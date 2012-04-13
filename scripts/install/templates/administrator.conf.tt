@@ -1,4 +1,0 @@
-<config logdir="[% logdir %]">
-	<internalnetwork ip="[% internal_net_add %]" mask="[% internal_net_mask %]"/>
-	<dbconf type="mysql" name="administrator" user="[% db_user %]" password="[% admin_password %]" port="[% dbport %]" host="[% dbip %]" debug="0"/>
-</config>

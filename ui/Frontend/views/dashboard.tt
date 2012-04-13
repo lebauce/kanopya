@@ -1,0 +1,43 @@
+<% css_head.push('icon.css') %>
+<% css_head.push('listing.css') %>
+
+<% js_head.push('monitor.js') %>
+<% js_head.push('status.js') %>
+
+<h3>System status</h3>
+<% FOREACH component IN components_status %>
+    <table class="status">
+    <% FOREACH group IN component.group %>
+        <tr id="<% group.id %>" class="simpleexpand">
+            <th colspan="2" class="img<% group.id %>"> <% group.label %></th>
+            <td id="status<% group.id %>" class="img<% group.status %>"></td>
+        </tr>
+
+        <tr id="X<% group.id %>" class="hidden">
+            <td>
+                <table class="listdetails">
+                    <% FOREACH detail IN group.details %>
+                        <tr>
+                            <td><% detail.label %></td>
+                            <td id="status<% detail.name %>" class="img<% detail.status %>">&nbsp;</td>
+                        </tr>
+                    <% END %>
+                </table>
+            </td>
+        </tr>
+    <% END %>
+    </table>
+<% END %>
+
+<hr />
+<h3>Energy consumption</h3>
+
+<div id="img_div">
+    <input id="default_timeline" type="radio" name="timeline" value="hourly" onclick="change_timeline('hour')" >hourly</input>
+    <input type="radio" name="timeline" value="daily" onclick="change_timeline('day')" >daily</input>
+    <br/>
+    <img id="conso_graph" class='autorefresh' src="" alt="kanopya-grapher must be running to see graph"/>
+</div>
+<div class="hidden" id="load_error_div">
+    Kanopya monitoring must be running to see graph.
+</div>

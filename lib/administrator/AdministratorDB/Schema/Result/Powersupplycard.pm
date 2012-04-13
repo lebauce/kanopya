@@ -23,7 +23,7 @@ __PACKAGE__->table("powersupplycard");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 powersupplycard_name
@@ -64,7 +64,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "powersupplycard_name",
@@ -107,6 +107,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 powersupplycard
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "powersupplycard",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "powersupplycard_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 =head2 powersupplycardmodel
 
 Type: belongs_to
@@ -119,7 +134,12 @@ __PACKAGE__->belongs_to(
   "powersupplycardmodel",
   "AdministratorDB::Schema::Result::Powersupplycardmodel",
   { powersupplycardmodel_id => "powersupplycardmodel_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 ipv4_internal
@@ -134,33 +154,23 @@ __PACKAGE__->belongs_to(
   "ipv4_internal",
   "AdministratorDB::Schema::Result::Ipv4Internal",
   { ipv4_internal_id => "ipv4_internal_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 powersupplycard_entity
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::PowersupplycardEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "powersupplycard_entity",
-  "AdministratorDB::Schema::Result::PowersupplycardEntity",
-  { "foreign.powersupplycard_id" => "self.powersupplycard_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-03-07 00:25:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Krb0zL6L/c7tgrGHIGjyUg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SE8IHjpBBla9pyfvinYlGw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->has_one(
-  "entitylink",
-  "AdministratorDB::Schema::Result::PowersupplycardEntity",
-    { "foreign.powersupplycard_id" => "self.powersupplycard_id" },
-    { cascade_copy => 0, cascade_delete => 0 });
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+    { "foreign.entity_id" => "self.powersupplycard_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;

@@ -1,0 +1,14 @@
+<% FOREACH netapp IN netapp_list %>
+    <table class="listing">
+    <tr><td colspan="3"><h1><% netapp.netapp_name %></h1></td></tr>
+    <tr><td class="italic" colspan="3"><span class="label">Description</span> : <% netapp.netapp_desc %></td><td class="toright">
+    <a class="imgManage" href="/equipments/netapp/<% netapp.netapp_id %>">details</a></td></tr>
+    </table>
+<% END %>
+
+<div class="actions">
+<% IF can_create %>
+    <a class="action modal" href="/equipments/netapp/add">create an netapp</a>
+    <p class="italic">Create and configure a new netapp.</p>
+<% END %>
+</div>

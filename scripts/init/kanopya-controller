@@ -1,0 +1,101 @@
+#! /bin/bash
+### BEGIN INIT INFO
+# Provides:           kanopya-controller
+# Required-Start:     mysql
+# Required-Stop:      $network $remote_fs $syslog
+# Default-Start:      2 3 4 5
+# Default-Stop:       0 1 6
+# Short-Description:  Kanopya Controller
+# Description:        Kanopya Controller
+### END INIT INFO
+#
+# Author:    Antoine Castaing <antoine.castaing@hederatech.com>
+#
+
+set -e
+
+. /lib/lsb/init-functions
+
+PATH="/opt/kanopya/sbin:$PATH"
+DAEMON="/opt/kanopya/sbin/kanopya-controller"
+EXEC="kanopya-controller"
+NAME="Kanopya controller"
+CONF_FILE="/opt/kanopya/conf/monitor.conf"
+PIDFILE="/var/run/$EXEC.pid"
+
+test -x "/opt/kanopya/sbin/$EXEC" || exit 0
+
+# Defaults
+PERL5LIB=\
+/opt/kanopya/lib/orchestrator/:\
+/opt/kanopya/lib/external/:\
+/opt/kanopya/lib/monitor/:\
+/opt/kanopya/lib/administrator/:\
+/opt/kanopya/lib/common
+export PERL5LIB
+KANOPYA_CONTROLLER_RUN=yes
+KANOPYA_CONTROLLER_OPTS=''
+
+
+# Reads config file (will override defaults above)
+[ -r /etc/default/kanopya ] && . /etc/default/kanopya
+
+RUN_DAEMON=$KANOPYA_CONTROLLER_RUN
+DAEMON_OPTS=$KANOPYA_CONTROLLER_OPTS
+
+#### Generic part
+
+# Cd to / before starting any daemons.
+cd /
+
+status=0;
+status_of_proc -p $PIDFILE $DAEMON $EXEC > /dev/null || status=$?
+
+case "$1" in
+  start)
+    if [ $status == 0 ]; then
+		log_success_msg "$NAME already running"
+    else
+		log_success_msg "Starting $NAME service"
+		if [ "$RUN_DAEMON" = "yes" -a -f $CONF_FILE ]; then
+		    start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
+			-- $DAEMON_OPTS
+		fi
+    fi  	
+    ;;
+  stop)
+  	
+  	if [ $status == 0 ]; then
+  		log_success_msg "Stopping $NAME service"
+    	start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
+    	if [ -f $PIDFILE ]; then
+    		rm $PIDFILE
+    	fi
+    else
+    	log_success_msg "$NAME not started"
+    fi
+    ;;
+  restart)
+    log_success_msg "Restarting $NAME service"
+    if [ $status == 0 ]; then
+	    if [ "$RUN_DAEMON" = "yes" -a -f $CONF_FILE ]; then
+			start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
+			if [ -f $PIDFILE ]; then
+				rm $PIDFILE
+			fi
+	    fi
+	    # Allow the daemons time to exit completely.
+	    sleep 2
+	fi
+    start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
+	    -- $DAEMON_OPTS
+    ;;
+  status)
+  	status_of_proc $DAEMON $EXEC  && exit 0 || exit $?
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|status}"
+    exit 1
+esac
+
+exit 0

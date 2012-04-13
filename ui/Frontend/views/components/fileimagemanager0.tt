@@ -1,0 +1,14 @@
+<% js_head.push('components.js') %>
+<h2>Cluster <% cluster_name %> - FileimageManager Configuration</h2>
+<hr />
+
+<div class="right">
+<input id="save_button" type="button" value="ok" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+
+
+<script type="text/javascript">
+document.getElementById('<% debug_level %>').selected=1;
+</script>

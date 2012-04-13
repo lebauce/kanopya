@@ -1,0 +1,15 @@
+<h2>Create an external cluster</h2>
+
+<form id="target" method="POST" action="/architectures/extclusters/add">
+<table class="form">
+    <tr>
+        <td class="label">Name :</td>
+        <td><input type="text" name="name" maxlength="32" size="32"/>
+        <span style="color: red"><% err_name %></span></td>
+    </tr>
+    <tr>
+        <td class="label">Description :</td>
+        <td><textarea cols="50" name="desc" value=""></textarea></td>
+    </tr>
+</table>
+</form>

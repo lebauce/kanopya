@@ -40,6 +40,7 @@ use strict;
 use warnings;
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 use General;
 our $VERSION = "1.00";
 
@@ -71,15 +72,11 @@ sub _getEntityIds {
     # retrieve entity_id of groups containing this entity object
     my @groups = $self->{schema}->resultset('Gp')->search( 
         { 'ingroups.entity_id' => $args{entity_id} },
-        { 
-            columns     => [],                                     # use no columns from Groups table
-            '+columns'     => [ 'gp_entity.entity_id' ],     # but add the entity_id column from groups_entity related table
-            join         => [qw/ingroups gp_entity/],
-        }
+        { join                 => [qw/ingroups gp_entity/] }
     );
     # add entity_id groups to the arrayref
     foreach my $g (@groups) { 
-        push @$ids, $g->get_column('entity_id');
+        push @$ids, $g->id;
     }
     
     return $ids;
@@ -132,22 +129,37 @@ sub updatePerms {
     
     my $methods = $args{methods};
     # we remove actuals perms not in methods argument
-    my $actualperms = $self->{schema}->resultset('Entityright')->search(
-        {    entityright_consumer_id => $args{consumer_id},
-            entityright_consumed_id => $args{consumed_id},
-            entityright_method => { -not_in => $methods },
-        },
-    )->delete_all;
     
+    if ((@$methods[0]) eq "") {
+        my $actualperms = $self->{schema}->resultset('Entityright')->search(
+        {    entityright_consumer_id => $args{consumer_id},
+             entityright_consumed_id => $args{consumed_id},
+        },
+        )->delete_all;
+        last;
+    }
+    else{
+        my $actualperms = $self->{schema}->resultset('Entityright')->search(
+        {    entityright_consumer_id => $args{consumer_id},
+             entityright_consumed_id => $args{consumed_id},
+             entityright_method => { -not_in => @$methods },
+        },
+        )->delete_all;
+    }   
+ 
     # we add new method perms if not already exists
-    foreach my $m (@$methods) {
-        $self->{schema}->resultset('Entityright')->find_or_create(
-            {    entityright_consumer_id => $args{consumer_id},
-                entityright_consumed_id => $args{consumed_id},
-                entityright_method => $m,
-            },
-            { key => 'entityright_right' }
-        );
+    if (ref scalar(@$methods[0]) ne "ARRAY"){
+    $methods = [$methods];
+    }
+    foreach my $m (@$methods) {	 
+        for (my $i=0; $i<scalar(@$m); $i++){
+            $self->{schema}->resultset('Entityright')->find_or_create(
+            {   entityright_consumer_id => $args{consumer_id},
+                entityright_consumed_id => $args{consumed_id},    
+                entityright_method => $m->[$i],
+            }
+            );
+        }   
     }
 }
 

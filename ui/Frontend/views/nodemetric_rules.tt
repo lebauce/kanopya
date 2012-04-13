@@ -1,0 +1,87 @@
+
+<table class="simplelisting">
+ 
+    <caption>Node metrics rules results 
+    <%IF  host_name%>
+     - <%cluster_name%> - <%host_name%>
+    <%END%> 
+    </caption>
+    </br>
+    
+    
+    
+    <% FOREACH rule IN rules %>
+        <tr>
+            <td>
+                <%IF host_name%>
+                    <% IF rule.isVerified == 0%><span class="bold state imgUp">  Rule <% rule.id %> </span> 
+                    <% ELSIF rule.isVerified == 1%><span class="bold state imgBroken">  Rule <% rule.id %> </span> 
+                    <% ELSE %><span class="bold state imgDown"> Rule <% rule.id %> </span> <% END %>
+                <% END %>
+                <span class="italic"> <% rule.label %></span>
+            </td>
+            <td>
+                <%IF host_name%>
+                    <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/externalnodes/<%externalnode_id%>/rules/<%rule.id%>/details">
+                        details
+                    </a>
+                <% ELSE %>
+                    <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/<%rule.id%>/details">
+                        details
+                    </a>
+                <% END %>
+                
+                
+            </td>
+            <td> 
+                <%IF host_name%>
+                    <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/externalnodes/<%externalnode_id%>/rules/<%rule.id%>/delete">
+                        delete
+                    </a>
+                <% ELSE %>
+                    <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/<%rule.id%>/delete">
+                        delete
+                    </a>
+                <% END %>
+            </td>
+
+        </tr>
+    <% END %>
+</table>
+
+
+
+<div class="actions">
+    <table>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>">Back to cluster interface</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations">View the combinations</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions">View the conditions</a>
+        </td></tr>
+        <tr><td>
+        <%IF externalnode_id%>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/externalnodes/<%externalnode_id%>/rules">View enabled rules</a>
+        <%ELSE%>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules">View enabled rules</a>
+        <%END%>
+        </td></tr>
+        <tr><td>
+        <%IF externalnode_id%>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/externalnodes/<%externalnode_id%>/rules/disabled">View disabled rules</a>
+        <%ELSE%>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/disabled">View disabled rules</a>
+        <%END%>
+        </td></tr>
+        
+    </table>
+    
+    <table><tr><td>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/new">Create new rule for this cluster</a>
+    </td></tr></table>
+</div> 
+
+

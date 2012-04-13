@@ -18,9 +18,9 @@ use warnings;
 use threads;
 #use threads::shared;
 use Net::Ping;
-use Entity::Motherboard;
+use Entity::Host;
 use Data::Dumper;
-
+use Message;
 use base "Monitor";
 
 # logger
@@ -37,113 +37,6 @@ sub new {
     return $self;
 }
 
-# DEPRECATED! TODO: remove
-sub onStateChanged {
-    my $self = shift;
-    my %args = @_;    
-    my ($mb, $last_state, $new_state) = ($args{mb}, $args{last_state}, $args{new_state});
-    my $adm = $self->{_admin};
-    
-    if ( $last_state eq 'starting' && $new_state eq 'up') {
-        $adm->newOp(
-                type => "UpdateClusterNodeStarted", priority => '500',
-                params => {
-                    motherboard_id => $mb->getAttr(name => 'motherboard_id'),
-                    cluster_id => $mb->getClusterId()
-                });
-    } elsif ( $last_state eq 'stopping' && $new_state eq 'down') {
-        $adm->newOp(
-                type => 'RemoveMotherboardFromCluster', priority => 100, 
-                params => {
-                    motherboard_id => $mb->getAttr(name => 'motherboard_id'),
-                    cluster_id => $mb->getClusterId()
-                });
-    }
-
-}
-
-=head2 _manageHostState
-    
-    Class : Private
-    
-    Desc : update the state of host in db if necessary (depending if this host is reachable or not and on the state time)
-    
-    Args :
-        host: ip of the host
-        reachable: 0 (false) or 1 (true): tell if we have succeeded in retrieving information from this host (i.e reachable or not)
-
-=cut
-
-# DEPRECATED! TODO: remove
-sub _manageHostState {
-    my $self = shift;
-    my %args = @_;
-    
-    my $starting_max_time = $self->{_node_states}{starting_max_time};
-    my $stopping_max_time = $self->{_node_states}{stopping_max_time};
-    my $adm = $self->{_admin};
-    my $reachable = $args{reachable};
-    my $host_ip = $args{host};
-
-    eval {
-        # Retrieve motherboard
-        # TODO keep the motherboard ID and get it with this id! (ip can be not unique)
-        my @mb_res = Entity::Motherboard->getMotherboards( hash => { motherboard_internal_ip => $host_ip } );
-        die "Several motherboards with ip '$host_ip', can not determine the wanted one" if (1 < @mb_res); # this die must desappear when we'll get mb by id
-        my $mb = shift @mb_res;
-        die "motherboard '$host_ip' no more in DB" if (not defined $mb);
-
-        # Retrieve mb state and state time
-        my ($state, $state_time) = $self->_mbState( state_info => $mb->getAttr( name => "motherboard_state" ) );
-        my $new_state = $state;
-        
-        # Manage new state
-        if ( $reachable && $state ne "stopping") {    # if reachable, node is now 'up', except if node is stopping
-            $new_state = "up";
-        } elsif ( $state eq "up" ) {                # if unreachable and last state was 'up', node is considered 'broken'
-                $new_state = 'broken';
-        } else {                                    # else we check if node is not 'starting/stopping' for too long, if it is, node is 'broken'
-            
-            # Check if stopping node is pingable
-            if ($state eq "stopping"){
-                my $host_ip = $mb->getAttr( name => 'motherboard_internal_ip' );
-                my $p = Net::Ping->new();
-                my $pingable = $p->ping($host_ip);
-                $p->close();
-                if ( not $pingable ) {
-                    $new_state = 'down';
-                } 
-            }
-            
-            # Check if node is not starting/stopping for too long
-            my $diff_time = 0;
-            if ($state_time) {
-                $diff_time = time() - $state_time;    
-            }
-            if (     (( $state eq "starting" ) && ( $diff_time > $starting_max_time )) ||
-                    (( $state eq "stopping" ) && ( $diff_time > $stopping_max_time ) && ( $new_state ne 'down') ) ) {
-                $new_state = 'broken';
-                my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
-                $log->warn($mess);
-                $adm->addMessage(from => 'Monitor', level => "warning", content => $mess );
-            }
-        }
-        
-        # Update state in DB if changed
-        if ( $state ne $new_state ) {
-            $mb->setAttr( name => "motherboard_state", value => $new_state );
-            $mb->save();
-            $log->info("=> ($host_ip) last state : $state  =>  new state : $new_state");
-            $adm->addMessage(from => 'Monitor', level => "info", content => "[$host_ip] State changed : $state => $new_state" );
-            
-            $self->onStateChanged( mb => $mb, last_state => $state, new_state => $new_state );
-        }
-    };
-    if ($@) {
-        my $error = $@;
-        $log->error( $error );
-    }
-}
 
 =head2 updateHostData
     
@@ -161,6 +54,8 @@ sub _manageHostState {
 sub updateHostData {
     my $self = shift;
     my %args = @_;
+
+
 
     my $start_time = time();
 
@@ -185,6 +80,9 @@ sub updateHostData {
                 $log->info("[$host] No component '$set->{'component'}' to monitor on this host");
                 next SET;
             }
+
+			# Skip set if collect is done by an external process
+			next SET if ($set->{'data_provider'} eq 'extern');
 
             ###################################################
             # Build the required var map: ( var_name => oid ) #
@@ -211,7 +109,7 @@ sub updateHostData {
                 # Retrieve the map ref { index => { var_name => value } } corresponding to required var_map for each entry #
                 ############################################################################################################
                 my $retrieve_set_start_time = time();
-                if ( exists $set->{table_oid} ) {
+                if ( defined $set->{table_oid} ) {
                     ($time, $update_values) = $data_provider->retrieveTableData( table_oid => $set->{table_oid}, index_oid => $set->{index_oid}, var_map => \%var_map );
                 } else {
                     ($time, $update_values->{"0"}) = $data_provider->retrieveData( var_map => \%var_map );
@@ -232,14 +130,14 @@ sub updateHostData {
                     my $mess = "Can not reach component '$comp' on $host";
                     if ( $args{host_state} =~ "up" ) {
                         $log->info( "Unreachable host '$host' (component '$comp') => we stop collecting data.");
-                        $self->{_admin}->addMessage(from => 'Monitor', level => "warning", content => $mess );
+                        Message->send(from => 'Monitor', level => "warning", content => $mess );
                     }
                     $host_reachable = 0;
                     last SET; # we stop collecting data sets
                 } else {
                     my $mess = "[$host] Error while collecting data set '$set->{label}' => $error";
                     $log->warn($mess);
-                    $self->{_admin}->addMessage(from => 'Monitor', level => "warning", content => $mess );
+                    Message->send(from => 'Monitor', level => "warning", content => $mess );
                     $error_happened = 1;
                 }
                 next SET; # continue collecting the other data sets
@@ -298,7 +196,7 @@ sub updateClusterNodeCount {
     my $self = shift;
     my %args = @_;
     
-    my ($cluster_name, $nodes_state) = ($args{cluster_name}, $args{nodes_state});
+    my ($cluster_name, $nodes_state, $hosts_state) = ($args{cluster_name}, $args{nodes_state}, $args{hosts_state});
     
     # RRD for node count
     my $rrd_file = "$self->{_rrd_base_dir}/nodes_$cluster_name.rrd";
@@ -310,26 +208,41 @@ sub updateClusterNodeCount {
                         'archive' => {     rows => $self->{_period} / $self->{_time_step},
                                         cpoints => 10,
                                         cfunc => "AVERAGE" },
+                        # nodes
                         'data_source' => {     name => 'up', type => 'GAUGE' },
                         'data_source' => {     name => 'starting', type => 'GAUGE' },
                         'data_source' => {     name => 'stopping', type => 'GAUGE' },
                         'data_source' => {     name => 'broken', type => 'GAUGE' },
+                        
+                        # hosts
+#                        'data_source' => {     name => 'host_up', type => 'GAUGE' },
+#                        'data_source' => {     name => 'host_starting', type => 'GAUGE' },
+#                        'data_source' => {     name => 'host_stopping', type => 'GAUGE' },
+#                        'data_source' => {     name => 'host_broken', type => 'GAUGE' },
                     );
         
     }
-        
-    my $up_count = scalar grep { $_ =~ '^in' } @$nodes_state;
-    my $starting_count = scalar grep { $_ =~ 'goingin' } @$nodes_state;
-    my $stopping_count = scalar grep { $_ =~ 'goingout' } @$nodes_state;
-    my $broken_count = scalar grep { $_ =~ 'broken' } @$nodes_state;
+    
+    my %count;
+    
+    # Nodes
+    $count{up} = scalar grep { $_ =~ '^in' } @$nodes_state;
+    $count{starting} = scalar grep { $_ =~ 'goingin' } @$nodes_state;
+    $count{stopping} = scalar grep { $_ =~ 'goingout' } @$nodes_state;
+    $count{broken} = scalar grep { $_ =~ 'broken' } @$nodes_state;
+
+    # hosts
+#    $count{host_up} = scalar grep { $_ =~ '^up' } @$hosts_state;
+#    $count{host_starting} = scalar grep { $_ =~ 'starting' } @$hosts_state;
+#    $count{host_stopping} = scalar grep { $_ =~ 'stopping' } @$hosts_state;
+#    $count{host_broken} = scalar grep { $_ =~ 'broken' } @$hosts_state;
 
     # we want update the rrd at time multiple of time_step (to avoid rrd extrapolation)
     my $time = time();
     my $mod_time = $time % $self->{_time_step};
     $time += ($mod_time > $self->{_time_step} / 2) ? $self->{_time_step} - $mod_time : -$mod_time; 
     eval {
-        $rrd->update( time => $time, values => {     'up' => $up_count, 'starting' => $starting_count,
-                                                    'stopping' => $stopping_count, 'broken' => $broken_count } );
+        $rrd->update( time => $time, values => \%count );
     };
     if ($@) {
         my $error = $@;
@@ -349,7 +262,7 @@ sub updateClusterNodeCount {
     Desc : Aggregate and store indicators values for each set for a cluster
     
     Args :
-        cluster : Entity::Cluster
+        cluster : Entity::ServiceProvider::Inside::Cluster
         hosts_values : hash ref : indicators values of each set for each hosts
         collect_time : seconds since Epoch when hosts data have been collected 
     
@@ -362,7 +275,7 @@ sub updateClusterData{
     my ($cluster, $hosts_values, $collect_time ) = ($args{cluster}, $args{hosts_values}, $args{collect_time});
     my $cluster_name = $cluster->getAttr( name => "cluster_name" );
     
-    my @mbs = values %{ $cluster->getMotherboards( ) };
+    my @mbs = values %{ $cluster->getHosts( ) };
     my @in_node_mb = grep { $_->getNodeState() =~ '^in' } @mbs; 
     
     
@@ -405,14 +318,15 @@ sub updateClusterData{
     
     # log cluster nodes state
     my @state_log = map {     $_->getInternalIP()->{ipv4_internal_address} .
-                            " (" . $_->getAttr( name => "motherboard_state" ) .
+                            " (" . $_->getAttr( name => "host_state" ) .
                             ", node:" .  $_->getNodeState() . ")"
                         } @mbs;
     $log->debug( "# '$cluster_name' nodes : " . join " | ", @state_log );
     
     # update cluster node count
+    my @hosts_state = map { $_->getState() } @mbs;
     my @nodes_state = map { $_->getNodeState() } @mbs;
-    $self->updateClusterNodeCount( cluster_name => $cluster_name, nodes_state => \@nodes_state )    
+    $self->updateClusterNodeCount( cluster_name => $cluster_name, nodes_state => \@nodes_state, hosts_state => \@hosts_state )    
 }
 
 =head2 udpate
@@ -442,7 +356,7 @@ sub update {
         #############################
         my %hosts_values = ();
         my %threads = ();
-        my @clusters = Entity::Cluster->getClusters( hash => { } );
+        my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
         foreach my $cluster (@clusters) {
             $log->info("# Update nodes data of cluster " . $cluster->getAttr( name => "cluster_name"));
             # Get set to monitor for this cluster
@@ -452,12 +366,12 @@ sub update {
             #my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
             my %components_by_name = map { $_->getComponentAttr()->{component_name} => $_ } values %$components;
             # Collect data for nodes in the cluster
-            foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
-                if ( $mb->getNodeState() eq 'in' ) {
+            foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
+                if ( $mb->getNodeState() =~ '^in' ) {
                     my $host_ip = $mb->getInternalIP()->{ipv4_internal_address};
                     my %params = (
                         host_ip => $host_ip,
-                        host_state => $mb->getAttr( name => "motherboard_state" ),
+                        host_state => $mb->getAttr( name => "host_state" ),
                         components => \%components_by_name,
                         sets => $monitored_sets,
                     );
@@ -527,10 +441,10 @@ sub updateConsumption {
     }
     
     my $consumption = 0;
-    my @up_motherboards = Entity::Motherboard->getMotherboards( hash => { motherboard_state => 'up'} );
-    for (@up_motherboards) {
+    my @up_hosts = Entity::Host->getHosts( hash => { host_state => { -like => 'up:%'}} );
+    for (@up_hosts) {
         my %model = $_->getModel();
-        $consumption += $model{motherboardmodel_consumption};
+        $consumption += $model{hostmodel_consumption};
     }
     
     $rrd->update( time => time(), values => { 'consumption' => $consumption } );
@@ -570,7 +484,7 @@ sub run {
     my $running = shift;
     
     my $adm = $self->{_admin};
-    $adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopya Collector started.");
+    Message->send(from => 'Monitor', level => 'info', content => "Kanopya Collector started.");
     
     while ( $$running ) {
 
@@ -590,7 +504,7 @@ sub run {
         #`/etc/init.d/kanopya-collector restart`;
     }
     
-    $adm->addMessage(from => 'Monitor', level => 'warning', content => "Kanopya Collector stopped");
+    Message->send(from => 'Monitor', level => 'warning', content => "Kanopya Collector stopped");
 }
 
 sub getMem {

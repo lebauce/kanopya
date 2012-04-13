@@ -66,39 +66,39 @@ print Dumper ($eguest_user->getPerms());
 
 
 
-#throws_ok { $ecluster = Entity::Cluster->get(id => 1) } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to retrieve Entity::Cluster with id 1';
-#throws_ok { Entity::Cluster->create() } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to create an Entity::Cluster';
+#throws_ok { $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => 1) } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to retrieve Entity::ServiceProvider::Inside::Cluster with id 1';
+#throws_ok { Entity::ServiceProvider::Inside::Cluster->create() } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to create an Entity::ServiceProvider::Inside::Cluster';
 
 #print "\n------ 'Admin' user Initial Permissions checking tests ------\n\n";
 
 #Administrator::authenticate(login => 'admin', password => 'admin');
 #$adm = Administrator->new();
-#lives_ok { $ecluster = Entity::Cluster->get(id => 1) } 'Permission granted for admin user to retrieve Entity::Cluster with id 1';
-#lives_ok { Entity::Cluster->create() } 'Permission granted for admin user to create an Entity::Cluster';
+#lives_ok { $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => 1) } 'Permission granted for admin user to retrieve Entity::ServiceProvider::Inside::Cluster with id 1';
+#lives_ok { Entity::ServiceProvider::Inside::Cluster->create() } 'Permission granted for admin user to create an Entity::ServiceProvider::Inside::Cluster';
 
 #print "\n------ 'Guest' user Permissions setting tests ------\n\n";
 
 #lives_ok { 
 #	$ecluster->addPerm(method => 'get', entity_id => $eguest_user->{_entity_id}) 
-#} "Permission granted for admin user to add 'get' permission on Entity::Cluster with id 1 for user guest";
+#} "Permission granted for admin user to add 'get' permission on Entity::ServiceProvider::Inside::Cluster with id 1 for user guest";
 
 #lives_ok { 
-	#Entity::Cluster->addPerm(method => 'create', entity_id => $eguest_user->{_entity_id})
-#} "Permission granted for admin user to add 'create' permission on Entity::Cluster class for user guest";
+	#Entity::ServiceProvider::Inside::Cluster->addPerm(method => 'create', entity_id => $eguest_user->{_entity_id})
+#} "Permission granted for admin user to add 'create' permission on Entity::ServiceProvider::Inside::Cluster class for user guest";
 
 #Administrator::authenticate(login => 'guest', password => 'guest');
 #$adm = Administrator->new();
-#lives_ok { $ecluster = Entity::Cluster->get(id => 1) } 'Permission granted for guest user to retrieve Entity::Cluster with id 1';
-#lives_ok { Entity::Cluster->create() } 'Permission granted for guest user to create an Entity::Cluster';
+#lives_ok { $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => 1) } 'Permission granted for guest user to retrieve Entity::ServiceProvider::Inside::Cluster with id 1';
+#lives_ok { Entity::ServiceProvider::Inside::Cluster->create() } 'Permission granted for guest user to create an Entity::ServiceProvider::Inside::Cluster';
 
 #throws_ok { 
-#	$ecluster = Entity::Cluster->get(id => 1);
+#	$ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => 1);
 #	$ecluster->addPerm(method => 'delete', entity_id => $eguest_user->{_entity_id}) 
-#} "Kanopya::Exception::Permission::Denied", "Permission denied for guest user to add 'delete' permission on Entity::Cluster with id 1";
+#} "Kanopya::Exception::Permission::Denied", "Permission denied for guest user to add 'delete' permission on Entity::ServiceProvider::Inside::Cluster with id 1";
 
 #my $masterclustergroups_eid = $adm->{db}->resultset('Groups')->find({ groups_name => 'Cluster' })->groups_entities->first->get_column('entity_id');
 #my %granted_methods = $adm->{_rightchecker}->getPerms(consumer_id => $user_guest_eid, consumed_id => $masterclustergroups_eid); 
-#print "\ngranted methods for user guest on Entity::Cluster class : ";
+#print "\ngranted methods for user guest on Entity::ServiceProvider::Inside::Cluster class : ";
 #foreach my $method (keys %granted_methods) {
 #	print $method." ";
 #}

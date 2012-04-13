@@ -11,8 +11,11 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package Kanopya::Exceptions;
+
 use Data::Dumper;
+
 =head1 NAME
 
 <KanopyaExceptions> – <General class containing Kanopya exceptions>
@@ -62,7 +65,7 @@ Kanopya has it own exception to manage internal error and show to user comprehen
 use Exception::Class (
     Kanopya::Exception => {
     description => "Kanopya General Exception",
-    fields => [ 'level', 'request' ],
+    fields => [ 'level', 'request', 'hidden' ],
     },
     Kanopya::Exception::DB => {
     isa => 'Kanopya::Exception',
@@ -70,7 +73,7 @@ use Exception::Class (
     },
     Kanopya::Exception::Network => {
     isa => 'Kanopya::Exception',
-    description => 'MicroCluster SSH communication exception',
+    description => 'SSH communication exception',
     },
     Kanopya::Exception::Internal => {
     isa => 'Kanopya::Exception',
@@ -80,6 +83,14 @@ use Exception::Class (
     isa => 'Kanopya::Exception::Internal',
     description => 'Wrong Value',
     },
+    Kanopya::Exception::Internal::WrongType => {
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Wrong Type',
+    },
+    Kanopya::Exception::Internal::NotFound => {
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Not found',
+    },
     Kanopya::Exception::Internal::IncorrectParam => {
     isa => 'Kanopya::Exception::Internal',
     description => 'Wrong attribute or parameter',
@@ -88,6 +99,15 @@ use Exception::Class (
     isa => 'Kanopya::Exception::Internal',
     description => 'Parameter missing or undefined',
     fields => [ 'sub_name', 'param_name' ],
+    },
+    Kanopya::Exception::Internal::UnknownCategory => {
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Unknown category type',
+    fields => [ 'sub_name', 'param_name' ],
+    },
+    Kanopya::Exception::Internal::UnknownClass => {
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Unknown class',
     },
     Kanopya::Exception::Execution => {
     isa => 'Kanopya::Exception',
@@ -119,15 +139,17 @@ use Exception::Class (
     },
     Kanopya::Exception::OperationAlreadyEnqueued => {
     isa => 'Kanopya::Exception',
-    description => 'Operation already enqueued'     
+    description => 'Operation already enqueued'
     },
-    
-    
+    Kanopya::Exception::NotImplemented => {
+    isa => 'Kanopya::Exception',
+    description => 'Method not implemented'
+    },
 );
 
 # Force print trace when exception is stringified
 # For Kanopya::Exception and all its subclasses
-#Kanopya::Exception->Trace(1);
+Kanopya::Exception->Trace(1);
 
 # Override method called when exception is stringified
 sub Kanopya::Exception::full_message {

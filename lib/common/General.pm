@@ -48,7 +48,25 @@ use warnings;
 my $log = get_logger("executor");
 my $errmsg;
 
-=head2
+=head2 getTemplateConfiguration
+
+    Desc: return hashref used to configure Template instance
+
+=cut
+
+sub getTemplateConfiguration {
+    return {
+        INCLUDE_PATH => '/templates/internal/',
+        INTERPOLATE  => 1,     # expand "$var" in plain text
+        POST_CHOMP   => 0,     # cleanup whitespace
+        EVAL_PERL    => 1,     # evaluate Perl code blocks
+        RELATIVE     => 1,     # desactive par defaut
+    };
+}
+
+=head2---------+--------------+
+1 row in set (0.00 sec)
+
     
     Class : Public
     
@@ -79,9 +97,39 @@ sub checkParams {
             # TODO log in the logger corresponding to caller package;
             $log->error($errmsg);
             
-            throw Kanopya::Exception::Internal::MissingParam(sub_name => $caller_sub_name, param_name => $param );
+            throw Kanopya::Exception::Internal::MissingParam(sub_name   => $caller_sub_name,
+                                                             param_name => $param );
         }
     }
+}
+
+sub checkParam {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'args', 'name' ]);
+
+    my $caller_args = $args{args};
+    my $arg_name = $args{name};
+    my $caller_sub_name = (caller(1))[3];
+
+    my $value;
+    eval {
+        General::checkParams(args => $caller_args, required => [ $arg_name ]);
+        $value = $caller_args->{$arg_name};
+        delete $caller_args->{$arg_name};
+    };
+    if ($@) {
+        if (exists $args{default} and defined $args{default}) {
+            $value = $args{default};
+        }
+        else {
+            throw Kanopya::Exception::Internal::MissingParam(
+                      sub_name   => $caller_sub_name,
+                      param_name => $args{name}
+                  );
+        }
+    }
+    return $value;
 }
 
 sub getClassEEntityFromEntity{
@@ -193,6 +241,60 @@ sub getAsHashRef {
         $res{ $val } = \%e; 
     }
     return \%res;
+}
+
+sub convertSizeFormat {
+    my %args = @_;
+    if(! exists $args{size} or ! defined $args{size}) {
+        $errmsg = "convertSizeFormat needs size named argument";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+    }
+    if($args{size} !~ /^(\d+)([BKMGTPE])$/) {
+        $errmsg = "convertSizeFormat bad size argument $args{size} ; must be XY where X is a positive number and Y a character among B, K, M, G, T, P or E";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+     
+    }
+    return ($1, $2);   
+}
+
+sub convertToBytes {
+    my %args = @_;
+    if((! exists $args{value} or ! defined $args{value}) ||
+       (! exists $args{units} or ! defined $args{units})) {
+        $errmsg = "convertToBytes needs value and units named arguments!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    if($args{units} !~ /^[BKMGTPE]$/) {
+        $errmsg = "convertToBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+    } 
+    my %convert = ('B' => 0, 'K' => 1, 'M' => 2, 'G' => 3, 'T' => 4, 'P' => 5, 'E' => 6);  
+    
+    return $args{value} * (1024**$convert{$args{units}});
+}
+
+sub convertFromBytes {
+    my %args = @_;
+    if((! exists $args{value} or ! defined $args{value}) ||
+       (! exists $args{units} or ! defined $args{units})) {
+        $errmsg = "convertFromBytes needs value and units named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    if($args{units} !~ /^[BKMGTPE]$/) {
+        $errmsg = "convertFromBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+    } 
+    my %convert = ('B' => 0, 'K' => 1, 'M' => 2, 'G' => 3, 'T' => 4, 'P' => 5, 'E' => 6);  
+    
+    if(! $args{value}) { return 0; }
+    
+    return $args{value} / (1024**$convert{$args{units}}); 
 }
 
 1;

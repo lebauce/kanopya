@@ -1,3 +1,31 @@
+kanopya (0.10.1) stable; urgency=low
+
+  * [Core] Infrastructure implementation
+  * [KICA] Model auto-tuning mechanism
+  * [KICA] Reconfiguration plan building
+  * [Core] Data management
+  * [Core] User roles and abilitation study
+  * [web ui] Migrate Cgi to Dancer
+  * [Component] private cloud manager
+  * [KICA] Cluster queuing model finalization
+  * [Component] Openldap
+
+ -- Hedera Dev Team <dev@hederatech.com>  Tue, 01 Nov 2011 12:48:29 +0100
+
+kanopya (0.8.1) stable; urgency=low
+
+  * New components : Iptables, Mysql, HAProxy 
+  * Bug fixes 
+  * Backup operations system
+  * Backup messages system
+  * Components Mounttable, Snmpd and Syslog-ng automatically installed on system images and added to new clusters
+  * Better state visualization for motherboard and node in web interface
+  * Orchestration analyse and conception
+  * Logrotate kanopya log files
+  * Force stop cluster operation 
+
+ -- Hedera Dev Team <dev@hederatech.com>  Mon, 01 Aug 2011 12:46:40 +0200
+
 kanopya (0.7.1) stable; urgency=low
 
   * Econtext ssh refactoring

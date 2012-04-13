@@ -65,6 +65,8 @@ use constant ATTR_DEF => {
                                         is_editable        => 0},
 };
 
+sub primarykey { return 'gp_id' }
+
 sub methods {
     return {
         'create'    => {'description' => 'create a new group', 
@@ -91,43 +93,6 @@ sub methods {
     };
 }
 
-
-=head2 get
-
-    Class: public
-    desc: retrieve a stored Entity::Gp instance
-    args:
-        id : scalar(int) : gp id
-    return: Entity::Gp instance 
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-    
-    my $admin = Administrator->new();
-       my $dbix_gp = $admin->{db}->resultset('Gp')->find($args{id});
-       if(not defined $dbix_gp) {
-           $errmsg = "Entity::Gp->get : id <$args{id}> not found !";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-       }   
-       # Entity::Gp->get method concerns an existing groups so we retrieve this groups'entity_id
-       my $entity_id = $dbix_gp->entitylink->get_column('entity_id');
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-       if(not $granted) {
-           $errmsg = "Permission denied to get group with id $args{id}";
-           $log->error($errmsg);
-           throw Kanopya::Exception::Permission::Denied(error => $errmsg);
-       }
-    
-       my $self = $class->SUPER::get( %args,  table => "Gp");
-       return $self;
-}
-
 =head2 getGroups
 
     Class: public
@@ -141,38 +106,10 @@ sub get {
 sub getGroups {
     my $class = shift;
     my %args = @_;
-    my @objs = ();
-    my ($rs, $entity_class);
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my $adm = Administrator->new();
-    return $class->SUPER::getEntities( %args,  type => "Gp");
-}
-
-=head2 new
-
-    Class: Public
-    desc:  constructor
-    args: 
-    return: Entity::Gp instance 
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-    
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Gp");
-    
-    # Set the extended parameters
-    #$self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
+    return $class->search(%args);
 }
 
 =head2 create
@@ -236,13 +173,13 @@ sub getGroupsFromEntity {
         
     my $adm = Administrator->new();
        my $mastergroup = $args{entity}->getMasterGroupName();
-    my $gp_rs = $adm->{db}->resultset('Gp')->search({
+    my $gp_rs = $adm->{db}->resultset('Gp')->search(
+		{
         -or => [
-            'ingroups.entity_id' => $args{entity}->{_dbix}->get_column('entity_id'),
-            'gp_name' => $mastergroup ]},
-            
-        {     '+columns' => [ 'gp_entity.entity_id' ], 
-            join => [qw/ingroups gp_entity/] }
+            'ingroups.entity_id' => $args{entity}->{_dbix}->id,
+            'gp_name' => $mastergroup ]
+        },
+        { join => [qw/ingroups/] }
     );
     while(my $row = $gp_rs->next) {
         eval {
@@ -277,7 +214,8 @@ sub appendEntity {
     
     General::checkParams(args => \%args, required => ['entity']);
     
-    my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
+#    my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
+ 	my $entity_id = $args{entity}->{_dbix}->id;
     $self->{_dbix}->ingroups->create({gp_id => $self->getAttr(name => 'gp_id'), entity_id => $entity_id} );
     return;
 }
@@ -299,7 +237,7 @@ sub removeEntity {
     
     General::checkParams(args => \%args, required => ['entity']);
     
-    my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
+    my $entity_id = $args{entity}->{_dbix}->id;
     $self->{_dbix}->ingroups->find({entity_id => $entity_id})->delete();
     return;
 }
@@ -324,8 +262,8 @@ sub getEntities {
     my $idfield = lc($type)."_id";
     
     while(my $row = $entities_rs->next) {
-        my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->get_column('entity_id')})->first;
-        push @$ids, $concret->get_column("$idfield");
+        my $concret = $adm->{db}->resultset($type)->find($row->get_column('entity_id'));
+        push @$ids, $concret->id;
     }    
     
     my @objs = ();
@@ -366,7 +304,7 @@ sub getExcludedEntities {
     
     # retrieve groups elements ids 
     while(my $row = $entities_rs->next) {
-        my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->get_column('entity_id')})->first;
+        my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->id})->first;
         push @$ids, $concret->get_column("$idfield");
     }    
     

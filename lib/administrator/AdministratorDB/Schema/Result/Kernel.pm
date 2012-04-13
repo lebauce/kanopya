@@ -23,7 +23,7 @@ __PACKAGE__->table("kernel");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 kernel_name
@@ -51,7 +51,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "kernel_name",
@@ -64,6 +64,21 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("kernel_id");
 
 =head1 RELATIONS
+
+=head2 clusters
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Cluster>
+
+=cut
+
+__PACKAGE__->has_many(
+  "clusters",
+  "AdministratorDB::Schema::Result::Cluster",
+  { "foreign.kernel_id" => "self.kernel_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 dhcpd3_hosts
 
@@ -80,45 +95,45 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 kernel_entity
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::KernelEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "kernel_entity",
-  "AdministratorDB::Schema::Result::KernelEntity",
-  { "foreign.kernel_id" => "self.kernel_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 motherboards
+=head2 hosts
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Motherboard>
+Related object: L<AdministratorDB::Schema::Result::Host>
 
 =cut
 
 __PACKAGE__->has_many(
-  "motherboards",
-  "AdministratorDB::Schema::Result::Motherboard",
+  "hosts",
+  "AdministratorDB::Schema::Result::Host",
   { "foreign.kernel_id" => "self.kernel_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kernel
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UmqSYhP+n/RxWr1i2RHlNA
-__PACKAGE__->has_one(
-  "entitylink",
-  "AdministratorDB::Schema::Result::KernelEntity",
-    { "foreign.kernel_id" => "self.kernel_id" },
-    );
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "kernel",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "kernel_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-28 16:32:30
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Qr1Hwst/tM458GTUyGJ5hA
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+        { "foreign.entity_id" => "self.kernel_id" },
+        { cascade_copy => 0, cascade_delete => 1 });
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

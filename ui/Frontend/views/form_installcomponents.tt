@@ -1,0 +1,16 @@
+<h2>Install a new component</h2>
+
+<form id="target" method="POST" action="/systems/images/<% systemimage_id %>/installcomponent">
+<table class="form">
+	<tr>
+		<td class="label">available components :</td>
+		<td>
+		<select name="component_type_id"><% FOREACH comp IN components_list %>
+			<option value="<% comp.component_type_id %>"><% comp.component_name %> <% comp.component_version %> - <% comp.component_category %></option>
+		<% END %>
+		</select>
+		</td>
+	</tr>
+</table>
+<input type="hidden" name="systemimage_id" value="<% systemimage_id %>" />
+</form>

@@ -51,6 +51,13 @@ __PACKAGE__->table("ipv4_public");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 infrastructure_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -68,6 +75,13 @@ __PACKAGE__->add_columns(
   "ipv4_public_default_gw",
   { data_type => "char", is_nullable => 1, size => 15 },
   "cluster_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "infrastructure_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -94,9 +108,29 @@ __PACKAGE__->belongs_to(
   { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 infrastructure
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ymmg5FL6hsAKvcddkzuAvQ
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Infrastructure>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "infrastructure",
+  "AdministratorDB::Schema::Result::Infrastructure",
+  { infrastructure_id => "infrastructure_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2011-10-01 12:16:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SUXuLF61O3/eoXyMh7eVzg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

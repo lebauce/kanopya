@@ -9,7 +9,7 @@ DEBUG=1
 
 do_iscsi_login ()
 {
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
 	return
     fi
 
@@ -18,6 +18,7 @@ do_iscsi_login ()
     DEV_TARGET_IP=$(eval echo \$${1}_target_ip)
     DEV_TARGET_PORT=$(eval echo \$${1}_target_port)
     DEV_TARGET_GROUP=$(eval echo \$${1}_target_group)
+    DEV_TARGET_LUN=$(eval echo \$${1}_target_lun)
     DEV_USERNAME=$(eval echo \$${1}_username)
     DEV_PASSWORD=$(eval echo \$${1}_password)
     DEV_IN_USERNAME=$(eval echo \$${1}_in_username)
@@ -29,6 +30,7 @@ do_iscsi_login ()
 	echo "DEV_TARGET_IP $DEV_TARGET_IP"
 	echo "DEV_TARGET_PORT $DEV_TARGET_PORT"
 	echo "DEV_TARGET_GROUP $DEV_TARGET_GROUP"
+	echo "DEV_TARGET_LUN $DEV_TARGET_LUN"
 	echo "DEV_USERNAME $DEV_USERNAME"
 	echo "DEV_PASSWORD $DEV_PASSWORD"
 	echo "DEV_IN_USERNAME $DEV_IN_USERNAME"
@@ -38,10 +40,15 @@ do_iscsi_login ()
 
     iscsistart -i $INITIATORNAME -t $DEV_TARGET_NAME -g $DEV_TARGET_GROUP -a $DEV_TARGET_IP -p $DEV_TARGET_PORT $DEV_USERNAME $DEV_PASSWORD $DEV_IN_USERNAME $DEV_IN_PASSWORD
 
-    udevadm settle
+    wait_for_udev 10
+    sleep 3
 
-    DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-lun-0"
-    
+    DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-${DEV_TARGET_LUN}-part1"
+
+    if [ ! -e "$DEVICE" ]; then
+        DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-${DEV_TARGET_LUN}-part1"
+    fi
+
     if [ ! -e "$DEVICE" ]; then
 	panic "Unable to find $DEVICE"
     fi
@@ -54,18 +61,18 @@ do_iscsi_login ()
 do_mount()
 {
 
-    if [ -z "$1" ]; then 
+    if [ -z "$1" ]; then
 	return
     fi
-    
+
     DEV_FS_TYPE=$(eval echo \$${1}_fs_type)
-    DEV_MOUNT_POINT=$(eval echo \$${1}_mount_point)
     DEV_MOUNT_OPTS=$(eval echo \$${1}_mount_opts)
 
     if [ "$1" = "root" ]; then
 	DEV_MOUNT_POINT=
     else
 	DEV_MOUNT_POINT=$(eval echo \$${1}_mount_point)
+    fi
 
     DEVICE=`cat /tmp/${1}`
     echo "mount -t ${DEV_FS_TYPE} -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}"

@@ -1,0 +1,45 @@
+<table class="simplelisting">
+
+    <caption>
+    
+        <% IF cluster_id %> Conditions related to cluster <% cluster_id %>  
+        <% ELSE %> All the Conditions
+        <% END %>
+        
+    
+    </caption>
+
+    <% FOREACH condition IN conditions %>
+        <tr><td>
+        <span class="bold"> Condition <% condition.id %></span>
+        <span class="italic"> <% condition.label %>
+        </td><td>
+        <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions/<%condition.id%>/edit">edit</a>
+        </td><td>
+        <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions/<%condition.id%>/delete">delete</a>
+        </td>
+        </tr>
+    <% END %>
+</table>     
+
+<div class="actions">
+
+    <table>
+         <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>">Back to cluster interface</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations">View the combinations</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions">View the conditions</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules">View the rules</a>
+        </td></tr>
+    </table>
+
+    <table><tr><td>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions/new">Create new condition for this cluster</a>
+    </td></tr></table>
+</div> 

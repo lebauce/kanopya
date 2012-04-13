@@ -41,13 +41,14 @@ __PACKAGE__->table("lvm2_lv");
 
 =head2 lvm2_lv_size
 
-  data_type: 'integer'
+  data_type: 'bigint'
   extra: {unsigned => 1}
   is_nullable: 0
 
 =head2 lvm2_lv_freespace
 
-  data_type: 'integer'
+  data_type: 'bigint'
+  extra: {unsigned => 1}
   is_nullable: 0
 
 =head2 lvm2_lv_filesystem
@@ -76,45 +77,15 @@ __PACKAGE__->add_columns(
   "lvm2_lv_name",
   { data_type => "char", is_nullable => 0, size => 32 },
   "lvm2_lv_size",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
   "lvm2_lv_freespace",
-  { data_type => "integer", is_nullable => 0 },
+  { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
   "lvm2_lv_filesystem",
   { data_type => "char", is_nullable => 0, size => 10 },
 );
 __PACKAGE__->set_primary_key("lvm2_lv_id");
 
 =head1 RELATIONS
-
-=head2 distribution_etc_devices
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Distribution>
-
-=cut
-
-__PACKAGE__->has_many(
-  "distribution_etc_devices",
-  "AdministratorDB::Schema::Result::Distribution",
-  { "foreign.etc_device_id" => "self.lvm2_lv_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 distribution_root_devices
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Distribution>
-
-=cut
-
-__PACKAGE__->has_many(
-  "distribution_root_devices",
-  "AdministratorDB::Schema::Result::Distribution",
-  { "foreign.root_device_id" => "self.lvm2_lv_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
 
 =head2 lvm2_vg
 
@@ -131,54 +102,9 @@ __PACKAGE__->belongs_to(
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 motherboards
 
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Motherboard>
-
-=cut
-
-__PACKAGE__->has_many(
-  "motherboards",
-  "AdministratorDB::Schema::Result::Motherboard",
-  { "foreign.etc_device_id" => "self.lvm2_lv_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 systemimage_etc_devices
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Systemimage>
-
-=cut
-
-__PACKAGE__->has_many(
-  "systemimage_etc_devices",
-  "AdministratorDB::Schema::Result::Systemimage",
-  { "foreign.etc_device_id" => "self.lvm2_lv_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 systemimage_root_devices
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Systemimage>
-
-=cut
-
-__PACKAGE__->has_many(
-  "systemimage_root_devices",
-  "AdministratorDB::Schema::Result::Systemimage",
-  { "foreign.root_device_id" => "self.lvm2_lv_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:q5Vp+30Czh6newPiyZoXLA
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-16 20:32:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Z1miWC4OiEh0yplRBeE4lQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

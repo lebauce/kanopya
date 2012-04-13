@@ -26,14 +26,14 @@ __PACKAGE__->table("node");
   is_auto_increment: 1
   is_nullable: 0
 
-=head2 cluster_id
+=head2 inside_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 motherboard_id
+=head2 host_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -50,7 +50,26 @@ __PACKAGE__->table("node");
 
   data_type: 'char'
   is_nullable: 1
-  size: 20
+  size: 32
+
+=head2 node_prev_state
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 32
+
+=head2 node_number
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
+=head2 systemimage_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
 
 =cut
 
@@ -62,14 +81,14 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
-  "cluster_id",
+  "inside_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "motherboard_id",
+  "host_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -79,47 +98,72 @@ __PACKAGE__->add_columns(
   "master_node",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "node_state",
-  { data_type => "char", is_nullable => 1, size => 20 },
+  { data_type => "char", is_nullable => 1, size => 32 },
+  "node_prev_state",
+  { data_type => "char", is_nullable => 1, size => 32 },
+  "node_number",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "systemimage_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 __PACKAGE__->set_primary_key("node_id");
-__PACKAGE__->add_unique_constraint("cluster_id", ["cluster_id", "motherboard_id"]);
-__PACKAGE__->add_unique_constraint("fk_node_2", ["motherboard_id"]);
+__PACKAGE__->add_unique_constraint("host_id", ["host_id"]);
 
 =head1 RELATIONS
 
-=head2 cluster
+=head2 host
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Cluster>
+Related object: L<AdministratorDB::Schema::Result::Host>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "cluster",
-  "AdministratorDB::Schema::Result::Cluster",
-  { cluster_id => "cluster_id" },
+  "host",
+  "AdministratorDB::Schema::Result::Host",
+  { host_id => "host_id" },
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 motherboard
+=head2 inside
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Motherboard>
+Related object: L<AdministratorDB::Schema::Result::Inside>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "motherboard",
-  "AdministratorDB::Schema::Result::Motherboard",
-  { motherboard_id => "motherboard_id" },
+  "inside",
+  "AdministratorDB::Schema::Result::Inside",
+  { inside_id => "inside_id" },
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 systemimage
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KOhhfx9RpiJ/GwPiJUcA5Q
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Systemimage>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "systemimage",
+  "AdministratorDB::Schema::Result::Systemimage",
+  { systemimage_id => "systemimage_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-21 21:53:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bYRnhBPKC/6DAUTGm45kcA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

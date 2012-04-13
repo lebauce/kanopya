@@ -1,0 +1,244 @@
+<h2>Create a new cluster</h2>
+
+<form id="target" method="POST" action="/architectures/clusters/add">
+<table class="form">
+    <tr><td class="label">Name :</td>
+        <td><input type="text" name="cluster_name" maxlength="32" size="32"/>
+        <span style="color: red"><% err_name %></span></td>
+    </tr>
+    <tr><td class="label">Description :</td>
+        <td><textarea cols="50" name="cluster_desc" value=""></textarea></td>
+    </tr>
+    <tr><td class="label">Owner group :</td>
+        <td><select id="groupschoice">
+            <% FOREACH gp IN gp_list %>
+                <option value="<% gp.gp_id %>"><% gp.gp_name %></option>
+            <% END %>
+            </select>
+            <span style="color: red"><% err_owner %></span>
+        </td>
+    </tr>
+    <tr><td class="label">Owner user:</td>
+        <td><select id="owner" name="user_id">
+            
+         </select>
+       </td>
+    </tr>
+    <tr><td class="label">Contact email :</td>
+		<td><input type="text" name="cluster_contactemail" maxlength="255" size="32"value="not yet implemented" disabled />
+            <span style="color: red"><% err_email %></span>
+        </td>
+	</tr>
+    
+    <tr><td colspan="2"><hr /></td></tr>
+    <tr><td class="label">Kernel :</td>
+        <td><select name="kernel_id">
+                <option value="0">default host kernel</option>
+            <% FOREACH kernel IN kernels_list %>
+                <option value="<% kernel.kernel_id %>"><% kernel.kernel_name %></option>
+            <% END %>
+            </select>
+            <span style="color: red"><% err_kernel %></span>
+        </td>
+    </tr>
+    <tr><td class="label">Hosts Provider :</td>
+        <td><select id="host_provider">
+            <% FOREACH hp IN hostproviders_list %>
+                <option value="<% hp.id %>"><% hp.name %></option>
+            <% END %>
+            </select>
+        </td>
+    </tr>
+    <tr><td class="label">Host Manager to use :</td>
+        <td><select id="cloud_manager" name="host_manager_id">
+            <% FOREACH cloudmanager IN cloudmanagers_list %>
+                <option value="<% cloudmanager.id %>"><% cloudmanager.name %></option>
+            <% END %>
+            </select>
+        </td>
+    </tr>
+    <tr><td class="label">Boot Policy :</td>
+        <td><select id="boot_policy" name="cluster_boot_policy"></select>
+        </td>
+    </tr>
+    <tr id="cloudmanagerdetails"></tr>
+
+    <tr><td colspan="2"><hr /></td></tr>
+    <tr><td class="label" rowspan="2">System image usage :</td>
+        <td><input type="radio" name="cluster_si_shared" value="0" checked=checked />dedicated (one image per node)</td>
+    </tr>
+    <tr><td><input type="radio" name="cluster_si_shared" value="1" />shared (one image for all nodes)</td>
+    </tr>
+    <tr><td class="label">Master Image :</td>
+        <td><select name="masterimage_id">
+            <% FOREACH si IN masterimages_list %>
+                <option value="<% si.masterimage_id %>"><% si.masterimage_name %></option>
+            <% END %>
+            </select>
+        </td>
+    </tr>
+    <tr><td class="label">Image size :</td>
+        <td><input type="text" name="disk_manager_param_systemimage_size" maxlength="16" size="5"/>
+            <select name="systemimage_size_unit">
+                <option value="G">G</option>
+                <option value="M">M</option>
+            </select> 
+            <span style="color: red"><% ERR_SYSTEMIMAGE_SIZE %></span>
+        </td>
+    </tr>
+    <tr><td class="label">Storage Provider :</td>
+        <td><select id="storage_provider">
+            <% FOREACH storage IN storageproviders_list %>
+                <option value="<% storage.id %>"><% storage.name %></option>
+            <% END %>
+            </select>
+        </td>
+    </tr>
+    <tr><td class="label">Disk Manager to store this image :</td>
+        <td><select id="disk_manager" name="disk_manager_id">
+            <% FOREACH diskmanager IN diskmanagers_list %>
+            <option value="<% diskmanager.id %>"><% diskmanager.name %></option>
+            <% END %>
+        </select>
+        </td>
+    </tr>
+    <tr id="diskmanagerdetails"></tr>
+
+
+    <!--<tr><td class="label">Export Manager :</td>
+        <td><select id="export_manager" name="export_manager_id">
+                <% FOREACH export IN exportmanagers_list %>
+                <option value="<% export.id %>"><% export.name %></option>
+                <% END %>
+            </select>
+        </td>
+    </tr>-->
+    <tr><td><span style="color: red"><% err_systemimage_id %></span></td></td></tr>
+
+     
+    <tr><td colspan="2"><hr /></td></tr>
+    <tr><td class="label">Priority :</td>
+        <td><input type="text" name="cluster_priority" maxlength="5" size="5" value="1" />
+            <span style="color: red"><% err_priority %></span>
+        </td>
+    </tr>
+    <tr><td class="label">minimum node to used :</td>
+        <td><input type="text" id="min_node" name="cluster_min_node" maxlength="5" size="5" value="1" />
+            <span style="color: red"><% err_min_node %></span>
+        </td>
+    </tr>
+    <tr><td class="label">maximum node to used :</td>
+        <td><input type="text" id="max_node" name="cluster_max_node" maxlength="5" size="5" value="1" />
+            <span style="color: red"><% err_max_node %></span>
+        </td>
+    </tr>
+
+    <tr><td colspan="2"><hr /></td></tr>
+    <tr><td class="label">Base node's hostname :</td>
+        <td><input type="text" name="cluster_basehostname" maxlength="64" size="32"/>
+            <span style="color: red"><% err_cluster_basehostname %></span>
+        </td>
+    </tr>
+    <tr><td class="label">Domain name :</td>
+        <td><input type="text" name="cluster_domainname" maxlength="64" size="32" value="hedera-technology.com"/>
+            <span style="color: red"><% err_domainname %></span>
+        </td>
+    </tr>
+    <tr><td class="label">Name server 1 :</td>
+        <td><input type="text" name="cluster_nameserver1" maxlength="15" size="15" value="<% nameserver %>"/>
+            <span style="color: red"><% err_nameserver %></span>
+        </td>
+    </tr>
+    <tr><td class="label">Name server 2 :</td>
+        <td><input type="text" name="cluster_nameserver2" maxlength="15" size="15" value="<% nameserver %>" />
+            <span style="color: red"><% err_nameserver %></span>
+        </td>
+    </tr>
+</table>
+</form>
+
+<script type="text/javascript">
+
+// update owner users list
+function Updateusers() {
+    var url = '/architectures/clusters/users/' + $('#groupschoice').val();
+    $.get(url, function(data) {
+        $('#owner').html(data);
+    }); 
+}
+
+// update cloud manager list
+function UpdateCloudmanagers() {
+    var url = '/architectures/clusters/cloudmanagers/' + $('#host_provider').val();
+    $.get(url, function(data) {
+        $('#cloud_manager').html(data);
+    }).complete(UpdateCloudmanagersSubform);
+}
+
+function UpdateCloudmanagersSubform() {
+    var hostproviderid = $('#host_provider').val();
+    var cloudmanagerid = $('#cloud_manager').val();
+    var url = '/architectures/clusters/cloudmanagers/'+hostproviderid+'/subform/'+cloudmanagerid ;
+    
+    $.get(url, function(data) {
+        $('#cloudmanagerdetails').html(data);
+    }).complete(UpdateBootPolicies);
+}
+
+function UpdateBootPolicies() {
+    var hostproviderid = $('#host_provider').val();
+    var cloudmanagerid = $('#cloud_manager').val();
+    var url = '/architectures/clusters/cloudmanagers/'+hostproviderid+'/bootpolicies/'+cloudmanagerid ;
+    
+    $.get(url, function(data) {
+        $('#boot_policy').html(data);
+    });
+}
+
+function UpdateMinMaxNode() {
+    var min = $("#min_node").val();
+    var max = $("#max_node").val();
+    if( parseInt(max) < parseInt(min) ) {
+        $("#max_node").val(min);
+    }
+}
+
+function UpdateDiskmanagers() {
+    var url = '/systems/images/diskmanagers/' + $('#storage_provider').val();
+    $.get(url, function(data) {
+        $('#disk_manager').html(data);
+    }).complete(UpdateDiskmanagersSubform);
+}
+    
+function UpdateDiskmanagersSubform() {
+    var storageid = $('#storage_provider').val();
+    var diskmanagerid = $('#disk_manager').val();
+    var url = '/systems/images/diskmanagers/'+storageid+'/subform/'+diskmanagerid ;
+    
+    $.get(url, function(data) {
+        $('#diskmanagerdetails').html(data);
+    }).complete(UpdateExportmanagers);
+}
+
+function UpdateExportmanagers() {
+    var storageid = $('#storage_provider').val();
+    var url = '/architectures/clusters/exportmanagers/'+storageid;
+    
+    $.get(url, function(data) {
+        $('#export_manager').html(data);
+    });
+}
+
+$('#storage_provider').change(UpdateDiskmanagers);
+$('#disk_manager').change(UpdateDiskmanagersSubform);
+$('#min_node, #max_node').change(UpdateMinMaxNode);
+$('#host_provider').change(UpdateCloudmanagers);
+$('#cloud_manager').change(UpdateCloudmanagersSubform);
+$('#groupschoice').change(Updateusers);
+
+Updateusers();
+UpdateCloudmanagers();
+UpdateDiskmanagers();
+UpdateExportmanagers();
+
+</script>

@@ -1,0 +1,16 @@
+<h2>Set a public ip to a cluster</h2>
+
+<form id="target" method="POST" action="/architectures/clusters/<% cluster_id %>/ips/public/add">
+<table class="form">	
+	<tr><td><select name="publicip_id">
+	<% FOREACH ip IN freepublicips_list %>
+		<option value="<% ip.publicip_id %>">
+			<% ip.ip_address %> | <% ip.ip_mask %> | <% ip.gateway %>
+		</option>
+	<% END %>	
+	</select></td>
+	</tr>
+</table>
+</form> 
+
+

@@ -230,25 +230,42 @@ sub getClusterModelParameters {
     my $self = shift;
     my %args = @_;
     
+    my $wc = $self->{db}->resultset('WorkloadCharacteristic')->search( cluster_id => $args{cluster_id} )->first;
+    
+    if (defined $wc) {
+    	my %data = (
+    			visit_ratio => $wc->get_column('wc_visit_ratio'),
+                service_time => $wc->get_column('wc_service_time'),
+                delay => $wc->get_column('wc_delay'),
+                think_time => $wc->get_column('wc_think_time') 
+    		);
+    	return \%data;
+    }
+    
     return {    visit_ratio => 1,
-                service_time => 0.002,
-                delay => 0,
-                think_time => 10 };
+                service_time => 0.010, # s
+                delay => 0, # s
+                think_time => 10 # s
+			};
 }
 
 sub setClusterModelParameters {
     my $self = shift;
     my %args = @_;
     
-    my $row = { cluster_id => $args{cluster_id},
-                wc_visit_ratio => $args{visit_ratio},
-                wc_service_time => $args{service_time},
-                wc_delay => $args{delay},
-                wc_think_time => $args{think_time},
-                 };
+    my $row = { cluster_id => $args{cluster_id} };
+    
+    for my $param ('visit_ratio', 'service_time', 'delay', 'think_time') {
+        $row->{ "wc_" . $param} = $args{$param} if (defined $args{$param});
+    }
     
     eval {             
-        $self->{db}->resultset('WorloadCharacteristic')->create($row);
+    	my $wc = $self->{db}->resultset('WorkloadCharacteristic')->search( cluster_id => $args{cluster_id} )->first;
+    	if (defined $wc) {
+    		$wc->update($row);
+    	} else {
+        	$self->{db}->resultset('WorkloadCharacteristic')->create($row);
+    	}
     };
     if($@) { 
         $errmsg = "RulesManager->setClusterModelParameters: $@";
@@ -261,7 +278,20 @@ sub getClusterQoSConstraints {
     my $self = shift;
     my %args = @_;
     
-    return { max_latency => 22, max_abort_rate => 0.3 } ;
+    my $qos_constraints = $self->{db}->resultset('QosConstraint')->search( cluster_id => $args{cluster_id} )->first;
+    
+    if (defined $qos_constraints) {
+        my %data = (
+                max_latency    => $qos_constraints->get_column('constraint_max_latency'),
+                max_abort_rate => $qos_constraints->get_column('constraint_max_abort_rate'),
+                
+            );
+        return \%data;
+    }
+    
+    
+    return { max_latency => 1, max_abort_rate => 0.5 } ;
+    
 }
 
 sub setClusterQoSConstraints {

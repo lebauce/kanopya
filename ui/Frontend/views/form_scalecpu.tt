@@ -1,0 +1,15 @@
+<h2>Scale of vcpu</h2>
+
+<form id="target" method="POST" action="/infrastructures/vms/scale_cpu">
+<table class="form">
+	<tr>
+		<td class="label">VCPU number :</td>
+		<td><input type="text" name="vcpu_number" size="32"/>
+		<span style="color: red"><% err_cpu_number %></span></td>
+		</td>
+	</tr>
+</table>
+<div class="buttons">
+<input type="hidden" name="host_id" value="<% host_id %>"/>
+</div>
+</form> 

@@ -7,3 +7,14 @@ dhcpd3
 snmpd5
 nfsd3
 mounttable1
+syslogng3
+mysql5
+iptables1
+openldap1
+opennebula3
+haproxy1
+keepalived1
+memcached1
+php5
+physicalhoster0
+fileimagemanager0

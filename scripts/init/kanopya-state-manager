@@ -29,7 +29,9 @@ test -x "/opt/kanopya/sbin/$EXEC" || exit 0
 PERL5LIB=\
 /opt/kanopya/lib/executor/:\
 /opt/kanopya/lib/administrator/:\
-/opt/kanopya/lib/common
+/opt/kanopya/lib/common:\
+/opt/kanopya/lib/external/:\
+/opt/kanopya/lib/orchestrator
 export PERL5LIB
 KANOPYA_STATE_MANAGER_RUN=yes
 KANOPYA_STATE_MANAGER_OPTS=''

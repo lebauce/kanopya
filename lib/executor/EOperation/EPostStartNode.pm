@@ -19,12 +19,12 @@
 
 =head1 NAME
 
-EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
+EEntity::Operation::EAddHost - Operation class implementing Host creation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement Host creation operation
 
 =head1 DESCRIPTION
 
@@ -41,8 +41,8 @@ use warnings;
 
 use Kanopya::Exceptions;
 use EFactory;
-use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::ServiceProvider::Inside::Cluster;
+use Entity::Host;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -61,44 +61,6 @@ my $config = {
     RELATIVE => 1,                   # desactive par defaut
 };
 
-
-=head2 new
-
-    my $op = EOperation::EAddMotherboard->new();
-
-    # Operation::EAddMotherboard->new creates a new AddMotheboard operation.
-    # RETURN : EOperation::EAddMotherboard : Operation add motherboar on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{nas} = {};
-    $self->{executor} = {};
-    $self->{bootserver} = {};
-    $self->{monitor} = {};
-    $self->{_objs} = {};
-    return;
-}
-
 =head2 prepare
 
     $op->prepare(internal_cluster => \%internal_clust);
@@ -106,37 +68,41 @@ sub _init {
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
     $log->info("Operation preparation");
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EPostStartNode->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
     
     my $params = $self->_getOperation()->getParams();
 
-    #### No Cluster nor context to load 
+    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
+
+    #$self->{nas}   = {};
+    $self->{_objs} = {};
     
-    #### Get instance of Cluster Entity
+    # Get instance of Cluster Entity
     $log->info("Load cluster instance");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
-    #### Get cluster components Entities
+    # Get cluster components Entities
     $log->info("Load cluster component instances");
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
     $log->debug("Load all component from cluster");
 
-    # Get instance of Motherboard Entity
-    $log->info("Load Motherboard instance");
-    $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
-    $log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+    # Get instance of Host Entity
+    $log->info("Load Host instance");
+    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
+    $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
+
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
@@ -144,20 +110,62 @@ sub execute {
     $self->SUPER::execute();
     
     if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
-        $self->{_objs}->{motherboard}->becomeMasterNode();
+        $self->{_objs}->{host}->becomeMasterNode();
     }
-    
+
     my $components = $self->{_objs}->{components};
     $log->info('Processing cluster components configuration for this node');
     foreach my $i (keys %$components) {
-        
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->postStartNode(motherboard => $self->{_objs}->{motherboard}, 
-                            cluster => $self->{_objs}->{cluster});
+        $tmp->postStartNode(host     => $self->{_objs}->{host},
+                            cluster  => $self->{_objs}->{cluster},
+                            econtext => $self->{executor}->{econtext});
     }
-    
 
+    my $nodes = $self->{_objs}->{cluster}->getHosts();
+    $log->info("Generate Hosts Conf");
+
+    my $etc_hosts_file = $self->generateHosts(nodes => $nodes);
+    foreach my $i (keys %$nodes) {
+	    my $node = $nodes->{$i};
+        my $node_ip = $nodes->{$i}->getInternalIP()->{ipv4_internal_address};
+        my $node_econtext = EFactory::newEContext(ip_source      => $self->{executor}->{econtext}->getLocalIp,
+                                                  ip_destination => $node_ip);
+        $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
+    }    
+	my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
+    $ehost->postStart(econtext => $self->{executor}->{econtext});
+}
+ 
+sub generateHosts {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "nodes" ]);
+
+    my $rand = new String::Random;
+    my $tmpfile = $rand->randpattern("cccccccc");
+
+    # create Template object
+    my $template = Template->new($config);
+    my $input = "hosts.tt";
+    my $nodes = $args{nodes};
+    my @nodes_list = ();
+    
+    foreach my $i (keys %$nodes) {
+        my $tmp = {hostname     => $nodes->{$i}->getAttr(name => 'host_hostname'),
+                   domainname    => "hedera-technology.com",
+                   ip            => $nodes->{$i}->getInternalIP()->{ipv4_internal_address}};
+        push @nodes_list, $tmp;
+    }
+    my $vars = { hosts       => \@nodes_list };
+    $log->debug(Dumper($vars));
+    $template->process($input, $vars, "/tmp/$tmpfile") || die $template->error(), "\n";
+
+    return("/tmp/".$tmpfile);
+   # $self->{nas}->{econtext}->send(src => "/tmp/".$tmpfile, dest => "/etc/hosts");
+   # unlink     "/tmp/$tmpfile";
 }
 
 #sub finish {
@@ -170,7 +178,7 @@ sub execute {
 #        $masternode =1;
 #    }
 #    
-#    $self->{_objs}->{motherboard}->becomeMasterNode(master_node => $masternode);
+#    $self->{_objs}->{host}->becomeMasterNode(master_node => $masternode);
 #}
 1;
 __END__

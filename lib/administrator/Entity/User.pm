@@ -21,6 +21,7 @@ use base "Entity";
 
 use strict;
 use warnings;
+use Digest::MD5 "md5_hex";
 use Kanopya::Exceptions;
 use General;
 use Log::Log4perl "get_logger";
@@ -35,11 +36,11 @@ use constant ATTR_DEF => {
                                         is_mandatory    => 1,
                                         is_extended        => 0,
                                         is_editable        => 0},
-            user_desc            => {pattern            => '^[\w\s]*$', # Impossible to check char used because of \n doesn't match with \w
+            user_desc            => {pattern            => '^.*$', # Impossible to check char used because of \n doesn't match with \w
                                         is_mandatory    => 0,
                                         is_extended     => 0,
                                         is_editable        => 1},
-            user_password        => {pattern            => '^\w*$',
+            user_password        => {pattern            => '^.*$',
                                         is_mandatory    => 1,
                                         is_extended        => 0,
                                         is_editable        => 1},
@@ -51,7 +52,7 @@ use constant ATTR_DEF => {
                                         is_mandatory    => 1,
                                         is_extended        => 0,
                                         is_editable        => 0},
-            user_email            => {pattern            => '\w*$',
+            user_email            => {pattern            => '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$',
                                         is_mandatory    => 1,
                                         is_extended        => 0,
                                         is_editable        => 1},    
@@ -64,6 +65,8 @@ use constant ATTR_DEF => {
                                         is_extended        => 0,
                                         is_editable        => 1},    
 };
+
+sub primarykey { return 'user_id' }
 
 sub methods {
     return {
@@ -85,43 +88,6 @@ sub methods {
     };
 }
 
-=head2 get
-
-    Class: public
-    desc: retrieve a stored Entity::User instance
-    args:
-        id : scalar(int) : user id
-    return: Entity::User instance 
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-      
-    my $admin = Administrator->new();
-    my $dbix_user = $admin->{db}->resultset('User')->find($args{id});
-    if(not defined $dbix_user) {
-        $errmsg = "Entity::User->get : id <$args{id}> not found !";    
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }       
-    
-    my $entity_id = $dbix_user->entitylink->get_column('entity_id');
-    $log->debug("checking get permission on entity_id : $entity_id");
-    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-    if(not $granted) {
-        $errmsg = "Permission denied to get user with id $args{id}";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Permission::Denied(error => $errmsg);
-    }
-   
-    my $self = $class->SUPER::get( %args,  table => "User");
-    return $self;
-}
-
 =head2 getUsers
 
     Class: public
@@ -135,41 +101,10 @@ sub get {
 sub getUsers {
     my $class = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['hash']);
-    
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::User->getUsers need a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    my $adm = Administrator->new();
-    return $class->SUPER::getEntities( %args,  type => "User");
-}
 
-=head2 new
-
-    Public class method
-    desc:  Constructor
-    args: 
-    return: Entity::User instance 
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-        
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "User");
-    
-    # Set the extended parameters
-    #$self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
+    return $class->search(%args);
 }
 
 =head2 create
@@ -184,7 +119,8 @@ sub create {
     if(not $granted) {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
     }
-    
+
+    $self->{_dbix}->user_password( md5_hex($self->{_dbix}->user_password) );
     $self->{_dbix}->user_creationdate(\'NOW()');
     $self->{_dbix}->user_lastaccess(undef);
     $self->save();

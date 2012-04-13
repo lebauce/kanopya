@@ -15,49 +15,50 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 17 july 2010
+
 package Entity::Systemimage;
 use base "Entity";
 
 use strict;
 use warnings;
+
 use Kanopya::Exceptions;
 use Administrator;
 use Operation;
+use General;
+
+use Entity::Container;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use General;
 
 my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    systemimage_name => { pattern => '^[1-9a-zA-Z]*$',
-                          is_mandatory => 1,
-                          is_extended => 0 },
-    
-    systemimage_desc => { pattern => '^[\w\s]*$',
-                          is_mandatory => 1,
-                          is_extended => 0 },
-    systemimage_dedicated => { pattern => '^(0|1)$',
-                          is_mandatory => 0,
-                          is_extended => 0 },
-    
-    distribution_id => { pattern => '^\d*$',
-                         is_mandatory => 1,
-                         is_extended => 0 },
-                         
-    etc_device_id => { pattern => '^\d*$',
-                         is_mandatory => 0,
-                         is_extended => 0 },
-    
-    root_device_id => { pattern => '^\d*$',
-                         is_mandatory => 0,
-                         is_extended => 0 },        
-                         
-    active => { pattern => '^[01]$',
-                is_mandatory => 0,
-                is_extended => 0 },        
+    systemimage_name => {
+        pattern      => '^[0-9a-zA-Z_]*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    systemimage_desc => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    container_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    active => {
+        pattern      => '^[01]$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
 };
+
+sub primarykey { return 'systemimage_id'; }
 
 sub methods {
     return {
@@ -82,43 +83,10 @@ sub methods {
         'setperm'    => {'description' => 'set permissions on this system image', 
                         'perm_holder' => 'entity',
         },
+        'installcomponent' => {'description' => 'install components on this system image', 
+                        'perm_holder' => 'entity',
+        },
     };
-}
-
-=head2 get
-
-    Class: public
-    desc: retrieve a stored Entity::Systemimage instance
-    args:
-        id : scalar(int) : user id
-    return: Entity::Systemimage instance 
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
- 
-    my $adm = Administrator->new();
-    my $dbix_systemimage = $adm->{db}->resultset('Systemimage')->find($args{id});
-    if(not defined $dbix_systemimage) {
-        $errmsg = "Entity::Systemiamge->get : id <$args{id}> not found !";    
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }       
-    
-    my $entity_id = $dbix_systemimage->entitylink->get_column('entity_id');
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-    if(not $granted) {
-        $errmsg = "Permission denied to get system image with id $args{id}";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Permission::Denied(error => $errmsg);
-    }
-       
-    my $self = $class->SUPER::get( %args, table=>"Systemimage");
-    return $self;
 }
 
 =head2 getSystemimages
@@ -137,8 +105,7 @@ sub getSystemimages {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my $adm = Administrator->new();
-    return $class->SUPER::getEntities( %args,  type => "Systemimage");
+    return $class->search(%args);
 }
 
 sub getSystemimage {
@@ -147,32 +114,8 @@ sub getSystemimage {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my @systemimages = $class->SUPER::getEntities( %args,  type => "Systemimage");
+    my @systemimages = $class->search(%args);
     return pop @systemimages;
-}
-
-=head2 new
-
-    Public class method
-    desc:  Constructor
-    args: 
-    return: Entity::Systemimage instance 
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-    
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Systemimage");
-    
-    # Set the extended parameters
-    $self->{_ext_attrs} = $attrs->{extended};
-    return $self;
 }
 
 =head2 create
@@ -180,15 +123,15 @@ sub new {
 =cut
 
 sub create {
-    my $self = shift;
-    my %params = $self->getAttrs();
+    my ($class, %params) = @_;
+    
     my $admin = Administrator->new();
-    my $mastergroup_eid = $self->getMasterGroupEid();
+    my $mastergroup_eid = $class->getMasterGroupEid();
        my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new system image");
        }
-    
+
     $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
     Operation->enqueue(
         priority => 200,
@@ -205,11 +148,11 @@ sub installComponent {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args=>\%args,required=>["component_id"]);
+    General::checkParams(args=>\%args,required=>["component_type_id"]);
     
     my %params = ();
     $params{systemimage_id} = $self->getAttr(name => 'systemimage_id');
-    $params{component_id} = $args{component_id};
+    $params{component_type_id} = $args{component_type_id};
     
     $log->debug("New Operation InstallComponentOnSystemImage with attrs : " . Dumper(%params));
     Operation->enqueue(
@@ -223,7 +166,7 @@ sub installedComponentLinkCreation {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args=>\%args,required=>["component_id"]);
+    General::checkParams(args=>\%args,required=>["component_type_id"]);
     
     $args{systemimage_id} = $self->getAttr(name=>"systemimage_id");
     $self->{_dbix}->components_installed->create(\%args);
@@ -267,19 +210,19 @@ sub clone {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args=>\%args,required=>["systemimage_name", "systemimage_desc"]);
+    General::checkParams(args => \%args, required=>[ "systemimage_name", "systemimage_desc" ]);
 
     my $sysimg_id = $self->getAttr(name => 'systemimage_id');
     if (! defined $sysimg_id) {
-        $errmsg = "Entity::Systemimage->clone needs a distribution_id parameter!";
+        $errmsg = "Entity::Systemimage->clone needs a systemimage_id parameter!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
     $args{systemimage_id} = $sysimg_id;
     $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%args));
     Operation->enqueue(priority => 200,
-                   type     => 'CloneSystemimage',
-                   params   => \%args);
+                       type     => 'CloneSystemimage',
+                       params   => \%args);
        
 }
 
@@ -315,46 +258,25 @@ sub toString {
     return $string;
 }
 
-=head2 getDevices 
+=head2 getDevice
 
-get etc and root device attributes for this systemimage
+get container for this systemimage
 
 =cut
 
-sub getDevices {
+sub getDevice {
     my $self = shift;
     if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Systemimage->getDevices must be called on an already save instance";
+        $errmsg = "Entity::Systemimage->getDevice must be called on an already save instance";
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }
-    $log->info("retrieve etc and root devices attributes");
-    my $etcrow = $self->{_dbix}->etc_device;
-    my $rootrow = $self->{_dbix}->root_device;
-    my $devices = {
-        etc => { lv_id => $etcrow->get_column('lvm2_lv_id'), 
-                 lvname => $etcrow->get_column('lvm2_lv_name'),
-                 lvsize => $etcrow->get_column('lvm2_lv_size'),
-                 lvfreespace => $etcrow->get_column('lvm2_lv_freespace'),    
-                 filesystem => $etcrow->get_column('lvm2_lv_filesystem'),
-                 vg_id => $etcrow->get_column('lvm2_vg_id'),
-                 vgname => $etcrow->lvm2_vg->get_column('lvm2_vg_name'),
-                 vgsize => $etcrow->lvm2_vg->get_column('lvm2_vg_size'),
-                 vgfreespace => $etcrow->lvm2_vg->get_column('lvm2_vg_freespace'),
-                },
-        root => { lv_id => $rootrow->get_column('lvm2_lv_id'), 
-                 lvname => $rootrow->get_column('lvm2_lv_name'),
-                 lvsize => $rootrow->get_column('lvm2_lv_size'),
-                 lvfreespace => $rootrow->get_column('lvm2_lv_freespace'),    
-                 filesystem => $rootrow->get_column('lvm2_lv_filesystem'),
-                 vg_id => $rootrow->get_column('lvm2_vg_id'),
-                 vgname => $rootrow->lvm2_vg->get_column('lvm2_vg_name'),
-                 vgsize => $rootrow->lvm2_vg->get_column('lvm2_vg_size'),
-                 vgfreespace => $rootrow->lvm2_vg->get_column('lvm2_vg_freespace'),
-        }
-    };
-    $log->info("Systemimage etc and root devices retrieved from database");
-    return $devices;
+
+    $log->info("Retrieve container");
+    my $device = Entity::Container->get(id => $self->getAttr(name => 'container_id'));
+
+    $log->info("Systemimage container retrieved from database");
+    return $device;
 }
 
 =head2 getInstalledComponents
@@ -373,20 +295,20 @@ sub getInstalledComponents {
     }
     my $components = [];
     my $search = $self->{_dbix}->components_installed->search(undef, 
-        { '+columns' => [ 'component.component_id', 
-                        'component.component_name', 
-                        'component.component_version', 
-                        'component.component_category' ],
-            join => ['component'] } 
+        { '+columns' => {'component_name' => 'component_type.component_name', 
+                         'component_version' => 'component_type.component_version', 
+                         'component_category' => 'component_type.component_category' },
+            join => ['component_type'] } 
     );
     while (my $row = $search->next) {
         my $tmp = {};
-        $tmp->{component_id} = $row->get_column('component_id');
+        $tmp->{component_type_id} = $row->get_column('component_type_id');
         $tmp->{component_name} = $row->get_column('component_name');
         $tmp->{component_version} = $row->get_column('component_version');
         $tmp->{component_category} = $row->get_column('component_category');
         push @$components, $tmp;
     }
+    $log->debug('systemimage components:'.Dumper($components));
     return $components;
 }
 
@@ -406,7 +328,7 @@ sub cloneComponentsInstalledFrom {
     my $rs = $si_source->{_dbix}->components_installed->search;
     while(my $component = $rs->next) {
         $self->{_dbix}->components_installed->create(
-            {    component_id => $component->get_column('component_id') });    
+            {    component_type_id => $component->get_column('component_type_id') });    
     }
 }
 

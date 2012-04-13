@@ -74,7 +74,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "indicator_name",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 64 },
   "indicator_oid",
   { data_type => "char", is_nullable => 0, size => 64 },
   "indicator_min",
@@ -89,6 +89,15 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 1,
+  },
+  "indicator_unit",
+  { data_type => "char", is_nullable => 0, size => 32 },
+    "class_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
   },
 );
 __PACKAGE__->set_primary_key("indicator_id");
@@ -107,12 +116,24 @@ __PACKAGE__->belongs_to(
   "indicatorset",
   "AdministratorDB::Schema::Result::Indicatorset",
   { indicatorset_id => "indicatorset_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nbNxcru1X+PPeLRCum/Agw
+__PACKAGE__->belongs_to(
+  "class_type",
+  "AdministratorDB::Schema::Result::ClassType",
+  { class_type_id => "class_type_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BfEQXqwQ+FEZ+0W7M93PZw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

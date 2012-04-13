@@ -47,7 +47,7 @@ use warnings;
 use RRDTool::OO;
 use XML::Simple;
 use Administrator;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use General;
 use Log::Log4perl "get_logger";
 
@@ -117,7 +117,7 @@ sub _mbState {
     if ($state_info =~ /([a-zA-Z]+):?([\d]*)/) {
         ($mb_state, $mb_state_time) = ($1, $2);
     } else {
-        $log->error("Bad motherboard state format '$state_info'.");
+        $log->error("Bad host state format '$state_info'.");
         ($mb_state, $mb_state_time) = ("unknown", 0);
     }
     
@@ -140,16 +140,16 @@ sub retrieveHostsByCluster {
     my %hosts_by_cluster;
 
     my $adm = $self->{_admin};
-    my @clusters = Entity::Cluster->getClusters( hash => { } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
     foreach my $cluster (@clusters) {
         my $components = $cluster->getComponents(category => 'all');
         my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
 
         my %mb_info;
-        foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
-            my $mb_name = $mb->getAttr( name => "motherboard_hostname" );
+        foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
+            my $mb_name = $mb->getAttr( name => "host_hostname" );
             my $mb_ip = $mb->getInternalIP()->{ipv4_internal_address};
-            my $mb_state = $mb->getAttr( name => "motherboard_state" );
+            my $mb_state = $mb->getAttr( name => "host_state" );
 
             $mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, components => \@components_name };
         }
@@ -162,7 +162,7 @@ sub retrieveHostsByCluster {
 sub getClustersName {
     my $self = shift;
 
-    my @clusters = Entity::Cluster->getClusters( hash => { } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
     my @clustersName = map { $_->getAttr( name => "cluster_name" ) } @clusters;
     
     return @clustersName;    
@@ -349,6 +349,7 @@ sub getRRD {
         dsname_list : the list of var name to store in the rrd
         ds_type : the type of var ( GAUGE, COUNTER, DERIVE, ABSOLUTE )
         file : the name of the rrd file to create
+        (optionnal) time_step: overload monitoring time_step (conf)
     
     Return : The RRDTool object
     
@@ -360,28 +361,30 @@ sub createRRD {
 
     $log->info("## CREATE RRD : '$args{file}' ##");
 
+    my $time_step   = $args{time_step} || $self->{_time_step};
     my $dsname_list = $args{dsname_list};
-
-    my $set_def = $self->getSetDesc( set_label => $args{set_name} );
-    my $ds_list = General::getAsHashRef( data => $set_def, tag => 'ds', key => 'label');
+    my $set_def     = $self->getSetDesc( set_label => $args{set_name} );
+    my $ds_list     = General::getAsHashRef( data => $set_def, tag => 'ds', key => 'label');
 
     my $rrd = $self->getRRD( file => $args{file} );
 
-    my $raws = $self->{_period} / $self->{_time_step};
+    my $raws = $self->{_period} / $time_step;
 
-    my @rrd_params = (     'step', $self->{_time_step},
-                        'archive', { rows    => $raws },
-#                        'archive', {     rows => $raws,
-#                                        cpoints => 10,
-#                                        cfunc => "AVERAGE" },
+    my @rrd_params = (  'step',     $time_step,
+                        'archive',  { rows    => $raws },
+#                        'archive', { rows => $raws,
+#                                     cpoints => 10,
+#                                     cfunc => "AVERAGE" },
                      );
     for my $name ( @$dsname_list ) {
-        push @rrd_params,     (
-                                'data_source' => {     name      => $name,
-                                                      type      => $args{ds_type},
-                                                      min        => $ds_list->{$name}{min},
-                                                      max        => $ds_list->{$name}{max} },            
-                            );
+        push @rrd_params, (
+                            'data_source' => {
+                                name      => $name,
+                                type      => $args{ds_type},
+                                min        => $ds_list->{$name}{min},
+                                max        => $ds_list->{$name}{max} 
+                            },
+        );
     }
 
     # Create a round-robin database
@@ -430,13 +433,15 @@ sub rebuild {
     
     Class : Public
     
-    Desc : Store values in rrd
+    Desc :  Store values in rrd
+            If rrd doesn't exist, then create it
     
     Args :
         time: the time associated with values retrieving
         rrd_name: the name of the rrd
         data: hash ref { var_name => value }
         ds_type: the type of data sources (vars)
+        (optionnal) time_step: used if create rrd, to overload monitoring time_step (conf)
     
     Return : the hash of values as stored in rrd
 =cut
@@ -464,7 +469,13 @@ sub updateRRD {
         else {
             $log->info("=> update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n (Reason: $error)");
             my @dsname_list = keys %{ $args{data} };
-            $rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type}, set_name => $args{set_name} );
+            $rrd = $self->createRRD( 
+                file        => $rrdfile_name,
+                dsname_list => \@dsname_list,
+                ds_type     => $args{ds_type},
+                set_name    => $args{set_name},
+                time_step   => $args{time_step},
+            );
             $rrd->update( time => $time, values =>  $args{data} );
         }
     } 
@@ -503,5 +514,4 @@ sub logRet {
     #$log->debug( "        => ( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
 }
 
-
-
+1;

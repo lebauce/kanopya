@@ -1,6 +1,6 @@
-# ERemoveMotherboardFromCluster.pm - Operation class node removing from cluster operation
+# EPostStopNode.pm - Operation class node removing from cluster operation
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2009-2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
 =head1 NAME
 
-EOperation::ERemoveMotherboardFromCluster - Operation class implementing node removing operation
+EOperation::EPostStopNode - Operation class implementing node removing operation
 
 =head1 SYNOPSIS
 
@@ -42,53 +42,31 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EFactory;
-
+use String::Random;
 my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-=head2 new
-
-EOperation::ERemoveMotherboardFromCluster->new creates a new ERemoveMotherboardFromCluster operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{duration_report} = 60; # specific duration for operation reporting (in seconds)
-    return;
-}
+my $config = {
+    INCLUDE_PATH => '/templates/internal/',
+    INTERPOLATE  => 1,               # expand "$var" in plain text
+    POST_CHOMP   => 0,               # cleanup whitespace 
+    EVAL_PERL    => 1,               # evaluate Perl code blocks
+    RELATIVE     => 1,               # desactive par defaut
+};
 
 sub checkOp{
     my $self = shift;
     my %args = @_;
     
-    if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
+    if($self->{_objs}->{host}->getAttr(name => 'host_state') =~ /^stopping:/) {
         my $msg = "Node is still in stopping state.";
         $log->error($msg);
         throw Kanopya::Exception::Execution::OperationReported(error => $msg);
     }
- 
 }
 
 =head2 prepare
@@ -98,193 +76,183 @@ sub checkOp{
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
     $log->info("Operation preparation");
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EAddMotherboardInCluster->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
 
     my $params = $self->_getOperation()->getParams();
-    
-# Instantiate motherboard and so check if exists
-    $log->debug("checking motherboard existence with id <$params->{motherboard_id}>");
+
+    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
+
+    # Instantiate host and so check if exists
+    $log->debug("checking host existence with id <$params->{host_id}>");
     eval {
-        $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+        $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     };
     if($@) {
-        $errmsg = "EOperation::EActivateMotherboard->new : motherboard_id $params->{motherboard_id} does not exist";
+        $errmsg = "EOperation::EPostStopNode->prepare : host_id $params->{host_id} does not found";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-     # Cluster instantiation
+
+    # Cluster instantiation
     $log->debug("checking cluster existence with id <$params->{cluster_id}>");
     eval {
-        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(
+                                        id => $params->{cluster_id}
+                                    );
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+        $errmsg = "EOperation::EPostStopNode->prepare : cluster_id $params->{cluster_id} " .
+                  "could not be found\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    #### Get cluster components Entities
-    $log->info("Load cluster component instances");
-    $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
+    # Get cluster components Entities
     $log->debug("Load all component from cluster");
+    $self->{_objs}->{components} = $self->{_objs}->{cluster}->getComponents(category => "all");
     
     eval {
         $self->checkOp(params => $params);
     };
     if ($@) {
         my $error = $@;
-        $errmsg = "Operation ActivateMotherboard failed an error occured :\n$error";
+        $errmsg = "EOperation::EPostStopNode->checkOp failed :\n$error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-        
-    #### Instanciate Clusters
-    $log->info("Get Internal Clusters");
-    # Instanciate nas Cluster 
-    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
-    $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
+
     # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(
+                                   id => $args{internal_cluster}->{executor}
+                               );
     $log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
+
     # Instanciate bootserver Cluster
-    $self->{bootserver}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{bootserver});
+    $self->{bootserver}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(
+                                     id => $args{internal_cluster}->{bootserver}
+                                 );
     $log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}->{obj}));
-    
-    
-    #### Get Internal IP
-    $log->info("Get Internal Cluster IP");
-    # Get Internal Ip address of Master node of cluster Executor
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    $log->debug("Executor ip is : <$exec_ip>");
-    # Get Internal Ip address of Master node of cluster nas
-    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-    $log->debug("Nas ip is : <$nas_ip>");
-    # Get Internal Ip address of Master node of cluster bootserver
-    my $bootserver_ip = $self->{bootserver}->{obj}->getMasterNodeIp();
-    $log->debug("Bootserver ip is : <$bootserver_ip>");
-    
-    
-    #### Instanciate context 
-    $log->info("Get Internal Cluster context");
-    # Get context for nas
-    $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-    $log->debug("Get econtext for nas with ip ($nas_ip) and ref " . ref($self->{nas}->{econtext}));
-    # Get context for bootserver
-    $self->{bootserver}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $bootserver_ip);
-    $log->debug("Get econtext for bootserver with ip ($bootserver_ip)" . ref($self->{bootserver}->{econtext}));
-    # Get context for executor
-    $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
-    $log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
-    
-    ## Instanciate Component needed (here LVM, ISCSITARGET, DHCP and TFTPD on nas and bootserver cluster)
-    # Instanciate Storage component.
-    my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-                                         version => "2");
-    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
-    $log->info("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
-    # Instanciate Export component.
-    $self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-                                                                                      version=> "1"));
-    $log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
-    # Instanciate tftpd component.
-    $self->{_objs}->{component_tftpd} = EFactory::newEEntity(data => $self->{bootserver}->{obj}->getComponent(name=>"Atftpd",
-                                                                                      version=> "0"));
-                                                                                      
+
+    # Instanciate context
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "bootserver");
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "executor");
+
+    # Instanciate tftpd component
+    $self->{_objs}->{component_tftpd}
+        = EFactory::newEEntity(
+              data => $self->{bootserver}->{obj}->getComponent(name => "Atftpd", version => "0")
+          );
+
     $log->info("Load tftpd component (Atftpd version 0.7, it ref is " . ref($self->{_objs}->{component_tftpd}));
-    # instanciate dhcpd component.
-    $self->{_objs}->{component_dhcpd} = EFactory::newEEntity(data => $self->{bootserver}->{obj}->getComponent(name=>"Dhcpd",
-                                                                                      version=> "3"));
-                                                                                      
+
+    # Instanciate dhcpd component
+    $self->{_objs}->{component_dhcpd}
+        = EFactory::newEEntity(
+              data => $self->{bootserver}->{obj}->getComponent(name => "Dhcpd", version => "3")
+          );
+
     $log->info("Load dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
 
+    # Get context for executor
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
     my $self = shift;
-    $log->debug("Before EOperation exec");
     $self->SUPER::execute();
-    $log->debug("After EOperation exec and before new Adm");
-    my $adm = Administrator->new();
-    
-    # We stop motherboard (to update powersupply)
-    my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
-    $emotherboard->stop();
 
-     $self->{_objs}->{motherboard}->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+    # We stop host (to update powersupply)
+    my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
+    $ehost->stop(econtext => $self->{executor}->{econtext});
 
-    ## Remove Motherboard in the dhcp
+    $self->{_objs}->{host}->stopToBeNode();
+
+    # Remove Host in the dhcp
     my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
-    my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
-    my $hostid =$self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(dhcpd3_subnet_id            => $subnet,
-                                                                            dhcpd3_hosts_mac_address    => $motherboard_mac);
-    $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id    => $subnet,
-                                                  dhcpd3_hosts_id    => $hostid);
-    ########## Strange : $self->{_objs}->{motherboard}->removeInternalIP();
+    my $host_mac = $self->{_objs}->{host}->getAttr(name => "host_mac_address");
+    my $hostid = $self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(
+                     dhcpd3_subnet_id         => $subnet,
+                     dhcpd3_hosts_mac_address => $host_mac
+                 );
+
+    $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
+                                                  dhcpd3_hosts_id  => $hostid);
     $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
-    
     $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
-    
-    # component migration
-    my $components = $self->{_objs}->{components};
+
+    # Component migration
     $log->info('Processing cluster components configuration for this node');
+    my $components = $self->{_objs}->{components};
     foreach my $i (keys %$components) {
-        
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->removeNode(motherboard => $self->{_objs}->{motherboard}, 
-                            mount_point => '',
-                            cluster => $self->{_objs}->{cluster},
-                            econtext => $self->{nas}->{econtext});
+
+        $tmp->removeNode(
+            host        => $self->{_objs}->{host},
+            cluster     => $self->{_objs}->{cluster},
+            mount_point => ''
+        );
     }
     
+    $self->{_objs}->{host}->setAttr(name => "host_hostname", value => undef);
+    $self->{_objs}->{host}->setAttr(name => "host_initiatorname", value => undef);
 
+    # Update Host internal IP
+    $self->{_objs}->{host}->removeInternalIP();
+    
+    # Finally save the host
+    $self->{_objs}->{host}->save();
 
-    
-    ## Remove motherboard etc export from iscsitarget 
-    my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
-    my $lv_name = $node_dev->{etc}->{lvname};
-    my $target_name = $self->{_objs}->{component_export}->_getEntity()->getFullTargetName(lv_name => $lv_name);
-    my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $lv_name);
-    my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
-                                                iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}");
-    
-    # clean initiator session 
-    $self->{_objs}->{component_export}->cleanInitiatorSession(
-        econtext => $self->{nas}->{econtext},
-        initiator => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_initiatorname'), 
-    );
-    
-    
-    $self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id     => $lun_id,
-                                                  iscsitarget1_target_id=>$target_id);
-    $self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id        =>$target_id,
-                                                     iscsitarget1_target_name     => $target_name,
-                                                     econtext                     => $self->{nas}->{econtext});
-                                                                  
-    $self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
-    
-    $self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname", value => undef);
-    $self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname", value => undef);
-    ## Update Motherboard internal ip
-    $self->{_objs}->{motherboard}->removeInternalIP();
-    
-    ## finaly save motherboard 
-    $self->{_objs}->{motherboard}->save();
+    $log->info("Generate Hosts Conf");
+    my $nodes = $self->{_objs}->{cluster}->getHosts();
+    my $etc_hosts_file = $self->generateHosts(nodes => $nodes);
 
+    foreach my $i (keys %$nodes) {
+	    my $node = $nodes->{$i};
+        my $node_econtext = EFactory::newEContext(
+                                ip_source      => $self->{executor}->{econtext}->getLocalIp,
+                                ip_destination => $nodes->{$i}->getInternalIP()->{ipv4_internal_address}
+                            );
+        $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
+    }    
+}
 
+sub generateHosts {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "nodes" ]);
+
+    my $rand = new String::Random;
+    my $tmpfile = $rand->randpattern("cccccccc");
+
+    # create Template object
+    my $template = Template->new($config);
+    my $input = "hosts.tt";
+    my $nodes = $args{nodes};
+    my @nodes_list = ();
+    
+    foreach my $i (keys %$nodes) {
+        my $tmp = {hostname     => $nodes->{$i}->getAttr(name => 'host_hostname'),
+                   domainname   => "hedera-technology.com",
+                   ip           => $nodes->{$i}->getInternalIP()->{ipv4_internal_address}};
+        push @nodes_list, $tmp;
+    }
+
+    my $vars = { hosts => \@nodes_list };
+    $log->debug(Dumper($vars));
+    $template->process($input, $vars, "/tmp/$tmpfile") or die $template->error(), "\n";
+    return("/tmp/".$tmpfile);
 }
 
 =head1 DIAGNOSTICS
@@ -327,7 +295,7 @@ Patches are welcome.
 
 =head1 LICENCE AND COPYRIGHT
 
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
+Kanopya Copyright (C) 2009-2012 Hedera Technology.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -1,6 +1,7 @@
 # EAddCluster.pm - Operation class implementing Cluster creation operation
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2009-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,16 +16,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
-EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
+EEntity::Operation::EAddHost - Operation class implementing Host creation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement Host creation operation
 
 =head1 DESCRIPTION
 
@@ -33,54 +33,28 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
+
 package EOperation::EAddCluster;
 use base "EOperation";
 
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
 use Kanopya::Exceptions;
 use EFactory;
 
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
+use Entity::Gp;
+use Entity;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-=head2 new
-
-    my $op = EEntity::EOperation::EAddMotherboard->new();
-
-EEntity::Operation::EAddMotherboard->new creates a new AddMotheboard operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    return;
-}
 
 =head2 prepare
 
@@ -93,68 +67,103 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EAddCluster->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    my $adm = Administrator->new();
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+    
     my $params = $self->_getOperation()->getParams();
 
     $self->{_objs} = {};
-    
-    # Cluster instantiation
+
+    # Pop the cluster paramaters.
+    my $cluster_params = {
+        cluster_name         => General::checkParam(args => $params, name => 'cluster_name'),
+        cluster_desc         => General::checkParam(args => $params, name => 'cluster_desc', default => ''),
+        cluster_si_shared    => General::checkParam(args => $params, name => 'cluster_si_shared'),
+        cluster_boot_policy  => General::checkParam(args => $params, name => 'cluster_boot_policy'),
+        cluster_priority     => General::checkParam(args => $params, name => 'cluster_priority'),
+        cluster_min_node     => General::checkParam(args => $params, name => 'cluster_min_node'),
+        cluster_max_node     => General::checkParam(args => $params, name => 'cluster_max_node'),
+        cluster_basehostname => General::checkParam(args => $params, name => 'cluster_basehostname'),
+        cluster_domainname   => General::checkParam(args => $params, name => 'cluster_domainname'),
+        cluster_nameserver1  => General::checkParam(args => $params, name => 'cluster_nameserver1'),
+        cluster_nameserver2  => General::checkParam(args => $params, name => 'cluster_nameserver2'),
+        kernel_id            => General::checkParam(args => $params, name => 'kernel_id'),
+        user_id              => General::checkParam(args => $params, name => 'user_id'),
+        masterimage_id       => General::checkParam(args => $params, name => 'masterimage_id'),
+        host_manager_id      => General::checkParam(args => $params, name => 'host_manager_id'),
+        disk_manager_id      => General::checkParam(args => $params, name => 'disk_manager_id'),
+    };
+
+    if (not $cluster_params->{kernel_id}) {
+        delete $cluster_params->{kernel_id};
+    }
+
+    # Instiate the disk manager to get the export manager according to the boot policy.
+    my $disk_manager;
     eval {
-        $self->{_objs}->{cluster} = Entity::Cluster->new(%$params);
+        $disk_manager = Entity->get(id => $cluster_params->{disk_manager_id});
     };
     if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EAddCluster->prepare : cluster_id $params->{cluster_name} does not find\n" . $err;
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    }
+
+    my $export_manager = $disk_manager->getExportManagerFromBootPolicy(
+                             boot_policy => $cluster_params->{cluster_boot_policy}
+                         );
+
+    $cluster_params->{export_manager_id} = General::checkParam(args    => $params,
+                                                               name    => 'export_manager_id',
+                                                               default => $export_manager->getAttr(name => 'entity_id'));
+
+    # Cluster instantiation
+    eval {
+        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->new(%$cluster_params);
+    };
+    if($@) {
+        $errmsg = "EOperation::EAddCluster->prepare : Cluster instanciation failed because : " . $@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
+    # Store managers paramaters for this cluster.
+    for my $manager ('host_manager', 'disk_manager', 'export_manager') {
+        for my $param_name (keys %$params) {
+            if ($param_name =~ m/^${manager}_param/) {
+                my $value = $params->{$param_name};
+                $param_name =~ s/^${manager}_param_//g;
+                $self->{_objs}->{cluster}->addManagerParameter(
+                    manager_type => $manager,
+                    name         => $param_name,
+                    value        => $value,
+                );
+            }
+        }
+    }
 
+    # Get export manager parameter related to si shared value.
+    my $readonly_param = $export_manager->getReadOnlyParameter(
+                             readonly => $cluster_params->{cluster_si_shared}
+                         );
+
+    if ($readonly_param) {
+        $self->{_objs}->{cluster}->addManagerParameter(manager_type => 'export_manager',
+                                                       name         => $readonly_param->{name},
+                                                       value        => $readonly_param->{value});
+    }
+    # Get context for executor
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
-
-
 
 sub execute {
     my $self = shift;
 
-    my $adm = Administrator->new();
-    my $si_location = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_location");
-    my $si_access_mode = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_access_mode");
-    my $si_shared = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_shared");
-    my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name =>"systemimage_id"));;
-    
-    if($si_location eq 'diskless') {
-        if(not $si_shared) {
-            $systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
-            $systemimage->save();
-        } 
-    }
+    my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
+    $ecluster->create(econtext  => $self->{executor}->{econtext},
+                      erollback => $self->{erollback});
 
-# Create cluster directory
-    my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
-    $self->{econtext}->execute(command => $command);
-    $log->debug("Execution : mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
-
-# Save the new cluster in db
-    $self->{_objs}->{cluster}->save();
-
-    # automatically add systems components
-    if($systemimage) {
-        my $components = $systemimage->getInstalledComponents(); 
-        foreach my $comp (@$components) {
-            if(($comp->{component_category} eq 'System') || ($comp->{component_category} eq 'Monitoragent')) {
-                $self->{_objs}->{cluster}->addComponent(component_id => $comp->{component_id});
-                $log->info("Component $comp->{component_name} automatically added");
-            }
-        }
-    }
-    $log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now added");
+    $log->info("Cluster <" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name") . "> is now added");
 }
 
 =head1 DIAGNOSTICS
@@ -197,7 +206,7 @@ Patches are welcome.
 
 =head1 LICENCE AND COPYRIGHT
 
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
+Kanopya Copyright (C) 2009-2012 Hedera Technology.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

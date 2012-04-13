@@ -1,0 +1,126 @@
+<%#
+<script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>Host : <% host_hostname %></h2>
+<hr/>
+<span id="state" class="title simpleexpand">State</span>
+<table id="Xstate" class="detailspart">
+<tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
+<td class="actions" rowspan="2">
+<% IF can_activate %>
+<% IF nbinterfaces ==1 %>
+ <a class="modal" href="/infrastructures/hosts/<% host_id %>/addinterface">activate</a><br />
+<% ELSE %>
+<a class="imgActivate" href="/infrastructures/hosts/<% host_id %>/activate">activate</a><br />
+<% END %>
+	<span class="desc">Activate this host.</span><br /><br />
+<% END %>
+<% IF can_deactivate %>
+	<a class="imgDeactivate" href="/infrastructures/hosts/<% host_id %>/deactivate">deactivate</a><br />
+	<span class="desc">Deactivate this host.</span><br /><br />
+<% END %>
+</td></tr>
+<tr>
+<% IF active %>
+    <td>
+    <% SWITCH host_state %>
+        <% CASE 'up' %>
+            <span class="state imgUp">Up on <% cluster_name %> cluster (<% state_time %>)</span></td>
+        <% CASE 'down' %>
+            <span class="state imgDown">Unused</span></td>
+        <% CASE 'stopping' %>
+            <span class="state imgDown">Stopping... (<% state_time %>)</span></td>
+        <% CASE 'starting' %>
+            <span class="state imgDown">Starting... on <% cluster_name %> cluster</span> (<% state_time %>)</td>
+        <% CASE 'broken' %>
+            <span class="state imgWarning">Broken (<% state_time %>)</span></td>
+    <% END %>
+<% END %>
+<td class="toright">
+<% IF link_activity %><a class="imgMonitor" href="/architectures/clusters/<% cluster_id %>">activity</a><% END %>
+</td></tr>
+</table>
+
+<hr/>
+<span id="settings" class="title simpleexpand">Main settings</span>
+<table id="Xsettings" class="detailspart">
+<tr><td class="italic" colspan="4"><% host_desc %></td>
+<td class="actions" rowspan="9">
+<% IF can_update %>
+	<a class="modal" href="/infrastructures/hosts/<% host_id %>/edit">edit</a><br />
+	<span class="desc">Modify these global parameters.</span><br /><br />
+<% END %>
+<% IF can_delete %>
+	<a class="imgRemove" href="/infrastructures/hosts/<% host_id %>/remove">remove</a><br />
+	<span class="desc">Delete this host.</span><br /><br />
+<% END %>
+<% IF can_setperm %>
+	<a class="imgPermission" href="/rights/permissions/host/<% host_id %>">permissions</a><br />
+	<span class="desc">View/set permissiosn for this host.</span><br /><br />
+<% END %>
+</td><tr/>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr><td class="label">Model :</td><td><% IF host_model %><% host_model %><% ELSE %>-<% END %></td>
+<td class="label">MAC address :</td><td><% host_mac %></td></tr>
+<tr><td class="label">Processor :</td><td><% IF processor_model %><% processor_model %><% ELSE %>-<% END %></td>
+<td class="label">Internal IP :</td><td><% host_ip %></td></tr>
+<tr><td class="label">S/N :</td><td><% host_sn %></td>
+<td class="label">Core number :</td><td><% host_core %></td></tr>
+<tr><td class="label">Power Supply Card :</td><td><% IF host_powersupply %><% host_powersupply %>-<% ELSE %>none<% END %></td>
+<td class="label">RAM amount :</td><td><% host_ram %>G</td></tr>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td class="label">Kernel :</td><td><% IF host_kernel %><% host_kernel %><% ELSE %>-<% END %></td></tr>
+</table>
+
+<hr />
+<span id="harddisks" class="title simpleexpand">Hard disks</span>
+<table id="Xharddisks" class="detailspart list">
+<% IF harddisks_list %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% nbharddisks %>">
+	<% IF can_addHarddisk %>
+		<a class="modal" href="/infrastructures/hosts/<% host_id %>/addharddisk">add hard disk</a><br />
+		<span class="desc">Add a hard disk to this host.</span><br /><br />
+	<% END %>
+	</td></tr>
+	<% FOREACH hd IN harddisks_list %>
+		<td class="label2">device: <% hd.harddisk_device %></td>
+		<td class="action"><% IF hd.link_removeharddisk %><a class="imgRemove" href="/infrastructures/hosts/<% host_id %>/removeharddisk/<% hd.harddisk_id %>">remove</a><% END %></td></tr>
+	<% END %>
+<% ELSE %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions">
+	<% IF can_addHarddisk %>
+		<a class="modal" href="/infrastructures/hosts/<% host_id %>/harddisks/add">add hard disk</a><br />
+		<span class="desc">Add a hard disk to this host.</span>
+	<% END %>
+	</td></tr>
+	<tr><td>This host has no hard disk</td></tr>
+<% END %>
+</table>
+<hr />
+<span id="interface" class="title simpleexpand">Interfaces</span>
+<table id="Xinterfaces" class="detailspart list">
+<% IF interfaces_list %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% nbinterfaces %>">
+	<% IF can_addinterface %>
+		<a class="modal" href="/infrastructures/hosts/<% host_id %>/addinterface">add interface</a><br />
+		<span class="desc">Add an interface to this host.</span><br /><br />
+	<% END %>
+	</td></tr>
+	<% FOREACH ifc IN interfaces_list %>
+		<td class="label2"><% ifc.iface_name %>: <%ifc.iface_mac_addr%> </td>
+		<td class="action"><% IF ifc.link_removeinterface %><a class="imgRemove" href="/infrastructures/hosts/<% host_id %>/removeinterface/<% ifc.iface_id %>">remove</a><% END %></td></tr>
+	<% END %>
+<% ELSE %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions">
+	<% IF can_addinterface %>
+		<a class="modal" href="/infrastructures/hosts/<% host_id %>/interface/add">add interface</a><br />
+		<span class="desc">Add an interface to this host.</span>
+	<% END %>
+	</td></tr>
+	<tr><td>This host has no interface</td></tr>
+<% END %>
+</table>

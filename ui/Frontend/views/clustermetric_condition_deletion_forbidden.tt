@@ -1,0 +1,10 @@
+<h2>CLUSTERMETRIC COMBINATION CONDITION DELETION FORBIDDEN !</h2>
+
+Clustermetric combination condition <% condition_id%> of cluster <%cluster_id%> cannot be deleted because it is used in following rules :
+
+<%FOR rule IN rules %>
+<%rule%> - 
+<%END%>
+<br/>
+
+<a href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions"> back </a> 

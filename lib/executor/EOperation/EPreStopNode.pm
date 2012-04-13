@@ -19,18 +19,18 @@
 
 =head1 NAME
 
-EEntity::Operation::EPreStopNode - Operation class implementing Motherboard creation operation
+EEntity::Operation::EPreStopNode - Operation class implementing Host creation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement Host creation operation
 
 =head1 DESCRIPTION
 
 EPreStopNode allows to prepare cluster for node addition.
 It takes as parameters :
-- motherboard_id : Int (Scalar) : motherboard_id identifies motherboard 
+- host_id : Int (Scalar) : host_id identifies host 
     which will be migrated into cluster to become a node.
 - cluster_id : Int (Scalar) : cluster_id identifies cluster which will grow.
 
@@ -42,8 +42,8 @@ use base "EOperation";
 
 use Kanopya::Exceptions;
 use EFactory;
-use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::ServiceProvider::Inside::Cluster;
+use Entity::Host;
 
 use strict;
 use warnings;
@@ -65,44 +65,6 @@ my $config = {
     RELATIVE => 1,                   # desactive par defaut
 };
 
-
-=head2 new
-
-    my $op = EOperation::EPreStopNode->new();
-
-    # Operation::EAddMotherboard->new creates a new AddMotheboard operation.
-    # RETURN : EOperation::EAddMotherboard : Operation add motherboar on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{nas} = {};
-    $self->{executor} = {};
-    $self->{bootserver} = {};
-    $self->{monitor} = {};
-    $self->{_objs} = {};
-    return;
-}
-
 =head2 prepare
 
     $op->prepare(internal_cluster => \%internal_clust);
@@ -117,65 +79,59 @@ sub prepare {
 
     $log->info("EPreStopNode Operation preparation");
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EPreStopNode->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
 
     my $params = $self->_getOperation()->getParams();
 
+    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
+
+    $self->{_objs} = {};
     
-    #### Get instance of Cluster Entity
+    # Get instance of Cluster Entity
     $log->info("Load cluster instance");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
-    #### Get cluster components Entities
+    # Get cluster components Entities
     $log->info("Load cluster component instances");
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
     $log->debug("Load all component from cluster");
 
-    # Get instance of Motherboard Entity
-    $log->info("Load Motherboard instance");
-    $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
-    $log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+    # Get instance of Host Entity
+    $log->info("Load Host instance");
+    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
+    $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
 
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
-    if ($node_count > 1 && $master_node_id == $params->{motherboard_id}){
-        $errmsg = "Node <$params->{motherboard_id}> is master node and not alone";
-#        my %params = ( cluster_id => $params->{cluster_id},
-#                       motherboard_id => $params->{motherboard_id},);
-#        $log->debug("New Operation PreStopNode with attrs : " . %params);
-#        Operation->enqueue(
-#            priority => $self->_getOperation()->getAttr(attr_name => "priority") -10,
-#            type     => 'PreStopNode',
-#            params   => \%params);
-#        throw Kanopya::Exception::Internal(error => $errmsg);
+    if ($node_count > 1 && $master_node_id == $params->{host_id}){
+        $errmsg = "Node <$params->{host_id}> is master node and not alone";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg, hidden => 1);
     }
+
+    # Get context for executor
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
     my $self = shift;
-    $log->debug("Before EOperation exec");
     $self->SUPER::execute();
-    $log->debug("After EOperation exec and before new Adm");
-    my $adm = Administrator->new();
-    
 
     my $components = $self->{_objs}->{components};
     $log->info('Processing cluster components configuration for this node');
     $self->{cluster_need_wait} = 0;
     foreach my $i (keys %$components) {        
         my $tmp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is ".ref($tmp));
-        $tmp->preStopNode(motherboard => $self->{_objs}->{motherboard}, 
-                            cluster => $self->{_objs}->{cluster});
+        $log->debug("component is " . ref($tmp));
+        $tmp->preStopNode(host     => $self->{_objs}->{host},
+                          cluster  => $self->{_objs}->{cluster},
+                          econtext => $self->{executor}->{econtext});
     }
-    $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingout");
+    $self->{_objs}->{host}->setNodeState(state => "pregoingout");
 }
 
 

@@ -1,6 +1,4 @@
-# ECreateExport.pm - Operation class implementing component installation on systemimage
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2009-2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +13,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -33,61 +30,25 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
+
 package EOperation::ECreateExport;
 use base "EOperation";
 
 use strict;
 use warnings;
 
+use Kanopya::Exceptions;
+use Entity::ServiceProvider;
+use Entity::Container;
+use EFactory;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use Kanopya::Exceptions;
-use Entity::Cluster;
-use Entity::Component::Export::Iscsitarget1;
-use EFactory;
 
 my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-
-=head2 new
-
-    my $op = EOperation::ECreateExport->new();
-
-    # Operation::ECreateExport->new installs component on systemimage.
-    # RETURN : EOperation::ECreateExport : Operation activate cluster on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    return;
-}
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-}
 
 =head2 prepare
 
@@ -100,117 +61,65 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("Operation preparation");
-
-    # Check if internal_cluster exists
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "ECreateExport->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
-    # Get Operation parameters
-    my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
 
-    # test component_instance_id presence
-    if(! exists $params->{component_instance_id} or ! defined $params->{component_instance_id}) {
-        $errmsg = "Operation::ECreateExport need a component_instance_id parameter";
+    $log->info("Operation preparation");
+
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+
+    # Get Operation parameters
+    my $params = $self->_getOperation()->getParams();
+
+    # Test operation paramaters
+    eval {
+        General::checkParams(args     => $params,
+                             required => [ "export_manager_id", "container_id" ]);
+    };
+    if($@) {
+        $errmsg = "Operation::ECreateExport needs storage_provider_id, ".
+                  "component_id and container_id parameters";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    # instanciate component and check its type
-    my $component = Entity::Component->getInstance(id => $params->{component_instance_id});
-    $self->{component_name} = $component->getComponentAttr()->{component_name};
-    if(!(($self->{component_name} eq 'Iscsitarget') or ($self->{component_name} eq 'Nfsd'))) {
-        $errmsg = "Operation::ECreateExport need either a Iscstarget or Nfsd component";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    # Instanciate the export manager for export creation from params
+    eval {
+        $self->{_objs}->{eexport_manager}
+            = EFactory::newEEntity(data => Entity->get(id => $params->{export_manager_id}));
+    };
+    if($@) {
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
-    
-    my $cluster_id =$component->getAttr(name => "cluster_id");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
-    if (!($self->{_objs}->{cluster}->getAttr(name=>"cluster_state") eq "up")){
-        $errmsg = "Cluster has to be up !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
-        
-    ## TODO change this monstrous bevahior by another components management... 
-    # BIG if here...
-    if($self->{component_name} eq 'Iscsitarget') {
-        
-        if ((! exists $params->{export_name} or ! defined $params->{export_name})||
-            (! exists $params->{device} or ! defined $params->{device})||
-            (! exists $params->{typeio} or ! defined $params->{typeio})||
-            (! exists $params->{iomode} or ! defined $params->{iomode})){
-               $errmsg = "Operation ECreateExport failed for component $self->{component_name}, missing parameters";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        }
-        $self->{params} = $params;
-        $self->{_objs}->{ecomp_iscsitarget} = EFactory::newEEntity(data => $component);
-    }    
-    elsif($self->{component_name} eq 'Nfsd') {
-        
-        if ((! exists $params->{device} or ! defined $params->{device})||
-            (! exists $params->{client_name} or ! defined $params->{client_name})||
-            (! exists $params->{client_options} or ! defined $params->{client_options})){
-               $errmsg = "Operation ECreateExport failed for component $self->{component_name}, missing parameters";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        }
-        $self->{params} = $params;
-        $self->{_objs}->{ecomp_nfsd} = EFactory::newEEntity(data => $component);
-    }
-    
-    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
-    $self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);
 
+    # Check state of the storage_provider
+    my $storage_provider = $self->{_objs}->{eexport_manager}->_getEntity->getServiceProvider;
+    my ($state, $timestamp) = $storage_provider->getState();
+    if ($state ne 'up'){
+        $errmsg = "ServiceProvider has to be up !";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Execution(error => $errmsg);
+    }
+
+    # Instanciate container
+    $self->{_objs}->{container} = Entity::Container->get(id => $params->{container_id});
+
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                              ip_destination => $storage_provider->getMasterNodeIp());
+
+    $self->{params} = $params;
 }
 
 sub execute{
     my $self = shift;
-    
-    # other big if...
-    if($self->{component_name} eq 'Iscsitarget') {
-        my $disk_targetname = $self->{_objs}->{ecomp_iscsitarget}->generateTargetname(name => $self->{params}->{export_name});
 
-        $self->{_objs}->{ecomp_iscsitarget}->addExport(iscsitarget1_lun_number    => 0,
-                                                      iscsitarget1_lun_device    => $self->{params}->{device},
-                                                      iscsitarget1_lun_typeio    => $self->{params}->{typeio},
-                                                      iscsitarget1_lun_iomode    => $self->{params}->{iomode},
-                                                      iscsitarget1_target_name  => $disk_targetname,
-                                                      econtext                 => $self->{cluster_econtext},
-                                                      erollback               => $self->{erollback});
-        my $eroll_add_export = $self->{erollback}->getLastInserted();
-
-        $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
-        $self->{_objs}->{ecomp_iscsitarget}->generate(econtext  => $self->{cluster_econtext},
-                                                      erollback => $self->{erollback});
-        $log->info("Add IScsi Export of device <$self->{params}->{device}>");
-    }
-    
-    elsif($self->{component_name} eq 'Nfsd') {
-        my $export_id = $self->{_objs}->{ecomp_nfsd}->addExport(
-            device => $self->{params}->{device},
-            econtext =>  $self->{cluster_econtext}
-        );
-         $self->{_objs}->{ecomp_nfsd}->addExportClient(
-             
-             export_id => $export_id,
-             client_name => $self->{params}->{client_name},
-             client_options => $self->{params}->{client_options}
-         );
-        
-        $self->{_objs}->{ecomp_nfsd}->update_exports(econtext => $self->{cluster_econtext});
-        $log->info("Add NFS Export of device <$self->{params}->{device}>");
-    }
-    
+    $self->{_objs}->{eexport_manager}->createExport(container   => $self->{_objs}->{container},
+                                                    export_name => $self->{params}->{export_name},
+                                                    erollback   => $self->{erollback},
+                                                    econtext    => $self->{econtext},
+                                                    %{$self->{params}});
 }
 
 =head1 DIAGNOSTICS
@@ -253,7 +162,7 @@ Patches are welcome.
 
 =head1 LICENCE AND COPYRIGHT
 
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
+Kanopya Copyright (C) 2009-2012 Hedera Technology.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -1,0 +1,22 @@
+<% IF entity_list %>
+	<form id="target" method="POST" action="/rights/groups/<% gp_id %>/appendentity">
+	<table class="form">
+			<tr>
+			<td class="label"><% gp_type %> :</td>
+			<td><select name="real_id">
+				<% FOREACH e IN entity_list %>
+					<option value="<% e.real_id %>"><% e.entity_label %></option>	
+				<% END %>
+			</select></td>
+		</tr>	
+	</table>
+	<div class="buttons">
+	<input type="hidden" name="gp_id" value="<% gp_id %>"/>
+	</div>
+	</form> 
+<% ELSE %>
+	<table class="form">
+		<tr><td>Nothing to add to this group.</td></tr>
+	</table>
+<% END %>
+

@@ -1,0 +1,62 @@
+<%# <script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>Ucs : <% netapp_name %></h2>
+
+<hr/>
+<span id="state" class="title simpleexpand">State</span>
+<table id="Xstate" class="detailspart">
+<tr>
+    <td>
+    <% SWITCH netapp_state %>
+        <% CASE 'up' %>
+        <span class="state imgUp">Up</span>
+        <% CASE 'down' %>
+        <span class="state imgDown">Down</span>
+        <% CASE 'starting' %>
+        <span class="state imgDown">Starting... (<% state_time %>)</span>
+        <% CASE 'stopping' %>
+        <span class="state imgDown">Stopping... (<% state_time %>)</span>
+        <% CASE 'broken' %>
+        <span class="state imgWarning">Broken (<% state_time %>)</span>
+    <% END %>
+    </td>
+    <td class="actions" rowspan="2">
+        <a class="imgStart" href="/equipments/netapp/<% netapp_id %>/synchronize">synchronize</a><br />
+        <span class="desc">Synchronize Kanopya with this Netapp equipement</span>
+    </td>
+</tr>
+</table>
+
+<hr />
+<span id="mainsettings" class="title simpleexpand">Main settings</span>
+<table id="Xmainsettings" class="detailspart">
+    <tr><td class="italic" colspan="2"><% netapp_desc %></td>
+    </td>
+    
+    <td class="actions" rowspan="2">
+        <a class="imgStart" href="/equipments/netapp/<% netapp_id %>/remove">remove</a><br />
+        <span class="desc">Delete this netapp.</span>
+    </td>
+
+    <tr><td class="label">Address :</td><td><% netapp_addr %></td></tr>
+    <tr><td class="label">Login :</td><td><% netapp_login %></td></tr>
+    <tr><td class="label">Password :</td><td>**********</td></tr>
+    </tr>
+</table>
+
+<hr/>
+<span id="connectors" class="title simpleexpand">Connectors</span>
+<table id="Xconnectors" class="detailspart list">
+<% IF connectors_list %>
+	<% FOREACH conn IN connectors_list %>
+		<tr><td class="label2"><span class="bold"><% conn.connector_name %></span> - <% conn.connector_category %></td>
+		<% IF conn.link_configureconnector %>
+		<td class="action"><a href="/systems/connectors/<% conn.connector_id %>/configure">configure</a>
+		<% ELSE %>
+        <td></td>
+        <% END %>
+	</td></tr>
+	<% END %>
+<% END %>
+</table>
+

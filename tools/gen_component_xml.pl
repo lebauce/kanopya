@@ -15,7 +15,8 @@ my %comp_info = getComponentInfo();
 my ($comp_name, $comp_version, $comp_cat) = ($comp_info{name},$comp_info{version},$comp_info{category});
 
 my $comp_fullname = $comp_name . $comp_version;
-my $comp_name_lc = lc $comp_fullname;
+my $comp_fullname_lc = lc $comp_fullname;
+my $comp_name_lc = lc $comp_name;
 
 my $xml_filename = "component_" . $comp_cat . "_" . $comp_fullname . ".xml";
 
@@ -26,33 +27,33 @@ my %info = (
     description => { name => $comp_name, category => $comp_cat, version => $comp_version },
     'nas' => [
 	{ # Component module
-	    src => "lib/administrator/Entity/Component/$comp_cat/$comp_fullname.pm",
-	    dest => "lib/administrator/Entity/Component/$comp_cat/$comp_fullname.pm",
+	    src => "lib/administrator/Entity/Component/$comp_fullname.pm",
+	    dest => "lib/administrator/Entity/Component/$comp_fullname.pm",
 	},
 	{ # DB schema
 	    src => "lib/administrator/AdministratorDB/Schema/Result/$comp_fullname.pm",
 	    dest => "lib/administrator/AdministratorDB/Schema/Result/$comp_fullname.pm",
 	},
 	{ # DB Tables 
-	    src => "scripts/database/mysql/schemas/components/$comp_name_lc.sql",
-	    dest => "scripts/database/mysql/schemas/components/$comp_name_lc.sql",
+	    src => "scripts/database/mysql/schemas/components/$comp_fullname_lc.sql",
+	    dest => "scripts/database/mysql/schemas/components/$comp_fullname_lc.sql",
 	},
 	{ # Instance relationship
 	    src => "lib/administrator/AdministratorDB/Component/$comp_fullname"."Instance.pm",
 	    dest => "lib/administrator/AdministratorDB/Component/$comp_fullname"."Instance.pm",
 	},
         { # Web ui configuration template
-	    src => "ui/web/KanopyaUI/templates/Components/form_$comp_name_lc.tmpl",
-            dest => "ui/web/KanopyaUI/templates/Components/form_$comp_name_lc.tmpl",
+	    src => "ui/web/KanopyaUI/templates/Components/form_$comp_fullname_lc.tmpl",
+            dest => "ui/web/KanopyaUI/templates/Components/form_$comp_fullname_lc.tmpl",
         },
     ],
     'executor' => [
 	{ # EComponent module
-	    src => "lib/executor/EEntity/EComponent/E$comp_cat/E$comp_fullname.pm",
-	    dest => "lib/executor/EEntity/EComponent/E$comp_cat/E$comp_fullname.pm",
+	    src => "lib/executor/EEntity/EComponent/E$comp_fullname.pm",
+	    dest => "lib/executor/EEntity/EComponent/E$comp_fullname.pm",
 	},
     ],
-    'tables_file' => "scripts/database/mysql/schemas/components/$comp_name_lc.sql",
+    'tables_file' => "scripts/database/mysql/schemas/components/$comp_fullname_lc.sql",
     'templates_dir' => "templates/components/$comp_name_lc",
 );
 

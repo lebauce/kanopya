@@ -1,0 +1,84 @@
+<h2>Create a new image</h2>
+
+<form id="target" method="POST" action="/systems/images/add">
+<table class="form">
+<tr><td class="label">Name :</td>
+	<td><input type="text" name="systemimage_name" maxlength="32" size="32"/>
+	<span style="color: red"><% ERR_SYSTEMIMAGE_NAME %></span></td>
+</tr>
+<tr><td class="label">Description :</td>
+	<td><textarea cols="50" name="systemimage_desc" value=""></textarea></td> 
+</tr>
+<tr><td class="label">Size :</td>
+	<td><input type="text" name="systemimage_size" maxlength="16" size="5"/>
+	<select name="systemimage_size_unit">
+        <option value="G">G</option>
+        <option value="M">M</option>
+    </select> 
+    <span style="color: red"><% ERR_SYSTEMIMAGE_SIZE %></span></td>
+</tr>
+<tr><td class="label">from a master image :<input type="radio" name="source" value="masterimage" checked="checked" /></td>
+	<td>
+	<select id="duplicate" name="masterimage_id">
+	<% FOREACH masterimage IN masterimages_list %>
+		<option value="<% masterimage.id %>"><% masterimage.name %></option>
+	<% END %></td>	
+	</td>
+</tr>
+<% IF systemimages_list.0 %>
+<tr><td class="label">clone a system image :<input type="radio" name="source" value="systemimage" /></td>
+	<td>
+	<select name="systemimage_id">
+	<%FOREACH systemimage IN systemimages_list %>
+		<option value="<% systemimage.id %>"><% systemimage.name %></option>
+	<% END %>
+	</td>
+</tr>
+<% END %>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td colspan="2" style="text-align: center">Where to store this image</td></tr>
+<tr><td class="label">Storage Provider :</td>
+    <td>
+    <select id="storage_provider" name="storage_provider_id">
+        <% FOREACH storage IN storageproviders_list %>
+        <option value="<% storage.id %>"><% storage.name %></option>
+        <% END %>
+    </select>
+    </td>
+</tr>
+<tr><td class="label">Disk Manager to use :</td>
+    <td>
+    <select id="disk_manager" name="disk_manager_id">
+        <% FOREACH diskmanager IN diskmanagers_list %>
+        <option value="<% diskmanager.id %>"><% diskmanager.name %></option>
+        <% END %>
+    </select>
+    </td>
+</tr>
+<tr id="diskmanagerdetails"></tr>
+</table>
+</form>
+
+<script type="text/javascript"> 
+function UpdateDiskmanagers() {
+    var url = '/systems/images/diskmanagers/' + $('#storage_provider').val();
+    $.get(url, function(data) {
+        $('#disk_manager').html(data);
+    }).complete(UpdateDiskmanagersSubform);
+}
+    
+function UpdateDiskmanagersSubform() {
+    var storageid = $('#storage_provider').val();
+    var diskmanagerid = $('#disk_manager').val();
+    var url = '/systems/images/diskmanagers/'+storageid+'/subform/'+diskmanagerid ;
+    
+    $.get(url, function(data) {
+        $('#diskmanagerdetails').html(data);
+    });
+}
+
+$('#storage_provider').change(UpdateDiskmanagers);
+$('#disk_manager').change(UpdateDiskmanagersSubform);
+UpdateDiskmanagers();
+    
+</script>

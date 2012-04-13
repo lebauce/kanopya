@@ -126,12 +126,12 @@ __PACKAGE__->belongs_to(
   "keepalived",
   "AdministratorDB::Schema::Result::Keepalived1",
   { keepalived_id => "keepalived_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LFe72hTUAt+rllm2fua1mA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 17:01:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:VHbRN3DgDD/rbgcujoF0zQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

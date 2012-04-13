@@ -1,0 +1,15 @@
+<% FOREACH sysimg IN systemimages_list %>
+	<table class="listing">
+	<tr><td colspan="3"><h1><% sysimg.systemimage_name %></h1></td></tr>
+	<tr><td><% sysimg.distribution %></td><td class="toright">
+	<a class="imgManage" href="/systems/images/<% sysimg.systemimage_id %>">details</a></td></tr>
+	<tr><td class="italic" colspan="3"><% sysimg.systemimage_desc %></td></tr>
+	</table>
+<% END %>
+
+<div class="actions">
+<p class="italic">System images used by your architectures</p>
+
+</div>
+
+

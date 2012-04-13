@@ -83,12 +83,12 @@ __PACKAGE__->belongs_to(
   "nfsd3_export",
   "AdministratorDB::Schema::Result::Nfsd3Export",
   { nfsd3_export_id => "nfsd3_export_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-28 14:30:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:G2ScYn5eXW53CMTg65791w
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Lyn99xaYK5Mm7uFA8E/1aw
 
 
 

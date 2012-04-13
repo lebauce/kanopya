@@ -1,0 +1,25 @@
+<% FOREACH m IN hosts_list %>
+	<table class="listing">
+	<tr><td colspan="3"><h1><% m.host_label %></h1></td></tr>
+	<tr><td><% m.host_hostname %></td><td>
+	<% IF m.active %>Active<% ELSE %>Deactivated<% END %></td><td class="toright">
+	<a class="imgManage" href="/infrastructures/hosts/<% m.host_id %>">details</a></td></tr>
+	<tr><td><% m.host_ip %></td>
+	<% IF m.active %>
+		<% IF m.state_up %><td><span class="state imgUp">Up</span></td><% END %>
+		<% IF m.state_down %><td><span class="state imgDown">Unused</span></td><% END %>
+		<% IF m.state_starting %><td><span class="state imgDown">Starting...</span></td><% END %>
+		<% IF m.state_stopping %><td><span class="state imgDown">Stopping...</span></td><% END %>
+		<% IF m.state_broken %><td><span class="state imgWarning">Broken</span></td><% END %>
+	<% END %>
+	</tr>
+	<tr><td class="italic" colspan="3"><% m.host_desc %></td></tr>
+	</table>
+<% END %>
+<div class="actions">
+<% IF can_create %>
+	<a class="action modal" href="/infrastructures/hosts/add?manager=<% host_manager.id %>">add a new <% host_manager.host_type %></a>
+	<p class="italic">add a new host.</p>
+<% END %>&nbsp;
+</div>
+

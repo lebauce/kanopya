@@ -1,0 +1,15 @@
+<table class="simplelisting">
+	<caption>Groups</caption>
+	<% FOREACH gp IN gp_list %>
+		<td><span class="bold"><% gp.gp_name %></span> (<% gp.gp_type %> : <% gp.gp_size %>) <span class="italic"><% gp.gp_desc %></span></td>
+		<td><a class="imgManage" href="/rights/groups/<% gp.gp_id %>">details</a></td>
+		</tr>
+	<% END %>
+</table>
+<div class="actions">
+<% IF can_create %>
+	<a class="action modal" href="/rights/groups/add">create a group</a>
+	<p class="italic">Create a new group.</p>
+<% END %>&nbsp;
+</div>
+

@@ -1,0 +1,28 @@
+<% js_head.push('status.js') %>
+
+<% IF error_msg %>
+    <p><% error_msg %></p>
+<% END %>
+
+<table id="logs_table">
+    <tr>
+        <td>
+            <% FOREACH dir IN dirs %>
+                <% dir.path %>: <br />
+                <% IF dir_locked %>
+                    <p><i>Can not read</i></p>
+                <% ELSE %>
+                    <ul>
+                        <% FOREACH file IN dir.files %>
+                            <li><a class="log_link" id="<% dir.path _ file.filename %>"><% file.filename %></a></li>
+                        <% END %>
+                    </ul>
+                <% END %>
+            <% END %>
+        </td>
+        <td>
+            <textarea cols="120" rows="80" readonly="true" id="log_container">
+            </textarea>
+        </td>
+    </tr>
+</table>

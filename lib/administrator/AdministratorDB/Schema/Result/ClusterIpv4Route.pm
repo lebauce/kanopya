@@ -66,7 +66,7 @@ __PACKAGE__->add_columns(
   },
 );
 __PACKAGE__->set_primary_key("cluster_ipv4_route_id");
-__PACKAGE__->add_unique_constraint("index4", ["cluster_id", "ipv4_route_id"]);
+__PACKAGE__->add_unique_constraint("cluster_id", ["cluster_id", "ipv4_route_id"]);
 
 =head1 RELATIONS
 
@@ -82,7 +82,7 @@ __PACKAGE__->belongs_to(
   "cluster",
   "AdministratorDB::Schema::Result::Cluster",
   { cluster_id => "cluster_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 ipv4_route
@@ -97,12 +97,12 @@ __PACKAGE__->belongs_to(
   "ipv4_route",
   "AdministratorDB::Schema::Result::Ipv4Route",
   { ipv4_route_id => "ipv4_route_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-03-07 00:25:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6sSmA850uYYfzHXkBp5p1A
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Dooh0VmbaQcyBlXeoM9egw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

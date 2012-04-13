@@ -1,0 +1,8 @@
+<td class="label">Volume:</td>
+<td>
+<select id="volume" name="disk_manager_param_netapp_volume_id">
+    <option value="">getConf() not implemented on NetappLunManager</option>
+</select>
+</td>
+
+

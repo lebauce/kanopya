@@ -1,0 +1,20 @@
+<%# <script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>Ip pool : <% poolip_name %></h2>
+<hr />
+<table id="Xmainsettings" class="detailspart">
+    <tr><td class="italic" colspan="2"><% poolip_desc %></td>
+    </td>
+    <tr><td class="label">Pool definition :</td><td><% poolip_addr %>/<% poolip_mask %></td>
+    
+    <td class="actions" rowspan="2">
+        <a class="imgStart" href="/networks/poolip/<% poolip_id %>/remove">delete</a><br />
+        <span class="desc">Delete this ip pool.</span>
+    </td>
+
+    <tr><td class="label">Pool size :</td><td><% poolip_size %> addresses</td></tr>
+    <tr><td class="label">Netmask :</td><td><% poolip_netmask %></td></tr>
+    <tr><td class="label">Gateway :</td><td><% poolip_gateway %></td></tr>
+    </tr>
+</table>
+<hr />

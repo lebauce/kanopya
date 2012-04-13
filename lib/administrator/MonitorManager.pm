@@ -1,6 +1,6 @@
 # MonitorManager.pm - Object class of Monitor Manager included in Administrator
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -55,8 +55,9 @@ sub new {
     return $self;
 }
 
-=head2
-    
+
+=head2 getIndicatorSets
+
     Class : Public
     
     Desc : Retrieve detailed sets description (including indicators desc for each set)
@@ -67,6 +68,7 @@ sub new {
     Return : array ref of set description
     
 =cut
+    
 
 sub getIndicatorSets {
     my $self = shift;
@@ -82,19 +84,22 @@ sub getIndicatorSets {
         my @indicators = ();
         while (my $indicator = $indicator_rs->next) {
             push @indicators, {
+                'id' => $indicator->get_column( 'indicator_id' ),
                 'label' => $indicator->get_column( 'indicator_name' ),
                 'oid' => $indicator->get_column( 'indicator_oid' ),
                 'min' => $indicator->get_column( 'indicator_min' ),
                 'max' => $indicator->get_column( 'indicator_max' ),
                 'color' => $indicator->get_column( 'indicator_color' ),
+                'unit' => $indicator->get_column( 'indicator_unit' ),
             };
         }
         
-        push @sets, {     'label' => $set->get_column( 'indicatorset_name' ),
+        push @sets, {   'label' => $set->get_column( 'indicatorset_name' ),
                         'ds_type' => $set->get_column( 'indicatorset_type' ),
                         'data_provider' => $set->get_column( 'indicatorset_provider' ),
                         'component' => $set->get_column( 'indicatorset_component' ),
                         'max' => $set->get_column( 'indicatorset_max' ),
+                        'table_oid' => $set->get_column( 'indicatorset_tableoid' ),
                         'ds' => \@indicators
                     };    
     }
@@ -136,7 +141,7 @@ sub getSetDesc {
 }
 
 
-=head2
+=head2 collectSet
     
     Class : Public
     
@@ -176,10 +181,20 @@ sub collectSets {
     my $self = shift;
     my %args = @_;    
     
+#    $log->error("collected Sets : " . Dumper $args{sets_name});
+    
     $self->deleteCollect( cluster_id => $args{cluster_id} );
     for my $set_name (@{ $args{sets_name} }) {
         $self->collectSet( cluster_id => $args{cluster_id}, set_name => $set_name );
     }
+}
+
+sub setAllCollectSets {
+    my $self = shift;
+    my %args = @_;
+    
+    $self->collectSets(cluster_id => $args{cluster_id},
+                       sets_name => ["mem","cpu","apache_stats"]);
 }
 
 =head2 deleteCollect
@@ -220,6 +235,7 @@ sub graphSettings {
     # delete old settings
     my $graph_rs = $self->{db}->resultset('Graph')->search( { cluster_id => $args{cluster_id} } );
     $graph_rs->delete;
+    
     
     # store new settings
     for my $graph (@{ $args{graphs} }) {
@@ -275,6 +291,14 @@ sub getClusterGraphSettings {
     return \@graphs;
 }
 
+sub getSetIdFromName{
+    my $self = shift;
+    my %args = @_;
+    
+    my $resultSet = $self->{db}->resultset('Indicatorset')->search( { indicatorset_name => $args{set_name}} );
+    my $indicatorset_id = $resultSet->first->get_column('indicatorset_id'); #UNIQUE
+    return $indicatorset_id;
+}
 sub _graphHash {
     my $self = shift;
     my %args = @_;

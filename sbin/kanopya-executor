@@ -38,18 +38,18 @@ Executor is the main script to run microCluster Executor server.
 use strict;
 use warnings;
 use Executor;
-use Log::Log4perl "get_logger";
+use Log::Log4perl 'get_logger';
 use Error qw(:try);
 
 Log::Log4perl->init('/opt/kanopya/conf/executor-log.conf');
-my $log = get_logger("executor");
+my $log = get_logger('executor');
 
 
 my $running = 1;
 
 sub signalHandler {
 	my $sig = shift;
-	$log->info($sig." recieved : stopping main loop");
+	$log->debug($sig." signal recieved : exiting main loop");
 	$running = 0;
 }
 
@@ -58,7 +58,7 @@ $SIG{TERM} = \&signalHandler;
 
 try	{
 	my $exec = Executor->new();
-	$log->info("Starting main loop");
+	$log->info("Entering main loop");
 	# enter in the main loop and continue while $$running is true
 	$exec->run(\$running);
 }
@@ -67,7 +67,7 @@ catch Error::Simple with {
 	die "Catch error in Executor instanciation: $ex";
 };
 
-$log->info("MCExecutor end.");
+$log->info("Executor stopped.");
 
 
 

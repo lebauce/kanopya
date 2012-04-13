@@ -1,1 +1,2 @@
-ui/web/* opt/kanopya/ui/web
+ui/Frontend/* opt/kanopya/ui/Frontend
+scripts/init/kanopya-front etc/init.d

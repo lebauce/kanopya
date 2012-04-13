@@ -1,0 +1,47 @@
+.ui-dialog {
+    border: 2px solid black;
+}
+
+.ui-widget-content {
+    background-color: white;
+    margin-left: auto;
+    margin-right: auto;
+    overflow: auto;
+    width: 75% !important;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+}
+
+.ui-dialog-titlebar {
+    text-align: right;
+    padding-right: 5px;
+}
+
+.ui-widget-overlay {
+    position: absolute;
+    top: 2px;
+    background-color: gray;
+    opacity: 0.5;
+}
+
+.ui-dialog-buttonpane {
+    background-color: gray;
+    height: 40px;
+    margin-bottom: 7px;
+    padding-top: 20px;
+}
+
+.ui-dialog-buttonset {
+    margin-right: auto;
+    margin-left: auto;
+    width: 80%;
+    button {
+        border: none;
+        width: 28%;
+        margin-left: 94px;
+        margin-top: -4px;
+        height: 32px;
+        background-color: white;
+    }
+}

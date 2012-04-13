@@ -63,18 +63,18 @@ __PACKAGE__->set_primary_key("powersupply_id");
 
 =head1 RELATIONS
 
-=head2 motherboards
+=head2 hosts
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Motherboard>
+Related object: L<AdministratorDB::Schema::Result::Host>
 
 =cut
 
 __PACKAGE__->has_many(
-  "motherboards",
-  "AdministratorDB::Schema::Result::Motherboard",
-  { "foreign.motherboard_powersupply_id" => "self.powersupply_id" },
+  "hosts",
+  "AdministratorDB::Schema::Result::Host",
+  { "foreign.host_powersupply_id" => "self.powersupply_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -90,12 +90,12 @@ __PACKAGE__->belongs_to(
   "powersupplycard",
   "AdministratorDB::Schema::Result::Powersupplycard",
   { powersupplycard_id => "powersupplycard_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/ynNBhPqm8k+4V58ozo/sQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DWG2zCA/VmGgchwI9seZcw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

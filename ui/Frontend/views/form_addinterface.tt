@@ -1,0 +1,28 @@
+
+<h2>Create a new interface</h2>
+
+<form id="target" method="POST" action="/infrastructures/hosts/<% host_id %>/addinterface">
+<table class="form">
+	<tr>
+	<td class="label">pxe_enabled </td>
+	<td><input type="checkbox" id="pxe" name="iface_pxe" value="checked" checked ></input>
+    <span style="color: red"><% err_iface_pxe %></span></td>
+  	</td>
+  	</tr>
+	<tr>
+		<td class="label">Interface name :</td>
+		<td><input type="text" name="iface_name" size="32"/>
+		<span style="color: red"><% err_iface_name %></span></td>
+		</td>
+	</tr>
+	<tr>
+		<td class="label">Mac address:</td>
+		<td><input type="text" id="macaddr" name="iface_mac_addr" size="32"/>
+		<span style="color: red"><% err_iface_mac_addr %></span></td>
+		</td>
+	</tr>
+</table>
+<div class="buttons">
+<input type="hidden" name="host_id" value="<% host_id %>"/>
+</div>
+</form> 

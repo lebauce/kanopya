@@ -1,0 +1,111 @@
+<% js_head.push('components.js') %>
+<h2>Cluster <% cluster_name %> - Syslogng3 Configuration</h2>
+<hr />
+<!--form method="POST" action="/cgi/kanopya.cgi/components/process_configurecomponent"-->
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="syslogng3_id" value="<% syslogng3_id %>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Syslogng3"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+
+<h3>Entry definition : source, destination and filter</h3>
+<ul class="conf_array_value" id="entries">
+<% FOREACH entry IN entries %>
+	<li class="elem_entries" name="entry">	
+		<select class="entry_simple_value" name="entry_type" selected_value="<% entry.type %>">
+			<option value="source">source</option>
+			<option value="destination">destination</option>
+			<option value="filter">filter</option>
+		</select>
+		<input class="entry_simple_value" type="text" name="entry_name" value="<% entry.name %>"/>
+		<a class="remove_entry imgRemove iconAction" ></a>
+		<table class="entry_array_value" id="params">
+		<% FOREACH param IN entry.params %>
+			<tr class="elem_params" name="param">
+				<td><input class="param_simple_value" type="text" size="50" name="content" value="<% param.content %>"/></td>
+				<td><a class="remove_param imgRemove iconAction" /></td>
+			</tr>
+		<% END %>
+		</table>
+		<a class="add_params imgAdding iconAction"></a>
+	</li>
+<% END %>
+</ul>
+<a class="add_entries imgAdding iconAction" >Add entry</a>
+
+<hr />
+<h3>Output configuration</h3>
+<table class="conf_array_value" id="logs">
+<% FOREACH log IN logs %>
+	<tr class="elem_logs" name="log"><td>log</td>
+		<td>
+		<table class="log_array_value" id="log_params">
+		<% FOREACH param IN log.params %>
+			<tr class="elem_log_params" name="log_param" >
+			<td>
+				<select class="log_param_simple_value" name="type" selected_value="<% param.type %>">
+					<option value="source">source</option>
+					<option value="destination">destination</option>
+					<option value="filter">filter</option>
+				</select>
+				: <input class="log_param_simple_value" type="text" name="name" value="<% param.name %>"/>
+			</td>
+			<td><a class="remove_log_param imgRemove iconAction"></a></td>
+			</tr>
+		<% END %>
+		</table>
+		<a class="add_log_params imgAdding iconAction"></a>
+		</td>
+	</tr>
+<% END %>
+</table>
+<br/>
+<a class="add_logs imgAdding iconAction" >Add log</a>
+
+<hr />
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+
+<div class="hidden" id="models">
+	<ul class="conf_array_value" id="entries">
+		<li class="elem_entries" name="entry">
+		<select class="entry_simple_value" name="entry_type">
+			<option value="source">source</option>
+			<option value="destination">destination</option>
+			<option value="filter">filter</option>
+		</select>
+		<input class="entry_simple_value" type="text" name="entry_name" value="name"/>
+		<a class="remove_entry imgRemove iconAction" ></a>
+		<table class="entry_array_value" id="params">
+				<tr class="elem_params" name="param">
+					<td><input class="param_simple_value" type="text" size="50" name="content" value="driver(params)"/></td>
+					<td><a class="remove_param imgRemove iconAction" /></td>
+				</tr>
+		</table>
+		<a class="add_params imgAdding iconAction"></a>
+		</li>
+	</ul>
+	
+	<table>
+	<tr class="elem_logs" name="log"><td>log</td>
+		<td>
+		<table class="log_array_value" id="log_params">
+			<tr class="elem_log_params" name="log_param" ><td>
+				<select class="log_param_simple_value" name="type">
+					<option value="source">source</option>
+					<option value="destination">destination</option>
+					<option value="filter">filter</option>
+				</select>
+				: <input class="log_param_simple_value" type="text" name="name" value="name"/>
+			</td>
+			<td><a class="remove_log_param imgRemove iconAction"></a></td>
+			</tr>
+		</table>
+		<a class="add_log_params imgAdding iconAction"></a>
+		</td>
+	</tr>
+	</table>
+</div>

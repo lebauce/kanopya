@@ -1,0 +1,61 @@
+<% js_head.push('components.js') %>
+<h2>Cluster <% cluster_name %> - Lvm2 Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<input class="conf_simple_value" type="hidden" name="lvm2_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Lvm2"/>
+
+<hr />
+<h3>Volume Groups</h3>
+	<table class="conf_array_value" id="vgs">
+		<% MACRO togiga(arg1) GET arg1 / 1073741824 %>
+        <tr><th>Name</th><th>Size</th><th>Free space</th></tr>
+		<% FOREACH vg IN lvm2_vgs %>
+			<tr class="elem_vgs" name="vg">
+                <td class="vg_simple_value" name="vg_name" value="<% vg.lvm2_vg_name %>"><% vg.lvm2_vg_name %></td>
+                <td><% togiga(vg.lvm2_vg_size) %>G</td>
+                <td><% togiga(vg.lvm2_vg_freespace) %>G</td>
+                <td class="vg_simple_value hidden" name="vg_id" value="<% vg.lvm2_vg_id %>"><% vg.lvm2_vg_id %></td>
+                <td><a class="add_lvs imgAdding iconAction" >Add logical volume</a></td>
+       
+                <td>
+                    <table class="vg_array_value" id="lvs" >
+                        <tr><th>Name</th><th>Size</th><th>Free space</th><th>File system</th></tr>
+                        <% FOREACH lv IN vg.lvm2_lvs %>
+                        <tr class="elem_lvs" name="lv">
+                         <td><% lv.lvm2_lv_name %></td>
+                        <td><% togiga(lv.lvm2_lv_size) %>G</td>
+                        <td><% togiga(lv.lvm2_lv_freespace) %>G</td>
+                        <td class="hidden"><% lv.lvm2_lv_id %></td>
+                        </tr>
+                        <% END %>
+                    </table>
+                </td>
+			</tr>
+               
+   
+		<% END %>
+	</table>
+<hr />
+
+<div class="right">
+<input id="save_button" type="button" value="create"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+
+<div class="hidden" id="models">
+	<table>
+		<tr class="elem_lvs" name="lv">
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_name" value=""/></td>
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_size" value="" /></td>
+			<!--td><input class="lv_simple_value" type="text" name="lvm2_lv_freespace" value="" /></td-->
+			<td></td>
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_filesystem" value="" /></td>
+			<td><a class="remove_lv imgRemove iconAction" ></a></td>
+		</tr>
+	</table>
+</div>
+

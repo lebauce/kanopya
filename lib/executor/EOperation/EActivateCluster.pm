@@ -42,44 +42,13 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EFactory;
 
 my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
-
-
-=head2 new
-
-    my $op = EOperation::EActivateCluster->new();
-
-    # Operation::EActivateCluster->new creates a new ActivateCluster operation.
-    # RETURN : EOperation::EActivateCluster : Operation activate cluster on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    return;
-}
 
 =head2 _checkOp
 
@@ -90,15 +59,7 @@ sub _init {
 sub _checkOp{
     my $self = shift;
     my %args = @_;
-    
-    # check if system image used is active 
-    my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name => 'systemimage_id'));
-    if(not $systemimage->getAttr(name => 'active')) {
-            $errmsg = "EOperation::EActivateCluster->new : cluster's systemimage is not activated";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    
+
     # check if cluster is not active
     if($self->{_objs}->{cluster}->getAttr(name => 'active')) {
             $errmsg = "EOperation::EActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
@@ -119,20 +80,17 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    # Check if internal_cluster exists
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EActivateCluster->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+
+    $self->{_objs} = {};
+
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
 
      # Cluster instantiation
     eval {
-        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     };
     if($@) {
         my $err = $@;
@@ -151,7 +109,6 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-
 }
 
 sub execute {

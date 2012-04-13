@@ -17,9 +17,9 @@ BEGIN {
     use_ok('Administrator'); 
     use_ok('Entity::User');
     use_ok('Entity::Gp');
-    use_ok('Entity::Motherboard');
+    use_ok('Entity::Host');
     use_ok('Entity::Systemimage');
-    use_ok('Entity::Cluster');
+    use_ok('Entity::ServiceProvider::Inside::Cluster');
 }
 
 diag('authentification tests');
@@ -27,9 +27,9 @@ diag('authentification tests');
 throws_ok { my $admin = Administrator->new(); } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to instanciate Administrator';
 throws_ok { my $user = Entity::User->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::User';
 throws_ok { my $groups = Entity::Gp->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::Groups';
-throws_ok { my $motherboard = Entity::Motherboard->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::Motherboard';
+throws_ok { my $host = Entity::Host->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::Host';
 throws_ok { my $systemimage = Entity::Systemimage->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::Systemimage';
-throws_ok { my $cluster = Entity::Cluster->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::Cluster';
+throws_ok { my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::ServiceProvider::Inside::Cluster';
 
 throws_ok { Administrator::authenticate(login => '', password => ''); } "Kanopya::Exception::AuthenticationFailed", "Authentication failed with incorrect login/password";
 throws_ok { Administrator::authenticate(login => '', password => 'admin'); } "Kanopya::Exception::AuthenticationFailed", "Authentication failed with incorrect login";
@@ -38,7 +38,7 @@ lives_ok { Administrator::authenticate(login => 'admin', password => 'K4n0pY4');
 lives_ok { Administrator::authenticate(login => 'executor', password => 'K4n0pY4'); }  "Authentication succeed with correct login/password for executor user";
 lives_ok { Administrator::authenticate(login => 'guest', password => 'guest'); }  "Authentication succeed with correct login/password for guest user";
 
-Administrator::authenticate(login => 'admin', password => 'K4n0pY4');
+Administrator::authenticate(login => 'admin', password => 'k4n0pY4');
 ok(exists $ENV{EID}, 'after authentication, environment variable EID exists');
 ok(defined $ENV{EID}, 'after authentication, environment variable EID defined');
 

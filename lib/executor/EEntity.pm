@@ -55,14 +55,11 @@ Entity>new($data : hash EntityData) creates a new entity execution object.
 sub new {
     my $class = shift;
     my %args = @_;
-    
-    if ((! exists $args{data} or ! defined $args{data})) { 
-        $errmsg = "EEntity->new ($class) need a data named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+
+    General::checkParams(args => \%args, required => ['data']);
         
-#       $log->debug("Class is : $class");
+    # $log->debug("Class is : $class");
+
     my $self = { _entity => $args{data}};
     bless $self, $class;
     return $self;

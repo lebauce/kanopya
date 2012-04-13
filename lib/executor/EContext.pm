@@ -1,6 +1,7 @@
 # EContext.pm - Abstract Class for EContext Classes 
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -31,12 +32,38 @@ use vars qw(@ISA $VERSION);
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
+=head2 new
+
+Keep the source ip whatever the the conrete type of EContext.
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'local' ]);
+
+    my $self = {
+        local_ip => $args{local},
+    };
+
+    bless $self, $class;
+    return $self;
+}
+
+sub getLocalIp {
+    my $self = shift;
+    return $self->{local_ip};
+}
+
 =head2 execute
 
 execute(command => $command)
 This method must be implemented in child classes
 
 =cut
+
 sub execute {}
 
 =head2 send
@@ -45,5 +72,7 @@ send(src => $srcfullpath, dest => $destfullpath)
 This method must be implemented in child classes
 
 =cut
+
 sub send {}
+
 1;

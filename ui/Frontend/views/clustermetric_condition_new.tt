@@ -1,0 +1,64 @@
+    <%IF condition.id%>
+        <h2>Edit condition</h2>
+    <%ELSE%>
+        <h2>New condition for cluster <%cluster_id%></h2>
+    <%END%>
+    
+    <hr />
+    <%IF condition.id%>
+        <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/<%condition.id%>/edit">
+    <%ELSE%>
+        <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/new">
+    <%END%>
+    
+    <table>
+        <tr>
+            <td>
+                Combination:
+                <select name="combinationid" >
+                    <% FOREACH combination IN combinations %>
+                        <option value="<% combination.id %>" <%IF condition.combination_id == combination.id %>SELECTED<%END%>> <% combination.id %>:<% combination.label %></option>
+                    <% END %>
+                </select>
+            </td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td>
+                Function: 
+            </td>
+            <td>
+                <select name="comparator">
+                    <option value="le" <%IF condition.comparator == '<='%> SELECTED <%END%> >&le;</option>
+                    <option value="lt" <%IF condition.comparator == '<'%> SELECTED <%END%> >&lt;</option>
+                    <option value="eq" <%IF condition.comparator == '=='%> SELECTED <%END%> >=</option>
+                    <option value="gt" <%IF condition.comparator == '>'%> SELECTED <%END%> >&gt;</option>
+                    <option value="ge" <%IF condition.comparator == '>='%> SELECTED <%END%> >&ge;</option>
+                </select>
+            </td>
+            <td>
+                <%IF condition.id %>
+                    <input type="text" value ="<%condition.threshold%>" name="threshold"/>
+                <%ELSE%>
+                    <input type="text" value ="threshold" name="threshold"/>
+                <%END%>
+            </td>
+        </tr>
+    </table>
+    <br/>
+    <%IF condition.id %>
+        <div class="left">
+            <input type="submit" value="Edit condition"/>
+        </div>
+    <%ELSE%>
+        <input type="checkbox" name="rule" value="1"/> Create the corresponding rule 
+        <br/>(Warning : The rule will be created but will be disabled, please enable it manually)
+         <br/>
+        <br/>
+        <div class="left">
+            <input type="submit" value="Create condition"/>
+        </div> 
+     <%END%>
+
+</form>

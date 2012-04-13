@@ -1,6 +1,5 @@
-# EFactory.pm - Module which instanciate EEntity and EContext
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -45,7 +43,9 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
 use General;
+use Entity;
 use Kanopya::Exceptions;
+use Entity::ServiceProvider::Inside::Cluster;
 use Net::IP qw(:PROC);
 
 my $log = get_logger("executor");
@@ -55,12 +55,8 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 sub newEOperation{
     my %args = @_;
-    
-    if (! exists $args{op} or ! defined $args{op}) { 
-        $errmsg = "EntityFactory::newEOperation need an op named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+
+    General::checkParams(args => \%args, required => ['op']);
     my $data = $args{op};
     my $class = "EOperation::E". $args{op}->getType();
 #    $log->debug("EOperation class is $class"); 
@@ -86,16 +82,16 @@ EFactory::newEEntity($objdata) instanciates a new object EEntity from Entity.
 sub newEEntity {
     my %args = @_;
     
-    if (! exists $args{data} or ! defined $args{data}) { 
-        $errmsg = "EntityFactory::newEEntity need a data named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['data']);
+
     my $data = $args{data};
+    my %params = (data => $args{data});
+
     my $class = General::getClassEEntityFromEntity(entity => $data);
-#    $log->debug("GetClassEEntityFromEntity return $class"); 
+    $log->debug("GetClassEEntityFromEntity return $class");
+
     my $location = General::getLocFromClass(entityclass => $class);
-    
+
     eval { require $location; };
     if ($@){
         $errmsg = "EFactory->newEEntity : require locaction failed (location is $location) : $@";
@@ -104,7 +100,7 @@ sub newEEntity {
     }
     
 #    $log->info("$class instanciated");
-    return $class->new(data => $args{data});
+    return $class->new(%params);
 }
 
 =head2 newEContext
@@ -115,19 +111,15 @@ EFactory::newEContext(ip_source, ip_destination) instanciates a new object ECont
 
 sub newEContext {
     my %args = @_;
-    if ((! exists $args{ip_source} or ! defined $args{ip_source}) ||
-        (! exists $args{ip_destination} or ! defined $args{ip_destination})) { 
-        $errmsg = "EFactory::newEContext need ip_source and ip_destination named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+
+    General::checkParams(args => \%args, required => ['ip_source', 'ip_destination']);
 
     if (!ip_is_ipv4($args{ip_source})){
         $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";    
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-        if (!ip_is_ipv4($args{ip_destination})){
+    if (!ip_is_ipv4($args{ip_destination})){
         $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";    
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -137,14 +129,17 @@ sub newEContext {
         # EContext::Local
         $log->debug("ip_source & ip_destination are the same, using EContext::Local");
         use EContext::Local;
-        return EContext::Local->new();
+        return EContext::Local->new(local => $args{ip_source});
     } else {
         # EContext::SSH
         use EContext::SSH;
-        my $ssh = EContext::SSH->new(ip => $args{ip_destination});
+        my $ssh = EContext::SSH->new(local => $args{ip_source},
+                                     ip    => $args{ip_destination});
         return $ssh;
     }
 }
+
+
 
 1;
 
@@ -152,7 +147,7 @@ __END__
 
 =head1 AUTHOR
 
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
+Copyright (c) 2011-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
 This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut

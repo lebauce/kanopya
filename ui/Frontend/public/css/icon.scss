@@ -1,0 +1,84 @@
+@mixin image($image) {
+    background-image: url($image);
+    background-repeat: no-repeat;
+}
+
+.imgDown {
+    background-image: url("/images/icons/down.png");
+    background-repeat: no-repeat;
+}
+
+.imgDeactive {
+    background-image: url("/images/icons/deactive.png");
+    background-repeat: no-repeat;
+}
+
+.imgUp {
+    background-image: url("/images/icons/up.png");
+    background-repeat: no-repeat;
+}
+
+.imgBroken {
+    background-image: url("/images/icons/broken.png");
+    background-repeat: no-repeat;
+}
+
+/* actions */
+/*
+.imgAdding { background-image: url("/images/icons/add.png"); background-repeat: no-repeat;}
+.imgRemove { background-image: url("/images/icons/remove.png"); background-repeat: no-repeat;}
+.imgActivate { background-image: url("/images/icons/activate.png"); background-repeat: no-repeat;}
+.imgDeactivate { background-image: url("/images/icons/deactivate.png"); background-repeat: no-repeat;}
+.imgEdit { background-image: url("/images/icons/edit.png");background-repeat: no-repeat; }
+.imgStart { background-image: url("/images/icons/start.png"); background-repeat: no-repeat;}
+.imgStop { background-image: url("/images/icons/stop.png");background-repeat: no-repeat; }
+.imgManage { background-image: url("/images/icons/manage.png"); background-repeat: no-repeat;}
+.imgConfigure { background-image: url("/images/icons/configure.png"); background-repeat: no-repeat;}
+.imgCancel { background-image: url("/images/icons/cancel.png"); background-repeat: no-repeat;}
+.imgSave { background-image: url("/images/icons/save.png"); background-repeat: no-repeat;}
+.imgSettings { background-image: url("/images/icons/settings.png"); background-repeat: no-repeat;}
+.imgClock { background-image: url("/images/icons/clock.png"); background-repeat: no-repeat;}
+.imgUploadcomponent { background-image: url("/images/icons/uploadcomponent.png"); background-repeat: no-repeat;}
+
+.imgHost { background-image: url("/images/icons/host.png"); background-repeat: no-repeat;}
+.imgHardware { background-image: url("/images/icons/hardware.png"); background-repeat: no-repeat;}
+.imgKernel { background-image: url("/images/icons/kernel.png"); background-repeat: no-repeat;}
+.imgTux { background-image: url("/images/icons/tux.png"); background-repeat: no-repeat;}
+.imgSystemimage { background-image: url("/images/icons/systemimage.png"); background-repeat: no-repeat;}
+.imgNetwork { background-image: url("/images/icons/network.png"); background-repeat: no-repeat;}
+.imgPermission { background-image: url("/images/icons/permission.png");background-repeat: no-repeat; }
+.imgListing { background-image: url("/images/icons/list.png");background-repeat: no-repeat; }
+.imgCluster { background-image: url("/images/icons/cluster.png"); background-repeat: no-repeat;}
+.imgEye, .imgStateManager { background-image: url("/images/icons/eye.png");background-repeat: no-repeat; }
+.imgDatabase { background-image: url("/images/icons/database.png");background-repeat: no-repeat; }
+.imgBoot { background-image: url("/images/icons/boot.png");background-repeat: no-repeat; }
+.imgExecute { background-image: url("/images/icons/execute.png"); background-repeat: no-repeat;}
+.imgMonitor { background-image: url("/images/icons/monitor.png"); background-repeat: no-repeat;}
+.imgHarddisk { background-image: url("/images/icons/harddisk.png"); background-repeat: no-repeat;}
+.imgOrchestrator { background-image: url("/images/icons/orchestrator.png");background-repeat: no-repeat; }
+.imgRedcross { background-image: url("/images/icons/error.png"); background-repeat: no-repeat;}
+.imgLightning { background-image: url("/images/icons/lightning.png"); background-repeat: no-repeat;}
+.imgModel { background-image: url("/images/icons/model.png"); background-repeat: no-repeat;}
+.imgDrivenet { background-image: url("/images/icons/drive-network.png"); background-repeat: no-repeat;}
+.imgUser { background-image: url("/images/icons/user.png"); background-repeat: no-repeat;}
+.imgGroups { background-image: url("/images/icons/groups.png"); background-repeat: no-repeat;}
+.imgLog { background-image: url("/images/icons/log.png"); background-repeat: no-repeat;}
+.imgMessage { background-image: url("/images/icons/messages.png"); background-repeat: no-repeat;}
+.imgComponent { background-image: url("/images/icons/component.png"); background-repeat: no-repeat;}
+.imgOperation { background-image: url("/images/icons/operations.png"); background-repeat: no-repeat;}
+.imgWarning { background-image: url("/images/icons/warning.png"); background-repeat: no-repeat;}
+.imgInfo { background-image: url("/images/icons/info.png"); background-repeat: no-repeat;}
+.imgError { background-image: url("/images/icons/error.png"); background-repeat: no-repeat;}
+.imgDebug { background-image: url("/images/icons/debug.png"); background-repeat: no-repeat;}
+.imgMonitHost { background: url("/images/icons/host.png") no-repeat left top; }
+.imgMonitCluster { background: url("/images/icons/cluster.png") no-repeat left top; }
+*/
+
+/* distribution icons */
+/*
+.distribution { 
+	padding-left: 32px; 
+	background-repeat: no-repeat;
+}
+.imgDebian { background-image: url("/images/distributions/Debian.png"); background-repeat: no-repeat;}
+*/

@@ -1,0 +1,91 @@
+<%# <script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>Ucs : <% ucs_name %></h2>
+
+<hr/>
+<span id="state" class="title simpleexpand">State</span>
+<table id="Xstate" class="detailspart">
+<tr>
+    <td>
+    <% SWITCH ucs_state %>
+        <% CASE 'up' %>
+        <span class="state imgUp">Up</span>
+        <% CASE 'down' %>
+        <span class="state imgDown">Down</span>
+        <% CASE 'starting' %>
+        <span class="state imgDown">Starting... (<% state_time %>)</span>
+        <% CASE 'stopping' %>
+        <span class="state imgDown">Stopping... (<% state_time %>)</span>
+        <% CASE 'broken' %>
+        <span class="state imgWarning">Broken (<% state_time %>)</span>
+    <% END %>
+    </td>
+    <td class="actions" rowspan="2">
+        <a class="imgStart" href="/equipments/ucs/<% ucs_id %>/synchronize">synchronize</a><br />
+        <span class="desc">Synchronize Kanopya with this UCS equipement</span>
+    </td>
+</tr>
+</table>
+
+<hr />
+<span id="mainsettings" class="title simpleexpand">Main settings</span>
+<table id="Xmainsettings" class="detailspart">
+    <tr><td class="italic" colspan="2"><% ucs_desc %></td>
+    </td>
+    
+    <td class="actions" rowspan="2">
+        <a class="imgStart" href="/equipments/ucs/<% ucs_id %>/remove">remove</a><br />
+        <span class="desc">Delete this ucs.</span>
+    </td>
+
+    <tr><td class="label">Address :</td><td><% ucs_addr %></td></tr>
+    <tr><td class="label">Login :</td><td><% ucs_login %></td></tr>
+    <tr><td class="label">Password :</td><td>**********</td></tr>
+    <tr><td class="label">Data Provider :</td><td><% ucs_dataprovider %></td></tr>
+    <tr><td class="label">OU :</td><td><% ucs_ou %></td></tr>
+    </tr>
+</table>
+
+<hr/>
+<span id="ucs_templates" class="title simpleexpand">Service Profiles Templates</span>
+<table id="Xnetwork" class="detailspart list">
+<% FOREACH sp IN ucs_templates %>
+<tr>
+    <td class="italic" colspan="2"><ul><li><% sp.name %> - <% sp.dn %></ul></li><br /></td>
+    </td>
+
+    </td>
+</tr>
+<% END %>
+</table>
+
+<hr/>
+<span id="ucs_serviceprofiles" class="title simpleexpand">Service Profiles</span>
+<table id="Xnetwork" class="detailspart list">
+<% FOREACH sp IN ucs_serviceprofiles %>
+<tr>
+    <td class="italic" colspan="2"><ul><li><% sp.name %> - <% sp.dn %></ul></li></td>
+    </td>
+    </td>
+</tr>
+<% END %>
+</table>
+
+<hr/>
+<span id="ucs_blades" class="title simpleexpand">Blades</span>
+<table id="XBlades" class="detailspart">
+    <tr><td class="label">Blades number :</td><td><% ucs_blades.size %></td>
+
+    <td class="actions" rowspan="2">
+        <a class="imgStart" href=""</a><br />
+        <span class="desc"></span>
+    </td></tr>
+
+    <% FOREACH blade IN ucs_blades %>
+    <tr>
+        <td class="italic"><ul><li><% blade.model %></ul></li></td>
+        </td>
+    </tr>
+    <% END %>
+    </tr>
+</table>

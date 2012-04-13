@@ -1,0 +1,41 @@
+<%#
+<script type="text/javascript" src="/js/details.js"></script>
+%>
+
+<h2><% masterimage_name %></h2>
+<hr/>
+<span id="settings" class="title simpleexpand">Informations</span>
+<table id="Xsettings" class="detailspart">
+<tr><td class="italic" colspan="2"><% masterimage_desc %></td>
+<td class="actions" rowspan="6">
+<% IF can_delete %>
+	<a class="imgRemove" href="/systems/masterimages/<% masterimage_id %>/remove">delete</a><br />
+	<span class="desc">Delete this master image.</span><br /><br />
+<% END %>
+<% IF can_setperm %>
+	<a class="imgPermission" href="/rights/permissions/masterimage/<% masterimage_id %>">permissions</a><br />
+	<span class="desc">View/set permissions on this master image.</span><br />
+<% END %>
+</td><tr/>
+<tr><td>&nbsp;</td></tr>
+<tr><td class="label">File :</td><td><% masterimage_file %></td></tr>
+<tr><td class="label">Size :</td><td><% masterimage_size %></td></tr>
+<tr><td class="label">arch :</td><td><% masterimage_arch %></td></tr>
+<tr><td class="label">OS :</td><td><% masterimage_os %></td></tr>
+</table>
+
+<hr/>
+<span id="components" class="title simpleexpand">Installed Components</span>
+<table id="Xcomponents" class="detailspart list">
+<% IF components_list %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% components_count %>">
+	<span class="desc">This list show components which are installed on this master image.</span><br /><br />
+	</td></tr>
+	<% FOREACH comp IN components_list %>
+	<tr><td class="label2"><span id="<% comp.component_id %>" class="bold"><% comp.component_name %><% comp.component_version %></span> - <% comp.component_category %></td>
+	<td class="action"><td></tr>
+	<% END %>
+<% END %>
+</table>
+

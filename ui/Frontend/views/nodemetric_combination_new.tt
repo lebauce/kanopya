@@ -1,0 +1,28 @@
+
+<h2>New node metric combination for Cluster <%cluster_id%></h2>
+<hr />
+<form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations/new">
+
+    <table>
+        <tr><td> Please enter a well formed formula (Syntax checker not implemented)
+        </td></tr>
+        
+        <tr><td>
+        
+        <input type=test name="formula" value="(idXX + idYY) / idZZ"/>
+        
+        </td></tr>
+        
+    </table>
+    <br/>
+    
+    <div class="left">
+        <input type="submit" value="Create combination"/>
+    </div>
+</form>
+<br/>
+Memo : <br/>
+<% FOREACH indicator IN indicators %>
+id<%indicator.id%> : <%indicator.label%> <br/>
+<% END %>
+

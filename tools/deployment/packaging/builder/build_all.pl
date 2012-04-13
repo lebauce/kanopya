@@ -16,6 +16,10 @@ open my $package_list,"<", "build_list" or die "open: $!";
 my $line;
 while ($line = <$package_list>) {
     chomp($line);
+    # skeep blank line and comments
+    if( !length($line) || $line =~ /^#/) {
+	next;
+    }
     print "./package_builder.pl $line $version\n";
     system("./package_builder.pl $line $version");
 }

@@ -1,0 +1,69 @@
+<h2>Create a new host</h2>
+
+<form id="target" method="POST" action="/infrastructures/hosts/add">
+<table class="form">
+	<tr>
+		<td class="label">Managed by :</td>
+		<td><% manager.name %></td>
+        <input type="hidden" name="host_manager_id" value="<% manager.id %>"/>
+	</tr>
+	<tr>
+		<td class="label">MAC address :</td>
+		<td><input type="text" name="mac_address" maxlength="17" size="17"/>
+		<span style="color: red"><% ERR_MAC_ADDRESS %></span></td>
+	</tr>
+	<tr>
+		<td class="label">Serial Number :</td>
+		<td><input type="text" name="serial_number" size="50" /></td>
+	</tr>
+	<tr>
+		<td class="label">Ram amount :</td>
+		<td><input type="text" name="ram" size="5" /><span class="label">G</span></td>
+	</tr>
+	<tr>
+		<td class="label">Core Number :</td>
+		<td><input type="text" name="core" size="3" /></td>
+	</tr>
+	<tr>
+		<td class="label">Host model :</td>
+		<td><select name="host_model">
+		<% FOREACH model IN hostmodels_list %>
+			<option value="<% model.id %>"><% model.name %></option>
+		<% END %>	
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">Processor model :</td>
+		<td><select name="cpu_model">
+		<% FOREACH model IN processormodels_list %>
+			<option value="<% model.id %>"><% model.name %></option>
+		<% END %>	
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">Default kernel :</td>
+		<td><select name="kernel">
+		<% FOREACH kernel IN kernels_list %>
+			<option value="<% kernel.id %>"><% kernel.name %></option>
+		<% END %>	
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">Description :</td>
+		<td><textarea cols="50" name="desc" value=""></textarea></td> 
+	</tr>
+	<tr>
+		<td class="label">Power supply card :</td>
+		<td><select name="powersupplycard_id">
+			<option value="none">none</option>
+		<% FOREACH psc IN powersupplycards_list %>
+			<option value="<% psc.id %>"><% psc.name %></option>
+		<% END %>	
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">Port number :</td>
+		<td><input type="text" name="powersupplyport_number" maxlength="2" size="2"/>
+	</tr>
+</table>
+</form> 

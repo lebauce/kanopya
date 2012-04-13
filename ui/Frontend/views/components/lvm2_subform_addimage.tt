@@ -1,0 +1,10 @@
+<td class="label">Volume Group use:</td>
+<td>
+<select id="vg_id" name="disk_manager_param_vg_id">
+<% FOREACH vg IN lvm2_vgs %>
+    <option value="<% vg.lvm2_vg_id %>"><% vg.lvm2_vg_name %></option>
+<% END %>
+</select>
+</td>
+
+

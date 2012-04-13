@@ -1,0 +1,50 @@
+<h2>Create a new host model</h2>
+
+<form id="target" method="POST" action="/models/hosts/add">
+<table class="form">
+	<tr>
+		<td class="label">Brand :</td>
+		<td><input type="text" name="brand" size="20"/><% ERR_BRAND %></td>
+	</tr>
+	<tr>
+		<td class="label">Name :</td>
+		<td><input type="text" name="name" size="20" /><% ERR_NAME %></td>
+	</tr>
+	<tr>
+		<td class="label">Chipset :</td>
+		<td><input type="text" name="chipset" size="10" /><% ERR_CHIPSET %></td>
+	</tr>
+	<tr>
+		<td class="label">Processors number :</td>
+		<td><input type="text" name="procnum" size="10" /><% ERR_PROCNUM %></td>
+	</tr>
+	<tr>
+		<td class="label">Consumption (W):</td>
+		<td><input type="text" name="consumption" size="10" /><% ERR_CONSUMPTION %></td>
+	</tr>
+	<tr>
+		<td class="label">iface number :</td>
+		<td><input type="text" name="ifacenum" size="10" /><% ERR_IFACENUM %></td>
+	</tr>
+	<tr>
+		<td class="label">RAM slots number :</td>
+		<td><input type="text" name="ramslotnum" size="10" /><% ERR_RAMSLOTNUM %></td>
+	</tr>
+	<tr>
+		<td class="label">RAM max (GB):</td>
+		<td><input type="text" name="rammax" size="4" /><% ERR_RAMMAX %></td>
+	</tr>
+	<tr>
+		<td class="label">solded processor :</td>
+		<td><select name="processorid">
+			<option selected="selected" value="0">no</option>
+			<% FOREACH p IN processormodels_list %>
+			<option value="<% p.processormodel_id %>"><% p.processormodel_name %></option>
+			<% END %>
+		</select></td>
+	</tr>
+</table>
+</form>
+
+
+

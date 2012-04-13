@@ -1,0 +1,68 @@
+<%#
+<style type="text/css">@import url(/css/details.css);</style>
+<script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>System image : <% systemimage_name %></h2>
+<hr/>
+<span id="state" class="title simpleexpand">State</span>
+<table id="Xstate" class="detailspart">
+<tr>
+<td class="actions">
+<% IF can_activate %>
+	<a class="imgActivate" href="/systems/images/<% systemimage_id %>/activate">activate</a><br />
+	<span class="desc">Activate this system image.</span><br />
+<% END %>
+<% IF can_deactivate %>
+	<a class="imgDeactivate" href="/systems/images/<% systemimage_id %>/deactivate">deactivate</a><br />
+	<span class="desc">Deactivate this system image.</span><br />
+<% END %>
+</td></tr>
+</table>
+
+<hr/>
+<span id="settings" class="title simpleexpand">Informations</span>
+<table id="Xsettings" class="detailspart">
+<tr><td class="italic" colspan="2"><% systemimage_desc %></td>
+<td class="actions" rowspan="6">
+<% IF can_update %>
+	<a class="modal" href="/systems/images/<% systemimage_id %>/edit">edit</a><br />
+	<span class="desc">Modify these global parameters.</span><br /><br />
+<% END %>
+<% IF can_delete %>
+	<a class="imgRemove" href="/systems/images/<% systemimage_id %>/remove">delete</a><br />
+	<span class="desc">Delete this system image.</span><br /><br />
+<% END %>
+<% IF can_setperm %>
+	<a class="imgPermission" href="/rights/permissions/systemimage/<% systemimage_id %>">permissions</a><br />
+	<span class="desc">View/set permissions on this system image.</span><br />
+<% END %>
+</td><tr/>
+<tr><td>&nbsp;</td></tr>
+<tr><td class="label">Storage Provider:</td><td><% storage_provider_name %></td></tr>
+<tr><td class="label">Disk manager:</td><td><% disk_manager_name %></td></tr>
+</table>
+
+<hr/>
+<span id="components" class="title simpleexpand">Installed Components</span>
+<table id="Xcomponents" class="detailspart list">
+<% IF components_list %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% components_count %>">
+    <% IF can_installcomponent %>
+        <a class="modal" href="/systems/images/<% systemimage_id %>/installcomponent">Install a component</a><br />
+        <span class="desc">Install a component to this system image.</span><br /><br />
+    <% END %>
+	</td></tr>
+	<% FOREACH comp IN components_list %>
+		<tr><td class="label2"><span class="bold"><% comp.component_name %><% comp.component_version %></span> - <% comp.component_category %></td>
+		<td class="action"></td></tr>
+	<% END %>
+<% ELSE %>
+	<tr><td colspan="2">no defined component.</td>
+	<td class="actions">
+	<a class="modal" href="/systems/images/<% systemimage_id %>/installcomponent">Install a component</a><br />
+	<span class="desc">Install a new component to this system image.</span><br /><br />
+	</td></tr>
+<% END %>
+</table>
+

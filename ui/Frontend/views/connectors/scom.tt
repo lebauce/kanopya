@@ -1,0 +1,27 @@
+<% js_head.push('components.js') %>
+<h2><% serviceprovider_tostring %> - SCOM connector configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="connector_id" value="<% connector_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="serviceprovider_id" value="<% serviceprovider_id %>"/>
+<input class="conf_simple_value" type="hidden" name="scom_id" value="<% scom_id %>"/>
+<table>
+<tr><td>Root Management Server fqdn :</td><td><input type="text" size="64" class="conf_simple_value" name="scom_ms_name" value="<% scom_ms_name %>"/></td></tr>
+</table>
+<h3>Remote invocation</h3>
+<table>
+<tr><td>Use ssl :
+    <select class="conf_simple_value" name="scom_usessl">
+        <option value="1" <% IF scom_usessl %>selected<% END %>>yes</option>
+        <option value="0" <% UNLESS scom_usessl %>selected<% END %>>no</option>
+    </select>
+</td></tr>
+</table>
+
+<hr />
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/extclusters/<% serviceprovider_id %>'"/>
+</div>
+</form>
+

@@ -1,0 +1,74 @@
+/*cluster overview zone */
+
+#combination_list {
+	width:25%;
+}
+
+#clusterCombinationView {
+	display:none;
+    position:relative;
+    bottom:170px;
+    left: 290px;
+    width:70%;
+}
+
+#cb_button {
+	position:absolute;
+	top:-25px;
+	left:15px;
+}
+
+.cluster_combination_tooltip {
+    background-color:#D4D4D4;
+    border:dotted;
+}
+
+.field {
+    margin-bottom:5px;
+}
+
+.field label {
+    float:left;
+    width:120px;
+}
+
+.error {
+    width:300px;
+    color:red;
+}
+
+/*nodes overview zone */
+.indicator_dropdown {
+    margin-bottom:5px;
+}
+
+.indicator_dropdown label {
+    float:left;
+    width:120px;
+}
+
+#nodes_charts {
+	display:none;
+    position:relative;
+    bottom:50px;
+    left: 290px;
+    width:70%;
+}
+
+#ncb_button {
+	position:absolute;
+	top:-25px;
+	left:45px;
+}
+
+.jqplot-yaxis {
+    margin-right: 15px;
+}
+
+/*CSS fix for the Time Picker addon */
+.ui-timepicker-div .ui-widget-header { margin-bottom: 8px; }
+.ui-timepicker-div dl { text-align: left; }
+.ui-timepicker-div dl dt { height: 25px; margin-bottom: -25px; }
+.ui-timepicker-div dl dd { margin: 0 10px 10px 65px; }
+.ui-timepicker-div td { font-size: 90%; }
+.ui-tpicker-grid-label { background: none; border: none; margin: 0; padding: 0; }

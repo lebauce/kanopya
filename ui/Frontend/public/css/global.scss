@@ -1,0 +1,208 @@
+$color_purple: #7E388A;
+$color_gray: #C2C2C2;
+$color_red: #FF002E;
+$color_green: #80E254;
+$color_white: white;
+$color_blue: #24BAF9;
+$font_color: #999999;
+$menu_pos: 50px;
+$menu_width: 75%;
+$head_height: 140px;
+
+@mixin center {
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    height: 100%;
+    background-color: $color_purple;
+    color: $font_color;
+    font-style: arial;
+    font-size: 0.9em;
+}
+
+#header {
+    position: fixed;
+    z-index: 10;
+    width: 100%;
+    background-color: $color_white;
+    border-top: 2px solid $color_purple;
+    height: $head_height;
+    border-bottom: 1px solid $color_purple;
+    #logo {
+        top: 10px;
+        padding-left: 110px;
+        padding-right: 20px;
+        float: left;
+        padding-top: 10px;
+    }
+    #infologin {
+        position: absolute;
+        top: 5px;
+        right: 100px;
+        color: $color_gray;
+        font-size: 11px;
+        font-weight: bold;
+        #username {
+            color: $color_purple;
+        }
+    }
+    .logout {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        color: $color_white;
+        text-align: center;
+        width: 84px;
+        height: 25px;
+        padding-top: 10px;
+        font-size: 11px;
+        font-weight: bold;
+        background: $color_purple;
+        a {
+            color: $color_white;
+            text-decoration: none;
+            background: $color_purple url(/images/picto_logout.png) no-repeat left;
+            padding-left: 25px;
+        }
+    }
+    #menu_separator {
+        border-bottom: 1px solid $color_gray;
+        width: 100%;
+        clear: both;
+        padding-top: 3px;
+    }
+    #menu {
+        margin-left: auto;
+        margin-right: auto;
+        width: $menu_width + 10;
+        
+        ul {
+            list-style-type: none;
+        }
+        li {
+            float: left;
+        }
+        ul {
+            li {
+                padding: 8px 37px 8px 0px;
+                a {
+                    display: block;
+                    text-decoration:none;
+                    color: $color_gray;
+                    font-weight: bold;
+                    //font-size: 1.0em;
+                    font-size: 18px;
+                }
+                a:hover {
+                        color: $color_green;
+                    }
+            }
+            .selected {
+                    a {
+                        color: $color_purple;
+                    }
+                    border-bottom: 3px solid $color_purple;
+                    margin-bottom: -3px;
+            }
+        }
+    }
+    #submenu {
+        margin-top: 10px;
+        margin-left: auto;
+        margin-right: auto;
+        width: $menu_width;
+        ul {
+            list-style-type: none;
+            margin-top: 0px;
+            text-align: center;
+            li {
+                padding: 5px 15px 5px 15px;
+                background-color: $color_gray;
+                display: inline-block;
+                a {
+                    display: block;
+                    float: left;
+                    text-decoration:none;
+                    color: white;
+                    //font-size: 0.875em;
+                    font-size: 13px;
+                    font-weight: bold;
+                }
+            }
+            li:hover {
+                    background-color: $color_green;
+                }
+            .selected {
+                    background-color: $color_purple;
+            }
+        }
+    }
+    hr {
+        margin-top: 30px;
+    }
+
+}
+
+#container {
+    width: 85%;
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: $color_white;
+    padding-top: $head_height;
+    padding-right: 20px;
+    padding-left: 20px;
+    min-height: 100%;
+}
+
+#opsmsg {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    width: 100%;
+    table {
+        width: 100%;
+        collapse: collapse;
+        td {
+            background-color: white;
+            border: thin solid $color_purple;
+            width: 15em;
+            text-align: center;
+            cursor: pointer;
+        }
+        td.active {
+            background-color: $color_purple;
+            color: white;
+            font-weight: bold;
+        }
+    }
+
+    #operations_content, #messages_content {
+        background-color: white;
+        border: thin solid $color_purple;
+        display: none;
+        font-size: 0.7em;
+        line-height: 1.4em;
+    }
+}
+
+.disabled {
+  color: #BBBBBB;
+}
+
+a .action .disabled {
+  color: #BBBBBB;
+}
+
+.disabled a {
+  pointer-events: none;
+  cursor: default;
+  color: #BBBBBB;
+}

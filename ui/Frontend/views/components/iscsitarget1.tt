@@ -1,0 +1,84 @@
+<% js_head.push('components.js') %>
+<h2>Cluster <% cluster_name %> - iscsitarget 1 Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Iscsitarget1"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+
+<table class="conf_array_value" id="targets">
+<% FOREACH target IN targets %>
+	<tr>
+	<td>
+	<table>
+		<tr>
+		<th>Target name: </th>
+		<td><input size="45" type="text" name="iscsitarget1_target_name" value="<% target.iscsitarget1_target_name %>" disabled /></td>
+		<td><input size="15" type="hidden" name="iscsitarget1_target_id" value="<% target.iscsitarget1_target_id %>" disabled /></td>
+		</tr>
+		<tr>
+			<th>Luns</th>
+			<td>
+			<table>
+			<tr><th>Number</th><th>Device</th><th>IO type</th><th>IO mode</th></tr>
+			<% FOREACH lun IN target.luns %>
+				<tr class="elem_luns" name="lun">
+				<td><input class="lun_simple_value" size="15" type="text" name="iscsitarget1_lun_number" value="<% lun.iscsitarget1_lun_number %>" disabled /></td>
+				<td><input class="lun_simple_value" size="15" type="text" name="iscsitarget1_lun_device" value="<% lun.iscsitarget1_lun_device %>" disabled /></td>
+				<td><input class="lun_simple_value" size="15" type="text" name="iscsitarget1_lun_typeio" value="<% lun.iscsitarget1_lun_typeio %>" disabled /></td>
+				<td><input class="lun_simple_value" size="15" type="text" name="iscsitarget1_lun_iomode" value="<% lun.iscsitarget1_lun_iomode %>" disabled /></td>
+				</tr>
+			<% END %>
+			</table>
+			</td>
+		</tr>
+	</table>
+	</td>
+	</tr>
+<% END %>
+</table>
+<br/>
+<a class="add_targets imgAdding iconAction" >Add target</a>
+
+<hr />
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+
+
+<div class="hidden" id="models">
+<table class="conf_array_value" id="targets">
+	<tr class="elem_targets" name="target">
+	<td>
+	<table>
+		<tr>
+		<th>Target name: </th>
+		<td><input class="target_simple_value" size="45" type="text" name="iscsitarget1_target_name" value=""/></td>
+		<td><input class="target_simple_value" size="15" type="hidden" name="iscsitarget1_target_id" value=""/></td>
+		<td><a class="remove_target imgRemove iconAction" ></a></td>
+		</tr>
+		<tr>
+			<th>Luns</th>
+			<td>
+			<table class="target_array_value" id="luns">
+			<tr><th>Number</th><th>Device</th><th>IO type</th><th>IO mode</th></tr>
+			<tr class="elem_luns" name="lun">
+				<td><input class="lun_simple_value" size="15" type="text" name="iscsitarget1_lun_number" value=""/></td>
+				<td><input class="lun_simple_value" size="15" type="text" name="iscsitarget1_lun_device" value=""/></td>
+				<td><input class="lun_simple_value" size="15" type="text" name="iscsitarget1_lun_typeio" value=""/></td>
+				<td><input class="lun_simple_value" size="15" type="text" name="iscsitarget1_lun_iomode" value=""/></td>
+			</tr>
+			</table>
+			<!--a class="add_luns imgAdding iconAction" >Add lun</a-->
+			</td>
+		</tr>
+	</table>
+	</td>
+	</tr>
+</table>
+</div>
+
+
+

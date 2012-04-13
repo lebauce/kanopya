@@ -1,0 +1,21 @@
+<h2>Set permission</h2>
+
+<form id="target" name= "form1" method="POST" action="/rights/permissions/set" >
+<table>
+<% FOREACH m IN methods %>
+	<tr><td><input type="checkbox" name="methods" value="<% m.method %>" <% m.checked %>/></td>
+	<td><span style="font-weight: bold;"><% m.method %></span> - <span style="font-style: italic;"><% m.description %></span></td></tr>
+<% END %>
+</table><div class="buttons">
+<input type="hidden" name="consumer_id" value="<% consumer_id %>"/>
+<input type="hidden" name="consumed_id" value="<% consumed_id %>"/>
+<input type="hidden" name="consumed_type" value="<% consumed_type %>"/>
+</div>
+<br>
+<input type="button" value="OK" onclick="submit();self.close()">
+</form>
+
+
+
+
+

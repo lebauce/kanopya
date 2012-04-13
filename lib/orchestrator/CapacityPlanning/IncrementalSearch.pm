@@ -14,8 +14,10 @@
 package CapacityPlanning::IncrementalSearch;
 
 use Log::Log4perl "get_logger";
-
 use base "CapacityPlanning";
+use Data::Dumper;
+use strict;
+use warnings;
 
 my $log = get_logger("orchestrator");
 
@@ -28,18 +30,30 @@ sub new {
 }
 
 sub search {
+    
     my $self = shift;
     my %args = @_;
 
     # No needs to check args, done by parent
     
+    # Dumper inline
+    $Data::Dumper::Indent = 0;
+    
     my $nb_tiers = $self->{_nb_tiers};    
     my $workload_amount = $args{workload_amount};
     my %workload_class = %{ $args{workload_class} };
     
+    $log->debug('Capacity planning input:');
+    $log->debug(Dumper \%workload_class);
+    $log->debug("Nb tiers: $nb_tiers, Workload amount: $workload_amount");
+        
+    
+#    print Dumper $self->{_search_spaces};
     my @min_node = map { $_->{min_node} || 1 } @{ $self->{_search_spaces} };
     my @max_node = map { $_->{max_node} || 1 } @{ $self->{_search_spaces} };
             
+#    print "MinN = @min_node; MaxN = @max_node\n";
+    
     # new conf
     my @AC     = ();
     my @LC     = ();
@@ -53,31 +67,54 @@ sub search {
         }
         push @LC, $max_mpl;
     }
-    #
+    #print "AC = @AC, LC = @LC\n";
     
     my %perf;
     my @next_AC = @AC;
     my @curr_AC;
     my $try_count = 0;
-    my $max_try = 50;
+    my $max_try = 1000; #Wonder wether this is usefull ? 
+
+    my $error = 0; 
     my $new_conf = 1;
+    
+    
     TRY:
     while ($try_count == 0 || not $self->matchConstraints( perf => \%perf )) {
         
         if (($try_count++ > $max_try)) {
             $log->warn("Can not find configuration to meet constraints after $max_try iterations (max)");
-            last TRY;
+            #print("[DEBUG] Can not find configuration to meet constraints after $max_try iterations (max)\n");
+            return { AC => \@curr_AC, LC => \@LC };;
+            
+            # /!\ IMPROVABLE WHEN ONLY 1 TIER IS BOTTLENECK
+#            for my $i (0..$nb_tiers-1){
+#                $curr_AC[$i] = -1;
+#            }
+#            return { AC => \@curr_AC, LC => \@LC };
+#            last TRY;
         }
         if (not $new_conf) {
             $log->warn("Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]");
-            last TRY;
+            #print("[DEBUG] Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]\n");
+            return { AC => \@curr_AC, LC => \@LC };;
+            # /!\ IMPROVABLE WHEN ONLY 1 TIER IS BOTTLENECK
+#            for my $i (0..$nb_tiers-1){
+#                $curr_AC[$i] = -1;
+#            }
+#            return { AC => \@curr_AC, LC => \@LC };
+#            last TRY;
         }
-
+       
         @curr_AC = @next_AC;
-        print "AC: @curr_AC  #  LC: @LC\n";
+        #print "AC: @curr_AC  #  LC: @LC, $workload_amount\n";
+        
+        
         %perf = $self->{_model}->calculate( configuration => { M => $nb_tiers, AC => \@curr_AC, LC => \@LC},
                                              workload_class => \%workload_class,
                                              workload_amount => $workload_amount);
+        
+        $log->debug("[phase 1] With AC = @curr_AC ==> perf = " . (Dumper \%perf));
         
         # Add one node on each tiers if possible
         $new_conf = 0;
@@ -88,32 +125,35 @@ sub search {
             }
         }
         #@next_AC = map { $_ + 1 } @curr_AC;
-
-    };
+        #print "@curr_AC : latency = $perf{latency} abort_rate = $perf{abort_rate} \n";
+        
+    };  #END WHILE
     
-    print "##### CURR ####\n";
-    print Dumper \@curr_AC;
+    #print "##### CURR ####\n";
+    #print Dumper \@curr_AC;
     
     for my $i (0..$nb_tiers-1) {
         my $first_try = 1;
-        print "######### AC: @curr_AC\n";
+        #print "######### AC: @curr_AC\n";
         TRY:
         while ($first_try || $self->matchConstraints( perf => \%perf )){
             $curr_AC[$i] -= 1;
-            print "AC: @curr_AC\n";
+            #print "AC: @curr_AC\n";
             last TRY if ($curr_AC[$i] < $min_node[$i] ); 
             %perf = $self->{_model}->calculate( configuration => { M => $nb_tiers, AC => \@curr_AC, LC => \@LC},
                                                  workload_class => \%workload_class,
                                                  workload_amount => $workload_amount);
+                                                 
+            $log->debug("[phase 2] With AC = @curr_AC ==> perf = " . (Dumper \%perf));
+        
             $first_try = 0;
         };
         $curr_AC[$i] += 1;
     }
-    
-    print "##### BEST ####\n";
-    print Dumper \@curr_AC;
-    
-    return \@curr_AC;
+
+    $log->debug("Best AC: @curr_AC");
+
+    return { AC => \@curr_AC, LC => \@LC };
 }
 
 1;

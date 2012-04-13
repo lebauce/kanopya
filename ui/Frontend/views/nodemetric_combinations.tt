@@ -1,0 +1,37 @@
+<table class="simplelisting">
+
+    <caption>
+    Node metric combinations
+    </caption>
+
+    <% FOREACH combination IN combinations %>
+        <tr><td>
+        <span class="bold"> Combination <% combination.id %></span>
+        <span class="italic"> <% combination.label %> 
+        </td><td>
+            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations/<%combination.id%>/delete">delete</a>
+        </td>
+        </tr>
+    <% END %>
+</table>     
+
+<div class="actions">
+    <table>
+         <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>">Back to cluster interface</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations">View the combinations</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions">View the conditions</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules">View the rules</a>
+        </td></tr>
+    </table>
+
+    <table><tr><td>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations/new">Create new node metric combination for this cluster</a>
+    </td></tr></table>
+</div> 

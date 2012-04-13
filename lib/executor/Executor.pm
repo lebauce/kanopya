@@ -53,10 +53,9 @@ use XML::Simple;
 use Data::Dumper;
 use EFactory;
 use Operation;
+use Message;
 
 my $log = get_logger("executor");
-
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
@@ -88,13 +87,13 @@ sub _init {
     my $self = shift;
     
     $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
-    if ((! exists $self->{config}->{user}->{name} ||
-         ! defined exists $self->{config}->{user}->{name}) &&
-        (! exists $self->{config}->{user}->{password} ||
-         ! defined exists $self->{config}->{user}->{password})){ 
-        throw Kanopya::Exception::Internal::IncorrectParam(error => "Executor->new need user definition in config file!"); }
-    my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name},
-                                 password => $self->{config}->{user}->{password});
+
+    General::checkParams(args => $self->{config}->{user}, required => [ "name","password" ]);
+
+    my $adm = Administrator::authenticate(
+                  login    => $self->{config}->{user}->{name},
+                  password => $self->{config}->{user}->{password}
+              );
     return;
 }
 
@@ -108,66 +107,118 @@ sub run {
     my $self = shift;
     my $running = shift;
     
+    Message->send(
+        from    => 'Executor',
+        level   => 'info',
+        content => "Kanopya Executor started."
+    );
+
+    while ($$running) {
+       $self->execnround(run => 1);
+    }
+
+    Message->send(
+        from    => 'Executor',
+        level   => 'warning',
+        content => "Kanopya Executor stopped"
+    );
+}
+
+sub oneRun {
+    my $self = shift;
+
     my $adm = Administrator->new();
-    $adm->addMessage(from => 'Executor', level => 'info', content => "Kanopya Executor started.");
-       while ($$running) {
-           my $opdata = Operation::getNextOp();
-           if ($opdata){
-               # start transaction
-               $opdata->setProcessing();
-               my $op = EFactory::newEOperation(op => $opdata);
-               $log->info("New operation (".ref($op).") retrieve ; execution processing");
-               $adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
-               $adm->{db}->txn_begin;
-               eval {
-                   eval {
-                       $op->prepare(internal_cluster => $self->{config}->{cluster});
-                   };
-                   if ($@) {
-                       my $error = $@;
-                       throw $error;
-                   }
-                   else {
-                       $op->process();
-                   }
-               };
-            if ($@) {
-                   my $error = $@;
-                   if($error->isa('Kanopya::Exception::Execution::OperationReported')) {
-                       $op->report();
-                       # commit transaction
-                       $adm->{db}->txn_commit;
-                       $adm->addMessage(from => 'Executor', level => 'info', content => ref($op)." reported");
-                       $log->debug("Operation ".ref($op)." reported");
-                   } else {
-                        # rollback transaction
-                        eval { $adm->{db}->txn_rollback; };
-                        $log->info("Rollback, Cancel operation will be call");
-                        eval {
-                            $adm->{db}->txn_begin;
-                            $op->cancel();
-                            $adm->{db}->txn_commit;};
-                        if ($@){
-                            my $error = $@;
-                            $log->error("Error during operation cancel :\n$error");
-                        }
-                       $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
-                       $log->error("Error during execution : $error");
-                       $op->delete();
-                   }
-               } else {
-                   # commit transaction
-                   $op->finish();
-                   $adm->{db}->txn_commit;
-                   $adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");    
-                   $op->delete();
-               }
-               
-           }
-           else { sleep 5; }
-       }
-       $log->debug("condition become false : $$running"); 
-       $adm->addMessage(from => 'Executor', level => 'warning', content => "Kanopya Executor stopped");
+    my $errors;
+    my $opdata = Operation::getNextOp();
+    
+    if ($opdata){
+        # start transaction
+        $opdata->setProcessing();
+        my $op = EFactory::newEOperation(op => $opdata);
+        my $opclass = ref($op);
+        
+        $log->info("---- [$opclass] retrieved ; execution processing ----");
+        Message->send(
+            from    => 'Executor',
+            level   => 'info',
+            content => "Operation Processing [$opclass]..."
+        );
+        
+        $adm->{db}->txn_begin;
+        eval {
+            $op->prepare(internal_cluster => $self->{config}->{cluster});
+            $op->process();
+        };
+        if ($@) {
+            my $err_exec = $@;
+            if($err_exec->isa('Kanopya::Exception::Execution::OperationReported')) {
+                $op->report();
+                # commit transaction
+                $adm->{db}->txn_commit;
+                #Message->send(
+                #    from    => 'Executor',
+                #    level   => 'info',
+                #    content => "Operation Execution Reported [$opclass]"
+                #);
+                $log->debug("Operation $opclass reported");
+            }
+            else {
+                # rollback transaction
+                $adm->{db}->txn_rollback;
+                $log->info("Rollback, Cancel operation will be call");
+                eval {
+                    $adm->{db}->txn_begin;
+                    $op->cancel();
+                    $adm->{db}->txn_commit;
+                };
+                if ($@){
+                    my $err_rollback = $@;
+                    $log->error("Error during operation cancel :\n$err_rollback");
+
+                    $errors .= $err_rollback;
+                }
+                if (!($err_exec =~ /HASH/) or !$err_exec->{hidden}){
+                    Message->send(
+                        from    => 'Executor',
+                        level   => 'error',
+                        content => "[$opclass] Execution Aborted : $err_exec"
+                    );
+                    $log->error("Error during execution : $err_exec");
+                }
+                else {
+                    $log->info("Warning : $err_exec");}
+            }
+
+            $errors .= $err_exec;
+        } else {
+            # commit transaction
+            $op->finish();
+            $adm->{db}->txn_commit;
+            $log->info("---- [$opclass] Execution succeed ----");
+            Message->send(
+                from    => 'Executor',
+                level   => 'info',
+                content => "[$opclass] Execution Success"
+            );
+        }
+        eval { $op->delete(); };
+        if ($@) {
+            my $err_delop = $@;
+            $log->error("Error during operation deletion : $err_delop");
+            Message->send(
+                from    => 'Executor',
+                level   => 'error',
+                content => "[$opclass] Deletion Error : $err_delop"
+            );
+
+            $errors .= $err_delop;
+        }
+    }
+    else { sleep 5; }
+
+    if (defined $errors) {
+        throw Kanopya::Exception::Execution(error => $errors);
+    };
 }
 
 =head2 execnrun
@@ -180,47 +231,15 @@ sub execnround {
     my $self = shift;
     my %args = @_;
 
-    my $adm = Administrator->new();
-
-       while ($args{run}) {
-           $args{run} -= 1;
-           my $opdata = Operation::getNextOp();
-           if ($opdata){
-               # start transaction
-               my $op = EFactory::newEOperation(op => $opdata);
-               $log->info("New operation (".ref($op).") retrieve ; execution processing");
-               $adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
-               $adm->{db}->txn_begin;
-               eval {
-                   eval {
-                       $op->prepare(internal_cluster => $self->{config}->{cluster});
-                   };
-                   if ($@) {
-                       my $error = $@;
-                       $adm->{db}->txn_rollback;
-#                       $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording: $error");
-#                       $log->error("Error during operation evaluation :\n$error");
-                       $op->delete();
-                       throw $error;
-                   }
-                   else {
-                       $op->execute();
-                       $op->finish();
-                   }
-               };
-            if ($@) {
-                   my $error = $@;
-                throw $error;
-               } else {
-                   # commit transaction
-                   $adm->{db}->txn_commit;
-                   $adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");    
-                   $op->delete();
-               }
-               
-           }
-           else { sleep 5; }
-       }
+    while ($args{run}) {
+        $args{run} -= 1;
+        eval {
+            $self->oneRun();
+        };
+        if ($@) {
+            $log->error($@);
+        }
+    }
 }
 
 

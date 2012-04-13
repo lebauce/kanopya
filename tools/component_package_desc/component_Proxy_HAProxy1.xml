@@ -1,0 +1,10 @@
+<info tables_file="scripts/database/mysql/schemas/components/haproxy1.sql" templates_dir="templates/components/haproxy">
+  <description name="HAProxy" category="Proxy" version="1" />
+  <executor dest="lib/executor/EEntity/EComponent/EHAProxy1.pm" src="lib/executor/EEntity/EComponent/EHAProxy1.pm" />
+  <meta packager_version="0.1" />
+  <nas dest="lib/administrator/Entity/Component/HAProxy1.pm" src="lib/administrator/Entity/Component/HAProxy1.pm" />
+  <nas dest="lib/administrator/AdministratorDB/Schema/Result/HAProxy1.pm" src="lib/administrator/AdministratorDB/Schema/Result/HAProxy1.pm" />
+  <nas dest="scripts/database/mysql/schemas/components/haproxy1.sql" src="scripts/database/mysql/schemas/components/haproxy1.sql" />
+  <nas dest="lib/administrator/AdministratorDB/Component/HAProxy1Instance.pm" src="lib/administrator/AdministratorDB/Component/HAProxy1Instance.pm" />
+  <nas dest="ui/Frontend/views/components/haproxy1.tt" src="ui/Frontend/views/components/haproxy1.tt" />
+</info>

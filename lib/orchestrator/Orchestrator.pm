@@ -47,13 +47,18 @@ package Orchestrator;
 
 use strict;
 use warnings;
-use Monitor::Retriever;
+#use Monitor::Retriever;
 use XML::Simple;
 use General;
 use Administrator;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
+use AggregateRule;
+use NodemetricRule;
+use NodemetricCondition;
+use NodemetricCombination;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("orchestrator");
@@ -78,30 +83,518 @@ sub new {
 
     # Load conf
     my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
-    $self->{_time_step} = $conf->{time_step};
-    $self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
-    $self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
-    
-    $self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/orchestrator';
-    $self->{_graph_dir} = $conf->{graph_dir} || '/tmp/orchestrator';
-    
-    # Create orchestrator dirs if needed
-    for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
-        my @dir_path = split '/', $dir_path;
-        my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
-        while (scalar @dir_path) {
-            $dir .= (shift @dir_path) . "/";
-            mkdir $dir;
-        }
-    }
-    
-    # Get Administrator
+   # Get Administrator
     my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
     Administrator::authenticate( login => $login, password => $password );
     $self->{_admin} = Administrator->new();
-    $self->{_monitor} = Monitor::Retriever->new( );
+    #$self->{_monitor} = Monitor::Retriever->new( );
     
     return $self;
+}
+
+
+=head2 manage_aggregate
+    
+    Class : Public
+    
+    Desc :     New manager for aggregates
+    
+=cut
+
+sub manage_aggregates {
+    my $self = shift;
+    
+    print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
+    eval{
+        # FOR EACH EXT CLUSTERS
+        my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
+        
+       
+        CLUSTER:
+        for my $externalCluster (@externalClusters){
+            my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
+            eval{   
+                print "<CM $cluster_id>\n";
+                $self->clustermetricManagement(externalCluster => $externalCluster);
+                print "</CM $cluster_id>\n";
+                1;
+            }or do {
+                print "Error in clustermetricManagement of cluster $cluster_id : $@\n";
+                $log->error($@);
+            };
+            
+            eval{
+                print "<CN $cluster_id>\n";
+                $self->nodemetricManagement(externalCluster => $externalCluster);
+                print "</CN $cluster_id>\n";
+                1;
+            }or do{
+                print "Error in nodemetricManagement of cluster $cluster_id  $@\n";
+                $log->error($@);
+            };
+            
+            my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id, extcluster => $externalCluster);
+        }
+    1;
+    }or do {
+        print "Skip all orchestration service due to error $@\n";
+        $log->error($@);
+    }
+}
+
+
+sub evalExtCluster{
+    my %args = @_;
+    
+    my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $args{extcluster_id});
+    my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster => $args{extcluster}, extcluster_id => $args{extcluster_id});
+    
+    my $cluster_eval = {%$cr_eval,%$nr_eval};
+    
+    #print Dumper $cluster_eval;
+    
+    if((scalar $cluster_eval->{nm_rule_nodes}) == 0) { # no nodes
+         $args{extcluster}->setAttr(
+            name => 'externalcluster_state',
+            value => 'down',
+        );
+    }
+    elsif ($cluster_eval->{nm_rule_enabled} == 0 && $cluster_eval->{cm_rule_enabled} == 0) { # no rules 
+         $args{extcluster}->setAttr(
+            name => 'externalcluster_state',
+            value => 'up',
+        );
+    }
+#    elsif ($cluster_eval->{nm_rule_enabled} == 0) { # cm_rule_enabled > 0 
+#        if($cluster_eval->{cm_rule_undef} == 0 && $cluster_eval->{cm_rule_nok} == 0){
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'up',
+#            );
+#        }elsif($cluster_eval->{cm_rule_nok} > 0){
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'warning',
+#            );
+#        }else{
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'down',
+#            );
+#        }
+#    }
+#    elsif ($cluster_eval->{cm_rule_enabled} == 0) { # nm_rule_enabled > 0
+#        if($cluster_eval->{nm_rule_nodes_nok} == 0 && $cluster_eval->{nm_rule_nodes_down} == 0){
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'up',
+#            );
+#        }
+#        elsif($cluster_eval->{nm_rule_nodes_nok} > 0) {
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'warning',
+#            );
+#        }else{
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'down',
+#            );
+#        }
+#    }
+    else { # nm_rule_enabled > 0 AND cm_rule_enabled > 0 
+        if($cluster_eval->{nm_rule_nodes_nok} == 0 && $cluster_eval->{nm_rule_nodes_down} == 0
+        && $cluster_eval->{cm_rule_undef} == 0 && $cluster_eval->{cm_rule_nok} == 0)
+        {
+            $args{extcluster}->setAttr(
+                name => 'externalcluster_state',
+                value => 'up',
+            );
+        }elsif(
+            $cluster_eval->{cm_rule_undef} == $cluster_eval->{cm_rule_enabled} &&
+            $cluster_eval->{nm_rule_nodes_down} == (scalar $cluster_eval->{nm_rule_nodes}) 
+        ){
+            $args{extcluster}->setAttr(
+                name => 'externalcluster_state',
+                value => 'down',
+            );
+        } else {
+            $args{extcluster}->setAttr(
+                name => 'externalcluster_state',
+                value => 'warning',
+            );
+        }
+    }
+
+#
+#    ){
+#    }
+#    if($cluster_eval->{} + $cluster_eval->{}  >0){
+#         $externalCluster->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'warning',
+#            );
+#    }else{
+#        $externalCluster->setAttr(
+#            name => 'externalcluster_state',
+#            value => 'up',
+#        );
+#    }
+    $args{extcluster}->save();
+    return $cluster_eval;
+}
+
+sub evalExtClusterNodeRuleState {
+    my %args = @_;
+    my $extcluster     = $args{extcluster};
+    my $extcluster_id  = $args{extcluster_id};
+    
+    my $externalClusterState = {};
+    
+    my $nodes = $extcluster->getNodes();
+    
+    $externalClusterState->{nm_rule_nodes}   = scalar (@$nodes);    
+    $externalClusterState->{nm_rule_enabled} = my $num_node_rule_total = scalar NodemetricRule->searchLight(
+                                    hash=>{
+                                        'nodemetric_rule_service_provider_id' => $extcluster_id,
+                                        'nodemetric_rule_state' => 'enabled',
+                                    }
+                                 );
+    
+    $externalClusterState->{nm_rule_nodes_ok}    = 0;
+    $externalClusterState->{nm_rule_nodes_nok}   = 0;
+    $externalClusterState->{nm_rule_nodes_down}  = 0;
+    $externalClusterState->{nm_rule_nok}         = 0;
+    $externalClusterState->{nm_rule_ok}          = 0;
+    $externalClusterState->{nm_rule_undef}       = 0;
+    
+
+    
+    foreach my $node (@$nodes) {
+        $externalClusterState->{nm_rule_nok}   += $node->{num_verified_rules};
+        $externalClusterState->{nm_rule_undef} += $node->{num_undef_rules};
+
+        if($externalClusterState->{nm_rule_enabled} > 0){ # TEST IF THERE ARE ENABLED RULES 
+            if($node->{num_undef_rules} == $externalClusterState->{nm_rule_enabled}){ # TEST IF THERE ARE DATA
+                $node->{state} = 'down';
+                $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'down');
+                $externalClusterState->{nm_rule_nodes_down}++;
+            } else {
+                if($node->{num_verified_rules} > 0 || $node->{num_undef_rules} > 0){
+                    $externalClusterState->{nm_rule_nodes_nok}++;
+                    $node->{state} = 'warning';
+                    $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'warning');
+                }else{
+                    $externalClusterState->{nm_rule_nodes_ok}++;
+                    $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'up');
+                    $node->{state} = 'up';
+                }
+            }
+        }else{ #NO RULES ENABLED, NODE OK!
+            $node->{state} = 'up';
+            $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'up');
+        } 
+        
+    }
+    $externalClusterState->{nm_rule_nodes} = $nodes;
+    return $externalClusterState;
+}
+
+
+sub evalExtClusterClusterRuleState {
+    my %args = @_;
+    my $extcluster_id = $args{extcluster_id};
+    my $externalClusterState = {};
+    
+    
+    my @rules = AggregateRule->search(
+        hash => {
+                    aggregate_rule_service_provider_id => $extcluster_id,
+                }
+        );
+        
+    my @enabled_rules = AggregateRule->search(
+        hash => {
+                    aggregate_rule_service_provider_id => $extcluster_id,
+                    aggregate_rule_state               => 'enabled',
+                }
+        );
+        
+    my @verif_rules = AggregateRule->search(
+        hash => {
+                    aggregate_rule_service_provider_id => $extcluster_id,
+                    aggregate_rule_state               => 'enabled',
+                    aggregate_rule_last_eval           => 1,
+                }
+        );
+
+    my @ok_rules = AggregateRule->search(
+        hash => {
+                    aggregate_rule_service_provider_id => $extcluster_id,
+                    aggregate_rule_state               => 'enabled',
+                    aggregate_rule_last_eval           => 0,
+                }
+        );
+
+    my @undef_rules = AggregateRule->search(
+        hash => {
+                    aggregate_rule_service_provider_id => $extcluster_id,
+                    aggregate_rule_state               => 'enabled',
+                    aggregate_rule_last_eval           => undef,
+                }
+        );
+    $externalClusterState->{cm_rule_total}   = scalar @rules;
+    $externalClusterState->{cm_rule_enabled} = scalar @enabled_rules;
+    $externalClusterState->{cm_rule_nok}     = scalar @verif_rules;
+    $externalClusterState->{cm_rule_ok}      = scalar @ok_rules;
+    $externalClusterState->{cm_rule_undef}   = scalar @undef_rules;
+
+    return $externalClusterState;
+}
+sub nodemetricManagement{
+    my ($self, %args) = @_;
+    my $externalCluster = $args{externalCluster};
+    
+    
+    # Merge all needed indicators to consctruc only one SCOM request
+    
+    my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
+    
+    eval{
+        $externalCluster->getConnector(category => 'MonitoringService');
+    };
+    if($@){
+        print '*** Orchestrator skip cluster '.$cluster_id.' for NM Management because it has no MonitoringService Connector ***'."\n";
+    }else{
+    
+        print 'Cluster NM management'.$cluster_id."\n";
+        
+        my @rules = NodemetricRule->search(
+                hash => {
+                    nodemetric_rule_service_provider_id => $cluster_id,
+                    nodemetric_rule_state               => 'enabled',
+                }
+        );
+        
+        my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules );
+        
+        
+        # Call the retriever to get SCOM data
+        my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+        $log->info(Dumper $monitored_values);
+        
+        # Eval the rules
+        my $rep = $self->_evalAllRules(
+            'monitored_values'  => $monitored_values,
+            'rules'             => \@rules,
+            'cluster'           => $externalCluster,
+        );
+        
+#            if(0 < $rep){
+#                
+#                $externalCluster->setAttr(
+#                    name => 'externalcluster_state',
+#                    value => 'warning',
+#                );
+#            }else{
+#                $externalCluster->setAttr(
+#                    name => 'externalcluster_state',
+#                    value => 'up',
+#                );
+#            }
+#            $externalCluster->save();
+    }
+}
+
+sub _evalAllRules {
+   my $self = shift;
+   my %args = @_;
+   
+   my $monitored_values = $args{monitored_values};
+   my $rules            = $args{rules};
+   my $cluster          = $args{cluster};
+   my $rep = 0;
+   
+   RULE:   
+   foreach my $rule (@$rules){
+       eval{
+           $rep += $self->_evalRule(
+               'rule'             =>$rule,
+               'monitored_values' => $monitored_values,
+               'cluster'          => $cluster,
+           );
+           1;
+       } or do {
+            print 'Error in evaluation of rule'.($rule->getAttr(name=>'nodemetric_rule_id')).' of cluster '.($rule->getAttr(name=>'nodemetric_rule_service_provider_id')).": $@\n";
+            $log->error($@);
+       }
+   }
+   return $rep;
+}
+
+sub _evalRule {
+    my $self = shift;
+    my %args = @_;
+
+    my $monitored_values = $args{monitored_values};
+    my $rule             = $args{rule};
+    my $cluster          = $args{cluster};
+
+    my $cluster_id = $cluster->getAttr(name => 'externalcluster_id');
+    my $rep = 0;
+    #Eval the rule for each node
+    NODE:
+    while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
+        # Warning, not all the monitored values are required but we transmit 
+        # all of them
+        
+#        if (0 ==  keys %$monitored_values_for_one_node) {
+#            $cluster->updateNodeState( hostname => $host_name, state => 'down' );
+#            next NODE;
+#        }
+#        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
+        my $node_state = $cluster->getNodeState(hostname => $host_name);
+        my $nodeEval;
+        if($node_state eq 'disabled'){
+            print "Node $host_name has just been disabled, rule not evaluated\n"; 
+            next NODE;
+        } else {
+            $nodeEval = $rule->evalOnOneNode(
+                monitored_values_for_one_node => $monitored_values_for_one_node
+            );
+            
+        }
+        
+        if(defined $nodeEval){
+            #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name;
+            
+            if($nodeEval eq 0){
+                #print ' WARNING'."\n";
+                $rule->deleteVerifiedRule(
+                    hostname   => $host_name,
+                    cluster_id => $cluster_id,
+                );
+            }else {
+                #print ' OK'."\n";
+                $rep++;
+                $rule->setVerifiedRule(
+                    hostname => $host_name,
+                    cluster_id => $cluster_id,
+                    state      => 'verified'
+                );
+                $rule->triggerAction(
+                    node_hostname => $host_name
+                );
+                
+            }
+        }else{
+            #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
+            $rule->setVerifiedRule(
+                hostname => $host_name,
+                cluster_id => $cluster_id,
+                state      => 'undef'
+            );
+        }
+    }
+    return $rep;
+}
+# Construct hash table for the service provider.
+# Inspired by eponyme aggregator method 
+
+sub _contructRetrieverOutput {
+    my $self = shift;
+    my %args = @_;
+    
+    #my $cluster_id                 = $args{cluster_id};
+    my $rules = $args{rules};
+    my $indicators_name = undef;
+    
+    #Get all the rules relative to the cluster_id 
+
+
+    
+    for my $rule (@$rules){
+        my @conditions = $rule->getDependantConditionIds();
+        #Check each conditions (i.e. each Combination
+        for my $condition_id (@conditions) {
+            
+            my $condition = NodemetricCondition->get('id' => $condition_id);
+             
+            # Get the related combination id (in order to parse its formula)            
+            my $combination_id = $condition->getAttr(name => 'nodemetric_condition_combination_id');
+            
+            my $combination = NodemetricCombination->get('id' => $combination_id);
+            # get the indicator ids used in combination formula
+            my @indicator_ids = $combination->getDependantIndicatorIds();
+            
+            for my $indicator_id (@indicator_ids){
+                my $indicator = Indicator->get('id' => $indicator_id);
+                $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
+            }
+        }
+    }
+    my @indicators_array = keys(%$indicators_name);
+    
+    my $rep = {
+        indicators => \@indicators_array,
+        time_span  => 1200,
+    };
+    #print Dumper $rep;
+    return $rep;
+};
+
+sub clustermetricManagement{
+    my ($self, %args) = @_;
+    my $externalCluster = $args{externalCluster};
+    
+    my $cluster_evaluation = {};
+    my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
+
+    #FILTER CLUSTERS WITH MONITORING PROVIDER
+    eval{
+        $externalCluster->getConnector(category => 'MonitoringService');
+    };
+    if($@){
+        print '*** Orchestrator skip cluster '.$cluster_id.' for CM Management because it has no MonitoringService Connector ***'."\n";
+        $cluster_evaluation->{state} = 'no_data';
+    }else{
+        #GET RULES RELATIVE TO A CLUSTER
+        my @rules = AggregateRule->search(hash=>{
+            aggregate_rule_service_provider_id => $externalCluster->getAttr(name => 'externalcluster_id'),
+            aggregate_rule_state               => 'enabled'
+        });
+        for my $aggregate_rule (@rules){
+            
+            print '<CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').">\n"; 
+            #print $aggregate_rule->toString().' ';
+            
+            $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
+            
+            my $result = $aggregate_rule->eval();
+            
+             # LOOP USED TO TRIGGER ACTIONS
+             
+            if(defined $result){
+                if($result == 1){
+                    $aggregate_rule->triggerAction(
+                        trigger_rule_id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+                    );
+                }
+            }
+#                   print 'Rule false => take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
+#                   $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
+#                   $aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
+#                }else{
+#                    print "Rule false => no action \n";
+#                    #$log->info("Rule false, no action");
+#                }                        
+#            } else{
+#                print "Rule undef\n";
+#            }
+        } # for my $aggregate_rule 
+    } #end eval
+
+#return $clusters_state_cm;
 }
 
 =head2 manage
@@ -131,7 +624,7 @@ sub manage {
 
         eval {
             #TODO keep cluster id from the beginning (get by name is not really good)
-            my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
+            my $cluster_id = Entity::ServiceProvider::Inside::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
         
             my $rules_manager = $self->{_admin}->{manager}{rules};
             
@@ -456,8 +949,8 @@ sub _isNodeMigrating {
     my $cluster_name = $args{cluster_name};
     
     my $cluster = $self->getClusterByName( cluster_name => $cluster_name );
-    my $motherboards = $cluster->getMotherboards();
-    for my $mb (values %$motherboards) {
+    my $hosts = $cluster->getHosts();
+    for my $mb (values %$hosts) {
         if (not $mb->getNodeState() eq "in") {
             return 1;
         }
@@ -492,8 +985,8 @@ sub _isOpInQueue {
     my $adm = $self->{_admin};
 
     #TODO keep cluster id from the beginning (get by name is not really good)
-    my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
-        
+    my $cluster_id = Entity::ServiceProvider::Inside::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
+    
     
     foreach my $op ( @{ $adm->getOperations() } ) {
         if ($op->{'TYPE'} eq $type) {
@@ -543,7 +1036,7 @@ sub _canAddNode {
 #    }
 #    
 #    # Check if there is a corresponding add node operation in operation queue #
-#    if ( $self->_isOpInQueue( cluster => $cluster_name, type => 'AddMotherboardInCluster' ) ) {
+#    if ( $self->_isOpInQueue( cluster => $cluster_name, type => 'AddHostInCluster' ) ) {
 #        $log->info(" => An operation to add node in cluster '$cluster_name' is already in queue");
 #        return 0;
 #    }
@@ -601,7 +1094,7 @@ sub _canRemoveNode {
     }
     
 #    # Check if there is a corresponding remove node operation in operation queue #
-#    if (     $self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) || 
+#    if (     $self->_isOpInQueue( cluster => $cluster, type => 'RemoveHostFromCluster' ) || 
 #            $self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
 #    {
 #        $log->info(" => An operation to remove node from cluster '$cluster' is already in queue");
@@ -639,7 +1132,7 @@ sub getClusterByName {
     my $self = shift;
     my %args = @_;
 
-       my @cluster = Entity::Cluster->getClusters( hash => { cluster_name => $args{cluster_name} } );
+       my @cluster = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { cluster_name => $args{cluster_name} } );
        die "More than one cluster with the name '$args{cluster_name}'" if ( 1 < @cluster);
        die "Cluster with name '$args{cluster_name}' no longer exists" if ( 0 == @cluster);
        return pop @cluster;
@@ -651,18 +1144,18 @@ sub addNode {
     
     $log->info("====> add node in $args{cluster_name}");
     
-#    #my @free_motherboards = Entity::Motherboard->getMotherboards( hash => { active => 1, motherboard_state => 'down'} );
-#    my @free_motherboards = Entity::Motherboard->getFreeMotherboards();
+#    #my @free_hosts = Entity::Host->getHosts( hash => { active => 1, host_state => 'down'} );
+#    my @free_hosts = Entity::Host->getFreeHosts();
 #    
-#    die "No free motherboard to add in cluster '$args{cluster_name}'" if ( scalar @free_motherboards == 0 );
+#    die "No free host to add in cluster '$args{cluster_name}'" if ( scalar @free_hosts == 0 );
 #    
 #    #TODO  Select the best node ?
-#    my $motherboard = pop @free_motherboards;
+#    my $host = pop @free_hosts;
     
     my $cluster = $self->getClusterByName( cluster_name => $args{cluster_name} );
     
     ############################################
-    # Enqueue the add motherboard operation
+    # Enqueue the add host operation
     ############################################
     $cluster->addNode( );
 
@@ -688,16 +1181,16 @@ sub removeNode {
     ($node_to_remove = shift @up_nodes) if ($node_to_remove->{ip} eq $master_node_ip);
     die "No up node to remove in cluster '$cluster_name'." if ( not defined $node_to_remove );
     
-    # TODO keep the motherboard ID and get it with this id! (ip can be not unique)
-    my @mb_res = Entity::Motherboard->getMotherboardFromIP( ipv4_internal_ip => $node_to_remove->{ip} );
-    die "Several motherboards with ip '$node_to_remove->{ip}', can not determine the wanted one" if (1 < @mb_res); # this die must desappear when we'll get mb by id
+    # TODO keep the host ID and get it with this id! (ip can be not unique)
+    my @mb_res = Entity::Host->getHostFromIP( ipv4_internal_ip => $node_to_remove->{ip} );
+    die "Several hosts with ip '$node_to_remove->{ip}', can not determine the wanted one" if (1 < @mb_res); # this die must desappear when we'll get mb by id
     my $mb_to_remove = shift @mb_res;
-    die "motherboard '$node_to_remove->{ip}' no more in DB" if (not defined $mb_to_remove);
+    die "host '$node_to_remove->{ip}' no more in DB" if (not defined $mb_to_remove);
     
     ############################################
-    # Enqueue the remove motherboard operation
+    # Enqueue the remove host operation
     ############################################
-    $cluster->removeNode( motherboard_id => $mb_to_remove->getAttr(name => 'motherboard_id') );
+    $cluster->removeNode( host_id => $mb_to_remove->getAttr(name => 'host_id') );
 }
 
 =head2 _storeTime
@@ -956,14 +1449,17 @@ sub graph {
 sub run {
     my $self = shift;
     my $running = shift;
-    
+    # Load conf
+    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    $self->{_time_step} = $conf->{time_step};
+        
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
     
     while ( $$running ) {
 
         my $start_time = time();
 
-        $self->manage();
+        $self->manage_aggregates();
 
         my $update_duration = time() - $start_time;
         $log->info( "Manage duration : $update_duration seconds" );
@@ -976,6 +1472,41 @@ sub run {
     }
     
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
+}
+
+sub new_old {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = {};
+    bless $self, $class;
+
+    # Load conf
+    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    $self->{_time_step} = $conf->{time_step};
+    $self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
+    $self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
+    
+    $self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/orchestrator';
+    $self->{_graph_dir} = $conf->{graph_dir} || '/tmp/orchestrator';
+    
+    # Create orchestrator dirs if needed
+    for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
+        my @dir_path = split '/', $dir_path;
+        my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
+        while (scalar @dir_path) {
+            $dir .= (shift @dir_path) . "/";
+            mkdir $dir;
+        }
+    }
+    
+    # Get Administrator
+    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
+    Administrator::authenticate( login => $login, password => $password );
+    $self->{_admin} = Administrator->new();
+    $self->{_monitor} = Monitor::Retriever->new( );
+    
+    return $self;
 }
 
 1;

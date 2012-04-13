@@ -1,10 +1,10 @@
 <info tables_file="scripts/database/mysql/schemas/components/php5.sql" templates_dir="templates/components/php5">
   <description name="Php" category="Tool" version="5" />
-  <executor dest="lib/executor/EEntity/EComponent/ETool/EPhp5.pm" src="lib/executor/EEntity/EComponent/ETool/EPhp5.pm" />
+  <executor dest="lib/executor/EEntity/EComponent/EPhp5.pm" src="lib/executor/EEntity/EComponent/EPhp5.pm" />
   <meta packager_version="0.1" />
-  <nas dest="lib/administrator/Entity/Component/Tool/Php5.pm" src="lib/administrator/Entity/Component/Tool/Php5.pm" />
+  <nas dest="lib/administrator/Entity/Component/Php5.pm" src="lib/administrator/Entity/Component/Php5.pm" />
   <nas dest="lib/administrator/AdministratorDB/Schema/Result/Php5.pm" src="lib/administrator/AdministratorDB/Schema/Result/Php5.pm" />
   <nas dest="scripts/database/mysql/schemas/components/php5.sql" src="scripts/database/mysql/schemas/components/php5.sql" />
   <nas dest="lib/administrator/AdministratorDB/Component/Php5Instance.pm" src="lib/administrator/AdministratorDB/Component/Php5Instance.pm" />
-  <nas dest="ui/web/KanopyaUI/templates/Components/form_php5.tmpl" src="ui/web/KanopyaUI/templates/Components/form_php5.tmpl" />
+  <nas dest="ui/Frontend/views/components/php5.tt" src="ui/Frontend/views/components/php5.tt" />
 </info>

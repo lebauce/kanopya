@@ -1,0 +1,280 @@
+<% js_head.push('details.js') %>
+
+<input type="hidden" id="cluster_id" value="<%cluster_id%>"/>
+
+<h2>Cluster : <% cluster_name %></h2>
+<hr/>
+<span id="state" class="title simpleexpand">State</span>
+<table id="Xstate" class="detailspart">
+<tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
+
+<td>
+    <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/nodemetrics/rules">
+        Node rules state
+    </a>
+</td>
+
+<td>
+    <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/clustermetrics/combinations/conditions/rules">
+        Cluster rules state
+    </a>
+</td>
+
+<td class="actions" rowspan="2">
+<% IF link_delete %>
+    <a class="imgRemove  action" href="/architectures/extclusters/<% cluster_id %>/remove">delete</a><br />
+    <span class="desc">Delete this cluster.</span><br /><br />
+<% END %>
+</td></tr><tr>
+<% IF active %>
+	<td>
+	<% SWITCH cluster_state %>
+        <% CASE 'up' %>
+        <span class="state imgUp">Ok</span>
+        <% CASE 'down' %>
+        <span class="state imgDown">Down</span>
+        <% CASE 'starting' %>
+        <span class="state imgDown">Starting...</span>
+        <% CASE 'stopping' %>
+        <span class="state imgDown">Stopping...</span>
+        <% CASE 'broken' %>
+        <span class="state imgWarning">Broken</span>
+        <% CASE 'warning' %>
+        <span class="state imgBroken">Warning</span>
+	<% END %>
+	</td>
+<% ELSE %>
+	<td></td>
+<% END %>
+<td>
+    <table>
+        <% IF nodes_list.size == 0  && nm_rule_enabled == 0%>
+            <tr><td><span class="state imgDown"></td><td>No node monitored</span></td></tr>
+            <tr><td></td><td>no rule enabled</td>
+        <% ELSIF nodes_list.size == 0 %> 
+            <tr><td><span class="state imgDown"></td><td>No node monitored</span></td></tr>
+            <tr><td></td><td><%nm_rule_enabled%> rule(s) enabled</td>
+        <% ELSIF nm_rule_enabled == 0 %>
+            <tr><td><span class="state imgUp"></td><td><%nodes_list.size%> node(s) monitored</td></tr>
+            <tr><td></td><td>No node rule enabled</span></td></tr>
+        <% ELSIF num_noderule_verif == 0 && nm_rule_undef == 0%>
+            <tr><td><span class="state imgUp"></td><td><%nodes_list.size - num_nodes_disabled%> node(s) monitored (<%num_nodes_disabled%> node(s) disabled)</span></td></tr>
+            <tr><td></td><td>All the enabled rules are ok</span></td></tr>
+        <%ELSE%>
+            <% IF nm_rule_undef == 0 %>
+                <tr><td><span class="state imgBroken"></td><td><%num_noderule_verif%> rule(s) not ok</span></td></tr>
+            <% ELSIF num_noderule_verif == 0 %>
+                <tr><td><span class="state imgBroken"></td><td><%nm_rule_undef%> rule(s) unknown</span></td></tr>
+            <% ELSE %>
+                <tr><td><span class="state imgBroken"></td><td><%num_noderule_verif%> rule(s) not ok</span></td></tr>            
+                <tr><td>                              </td><td><%nm_rule_undef%> rule(s) unknown</span></td></tr>
+            <% END %>
+        <%END%>
+    </table>
+    
+</td>
+
+<td>
+    <table>
+    <tr>
+    <% IF nodes_list.size == 0 && cm_rule_enabled ==0 %>
+        <td><span class="state imgDown"></td><td>No node monitored</span><br/></td>
+        </tr><tr>
+        <td></td><td>No rule enabled</td>
+    <% ELSIF nodes_list.size == 0 %>
+        <td><span class="state imgDown"></td><td>No node monitored</span><br/></td>
+        </tr><tr>
+        <td></td><td><%num_cluster_rule_total%> rule(s) enabled</td>
+    <% ELSIF cm_rule_enabled == 0 %>
+        <td><span class="state imgUp"></td><td> <% nodes_list.size %> node(s) monitored</span><br/></td>
+        </tr><tr>
+        <td></td><td>no rule enabled</td>
+    <% ELSIF num_clusterrule_verif == 0 && cm_rule_undef == 0%>
+        <tr><td><span class="state imgUp"></td><td><%nodes_list.size%> node(s) monitored</span></td></tr>
+        <tr><td></td><td> <%cm_rule_ok %> enabled rules ok</span></td></tr>
+    <% ELSE %>
+        <% IF cm_rule_undef == 0 %>
+            <td><span class="state imgBroken"><%num_clusterrule_verif%>/<%cm_rule_enabled%> rule(s) not ok</span></td>
+        <% ELSIF num_clusterrule_verif == 0 %>
+            <td><span class="state imgBroken"><%cm_rule_undef%>/<%cm_rule_enabled%> rule(s) unknown</span></td>
+        <% ELSE %>
+                <td><span class="state imgBroken"></td><td><%num_clusterrule_verif%>/<%cm_rule_enabled%> rule(s) not ok</span></td></tr>
+            <tr><td>                              </td><td><%cm_rule_undef%>/<%cm_rule_enabled%> rule(s) unknown</span></td>
+        <%END%> 
+    <%END%>
+    </tr>
+    </table>
+</td>
+
+</tr>
+</table>
+
+
+
+<hr/>
+<span id="nodes" class="title simpleexpand">Nodes</span>
+<table id="Xnodes" class="detailspart list">
+
+
+	<tr><td colspan="4">&nbsp;</td>
+	<td class="actions" rowspan="<% nbnodesup %>">
+	<% IF link_updatenodes %>
+		<a class="clickable action" onclick="alert('To update node list:\n - Add a DirectoryService connector to the cluster\n - Provide required configuration\n - click on \'Get computers\' button')">update</a><br />
+		<span class="desc">Use a DirectoryService connector to retrieve nodes</span><br /><br />
+	<% END %>
+	
+    </td></tr>
+<% IF nodes_list.size > 0 %>
+    <td></td>
+    <td></td>
+    
+    <td>
+        <% IF node_actions_list.size > 0 %>
+            <select id="action_id">
+                <% FOREACH action IN node_actions_list %>
+                    <option value="<% action.id %>"><% action.name %></option>
+	        <%END%>
+	    </select>
+        <% END %>
+    </td>
+
+    <% FOREACH node IN nodes_list %>
+        <tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
+        <td class="label2">
+                <% SWITCH node.state %>
+                <% CASE 'up' %>
+                    <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
+                    <span class="state imgUp">
+                        <%IF nm_rule_enabled == 0%> 
+                            no rule enabled
+                        <%ELSE%>
+                            ok
+                        <% END %>
+                    </span></a>
+                    <td class="action">
+                        <% IF node_actions_list.size > 0 %>
+                            <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
+                        <%END%>
+                    </td>
+                <% CASE 'warning' %>
+                    <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
+                    <span class="state imgBroken">
+                        <%IF node.num_verified_rules > 0%>
+                           <%node.num_verified_rules%> rule(s) not ok
+                        <%END%>
+                        <%IF node.num_verified_rules > 0 &&  node.num_undef_rules > 0 %> ; <%END%>
+                        <%IF node.num_undef_rules > 0%>
+                            <%node.num_undef_rules%> rule(s) unkown
+                        <%END%>
+                    </span></a>
+                    <td class="action">
+                    <% IF node_actions_list.size > 0 %>
+                        <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
+                    <%END%>
+                    </td>
+                <% CASE 'down' %>
+                    <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
+                    <span class="state imgDown">
+                        <%node.num_undef_rules%>/<%nm_rule_enabled%> rule(s) unkown
+                    </span></a>
+                    <td class="action">
+                    <% IF node_actions_list.size > 0 %>
+                        <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
+                    <% END %>
+                    </td>
+                <% CASE 'disabled' %>
+                    disabled
+                <td class="action">
+                
+                 <a href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/enable"> Enable node </a>
+                </td>
+                <% END %>
+            
+        </td>
+
+        
+        <% IF node.link_remove %>
+        <td class="action">
+        <a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.host_id %>/remove">remove</a>
+        </td>
+        <% END %>
+
+
+            
+            
+        </tr>
+    <% END %>
+    
+<% ELSE %>
+	<tr><td>This cluster has no nodes</td></tr>
+<% END %>
+</table>
+
+
+
+<hr/>
+<span id="actions" class="title simpleexpand">Actions</span>
+<table id="Xnodes" class="detailspart list">
+<% IF actions_list %>
+    <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="actions">
+            <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add a node action</a><br />
+            <span class="desc">Add a new action to this cluster.</span><br /><br />
+			<a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/clusteractions/add">add a cluster action</a><br />
+            <span class="desc">Add a new cluster action to this cluster.</span><br /><br />
+            <a class="imgAdding action" href="/architectures/extclusters/<% cluster_id %>/actions/list">Currently triggered actions</a><br />
+            <span class="desc">List all currently triggered actions from this cluster </span><br /><br />
+        </td>
+    </tr>
+    <% FOREACH action IN actions_list %>
+        <tr>
+            <td class="label2"><span class="bold"><% action.name %><% IF action.type == "noderule" %> </td><td class="label2 bold">(Node action)<% END %><% IF action.type == "clusterrule" %> </td><td class="label2 bold">(Cluster action)<% END %></span></td>
+            <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>			
+			<td></td>
+        </tr>
+    <% END %>
+<%END%>
+</table>
+
+<hr/>
+<span id="connectors" class="title simpleexpand">Connectors</span>
+<table id="Xconnectors" class="detailspart list">
+<% IF connectors_list %>
+    <tr><td colspan="2">&nbsp;</td>
+    <td class="actions" rowspan="<% nbconnectors %>">
+    <% IF link_addconnector %>
+        <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/connectors/add">add a connector</a><br />
+        <span class="desc">Add a new connector to this cluster.</span><br /><br />
+    <% END %>
+    </td></tr>
+    <% FOREACH conn IN connectors_list %>
+        <tr><td class="label2"><span class="bold"><% conn.connector_name %></span> - <% conn.connector_category %></td>
+        <% IF can_configure %>
+        <td class="action"><% IF conn.link_configureconnector %><a href="/systems/connectors/<% conn.connector_id %>/configure">configure</a> <% END %>
+        <% END %>
+        <% IF conn.link_remove %><a class="imgRemove" href="/architectures/extclusters/<% cluster_id %>/connectors/<% conn.connector_id %>/remove">remove</a><% END %>
+    </td></tr>
+    <% END %>
+<% END %>
+</table>
+
+
+
+<hr/>
+<span id="monitor" class="title simpleexpand">Monitoring</span>
+<table id="Xmonitor" class="detailspart list">
+<tr>
+<td colspan="2">
+<a class="imgMonitor" href="/architectures/extclusters/<% cluster_id %>/monitoring">activity</a>
+</td>
+<td class="actions">
+<a class="action imgSettings" href="/architectures/extclusters/<% cluster_id %>/clustermetrics/combinations/conditions/rules">Cluster rules settings</a><br/>
+<a class="action imgSettings" href="/architectures/extclusters/<% cluster_id %>/nodemetrics/rules">Node rules settings</a><br/>
+<a class="action imgSettings" href="/architectures/indicators">Add indicator</a><br/>
+<p class="italic">Manage cluster metrics and node metrics rules.</p>
+</td></tr>
+</table>
+

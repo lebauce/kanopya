@@ -11,15 +11,16 @@ my %PATHS = (
 	ecomponent 	=> "lib/executor/EEntity/EComponent/",
 	table 		=> "scripts/database/mysql/schemas/components/",
 	form 		=> "ui/web/KanopyaUI/templates/Components/",
+	relationship => "lib/administrator/AdministratorDB/Component/"
 );
 
 createComp();
 
 sub createComp {
 	my %comp_info = getComponentInfo();
-	checkValidCategory( category => $comp_info{category} );
+	#checkValidCategory( category => $comp_info{category} );
 	genFiles( name => $comp_info{name}, category => $comp_info{category}, version => $comp_info{version} );
-	#showTodo();
+	showTodo();
 }
 
 sub getComponentInfo {
@@ -32,17 +33,6 @@ sub getComponentInfo {
 		$comp_info{$info} = $input;		
 	}
 	return %comp_info;
-}
-
-sub checkValidCategory {
-	my %args = @_;
-	
-	for my $dir ( 	$ROOT_PATH . $PATHS{component} . $args{category}, 
-					$ROOT_PATH . $PATHS{ecomponent} . 'E' . $args{category} ) {					
-		if ( not -d $dir ) {
-	    	mkdir($dir);
-		}
-	}
 }
 
 sub genFiles {
@@ -58,13 +48,11 @@ sub genFiles {
 	);
 	
 	my %files = (
-	    "ComponentCategory.pm.tt"=> $ROOT_PATH . $PATHS{component} 	. "$comp_cat.pm",
-	    "Component.pm.tt" 		 => $ROOT_PATH . $PATHS{component} 	. "$comp_cat/$comp_name.pm",
-	    "EComponentCategory.pm.tt" => $ROOT_PATH . $PATHS{ecomponent} . "E$comp_cat.pm",
-	    "EComponent.pm.tt" 		 => $ROOT_PATH . $PATHS{ecomponent} . "E$comp_cat/E$comp_name.pm",
-	    "ComponentTable.sql.tt"  => $ROOT_PATH . $PATHS{table} 		. "$comp_name_lc.sql",
-	    "form_component.tmpl.tt" => $ROOT_PATH . $PATHS{form} 		. "form_$comp_name_lc.tmpl",
-		
+	    "Component.pm.tt" 		 => $ROOT_PATH . $PATHS{component} 	. "$comp_name.pm",                # DB management
+	    "EComponent.pm.tt" 		 => $ROOT_PATH . $PATHS{ecomponent} . "E$comp_name.pm",               # Execution
+	    "ComponentTable.sql.tt"  => $ROOT_PATH . $PATHS{table} 		. "$comp_name_lc.sql",            # DB tables def
+	    "form_component.tmpl.tt" => $ROOT_PATH . $PATHS{form} 		. "form_$comp_name_lc.tmpl",      # web ui
+		"ComponentInstance.pm.tt" => $ROOT_PATH . $PATHS{relationship} . "$comp_name" . "Instance.pm",# instance relationship
 	);
 	
 	my $config = {
@@ -88,6 +76,15 @@ sub genFiles {
 sub showTodo {
 	print "####################################\n";
 	print "1. Edit generated files\n";
-	print "2. Install comp in db and make schema\n";
-	print "3. Install component on a system image\n";
+	print "2. Create related tables in db: \n";
+	print "    > cd /opt/kanopya/scripts/database/mysql/sbin\n";
+	print "    > sh create_component_table.sh <...>\n";
+	print "3. Generate dbix schema for each related tables:\n";
+	print "    > perl MakeSchema.pl <table_name>\n";
+	print "x. add component in db table 'component'\n";
+	print "x. Test\n";
+	print "x. Doc\n";
+	print "x. create component definition xml\n";
+	#print "2. Install comp in db and make schema\n";
+	print "x. Install component on a system image\n";
 }

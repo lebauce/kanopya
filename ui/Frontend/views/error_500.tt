@@ -1,0 +1,7 @@
+<p><b>"Ooops, an error has occured"</b></p>
+
+<p>TITLE: <% title %><p>
+<p>EXCEPTION: <% exception %><p>
+<p>MESSAGE:</p>
+<div style="width:100%;text-align:center;"><textarea style="width:98%;height:80%;" id="log_container"><% message %></textarea></div>
+

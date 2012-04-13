@@ -38,8 +38,8 @@ use base "EOperation";
 
 use Kanopya::Exceptions;
 use EFactory;
-use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::ServiceProvider::Inside::Cluster;
+use Entity::Host;
 
 use strict;
 use warnings;
@@ -50,25 +50,6 @@ use Data::Dumper;
 my $log = get_logger("executor");
 my $errmsg;
 
-=head2 new
-
-    my $op = EEntity::EOperation::EStopNode->new();
-
-EOperation::EStopNode->new creates a new StopNode operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
 =head2 prepare
 
     $op->prepare();
@@ -76,7 +57,6 @@ sub new {
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
@@ -85,47 +65,50 @@ sub prepare {
 
     my $params = $self->_getOperation()->getParams();
 
-    # Get instance of Motherboard Entity
-    $log->info("Load Motherboard instance");
-    $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
+
+    # Get instance of Host Entity
+    $log->info("Load Host instance");
+    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     
     # Get instance of Cluster Entity
     $log->info("Load cluster instance");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     
     $self->{_objs}->{components} = $self->{_objs}->{cluster}->getComponents(category => "all");
     
     # Get context for executor
-    $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
-    $log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
+
+    $log->debug("Get econtext for executor with ref ". ref($self->{executor}->{econtext}));
     # Get node context
-    $self->{node_econtext} = EFactory::newEContext(ip_source => "127.0.0.1",
-                                                   ip_destination => $self->{_objs}->{motherboard}->getInternalIP()->{ipv4_internal_address});
-    $log->debug("Get econtext for motherboard with ref ". ref($self->{node_econtext}));
+    $self->{node_econtext} = EFactory::newEContext(ip_source      => $self->{executor}->{econtext}->getLocalIp,
+                                                   ip_destination => $self->{_objs}->{host}->getInternalIP()->{ipv4_internal_address});
+    $log->debug("Get econtext for host with ref ". ref($self->{node_econtext}));
 
 }
 
 sub execute {
     my $self = shift;
-    $log->debug("Before EOperation exec");
     $self->SUPER::execute();
-    $log->debug("After EOperation exec and before new Adm");
-    my $adm = Administrator->new();
-    
+
     my $components = $self->{_objs}->{components};
     $log->info('Processing cluster components configuration for this node');
     foreach my $i (keys %$components) {
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->stopNode(motherboard => $self->{_objs}->{motherboard}, 
-                        cluster => $self->{_objs}->{cluster} );
+        $tmp->stopNode(host    => $self->{_objs}->{host},
+                       cluster => $self->{_objs}->{cluster} );
     }
     # finaly we halt the node
-    my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
-    $emotherboard->halt(node_econtext =>$self->{node_econtext});
+    my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
+    $ehost->halt(node_econtext => $self->{node_econtext});
 
-    $self->{_objs}->{motherboard}->setNodeState(state=>"goingout");
-    $self->{_objs}->{motherboard}->save();
+    $self->{_objs}->{host}->setNodeState(state => "goingout");
+    $self->{_objs}->{host}->save();
 
 }
 
@@ -139,14 +122,3 @@ Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All right
 This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut
-
-
-
-
-
-
-
-
-
-
-

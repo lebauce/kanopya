@@ -1,0 +1,53 @@
+
+<% IF NOT cluster_id %>
+    <h2>New Cluster metric</h2>
+    <hr />
+    <form METHOD="POST" ACTION="/architectures/clustermetrics/new">
+<% ELSE %>
+    <h2>New Cluster metric for Cluster <%cluster_id%></h2>
+    <hr />
+    <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/clustermetrics/new">
+<% END %>
+
+
+    <table>
+        <tr><td>Function: </td><td><select name="function">
+        <option value="mean">Mean</option>
+        <option value="std">Standard deviation</option>
+        <option value="max">Maximum</option>
+        <option value="min">Minimum</option>
+        <option value="sum">Somme</option>
+        <option value="kurtosis">Peakedness (Kurtosis)</option>
+        <option value="skewness">Asymmetry (Skewness)</option>
+        <option value="dataOut">Data out of range</option>
+         </select></td></tr>
+        
+        <tr><td>
+        
+        Indicator id: </td><td>
+        
+        <select name="id2" >
+            <% FOREACH indicator IN indicators %>
+            <option value="<% indicator.id %>"><% indicator.label %>(<% indicator.id %>)</option>
+            <% END %>
+        </select>
+        
+        </td></tr>
+        
+        <% IF NOT cluster_id %>
+            <select name="cluster_id" >
+                <% FOREACH extcluster IN extclusters %>
+                <option value="<% extcluster.id %>"><% extcluster.name %>(<% extcluster.id %>)</option>
+                <% END %>
+            </select>
+        <% END %>
+    </table>
+    
+    <br/>
+    
+    <div class="left">
+        <input type="submit" value="Create metric"/>
+    </div>
+    Warning : creating a new clustermetric will automatically create the associated combination 
+    
+</form>

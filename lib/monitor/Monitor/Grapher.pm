@@ -19,7 +19,7 @@ use List::Util qw(sum);
 use XML::Simple;
 use DateTime::Format::Strptime;
 #use General;
-
+use Message;
 use Data::Dumper;
 
 use base "Monitor";
@@ -38,11 +38,13 @@ sub new {
     my $self = $class->SUPER::new( %args );
     
     #$self->{_graph_color} = { back => "#69B033" };
-    $self->{_graph_color} = {     back => "#111111",
-                                font => "#DDDDDD",
-                                canvas => "#222222",    # graph background
-                                frame => "#666666",        # line around color spot
-                                #mgrid => "#AAAAAA",
+    $self->{_graph_color} = {   back    => "#FFFFFF",
+                                font    => "#444444",
+                                canvas  => "#FFFFFF",   # graph background
+                                frame   => "#000000",   # line around color spot
+                                #mgrid  => "#AAAAAA",
+                                shadea  => "#FFFFFF",   # left and top border
+                                shadeb  => "#FFFFFF",   # right and bottom border
                             };
     
     $self->{_graph_title_font} = { name => "Times", element => "title", size => 15 };
@@ -619,7 +621,7 @@ sub graphFromConf {
     }
     my @time_laps = ('1200', 'hour', 'day');
     
-    my @clusters = Entity::Cluster->getClusters( hash => { } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
     CLUSTER:
     foreach my $cluster (@clusters) {
         eval {
@@ -630,7 +632,7 @@ sub graphFromConf {
             my $graphs_settings = $self->{_admin}->{manager}{monitor}->getClusterGraphSettings( cluster_id => $cluster_id );
             
             #my @nodes_ip = map { $_->{ip} } values %$cluster_nodes;
-            my @nodes_ip = map { $_->getInternalIP()->{ipv4_internal_address} } values %{ $cluster->getMotherboards( ) };
+            my @nodes_ip = map { $_->getInternalIP()->{ipv4_internal_address} } values %{ $cluster->getHosts( ) };
             
             # Graph Node Count
             foreach my $laps (@time_laps) {
@@ -706,7 +708,8 @@ sub graphNodeCount {
     my $self = shift;
     my %args = @_;
     
-    my $alpha = "66";
+    my $alpha_node = "66";
+    my $alpha_host = "33";
     
     my $cluster = $args{cluster};
     
@@ -735,30 +738,32 @@ sub graphNodeCount {
                     
                     'y_grid' => '1:1',
                     
-                    draw =>     {
+                    # NODES
+					draw =>     {
                                     type => 'stack',
                                     dsname => 'up',
-                                    color => "00FF00".$alpha,
+                                    color => "00FF00".$alpha_node,
                                     legend => "up",
                                   },
                     draw =>     {
                                     type => 'stack',
                                     dsname => 'starting',
-                                    color => "0000FF".$alpha,
+                                    color => "0000FF".$alpha_node,
                                     legend => "starting",
                                   },
                     draw =>     {
                                     type => 'stack',
                                     dsname => 'stopping',
-                                    color => "FFFF00".$alpha,
+                                    color => "FFFF00".$alpha_node,
                                     legend => "stopping",
                                   },
-                      draw =>     {
+                  	draw =>     {
                                     type => 'stack',
                                     dsname => 'broken',
-                                    color => "FF0000".$alpha,
+                                    color => "FF0000".$alpha_node,
                                     legend => "broken",
                                   },
+                    
                     );
                     
     `mv $self->{_graph_dir}/tmp/$graph_file $self->{_graph_dir}`;
@@ -860,7 +865,7 @@ sub run {
     my $running = shift;
     
     my $adm = $self->{_admin};
-    $adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopya Grapher started.");
+    Message->send(from => 'Monitor', level => 'info', content => "Kanopya Grapher started.");
     
     while ( $$running ) {
 
@@ -878,7 +883,7 @@ sub run {
 
     }
     
-    $adm->addMessage(from => 'Monitor', level => 'warning', content => "Kanopya Grapher stopped");
+    Message->send(from => 'Monitor', level => 'warning', content => "Kanopya Grapher stopped");
 }
 
 1;

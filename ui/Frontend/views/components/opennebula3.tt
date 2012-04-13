@@ -1,0 +1,67 @@
+<% js_head.push('components.js') %>
+<h2>Cluster <% cluster_name %> - Opennebula3 Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<input class="conf_simple_value" type="hidden" name="opennebula3_id" value="<% opennebula3_id %>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Opennebula3"/>
+
+<table>
+
+<tr><td class="bold right darkgreen">vm image base repository path :</td><td><input type="text" size="30" class="conf_simple_value" name="image_repository_path" value="<% image_repository_path %>"/></td></tr>
+<tr><td class="bold right darkgreen">host monitoring interval :</td><td><input type="text" size="5" class="conf_simple_value" name="host_monitoring_interval" value="<% host_monitoring_interval %>"/></td></tr>
+<tr><td class="bold right darkgreen">vm polling interval :</td><td><input type="text" size="5" class="conf_simple_value" name="vm_polling_interval" value="<% vm_polling_interval %>"/></td></tr>
+<tr><td class="bold right darkgreen">port :</td><td><input type="text" size="5" class="conf_simple_value" name="port" value="<% port %>"/>
+<tr><td class="bold right darkgreen">log level :</td>
+<td><select class="conf_simple_value" name="debug_level">
+<option id="0" value="0">error</option>
+<option id="1" value="1">warning</option>
+<option id="2" value="2">info</option>
+<option id="3" value="3">debug</option>
+</select></td>
+</table>
+
+<hr />
+<h3>Images repositories:</h3>
+	<table class="conf_array_value" id="opennebula3_repositories">
+        <tr><th>Name</th><th>Export</th></tr>
+		<% FOREACH repo IN opennebula3_repositories %>
+			<tr class="elem_opennebula3_repositories" name="opennebula3_repositories">
+			     <td><input type="text" class="opennebula3_repositories_simple_value" name="repository_name" value="<% repo.repository_name %>" disabled /></td>
+			     <td><input type="text" class="opennebula3_repositories_simple_value" name="container_access_export" value="<% repo.container_access_export %>" disabled /></td>
+			</tr>
+		<% END %>
+	</table>
+<hr />
+<a class="add_opennebula3_repositories imgAdding iconAction">Add repositories</a>
+<hr />
+
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+
+
+<script type="text/javascript">
+document.getElementById('<% debug_level %>').selected=1;
+</script>
+
+<div class="hidden" id="models">
+	<table class="conf_array_value" id="opennebula3_repositories">
+        <tr><th>Name</th><th>Export</th></tr>
+			<tr class="elem_opennebula3_repositories" name="opennebula3_repositories">
+			     <td><input type="text" class="opennebula3_repositories_simple_value" name="repository_name" value=""/></td>
+                 <td><select class="opennebula3_repositories_simple_value" name="container_access_id">
+                     <% FOREACH access IN container_accesses %>
+                         <option value="<% access.container_access_id %>"><% access.container_access_name %></option>
+                     <% END %>
+                 </select></td>
+			</tr>
+	</table>
+</div>
+
+
+
+

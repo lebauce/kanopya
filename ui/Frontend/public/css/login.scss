@@ -1,0 +1,72 @@
+$purple_color: #7E388A;
+$background_color: #FFFFFF;
+$background_error_color: red;
+$text_error_color: black;
+
+* {
+    margin: 0;
+    padding: 0;
+    font-family: Monospace;
+    font-size: 1.05em;
+}
+
+body {
+    color: $purple_color;
+}
+
+.small {
+    font-size: small;
+    color: $purple_color;
+    text-align: center;
+    position: relative;
+    top: 20px;
+}
+
+div#container {
+    margin: auto;
+    width: 350px;
+    margin-top: -12px;
+    background-color: $background_color;
+    border: thin solid $purple_color;
+    padding: 25px;
+}
+
+h2 {
+    text-align: center;
+}
+
+form {
+    margin: 12px;
+}
+
+label {
+    display: inline-block;
+    width: 100px;
+}
+
+input {
+    width: 120px;
+    margin-top: 12px;
+    &[type="submit"] {
+    margin-left: 109px;
+    }
+}
+
+img#biglogo {
+    display: block;
+    margin: 20px auto auto;
+}
+
+.dfv_errors {
+    font-size: 0.8em;
+    background-color: $background_error_color;
+    color: $text_error_color;
+    margin-bottom: 18px;
+    padding-left: 121px;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    li {
+        margin-left: 37px;
+    }
+}

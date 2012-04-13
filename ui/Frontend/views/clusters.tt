@@ -1,0 +1,38 @@
+<% FOREACH cluster IN clusters_list %>
+	<table class="listing">
+	<tr><td colspan="3"><h1><% cluster.cluster_name %></h1></td></tr>
+	<tr><td><span class="label">Type</span> : <% cluster.type %></td><td><span class="label">Status</span> : 
+	<% IF cluster.active %>Active<% ELSE %>Deactivated<% END %></td><td class="toright">
+	<a class="imgManage clickable" onclick="loadLink('/architectures/<% cluster.route_base %>/<% cluster.cluster_id %>')">details</a></td></tr>
+	<tr><td><span class="label">Size</span> : <% cluster.nbnodes %></td>
+	<% IF cluster.active %>
+		<td><span class="label">State</span> :
+		<% IF cluster.state_up %><span class="state imgUp">Up (<% cluster.nbnodesup %>)</span><% END %>
+		<% IF cluster.state_down %><span class="state imgDown">Down</span><% END %>
+		<% IF cluster.state_starting %><span class="state imgDown">Starting...</span><% END %>
+		<% IF cluster.state_stopping %><span class="state imgDown">Stopping...</span><% END %>
+		<% IF cluster.state_broken %><span class="state imgWarning">Broken</span><% END %>
+		<% IF cluster.state_warning %><span class="state imgBroken">Warning</span><% END %>
+		</td>
+	<% END %>
+	<td class="toright">
+	<% IF cluster.link_activity %>
+		<a class="imgMonitor clickable" onclick="loadLink('/architectures/<% cluster.route_base %>/<% cluster.cluster_id %>/monitoring')">activity</a>
+	<% END %>
+	</td></tr>
+	<tr><td class="italic" colspan="3"><span class="label">Description</span> : <% cluster.cluster_desc %></td></tr>
+	</table>
+<% END %>
+
+<div class="actions">
+    <div class="<% IF ! can_create %> disabled<% END %>">
+	    <a class="action modal" href="/architectures/clusters/add"<% IF ! can_create %> title="At least one free host and one master image are required to create a cluster"<% END %>>create a cluster</a>
+	    <p class="italic">Create and configure a new cluster.</p>
+    </div>
+    <div>
+        <a class="action modal" href="/architectures/extclusters/add">add an external cluster</a>
+        <p class="italic">Register and manage an external cluster.</p>
+    </div>
+</div>
+
+

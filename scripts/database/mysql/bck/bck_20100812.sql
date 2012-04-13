@@ -104,47 +104,47 @@ INSERT INTO `processor_model` VALUES (1,'Intel','Atom',2,2,0,2,17,0,0,NULL);
 UNLOCK TABLES;
 
 --
--- Table structure for table `motherboard`
+-- Table structure for table `host`
 --
 
-DROP TABLE IF EXISTS `motherboard`;
+DROP TABLE IF EXISTS `host`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `motherboard` (
-  `motherboard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `motherboard_model_id` int(8) unsigned NOT NULL,
+CREATE TABLE `host` (
+  `host_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `host_model_id` int(8) unsigned NOT NULL,
   `processor_model_id` int(8) unsigned NOT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
-  `motherboard_serial_number` char(64) NOT NULL,
-  `motherboard_slot_position` int(1) unsigned NOT NULL,
-  `motherboard_desc` char(255) DEFAULT NULL,
+  `host_serial_number` char(64) NOT NULL,
+  `host_slot_position` int(1) unsigned NOT NULL,
+  `host_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
-  `motherboard_mac_address` char(18) NOT NULL,
-  `motherboard_initiatorname` char(64) DEFAULT NULL,
-  `motherboard_internal_ip` char(15) DEFAULT NULL,
-  `motherboard_hostname` char(32) DEFAULT NULL,
+  `host_mac_address` char(18) NOT NULL,
+  `host_initiatorname` char(64) DEFAULT NULL,
+  `host_internal_ip` char(15) DEFAULT NULL,
+  `host_hostname` char(32) DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`motherboard_id`),
-  UNIQUE KEY `motherboard_internal_ip_UNIQUE` (`motherboard_internal_ip`),
-  KEY `fk_motherboard_1` (`motherboard_model_id`),
-  KEY `fk_motherboard_2` (`processor_model_id`),
-  KEY `fk_motherboard_3` (`kernel_id`),
-  KEY `fk_motherboard_4` (`etc_device_id`),
-  CONSTRAINT `fk_motherboard_1` FOREIGN KEY (`motherboard_model_id`) REFERENCES `motherboard_model` (`motherboard_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_2` FOREIGN KEY (`processor_model_id`) REFERENCES `processor_model` (`processor_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  PRIMARY KEY (`host_id`),
+  UNIQUE KEY `host_internal_ip_UNIQUE` (`host_internal_ip`),
+  KEY `fk_host_1` (`host_model_id`),
+  KEY `fk_host_2` (`processor_model_id`),
+  KEY `fk_host_3` (`kernel_id`),
+  KEY `fk_host_4` (`etc_device_id`),
+  CONSTRAINT `fk_host_1` FOREIGN KEY (`host_model_id`) REFERENCES `host_model` (`host_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_2` FOREIGN KEY (`processor_model_id`) REFERENCES `processor_model` (`processor_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `motherboard`
+-- Dumping data for table `host`
 --
 
-LOCK TABLES `motherboard` WRITE;
-/*!40000 ALTER TABLE `motherboard` DISABLE KEYS */;
-INSERT INTO `motherboard` VALUES (1,1,1,1,'Admin SN',1,'Admin motherboard',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','127.0.0.1','node001',NULL);
-/*!40000 ALTER TABLE `motherboard` ENABLE KEYS */;
+LOCK TABLES `host` WRITE;
+/*!40000 ALTER TABLE `host` DISABLE KEYS */;
+INSERT INTO `host` VALUES (1,1,1,1,'Admin SN',1,'Admin host',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','127.0.0.1','node001',NULL);
+/*!40000 ALTER TABLE `host` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -259,38 +259,38 @@ INSERT INTO `cluster` VALUES (1,'adm','Admin Cluster',0,1,1,500,1,1,1);
 UNLOCK TABLES;
 
 --
--- Table structure for table `motherboard_model`
+-- Table structure for table `host_model`
 --
 
-DROP TABLE IF EXISTS `motherboard_model`;
+DROP TABLE IF EXISTS `host_model`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `motherboard_model` (
-  `motherboard_model_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `motherboard_brand` char(64) NOT NULL,
-  `motherboard_model_name` char(32) NOT NULL,
-  `motherboard_chipset` char(64) NOT NULL,
-  `motherboard_processor_num` int(1) unsigned NOT NULL,
-  `motherboard_consumption` int(2) unsigned NOT NULL,
-  `motherboard_iface_num` int(1) unsigned NOT NULL,
-  `motherboard_RAM_slot_num` int(1) unsigned NOT NULL,
-  `motherboard_RAM_max` int(1) unsigned NOT NULL,
+CREATE TABLE `host_model` (
+  `host_model_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `host_brand` char(64) NOT NULL,
+  `host_model_name` char(32) NOT NULL,
+  `host_chipset` char(64) NOT NULL,
+  `host_processor_num` int(1) unsigned NOT NULL,
+  `host_consumption` int(2) unsigned NOT NULL,
+  `host_iface_num` int(1) unsigned NOT NULL,
+  `host_RAM_slot_num` int(1) unsigned NOT NULL,
+  `host_RAM_max` int(1) unsigned NOT NULL,
   `processor_model_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`motherboard_model_id`),
-  UNIQUE KEY `motherboard_model_UNIQUE` (`motherboard_model_name`),
-  KEY `fk_motherboard_model_1` (`processor_model_id`),
-  CONSTRAINT `fk_motherboard_model_1` FOREIGN KEY (`processor_model_id`) REFERENCES `processor_model` (`processor_model_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  PRIMARY KEY (`host_model_id`),
+  UNIQUE KEY `host_model_UNIQUE` (`host_model_name`),
+  KEY `fk_host_model_1` (`processor_model_id`),
+  CONSTRAINT `fk_host_model_1` FOREIGN KEY (`processor_model_id`) REFERENCES `processor_model` (`processor_model_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `motherboard_model`
+-- Dumping data for table `host_model`
 --
 
-LOCK TABLES `motherboard_model` WRITE;
-/*!40000 ALTER TABLE `motherboard_model` DISABLE KEYS */;
-INSERT INTO `motherboard_model` VALUES (1,'Intel','DG945GCLF2','945GC',2,42,1,1,2,NULL);
-/*!40000 ALTER TABLE `motherboard_model` ENABLE KEYS */;
+LOCK TABLES `host_model` WRITE;
+/*!40000 ALTER TABLE `host_model` DISABLE KEYS */;
+INSERT INTO `host_model` VALUES (1,'Intel','DG945GCLF2','945GC',2,42,1,1,2,NULL);
+/*!40000 ALTER TABLE `host_model` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -314,36 +314,36 @@ CREATE TABLE `operationtype` (
 
 LOCK TABLES `operationtype` WRITE;
 /*!40000 ALTER TABLE `operationtype` DISABLE KEYS */;
-INSERT INTO `operationtype` VALUES (10,'AddMotherboard');
+INSERT INTO `operationtype` VALUES (10,'AddHost');
 /*!40000 ALTER TABLE `operationtype` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `motherboard_entity`
+-- Table structure for table `host_entity`
 --
 
-DROP TABLE IF EXISTS `motherboard_entity`;
+DROP TABLE IF EXISTS `host_entity`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `motherboard_entity` (
+CREATE TABLE `host_entity` (
   `entity_id` int(8) unsigned NOT NULL,
-  `motherboard_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`motherboard_id`),
-  UNIQUE KEY `fk_motherboard_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_motherboard_entity_2` (`motherboard_id`),
-  CONSTRAINT `fk_motherboard_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_entity_2` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  `host_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`host_id`),
+  UNIQUE KEY `fk_host_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_host_entity_2` (`host_id`),
+  CONSTRAINT `fk_host_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_entity_2` FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `motherboard_entity`
+-- Dumping data for table `host_entity`
 --
 
-LOCK TABLES `motherboard_entity` WRITE;
-/*!40000 ALTER TABLE `motherboard_entity` DISABLE KEYS */;
-INSERT INTO `motherboard_entity` VALUES (185,1);
-/*!40000 ALTER TABLE `motherboard_entity` ENABLE KEYS */;
+LOCK TABLES `host_entity` WRITE;
+/*!40000 ALTER TABLE `host_entity` DISABLE KEYS */;
+INSERT INTO `host_entity` VALUES (185,1);
+/*!40000 ALTER TABLE `host_entity` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -576,7 +576,7 @@ CREATE TABLE `operation` (
 
 LOCK TABLES `operation` WRITE;
 /*!40000 ALTER TABLE `operation` DISABLE KEYS */;
-INSERT INTO `operation` VALUES (17,'AddMotherboard',16,100,'0000-00-00','00:00:00',1),(18,'AddMotherboard',16,200,'0000-00-00','00:00:00',2);
+INSERT INTO `operation` VALUES (17,'AddHost',16,100,'0000-00-00','00:00:00',1),(18,'AddHost',16,200,'0000-00-00','00:00:00',2);
 /*!40000 ALTER TABLE `operation` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -700,14 +700,14 @@ DROP TABLE IF EXISTS `node`;
 CREATE TABLE `node` (
   `node_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `cluster_id` int(8) unsigned NOT NULL,
-  `motherboard_id` int(8) unsigned NOT NULL,
+  `host_id` int(8) unsigned NOT NULL,
   `master_node` int(1) unsigned DEFAULT NULL,
   PRIMARY KEY (`node_id`),
-  KEY `cluster_id` (`cluster_id`,`motherboard_id`),
+  KEY `cluster_id` (`cluster_id`,`host_id`),
   KEY `fk_node_1` (`cluster_id`),
-  KEY `fk_node_2` (`motherboard_id`),
+  KEY `fk_node_2` (`host_id`),
   CONSTRAINT `fk_node_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_node_2` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_node_2` FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -881,7 +881,7 @@ CREATE TABLE `operation_parameter` (
 
 LOCK TABLES `operation_parameter` WRITE;
 /*!40000 ALTER TABLE `operation_parameter` DISABLE KEYS */;
-INSERT INTO `operation_parameter` VALUES (49,'motherboard_serial_number','Test sn',17),(50,'kernel_id','2',17),(51,'motherboard_mac_address','00:1c:c0:c0:1c:9a',17),(52,'motherboard_serial_number','Test2 sn',18),(53,'kernel_id','1',18),(54,'motherboard_mac_address','00:1c:c1:c1:c1:c1',18);
+INSERT INTO `operation_parameter` VALUES (49,'host_serial_number','Test sn',17),(50,'kernel_id','2',17),(51,'host_mac_address','00:1c:c0:c0:1c:9a',17),(52,'host_serial_number','Test2 sn',18),(53,'kernel_id','1',18),(54,'host_mac_address','00:1c:c1:c1:c1:c1',18);
 /*!40000 ALTER TABLE `operation_parameter` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -940,62 +940,62 @@ CREATE TABLE `groups` (
 
 LOCK TABLES `groups` WRITE;
 /*!40000 ALTER TABLE `groups` DISABLE KEYS */;
-INSERT INTO `groups` VALUES (35,'User','User master group',1),(36,'Processortemplate','Processortemplate master group',1),(37,'Motherboardtemplate','Motherboardtemplate master group',1),(38,'Motherboard','Motherboard master group',1),(39,'Cluster','Cluster master group',1),(40,'Distribution','Distribution master group',1),(41,'Kernel','Kernel master group',1),(42,'Systemimage','Systemimage master group',1),(43,'Operationtype','Operationtype master group',1),(44,'admin','for administration tasks',1);
+INSERT INTO `groups` VALUES (35,'User','User master group',1),(36,'Processortemplate','Processortemplate master group',1),(37,'Hosttemplate','Hosttemplate master group',1),(38,'Host','Host master group',1),(39,'Cluster','Cluster master group',1),(40,'Distribution','Distribution master group',1),(41,'Kernel','Kernel master group',1),(42,'Systemimage','Systemimage master group',1),(43,'Operationtype','Operationtype master group',1),(44,'admin','for administration tasks',1);
 /*!40000 ALTER TABLE `groups` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `motherboarddetails`
+-- Table structure for table `hostdetails`
 --
 
-DROP TABLE IF EXISTS `motherboarddetails`;
+DROP TABLE IF EXISTS `hostdetails`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `motherboarddetails` (
-  `motherboard_id` int(8) unsigned NOT NULL,
+CREATE TABLE `hostdetails` (
+  `host_id` int(8) unsigned NOT NULL,
   `name` char(32) NOT NULL,
   `value` char(255) DEFAULT NULL,
-  PRIMARY KEY (`motherboard_id`,`name`),
-  KEY `fk_motherboarddetails_1` (`motherboard_id`),
-  CONSTRAINT `fk_motherboarddetails_1` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  PRIMARY KEY (`host_id`,`name`),
+  KEY `fk_hostdetails_1` (`host_id`),
+  CONSTRAINT `fk_hostdetails_1` FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `motherboarddetails`
+-- Dumping data for table `hostdetails`
 --
 
-LOCK TABLES `motherboarddetails` WRITE;
-/*!40000 ALTER TABLE `motherboarddetails` DISABLE KEYS */;
-/*!40000 ALTER TABLE `motherboarddetails` ENABLE KEYS */;
+LOCK TABLES `hostdetails` WRITE;
+/*!40000 ALTER TABLE `hostdetails` DISABLE KEYS */;
+/*!40000 ALTER TABLE `hostdetails` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `motherboard_model_entity`
+-- Table structure for table `host_model_entity`
 --
 
-DROP TABLE IF EXISTS `motherboard_model_entity`;
+DROP TABLE IF EXISTS `host_model_entity`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `motherboard_model_entity` (
+CREATE TABLE `host_model_entity` (
   `entity_id` int(8) unsigned NOT NULL,
-  `motherboard_model_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`motherboard_model_id`),
-  KEY `fk_motherboard_model_entity_1` (`entity_id`),
-  KEY `fk_motherboard_model_entity_2` (`motherboard_model_id`),
-  CONSTRAINT `fk_motherboard_model_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_model_entity_2` FOREIGN KEY (`motherboard_model_id`) REFERENCES `motherboard_model` (`motherboard_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  `host_model_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`host_model_id`),
+  KEY `fk_host_model_entity_1` (`entity_id`),
+  KEY `fk_host_model_entity_2` (`host_model_id`),
+  CONSTRAINT `fk_host_model_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_model_entity_2` FOREIGN KEY (`host_model_id`) REFERENCES `host_model` (`host_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `motherboard_model_entity`
+-- Dumping data for table `host_model_entity`
 --
 
-LOCK TABLES `motherboard_model_entity` WRITE;
-/*!40000 ALTER TABLE `motherboard_model_entity` DISABLE KEYS */;
-INSERT INTO `motherboard_model_entity` VALUES (182,1);
-/*!40000 ALTER TABLE `motherboard_model_entity` ENABLE KEYS */;
+LOCK TABLES `host_model_entity` WRITE;
+/*!40000 ALTER TABLE `host_model_entity` DISABLE KEYS */;
+INSERT INTO `host_model_entity` VALUES (182,1);
+/*!40000 ALTER TABLE `host_model_entity` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --

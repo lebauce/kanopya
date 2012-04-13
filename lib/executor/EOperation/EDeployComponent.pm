@@ -43,49 +43,13 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use XML::Simple;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
-use Entity::Distribution;
 use EFactory;
 
 my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
-
-
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    return;
-}
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-    
-
-}
 
 =head2 prepare
 
@@ -99,13 +63,10 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    # Check if internal_cluster exists
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EDeployComponent->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
+
+    $self->{_objs} = {};
+
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
     
@@ -140,12 +101,13 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-
     # Get contexts
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
-    $self->loadContext( internal_cluster => $args{internal_cluster}, service => 'nas' );
-    
-    
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
+
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => 'nas');
 }
 
 sub execute{
@@ -228,14 +190,6 @@ sub execute{
 #   TODO call component data sql (for specific data insertion)
 #   create new component and call init method on it
 
-
-    # update distribution provided components list
-    my @distributions = Entity::Distribution->getDistributions(hash => {});
-    $log->info ("Go through distribution list of size <".(scalar @distributions).">");
-    foreach my $distrib (@distributions) {
-        $log->info("Update component on distribution <".$distrib->getAttr(name=>"distribution_name").">");
-		$distrib->updateProvidedComponents();
-	}
 }        
 
 =head2 _registerComponentInDB

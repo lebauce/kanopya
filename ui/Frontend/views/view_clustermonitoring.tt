@@ -1,0 +1,45 @@
+<% js_head.push('monitor.js') %>
+
+<!--button id='fold_all'>fold</button-->
+
+</td>
+<td>
+<table class='set_selectors simplelisting'>
+	<tr>
+	<% FOREACH s IN sets %>
+		<th id='<% s.id %>' class='set_selector clickable'><% s.label %></th>
+	<% END %>
+	</tr>
+</table>
+</td>
+
+</tr>
+</table>
+
+<table id='graph_table' class="graphview simplelisting">
+	<tr>
+		<td></td><td id='nodecount_graph'><img class='autorefresh' src="<% nodecount_graph %>" alt="kanopya-grapher must be running to see graph"/></td>
+	</tr>
+	<tr>
+		<td id='<% cluster_name %>' class='node_selector imgMonitCluster'><% cluster_name %></td>
+		<td id='<% cluster_name %>_content' class='content_container'></td>
+	</tr>
+	<% FOREACH n IN nodes %>
+		<tr>
+			<td id='<% n.id %>' class='node_selector imgMonitHost'><% n.name %><% IF n.name==master %> (master) <% END %></td>
+			<td id='<% n.id %>_content' class='content_container'></td>
+		</tr>
+	<% END %>
+</table>
+
+<div class="actions">
+<a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring/settings">settings</a>
+<p class="italic">Cluster collect and graph settings.</p>
+
+<a class='action imgClock' >Graph period</a>
+<ul class="italic">
+	<li id='hour' class='period_selector selected_period' >Hourly</li>
+	<li id='day'  class='period_selector' >Daily</li>
+	<!--li id='custom' class='period_selector' >Custom</li-->
+</ul>
+</div>

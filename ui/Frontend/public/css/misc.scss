@@ -1,0 +1,17 @@
+$color_gray: #C2C2C2;
+
+h2 {
+    text-transform: uppercase;
+}
+
+.clickable:hover {
+  cursor: pointer;
+  color: #00A; 
+}
+
+.hidden { display: none;}
+
+.form {
+    margin-left: auto;
+    margin-right: auto;
+}

@@ -1,0 +1,10 @@
+<td class="label">Volume:</td>
+<td>
+<select id="volume" name="disk_manager_param_volume_id">
+<% FOREACH netapp_volume IN netapp_volumes %>
+    <option value="<% netapp_volume.volume_id %>"><% netapp_volume.volume_name %></option>
+<% END %>
+</select>
+</td>
+
+

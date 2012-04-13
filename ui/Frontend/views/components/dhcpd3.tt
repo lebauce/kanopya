@@ -1,0 +1,33 @@
+<% js_head.push('components.js') %>
+<h2>Cluster <% cluster_name %> - Dhcpd3 Configuration</h2>
+<hr />
+<input type="hidden" name="component_id" value="<% component_instance_id %>"/>
+<input type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<input type="hidden" name="apache2_id" value="<% apache2_id %>"/>
+<input type="hidden" name="component_name" value="Apache2"/>
+<table>
+    <tr><th>domain name : </th><td><% domain_name %></td></tr>
+    <tr><th>domain name server : </th><td><% domain_name_server %></td></tr>
+    <tr><th>server name : </th><td><% server_name %></td></tr>
+    <tr><th>server ip : </th><td><% server_ip %></td></tr>
+</table>
+<br/>
+<h3>hosts</h3>
+<br/>
+<table>
+<% FOREACH subnet IN subnets %>
+	<tr><th>subnet : </th><td><% subnet.net %></td><th>netmask : </th><td><% subnet.mask %></td></tr>
+	<% FOREACH node IN nodes %>
+		<tr><th></th><td><% node.domain_name %></td></tr>
+		<tr><th></th><td><% node.domain_name_server %></td></tr>
+		<tr><th></th><td><% node.ntp_server %></td></tr>
+		<tr><th></th><td><% node.ip_address %></td></tr>
+		<tr><th></th><td><% node.mac_address %></td></tr>
+		<tr><th></th><td><% node.hostname %></td></tr>
+		<tr><th></th><td><% node.kernel_version %></td></tr>
+	<% END %>
+<% END %>     
+</table>
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
+
