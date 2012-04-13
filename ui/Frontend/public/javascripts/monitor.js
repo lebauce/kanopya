@@ -317,6 +317,8 @@ $(function() {
 var url = window.location.href;
 var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
 var nodes_view = path + '/nodesview';
+var nodes_view_bargraph = nodes_view + '/bargraph';
+var nodes_view_histogram = nodes_view + '/histogram';
 var clusters_view = path  + '/clustersview';
 var nodes_bar_graph;
 var cluster_timed_graph;
@@ -343,12 +345,12 @@ function showCombinationGraph(curobj,combi_id,label,start,stop) {
 }
 
 //function triggered on nodemetrics combination selection
-function showNodemetricCombinationGraph(curobj,nodemetric_combination_id) {
+function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id) {
 	if (nodemetric_combination_id == 'default') { return }
 	loading_start();
 	var params = {id:nodemetric_combination_id};
 	document.getElementById('nodes_charts').innerHTML='';
-	$.getJSON(nodes_view, params, function(data) {
+	$.getJSON(nodes_view_bargraph, params, function(data) {
         if (data.error){ alert (data.error); }
 		else {
 			document.getElementById('nodes_charts').style.display='block';
@@ -369,7 +371,7 @@ function showNodemetricCombinationGraph(curobj,nodemetric_combination_id) {
 				var sliced_values = data.values.slice(indexOffset,toElementNumber);
 				var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
 				//we generate the graph
-				barGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, nodemetric_combination_id);
+				nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, nodemetric_combination_id);
 			}
 			var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
 			$("#nodes_charts").append(button);
@@ -380,7 +382,7 @@ function showNodemetricCombinationGraph(curobj,nodemetric_combination_id) {
 
 
 //Jqplot bar graph
-function barGraph(values, nodelist, unit, div_id, min, max, title) {
+function nodemetricCombinationBarGraph(values, nodelist, unit, div_id, min, max, title) {
 	$.jqplot.config.enablePlugins = true;
     nodes_bar_graph = $.jqplot(div_id, [values], {
 	title: title+' (in '+unit+' )',

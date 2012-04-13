@@ -351,7 +351,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 
 =cut  
 
-ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
+ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph' => sub {
     my $cluster_id    = params->{extclusterid} || 0;   
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
     my $nodemetric_combination_id = params->{'id'};   
