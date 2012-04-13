@@ -454,13 +454,13 @@ post '/extclusters/:extclusterid/clustermetrics/new' => sub {
         clustermetric_window_time              => '1200',
     };
     my $cm = Clustermetric->new(%$cm_params);
-   
+
     my $comb_params = {
         aggregate_combination_service_provider_id =>param('extclusterid'),
         aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
     };
     AggregateCombination->new(%$comb_params);
-    
+
     my $var = param('extclusterid');
     redirect("/architectures/extclusters/$var/clustermetrics");
 };
@@ -2244,7 +2244,7 @@ sub _getCombinations() {
 	}
 }
 
-sub _computeNodemetricCombination($cluster_id, $nodemetric_combination_id) {
+sub _computeNodemetricCombination ($cluster_id, $nodemetric_combination_id) {
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
     my $nodemetric_combination = NodemetricCombination->get('id' => $nodemetric_combination_id);
     my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
@@ -2317,5 +2317,6 @@ sub _computeNodemetricCombination($cluster_id, $nodemetric_combination_id) {
         $rep{'nodes'} = @nodes;
         $rep{'values'} = @values;
         return %rep;
+    }
 }
 1;
