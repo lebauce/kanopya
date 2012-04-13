@@ -344,7 +344,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 };  
   
 
-=head2 ajax '/extclusters/:extclusterid/monitoring/nodesview'
+=head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph'
 
     Desc: Get the values corresponding to the selected nodemetric combination for the currently monitored cluster, 
     return to the monitor.js an array containing the nodes names for the combination, and another one containing the values for the nodes, plus the label of the node combination unit
@@ -352,92 +352,31 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 =cut  
 
 ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph' => sub {
-    my $cluster_id    = params->{extclusterid} || 0;   
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
-    my $nodemetric_combination_id = params->{'id'};   
-    my $nodemetric_combination = NodemetricCombination->get('id' => $nodemetric_combination_id);
-    my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
-    my @indicator_oids;
-    $log->debug('[Cluster id '.$cluster_id.']: The requested combination: '.$nodemetric_combination_id.' is built on the top of the following indicators: '."@indicator_ids");
+    my $cluster_id    = params->{extclusterid} || 0;
+    my $nodemetric_combination_id = params->{'id'};
 
-    my $nodes_metrics; 
-    my $error;
-    my %nodeEvals;
+    my $compute_result = _computeNodemetricCombination($cluster_id, $nodemetric_combination_id);
 
-    # we retrieve the nodemetric values
-    eval {
-        foreach my $indicator_id (@indicator_ids) {
-            my $indicator_inst = Indicator->get('id' => $indicator_id);
-            my $indicator_oid = $indicator_inst->getAttr('name'=> 'indicator_oid');
-            push @indicator_oids, $indicator_oid;
-        }
-        $nodes_metrics = $extcluster->getNodesMetrics(
-            indicators => \@indicator_oids,
-            time_span => 3600,
-            shortname => 1
-        );
-
-        $log->debug('[Cluster id '.$cluster_id.']: The indicators have the following values :'.Dumper $nodes_metrics);
-
-        while (my ($host_name,$monitored_values_for_one_node) = each %$nodes_metrics) {
-            my $nodeEval;
-            $nodeEval = $nodemetric_combination->computeValueFromMonitoredValues(
-                monitored_values_for_one_node => $monitored_values_for_one_node
-            );
-            $nodeEvals{$host_name} = $nodeEval;
-        }
-        $log->debug('[Cluster id '.$cluster_id.']: Requested combination value for each node: '.Dumper \%nodeEvals);
-    };
-    # error catching
-    if ($@) {
-        $error="$@";
-        $log->error($error);
-        return to_json {error => $error};
-    # we catch the fact that there is no value available for the selected nodemetric
-    } elsif (scalar(keys %nodeEvals) == 0) {
-        $error='Error : No indicator values returned by monitored nodes';
-        $log->error($error);
-        return to_json {error => $error};   
-    } else {
-        #we create an array containing the values, to be sorted
-        my @nodes_values_to_sort;
-        my @nodes_values_undef;
-        while (my ($node, $metric) = each %nodeEvals) {
-            if (defined $metric) {
-            push @nodes_values_to_sort, { node => $node, value => $metric };
-            } else {
-                push @nodes_values_undef, $node;
-            }
-        }
-        if (scalar(@nodes_values_to_sort) == 0){
-            $error="no value could be retrieve for this metric";
-            $log->error($error);
-            return to_json {error => $error};   
-        }
-        #we now sort this array
-        my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
-        # we split the array into 2 distincts one, that will be returned to the monitor.js
-        my @nodes = map { $_->{node} } @sorted_nodes_values;
-        my @values = map { $_->{value} } @sorted_nodes_values;  
-        #we add nodes without values at the end of nodes list
-        @nodes = (@nodes, @nodes_values_undef);
-
-        return to_json {values => \@values, nodelist => \@nodes};  
-        # my (@test1, @test2);
-        
-        # for (my $i = 1; $i<51; $i++){
-            # my $nde = 'node'.$i;
-            # push @test2, $nde;
-        # }
-        # for (my $y = 1; $y<1500; $y+=37){
-            # push @test1, $y;
-        # }
-        # $log->error('node list: '.Dumper @test2);
-        # $log->error('values: '.Dumper @test1);
-        
-        # to_json {values => \@test1, nodelist => \@test2, unit => "unit"};
-    }
+    return to_json {values => $compute_result->{'values'}, nodelist => $compute_result->{'nodes'}};
 };
+
+=head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram'
+
+    Desc: 
+    return
+
+=cut  
+
+ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram' => sub {
+    my $cluster_id    = params->{extclusterid} || 0;
+    my $nodemetric_combination_id = params->{'id'}; 
+    #choper min et max des valeurs
+    #découper avec une valeur X par défaut et remplir @bins
+    #appliquer fonction frequency_distribution avec \@bins en parametre
+    # construire le tableau des valeurs a partir des valeurs de %frequency_distribution
+    # construire le tableau des partitions associé à partir des clefs 
+};
+
 
 get '/clustermetrics' => sub {
     my @clustermetrics = Clustermetric->search(hash=>{});
@@ -2237,7 +2176,7 @@ get '/extclusters/:extclusterid/externalnodes/:nodeid/enable' => sub {
 #######INNER FUNCTION DECLARATION#######
 ########################################
 
-sub _getNodeMetricCombinations(){
+sub _getNodeMetricCombinations() {
     my $template_config = shift;
     my $cluster_id = $template_config->{'cluster_id'};
     my %errors;
@@ -2269,7 +2208,7 @@ sub _getNodeMetricCombinations(){
         return %$template_config;
     }
 }
-sub _getCombinations(){
+sub _getCombinations() {
 	my $template_config = shift;
 	my $cluster_id = $template_config->{'cluster_id'};
 	my %errors;
@@ -2305,4 +2244,78 @@ sub _getCombinations(){
 	}
 }
 
+sub _computeNodemetricCombination($cluster_id, $nodemetric_combination_id) {
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
+    my $nodemetric_combination = NodemetricCombination->get('id' => $nodemetric_combination_id);
+    my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
+    my @indicator_oids;
+    $log->debug('[Cluster id '.$cluster_id.']: The requested combination: '.$nodemetric_combination_id.' is built on the top of the following indicators: '."@indicator_ids");
+
+    my $nodes_metrics; 
+    my $error;
+    my %nodeEvals;
+
+    # we retrieve the nodemetric values
+    eval {
+        foreach my $indicator_id (@indicator_ids) {
+            my $indicator_inst = Indicator->get('id' => $indicator_id);
+            my $indicator_oid = $indicator_inst->getAttr('name'=> 'indicator_oid');
+            push @indicator_oids, $indicator_oid;
+        }
+        $nodes_metrics = $extcluster->getNodesMetrics(
+            indicators => \@indicator_oids,
+            time_span => 3600,
+            shortname => 1
+        );
+
+        $log->debug('[Cluster id '.$cluster_id.']: The indicators have the following values :'.Dumper $nodes_metrics);
+
+        while (my ($host_name,$monitored_values_for_one_node) = each %$nodes_metrics) {
+            my $nodeEval;
+            $nodeEval = $nodemetric_combination->computeValueFromMonitoredValues(
+                monitored_values_for_one_node => $monitored_values_for_one_node
+            );
+            $nodeEvals{$host_name} = $nodeEval;
+        }
+        $log->debug('[Cluster id '.$cluster_id.']: Requested combination value for each node: '.Dumper \%nodeEvals);
+    };
+    # error catching
+    if ($@) {
+        $error="$@";
+        $log->error($error);
+        return to_json {error => $error};
+    # we catch the fact that there is no value available for the selected nodemetric
+    } elsif (scalar(keys %nodeEvals) == 0) {
+        $error='Error : No indicator values returned by monitored nodes';
+        $log->error($error);
+        return to_json {error => $error};   
+    } else {
+        #we create an array containing the values, to be sorted
+        my @nodes_values_to_sort;
+        my @nodes_values_undef;
+        while (my ($node, $metric) = each %nodeEvals) {
+            if (defined $metric) {
+            push @nodes_values_to_sort, { node => $node, value => $metric };
+            } else {
+                push @nodes_values_undef, $node;
+            }
+        }
+        if (scalar(@nodes_values_to_sort) == 0){
+            $error="no value could be retrieved for this metric";
+            $log->error($error);
+            return to_json {error => $error};   
+        }
+        #we now sort this array
+        my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
+        # we split the array into 2 distincts one, that will be returned to the monitor.js
+        my @nodes = map { $_->{node} } @sorted_nodes_values;
+        my @values = map { $_->{value} } @sorted_nodes_values;  
+        #we add nodes without values at the end of nodes list
+        @nodes = (@nodes, @nodes_values_undef);
+        
+        my %rep;
+        $rep{'nodes'} = @nodes;
+        $rep{'values'} = @values;
+        return %rep;
+}
 1;

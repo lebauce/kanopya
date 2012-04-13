@@ -302,7 +302,16 @@
    // $('#testcall').click (test_ui);
  });
 
+var url = window.location.href;
+var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
+var nodes_view = path + '/nodesview';
+var nodes_view_bargraph = nodes_view + '/bargraph';
+var nodes_view_histogram = nodes_view + '/histogram';
+var clusters_view = path  + '/clustersview';
+var nodes_bar_graph;
+var cluster_timed_graph;
 
+//format the dates given by datetimepicker
 $(function() {
 	$( "#combination_start_time" ).datetimepicker({
 		dateFormat: 'mm-dd-yy'
@@ -314,14 +323,6 @@ $(function() {
 	});
 });
  
-var url = window.location.href;
-var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
-var nodes_view = path + '/nodesview';
-var nodes_view_bargraph = nodes_view + '/bargraph';
-var nodes_view_histogram = nodes_view + '/histogram';
-var clusters_view = path  + '/clustersview';
-var nodes_bar_graph;
-var cluster_timed_graph;
 
 //function triggered on cluster_combination selection
 function showCombinationGraph(curobj,combi_id,label,start,stop) {
@@ -344,16 +345,16 @@ function showCombinationGraph(curobj,combi_id,label,start,stop) {
     });
 }
 
-//function triggered on nodemetrics combination selection
+//functions triggered on nodemetrics combination selection
 function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id) {
 	if (nodemetric_combination_id == 'default') { return }
 	loading_start();
 	var params = {id:nodemetric_combination_id};
-	document.getElementById('nodes_charts').innerHTML='';
+	document.getElementById('nodes_bargraph').innerHTML='';
 	$.getJSON(nodes_view_bargraph, params, function(data) {
         if (data.error){ alert (data.error); }
 		else {
-			document.getElementById('nodes_charts').style.display='block';
+			document.getElementById('nodes_bargraph').style.display='block';
             var min = data.values[0];
             var max = data.values[(data.values.length-1)];
             // alert('min: '+min+ ' max: '+max); 
@@ -361,10 +362,10 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id) {
 			var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
 			var nodes_per_graph = data.nodelist.length/graph_number;
 			for (var i = 0; i<graph_number; i++) {
-				var div_id = 'nodechart_'+i;
+				var div_id = 'nodes_bargraph_'+i;
 				var div = '<div id=\"'+div_id+'\"></div>';
 				//create the graph div container
-				$("#nodes_charts").append(div);
+				$("#nodes_bargraph").append(div);
 				//slice the array
 				var indexOffset = nodes_per_graph*i;
 				var toElementNumber = nodes_per_graph*(i+1);
@@ -374,12 +375,21 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id) {
 				nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, nodemetric_combination_id);
 			}
 			var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
-			$("#nodes_charts").append(button);
+			$("#nodes_bargraph").append(button);
 		}
         loading_stop();
     });
 }
 
+function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id) {
+	if (nodemetric_combination_id == 'default') { return }
+	loading_start();
+	var params = {id:nodemetric_combination_id};
+	document.getElementById('nodes_histogram').innerHTML='';
+	$.getJSON(nodes_view_histogram, params, function(data) {
+		if (data.error){ alert (data.error); }
+	}
+}
 
 //Jqplot bar graph
 function nodemetricCombinationBarGraph(values, nodelist, unit, div_id, min, max, title) {

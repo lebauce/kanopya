@@ -1,11 +1,11 @@
 /*cluster overview zone */
 
 #combination_list {
-	width:25%;
+    width:25%;
 }
 
 #clusterCombinationView {
-	display:none;
+    display:none;
     position:relative;
     bottom:170px;
     left: 290px;
@@ -13,9 +13,9 @@
 }
 
 #cb_button {
-	position:absolute;
-	top:-25px;
-	left:15px;
+    position:absolute;
+    top:-25px;
+    left:15px;
 }
 
 .cluster_combination_tooltip {
@@ -47,8 +47,16 @@
     width:120px;
 }
 
-#nodes_charts {
-	display:none;
+#nodes_bargraph {
+    display:none;
+    position:relative;
+    bottom:50px;
+    left: 290px;
+    width:70%;
+}
+
+#nodes_histogram {
+    display:none;
     position:relative;
     bottom:50px;
     left: 290px;
@@ -56,9 +64,9 @@
 }
 
 #ncb_button {
-	position:absolute;
-	top:-25px;
-	left:45px;
+    position:absolute;
+    top:-25px;
+    left:45px;
 }
 
 .jqplot-yaxis {
