@@ -160,7 +160,7 @@ sub setConf {
                 mounttable1_mount_filesystem => 'nfs',
                 mounttable1_mount_point      => $conf->{image_repository_path} . '/' . $repo->{repository_name},
                 mounttable1_mount_device     => $container_access->getAttr(name => 'container_access_export'),
-                mounttable1_mount_options    => $container_access->getAttr(name => 'container_access_options'),
+                mounttable1_mount_options    => 'rw,sync,vers=3',
                 mounttable1_mount_passnum    => 0,
             };
             push @mountentries, $mounttable_entry

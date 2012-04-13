@@ -239,7 +239,7 @@ get '/monitoring/browse' => sub  {
 };
 
 # ---------------------------------------------------------------------------------------------#
-# -----------------------------external cluster monitoring (poc BT)----------------------------#
+# -----------------------------external cluster monitoring-------------------------------------#
 # ---------------------------------------------------------------------------------------------#
 
 # --------------------------------------------------------------------#
@@ -346,7 +346,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 
 =head2 ajax '/extclusters/:extclusterid/monitoring/nodesview'
 
-    Desc: Get the values corresponding to the selected nodes combination for the currently monitored cluster, 
+    Desc: Get the values corresponding to the selected nodemetric combination for the currently monitored cluster, 
     return to the monitor.js an array containing the nodes names for the combination, and another one containing the values for the nodes, plus the label of the node combination unit
 
 =cut  
@@ -354,21 +354,19 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
     my $cluster_id    = params->{extclusterid} || 0;   
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
-    my $nodemetric_combination_ids = params->{'id'};
-    $log->debug('[Cluster id '.$cluster_id.']: Monitored nodemetric combination: '.$nodemetric_combination_ids);
-    
+    my $nodemetric_combination_id = params->{'id'};   
+    my $nodemetric_combination = NodemetricCombination->get('id' => $nodemetric_combination_id);
+    my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
+    my @indicator_oids;
+    $log->debug('[Cluster id '.$cluster_id.']: The requested combination: '.$nodemetric_combination_id.' is built on the top of the following indicators: '."@indicator_ids");
+
     my $nodes_metrics; 
     my $error;
     my %nodeEvals;
-    
+
     # we retrieve the nodemetric values
     eval {
-        my $nodemetric_combination = NodemetricCombination->get('id' => $nodemetric_combination_ids);        
-        my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
-        $log->debug('[Cluster id '.$cluster_id.']: The requested combination: '.$nodemetric_combination_ids.' is built on the top of the following indicators: '."@indicator_ids");
-        
-        my @indicator_oids;
-        foreach my $indicator_id (@indicator_ids){
+        foreach my $indicator_id (@indicator_ids) {
             my $indicator_inst = Indicator->get('id' => $indicator_id);
             my $indicator_oid = $indicator_inst->getAttr('name'=> 'indicator_oid');
             push @indicator_oids, $indicator_oid;
@@ -378,10 +376,10 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
             time_span => 3600,
             shortname => 1
         );
-      
+
         $log->debug('[Cluster id '.$cluster_id.']: The indicators have the following values :'.Dumper $nodes_metrics);
-        
-        while(my ($host_name,$monitored_values_for_one_node) = each %$nodes_metrics){
+
+        while (my ($host_name,$monitored_values_for_one_node) = each %$nodes_metrics) {
             my $nodeEval;
             $nodeEval = $nodemetric_combination->computeValueFromMonitoredValues(
                 monitored_values_for_one_node => $monitored_values_for_one_node
@@ -415,7 +413,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
             $error="no value could be retrieve for this metric";
             $log->error($error);
             return to_json {error => $error};   
-        }   
+        }
         #we now sort this array
         my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
         # we split the array into 2 distincts one, that will be returned to the monitor.js
@@ -423,7 +421,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
         my @values = map { $_->{value} } @sorted_nodes_values;  
         #we add nodes without values at the end of nodes list
         @nodes = (@nodes, @nodes_values_undef);
-        
+
         return to_json {values => \@values, nodelist => \@nodes};  
         # my (@test1, @test2);
         
