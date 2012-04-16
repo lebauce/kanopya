@@ -1,4 +1,0 @@
-sbin/* opt/kanopya/sbin
-scripts/init/* etc/init.d
-lib/monitor/* opt/kanopya/lib/monitor
-t/monitor/* opt/kanopya/t/monitor

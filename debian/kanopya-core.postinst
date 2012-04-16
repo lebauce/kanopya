@@ -1,0 +1,11 @@
+#!/bin/bash -e
+
+update-rc.d kanopya-executor defaults
+update-rc.d kanopya-state-manager defaults
+chmod +x /etc/init.d/kanopya-executor
+chmod +x /etc/init.d/kanopya-state-manager
+
+echo "ISCSITARGET_ENABLE=true" > /etc/default/iscsitarget
+touch /var/log/tftp.log
+chmod 777 /var/log/tftp.log
+invoke-rc.d iscsitarget restart

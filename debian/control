@@ -1,0 +1,37 @@
+Source: kanopya
+Section: admin
+Priority: optional
+Maintainer: Hedera Dev Team <dev@hederatech.com>
+Build-Depends: debhelper (>= 7), perl (>=5.10.0)
+Standards-Version: 3.8.4
+Homepage: http://www.kanopya.org
+Vcs-Git: git://git.kanopya.org/mcs/executor.git
+
+Package: kanopya
+Description: Meta provides a full Kanopya install
+Architecture: all
+Depends: kanopya-core, kanopya-webui, kanopya-monitor, kanopya-orchestrator
+
+Package: kanopya-core
+Description: Core package contains Kanopya executor and state manager
+Architecture: all
+Build-Depends: debhelper (>= 7), perl (>=5.10.0)
+Depends: ${perl:Depends}, syslog-ng, bzip2, openssh-server, openssh-client, ntp, ntpdate, nmap, liblog-log4perl-perl, liblog-dispatch-perl, libdata-dumper-simple-perl, libxml-simple-perl, libexception-class-perl, libstring-random-perl, libnetaddr-ip-perl, libdate-simple-perl, libproc-pid-file-perl, libkanopya-perl, libnet-openssh-perl, etherwake, libtemplate-perl, libtest-pod-perl, libcrypt-saltedhash-perl, atftpd, isc-dhcp-server, ntp, ntpdate, openssh-client, openssh-server, liblog-log4perl-perl, liblog-dispatch-perl, libdata-dumper-simple-perl, libexception-class-perl, libxml-simple-perl, libtest-simple-perl, liberror-perl, libterm-readkey-perl, lvm2, openssh-client, openssh-server, iscsitarget, iscsitarget-dkms, nfs-kernel-server, mysql-client, mysql-server, liblog-log4perl-perl, liblog-dispatch-perl, libdata-dumper-simple-perl, libexception-class-perl, libxml-simple-perl, libnetaddr-ip-perl, libdbix-class-perl, libdbix-class-schema-loader-perl, libtest-simple-perl, liberror-perl
+
+Package: kanopya-monitor
+Description: The monitor collects and graphes cluster and node activity
+Architecture: all
+Build-Depends: debhelper (>= 7), perl (>=5.10.0)
+Depends: openssh-server, snmpd, curl, libnet-snmp-perl, librrdtool-oo-perl, libdatetime-format-strptime-perl
+
+Package: kanopya-orchestrator
+Description: Nowaday Orchestrator is a powerful trap manager allowing to resize clusters using indicators from monitor 
+Architecture: all
+Build-Depends: debhelper (>= 7), perl (>=5.10.0)
+Depends: openssh-client, kanopya-monitor, libparse-booleanlogic-perl  
+
+Package: kanopya-webui
+Description: The web UI allows to manage kanopya from a web interface.
+Architecture: all
+Build-Depends: debhelper (>= 7), perl (>=5.10.0)
+Depends: libconvert-color-perl, libdancer-perl, libplack-perl, libdancer-plugin-escapehtml-perl, libdancer-plugin-formvalidator-perl, libdancer-plugin-preprocess-sass-perl, starman, libtemplate-perl, libjson-perl
