@@ -282,8 +282,6 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 	my $stop = params->{'stop'};
     my $stop_timestamp;	
     my $date_parser = DateTime::Format::Strptime->new( pattern => '%m-%d-%Y %H:%M' );
-    my %aggregate_combination;
-    my @histovalues;
 
     #If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
     if ($start eq '') {
@@ -309,7 +307,6 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     my $compute_result = _computeClustermetricCombination (combination_id => $combination_id, start_tms => $start_timestamp, stop_tms => $stop_timestamp);
 
     return to_json {first_histovalues => $compute_result, min => $start, max => $stop};
-    }
 };
 
 =head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph'
@@ -2341,11 +2338,13 @@ sub _computeNodemetricCombination () {
 
 sub _computeClustermetricCombination () {
     my %args = @_;
-    my $combination_id = args{combination_id};
-    my $start_timestamp = args{start_tms};
-    my $stop_timestamp = args{stop_tms};
+    my $combination_id = $args{combination_id};
+    my $start_timestamp = $args{start_tms};
+    my $stop_timestamp = $args{stop_tms};
     my $combination = AggregateCombination->get('id' => $combination_id);
     my $error;
+    my %aggregate_combination;
+    my @histovalues;
 
     eval {
         %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
@@ -2378,5 +2377,6 @@ sub _computeClustermetricCombination () {
         }
 
         return \@histovalues;
+    }
 }
 1;
