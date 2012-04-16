@@ -313,96 +313,98 @@ var cluster_timed_graph;
 
 //format the dates given by datetimepicker
 $(function() {
-	$( "#combination_start_time" ).datetimepicker({
-		dateFormat: 'mm-dd-yy'
-	});
+    $( "#combination_start_time" ).datetimepicker({
+        dateFormat: 'mm-dd-yy'
+    });
 });
- $(function() {
-	$( "#combination_end_time" ).datetimepicker({
-		dateFormat: 'mm-dd-yy'
-	});
+$(function() {
+    $( "#combination_end_time" ).datetimepicker({
+        dateFormat: 'mm-dd-yy'
+    });
 });
- 
 
 //function triggered on cluster_combination selection
 function showCombinationGraph(curobj,combi_id,label,start,stop) {
-	if (combi_id == 'default'){return}
-	loading_start();
-	var params = {id:combi_id,start:start,stop:stop};
-	document.getElementById('clusterCombinationView').innerHTML='';
-	$.getJSON(clusters_view, params, function(data) {
-		if (data.error) { alert (data.error); }
-		else {
-			var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot()\"/>';
-			var div_id = 'cluster_combination_graph';
-			var div = '<div id=\"'+div_id+'\"></div>';
-			document.getElementById('clusterCombinationView').style.display='block';
-			$("#clusterCombinationView").append(div);
-			timedGraph(data.first_histovalues, data.min, data.max, label, div_id);
-			$("#clusterCombinationView").append(button);
-		}
+    if (combi_id == 'default'){return}
+    loading_start();
+    var params = {id:combi_id,start:start,stop:stop};
+    document.getElementById('clusterCombinationView').innerHTML='';
+    $.getJSON(clusters_view, params, function(data) {
+        if (data.error) { alert (data.error); }
+        else {
+            var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot()\"/>';
+            var div_id = 'cluster_combination_graph';
+            var div = '<div id=\"'+div_id+'\"></div>';
+            document.getElementById('clusterCombinationView').style.display='block';
+            $("#clusterCombinationView").append(div);
+            timedGraph(data.first_histovalues, data.min, data.max, label, div_id);
+            $("#clusterCombinationView").append(button);
+        }
         loading_stop();
     });
 }
 
 //functions triggered on nodemetrics combination selection
 function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id) {
-	if (nodemetric_combination_id == 'default') { return }
-	loading_start();
-	var params = {id:nodemetric_combination_id};
-	document.getElementById('nodes_bargraph').innerHTML='';
-	$.getJSON(nodes_view_bargraph, params, function(data) {
+    if (nodemetric_combination_id == 'default') { return }
+    loading_start();
+    var params = {id:nodemetric_combination_id};
+    document.getElementById('nodes_bargraph').innerHTML='';
+    $.getJSON(nodes_view_bargraph, params, function(data) {
         if (data.error){ alert (data.error); }
-		else {
-			document.getElementById('nodes_bargraph').style.display='block';
+        else {
+            document.getElementById('nodes_bargraph').style.display='block';
             var min = data.values[0];
             var max = data.values[(data.values.length-1)];
             // alert('min: '+min+ ' max: '+max); 
-			var max_nodes_per_graph = 50;
-			var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
-			var nodes_per_graph = data.nodelist.length/graph_number;
-			for (var i = 0; i<graph_number; i++) {
-				var div_id = 'nodes_bargraph_'+i;
-				var div = '<div id=\"'+div_id+'\"></div>';
-				//create the graph div container
-				$("#nodes_bargraph").append(div);
-				//slice the array
-				var indexOffset = nodes_per_graph*i;
-				var toElementNumber = nodes_per_graph*(i+1);
-				var sliced_values = data.values.slice(indexOffset,toElementNumber);
-				var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
-				//we generate the graph
-				nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, nodemetric_combination_id);
-			}
-			var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
-			$("#nodes_bargraph").append(button);
-		}
+            var max_nodes_per_graph = 50;
+            var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
+            var nodes_per_graph = data.nodelist.length/graph_number;
+            for (var i = 0; i<graph_number; i++) {
+                var div_id = 'nodes_bargraph_'+i;
+                var div = '<div id=\"'+div_id+'\"></div>';
+                //create the graph div container
+                $("#nodes_bargraph").append(div);
+                //slice the array
+                var indexOffset = nodes_per_graph*i;
+                var toElementNumber = nodes_per_graph*(i+1);
+                var sliced_values = data.values.slice(indexOffset,toElementNumber);
+                var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
+                //we generate the graph
+                nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, nodemetric_combination_id);
+            }
+            var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
+            $("#nodes_bargraph").append(button);
+        }
         loading_stop();
     });
 }
 
 function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id) {
-	//if (nodemetric_combination_id == 'default') { return }
-	//loading_start();
-	//var params = {id:nodemetric_combination_id};
-	//document.getElementById('nodes_histogram').innerHTML='';
-	//$.getJSON(nodes_view_histogram, params, function(data) {
-	//	if (data.error){ alert (data.error); }
-	//}
+    if (nodemetric_combination_id == 'default') { return }
+    loading_start();
+    var params = {id:nodemetric_combination_id};
+    document.getElementById('nodes_histogram').innerHTML='';
+    $.getJSON(nodes_view_histogram, params, function(data) {
+        if (data.error){ alert (data.error); }
+        else {
+        }
+    }
+    loading_stop();
 }
 
 //Jqplot bar graph
 function nodemetricCombinationBarGraph(values, nodelist, unit, div_id, min, max, title) {
-	$.jqplot.config.enablePlugins = true;
+    $.jqplot.config.enablePlugins = true;
     nodes_bar_graph = $.jqplot(div_id, [values], {
-	title: title+' (in '+unit+' )',
+    title: title+' (in '+unit+' )',
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
             rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 30 },
             pointLabels: { show: true },
-			trendline: {
-				show: false, 
+            trendline: {
+                show: false, 
             },
         },
         axes: {
@@ -426,7 +428,7 @@ function nodemetricCombinationBarGraph(values, nodelist, unit, div_id, min, max,
             show: true,
             showMarker:false,
         }
-    }); 
+    });
     // $('#nodechart').bind('jqplotDataHighlight',
         // function (ev, seriesIndex, pointIndex, data) {
             // $('#info1').html('series: '+seriesIndex+', point: '+pointIndex+', data: '+data);
@@ -434,9 +436,9 @@ function nodemetricCombinationBarGraph(values, nodelist, unit, div_id, min, max,
     // );
 }
 
- //Jqplot basic curve graph
- function timedGraph(first_graph_line, min, max, label, div_id) {
-	$.jqplot.config.enablePlugins = true;
+//Jqplot basic curve graph
+function timedGraph(first_graph_line, min, max, label, div_id) {
+    $.jqplot.config.enablePlugins = true;
     // var first_graph_line=[['03-14-2012 16:23', 0], ['03-14-2012 16:17', 0], ['03-14-2012 16:12', 0],['03-14-2012 16:15',null], ['03-14-2012 16:19', 0], ['03-14-2012 16:26', null]];
     // alert ('min: '+min+' max: '+max);
     // alert ('data for selected combination: '+first_graph_line);
@@ -445,8 +447,8 @@ function nodemetricCombinationBarGraph(values, nodelist, unit, div_id, min, max,
         seriesDefaults: {
             breakOnNull:true,
             trendline: {
-				color : '#555555',
-				show  : $('#trendlineinput').attr('checked') ? true : false, 
+                color : '#555555',
+                show  : $('#trendlineinput').attr('checked') ? true : false, 
             }
         },
         axes:{
@@ -491,11 +493,11 @@ function toggleTrendLine() {
 
 //replot cluster combination timed graph. 
 function c_replot(){
-	var combination_dropdown_list = document.getElementById('combination_list');
-	showCombinationGraph(this,combination_dropdown_list.options[combination_dropdown_list.selectedIndex].id, combination_dropdown_list.options[combination_dropdown_list.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);
+    var combination_dropdown_list = document.getElementById('combination_list');
+    showCombinationGraph(this,combination_dropdown_list.options[combination_dropdown_list.selectedIndex].id, combination_dropdown_list.options[combination_dropdown_list.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);
 }
 //replot  nodemetric combination bar graph
 function nc_replot(){
-	var nmcombination_dropdown_list = document.getElementById('indicator_list');
-	showMetricGraph(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)	
+    var nmcombination_dropdown_list = document.getElementById('indicator_list');
+    showMetricGraph(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)	
 }
