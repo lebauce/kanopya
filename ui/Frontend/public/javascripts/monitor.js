@@ -371,7 +371,7 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id) {
                 var sliced_values = data.values.slice(indexOffset,toElementNumber);
                 var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
                 //we generate the graph
-                nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, nodemetric_combination_id);
+                nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, div_id, max, nodemetric_combination_id);
             }
             var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
             $("#nodes_bargraph").append(button);
@@ -390,7 +390,7 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id) {
         if (data.error){ alert (data.error); }
         else {
             document.getElementById(div_id).style.display='block';
-            nodemetricCombinationBarGraph(data.nbof_nodes_in_partition, data.partitions, data.unit, div_id, min, nodesquantity, nodemetric_combination_id);
+            nodemetricCombinationHistogram(data.nbof_nodes_in_partition, data.partitions, div_id, nodesquantity, nodemetric_combination_id);
         }
         var button = '<input type=\"button\" value=\"refresh\" id=\"nch_button\" onclick=\"nch_replot()\"/>';
         $("#nodes_bargraph").append(button);
@@ -398,11 +398,11 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id) {
     loading_stop();
 }
 
-//Jqplot bar graph
-function nodemetricCombinationBarGraph(values, nodelist, unit, div_id, min, max, title) {
+//Jqplot bar plots
+function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title) {
     $.jqplot.config.enablePlugins = true;
     nodes_bar_graph = $.jqplot(div_id, [values], {
-    title: title+' (in '+unit+' )',
+    title: title,
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
@@ -434,11 +434,43 @@ function nodemetricCombinationBarGraph(values, nodelist, unit, div_id, min, max,
             showMarker:false,
         }
     });
-    // $('#nodechart').bind('jqplotDataHighlight',
-        // function (ev, seriesIndex, pointIndex, data) {
-            // $('#info1').html('series: '+seriesIndex+', point: '+pointIndex+', data: '+data);
-        // }
-    // );
+}
+
+function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div_id, nodesquantity, title) {
+    $.jqplot.config.enablePlugins = true;
+    nodes_bar_graph = $.jqplot(div_id, [nbof_nodes_in_partition], {
+    title: title,
+        animate: !$.jqplot.use_excanvas,
+        seriesDefaults:{
+            renderer:$.jqplot.BarRenderer,
+            rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 30 },
+            pointLabels: { show: true },
+            trendline: {
+                show: false, 
+            },
+        },
+        axes: {
+            xaxis: {
+                renderer: $.jqplot.CategoryAxisRenderer,
+                ticks: partitions,
+                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+                tickOptions: {
+                    showMark: false,
+                    showGridline: false,
+                    angle: -40,
+                }
+            },
+            yaxis:{
+                min:0,
+                max:nodesquantity,
+            },
+        },
+        seriesColors: ["#D4D4D4" ,"#999999"],
+        highlighter: { 
+            show: true,
+            showMarker:false,
+        }
+    });
 }
 
 //Jqplot basic curve graph
@@ -504,10 +536,10 @@ function c_replot() {
 //replot  nodemetric combination bar graph
 function nc_replot() {
     var nmcombination_dropdown_list = document.getElementById('nmBargraph_list');
-    showMetricGraph(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)	
+    showNodemetricCombinationBarGraph(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)	
 }
 //replot  nodemetric combination Histogram
 function nch_replot() {
     var nmcombination_dropdown_list = document.getElementById('nmHistogram_list');
-    showMetricGraph(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)    
+    showNodemetricCombinationHistogram(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)    
 }
