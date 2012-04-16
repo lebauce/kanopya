@@ -335,9 +335,11 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph' => sub {
 ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram' => sub {
     my $cluster_id    = params->{extclusterid} || 0;
     my $nodemetric_combination_id = params->{'id'}; 
-
+    my $part_number = params->{'pn'};
     #we define the numer of partition used for the graph
-    my $part_number = 10;
+    if ($part_number == '') {
+        my $part_number = 10;
+    }
 
     #we gather computation result for the nodemetric combination
     my $compute_result = _computeNodemetricCombination(cluster_id => $cluster_id, combination_id => $nodemetric_combination_id);

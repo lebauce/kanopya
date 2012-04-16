@@ -380,10 +380,14 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
     });
 }
 
-function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nodemetric_combination_label) {
+function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nodemetric_combination_label,part_number) {
     if (nodemetric_combination_id == 'default') { return }
+    if (!isInt(part_number)) {
+        alert(part_number+' is not an integer');
+        return
+    }
     loading_start();
-    var params = {id:nodemetric_combination_id};
+    var params = {id:nodemetric_combination_id,pn:part_number};
     var div_id = 'nodes_histogram';
     document.getElementById(div_id).innerHTML='';
     $.getJSON(nodes_view_histogram, params, function(data) {
@@ -543,4 +547,9 @@ function nc_replot() {
 function nch_replot() {
     var nmcombination_dropdown_list = document.getElementById('nmHistogram_list');
     showNodemetricCombinationHistogram(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)    
+}
+
+//simple function to check if a variable is an integer
+function isInt(n) {
+   return n % 1 == 0;
 }
