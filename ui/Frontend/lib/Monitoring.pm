@@ -267,7 +267,6 @@ get '/extclusters/:extclusterid/monitoring' => sub {
     template 'cluster_monitor', \%template_config, { layout => 'main' };
 };
 
-
 =head2 ajax '/extclusters/:extclusterid/monitoring/clustersview'
 
     Desc: Get the values corresponding to the selected combination for the currently monitored cluster,	
@@ -282,9 +281,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     my $start_timestamp;
 	my $stop = params->{'stop'};
     my $stop_timestamp;	
-	my $error;
     my $date_parser = DateTime::Format::Strptime->new( pattern => '%m-%d-%Y %H:%M' );
-    my $combination = AggregateCombination->get('id' => $combination_id);
     my %aggregate_combination;
     my @histovalues;
 
@@ -308,41 +305,12 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
         $stop_timestamp = $stop_dt->epoch() ;
     }
 
-    eval {
-        %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
-        # $log->info('values returned by compute values: '.Dumper \%aggregate_combination);
-    };
-    if ($@) {
-        $error="$@";
-        $log->error($error);
-        return to_json {error => $error};
-    } elsif (!%aggregate_combination || scalar(keys %aggregate_combination) == 0) {
-        $error='no values could be computed for this combination';
-        $log->error($error);
-        return to_json {error => $error};
-    } else {
-        my $undef_count = 0;
-        my $res_number = scalar(keys %aggregate_combination);
-        while (my ($date, $value) = each %aggregate_combination) {
-            my $dt = DateTime->from_epoch(epoch => $date)->set_time_zone('local');
-            my $date_string = $dt->strftime('%m-%d-%Y %H:%M');
-            push @histovalues, [$date_string,$value];
-            # we reference the undef values in order to throw an error if all values are undef
-            if (!defined $value) {
-                $undef_count++;
-            }
-        }
-        if ($res_number == $undef_count) {
-            $error='all values retrieved for the selected time windows were undefined';
-            $log->error($error);
-            return to_json {error => $error};
-        }
-        # $log->info('values sent to timed graph: '.Dumper \@histovalues);
-        # $log->info('counter value: '.$undef_count.' number of values: '.$res_number);
-        return to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
+    #we get the combination values and return them to the javascript
+    my $compute_result = _computeClustermetricCombination (combination_id => $combination_id, start_tms => $start_timestamp, stop_tms => $stop_timestamp);
+
+    return to_json {first_histovalues => $compute_result, min => $start, max => $stop};
     }
 };
-
 
 =head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph'
 
@@ -362,8 +330,8 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph' => sub {
 
 =head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram'
 
-    Desc: 
-    return
+    Desc: Create a frequency distribution from the values computed to the selected nodemetric combination
+    return to the monitor.js a scalar containing the quantity of nodes, an array containing the number of nodes per partitions and another array containing the partitions (interval) of values 
 
 =cut  
 
@@ -2195,7 +2163,14 @@ get '/extclusters/:extclusterid/externalnodes/:nodeid/enable' => sub {
 #######INNER FUNCTION DECLARATION#######
 ########################################
 
-sub _getNodeMetricCombinations() {
+=head2 sub _getNodeMetricCombinations
+
+    Desc: Get all the nodemetric combinations for the cluster and give them to the template configuration hash 
+    return: %$template_config;
+
+=cut
+
+sub _getNodeMetricCombinations () {
     my $template_config = shift;
     my $cluster_id = $template_config->{'cluster_id'};
     my %errors;
@@ -2203,65 +2178,80 @@ sub _getNodeMetricCombinations() {
     my @nodemetric_combination_insts;
     eval {
         @nodemetric_combination_insts = NodemetricCombination->searchLight(
-        hash=>{'nodemetric_combination_service_provider_id' => $cluster_id});
+            hash=>{'nodemetric_combination_service_provider_id' => $cluster_id}
+        );
     };
     if ($@) {
         my $error = "$@";
         $log->error($error);
         $template_config->{'errors'}{'nodemetric_combinations'} = $error;
         return %$template_config;
-    }elsif (scalar(@nodemetric_combination_insts) == 0){
+    } elsif (scalar(@nodemetric_combination_insts) == 0) {
         my $error = 'No nodemetric combination could be found for this external cluster';
         $log->error($error);
         $template_config->{'errors'}{'nodemetric_combinations'} = $error;
         return %$template_config;
-    }else{
-         for my $nodemetric_combination_inst (@nodemetric_combination_insts){
+    } else {
+         for my $nodemetric_combination_inst (@nodemetric_combination_insts) {
             my %combination;
             $combination{'id'}    = $nodemetric_combination_inst->getAttr(name => 'nodemetric_combination_id');
             $combination{'label'} = $nodemetric_combination_inst->getAttr(name => 'nodemetric_combination_label');
             push @nodemetric_combinations, \%combination;
         }
         $template_config->{'nodemetric_combinations'} = \@nodemetric_combinations;
-        # $log->info('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper($template_config->{'combinations'}));
+        # $log->debug('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper($template_config->{'combinations'}));
         return %$template_config;
     }
 }
-sub _getClustermetricCombinations() {
-	my $template_config = shift;
-	my $cluster_id = $template_config->{'cluster_id'};
-	my %errors;
-	my @combinations;
-	my @clustermetric_combinations;
-	
-	eval {
-		#@aggregate_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId($cluster_id);
-        @clustermetric_combinations = AggregateCombination->searchLight(
-        hash=>{'aggregate_combination_service_provider_id' => $cluster_id});
 
-	};
-	if ($@) {
-		my $error = "$@";
-		$log->error($error);
-		$template_config->{'errors'}{'combinations'} = $error;
-		return %$template_config;
-	}elsif (scalar(@clustermetric_combinations) == 0){
-		my $error = 'No combination could be found for this external cluster';
-		$log->error($error);
-		$template_config->{'errors'}{'combinations'} = $error;
-		return %$template_config;
-	}else{
-		 for my $combi (@clustermetric_combinations){
-			my %combination;
-			$combination{'id'} = $combi->getAttr(name => 'aggregate_combination_id');
-			$combination{'label'} = $combi->getAttr(name => 'aggregate_combination_label');
-			push @combinations, \%combination;
-		}
-	$template_config->{'combinations'} = \@combinations;
-	# $log->info('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper($template_config->{'combinations'}));
-	return %$template_config;
-	}
+=head2 sub _getClustermetricCombinations
+
+    Desc: Get all the clustermetric combinations for the cluster and give them to the template configuration hash  
+    return: %$template_config;
+
+=cut
+
+sub _getClustermetricCombinations () {
+    my $template_config = shift;
+    my $cluster_id = $template_config->{'cluster_id'};
+    my %errors;
+    my @combinations;
+    my @clustermetric_combinations;
+
+    eval {
+        @clustermetric_combinations = AggregateCombination->searchLight(
+            hash=>{'aggregate_combination_service_provider_id' => $cluster_id}
+        );
+    };
+    if ($@) {
+        my $error = "$@";
+        $log->error($error);
+        $template_config->{'errors'}{'combinations'} = $error;
+        return %$template_config;
+    } elsif (scalar(@clustermetric_combinations) == 0) {
+        my $error = 'No combination could be found for this external cluster';
+        $log->error($error);
+        $template_config->{'errors'}{'combinations'} = $error;
+        return %$template_config;
+    } else {
+        for my $combi (@clustermetric_combinations) {
+        my %combination;
+        $combination{'id'} = $combi->getAttr(name => 'aggregate_combination_id');
+        $combination{'label'} = $combi->getAttr(name => 'aggregate_combination_label');
+        push @combinations, \%combination;
+        }
+        $template_config->{'combinations'} = \@combinations;
+        # $log->debug('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper($template_config->{'combinations'}));
+        return %$template_config;
+    }
 }
+
+=head2 sub _computeNodemetricCombination
+
+    Desc: Compute the nodemetric combination for each node of the cluster and return a reference to a hash containing references to 2 arrays, the first containing the node list, the second containing the corresponding values 
+    return: \%rep;
+
+=cut
 
 sub _computeNodemetricCombination () {
     my %args = @_;
@@ -2340,5 +2330,53 @@ sub _computeNodemetricCombination () {
         $rep{'values'} = \@values;
         return \%rep;
     }
+}
+
+=head2 sub _computeClustermetricCombination
+
+    Desc: Compute the clustermetric combination for the cluster and return a reference to an array containing the corresponding values and related times
+    return: \@histovalues;
+
+=cut
+
+sub _computeClustermetricCombination () {
+    my %args = @_;
+    my $combination_id = args{combination_id};
+    my $start_timestamp = args{start_tms};
+    my $stop_timestamp = args{stop_tms};
+    my $combination = AggregateCombination->get('id' => $combination_id);
+    my $error;
+
+    eval {
+        %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
+        # $log->info('values returned by compute values: '.Dumper \%aggregate_combination);
+    };
+    if ($@) {
+        $error="$@";
+        $log->error($error);
+        return to_json {error => $error};
+    } elsif (!%aggregate_combination || scalar(keys %aggregate_combination) == 0) {
+        $error='no values could be computed for this combination';
+        $log->error($error);
+        return to_json {error => $error};
+    } else {
+        my $undef_count = 0;
+        my $res_number = scalar(keys %aggregate_combination);
+        while (my ($date, $value) = each %aggregate_combination) {
+            my $dt = DateTime->from_epoch(epoch => $date)->set_time_zone('local');
+            my $date_string = $dt->strftime('%m-%d-%Y %H:%M');
+            push @histovalues, [$date_string,$value];
+            # we reference the undef values in order to throw an error if all values are undef
+            if (!defined $value) {
+                $undef_count++;
+            }
+        }
+        if ($res_number == $undef_count) {
+            $error='all values retrieved for the selected time windows were undefined';
+            $log->error($error);
+            return to_json {error => $error};
+        }
+
+        return \@histovalues;
 }
 1;
