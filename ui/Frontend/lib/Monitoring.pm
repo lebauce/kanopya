@@ -249,36 +249,36 @@ get '/monitoring/browse' => sub  {
 
 =head2 get '/extclusters/:extclusterid/monitoring'
 
-	Desc: Compute the values to be displayed on the monitoring page and create the according template
-	
+    Desc: Compute the values to be displayed on the monitoring page and create the according template
+    
 =cut
 
 get '/extclusters/:extclusterid/monitoring' => sub {
     my $cluster_id = params->{extclusterid} || 0;
-	my %template_config = (title_page => "Cluster Monitor Overview", cluster_id => $cluster_id);
+    my %template_config = (title_page => "Cluster Monitor Overview", cluster_id => $cluster_id);
 
-	#we retrieve the combination list for this external cluster
-	_getCombinations(\%template_config);
+    #we retrieve the combination list for this external cluster
+    _getCombinations(\%template_config);
     #we retrieve the nodemetrics combination list for this external cluster
     _getNodeMetricCombinations(\%template_config);
 
-	# $log->error('get combinations: '.Dumper\%template_config);
+    # $log->error('get combinations: '.Dumper\%template_config);
 
-	template 'cluster_monitor', \%template_config, { layout => 'main' };
+    template 'cluster_monitor', \%template_config, { layout => 'main' };
 };
 
 
 =head2 ajax '/extclusters/:extclusterid/monitoring/clustersview'
 
-	Desc: Get the values corresponding to the selected combination for the currently monitored cluster,	
-	return to the monitor.js an 2D array containing the timestamped values for the combination, plus a start time and a stop time
+    Desc: Get the values corresponding to the selected combination for the currently monitored cluster,	
+    return to the monitor.js an 2D array containing the timestamped values for the combination, plus a start time and a stop time
 
 =cut
 
 ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
-	my $cluster_id = params->{extclusterid} || 0;   
-	my $combination_id = params->{'id'};
-	my $start = params->{'start'};
+    my $cluster_id = params->{extclusterid} || 0;   
+    my $combination_id = params->{'id'};
+    my $start = params->{'start'};
     my $start_timestamp;
 	my $stop = params->{'stop'};
     my $stop_timestamp;	
@@ -288,61 +288,61 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     my %aggregate_combination;
     my @histovalues;
 
-	#If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
-	if ($start eq '') {
-		$start = DateTime->now->set_time_zone('local');
-		$start->subtract( days => 1 );
+    #If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
+    if ($start eq '') {
+        $start = DateTime->now->set_time_zone('local');
+        $start->subtract( days => 1 );
         $start_timestamp = $start->epoch(); 
-		$start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
-	} else {
+        $start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
+    } else {
         my $start_dt = $date_parser->parse_datetime($start);
         $start_timestamp = $start_dt->epoch();
     }
-        
-	if ($stop eq '') {
-		$stop = DateTime->now->set_time_zone('local');
+
+    if ($stop eq '') {
+        $stop = DateTime->now->set_time_zone('local');
         $stop_timestamp = $stop->epoch(); 
-		$stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
+        $stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
 	} else {
         my $stop_dt = $date_parser->parse_datetime($stop);
         $stop_timestamp = $stop_dt->epoch() ;
     }
-    
+
     eval {
         %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
-		# $log->info('values returned by compute values: '.Dumper \%aggregate_combination);
+        # $log->info('values returned by compute values: '.Dumper \%aggregate_combination);
     };
     if ($@) {
-		$error="$@";
-		$log->error($error);
-		return to_json {error => $error};
-	} elsif (!%aggregate_combination || scalar(keys %aggregate_combination) == 0) {
-		$error='no values could be computed for this combination';
-		$log->error($error);
-		return to_json {error => $error};
-	} else {
-		my $undef_count = 0;
-		my $res_number = scalar(keys %aggregate_combination);
+        $error="$@";
+        $log->error($error);
+        return to_json {error => $error};
+    } elsif (!%aggregate_combination || scalar(keys %aggregate_combination) == 0) {
+        $error='no values could be computed for this combination';
+        $log->error($error);
+        return to_json {error => $error};
+    } else {
+        my $undef_count = 0;
+        my $res_number = scalar(keys %aggregate_combination);
         while (my ($date, $value) = each %aggregate_combination) {
             my $dt = DateTime->from_epoch(epoch => $date)->set_time_zone('local');
             my $date_string = $dt->strftime('%m-%d-%Y %H:%M');
             push @histovalues, [$date_string,$value];
-			# we reference the undef values in order to throw an error if all values are undef
-			if (!defined $value) {
-				$undef_count++;
-			}
+            # we reference the undef values in order to throw an error if all values are undef
+            if (!defined $value) {
+                $undef_count++;
+            }
         }
-		if ($res_number == $undef_count) {
-			$error='all values retrieved for the selected time windows were undefined';
-			$log->error($error);
-			return to_json {error => $error};
-		}
+        if ($res_number == $undef_count) {
+            $error='all values retrieved for the selected time windows were undefined';
+            $log->error($error);
+            return to_json {error => $error};
+        }
         # $log->info('values sent to timed graph: '.Dumper \@histovalues);
-		# $log->info('counter value: '.$undef_count.' number of values: '.$res_number);
-		return to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
+        # $log->info('counter value: '.$undef_count.' number of values: '.$res_number);
+        return to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
     }
-};  
-  
+};
+
 
 =head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph'
 
@@ -370,6 +370,12 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph' => sub {
 ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram' => sub {
     my $cluster_id    = params->{extclusterid} || 0;
     my $nodemetric_combination_id = params->{'id'}; 
+
+    #we gather computation result for the nodemetric combination
+    my $compute_result = _computeNodemetricCombination(cluster_id => $cluster_id, combination_id => $nodemetric_combination_id);
+
+
+
     #choper min et max des valeurs
     #découper avec une valeur X par défaut et remplir @bins
     #appliquer fonction frequency_distribution avec \@bins en parametre
