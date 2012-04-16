@@ -75,6 +75,9 @@
     left:45px;
 }
 
+#part_number {
+    width:40px;
+}
 .jqplot-yaxis {
     margin-right: 15px;
 }
