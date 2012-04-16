@@ -78,8 +78,9 @@
             </select>
         <% END %>
         </div>
+        <br />
         <div>
-            <label for="part_number"> select a number of partition for the histogram (default 10)</label>
+            <label for="part_number"> number of partitions(default 10)</label>
             <input type="text" id="part_number">
         </div>
         <br />
