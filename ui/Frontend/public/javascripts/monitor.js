@@ -461,7 +461,7 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
                 }
             },
             yaxis:{
-                label:'nodes quantity',
+                label:'#nodes',
                 min:0,
                 max:nodesquantity,
             },
