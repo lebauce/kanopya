@@ -345,7 +345,7 @@ function showCombinationGraph(curobj,combi_id,label,start,stop) {
 }
 
 //functions triggered on nodemetrics combination selection
-function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id) {
+function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nodemetric_combination_label) {
     if (nodemetric_combination_id == 'default') { return }
     loading_start();
     var params = {id:nodemetric_combination_id};
@@ -371,7 +371,7 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id) {
                 var sliced_values = data.values.slice(indexOffset,toElementNumber);
                 var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
                 //we generate the graph
-                nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, div_id, max, nodemetric_combination_id);
+                nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, div_id, max, nodemetric_combination_label);
             }
             var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
             $("#nodes_bargraph").append(button);
@@ -380,7 +380,7 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id) {
     });
 }
 
-function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id) {
+function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nodemetric_combination_label) {
     if (nodemetric_combination_id == 'default') { return }
     loading_start();
     var params = {id:nodemetric_combination_id};
@@ -390,12 +390,12 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id) {
         if (data.error){ alert (data.error); }
         else {
             document.getElementById(div_id).style.display='block';
-            nodemetricCombinationHistogram(data.nbof_nodes_in_partition, data.partitions, div_id, nodesquantity, nodemetric_combination_id);
+            nodemetricCombinationHistogram(data.nbof_nodes_in_partition, data.partitions, div_id, data.nodesquantity, nodemetric_combination_label);
         }
         var button = '<input type=\"button\" value=\"refresh\" id=\"nch_button\" onclick=\"nch_replot()\"/>';
-        $("#nodes_bargraph").append(button);
-    }
-    loading_stop();
+        $("#"+div_id).append(button);
+        loading_stop();
+    });
 }
 
 //Jqplot bar plots
@@ -461,6 +461,7 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
                 }
             },
             yaxis:{
+                label:'nodes quantity',
                 min:0,
                 max:nodesquantity,
             },

@@ -378,7 +378,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram' => sub {
     my $compute_result = _computeNodemetricCombination(cluster_id => $cluster_id, combination_id => $nodemetric_combination_id);
 
     #we define the number of nodes
-    my $nodes_quantity = scalar($compute_result->{'nodes'});
+    my $nodes_quantity = scalar(@{$compute_result->{'nodes'}});
 
     #we get the combination values and give them to statistics descriptive
     my $top_value = Statistics::Descriptive::Full->new();
@@ -393,7 +393,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram' => sub {
         push @number_of_nodes_in_partition, $partition_value;
     }
 
-    return to_json {partitions => @partitions, nbof_nodes_in_partition => @number_of_nodes_in_partition, nodesquantity => $nodes_quantity};
+    return to_json {partitions => \@partitions, nbof_nodes_in_partition => \@number_of_nodes_in_partition, nodesquantity => $nodes_quantity};
 };
 
 

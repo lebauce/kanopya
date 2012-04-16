@@ -51,10 +51,10 @@
 			<p>no nodemetric_combinations could be retrieved for this external cluster</p>
 		<% ELSE %>
 			<label for="nmBargraph_list" class="list_label">Available nodemetric combinations for external cluster </label>
-			<select id="nmBargraph_list" onchange="showNodemetricCombinationBarGraph(this, this.options[this.selectedIndex].id);" >
+			<select id="nmBargraph_list" onchange="showNodemetricCombinationBarGraph(this, this.options[this.selectedIndex].id), this.options[this.selectedIndex].value);" >
 				<option selected="selected" id="default">Select an indicator</option>
 				<% FOREACH nodemetric_combination IN nodemetric_combinations %>
-					<option id ="<% nodemetric_combination.id %>"><% nodemetric_combination.label %></option>
+					<option id ="<% nodemetric_combination.id %>" value="<% nodemetric_combination.label %>"><% nodemetric_combination.label %></option>
 				<% END %>
 			</select>
 		<% END %>
@@ -70,10 +70,10 @@
 			<p>no nodemetric_combinations could be retrieved for this external cluster</p>
 		<% ELSE %>
 			<label for="nmHistogram_list" class="list_label">Available nodemetric combinations for external cluster </label>
-			<select id="nmHistogram_list" onchange="showNodemetricCombinationHistogram(this, this.options[this.selectedIndex].id);" >
+			<select id="nmHistogram_list" onchange="showNodemetricCombinationHistogram(this, this.options[this.selectedIndex].id), this.options[this.selectedIndex].value);" >
 				<option selected="selected" id="default">Select an indicator</option>
 				<% FOREACH nodemetric_combination IN nodemetric_combinations %>
-					<option id ="<% nodemetric_combination.id %>"><% nodemetric_combination.label %></option>
+					<option id ="<% nodemetric_combination.id %>" value="<% nodemetric_combination.label %>"><% nodemetric_combination.label %></option>
 				<% END %>
 			</select>
 		<% END %>
