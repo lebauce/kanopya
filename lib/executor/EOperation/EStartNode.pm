@@ -691,6 +691,25 @@ sub _generateNtpdateConf {
     );
 
     unlink "/tmp/$tmpfile";
+    
+    # send ntpdate init script
+    $tmpfile = $rand->randpattern("cccccccc");
+    $input = "ntpdate";
+    $data = {};
+    
+    $template->process($input, $data, "/tmp/$tmpfile")
+        or throw Kanopya::Exception::Internal::IncorrectParam(
+                     error => "Error while generating ntpdate init script ". $template->error() . "\n"
+                 );
+
+    $self->{executor}->{econtext}->send(
+        src  => "/tmp/$tmpfile",
+        dest => "$args{etc_path}/init.d/ntpdate"
+    );
+    
+    $self->{executor}->{econtext}->execute(command => "chmod +x $args{etc_path}/init.d/ntpdate");
+    $self->{executor}->{econtext}->execute(command => "chroot $args{etc_path}/.. /sbin/insserv -d ntpdate");
+    
 }
 
 1;
