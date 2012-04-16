@@ -384,11 +384,16 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id) {
     if (nodemetric_combination_id == 'default') { return }
     loading_start();
     var params = {id:nodemetric_combination_id};
-    document.getElementById('nodes_histogram').innerHTML='';
+    var div_id = 'nodes_histogram';
+    document.getElementById(div_id).innerHTML='';
     $.getJSON(nodes_view_histogram, params, function(data) {
         if (data.error){ alert (data.error); }
         else {
+            document.getElementById(div_id).style.display='block';
+            nodemetricCombinationBarGraph(data.nbof_nodes_in_partition, data.partitions, data.unit, div_id, min, nodesquantity, nodemetric_combination_id);
         }
+        var button = '<input type=\"button\" value=\"refresh\" id=\"nch_button\" onclick=\"nch_replot()\"/>';
+        $("#nodes_bargraph").append(button);
     }
     loading_stop();
 }
@@ -492,12 +497,17 @@ function toggleTrendLine() {
 // TODO: make one generic refresh functions for every case.
 
 //replot cluster combination timed graph. 
-function c_replot(){
+function c_replot() {
     var combination_dropdown_list = document.getElementById('combination_list');
     showCombinationGraph(this,combination_dropdown_list.options[combination_dropdown_list.selectedIndex].id, combination_dropdown_list.options[combination_dropdown_list.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);
 }
 //replot  nodemetric combination bar graph
-function nc_replot(){
-    var nmcombination_dropdown_list = document.getElementById('indicator_list');
+function nc_replot() {
+    var nmcombination_dropdown_list = document.getElementById('nmBargraph_list');
     showMetricGraph(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)	
+}
+//replot  nodemetric combination Histogram
+function nch_replot() {
+    var nmcombination_dropdown_list = document.getElementById('nmHistogram_list');
+    showMetricGraph(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)    
 }

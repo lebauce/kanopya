@@ -69,6 +69,12 @@
     left:45px;
 }
 
+#nch_button {
+    position:absolute;
+    top:-25px;
+    left:45px;
+}
+
 .jqplot-yaxis {
     margin-right: 15px;
 }

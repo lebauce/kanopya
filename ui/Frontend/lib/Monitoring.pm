@@ -258,7 +258,7 @@ get '/extclusters/:extclusterid/monitoring' => sub {
     my %template_config = (title_page => "Cluster Monitor Overview", cluster_id => $cluster_id);
 
     #we retrieve the combination list for this external cluster
-    _getCombinations(\%template_config);
+    _getClustermetricCombinations(\%template_config);
     #we retrieve the nodemetrics combination list for this external cluster
     _getNodeMetricCombinations(\%template_config);
 
@@ -371,16 +371,29 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram' => sub {
     my $cluster_id    = params->{extclusterid} || 0;
     my $nodemetric_combination_id = params->{'id'}; 
 
+    #we define the numer of partition used for the graph
+    my $part_number = 10;
+
     #we gather computation result for the nodemetric combination
     my $compute_result = _computeNodemetricCombination(cluster_id => $cluster_id, combination_id => $nodemetric_combination_id);
 
+    #we define the number of nodes
+    my $nodes_quantity = scalar($compute_result->{'nodes'});
 
+    #we get the combination values and give them to statistics descriptive
+    my $top_value = Statistics::Descriptive::Full->new();
+    $top_value->add_data($compute_result->{'values'});
+    my %partitioned_values = $top_value->frequency_distribution($part_number);
 
-    #choper min et max des valeurs
-    #découper avec une valeur X par défaut et remplir @bins
-    #appliquer fonction frequency_distribution avec \@bins en parametre
-    # construire le tableau des valeurs a partir des valeurs de %frequency_distribution
-    # construire le tableau des partitions associé à partir des clefs 
+    my @partitions;
+    my @number_of_nodes_in_partition;
+    #we build two arrays, one containing the partition "label", and the other containing the related values
+    while ( my ($partition_scope, $partition_value) = each %partitioned_values) {
+        push @partitions, $partition_scope;
+        push @number_of_nodes_in_partition, $partition_value;
+    }
+
+    return to_json {partitions => @partitions, nbof_nodes_in_partition => @number_of_nodes_in_partition, nodesquantity => $nodes_quantity};
 };
 
 
@@ -2214,7 +2227,7 @@ sub _getNodeMetricCombinations() {
         return %$template_config;
     }
 }
-sub _getCombinations() {
+sub _getClustermetricCombinations() {
 	my $template_config = shift;
 	my $cluster_id = $template_config->{'cluster_id'};
 	my %errors;
