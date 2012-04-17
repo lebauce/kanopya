@@ -7,11 +7,11 @@
 		<td><% manager.name %></td>
         <input type="hidden" name="host_manager_id" value="<% manager.id %>"/>
 	</tr>
-	<tr>
+	<!--<tr>
 		<td class="label">MAC address :</td>
 		<td><input type="text" name="mac_address" maxlength="17" size="17"/>
 		<span style="color: red"><% ERR_MAC_ADDRESS %></span></td>
-	</tr>
+	</tr>-->
 	<tr>
 		<td class="label">Serial Number :</td>
 		<td><input type="text" name="serial_number" size="50" /></td>
