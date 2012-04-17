@@ -344,6 +344,22 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+
+=head2 network
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Network>
+
+=cut
+
+__PACKAGE__->might_have(
+  "network",
+  "AdministratorDB::Schema::Result::Network",
+  { "foreign.network_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nfs_container_access_client
 
 Type: might_have
