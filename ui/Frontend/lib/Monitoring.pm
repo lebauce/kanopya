@@ -348,15 +348,18 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram' => sub {
     $top_value->add_data($compute_result->{'values'});
     my %partitioned_values = $top_value->frequency_distribution($part_number);
 
-    my @partitions;
-    my @number_of_nodes_in_partition;
+    my $min = 0;
+    my @partitions_scopes;
+    my @nbof_nodes_per_partition;
+
     #we build two arrays, one containing the partition "label", and the other containing the related values
-    while ( my ($partition_scope, $partition_value) = each %partitioned_values) {
-        push @partitions, $partition_scope;
-        push @number_of_nodes_in_partition, $partition_value;
+    foreach my $partition_scope ( sort { $f{$b} <=> $f{$a} } keys %partitioned_values) {
+        push @partitions_scopes, $min.' - '.$partition_scope;
+        push @nbof_nodes_per_partition, %partitioned_values->{$partition_scope};
+        $min = $partition_scope + 1;
     }
 
-    return to_json {partitions => \@partitions, nbof_nodes_in_partition => \@number_of_nodes_in_partition, nodesquantity => $nodes_quantity};
+    return to_json {partitions => \@partitions_scopes, nbof_nodes_in_partition => \@nbof_nodes_per_partition, nodesquantity => $nodes_quantity};
 };
 
 
