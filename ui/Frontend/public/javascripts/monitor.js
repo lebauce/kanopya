@@ -385,7 +385,10 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nod
     if (!isInt(part_number)) {
         alert(part_number+' is not an integer');
         return
-    }
+    } else if (!part_number) {
+		alert(part_number);
+		part_number = 10;
+	}
     loading_start();
     var params = {id:nodemetric_combination_id,pn:part_number};
     var div_id = 'nodes_histogram';
