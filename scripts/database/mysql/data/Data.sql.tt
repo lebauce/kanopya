@@ -431,17 +431,11 @@ INSERT INTO `inside` VALUES (@admin_cluster);
 INSERT INTO `cluster` VALUES (@admin_cluster,'Kanopya','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'',0,'[% admin_domainname %]', '127.0.0.1', '127.0.0.1', 'up:[% tmstp %]', NULL,'test_', 1, @adminuserid, @kernel, NULL, @physical_hoster, NULL, NULL);
 
 --
--- internal ip for admin node
---
-
-INSERT INTO `ipv4_internal` VALUES (1,'[% ipv4_internal_ip %]','[% ipv4_internal_netmask %]', NULL);
-
---
 -- admin host
 --
 
 INSERT INTO `entity` VALUES (@eid, 3);
-INSERT INTO `host` VALUES (@eid, @physical_hoster, NULL, NULL,@kernel,'',NULL,1,'Admin host',1,'[% mb_hw_address %]','node1.[% admin_domainname %]','4294967296', '4','node001', 'up:[% tmstp %]',NULL);
+INSERT INTO `host` VALUES (@eid, @physical_hoster, NULL, NULL,@kernel,'',NULL, 'Admin host',1,'node1.[% admin_domainname %]','4294967296', '4','node001', 'up:[% tmstp %]',NULL);
 SET @admin_host := @eid;
 SET @eid := @eid +1;
 
@@ -451,6 +445,12 @@ SET @eid := @eid +1;
 --
 INSERT INTO `iface` VALUES (1,'eth0','[% mb_hw_address %]',0,@admin_host);
 
+--
+-- internal ip for admin node
+--
+
+INSERT INTO `ipv4_internal` VALUES (1,'[% ipv4_internal_ip %]','[% ipv4_internal_netmask %]', NULL);
+INSERT INTO `ip` VALUES (1,'[% ipv4_internal_ip %]', NULL, 1);
 
 --
 -- admin node
@@ -718,7 +718,6 @@ INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'activate'
 INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'deactivate');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'toString');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getEtcName');SET @id:=@id+1;
-INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getMacName');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getEtcDev');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getInternalIP');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getModel');SET @id:=@id+1;

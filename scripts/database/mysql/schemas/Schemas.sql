@@ -407,10 +407,8 @@ CREATE TABLE `host` (
   `kernel_id` int(8) unsigned NOT NULL,
   `host_serial_number` char(64) NOT NULL,
   `host_powersupply_id` int(8) unsigned,
-  `host_ipv4_internal_id` int(8) unsigned  DEFAULT NULL,
   `host_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
-  `host_mac_address` char(18) NOT NULL,
   `host_initiatorname` char(64) DEFAULT NULL,
   `host_ram` bigint unsigned DEFAULT NULL,
   `host_core` int(1) unsigned DEFAULT NULL,
@@ -419,7 +417,6 @@ CREATE TABLE `host` (
   `host_prev_state` char(32),
   PRIMARY KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`host_mac_address`),
   KEY (`hostmodel_id`),
   FOREIGN KEY (`hostmodel_id`) REFERENCES `hostmodel` (`hostmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`processormodel_id`),
@@ -427,9 +424,7 @@ CREATE TABLE `host` (
   KEY (`kernel_id`),
   FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`host_powersupply_id`),
-  FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`host_ipv4_internal_id`),
-  FOREIGN KEY (`host_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
