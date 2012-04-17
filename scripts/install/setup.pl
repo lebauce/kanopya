@@ -134,7 +134,7 @@ $answers->{masterimages_directory} = $answers->{masterimages_directory} . '/'
     if ( $answers->{log_directory} !~ /\/$/ );
 
 make_path("$answers->{masterimages_directory}", { verbose => 1 });
-
+print "done\n";
 
 
 ######################
@@ -154,7 +154,7 @@ if((! -e '/root/.ssh/kanopya_rsa') && (! -e '/root/.ssh/kanopya_rsa.pub')) {
 #As conf file changes from lenny to squeeze, we need to handle both cases
 open (my $FILE, "<","/etc/debian_version") or die "error while opening /etc/debian_version: $!";
 my $line;
-my $debian_version;
+my $debian_version = '';
 while ($line = <$FILE>){
     if ($line =~ m/^6\./ || $line =~ m/^squeeze/) {
             print 'stable release: ' . $line . "\n";
@@ -167,16 +167,16 @@ while ($line = <$FILE>){
 }
 close ($FILE);
 
-if ($debian_version eq 'squeeze') {
-    writeFile('/etc/dhcp/dhcpd.conf', 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n");
-    system('invoke-rc.d isc-dhcp-server restart');
-}
-elsif ($debian_version eq 'lenny') {
+if ($debian_version eq 'lenny') {
     writeFile('/etc/dhcp3/dhcpd.conf', 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n");
     system('invoke-rc.d dhcpd restart');
 }
 else {
-    print "we can't determine the Debian version you are running, please check /etc/debian_version";
+    if ($debian_version ne 'squeeze' ) {
+        print "We can't determine the Debian version you are running, trying to use Debian Squeeze config.\n";
+    }
+    writeFile('/etc/dhcp/dhcpd.conf', 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n");
+    system('invoke-rc.d isc-dhcp-server restart');
 }
 
 #Atftpd configuration
