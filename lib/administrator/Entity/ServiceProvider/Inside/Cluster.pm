@@ -541,12 +541,9 @@ sub getMasterNode {
 sub getMasterNodeIp {
     my $self = shift;
     my $master = $self->getMasterNode();
-    my $adm = Administrator->new();
 
     if ($master) {
-        my $node_ip = $adm->{manager}->{network}->getInternalIP(
-                          ipv4_internal_id => $master->getAttr(name => "host_ipv4_internal_id")
-                      )->{ipv4_internal_address};
+        my $node_ip = $master->getInternalIP->{ipv4_internal_address};
 
         $log->debug("Master node found and its ip is $node_ip");
         return $node_ip;

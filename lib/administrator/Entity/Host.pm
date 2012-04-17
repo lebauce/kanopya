@@ -40,7 +40,6 @@ hostmodel_id : Int : Identifier of host model.
 processormodel_id : Int : Identifier of host processor model
 kernel_id : Int : kernel identifier which will be used by host if non specified by cluster
 host_serial_number : String : This is the serial number attributed to host
-host_mac_address : String : This is the main network interface mac address of the host
 
 host_powersupply_id : Int : Facultative identifier to know which powersupplycard and port is used.
 Powersupplyid is created during host creation.
@@ -48,8 +47,6 @@ host_desc :  String : This is a free field to enter a description of host. It is
 specify owner, team, ...
 
 active : Int : This is an internal parameter used to activate or deactivate resources on Kanopya System
-host_internal_ip : String : This another internally manage attribute, it allow to save internal ip of
-a host when it is in a cluster
 host_hostname : Hostname is also internally managed. Host hostname will be generated from the mac address
 It is generated when a host is added into a cluster
 host_initiatorname : This attributes is generated when a host is added in a cluster and allow to connect
@@ -108,19 +105,6 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
-    host_mac_address => {
-        # mac address format must be lower case
-        pattern      => '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:' .
-                        '[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',
-        # to have udev persistent net rules work
-        is_mandatory => 1,
-        is_extended  => 0
-    },
-    host_internal_ip => {
-        pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
     host_hostname => {
         pattern      => '^\w*$',
         is_mandatory => 0,
@@ -143,11 +127,6 @@ use constant ATTR_DEF => {
     },
     host_state => {
         pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
-    host_ipv4_internal_id => {
-        pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
     },
@@ -423,6 +402,21 @@ sub getIfaces {
     return wantarray ? @$ifcs : $ifcs;
 }
 
+=head2 getPXEMacAddress
+
+=cut
+
+sub getPXEMacAddress {
+    my $self = shift;
+
+    my $interfaces = $self->{_dbix}->ifaces;
+    while(my $ifc = $interfaces->next) {
+        if ($ifc->get_column('iface_pxe')) {
+            return $ifc->get_column('iface_mac_addr');
+        }
+    }
+}
+
 sub removeInterface {
     my $self = shift;
     my %args = @_;
@@ -439,12 +433,13 @@ sub removeInterface {
     my $ifc = $self->{_dbix}->ifaces->find($args{iface_id});
     $ifc->delete();
 }
+
 sub becomeMasterNode{
     my $self = shift;
 
     my $row = $self->{_dbix}->node;
     if(not defined $row) {
-        $errmsg = "Entity::Host->becomeMasterNode :Host ".$self->getAttr(name=>"host_mac_address")." is not a node!";
+        $errmsg = "Entity::Host->becomeMasterNode :Host " . $self->getAttr(name => "entity_id") . " is not a node!";
         $log->error($errmsg);
         throw Kanopya::Exception::DB(error => $errmsg);
     }
@@ -466,10 +461,10 @@ sub stopToBeNode{
     my $self = shift;
 
     my $row = $self->{_dbix}->node;
-    $log->debug("node <" . $self->getAttr(name => "host_mac_address") . "> stop to be node");
+    $log->debug("node <" . $self->getAttr(name => "entity_id") .  "> stop to be node");
     if(not defined $row) {
         $errmsg = "Entity::Host->stopToBeNode : node representing host " .
-                  $self->getAttr(name=>"host_mac_address") . " not found!";
+                   $self->getAttr(name => "entity_id") . " not found!";
         $log->error($errmsg);
         throw Kanopya::Exception::DB(error => $errmsg);
     }
@@ -503,11 +498,7 @@ sub getHostFromIP {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['ipv4_internal_ip']);
-
-    my $adm = Administrator->new();
-    my $net_id = $adm->{manager}->{network}->getInternalIPId( ipv4_internal_address => $args{ipv4_internal_ip} );
-    return $class->SUPER::getEntities( hash=>{host_ipv4_internal_id => $net_id},  type => "Host");
+    throw Kanopya::Exception::NotImplemented();
 }
 
 sub getFreeHosts {
@@ -635,34 +626,27 @@ sub deactivate{
 
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('host_mac_address');
-    $string =~ s/\://g;
-    return $string;
-}
 
-=head2 getMacName
-
-return Mac address with separator : replaced by _
-
-=cut
-
-sub getMacName {
-    my $self = shift;
-    my $mac = $self->getAttr(name => "host_mac_address");
-    $mac =~ s/\:/\_/mg;
-    return $mac;
+    return 'Entity::Host <' . $self->getAttr(name => "entity_id") .'>';
 }
 
 sub getInternalIP {
     my $self = shift;
     my $adm = Administrator->new();
-    if ($self->getAttr(name=>"host_ipv4_internal_id")) {
-        return $adm->{manager}->{network}->getInternalIP(
-                   ipv4_internal_id => $self->getAttr(name=>"host_ipv4_internal_id")
-               );
+
+    # For instance, return the first ip of the first iface found.
+    my $iface = $self->{_dbix}->ifaces->single();
+    if (defined $iface) {
+        my $ip = $iface->ips->single();
+        if (defined $ip) {
+            # TODO: Do not use ipv4_internal table, so do not use the NetworkManager any more ?
+            my $ipv4_id = $adm->{manager}->{network}->getInternalIPId(
+                              ipv4_internal_address => $ip->get_column('ip_addr')
+                          );
+            return $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $ipv4_id);
+        }
     }
     return {};
-
 }
 
 sub setInternalIP {
@@ -671,21 +655,38 @@ sub setInternalIP {
 
     General::checkParams(args => \%args, required => ['ipv4_address','ipv4_mask']);
 
-    my $adm = Administrator->new();
-    my $net_id = $adm->{manager}->{network}->newInternalIP(%args);
-    $self->setAttr(name => "host_ipv4_internal_id", value => $net_id);
-    return $net_id;
+    # For instance, add an IP to the frist iface found.
+    my $iface = $self->{_dbix}->ifaces->single();
+    if (defined $iface) {
+        # TODO: Do not use ipv4_internal table, so do not use the NetworkManager any more ?
+        my $adm = Administrator->new();
+        my $net_id = $adm->{manager}->{network}->newInternalIP(%args);
+
+        $iface->ips->create({ ip_addr => $args{ipv4_address} });
+
+        return $net_id;
+    }
+    throw Kanopya::Exception::DB(
+              error => "Not iface defined for Host <" . $self->getAttr(name => 'entity_id') . ">."
+          );
 }
 
 sub removeInternalIP {
     my $self = shift;
+    my $adm = Administrator->new();
 
-    my $internal_net_id = $self->getAttr(name => "host_ipv4_internal_id");
-
-    if (defined $internal_net_id) {
-        $self->{_dbix}->update({'host_ipv4_internal_id' => undef});
-        my $adm = Administrator->new();
-        my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_id => $internal_net_id);
+    # For instance, remove all ip related to this host.
+    my $ifaces = $self->{_dbix}->ifaces;
+    while(my $iface = $ifaces->next) {
+        my $ips = $iface->ips;
+        while(my $ip = $ips->next) {
+            # TODO: Do not use ipv4_internal table, so do not use the NetworkManager any more ?
+            my $ipv4_id = $adm->{manager}->{network}->getInternalIPId(
+                              ipv4_internal_address => $ip->get_column('ip_addr')
+                          );
+            $adm->{manager}->{network}->delInternalIP(ipv4_id => $ipv4_id);
+            $ip->delete();
+        }
     }
 }
 

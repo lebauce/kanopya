@@ -43,8 +43,7 @@ sub addHost {
 
     General::checkParams(args     => \%args,
                          required => [ "processormodel_id", "host_core", "kernel_id",
-                                       "hostmodel_id", "host_mac_address",
-                                       "host_serial_number", "host_ram" ]);
+                                       "hostmodel_id", "host_serial_number", "host_ram" ]);
 
     my $host_manager_id = $self->getAttr(name => 'entity_id');
 
@@ -126,8 +125,7 @@ sub createHost {
 
     General::checkParams(args     => \%args,
                          required => [ "processormodel_id", "host_core", "kernel_id",
-                                       "hostmodel_id", "host_mac_address",
-                                       "host_serial_number", "host_ram" ]);
+                                       "hostmodel_id", "host_serial_number", "host_ram" ]);
 
     my $host_manager_id = $self->getAttr(name => 'entity_id');
 

@@ -725,8 +725,8 @@ sub generateMacAddress {
 	my $regexp = '00:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}';  
 	do {
 		$macaddress = random_regex($regexp);
-		@hosts = $self->{db}->resultset('Host')->search(
-			{ host_mac_address => $macaddress },
+		@hosts = $self->{db}->resultset('Iface')->search(
+			{ iface_mac_addr => $macaddress },
 			{ rows => 1 }
 		);
 	} while( scalar(@hosts) );

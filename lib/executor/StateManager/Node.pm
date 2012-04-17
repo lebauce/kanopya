@@ -178,7 +178,7 @@ sub incorrectStates {
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
     my $state = $args{pingable} || $args{services_available};
-    my $error = "Wrong state <$state> for host <". $args{host}->getAttr(name=>'host_mac_address').">\n";
+    my $error = "Wrong state <$state> for host <" . $args{host}->getAttr(name => 'entity_id') . ">\n";
     throw Kanopya::Exception::Internal(error => $error);
 }
 

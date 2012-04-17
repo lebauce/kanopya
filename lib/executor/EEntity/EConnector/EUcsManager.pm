@@ -112,11 +112,7 @@ sub getFreeHost {
 
             my @ethernets = $sp->children("vnicEther");
             my $ethernet = $ethernets[0];
-
-            $log->info("Filling host MAC field with " . $ethernet->{addr});
-            $host->setAttr(name  => "host_mac_address",
-                           value => $ethernet->{addr});
-            $host->save();
+            # TODO: set host ifeacs to proper mac addrs.
 
             return $host;
         }

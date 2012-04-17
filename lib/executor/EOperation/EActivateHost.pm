@@ -151,7 +151,7 @@ sub execute{
     # set host active in db
     $self->{_objs}->{host}->setAttr(name => 'active', value => 1);
     $self->{_objs}->{host}->save();
-    $log->info("Host <".$self->{_objs}->{host}->getAttr(name=>"host_mac_address") ."> is now active");
+    $log->info("Host <" . $self->{_objs}->{host}->getAttr(name=>"entity_id") . "> is now active");
 }
 
 =head1 DIAGNOSTICS

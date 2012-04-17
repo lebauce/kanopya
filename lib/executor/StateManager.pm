@@ -134,11 +134,10 @@ sub run {
         foreach my $mb (@hosts) {
             $adm->{db}->txn_begin;
             eval {
-                  
-                    print "loop on not down host <" .$mb->getAttr(name=>"host_mac_address").">\n";
-                  my $ehost = EFactory::newEEntity(data => $mb);
-                  my $is_up = $ehost->checkUp();
-                  StateManager::Host::updateHostStatus(pingable => $is_up, host=>$mb);
+                print "loop on not down host <" . $mb->getAttr(name => "entity_id") . ">\n";
+                my $ehost = EFactory::newEEntity(data => $mb);
+                my $is_up = $ehost->checkUp();
+                StateManager::Host::updateHostStatus(pingable => $is_up, host => $mb);
             };
             if($@) {
                 my $exception = $@;
@@ -161,10 +160,12 @@ sub run {
             foreach my $mb (@moth_index) {
                 $adm->{db}->txn_begin;
                 eval {
-                    my $srv_available = StateManager::Node::checkNodeUp(host=>$hosts->{$mb}, 
-                                                    cluster=>$cluster,
-                                                    executor_ip=>Entity::ServiceProvider::Inside::Cluster->get(id => $self->{config}->{cluster}->{executor})->getMasterNodeIp());
-                    StateManager::Node::updateNodeStatus(host=>$hosts->{$mb}, services_available => $srv_available, cluster => $cluster);
+                    my $executor = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{config}->{cluster}->{executor});
+                    my $srv_available = StateManager::Node::checkNodeUp(host        => $hosts->{$mb}, 
+                                                                        cluster     => $cluster,
+                                                                        executor_ip => $executor->getMasterNodeIp());
+
+                    StateManager::Node::updateNodeStatus(host => $hosts->{$mb}, services_available => $srv_available, cluster => $cluster);
                 };
                 if($@) {
                     my $exception = $@;
