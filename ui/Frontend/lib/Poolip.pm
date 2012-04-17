@@ -21,7 +21,7 @@ sub _poolip {
 
         $tmp->{poolip_id}       = $poolip->getAttr('name' => 'poolip_id');
         $tmp->{poolip_name}     = $poolip->getAttr('name' => 'poolip_name');
-        $tmp->{poolip_desc}     = $poolip->getAttr('name' => 'poolip_desc');
+        #$tmp->{poolip_desc}     = $poolip->getAttr('name' => 'poolip_desc');
         $tmp->{poolip_addr}     = $poolip->getAttr('name' => 'poolip_addr');
         $tmp->{poolip_mask}     = $poolip->getAttr('name' => 'poolip_mask');
         $tmp->{poolip_netmask}  = $poolip->getAttr('name' => 'poolip_netmask');
@@ -52,7 +52,7 @@ post '/poolip/add' => sub {
     my $adm = Administrator->new;
     eval { Entity::Poolip->create(
             poolip_name     => param('name'),
-            poolip_desc     => param('desc'),
+            #poolip_desc     => param('desc'),
             poolip_addr     => param('addr'),
             poolip_mask     => param('mask'),
             poolip_netmask  => param('netmask'),
@@ -102,7 +102,7 @@ get '/poolip/:poolid' => sub {
     template 'poolip_details', {
         poolip_id      => $epoolip->getAttr('name' => 'poolip_id'),
         poolip_name    => $epoolip->getAttr('name' => 'poolip_name'),
-        poolip_desc    => $epoolip->getAttr('name' => 'poolip_desc'),
+        #poolip_desc    => $epoolip->getAttr('name' => 'poolip_desc'),
         poolip_addr    => $poolipaddr,
         poolip_mask    => $poolipmask,
         poolip_netmask => $epoolip->getAttr('name' => 'poolip_netmask'),

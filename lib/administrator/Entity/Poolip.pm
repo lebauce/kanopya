@@ -31,44 +31,52 @@ Entity::Poolip
 
 package Entity::Poolip;
 use base "Entity";
+
 use NetAddr::IP;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	poolip_name			=> { pattern      => '.*',
-							 is_mandatory => 1,
-                           },
-    poolip_desc			=> { pattern      => '.*',
-							 is_mandatory => 0,
-                           },
-    poolip_addr			=> { pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
-							 is_mandatory => 1,
-                           },
-    poolip_mask			=> { pattern      => '[0-9]{1,2}',
-							 is_mandatory => 1,
-                           },
-    poolip_netmask		=> { pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
-							 is_mandatory => 1,
-                           },
-    poolip_gateway		=> { pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
-							 is_mandatory => 1,
-                           },                           
+    poolip_name => {
+        pattern      => '.*',
+        is_mandatory => 1,
+    },
+    poolip_addr => {
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+    },
+    poolip_mask => {
+        pattern      => '[0-9]{1,2}',
+        is_mandatory => 1,
+    },
+    poolip_netmask => {
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+    },
+    poolip_gateway => {
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
 sub getPoolip {
     my $class = shift;
     my %args = @_;
-General::checkParams(args => \%args, required => ['hash']);
 
-return $class->search(%args);
+    General::checkParams(args => \%args, required => ['hash']);
+
+    return $class->search(%args);
 }
+
 sub create {
-    my $self = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
+
+    $class->checkAttrs(attrs => \%args);
 
     my $addrip = new NetAddr::IP($args{poolip_addr});
     if(not defined $addrip) {
@@ -93,7 +101,6 @@ sub create {
 
     my $poolip = Entity::Poolip->new(
         poolip_name     => $args{poolip_name},
-        poolip_desc     => $args{poolip_desc},
         poolip_addr     => $args{poolip_addr},
         poolip_mask     => $args{poolip_mask},
         poolip_netmask  => $args{poolip_netmask},
