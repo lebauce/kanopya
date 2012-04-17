@@ -127,7 +127,7 @@ __PACKAGE__->belongs_to(
   "class_type",
   "AdministratorDB::Schema::Result::ClassType",
   { class_type_id => "class_type_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 entityright_entityrights_consumed
@@ -280,6 +280,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 network
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Network>
+
+=cut
+
+__PACKAGE__->might_have(
+  "network",
+  "AdministratorDB::Schema::Result::Network",
+  { "foreign.network_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nfs_container_access_client
 
 Type: might_have
@@ -292,21 +307,6 @@ __PACKAGE__->might_have(
   "nfs_container_access_client",
   "AdministratorDB::Schema::Result::NfsContainerAccessClient",
   { "foreign.nfs_container_access_client_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 iscsi_target
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::IscsiTarget>
-
-=cut
-
-__PACKAGE__->might_have(
-  "iscsi_target",
-  "AdministratorDB::Schema::Result::IscsiTarget",
-  { "foreign.iscsi_target_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -430,25 +430,10 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vlan
 
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Vlan>
-
-=cut
-
-__PACKAGE__->might_have(
-  "vlan",
-  "AdministratorDB::Schema::Result::Vlan",
-  { "foreign.vlan_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-17 14:30:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jqEp+0CRUKgDGcfc2VkSdQ
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-22 15:41:08
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ol/38+Y1FY4qobTesBf0rQ
-
-
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

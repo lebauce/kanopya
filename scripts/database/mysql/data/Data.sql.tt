@@ -63,7 +63,7 @@ INSERT INTO `class_type` VALUES
 (47, 'AggregateRule'),
 (48, 'Entity::Component::Physicalhoster0'),
 (49, 'Entity::Poolip'),
-(50, 'Entity::Vlan'),
+(50, 'Entity::Network::Vlan'),
 (51, 'Entity::Masterimage'),
 (52, 'Entity::Connector::UcsManager'),
 (53, 'Entity::Component::Fileimagemanager0'),
@@ -83,7 +83,9 @@ INSERT INTO `class_type` VALUES
 (67, 'ActionTriggered'),
 (68, 'ActionParameter'),
 (69, 'ActionType'),
-(70, 'ActionTypeParameter');
+(70, 'ActionTypeParameter'),
+(71, 'Entity::Network'),
+(72, 'Entity::Ip');
 
 --
 -- system groups
@@ -395,8 +397,8 @@ INSERT INTO `connector_type` VALUES
 --
 
 INSERT INTO `entity` VALUES (@eid, 50);
-INSERT INTO `vlan` VALUES
-(@eid,'novlan','used when no vlan are required', 0);
+INSERT INTO `network` VALUES (@eid, 'novlan');
+INSERT INTO `vlan` VALUES (@eid, 0);
 SET @eid := @eid +1;
 
 --
@@ -404,9 +406,9 @@ SET @eid := @eid +1;
 --
 
 INSERT INTO `interface_role` VALUES
-(1,'admin','network used for system administration'),
-(2,'public','network used for public access'),
-(3,'vms','network used for virtual machines');
+(1,'admin'),
+(2,'public'),
+(3,'vms');
 
 --
 -- kernels
