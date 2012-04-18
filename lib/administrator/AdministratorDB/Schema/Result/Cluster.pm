@@ -74,6 +74,13 @@ __PACKAGE__->table("cluster");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 cluster_si_persistent
+
+  data_type: 'integer'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =head2 cluster_domainname
 
   data_type: 'char'
@@ -95,7 +102,7 @@ __PACKAGE__->table("cluster");
 =head2 cluster_state
 
   data_type: 'char'
-  default_value: 'down'
+  default_value: 'down:0'
   is_nullable: 0
   size: 32
 
@@ -182,6 +189,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "cluster_si_shared",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "cluster_si_persistent",
+  {
+    data_type => "integer",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
   "cluster_domainname",
   { data_type => "char", is_nullable => 0, size => 64 },
   "cluster_nameserver1",
@@ -189,7 +203,12 @@ __PACKAGE__->add_columns(
   "cluster_nameserver2",
   { data_type => "char", is_nullable => 0, size => 15 },
   "cluster_state",
-  { data_type => "char", default_value => "down", is_nullable => 0, size => 32 },
+  {
+    data_type => "char",
+    default_value => "down:0",
+    is_nullable => 0,
+    size => 32,
+  },
   "cluster_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
   "cluster_basehostname",
@@ -435,14 +454,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-28 16:32:30
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2Za7AR3ptvmxjYZK4FvKUg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-18 12:00:01
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/YFmOaKFXNgS7sf0XWcHOA
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Inside",
-        { "foreign.inside_id" => "self.cluster_id" },
-        { cascade_copy => 0, cascade_delete => 1 }
-    );
+         { "foreign.inside_id" => "self.cluster_id" },
+         { cascade_copy => 0, cascade_delete => 1 }
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
