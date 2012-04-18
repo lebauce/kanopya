@@ -85,21 +85,18 @@ INSERT INTO `class_type` VALUES
 (69, 'ActionType'),
 (70, 'ActionTypeParameter'),
 (71, 'Entity::Network'),
-(72, 'Entity::NetappAggregate');
+(72, 'Entity::InterfaceRole'),
+(73, 'Entity::NetappAggregate');
 
 --
 -- entity comment list
 --
 
 INSERT INTO `entity_comment` VALUES
-(1, 'Used when no vlan are required');
-
---
--- entity comment list
---
-
-INSERT INTO `entity_comment` VALUES
-(1, 'Used when no vlan are required');
+(1, 'Used when no vlan are required'),
+(2, 'Network used for system administration'),
+(3, 'Network used for public access'),
+(4, 'Network used for virtual machines');
 
 --
 -- system groups
@@ -418,11 +415,17 @@ SET @eid := @eid +1;
 --
 -- interace role list
 --
+INSERT INTO `entity` VALUES (@eid, 72, 2);
+INSERT INTO `interface_role` VALUES (@eid, 'admin');
+SET @eid := @eid +1;
 
-INSERT INTO `interface_role` VALUES
-(1,'admin'),
-(2,'public'),
-(3,'vms');
+INSERT INTO `entity` VALUES (@eid, 72, 3);
+INSERT INTO `interface_role` VALUES (@eid, 'public');
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 72, 4);
+INSERT INTO `interface_role` VALUES (@eid, 'vms');
+SET @eid := @eid +1;
 
 --
 -- kernels

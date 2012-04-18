@@ -699,6 +699,7 @@ CREATE TABLE `interface_role` (
   `interface_role_id`   int(8) unsigned AUTO_INCREMENT,
   `interface_role_name` char(32) NOT NULL,
   PRIMARY KEY (`interface_role_id`),
+  FOREIGN KEY (`interface_role_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`interface_role_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

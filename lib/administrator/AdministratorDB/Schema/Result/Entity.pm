@@ -269,6 +269,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 interface_role
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::InterfaceRole>
+
+=cut
+
+__PACKAGE__->might_have(
+  "interface_role",
+  "AdministratorDB::Schema::Result::InterfaceRole",
+  { "foreign.interface_role_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 kernel
 
 Type: might_have
@@ -496,8 +511,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-18 14:46:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AbVNgq/tQXudgMy/MVNn6Q
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-18 17:24:34
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BjkYSIrEdIPKc7vKL4IgmA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
