@@ -20,8 +20,7 @@ USE `kanopya`;
 SET foreign_key_checks=0;
 
 --
--- Table structure for table `entity`
--- Entity class
+-- Table structure for table `class_type`
 
 CREATE TABLE `class_type` (
   `class_type_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -31,13 +30,25 @@ CREATE TABLE `class_type` (
 
 --
 -- Table structure for table `entity`
+-- EntityComment class
+
+CREATE TABLE `entity_comment` (
+  `entity_comment_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `entity_comment` char(255) DEFAULT NULL,
+  PRIMARY KEY (`entity_comment_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `entity`
 -- Entity class
 
 CREATE TABLE `entity` (
   `entity_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `class_type_id` int(8) unsigned NOT NULL,
+  `entity_comment_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`entity_id`),
   KEY (`class_type_id`),
+  FOREIGN KEY (`entity_comment_id`) REFERENCES `entity_comment` (`entity_comment_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1510,14 +1521,6 @@ CREATE TABLE `masterimage` (
   `masterimage_size` int(8) unsigned NOT NULL,
   PRIMARY KEY (`masterimage_id`),
   FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `entity_comment` (
-  `entity_comment_id` int(8) unsigned NOT NULL,
-  `entity_comment` char(255) DEFAULT NULL,
-  `entity_id` char(255) DEFAULT NULL,
-  PRIMARY KEY (`entity_comment_id`),
-  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

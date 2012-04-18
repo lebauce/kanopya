@@ -22,6 +22,7 @@ sub _vlans {
         $tmp->{vlan_id}     = $vlan->getAttr(name => 'entity_id');
         $tmp->{vlan_name}   = $vlan->getAttr(name => 'network_name');
         $tmp->{vlan_number} = $vlan->getAttr(name => 'vlan_number');
+        $tmp->{vlan_desc}   = $vlan->getComment;
 
         push(@$vlans, $tmp);
     }
@@ -43,8 +44,10 @@ get '/vlans/add' => sub {
 post '/vlans/add' => sub {
     my $evlan = Entity::Network::Vlan->new(
                     network_name => params->{'vlan_name'},
-                    vlan_number => params->{'vlan_number'},
+                    vlan_number  => params->{'vlan_number'},
                 );
+    $evlan->setComment(comment => params->{'vlan_desc'});
+
     redirect('/networks/vlans');
 };
 
@@ -103,11 +106,11 @@ get '/vlans/:vlanid' => sub {
     }
 
     template 'vlans_details', {
-        vlan_id            => $evlan->getAttr('name' => 'entity_id'),
-        #vlan_desc          => $evlan->getAttr('name' => 'vlan_desc'),
-        vlan_number        => $evlan->getAttr('name' => 'vlan_number'),
-        poolips_list       => $poolips,
-        nbpoolips          => scalar(@$poolips)+1,
+        vlan_id      => $evlan->getAttr('name' => 'entity_id'),
+        vlan_number  => $evlan->getAttr('name' => 'vlan_number'),
+        poolips_list => $poolips,
+        nbpoolips    => scalar(@$poolips)+1,
+        vlan_desc    => $evlan->getComment,
     };
 };
 

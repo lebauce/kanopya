@@ -34,67 +34,29 @@ EntityComment
 =cut
 
 package EntityComment;
-
 use base "BaseDB";
 
 use strict;
 use warnings;
+
 use Kanopya::Exceptions;
+use General;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use General;
-our $VERSION = "1.00";
 
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 _getEntityIds
+use constant ATTR_DEF => {
+    entity_comment => {
+        pattern => '^.{0,255}$',
+        is_mandatory => 1,
+        is_extended => 0
+    },
+};
 
-    Class : Protected
-    
-    Desc : return an array reference containing entity id and its groups entity ids
-    
-    args :
-            entity_id : entity_id about an entity object
-    return : array reference of entity_id 
-
-=cut
-
-sub _getEntityIds {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['entity_id']);
-
-    my $ids = [];
-    # TODO verifier que l'entity_id fournit exists en base
-    push @$ids, $args{entity_id};
-    
-    # retrieve entity_id of groups containing this entity object
-    my @groups = $self->{schema}->resultset('Gp')->search( 
-        { 'ingroups.entity_id' => $args{entity_id} },
-        { join                 => [qw/ingroups gp_entity/] }
-    );
-    # add entity_id groups to the arrayref
-    foreach my $g (@groups) { 
-        push @$ids, $g->id;
-    }
-    
-    return $ids;
-}
-
-=head2 getEntityComment
-
-=cut
-
-sub getEntityComment {
-    my $class = shift;
-    my %args = @_;
-    General::checkParams(args => \%args, required => ['hash']);
-
-return $class->search(%args);
-}
-
+sub getAttrDef { return ATTR_DEF; }
 
 1;
 

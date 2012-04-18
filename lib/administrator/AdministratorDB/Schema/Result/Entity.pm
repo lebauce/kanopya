@@ -33,6 +33,13 @@ __PACKAGE__->table("entity");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 entity_comment_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -49,6 +56,13 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "entity_comment_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
 );
 __PACKAGE__->set_primary_key("entity_id");
@@ -113,6 +127,26 @@ __PACKAGE__->might_have(
   "AdministratorDB::Schema::Result::ContainerAccess",
   { "foreign.container_access_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 entity_comment
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::EntityComment>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "entity_comment",
+  "AdministratorDB::Schema::Result::EntityComment",
+  { entity_comment_id => "entity_comment_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 class_type
@@ -431,8 +465,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-17 14:30:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jqEp+0CRUKgDGcfc2VkSdQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-18 14:46:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AbVNgq/tQXudgMy/MVNn6Q
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -162,10 +162,9 @@ sub new {
         $attrs->{class_type_id} = $rs->get_column('class_type_id');
     };
     if ($@) {
-        my $error = $@;
-        $errmsg = "Unregistred or abstract class name <$class>:\n $error";
+        $errmsg = "Unregistred or abstract class name <$class>, assuming it is not an Entity.";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        #throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
     my $dbixroot = $adm->_newDbix(table => _rootTable($class), row => $attrs);

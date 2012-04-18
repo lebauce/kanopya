@@ -21,11 +21,11 @@ sub _poolip {
 
         $tmp->{poolip_id}       = $poolip->getAttr('name' => 'poolip_id');
         $tmp->{poolip_name}     = $poolip->getAttr('name' => 'poolip_name');
-        #$tmp->{poolip_desc}     = $poolip->getAttr('name' => 'poolip_desc');
         $tmp->{poolip_addr}     = $poolip->getAttr('name' => 'poolip_addr');
         $tmp->{poolip_mask}     = $poolip->getAttr('name' => 'poolip_mask');
         $tmp->{poolip_netmask}  = $poolip->getAttr('name' => 'poolip_netmask');
         $tmp->{poolip_gateway}  = $poolip->getAttr('name' => 'poolip_gateway');
+        $tmp->{poolip_desc}     = $poolip->getComment;
 
         push(@$poolip_list, $tmp);
     }
@@ -50,14 +50,16 @@ get '/poolip/add' => sub {
 
 post '/poolip/add' => sub {
     my $adm = Administrator->new;
-    eval { Entity::Poolip->create(
-            poolip_name     => param('name'),
-            #poolip_desc     => param('desc'),
-            poolip_addr     => param('addr'),
-            poolip_mask     => param('mask'),
-            poolip_netmask  => param('netmask'),
-            poolip_gateway  => param('gateway'),
-    ); };
+    eval { 
+        my $poolip = Entity::Poolip->create(
+                      poolip_name     => param('name'),
+                      poolip_addr     => param('addr'),
+                      poolip_mask     => param('mask'),
+                      poolip_netmask  => param('netmask'),
+                      poolip_gateway  => param('gateway'),
+                  );
+        $poolip->setComment(comment => param('desc'));
+    };
     if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
@@ -102,7 +104,7 @@ get '/poolip/:poolid' => sub {
     template 'poolip_details', {
         poolip_id      => $epoolip->getAttr('name' => 'poolip_id'),
         poolip_name    => $epoolip->getAttr('name' => 'poolip_name'),
-        #poolip_desc    => $epoolip->getAttr('name' => 'poolip_desc'),
+        poolip_desc    => $epoolip->getComment,
         poolip_addr    => $poolipaddr,
         poolip_mask    => $poolipmask,
         poolip_netmask => $epoolip->getAttr('name' => 'poolip_netmask'),
