@@ -306,6 +306,10 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     #we get the combination values and return them to the javascript
     my $compute_result = _computeClustermetricCombination (combination_id => $combination_id, start_tms => $start_timestamp, stop_tms => $stop_timestamp);
 
+    if ($compute_result->{'error'}) {
+        return to_json {error => $compute_result->{'error'}};
+    }
+
     return to_json {first_histovalues => $compute_result, min => $start, max => $stop};
 };
 
@@ -321,6 +325,10 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph' => sub {
     my $nodemetric_combination_id = params->{'id'};
 
     my $compute_result = _computeNodemetricCombination(cluster_id => $cluster_id, combination_id => $nodemetric_combination_id);
+
+    if ($compute_result->{'error'}) {
+        return to_json {error => $compute_result->{'error'}};
+    }
 
     return to_json {values => $compute_result->{'values'}, nodelist => $compute_result->{'nodes'}};
 };
@@ -353,9 +361,9 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram' => sub {
     my @nbof_nodes_per_partition;
 
     #we build two arrays, one containing the partition "label", and the other containing the related values
-    foreach my $partition_scope ( sort { $f{$b} <=> $f{$a} } keys %partitioned_values) {
+    foreach my $partition_scope ( sort { $partitioned_values{$b} <=> $partitioned_values{$a} } keys %partitioned_values) {
         push @partitions_scopes, $min.' - '.$partition_scope;
-        push @nbof_nodes_per_partition, %partitioned_values->{$partition_scope};
+        push @nbof_nodes_per_partition, $partitioned_values{$partition_scope};
         $min = $partition_scope + 1;
     }
 
@@ -2264,7 +2272,8 @@ sub _computeNodemetricCombination () {
     my $nodes_metrics; 
     my $error;
     my %nodeEvals;
-
+    my %rep;
+    
     # we retrieve the nodemetric values
     eval {
         foreach my $indicator_id (@indicator_ids) {
@@ -2293,12 +2302,14 @@ sub _computeNodemetricCombination () {
     if ($@) {
         $error="$@";
         $log->error($error);
-        return to_json {error => $error};
+        $rep{'error'} = $error;
+        return \%rep;
     # we catch the fact that there is no value available for the selected nodemetric
     } elsif (scalar(keys %nodeEvals) == 0) {
         $error='Error : No indicator values returned by monitored nodes';
         $log->error($error);
-        return to_json {error => $error};   
+        $rep{'error'} = $error;
+        return \%rep;
     } else {
         #we create an array containing the values, to be sorted
         my @nodes_values_to_sort;
@@ -2322,8 +2333,8 @@ sub _computeNodemetricCombination () {
         my @values = map { $_->{value} } @sorted_nodes_values;  
         #we add nodes without values at the end of nodes list
         @nodes = (@nodes, @nodes_values_undef);
-        
-        my %rep;
+
+
         $rep{'nodes'} = \@nodes;
         $rep{'values'} = \@values;
         return \%rep;
@@ -2346,7 +2357,7 @@ sub _computeClustermetricCombination () {
     my $error;
     my %aggregate_combination;
     my @histovalues;
-
+    my %rep;
     eval {
         %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
         # $log->info('values returned by compute values: '.Dumper \%aggregate_combination);
@@ -2354,11 +2365,13 @@ sub _computeClustermetricCombination () {
     if ($@) {
         $error="$@";
         $log->error($error);
-        return to_json {error => $error};
+        $rep{'error'} = $error;
+        return \%rep;
     } elsif (!%aggregate_combination || scalar(keys %aggregate_combination) == 0) {
         $error='no values could be computed for this combination';
         $log->error($error);
-        return to_json {error => $error};
+        $rep{'error'} = $error;
+        return \%rep;
     } else {
         my $undef_count = 0;
         my $res_number = scalar(keys %aggregate_combination);
