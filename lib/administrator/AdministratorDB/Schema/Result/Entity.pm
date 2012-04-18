@@ -280,6 +280,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 netapp_aggregate
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetappAggregate>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netapp_aggregate",
+  "AdministratorDB::Schema::Result::NetappAggregate",
+  { "foreign.aggregate_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nfs_container_access_client
 
 Type: might_have
@@ -292,21 +307,6 @@ __PACKAGE__->might_have(
   "nfs_container_access_client",
   "AdministratorDB::Schema::Result::NfsContainerAccessClient",
   { "foreign.nfs_container_access_client_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 iscsi_target
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::IscsiTarget>
-
-=cut
-
-__PACKAGE__->might_have(
-  "iscsi_target",
-  "AdministratorDB::Schema::Result::IscsiTarget",
-  { "foreign.iscsi_target_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -446,8 +446,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-22 15:41:08
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ol/38+Y1FY4qobTesBf0rQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-18 17:21:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:VWdtkIraoBqzqqn6Wz9Ivw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

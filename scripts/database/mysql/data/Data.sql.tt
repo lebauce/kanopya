@@ -83,7 +83,8 @@ INSERT INTO `class_type` VALUES
 (67, 'ActionTriggered'),
 (68, 'ActionParameter'),
 (69, 'ActionType'),
-(70, 'ActionTypeParameter');
+(70, 'ActionTypeParameter'),
+(71, 'Entity::NetappAggregate');
 
 --
 -- system groups
