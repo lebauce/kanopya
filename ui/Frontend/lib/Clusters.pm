@@ -11,6 +11,9 @@ use Entity::Host;
 use Entity::Gp;
 use Entity::Masterimage;
 use Entity::Kernel;
+use Entity::InterfaceRole;
+use Entity::Network::Vlan;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NodemetricRule;
@@ -1091,17 +1094,25 @@ get '/extclusters/:clusterid/connectors/:instanceid/remove' => sub {
 # cluster network addition form display
 
 get '/clusters/:clusterid/network/add' => sub {
-    my $adm = Administrator->new;
-    my @rows = $adm->{db}->resultset('InterfaceRole')->search(undef, {});
+    my @rows = Entity::InterfaceRole->search(hash => {});
     my $interfaceroles = [];
     foreach my $row (@rows) {
-        push @$interfaceroles, { $row->get_columns };
+        push @$interfaceroles, {
+            interface_role_id   => $row->getAttr(name => 'entity_id'),
+            interface_role_name => $row->getAttr(name => 'interface_role_name'),
+            interface_role_desc => $row->getComment,
+        };
     }
-    
-    @rows = $adm->{db}->resultset('Vlan')->search(undef, {});
+
+    @rows =  Entity::Network::Vlan->search(hash => {});
     my $vlans = [];
     foreach my $row (@rows) {
-        push @$vlans, { $row->get_columns };
+        push @$vlans, {
+            vlan_id     => $row->getAttr(name => 'entity_id'),
+            vlan_name   => $row->getAttr(name => 'network_name'),
+            vlan_number => $row->getAttr(name => 'vlan_number'),
+            vlan_desc   => $row->getComment,
+        };
     }
  
     template 'form_addnetwork', {
