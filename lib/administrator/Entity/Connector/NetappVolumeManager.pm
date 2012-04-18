@@ -231,7 +231,8 @@ sub getConf {
                     volume_state     => $volume->state,
                     volume_totalsize => $volume->size_total,
                     volume_sizeused  => $volume->size_used,
-                    volume_luns      => []
+                    volume_luns      => [],
+                    entity_comment   => $volume->getComment(),
                 };
             
                 push @{$tmp->{aggregates_volumes}}, $tmp2;

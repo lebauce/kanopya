@@ -1512,6 +1512,12 @@ CREATE TABLE `masterimage` (
   FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `entity_comment` (
+  `entity_comment_id` int(8) unsigned NOT NULL,
+  `entity_comment` char(255) DEFAULT NULL,
+  PRIMARY KEY (`entity_comment_id`),
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;
 

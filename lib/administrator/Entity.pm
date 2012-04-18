@@ -3,6 +3,7 @@ use base 'BaseDB';
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
+use EntityComment;
 
 my $log = get_logger('administrator');
 
@@ -203,6 +204,12 @@ sub getEntities {
         else { push @objs, $obj; }
     }
     return  @objs;
+}
+
+sub getComment {
+    my $self = shift;
+    my $entity_comment = EntityComment->find(hash => { entity_id => $self->{_dbix}->id });
+    return $entity_comment->getAttr('name' => 'entity_comment');
 }
 
 1;
