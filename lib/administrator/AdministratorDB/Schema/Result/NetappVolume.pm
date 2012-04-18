@@ -30,6 +30,7 @@ __PACKAGE__->table("netapp_volume");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 0
 
 =cut
@@ -43,7 +44,12 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "aggregate_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
 __PACKAGE__->set_primary_key("volume_id");
 
@@ -76,12 +82,28 @@ __PACKAGE__->belongs_to(
   "volume",
   "AdministratorDB::Schema::Result::Container",
   { container_id => "volume_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 aggregate
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::NetappAggregate>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "aggregate",
+  "AdministratorDB::Schema::Result::NetappAggregate",
+  { aggregate_id => "aggregate_id" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-10 14:42:11
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ebw8O5eDZcK0S1oIpkp2bg
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-18 17:21:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6e7zdIWv7K0s6k4vuD+CEg
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Container",

@@ -329,6 +329,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 netapp_aggregate
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetappAggregate>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netapp_aggregate",
+  "AdministratorDB::Schema::Result::NetappAggregate",
+  { "foreign.aggregate_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nfs_container_access_client
 
 Type: might_have

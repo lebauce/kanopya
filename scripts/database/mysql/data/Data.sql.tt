@@ -85,7 +85,7 @@ INSERT INTO `class_type` VALUES
 (69, 'ActionType'),
 (70, 'ActionTypeParameter'),
 (71, 'Entity::Network'),
-(72, 'Entity::Ip');
+(72, 'Entity::NetappAggregate');
 
 --
 -- entity comment list

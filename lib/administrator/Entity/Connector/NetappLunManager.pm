@@ -182,24 +182,21 @@ sub synchronize {
     my $self = shift;
     my %args = @_;
 
-    # Get list of luns exists on NetApp :
+    # Get list of luns exists on NetApp
     foreach my $lun ($self->luns) {
-        # Get the path where is stocked the lun
-        my $lun_volume_path = $lun->path;
-
-        # Split the path to grab volume name
-        my @array_lun_volume_name = split(/\//, $lun_volume_path);
+        my @array_lun_volume_name = split(/\//, $lun->path);
         my $lun_volume_name = $array_lun_volume_name[2];
         my $lun_name = $array_lun_volume_name[3];
 
         # Search in database if the volume is stored
-        my $lun_volume_obj = Entity::Container::NetappVolume->find( hash=>{name=>$lun_volume_name});
+        my $lun_volume_obj = Entity::Container->find( hash => { container_name => $lun_volume_name });
         my $lun_volume_id = $lun_volume_obj->getAttr(name => "volume_id");
 
-        # Search in Kanopya to see if LUN already exists
-        my $existingluns = Entity::Container::NetappLun->search(hash => { name => $lun_name });
-        my $existinglun = scalar($existingluns);
-        if ($existinglun eq "0") {
+        # Is the LUN already in database
+        eval {
+            Entity::Container->search(hash => { container_name => $lun_name });
+        };
+        if ($@) {
             Entity::Container::NetappLun->new(
                 disk_manager_id      => $self->getAttr(name => 'entity_id'),
                 container_name       => $lun_name,

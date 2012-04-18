@@ -23,6 +23,7 @@ use strict;
 use Entity::HostManager;
 use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::NfsContainerAccess;
+use Entity::NetappAggregate;
 
 use Data::Dumper;
 
@@ -171,33 +172,40 @@ sub removeExport {
 sub synchronize {
     my $self = shift;
     my %args = @_;
-    # Get list of volumes exists on NetApp :
-    my @volumesList = $self->volumes;
+    my $aggregates = {};
     my $manager_ip  = $self->getServiceProvider->getMasterNodeIp;
 
-    foreach my $vol (@volumesList) {
-        # Get list of volumes exists on Kanopya :
-        my $existing_volumes = Entity::Container::NetappVolume->search(hash => { name => $vol->name });
-        my $existing_volume = scalar($existing_volumes);
-        if ($existing_volume eq "0") {
+    foreach my $aggregate ($self->aggregates) {
+        my $aggr = Entity::NetappAggregate->new(
+                       name      => $aggregate->name
+                   );
+        $aggregates->{$aggregate->name} = $aggr;
+    }
+
+    foreach my $vol ($self->volumes) {
+        eval {
+            Entity::Container::NetappVolume->find(hash => { name => $vol->name });
+        };
+        if ($@) {
+            my $aggregate = $aggregates->{$vol->containing_aggregate};
             my $container = Entity::Container::NetappVolume->new(
                                 disk_manager_id      => $self->getAttr(name => 'entity_id'),
                                 container_name       => $vol->name,
                                 container_size       => $vol->size_used,
-                                container_filesystem => "ext3",
+                                container_filesystem => "wafl",
                                 container_freespace  => 0,
                                 container_device     => $vol->name,
-                                aggregate_id         => "aggr0"
+                                aggregate_id         => $aggregate->getAttr(name => "aggregate_id")
                             );
 
             my $container_access = Entity::ContainerAccess::NfsContainerAccess->new(
-                               container_id            => $container->getAttr(name => 'container_id'),
-                               export_manager_id       => $self->getAttr(name => 'entity_id'),
-                               container_access_export => $manager_ip . ':/vol/' . $vol->name,
-                               container_access_ip     => $manager_ip,
-                               container_access_port   => 2049,
-                               options                 => 'rw,sync,no_root_squash',
-                           );
+                                       container_id            => $container->getAttr(name => 'container_id'),
+                                       export_manager_id       => $self->getAttr(name => 'entity_id'),
+                                       container_access_export => $manager_ip . ':/vol/' . $vol->name,
+                                       container_access_ip     => $manager_ip,
+                                       container_access_port   => 2049,
+                                       options                 => 'rw,sync,no_root_squash',
+                                   );
         }
     }
 }
