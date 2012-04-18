@@ -95,6 +95,13 @@ INSERT INTO `entity_comment` VALUES
 (1, 'Used when no vlan are required');
 
 --
+-- entity comment list
+--
+
+INSERT INTO `entity_comment` VALUES
+(1, 'Used when no vlan are required');
+
+--
 -- system groups
 --
 
