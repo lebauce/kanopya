@@ -1,6 +1,6 @@
 <h2>Scale of vcpu</h2>
 
-<form id="target" method="POST" action="/infrastructures/vms/scale_cpu">
+<form id="target" method="POST" action="/infrastructures/hosts/scale_cpu">
 <table class="form">
 	<tr>
 		<td class="label">VCPU number :</td>

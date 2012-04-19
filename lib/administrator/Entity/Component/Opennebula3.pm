@@ -101,6 +101,9 @@ sub getConf {
 
     my @repositories = ();
     my @available_accesses = ();
+    my @hypervisors = ();
+    my @vms = ();
+   # my $hypervisors = [];
     my $repo_rs = $confindb->opennebula3_repositories;
     while (my $repo_row = $repo_rs->next) {
         my $container_access = Entity::ContainerAccess->get(
@@ -119,9 +122,38 @@ sub getConf {
             container_access_name => $access->getAttr(name => 'container_access_export'),
         }
     }
-
+my @hyper_rs = $self->{_dbix}->opennebula3_hypervisors->search({});
+    for my $row (@hyper_rs){
+   my @vms_rs = $self->{_dbix}->opennebula3_vms->search(opennebula3_hypervisor_id=>$row->get_column('opennebula3_hypervisor_id'));
+	my $tmp = {
+	    hypervisor_host_id        => $row->get_column('hypervisor_host_id'),
+	    hypervisor_id             => $row->get_column('hypervisor_id'),
+	    opennebula3_hypervisor_id => $row ->get_column('opennebula3_hypervisor_id'),
+	    vms                       => \@vms_rs,
+	    nbrevms                   =>scalar(@vms_rs)
+	};
+	
+	 push @hypervisors, $tmp;
+    }
+    for my $hyper(@hypervisors)
+   {
+    my @vms_rs = $self->{_dbix}->opennebula3_vms->search(opennebula3_hypervisor_id=>$hyper->{opennebula3_hypervisor_id});
+		for my $row (@vms_rs){
+			 my $vm_id=$row->get_column('vm_host_id');
+			my $tmp = {
+				vm_id => $row ->get_column('vm_id'),
+				opennebula3_hypervisor_id=> $row->get_column('opennebula3_hypervisor_id'),
+				vm_host_id               =>$row->get_column('vm_host_id'),
+				url                      => "http://10.0.0.1:5000/infrastructures/hosts/$vm_id"
+				
+			};
+			push @vms,$tmp;
+		}
+	}
     $conf{container_accesses} = \@available_accesses;
     $conf{opennebula3_repositories} = \@repositories;
+    $conf{opennebula3_hypervisors} =\@hypervisors;
+    $conf{opennebula3_vms}         =\@vms;
     return \%conf;
 }
 

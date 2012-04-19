@@ -1,6 +1,6 @@
 <h2>Scale of memory</h2>
 
-<form id="target" method="POST" action="/infrastructures/vms/scale_memory">
+<form id="target" method="POST" action="/infrastructures/hosts/scale_memory">
 <table class="form">
 	<tr>
 		<td class="label">Quantity of memory :</td>
