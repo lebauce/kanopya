@@ -24,6 +24,7 @@ use General;
 use XML::Simple;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use NetAddr::IP;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -52,7 +53,27 @@ sub configureNode {
                   econtext => $args{econtext}, 
                 scriptname => 'opennebula', 
         );
-    } 
+        
+        $self->addInitScripts(
+                mountpoint => $args{mount_point}, 
+                  econtext => $args{econtext}, 
+                scriptname => 'nfs-kernel-server', 
+        );
+        
+        my $ip = $args{host}->getInternalIP();
+        my $network = NetAddr::IP->new(
+            $ip->{ipv4_internal_address}, 
+            $ip->{ipv4_internal_mask}
+        )->network();
+        my $exports = "/var/lib/one $network(rw,no_root_squash,no_subtree_check)\n";
+        my $cmd = "echo '$exports' > " .$args{mount_point}."/etc/exports";
+        $args{econtext}->execute(command => $cmd);
+        
+    } else {
+        my $mount = $masternodeip.":/var/lib/one /var/lib/one nfs rw,sync,vers=3 0 0\n";
+        my $cmd = "echo '$mount' >> ".$args{mount_point}."/etc/fstab";
+        $args{econtext}->execute(command => $cmd);
+    }
      
     $log->info("Opennebula cluster's node configuration");
     $log->debug('generate /etc/default/libvirt-bin');    
