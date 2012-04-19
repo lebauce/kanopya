@@ -37,8 +37,8 @@ sub getVolume {
 sub getPath {
     my $self = shift;
 
-    return '/vol/' . $self->getVolume->getAttr(name => "name") .
-           '/' . $self->getAttr(name => "name");
+    return '/vol/' . $self->getVolume->getAttr(name => "container_name") .
+           '/' . $self->getAttr(name => "container_name");
 }
 
 1;

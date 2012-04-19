@@ -223,7 +223,7 @@ sub createExport {
     my $container_access = Entity::ContainerAccess::IscsiContainerAccess->new(
                                container_id            => $args{container}->getAttr(name => 'container_id'),
                                export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
-                               container_access_export => $args{export_name},
+                               container_access_export => $self->_getEntity->iscsi_node_get_name->node_name,
                                container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
                                container_access_port   => 3260,
                                typeio                  => $typeio,
