@@ -122,7 +122,6 @@ sub synchronize {
 
     foreach my $blade (@blades) {
         # Add the blade to the host table :
-        my $mac = $adm->{manager}->{network}->generateMacAddress();
         my %parameters = (
                 kernel_id           => $kernelid,
                 host_serial_number  => $blade->{dn},
@@ -130,7 +129,7 @@ sub synchronize {
                 host_core           => $blade->{numOfCores},
                 hostmodel_id        => $hostmodelid,
                 processormodel_id   => $processormodelid,
-                host_desc           => "",
+                host_desc           => $blade->{dn},
                 active              => "1",
                 host_manager_id     => $hostmanagerid,
         );
@@ -150,27 +149,26 @@ sub synchronize {
         my $ucsvlan_name = $ucsvlan->{name};
         my $ucsvlan_nb = $ucsvlan->{id};
         %parameters = (
-            vlan_name   => $ucsvlan_name,
-            vlan_desc   => "",
-            vlan_number => $ucsvlan_nb,
+            network_name => $ucsvlan_name,
+            vlan_number  => $ucsvlan_nb,
         );
 
         # Get Vlans existing in Kanopya :
-        my $existingvlans = Entity::Vlan->search(hash => { vlan_name => $ucsvlan_name });
+        my $existingvlans = Entity::Network->search(hash => { network_name => $ucsvlan_name });
         my $existingvlan = scalar($existingvlans);
 
         # If the vlan not exist in Kanopya, create it :
         if ($existingvlan eq "0") {
-            Entity::Vlan->new(%parameters);
+            Entity::Network::Vlan->new(%parameters);
         }
     }
-    
+
     # Synchronize VLANs from Kanopya to UCS :
     # Get all VLANs on Kanopya :
-    my @vlans = Entity::Vlan->search(hash => {});
+    my @vlans = Entity::Network::Vlan->search(hash => {});
     foreach my $vlan (@vlans) {
         my $vlan_nb = $vlan->getAttr('name' => 'vlan_number');
-        my $vlan_name = $vlan->getAttr('name' => 'vlan_name');
+        my $vlan_name = $vlan->getAttr('name' => 'network_name');
 
         # We must ignore the VLAN 0 on Kanopya side, this is the default UCS Vlan too
         if ($vlan_nb ne "0") {
