@@ -202,7 +202,6 @@ CREATE TABLE `unified_computing_system` (
   `ucs_state` char(32) NOT NULL DEFAULT 'down:0',
   `ucs_login` char(32) NOT NULL,
   `ucs_passwd` char(32) NOT NULL,
-  `ucs_dataprovider` char(32) NULL,
   `ucs_ou` char(32) NULL,
   PRIMARY KEY (`ucs_id`),
   FOREIGN KEY (`ucs_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION

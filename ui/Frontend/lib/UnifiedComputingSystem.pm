@@ -25,7 +25,6 @@ sub _ucs {
         $tmp->{ucs_addr}          = $ucs->getAttr('name' => 'ucs_addr');
         $tmp->{ucs_login}         = $ucs->getAttr('name' => 'ucs_login');
         $tmp->{ucs_passwd}        = $ucs->getAttr('name' => 'ucs_passwd');
-        $tmp->{ucs_dataprovider}  = $ucs->getAttr('name' => 'ucs_dataprovider');
         $tmp->{ucs_ou}            = $ucs->getAttr('name' => 'ucs_ou');
 
         push(@$ucs_list, $tmp);
@@ -59,7 +58,6 @@ post '/ucs/add' => sub {
             ucs_addr         => param('addr'),
             ucs_login        => param('login'),
             ucs_passwd       => param('passwd'),
-            ucs_dataprovider => param('dataprovider'),
             ucs_ou           => param('ou'),
         );
     };
@@ -111,7 +109,6 @@ get '/ucs/:ucsid' => sub {
         ucs_addr            => $eucs->getAttr('name' => 'ucs_addr'),
         ucs_login           => $eucs->getAttr('name' => 'ucs_login'),
         ucs_passwd          => $eucs->getAttr('name' => 'ucs_passwd'),
-        ucs_dataprovider    => $eucs->getAttr('name' => 'ucs_dataprovider'),
         ucs_ou              => $eucs->getAttr('name' => 'ucs_ou'),
         ucs_state           => $eeucs->{state},
         ucs_serviceprofiles => \@sps,

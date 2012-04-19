@@ -28,7 +28,7 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	ucs_name            => { pattern      => '.*',
+    ucs_name            => { pattern      => '.*',
 							 is_mandatory => 1,
                            },
     ucs_desc            => { pattern      => '.*',
@@ -43,9 +43,6 @@ use constant ATTR_DEF => {
     ucs_passwd          => { pattern    => '.*',
                              is_mandatory => 1,
                            },
-    ucs_dataprovider    =>  { pattern   => '.*',
-                             is_mandatory => 0,
-                            },
     ucs_ou              =>  { pattern => '.*',
                              is_mandatory => 0,
                             },
@@ -78,7 +75,6 @@ sub create {
         ucs_addr            => $args{ucs_addr},
         ucs_login           => $args{ucs_login},
         ucs_passwd          => $args{ucs_passwd},
-        ucs_dataprovider    => $args{ucs_dataprovider},
         ucs_ou              => $args{ucs_ou},
     );
 
