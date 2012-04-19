@@ -176,13 +176,50 @@ sub synchronize {
     my $manager_ip  = $self->getServiceProvider->getMasterNodeIp;
 
     foreach my $aggregate ($self->aggregates) {
-        my $aggr = Entity::NetappAggregate->new(
-                       name      => $aggregate->name
-                   );
-        $aggregates->{$aggregate->name} = $aggr;
+        # Check if an aggregrate with same name already exist :
+        my $existing_aggrs = Entity::NetappAggregate->search(hash => { name => $aggregate->name });
+        my $existing_aggr = scalar($existing_aggrs);
+        # if not, create the new aggregate :
+        if ($existing_aggr eq "0") {
+            my $aggr = Entity::NetappAggregate->new(
+                           name      => $aggregate->name
+                       );
+            $aggr->setComment(comment => "Default comment for " . $aggregate->name);
+            $aggregates->{$aggregate->name} = $aggr;
+        }
     }
 
     foreach my $vol ($self->volumes) {
+        # Is the VOL already in database
+        
+        # TEST
+        # Get list of volumes exists on Kanopya :
+        my $existing_volumes = Entity::Container->search(hash => { container_name => $vol->name });
+        my $existing_volume = scalar($existing_volumes);
+        if ($existing_volume eq "0") {
+            my $aggregate = $aggregates->{$vol->containing_aggregate};
+            my $container = Entity::Container::NetappVolume->new(
+                                disk_manager_id      => $self->getAttr(name => 'entity_id'),
+                                container_name       => $vol->name,
+                                container_size       => $vol->size_used,
+                                container_filesystem => "wafl",
+                                container_freespace  => 0,
+                                container_device     => $vol->name,
+                                aggregate_id         => $aggregate->getAttr(name => "aggregate_id"),
+                            );
+            $container->setComment(comment => "Default comment for " . $vol->name);
+
+            my $container_access = Entity::ContainerAccess::NfsContainerAccess->new(
+                                       container_id            => $container->getAttr(name => 'container_id'),
+                                       export_manager_id       => $self->getAttr(name => 'entity_id'),
+                                       container_access_export => $manager_ip . ':/vol/' . $vol->name,
+                                       container_access_ip     => $manager_ip,
+                                       container_access_port   => 2049,
+                                       options                 => 'rw,sync,no_root_squash',
+                                   );
+        }
+        ##### TEST
+=head2        
         eval {
             Entity::Container::NetappVolume->find(hash => { name => $vol->name });
         };
@@ -207,6 +244,7 @@ sub synchronize {
                                        options                 => 'rw,sync,no_root_squash',
                                    );
         }
+=cut
     }
 }
 
@@ -216,6 +254,7 @@ sub synchronize {
 
 =cut
 
+=head2
 sub getConf {
     my ($self) = @_;
     my $config = {};
@@ -251,6 +290,43 @@ sub getConf {
     }
      
     return $config;
+}
+=cut
+
+sub getConf {
+    my ($self) = @_;
+    my @aggregates = Entity::NetappAggregate->search( hash => {} );
+    my $aggregate = [];
+    my $volume = [];
+    
+    foreach my $aggr (@aggregates) {
+        my $aggr_list = {
+            aggregate_name      => $aggr->getAttr(name => 'name'),
+            aggregate_id        => $aggr->getAttr(name => 'aggregate_id'),
+            #aggregate_totalsize => $aggr->size_total,
+            #aggregate_sizeused  => $aggr->size_used,
+            entity_comment      => $aggr->getComment(),
+        };
+        my @netappvolumes = Entity::Container::NetappVolume->search( hash => { aggregate_id => $aggr->getAttr(name => 'aggregate_id') } );
+        foreach my $vol (@netappvolumes) {
+            my $vol_list = {
+                container_id            => $vol->getAttr(name => 'container_id'),
+                container_name          => $vol->getAttr(name => 'container_name'),
+                container_size          => $vol->getAttr(name => 'container_size'),
+                container_device        => $vol->getAttr(name => 'container_device'),
+                container_filesystem    => $vol->getAttr(name => 'container_filesystem'),
+                container_freespace     => $vol->getAttr(name => 'container_freespace'),
+                disk_manager_id         => $vol->getAttr(name => 'disk_manager_id'),
+                entity_comment          => $vol->getComment(),
+            };
+            push(@$volume, $vol_list);
+        }
+        push(@$aggregate, $aggr_list);
+    }
+    return { 
+            "aggregates"=>$aggregate,
+            "volumes"=>$volume
+    };
 }
 
 1;
