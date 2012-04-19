@@ -51,7 +51,7 @@ sub createDisk {
                          required => [ "volume_id", "name", "size", "filesystem", "econtext" ]);
 
     my $volume = Entity::Container::NetappVolume->get(id => $args{volume_id});
-    my $volume_name = "/vol/" . $volume->getAttr(name => "name") . "/" . $args{name};
+    my $volume_name = "/vol/" . $volume->getAttr(name => "container_name") . "/" . $args{name};
 
     # Make the XML RPC call
     my $api = $self->_getEntity();
@@ -124,14 +124,7 @@ sub removeDisk {
               );
     }
 
-    my $container = $args{container};
-    my $volume = Entity::Container::NetappVolume->get(
-                     id => $container->getAttr(name => "volume_id")
-                 );
-
-    my $lun_path = "/vol/" . $volume->getAttr(name => "name") .
-                   "/" . $container->getAttr(name => "name");
-    $self->_getEntity()->lun_destroy(path => $lun_path);
+    $self->_getEntity()->lun_destroy(path => $args{container}->getPath());
 
     $args{container}->delete();
 
@@ -187,9 +180,8 @@ sub createExport {
     my $iomode = General::checkParam(args => \%args, name => 'iomode', default => 'wb');
 
     my $api = $self->_getEntity();
-    my $volume = Entity::Container::NetappVolume->get(id => $args{container}->getAttr(name => "volume_id"));
-    my $lun_path = '/vol/' . $volume->getAttr(name => "name") .
-                   '/' . $args{container}->getAttr(name => "name");
+    my $volume = $args{container}->getVolume();
+    my $lun_path = $args{container}->getPath();
 
     my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
                              hash => {
@@ -314,10 +306,8 @@ sub addExportClient {
 
     my $host = $args{host};
     my $lun = $args{export}->getContainer;
-    my $volume = Entity->get(id => $lun->getAttr(name => "volume_id"));
     my $cluster = Entity->get(id => $host->getClusterId());
-    my $path = '/vol/' . $volume->getAttr(name => "name") .
-               '/' . $lun->getAttr(name => "name");
+    my $path = $lun->getPath();
     my $initiator_group = 'igroup_kanopya_' . $cluster->getAttr(name => "cluster_name");
 
     eval {

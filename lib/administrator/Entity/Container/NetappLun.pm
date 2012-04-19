@@ -28,4 +28,17 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getVolume {
+    my $self = shift;
+
+    return Entity->get(id => $self->getAttr(name => "volume_id"));
+}
+
+sub getPath {
+    my $self = shift;
+
+    return '/vol/' . $self->getVolume->getAttr(name => "name") .
+           '/' . $self->getAttr(name => "name");
+}
+
 1;
