@@ -78,6 +78,7 @@ sub prepare {
         cluster_name         => General::checkParam(args => $params, name => 'cluster_name'),
         cluster_desc         => General::checkParam(args => $params, name => 'cluster_desc', default => ''),
         cluster_si_shared    => General::checkParam(args => $params, name => 'cluster_si_shared'),
+        cluster_si_persistent=> General::checkParam(args => $params, name => 'cluster_si_persistent'),
         cluster_boot_policy  => General::checkParam(args => $params, name => 'cluster_boot_policy'),
         cluster_priority     => General::checkParam(args => $params, name => 'cluster_priority'),
         cluster_min_node     => General::checkParam(args => $params, name => 'cluster_min_node'),

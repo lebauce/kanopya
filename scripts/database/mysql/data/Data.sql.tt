@@ -83,7 +83,8 @@ INSERT INTO `class_type` VALUES
 (67, 'ActionTriggered'),
 (68, 'ActionParameter'),
 (69, 'ActionType'),
-(70, 'ActionTypeParameter');
+(70, 'ActionTypeParameter'),
+(71, 'Entity::NetappAggregate');
 
 --
 -- system groups
@@ -428,7 +429,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@admin_cluster, 13);
 INSERT INTO `service_provider` VALUES (@admin_cluster);
 INSERT INTO `inside` VALUES (@admin_cluster);
-INSERT INTO `cluster` VALUES (@admin_cluster,'Kanopya','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'',0,'[% admin_domainname %]', '127.0.0.1', '127.0.0.1', 'up:[% tmstp %]', NULL,'test_', 1, @adminuserid, @kernel, NULL, @physical_hoster, NULL, NULL);
+INSERT INTO `cluster` VALUES (@admin_cluster,'Kanopya','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'',0,0,'[% admin_domainname %]', '127.0.0.1', '127.0.0.1', 'up:[% tmstp %]', NULL,'test_', 1, @adminuserid, @kernel, NULL, @physical_hoster, NULL, NULL);
 
 --
 -- internal ip for admin node

@@ -75,6 +75,7 @@ CREATE TABLE `cluster` (
   `cluster_priority` int(1) unsigned NOT NULL,
   `cluster_boot_policy` char(32) NOT NULL,
   `cluster_si_shared` int(1) unsigned NOT NULL,
+  `cluster_si_persistent` int(1) unsigned NOT NULL DEFAULT 0,
   `cluster_domainname` char(64) NOT NULL,
   `cluster_nameserver1` char(15) NOT NULL,
   `cluster_nameserver2` char(15) NOT NULL,
@@ -305,6 +306,17 @@ CREATE TABLE `file_container` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `netapp_aggregate`
+-- Entity::NetappAggregate class
+
+CREATE TABLE `netapp_aggregate` (
+  `aggregate_id` int(8) unsigned NOT NULL,
+  `name` char(255) NOT NULL,
+  PRIMARY KEY (`aggregate_id`),
+  FOREIGN KEY (`aggregate_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `netapp_volume`
 -- Entity::Container::NetAppVolume class
 
@@ -312,7 +324,8 @@ CREATE TABLE `netapp_volume` (
   `volume_id` int(8) unsigned NOT NULL,
   `aggregate_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`volume_id`),
-  FOREIGN KEY (`volume_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`volume_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`aggregate_id`) REFERENCES `netapp_aggregate` (`aggregate_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

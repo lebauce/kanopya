@@ -96,6 +96,19 @@ sub getConnectorType {
 
 }
 
+
+=head2 getServiceProvider
+
+    Desc: Returns the service provider the component is on
+
+=cut
+
+sub getServiceProvider {
+    my $self = shift;
+
+    return Entity->get(id => $self->getAttr(name => "service_provider_id"));
+}
+
 sub getConf {
     my $self = shift;
 

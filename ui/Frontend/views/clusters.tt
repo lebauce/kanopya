@@ -25,8 +25,8 @@
 <% END %>
 
 <div class="actions">
-    <div class="<% IF ! can_create %> disabled<% END %>">
-	    <a class="action modal" href="/architectures/clusters/add"<% IF ! can_create %> title="At least one free host and one master image are required to create a cluster"<% END %>>create a cluster</a>
+    <div<% IF ! can_create %> class="disabled" title="At least one free host and one master image are required to create a cluster"<% END %>>
+	    <a class="action modal" href="/architectures/clusters/add">create a cluster</a>
 	    <p class="italic">Create and configure a new cluster.</p>
     </div>
     <div>

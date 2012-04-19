@@ -243,7 +243,7 @@ sub execute {
                                                                 client_name => $adm->{manager}->{network}->getInternalNetwork(),
                                                                 client_options => "rw,sync,no_subtree_check");
         
-        $self->{_objs}->{component_nfs_export}->update_exports(econtext => $self->{nas}->{econtext});
+        $self->{_objs}->{component_nfs_export}->updateExports(econtext => $self->{nas}->{econtext});
         $log->info("Add NFS Export of device </dev/". $vg_name ."/" . $disk_name .">");
         }
         else {
