@@ -8,7 +8,8 @@ RAW = [ type="xen", data="maxmem=4096" ]
 OS = [
 	KERNEL = [% kernelpath %],
 	INITRD = [% initrdpath %],
-	ROOT = xvda1
+	ROOT = xvda1,
+    KERNEL_CMD = "xencons=tty console=hvc0"
 ]
 
 DISK = [
