@@ -26,6 +26,8 @@
 	<span class="desc">Scale cpu of this host.</span><br /><br />
 	<a class="modal" href="/infrastructures/hosts/scale_memory/<% host_id %>">scale memory</a><br />
 	<span class="desc">Scale memory of this host.</span><br /><br />
+	<a  href="<% url %>">launch VNC</a><br />
+	<span class="desc">access to this host.</span><br /><br />
 <% END %>
 </td></tr>
 <tr>

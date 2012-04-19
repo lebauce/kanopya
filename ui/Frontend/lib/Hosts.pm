@@ -429,9 +429,11 @@ get '/hosts/:hostid' => sub {
     my $host_type;
     my $host_state;
     my $timestamp;
-   
+    my $internal_ip;
+   my $vnc_port;
     my $host_manager;
     my $ehost = Entity::Host->get(id => param('hostid'));
+   # my $vncport=$ehost->getVncport(host_id =>param('hostid'));
     my $methods = $ehost->getPerms();
     
     # host model
@@ -508,7 +510,6 @@ get '/hosts/:hostid' => sub {
         push @$ifcs, $tmp;
     }
 
-
     # hostram
     my $hostram = $ehost->getAttr('name' => 'host_ram');
     my $hostramConverted = General::convertFromBytes('value' => $hostram, 'units' => 'G');
@@ -518,8 +519,16 @@ get '/hosts/:hostid' => sub {
     $log->info('host *********************'.$host_type.'****************');
     if($host_type eq "Virtual Machine")
     { $is_virtual=1;
+     $vnc_port=$ehost->getVncport(vm_host_id=>param('hostid'));
+     
      $log->info('host ==========='.$is_virtual.'============');
- }
+      # my $hyperhost_id=$ehost->getHypervisorid(vm_host_id=>param('hostid'));
+      # $log->info( '****host***&&&&***'.$hyperhost_id.'*****&&&&&&&******');
+     #my $hyper_id=Entity::Component::Opennebula3->getHypervisorIdFromHostId(host_id=>$hyperhost_id);
+    #$log->info( '****id***&&&&***'.$hyper_id.'*****&&&&&&&******');
+     #my $h = Entity::Host->get(id => $hyper_id);
+     #$internal_ip=$h->getInternalIP();
+	}
      else
      {
      $is_virtual=0;
@@ -547,6 +556,7 @@ get '/hosts/:hostid' => sub {
         interfaces_list         => $ifcs,
         active                  => $active,
         is_virtual               => $is_virtual,
+        url                      => "vnc://10.0.0.1:$vnc_port",
         can_deactivate          => $methods->{'deactivate'}->{'granted'} && $active && $host_state =~ /down/,
         can_delete              => $methods->{'remove'}->{'granted'} && !$active,
         can_activate            => $methods->{'activate'}->{'granted'} && !$active,
