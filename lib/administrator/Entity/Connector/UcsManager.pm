@@ -109,7 +109,7 @@ sub synchronize {
     my $kernelid = $kernelhash->getAttr('name' => 'kernel_id');
 
     # Get a "random" host model for his id :
-    my $hostmodelhash = Entity::Host->find(hash => {});
+    my $hostmodelhash = Entity::Hostmodel->find(hash => {});
     my $hostmodelid = $hostmodelhash->getAttr('name' => 'hostmodel_id');
 
     # Get a "random" processor model for his id :
