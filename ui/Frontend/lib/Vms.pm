@@ -47,7 +47,6 @@ sub _vms {
 
         $tmp->{host_label} = $m->toString();
         my $state = $m->getAttr(name => 'host_state');
-        #$tmp->{host_mac} = $m->getAttr(name => 'host_mac_address');
         $tmp->{host_hostname} = $m->getAttr(name => 'host_hostname');
         $tmp->{host_ip} = $m->getInternalIP()->{ipv4_internal_address};
         $tmp->{active} = $m->getAttr(name => 'active');
@@ -136,7 +135,6 @@ get '/vms/add' => sub {
 post '/vms/add' => sub {
     my $adm = Administrator->new;
     my %parameters = (
-        host_mac_address   => params->{mac_address},
         kernel_id                 => params->{kernel},
         host_serial_number => params->{serial_number},
 	host_ram           => params->{ram},
@@ -423,7 +421,6 @@ get '/vms/:hostid' => sub {
         host_id          => $ehost->getAttr('name' => 'host_id'),
         host_hostname    => $ehost->getAttr('name' => 'host_hostname'),
         host_desc        => $ehost->getAttr('name' => 'host_desc'),
-        host_mac         => $ehost->getAttr('name' => 'host_mac_address'),
         host_ip          => $ehost->getInternalIP()->{ipv4_internal_address},
         host_sn          => $ehost->getAttr('name' => 'host_serial_number'),
         host_powersupply => $ehost->getAttr('name' => 'host_powersupply_id'),

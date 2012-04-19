@@ -204,18 +204,21 @@ sub execute {
 
     
 
-    # Remove Host in the dhcp
-    my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
-    my $host_mac = $self->{_objs}->{host}->getAttr(name => "host_mac_address");
-    my $hostid = $self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(
-                     dhcpd3_subnet_id         => $subnet,
-                     dhcpd3_hosts_mac_address => $host_mac
-                 );
+    # Remove Host from the dhcp
+    my $host_mac = $self->{_objs}->{host}->getPXEMacAddress;
+    if ($host_mac) {
+        my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
 
-    $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
-                                                  dhcpd3_hosts_id  => $hostid);
-    $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
-    $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
+        my $hostid = $self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(
+                         dhcpd3_subnet_id         => $subnet,
+                         dhcpd3_hosts_mac_address => $host_mac
+                     );
+
+        $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
+                                                      dhcpd3_hosts_id  => $hostid);
+        $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
+        $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
+    }
 
     # Component migration
     $log->info('Processing cluster components configuration for this node');

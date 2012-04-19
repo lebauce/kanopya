@@ -148,13 +148,15 @@ sub execute {
 
         eval {
             # Update Dhcp component conf
-            my $host_mac = $node->getAttr(name => "host_mac_address");
-            my $hostid   = $self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(
-                               dhcpd3_subnet_id            => $subnet,
-                               dhcpd3_hosts_mac_address    => $host_mac
-                           );
-            $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
-                                                          dhcpd3_hosts_id  => $hostid);
+            my $host_mac = $node->getPXEMacAddress;
+            if ($host_mac) {
+	            my $hostid = $self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(
+	                             dhcpd3_subnet_id         => $subnet,
+	                             dhcpd3_hosts_mac_address => $host_mac
+	                         );
+	            $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
+	                                                          dhcpd3_hosts_id  => $hostid);
+            }
         };
         if ($@) {
             my $error = $@;

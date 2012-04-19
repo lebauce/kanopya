@@ -61,7 +61,7 @@
 </td><tr/>
 <tr><td colspan="4">&nbsp;</td></tr>
 <tr><td class="label">Model :</td><td><% IF host_model %><% host_model %><% ELSE %>-<% END %></td>
-<td class="label">MAC address :</td><td><% host_mac %></td></tr>
+<!--<td class="label">MAC address :</td><td><% host_mac %></td>--></tr>
 <tr><td class="label">Processor :</td><td><% IF processor_model %><% processor_model %><% ELSE %>-<% END %></td>
 <td class="label">Internal IP :</td><td><% host_ip %></td></tr>
 <tr><td class="label">S/N :</td><td><% host_sn %></td>

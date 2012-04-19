@@ -20,8 +20,7 @@ USE `kanopya`;
 SET foreign_key_checks=0;
 
 --
--- Table structure for table `entity`
--- Entity class
+-- Table structure for table `class_type`
 
 CREATE TABLE `class_type` (
   `class_type_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -31,13 +30,25 @@ CREATE TABLE `class_type` (
 
 --
 -- Table structure for table `entity`
+-- EntityComment class
+
+CREATE TABLE `entity_comment` (
+  `entity_comment_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `entity_comment` char(255) DEFAULT NULL,
+  PRIMARY KEY (`entity_comment_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `entity`
 -- Entity class
 
 CREATE TABLE `entity` (
   `entity_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `class_type_id` int(8) unsigned NOT NULL,
+  `entity_comment_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`entity_id`),
   KEY (`class_type_id`),
+  FOREIGN KEY (`entity_comment_id`) REFERENCES `entity_comment` (`entity_comment_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -420,10 +431,8 @@ CREATE TABLE `host` (
   `kernel_id` int(8) unsigned NOT NULL,
   `host_serial_number` char(64) NOT NULL,
   `host_powersupply_id` int(8) unsigned,
-  `host_ipv4_internal_id` int(8) unsigned  DEFAULT NULL,
   `host_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
-  `host_mac_address` char(18) NOT NULL,
   `host_initiatorname` char(64) DEFAULT NULL,
   `host_ram` bigint unsigned DEFAULT NULL,
   `host_core` int(1) unsigned DEFAULT NULL,
@@ -432,7 +441,6 @@ CREATE TABLE `host` (
   `host_prev_state` char(32),
   PRIMARY KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`host_mac_address`),
   KEY (`hostmodel_id`),
   FOREIGN KEY (`hostmodel_id`) REFERENCES `hostmodel` (`hostmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`processormodel_id`),
@@ -440,9 +448,7 @@ CREATE TABLE `host` (
   KEY (`kernel_id`),
   FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`host_powersupply_id`),
-  FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`host_ipv4_internal_id`),
-  FOREIGN KEY (`host_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -634,14 +640,13 @@ CREATE TABLE `systemimage` (
 
 
 --
--- Table structure for table `pool_ip`
+-- Table structure for table `poolip`
 --
 CREATE TABLE `poolip` (
-  `poolip_id`   int(8) unsigned,
-  `poolip_name` char(32) NOT NULL,
-  `poolip_desc` char(255) NULL,
-  `poolip_addr` char(15) NOT NULL,
-  `poolip_mask`  smallint unsigned NOT NULL,
+  `poolip_id`      int(8) unsigned,
+  `poolip_name`    char(32) NOT NULL,
+  `poolip_addr`    char(15) NOT NULL,
+  `poolip_mask`    smallint unsigned NOT NULL,
   `poolip_netmask` char(15) NOT NULL,
   `poolip_gateway` char(15) NOT NULL,
   PRIMARY KEY (`poolip_id`),
@@ -654,10 +659,10 @@ CREATE TABLE `poolip` (
 -- Table structure for table `ip`
 --
 CREATE TABLE `ip` (
-  `ip_id`   int(8) unsigned AUTO_INCREMENT,
-  `ip_addr` char(15) NOT NULL,
+  `ip_id`     int(8) unsigned AUTO_INCREMENT,
+  `ip_addr`   char(15) NOT NULL,
   `poolip_id` int(8) unsigned NULL DEFAULT NULL,
-  `iface_id` int(8) unsigned NULL DEFAULT NULL,
+  `iface_id`  int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`ip_id`),
   UNIQUE KEY (`ip_addr`, `poolip_id`),
   KEY (`poolip_id`),
@@ -667,16 +672,24 @@ CREATE TABLE `ip` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `network`
+--
+CREATE TABLE `network` (
+  `network_id`   int(8) unsigned,
+  `network_name` char(32) NOT NULL,
+  PRIMARY KEY (`network_id`),
+  FOREIGN KEY (`network_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  UNIQUE KEY (`network_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `vlan`
 --
 CREATE TABLE `vlan` (
   `vlan_id`     int(8) unsigned,
-  `vlan_name`   char(32) NOT NULL,
-  `vlan_desc`   char(255) NULL DEFAULT NULL,
   `vlan_number` int unsigned NOT NULL,
   PRIMARY KEY (`vlan_id`),
-  FOREIGN KEY (`vlan_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`vlan_name`),
+  FOREIGN KEY (`vlan_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`vlan_number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -686,11 +699,10 @@ CREATE TABLE `vlan` (
 CREATE TABLE `interface_role` (
   `interface_role_id`   int(8) unsigned AUTO_INCREMENT,
   `interface_role_name` char(32) NOT NULL,
-  `interface_role_desc` char(255) NOT NULL,
   PRIMARY KEY (`interface_role_id`),
+  FOREIGN KEY (`interface_role_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`interface_role_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 
 --
 -- Table structure for table `interface`
@@ -707,30 +719,30 @@ CREATE TABLE `interface` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `interface_vlan`
+-- Table structure for table `interface_network`
 --
-CREATE TABLE `interface_vlan` (
+CREATE TABLE `interface_network` (
   `interface_id` int(8) unsigned NOT NULL,
-  `vlan_id`      int(8) unsigned NOT NULL,
+  `network_id`   int(8) unsigned NOT NULL,
   `poolip_id`    int(8) unsigned NULL DEFAULT NULL,
-  PRIMARY KEY (`interface_id`, `vlan_id`),
+  PRIMARY KEY (`interface_id`, `network_id`),
   KEY (`interface_id`),
   FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`vlan_id`),
-  FOREIGN KEY (`vlan_id`) REFERENCES `vlan` (`vlan_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`network_id`),
+  FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`poolip_id`),
   FOREIGN KEY (`poolip_id`) REFERENCES `poolip` (`poolip_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `vlan_poolip`
+-- Table structure for table `network_poolip`
 --
-CREATE TABLE `vlan_poolip` (
-  `vlan_id`    int(8) unsigned NOT NULL,
-  `poolip_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`vlan_id`, `poolip_id`),
-  KEY (`vlan_id`),
-  FOREIGN KEY (`vlan_id`) REFERENCES `vlan` (`vlan_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+CREATE TABLE `network_poolip` (
+  `network_id` int(8) unsigned NOT NULL,
+  `poolip_id`  int(8) unsigned NOT NULL,
+  PRIMARY KEY (`network_id`, `poolip_id`),
+  KEY (`network_id`),
+  FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`poolip_id`),
   FOREIGN KEY (`poolip_id`) REFERENCES `poolip` (`poolip_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1524,7 +1536,6 @@ CREATE TABLE `masterimage` (
   PRIMARY KEY (`masterimage_id`),
   FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 
 SET foreign_key_checks=1;
 

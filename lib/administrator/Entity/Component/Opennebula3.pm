@@ -217,33 +217,30 @@ sub createVirtualHost {
     my $kernel = Entity::Kernel->find(hash => {});
 
     my $vm = Entity::Host->new(
-                 host_manager_id     => $self->getAttr(name => 'entity_id'),
-                 host_mac_address    => $new_mac_address,
-                 host_serial_number  => "Virtual Host with mac $new_mac_address",
-                 kernel_id           => $kernel->getAttr(name => 'entity_id'),
-                 host_ram            => $args{ram},
-                 host_core           => $args{core},
-                 active              => 1,
+                 host_manager_id    => $self->getAttr(name => 'entity_id'),
+                 host_serial_number => "Virtual Host with mac $new_mac_address",
+                 kernel_id          => $kernel->getAttr(name => 'entity_id'),
+                 host_ram           => $args{ram},
+                 host_core          => $args{core},
+                 active             => 1,
              );
 
     $vm->save();
     $vm->{_dbix}->discard_changes();
-    # TODO NETWORK REVIEW
-   
+    # TODO: NETWORK REVIEW
+
     $vm->addIface(
-            iface_name => 'eth0',
+        iface_name     => 'eth0',
         iface_mac_addr => $new_mac_address,
-             iface_pxe => 0
+        iface_pxe      => 0
     );
-    
+
     $vm->addIface(
-            iface_name => 'eth1',
+        iface_name     => 'eth1',
         iface_mac_addr => $adm->{manager}->{network}->generateMacAddress(),
-             iface_pxe => 0
+        iface_pxe      => 0
     );
-    
-    
-    
+
     $log->debug("return host with <" . $vm->getAttr(name => "host_id") . ">");
     return $vm;
 }

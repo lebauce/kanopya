@@ -140,14 +140,15 @@ sub updateClusterStatus {
                               host_id => $master_id);
                 $log->debug("New Operation PreStopNode with attrs : " . %params);
                 eval {
-                    Operation->enqueue(
-                                       priority => 200,
+                    Operation->enqueue(priority => 200,
                                        type     => 'PreStopNode',
-                                       params   => \%params);};
+                                       params   => \%params);
+                };
                 if ($@){
                     my $error = $@;
                     if ($error->isa('Kanopya::Exception::OperationAlreadyEnqueued')) {
-                        $log->info("PreStopNode operation is already enqueued");}
+                        $log->info("PreStopNode operation is already enqueued");
+                    }
                 }
             }
         }

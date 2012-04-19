@@ -105,18 +105,6 @@ sub checkOp {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-
-    # Check mac address unicity
-    my $mac = $self->{_objs}->{host}->getAttr(name => 'host_mac_address');
-    $log->debug("Checking unicity of mac address <$mac>");
-    my $host = Entity::Host->getHost(hash => { host_mac_address => $mac });
-    $log->debug(ref($host));
-    
-    if (defined $host){
-        $errmsg = "There is already an existing host with MAC $mac";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
     
     if (defined $self->{_objs}->{powersupplyport_number}) {
         # Check power supply
@@ -150,9 +138,6 @@ sub prepare {
 
     my $host_manager_id = General::checkParam(args => $params, name => 'host_manager_id');
 
-    # Put the MAC address in lowercase
-    $params->{host_mac_address} = lc($params->{host_mac_address});
-
     # TODO: Check parameters for addHost method.
     $self->{_objs}->{ehost_manager}
         = EFactory::newEEntity(data => Entity->get(id => $host_manager_id));
@@ -172,7 +157,7 @@ sub execute {
                                                            econtext  => $self->{executor}->{econtext},
                                                            %{$self->{params}});
 
-    $log->info("Host <" . $host->getAttr(name => "host_mac_address") . "> is now created");
+    $log->info("Host <" . $host->getAttr(name => "entity_id") . "> is now created");
 
     my @group = Entity::Gp->getGroups(hash => {gp_name => 'Host'});
     $group[0]->appendEntity(entity => $host);

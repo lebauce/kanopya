@@ -232,10 +232,11 @@ sub getConf {
 
         for my $lun (@{$luns}) {
             my $lun_hash = {
-                lun_id     => $lun->getAttr(name => 'lun_id'),
-                name       => $lun->getAttr(name => 'container_name'),
-                size       => $lun->getAttr(name => 'container_size'),
-                filesystem => $lun->getAttr(name => 'container_filesystem'),
+                lun_id          => $lun->getAttr(name => 'lun_id'),
+                name            => $lun->getAttr(name => 'container_name'),
+                size            => $lun->getAttr(name => 'container_size'),
+                filesystem      => $lun->getAttr(name => 'container_filesystem'),
+                entity_comment  => $lun->getComment(),
             };
             push @{$netapp_volume->{luns}}, $lun_hash;
         }

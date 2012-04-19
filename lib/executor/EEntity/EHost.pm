@@ -130,7 +130,7 @@ sub checkUp {
         }
     }
 
-    return $pingable;
+    return $pingable ? $pingable : 0;
 }
 
 sub generateUdevPersistentNetRules {

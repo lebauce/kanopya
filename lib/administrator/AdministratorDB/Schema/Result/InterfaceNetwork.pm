@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::Result::InterfaceVlan;
+package AdministratorDB::Schema::Result::InterfaceNetwork;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -11,11 +11,11 @@ use base 'DBIx::Class::Core';
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::InterfaceVlan
+AdministratorDB::Schema::Result::InterfaceNetwork
 
 =cut
 
-__PACKAGE__->table("interface_vlan");
+__PACKAGE__->table("interface_network");
 
 =head1 ACCESSORS
 
@@ -26,7 +26,7 @@ __PACKAGE__->table("interface_vlan");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 vlan_id
+=head2 network_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -50,7 +50,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "vlan_id",
+  "network_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -65,7 +65,7 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
-__PACKAGE__->set_primary_key("interface_id", "vlan_id");
+__PACKAGE__->set_primary_key("interface_id", "network_id");
 
 =head1 RELATIONS
 
@@ -84,18 +84,18 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 vlan
+=head2 network
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Vlan>
+Related object: L<AdministratorDB::Schema::Result::Network>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "vlan",
-  "AdministratorDB::Schema::Result::Vlan",
-  { vlan_id => "vlan_id" },
+  "network",
+  "AdministratorDB::Schema::Result::Network",
+  { network_id => "network_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -120,8 +120,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-27 07:11:49
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UBHmANASULV1+3w2yx44uQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-17 14:30:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+E/K8ZnW5RTdMhg57Il+tQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -118,13 +118,12 @@ sub synchronize {
 
     # Get the hostmanager for his id :
     my $hostmanagerid = $self->getAttr('name' => 'entity_id');
-    my $adm = Administrator->new;   
+    my $adm = Administrator->new;
 
     foreach my $blade (@blades) {
         # Add the blade to the host table :
         my $mac = $adm->{manager}->{network}->generateMacAddress();
         my %parameters = (
-                host_mac_address    => $mac,
                 kernel_id           => $kernelid,
                 host_serial_number  => $blade->{dn},
                 host_ram            => $blade->{totalMemory} * 1024 * 1024,

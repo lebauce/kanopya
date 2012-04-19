@@ -124,7 +124,7 @@ sub _cancel {
     my $host = Entity::Host->get(id => $params->{host_id});
 
     $log->info("Cancel start node, we will try to remove node link for <" .
-               $host->getAttr(name => "host_mac_address") . ">");
+               $host->getAttr(name => "entity_id") . ">");
 
     $host->stopToBeNode();
 
@@ -137,10 +137,9 @@ sub _cancel {
 
 sub execute {
     my $self = shift;
-    my $adm = Administrator->new();
 
     # Firstly compute the node configuration
-    $log->info("Compute node configuration for host <" . $self->{_objs}->{host}->getAttr(name => "host_mac_address"));
+    $log->info("Compute node configuration for host <" . $self->{_objs}->{host}->getAttr(name => "entity_id"));
     if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard}) and
         (exists $self->{_objs}->{powersupplyport_number} and defined $self->{_objs}->{powersupplyport_number})) {
         my $powersupply_id = $self->{_objs}->{powersupplycard}->addPowerSupplyPort(
@@ -150,60 +149,6 @@ sub execute {
         $self->{_objs}->{host}->setAttr(name  => 'host_powersupply_id',
                                         value => $powersupply_id);
     }
-
-    # Add host in the dhcp
-    my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
-    my $host_ip = $adm->{manager}->{network}->getFreeInternalIP();
-
-    # Set Hostname
-    my $host_hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
-
-    # Configure DHCP Component
-    my $host_mac = $self->{_objs}->{host}->getAttr(name => "host_mac_address");
-    
-    # Not used any more in dhcp component, please have a see to _generatePXEConf
-    my $host_kernel_id;
-    my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
-    if ($tmp_kernel_id) {
-        $host_kernel_id = $tmp_kernel_id;
-    } else {
-        $host_kernel_id = $self->{_objs}->{host}->getAttr(name => "kernel_id");
-    }
-
-    $self->{_objs}->{component_dhcpd}->addHost(
-        dhcpd3_subnet_id                => $subnet,
-        dhcpd3_hosts_ipaddr             => $host_ip,
-        dhcpd3_hosts_mac_address        => $host_mac,
-        dhcpd3_hosts_hostname           => $host_hostname,
-        dhcpd3_hosts_ntp_server         => $self->{bootserver}->{obj}->getMasterNodeIp(),
-        dhcpd3_hosts_domain_name        => $self->{_objs}->{cluster}->getAttr(name => "cluster_domainname"),
-        dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver1"),
-        kernel_id                       => $host_kernel_id,
-        erollback                       => $self->{erollback}
-    );
-
-    my $eroll_add_dhcp_host = $self->{erollback}->getLastInserted();
-    $self->{erollback}->insertNextErollBefore(erollback => $eroll_add_dhcp_host);
-
-    # Generate new configuration file
-    $self->{_objs}->{component_dhcpd}->generate(econtext    => $self->{bootserver}->{econtext},
-                                                erollback   => $self->{erollback});
-
-    my $eroll_dhcp_generate = $self->{erollback}->getLastInserted();
-    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_dhcp_generate);
-
-    # Generate new configuration file
-    $self->{_objs}->{component_dhcpd}->reload(econtext  => $self->{bootserver}->{econtext},
-                                              erollback => $self->{erollback});
-    $log->info('Adming dhcp server updated');
-
-    # Update Host internal ip
-    $log->info("get subnet <$subnet> and have host ip <$host_ip>");
-    my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
-
-    my $ipv4_internal_id
-        = $self->{_objs}->{host}->setInternalIP(ipv4_address => $host_ip,
-                                                ipv4_mask    => $subnet_hash{'dhcpd3_subnet_mask'});
 
     my ($access_mode, $mount_options) = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared')
                       ? ("ro", "ro,noatime,nodiratime") : ("rw", "defaults");
@@ -242,17 +187,17 @@ sub execute {
     );
 
     # Apply node etc configuration
-    $self->_generateNodeConf(etc_path   => $mountpoint . '/etc',
-                             options    => $mount_options);
+    $self->_generateNodeConf(etc_path => $mountpoint . '/etc',
+                             options  => $mount_options);
 
     $log->info("Generate Boot Conf");
 
     # Apply node boot configuration
-    $self->_generateBootConf(mountpoint    => $mountpoint,
-                             filesystem    => $self->{_objs}->{container}->getAttr(
-                                                  name => 'container_filesystem'
-                                              ),
-                             options       => $mount_options);
+    $self->_generateBootConf(mountpoint => $mountpoint,
+                             filesystem => $self->{_objs}->{container}->getAttr(
+                                               name => 'container_filesystem'
+                                           ),
+                             options    => $mount_options);
 
     # TODO: Component migration (node, exec context?)
     my $components = $self->{_objs}->{components};
@@ -563,10 +508,54 @@ sub _generatePXEConf {
     # recompress the initrd in bz2
     $cmd = "bzip2 $newinitrd && mv $newinitrd.bz2 $newinitrd";
     $self->{executor}->{econtext}->execute(command => $cmd);
-    
-    
-    ## here we generate pxelinux.cfg for the host
-    
+
+    my $node_mac_addr = $args{host}->getPXEMacAddress;
+
+    # Add host in the dhcp
+    my $adm     = Administrator->new();
+    my $subnet  = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
+    my $host_ip = $adm->{manager}->{network}->getFreeInternalIP();
+
+    # Set Hostname
+    my $host_hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
+
+    # Configure DHCP Component
+    my $host_kernel_id;
+    my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
+    if ($tmp_kernel_id) {
+        $host_kernel_id = $tmp_kernel_id;
+    } else {
+        $host_kernel_id = $self->{_objs}->{host}->getAttr(name => "kernel_id");
+    }
+
+    $self->{_objs}->{component_dhcpd}->addHost(
+        dhcpd3_subnet_id                => $subnet,
+        dhcpd3_hosts_ipaddr             => $host_ip,
+        dhcpd3_hosts_mac_address        => $node_mac_addr,
+        dhcpd3_hosts_hostname           => $host_hostname,
+        dhcpd3_hosts_ntp_server         => $self->{bootserver}->{obj}->getMasterNodeIp(),
+        dhcpd3_hosts_domain_name        => $self->{_objs}->{cluster}->getAttr(name => "cluster_domainname"),
+        dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver1"),
+        kernel_id                       => $host_kernel_id,
+        erollback                       => $self->{erollback}
+    );
+
+    my $eroll_add_dhcp_host = $self->{erollback}->getLastInserted();
+    $self->{erollback}->insertNextErollBefore(erollback => $eroll_add_dhcp_host);
+
+    # Generate new configuration file
+    $self->{_objs}->{component_dhcpd}->generate(econtext    => $self->{bootserver}->{econtext},
+                                                erollback   => $self->{erollback});
+
+    my $eroll_dhcp_generate = $self->{erollback}->getLastInserted();
+    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_dhcp_generate);
+
+    # Generate new configuration file
+    $self->{_objs}->{component_dhcpd}->reload(econtext  => $self->{bootserver}->{econtext},
+                                              erollback => $self->{erollback});
+    $log->info('Adming dhcp server updated');
+
+    # Here we generate pxelinux.cfg for the host
     my $rand    = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
 
@@ -587,15 +576,20 @@ sub _generatePXEConf {
         or throw Kanopya::Exception::Internal(
                      error => "Error when processing template $input."
                  );
-    
-    my $node_mac_addr = $args{host}->getAttr(name => 'host_mac_address');
+
     $node_mac_addr =~ s/:/-/g;
-    
     my $dest = $tftp_conf->{'repository'} . '/pxelinux.cfg/01-' . lc $node_mac_addr;
 
     $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
     unlink "/tmp/$tmpfile";
-   
+
+    # Update Host internal ip
+    $log->info("get subnet <$subnet> and have host ip <$host_ip>");
+    my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
+
+    my $ipv4_internal_id
+        = $self->{_objs}->{host}->setInternalIP(ipv4_address => $host_ip,
+                                                ipv4_mask    => $subnet_hash{'dhcpd3_subnet_mask'});
 }
 
 sub _generateKanopyaHalt{

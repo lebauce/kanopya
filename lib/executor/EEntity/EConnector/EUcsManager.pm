@@ -136,10 +136,6 @@ sub getFreeHost {
                 $ifname =~ s/^v//g;
 
                 if ($ifname eq "eth0") {
-                    $log->info("Filling host MAC field with " . $ethernet->{addr});
-                    $host->setAttr(name  => "host_mac_address",
-                                   value => $ethernet->{addr});
-                    $host->save();
                     $pxe = 1;
                 }
 

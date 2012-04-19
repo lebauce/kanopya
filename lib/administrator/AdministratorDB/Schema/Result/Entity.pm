@@ -33,6 +33,13 @@ __PACKAGE__->table("entity");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 entity_comment_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -49,6 +56,13 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "entity_comment_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
 );
 __PACKAGE__->set_primary_key("entity_id");
@@ -113,6 +127,21 @@ __PACKAGE__->might_have(
   "AdministratorDB::Schema::Result::ContainerAccess",
   { "foreign.container_access_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 entity_comment
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::EntityComment>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "entity_comment",
+  "AdministratorDB::Schema::Result::EntityComment",
+  { entity_comment_id => "entity_comment_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 class_type
@@ -235,6 +264,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 interface_role
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::InterfaceRole>
+
+=cut
+
+__PACKAGE__->might_have(
+  "interface_role",
+  "AdministratorDB::Schema::Result::InterfaceRole",
+  { "foreign.interface_role_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 kernel
 
 Type: might_have
@@ -292,6 +336,21 @@ __PACKAGE__->might_have(
   "netapp_aggregate",
   "AdministratorDB::Schema::Result::NetappAggregate",
   { "foreign.aggregate_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 network
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Network>
+
+=cut
+
+__PACKAGE__->might_have(
+  "network",
+  "AdministratorDB::Schema::Result::Network",
+  { "foreign.network_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -430,24 +489,9 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vlan
 
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Vlan>
-
-=cut
-
-__PACKAGE__->might_have(
-  "vlan",
-  "AdministratorDB::Schema::Result::Vlan",
-  { "foreign.vlan_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-18 17:21:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:VWdtkIraoBqzqqn6Wz9Ivw
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-19 19:10:47
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:g05Zf6h11mupjzKvj47lyQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

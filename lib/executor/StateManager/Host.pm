@@ -73,8 +73,8 @@ sub hostBroken{
     
     logHostStateChange(
         level => 'warning',
-        mac_address => $args{host}->getAttr(name=>"host_mac_address"),
-        newstatus => 'broken' 
+        host => $args{host},
+        newstatus => 'broken'
     );
 }
 
@@ -87,7 +87,7 @@ sub hostRepaired{
     
     logHostStateChange(
         level => 'info',
-        mac_address => $args{host}->getAttr(name=>"host_mac_address"),
+        host => $args{host},
         newstatus => 'up' 
     );
 }
@@ -101,7 +101,7 @@ sub hostStopped{
     
     logHostStateChange(
         level => 'info',
-        mac_address => $args{host}->getAttr(name=>"host_mac_address"),
+        host => $args{host},
         newstatus => 'down' 
     );
     
@@ -122,7 +122,7 @@ sub hostStarted{
     
     logHostStateChange(
         level => 'info',
-        mac_address => $args{host}->getAttr(name=>"host_mac_address"),
+        host => $args{host},
         newstatus => 'up' 
     );
 
@@ -147,21 +147,17 @@ sub incorrectHost {
             $log->error($errmsg);
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
-    my $error = "Wrong host <". $args{host}->getAttr(name=>'host_mac_address')."> must not be in cluster";
+    my $error = "Wrong host <" . $args{host}->getAttr(name => 'entity_id') . "> must not be in cluster";
     throw Kanopya::Exception::Internal(error => $error);
 }
 
 sub incorrectStates {
     my %args = @_;
-    if ((!defined $args{host} or !exists $args{host})||
-        ((!defined $args{services_available} or !exists $args{services_available})&&
-         (!defined $args{pingable} or !exists $args{pingable}))){
-            $errmsg = "StateManager::incorrectStates need a host and (pingable or services_available) named argument!";    
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal(error => $errmsg);
-        }
+
+    General::checkParams(args => \%args, required => [ 'host', 'services_available', 'pingable' ]);
+
     my $state = $args{pingable} || $args{services_available};
-    my $error = "Wrong state <$state> for host <". $args{host}->getAttr(name=>'host_mac_address').">\n";
+    my $error = "Wrong state <$state> for host <" . $args{host}->getAttr(name => 'entity_id') . ">\n";
     throw Kanopya::Exception::Internal(error => $error);
 }
 
@@ -194,8 +190,8 @@ sub testStoppingHost{
 
 sub updateHostStatus {
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['host']);
+
+    General::checkParams(args => \%args, required => [ 'host', 'pingable' ]);
 
     print "UpdateHost Status with pingable <$args{pingable}>\n";
     my %actions = (0 => { up        => \&hostBroken,
@@ -219,9 +215,10 @@ sub updateHostStatus {
 
 sub logHostStateChange {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['mac_address', 'newstatus', 'level']);
-    my $adm = Administrator->new();
-    my $msg = "Host with mac address $args{mac_address} is now $args{newstatus}";
+
+    General::checkParams(args => \%args, required => [ 'host', 'newstatus', 'level' ]);
+
+    my $msg = "Host with id <" . $args{host}->getAttr(name => 'entity_id') . "> is now $args{newstatus}";
     Message->send(from => 'StateManager', level => $args{level}, content => $msg);
     $log->info($msg); 
 }

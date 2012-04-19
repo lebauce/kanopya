@@ -33,12 +33,6 @@ __PACKAGE__->table("poolip");
   is_nullable: 0
   size: 32
 
-=head2 poolip_desc
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 255
-
 =head2 poolip_addr
 
   data_type: 'char'
@@ -76,8 +70,6 @@ __PACKAGE__->add_columns(
   },
   "poolip_name",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "poolip_desc",
-  { data_type => "char", is_nullable => 1, size => 255 },
   "poolip_addr",
   { data_type => "char", is_nullable => 0, size => 15 },
   "poolip_mask",
@@ -93,17 +85,17 @@ __PACKAGE__->add_unique_constraint("poolip_addr", ["poolip_addr", "poolip_mask"]
 
 =head1 RELATIONS
 
-=head2 interface_vlans
+=head2 interface_networks
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::InterfaceVlan>
+Related object: L<AdministratorDB::Schema::Result::InterfaceNetwork>
 
 =cut
 
 __PACKAGE__->has_many(
-  "interface_vlans",
-  "AdministratorDB::Schema::Result::InterfaceVlan",
+  "interface_networks",
+  "AdministratorDB::Schema::Result::InterfaceNetwork",
   { "foreign.poolip_id" => "self.poolip_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -123,6 +115,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 network_poolips
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NetworkPoolip>
+
+=cut
+
+__PACKAGE__->has_many(
+  "network_poolips",
+  "AdministratorDB::Schema::Result::NetworkPoolip",
+  { "foreign.poolip_id" => "self.poolip_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 poolip
 
 Type: belongs_to
@@ -138,25 +145,15 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 vlan_poolips
 
-Type: has_many
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-17 14:30:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YCv/0zxqu32l3BbUor15Yg
 
-Related object: L<AdministratorDB::Schema::Result::VlanPoolip>
-
-=cut
-
-__PACKAGE__->has_many(
-  "vlan_poolips",
-  "AdministratorDB::Schema::Result::VlanPoolip",
-  { "foreign.poolip_id" => "self.poolip_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { "foreign.entity_id" => "self.poolip_id" },
+  { cascade_copy => 0, cascade_delete => 1 }
 );
 
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-27 07:11:49
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XkJHXB/C/Ay9Rr6fKGFGvA
-
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

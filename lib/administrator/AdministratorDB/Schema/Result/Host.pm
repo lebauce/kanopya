@@ -66,13 +66,6 @@ __PACKAGE__->table("host");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 host_ipv4_internal_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
 =head2 host_desc
 
   data_type: 'char'
@@ -84,12 +77,6 @@ __PACKAGE__->table("host");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_nullable: 0
-
-=head2 host_mac_address
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 18
 
 =head2 host_initiatorname
 
@@ -170,19 +157,10 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
-  "host_ipv4_internal_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
   "host_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
   "active",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "host_mac_address",
-  { data_type => "char", is_nullable => 0, size => 18 },
   "host_initiatorname",
   { data_type => "char", is_nullable => 1, size => 64 },
   "host_ram",
@@ -202,7 +180,6 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
 );
 __PACKAGE__->set_primary_key("host_id");
-__PACKAGE__->add_unique_constraint("host_mac_address", ["host_mac_address"]);
 
 =head1 RELATIONS
 
@@ -233,7 +210,7 @@ __PACKAGE__->belongs_to(
   "host",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "host_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 hostmodel
@@ -248,7 +225,12 @@ __PACKAGE__->belongs_to(
   "hostmodel",
   "AdministratorDB::Schema::Result::Hostmodel",
   { hostmodel_id => "hostmodel_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 processormodel
@@ -263,7 +245,12 @@ __PACKAGE__->belongs_to(
   "processormodel",
   "AdministratorDB::Schema::Result::Processormodel",
   { processormodel_id => "processormodel_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 kernel
@@ -278,7 +265,7 @@ __PACKAGE__->belongs_to(
   "kernel",
   "AdministratorDB::Schema::Result::Kernel",
   { kernel_id => "kernel_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 host_powersupply
@@ -293,22 +280,12 @@ __PACKAGE__->belongs_to(
   "host_powersupply",
   "AdministratorDB::Schema::Result::Powersupply",
   { powersupply_id => "host_powersupply_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 host_ipv4_internal
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Ipv4Internal>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "host_ipv4_internal",
-  "AdministratorDB::Schema::Result::Ipv4Internal",
-  { ipv4_internal_id => "host_ipv4_internal_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 ifaces
@@ -372,8 +349,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-05 20:08:58
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2QRYGyGbzm5vxml4P8B00w
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-13 14:46:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qgjMtnrMTrveW8/u39G+mA
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",

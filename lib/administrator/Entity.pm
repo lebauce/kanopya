@@ -3,10 +3,18 @@ use base 'BaseDB';
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
+use EntityComment;
 
 my $log = get_logger('administrator');
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    entity_comment_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+};
+
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -197,12 +205,41 @@ sub getEntities {
             if(Kanopya::Exception::Permission::Denied->caught()) {
                                $log->info("no right to access to object <$args{type}> with  <$id>");
                 next;
-            } 
+            }
             else { $exception->rethrow(); } 
         }
         else { push @objs, $obj; }
     }
     return  @objs;
+}
+
+sub getComment {
+    my $self = shift;
+    
+    my $comment_id = $self->getAttr(name => 'entity_comment_id');
+    if ($comment_id) {
+        return EntityComment->get(id => $comment_id)->getAttr(name => 'entity_comment');
+    }
+    return '';
+}
+
+sub setComment {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'comment' ]);
+
+    my $comment_id = $self->getAttr(name => 'entity_comment_id');
+    if ($comment_id) {
+        my $comment = EntityComment->get(id => $comment_id);
+        $comment->setAttr(name => 'entity_comment', value => $args{comment});
+        $comment->save();
+    }
+    else {
+        my $comment = EntityComment->new(entity_comment => $args{comment});
+        $self->setAttr(name => 'entity_comment_id', value => $comment->getAttr(name => 'entity_comment_id'));
+        $self->save();
+    }
 }
 
 1;

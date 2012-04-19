@@ -143,7 +143,7 @@ sub execute{
     # set host active in db
     $self->{_objs}->{host}->setAttr(name => 'active', value => 0);
     $self->{_objs}->{host}->save();
-    $log->info("Host <". $self->{_objs}->{host}->getAttr(name => 'host_mac_address') ."> deactivated");
+    $log->info("Host <". $self->{_objs}->{host}->getAttr(name => 'entity_id') ."> deactivated");
 }
 
 

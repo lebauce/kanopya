@@ -66,21 +66,6 @@ __PACKAGE__->add_unique_constraint("ipv4_internal_address", ["ipv4_internal_addr
 
 =head1 RELATIONS
 
-=head2 hosts
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Host>
-
-=cut
-
-__PACKAGE__->has_many(
-  "hosts",
-  "AdministratorDB::Schema::Result::Host",
-  { "foreign.host_ipv4_internal_id" => "self.ipv4_internal_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 powersupplycards
 
 Type: has_many
@@ -97,9 +82,9 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UWUfh9SMMFF62/TrCYvQmw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-13 14:46:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dlRPl5H0O0C0FlRB/BYd6Q
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

@@ -38,8 +38,7 @@ sub createHost {
 
     General::checkParams(args     => \%args,
                          required => [ "processormodel_id", "host_core", "kernel_id",
-                                       "hostmodel_id", "host_mac_address",
-                                       "host_serial_number", "host_ram" ]);
+                                       "hostmodel_id", "host_serial_number", "host_ram" ]);
 
     if (defined $args{erollback}) { delete $args{erollback}; }
     if (defined $args{econtext})  { delete $args{econtext}; }

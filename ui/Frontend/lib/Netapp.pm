@@ -7,6 +7,7 @@ use Administrator;
 use Entity::ServiceProvider::Outside::Netapp;
 use Entity::Connector::NetappVolumeManager;
 use Entity::Connector::NetappLunManager;
+use EntityComment;
 
 my $log = get_logger('webui');
 
@@ -92,8 +93,9 @@ get '/netapp/:netappid/remove' => sub {
 
 get '/netapp/:netappid' => sub {
     my $netapp_id = param('netappid');
-    my $netapp = Entity::ServiceProvider::Outside::Netapp->get(id => $netapp_id);
+    my $netapp = Entity->get(id => $netapp_id);
     my $eenetapp = $netapp->getConnector(category => 'Storage');
+    #my $entity_comment = EntityComment->find(hash => { entity_id => $netapp_id });
     
     # Connectors
     my @connectors = map { 
@@ -116,6 +118,8 @@ get '/netapp/:netappid' => sub {
         netapp_passwd          => $netapp->getAttr('name' => 'netapp_passwd'),
         netapp_state           => $eenetapp->{state},
         connectors_list        => \@connectors,
+        #entity_comment         => $entity_comment->getAttr('name' => 'entity_comment'),
+        entity_comment         => $netapp->getComment(),
         #netapp_volumes         => \@volumes,
         #netapp_aggregates      => \@aggregates,
     };

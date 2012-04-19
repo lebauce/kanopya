@@ -120,23 +120,21 @@ B<throws>  : None
 # return a data structure to pass to the template processor 
 sub getConf {
     my $self = shift;
-    my $cluster = $self->{_dbix}->parent->service_provider->cluster;
-    my $dhcpd3 =  $self->{_dbix};
-    my $data = {};
-    my $adm = Administrator->new();
-    $data->{domain_name} = $dhcpd3->get_column('dhcpd3_domain_name');
+
+    my $dhcpd3 = $self->{_dbix};
+    my $data   = {};
+
+    $data->{domain_name}        = $dhcpd3->get_column('dhcpd3_domain_name');
     $data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
-    $data->{server_name} =  $dhcpd3->get_column('dhcpd3_servername');
-    my $ipv4_internal_id = $cluster->parent->search_related("nodes", { master_node => 1 })->single->host->get_column('host_ipv4_internal_id');
-    $data->{server_ip}= $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $ipv4_internal_id)->{ipv4_internal_address};
-    
+    $data->{server_name}        = $dhcpd3->get_column('dhcpd3_servername');
+    $data->{server_ip}          = $self->getServiceProvider->getMasterNodeIp;
+
     my $subnets = $dhcpd3->dhcpd3_subnets;
     my @data_subnets = ();
     while(my $subnet = $subnets->next) {
         my $hosts = $subnet->dhcpd3_hosts;
         my @data_hosts = ();
         while(my $host = $hosts->next) {
-        #my $host = Host::getHostFromIP(ipv4_internal_ip => $host->get_column('dhcpd3_hosts_ipaddr'));
             push @data_hosts, {
                 domain_name =>$host->get_column('dhcpd3_hosts_domain_name'),
                 domain_name_server => $host->get_column('dhcpd3_hosts_domain_name_server'),
