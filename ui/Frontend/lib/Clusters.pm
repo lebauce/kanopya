@@ -373,6 +373,9 @@ post '/clusters/add' => sub {
     
     delete $parameters{systemimage_size_unit};
     $parameters{disk_manager_param_systemimage_size} = $sizeinbyte;
+
+    my $persistent = param('cluster_si_persistent') eq 'checked' ? 1 : 0;
+    $parameters{cluster_si_persistent} = $persistent;
  
     eval {
         Entity::ServiceProvider::Inside::Cluster->create(%parameters);

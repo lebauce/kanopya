@@ -70,6 +70,12 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 0
     },
+    cluster_si_persistent => {
+        pattern      => '^(0|1)$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
     cluster_min_node => {
         pattern      => '^\d*$',
         is_mandatory => 1,

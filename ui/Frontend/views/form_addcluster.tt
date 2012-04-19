@@ -69,6 +69,7 @@
     </tr>
     <tr><td><input type="radio" name="cluster_si_shared" value="1" />shared (one image for all nodes)</td>
     </tr>
+    <tr><td></td><td><input type="checkbox" name="cluster_si_persistent" value="checked" checked />persistent (do not delete images automatically)</td></tr>
     <tr><td class="label">Master Image :</td>
         <td><select name="masterimage_id">
             <% FOREACH si IN masterimages_list %>
