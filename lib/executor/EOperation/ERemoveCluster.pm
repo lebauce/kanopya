@@ -99,22 +99,6 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
 
-    # Get systemimage if removal required.
-    if (not $params->{keep_systemimage}) {
-        # All node systemimages should be removed at StopNode step excepted
-        # the master node one, so find it from its name.
-        my $systemimage_name = $self->{_objs}->{cluster}->getAttr(name => 'cluster_name') . '_1';
-
-        eval {
-            $self->{_objs}->{systemimage} = Entity::Systemimage->find(
-                                                hash => { systemimage_name => $systemimage_name }
-                                            );
-        };
-        if ($@) {
-            $log->debug("Could not find systemimage with name <$systemimage_name> for removal.");
-        }
-    }
-
     # Get contexts
     my $exec_cluster
         = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
@@ -125,15 +109,6 @@ sub prepare {
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
-
-    if ($self->{_objs}->{systemimage}) {
-        my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
-        $esystemimage->deactivate(econtext  => $self->{executor}->{econtext},
-                                  erollback => $self->{erollback});
-
-        $esystemimage->remove(econtext  => $self->{executor}->{econtext},
-                              erollback => $self->{erollback});
-    }
 
     # Remove cluster directory
     my $command = "rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name");

@@ -10,12 +10,12 @@ use Operation;
 use General;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init($INFO);
+Log::Log4perl->easy_init($ERROR);
 
 # Get param
 my $arg = $ARGV[0];
 if (not defined $arg) {
-    print "Usage: deploy_masterimage file.tar.bz\n";
+    print "Usage: deploy_masterimage /path/to/your/masterimage/file.tar.bz\n";
     exit 1;
 }
 
@@ -41,3 +41,4 @@ eval {
     );
 };
 
+print "DeployMasterimage operation added to operations queue\n";
