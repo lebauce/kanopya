@@ -79,7 +79,7 @@ sub copy {
 
         # Check if the destination container is higher thant the source one,
         # resize it to maximum.
-        if ($dest_size > $source_size) {
+        if ($dest_access->getPartitionCount(econtext => $args{econtext}) == 1 and $dest_size > $source_size) {
             my $part_start = $dest_access->getPartitionStart(econtext => $args{econtext});
             if ($part_start and $part_start > 0) {
                 $command = "parted -s $dest_device rm 1";
@@ -265,11 +265,31 @@ sub getPartitionStart {
 
     # Parse the parted output to get partition start.
     my $part_start = $result->{stdout};
-    $part_start =~ s/.*\n.*\n1://g;
-    $part_start =~ s/B.*$//g;
+    $part_start =~ s/\n//g;
+    $part_start =~ s/.*1://g;
+    $part_start =~ s/B.*//g;
     chomp($part_start);
 
     return $part_start;
+}
+
+sub getPartitionCount {
+    my $self = shift;
+    my %args = @_;
+    my ($command, $result);
+
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    if (! $device) {
+        my $msg = "A container access must be connected before getting partition start.";
+        throw Kanopya::Exception::Execution(error => $msg);
+    }
+
+    $command = "parted -m -s $device u B print";
+    $result = $args{econtext}->execute(command => $command);
+
+    return ((scalar split('\n', $result->{stdout})) - 2);
 }
 
 sub connectPartition {
