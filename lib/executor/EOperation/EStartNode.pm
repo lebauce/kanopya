@@ -186,10 +186,6 @@ sub execute {
         econtext => $self->{executor}->{econtext}
     );
 
-    # Apply node etc configuration
-    $self->_generateNodeConf(etc_path => $mountpoint . '/etc',
-                             options  => $mount_options);
-
     $log->info("Generate Boot Conf");
 
     # Apply node boot configuration
@@ -198,6 +194,10 @@ sub execute {
                                                name => 'container_filesystem'
                                            ),
                              options    => $mount_options);
+
+    # Apply node etc configuration
+    $self->_generateNodeConf(etc_path => $mountpoint . '/etc',
+                             options  => $mount_options);
 
     # TODO: Component migration (node, exec context?)
     my $components = $self->{_objs}->{components};
@@ -455,7 +455,19 @@ sub _generateBootConf {
             );
         }
     }
-    
+    else {
+        my $adm     = Administrator->new();
+        my $subnet  = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
+        my $host_ip = $adm->{manager}->{network}->getFreeInternalIP();
+
+        # Update Host internal ip
+        $log->info("get subnet <$subnet> and have host ip <$host_ip>");
+        my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
+            
+        $self->{_objs}->{host}->setInternalIP(ipv4_address => $host_ip,
+                                              ipv4_mask    => $subnet_hash{'dhcpd3_subnet_mask'});
+    }
+ 
     # Set up fastboot
     $self->{executor}->{econtext}->execute(
         command => "touch $args{mountpoint}/fastboot"
