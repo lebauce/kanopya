@@ -37,7 +37,7 @@ get '/connectors/:instanceid/configure' => sub {
     my $config;
     #...
     if ($connector->isa('Entity::Connector::NetappLunManager')) {
-        $config = $connector->getConf2;
+        $config = $connector->getConf;
     }
     else {
         $config = $connector->getConf;

@@ -273,16 +273,21 @@ sub getConf {
 sub getConf {
     my ($self) = @_;
     my @aggregates = Entity::NetappAggregate->search( hash => {} );
+    my @aggr_object = $self->aggregates;
+    my @vol_object = $self->volumes;
     my $aggregate = [];
     my $volume = [];
     
-    foreach my $aggr (@aggregates) {
+    foreach my $aggr (@aggr_object) {
+        my $aggr_key = $aggr->name;
+        my $aggr_id = Entity::NetappAggregate->find( hash => { name => $aggr_key } )->getAttr(name => 'aggregate_id');
+        my $entity_id = Entity->find( hash => { entity_id => $aggr_id })->getAttr(name => 'entity_comment_id');
         my $aggr_list = {
-            aggregate_name      => $aggr->getAttr(name => 'name'),
-            aggregate_id        => $aggr->getAttr(name => 'aggregate_id'),
-            #aggregate_totalsize => $aggr->size_total,
-            #aggregate_sizeused  => $aggr->size_used,
-            entity_comment      => $aggr->getComment(),
+            aggregate_name      => $aggr->name,
+            aggregate_id        => $aggr_id,
+            aggregate_totalsize => $aggr->size_total,
+            aggregate_sizeused  => $aggr->size_used,
+            entity_comment      => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
         };
         my @netappvolumes = Entity::Container::NetappVolume->search( hash => { aggregate_id => $aggr->getAttr(name => 'aggregate_id') } );
         foreach my $vol (@netappvolumes) {

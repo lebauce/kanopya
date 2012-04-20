@@ -192,11 +192,10 @@ sub synchronize {
         my $lun_volume_obj = Entity::Container->find( hash => { container_name => $lun_volume_name });
         my $lun_volume_id = $lun_volume_obj->getAttr(name => "volume_id");
 
-        # Is the LUN already in database
-        eval {
-            Entity::Container->search(hash => { container_name => $lun_name });
-        };
-        if ($@) {
+        # Is the LUN already in database :
+        my $existing_luns = Entity::Container->search(hash => { container_name => $lun->name });
+        my $existing_lun = scalar($existing_luns);
+        if ($existing_lun eq "0") {
             Entity::Container::NetappLun->new(
                 disk_manager_id      => $self->getAttr(name => 'entity_id'),
                 container_name       => $lun_name,
@@ -210,89 +209,73 @@ sub synchronize {
     }
 }
 
-sub getConf {
-    my $self = shift;
-
-    my $conf = {};
-    my @tab_volumes = ();
-
-    my @volumes = Entity::Container::NetappVolume->search(hash => {});
-
-    for my $volume (@volumes) {
-        my $netapp_volume = {
-            volume_id   => $volume->getAttr(name => 'volume_id'),
-            volume_name => $volume->getAttr(name => 'container_name'),
-        };
-        $netapp_volume->{luns} = ();
-        my $luns = Entity::Container::NetappLun->search(
-                       hash => {
-                           volume_id => $netapp_volume->{volume_id}
-                        }
-                   );
-
-        for my $lun (@{$luns}) {
-            my $lun_hash = {
-                lun_id          => $lun->getAttr(name => 'lun_id'),
-                name            => $lun->getAttr(name => 'container_name'),
-                size            => $lun->getAttr(name => 'container_size'),
-                filesystem      => $lun->getAttr(name => 'container_filesystem'),
-                entity_comment  => $lun->getComment(),
-            };
-            push @{$netapp_volume->{luns}}, $lun_hash;
-        }
-        push @tab_volumes, $netapp_volume;
-    }
-    $conf->{netapp_volumes} = \@tab_volumes;
-    return $conf;
-}
-
 
 =head2 getConf 
 
-    Desc: return hash structure containing luns  
+    Desc: return hash structure containing luns
+    
+    Return: Scalar $config
+    
+    Info: ReWrited on April 20 2012 by jlevasseur
 
 =cut
 
-sub getConf2 {
+sub getConf {
     my ($self) = @_;
     my $config = {};
     $config->{aggregates} = [];
     $config->{volumes} = [];
-    my @aggregates = $self->aggregates;
-    my @volumes = $self->volumes;
-    my @luns = $self->luns;
+    my @aggr_object = $self->aggregates;
+    my @vol_object = $self->volumes;
+    my @lun_object = $self->luns;
+    my @luns = Entity::Container::NetappLun->search(hash => {});
     
-    foreach my $aggr (@aggregates) {
+    # run through each aggr on xml/rpc fill and get comment from db
+    foreach my $aggr (@aggr_object) {
+        # get the identical info shared by aggr object and database :
+        my $aggr_key = $aggr->name;
+        my $aggr_id = Entity::NetappAggregate->find( hash => { name => $aggr_key } )->getAttr(name => 'aggregate_id');
+        my $entity_id = Entity->find( hash => { entity_id => $aggr_id })->getAttr(name => 'entity_comment_id');
         my $tmp = {
+            aggregate_id        => $aggr_id,
             aggregate_name      => $aggr->name,
             aggregate_state     => $aggr->state,
             aggregate_totalsize => $aggr->size_total,
             aggregate_sizeused  => $aggr->size_used,
-            aggregate_volumes   => []
+            aggregate_volumes   => [],
+            entity_comment      => EntityComment->find( hash => {entity_comment_id => $aggr_id})->getAttr(name => 'entity_comment'),
         };
-        foreach my $volume (@volumes) {
-            if($volume->containing_aggregate eq $aggr->name) {
+        # run through each vol on xml/rpc fill and get comment from db
+        foreach my $volume (@vol_object) {
+            my $vol_key = $volume->name;
+            my $volume_id = Entity::Container->find( hash => { container_name => $vol_key } )->getAttr(name => 'container_id');
+            my $entity_id = Entity->find( hash => { entity_id => $volume_id })->getAttr(name => 'entity_comment_id');
                 my $tmp2 = {
-                    volume_name      => $volume->name,
+                    volume_id       => $volume_id,
+                    volume_name      => $vol_key,
                     volume_state     => $volume->state,
                     volume_totalsize => $volume->size_total,
                     volume_sizeused  => $volume->size_used,
-                    volume_luns      => []
+                    volume_luns      => [],
+                    entity_comment   => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
                 };
-                foreach my $lun (@luns) {
-                    my $name = $volume->name;
+                foreach my $lun (@lun_object) {
+                    my $name = $vol_key;
+                    my $lun_id = Entity::Container->find( hash => { container_name => $name } )->getAttr(name => 'container_id');
+                    my $entity_id = Entity->find( hash => { entity_id => $lun_id })->getAttr(name => 'entity_comment_id');
                     if($lun->path =~ /$name/) {
                         my $tmp3 = {
-                            lun_path      => $lun->path,
-                            lun_state     => $lun->state,
-                            lun_totalsize => $lun->size,
-                            lun_sizeused => $lun->size_used,
+                            lun_path        => $lun->path,
+                            lun_state       => $lun->state,
+                            lun_totalsize   => $lun->size,
+                            lun_sizeused    => $lun->size_used,
+                            entity_comment   => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
                         };
                         push @{$tmp2->{volume_luns}}, $tmp3;
                     }
                 }    
                 push @{$tmp->{aggregates_volumes}}, $tmp2;
-            }    
+            #}    
         }
         
         push @{$config->{aggregates}}, $tmp;
