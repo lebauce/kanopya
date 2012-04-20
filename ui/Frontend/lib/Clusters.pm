@@ -512,14 +512,9 @@ get '/clusters/:clusterid' => sub {
     
     # state info
     my ($cluster_state, $timestamp) = split ':', $ecluster->getAttr('name' => 'cluster_state');
-    if($cluster_id==1) {$can_configure=1}
-    else
-    {
-		if($cluster_state ne "down")
-           {$can_configure=0;}
-           else{$can_configure=1}
-	}
-	 
+
+    $can_configure = ($cluster_id == 1 or $cluster_state ne "down");
+
     my $hosts = $ecluster->getHosts(administrator => Administrator->new);
     my $nbnodesup = scalar(keys(%$hosts));
     my $nodes = [];
@@ -549,23 +544,24 @@ get '/clusters/:clusterid' => sub {
     my $components = $ecluster->getComponents(category => 'all');
     my $comps = [];
 
-    while( my ($component_id, $comp) = each %$components) {
-        my $comphash = {};
+    while (my ($component_id, $comp) = each %$components) {
         my $compAtt = $comp->getComponentAttr();
-        $comphash->{component_id} = $component_id;
-        $comphash->{component_name} = $compAtt->{component_name};
-        $comphash->{component_version} = $compAtt->{component_version};
-        $comphash->{component_category} = $compAtt->{component_category};
-        $comphash->{cluster_id} = $cluster_id;
-        if(not $methods->{'configureComponents'}->{'granted'} ) {
-                $comphash->{'link_configurecomponents'} = 0;
-        } else { $comphash->{'link_configurecomponents'} = 1;}
-        if(not $methods->{'removeComponent'}->{'granted'} ) {
-                $comphash->{link_remove} = 0;
-        } else { $comphash->{link_remove} = not $active;}
+        my $configure_component = $methods->{'configureComponents'}->{'granted'};
+        my $link_remove = ($methods->{'removeComponent'}->{'granted'} or (not $active));
 
+        if ($active and $cluster_id != 1) {
+            $configure_component &= $comp->supportHotConfiguration();
+        }
 
-        push (@$comps, $comphash);
+        push (@$comps, {
+            component_id             => $component_id,
+            component_name           => $compAtt->{component_name},
+            component_version        => $compAtt->{component_version},
+            component_category       => $compAtt->{component_category},
+            cluster_id               => $cluster_id,
+            link_configurecomponents => $configure_component,
+            link_remove              => $link_remove
+        });
     }
 
     # nodes list

@@ -274,6 +274,10 @@ sub toString {
     return $component_name . " " . $component_version;
 }
 
+sub supportHotConfiguration {
+    return 0;
+}
+
 sub readyNodeAddition { return 1; }
 sub readyNodeRemoving { return 1; }
 

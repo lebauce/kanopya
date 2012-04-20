@@ -388,6 +388,9 @@ sub getImageRepository {
     return $row->get_columns();
 }
 
+sub supportHotConfiguration {
+    return 1;
+}
 
 =head1 DIAGNOSTICS
 
