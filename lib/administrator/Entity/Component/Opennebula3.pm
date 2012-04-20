@@ -144,7 +144,7 @@ my @hyper_rs = $self->{_dbix}->opennebula3_hypervisors->search({});
 				vm_id => $row ->get_column('vm_id'),
 				opennebula3_hypervisor_id=> $row->get_column('opennebula3_hypervisor_id'),
 				vm_host_id               =>$row->get_column('vm_host_id'),
-				url                      => "http://10.0.0.1:5000/infrastructures/hosts/$vm_id"
+				url                      => "/infrastructures/hosts/$vm_id"
 				
 			};
 			push @vms,$tmp;
