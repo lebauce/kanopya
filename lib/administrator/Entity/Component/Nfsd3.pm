@@ -53,7 +53,7 @@ sub getExports {
                 };
             }
             push @result, {
-                nfsd3_export_path => $export->getAttr(name => 'export_path'),
+                nfsd3_export_path => $export->getAttr(name => 'container_access_export'),
                 clients     => \@clients,
             };
         }
