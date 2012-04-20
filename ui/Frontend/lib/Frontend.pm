@@ -9,7 +9,6 @@ use Components;
 use Clusters;
 use Masterimages;
 use Hosts;
-use Vms;
 use Images;
 use Kernels;
 use Images;
