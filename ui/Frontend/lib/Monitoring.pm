@@ -331,7 +331,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph' => sub {
     }
 
     my $nodelist = [ @{$compute_result->{'nodes'}}, @{$compute_result->{'undef'}} ];
-    return to_json {values => $compute_result->{'values'}, nodelist => $nodelist;
+    return to_json {values => $compute_result->{'values'}, nodelist => $nodelist};
 };
 
 =head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram'
