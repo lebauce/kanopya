@@ -461,6 +461,8 @@ sub stopHost {
 	my $result = $masternode_econtext->execute(command => $command);
 
     # In the case of OpenNebula, we delete the host once it's stopped
+    $args{host}->setAttr(name => 'active', value => '0');
+    $args{host}->save;
     $args{host}->remove;
 }
 
