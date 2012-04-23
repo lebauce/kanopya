@@ -112,20 +112,23 @@
 <span id="components" class="title simpleexpand">Components</span>
 <table id="Xcomponents" class="detailspart list">
 <% IF components_list %>
-	<tr><td colspan="2">&nbsp;</td>
-	<td class="actions" rowspan="<% nbcomponents %>">
-	<% IF link_addcomponent %>
-		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/components/add">add a component</a><br />
-		<span class="desc">Add a new component to this cluster.</span><br /><br />
-	<% END %>
-	</td></tr>
-	<% FOREACH comp IN components_list %>
-		<tr><td class="label2"><span class="bold"><% comp.component_name %><% comp.component_version %></span> - <% comp.component_category %></td>
-		<% IF can_configure %>
-		<td class="action"><% IF comp.link_configurecomponents %><a href="/systems/components/<% comp.component_id %>/configure">configure</a> <% END %>
+	<tr>
+		<td colspan="2">&nbsp;</td>
+		<td class="actions" rowspan="<% nbcomponents %>">
+		<% IF link_addcomponent %>
+			<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/components/add">add a component</a><br />
+			<span class="desc">Add a new component to this cluster.</span><br /><br />
 		<% END %>
+		</td>
+	</tr>
+	<% FOREACH comp IN components_list %>
+	<tr>
+		<td class="label2"><span class="bold"><% comp.component_name %><% comp.component_version %></span> - <% comp.component_category %></td>
+		<td class="action">
+		<% IF comp.link_configurecomponents %><a href="/systems/components/<% comp.component_id %>/configure">configure</a><% END %>
 		<% IF comp.link_remove %><a class="imgRemove" href="/architectures/clusters/<% comp.cluster_id %>/components/<% comp.component_id %>/remove">remove</a><% END %>
-	</td></tr>
+		</td>
+	</tr>
 	<% END %>
 <% ELSE %>
 	<tr><td colspan="2">no defined component.</td>
