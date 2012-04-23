@@ -77,47 +77,30 @@ use constant ACCESS_MODE => {
     READ_ONLY  => 'ro',
 };
 
-sub getLun {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'iscsitarget1_lun_id', 'iscsitarget1_target_id' ]);
-
-    my $target_row = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
-    my $lun_row = $target_row->iscsitarget1_luns->find($args{iscsitarget1_lun_id});
-    return {
-            iscsitarget1_lun_number => $lun_row->get_column('iscsitarget1_lun_number'),
-            iscsitarget1_lun_device => $lun_row->get_column('iscsitarget1_lun_device'),
-            iscsitarget1_lun_typeio => $lun_row->get_column('iscsitarget1_lun_typeio'),
-            iscsitarget1_lun_iomode => $lun_row->get_column('iscsitarget1_lun_iomode'),
-    };
-}
-
 sub getConf {
     my $self = shift;
-    my %conf = ( );
-    
-    my $conf_rs = $self->{_dbix}->iscsitarget1_targets;
+    my %conf    = ();
     my @targets = ();
-    while (my $conf_row = $conf_rs->next) {
-        my $lun_rs = $conf_row->iscsitarget1_luns;
+
+    my @accesses = Entity::ContainerAccess->search(
+                       hash => { export_manager_id => $self->getAttr(name => 'entity_id') }
+                   );
+
+    for my $access (@accesses) {
         my @luns = ();
-        while (my $lun_row = $lun_rs->next) {
-            push @luns, {
-                iscsitarget1_lun_number => $lun_row->get_column('iscsitarget1_lun_number'),
-                iscsitarget1_lun_device => $lun_row->get_column('iscsitarget1_lun_device'),
-                iscsitarget1_lun_typeio => $lun_row->get_column('iscsitarget1_lun_typeio'),
-                iscsitarget1_lun_iomode => $lun_row->get_column('iscsitarget1_lun_iomode'),
-            }
-        }
+        push @luns, {
+                 iscsitarget1_lun_number => $access->getAttr(name => 'lun_name'),
+                 iscsitarget1_lun_device => $access->getContainer->getAttr(name => 'container_device'),
+                 iscsitarget1_lun_typeio => $access->getAttr(name => 'typeio'),
+                 iscsitarget1_lun_iomode => $access->getAttr(name => 'iomode'),
+             };
         push @targets, {
-            iscsitarget1_target_name => $conf_row->get_column('iscsitarget1_target_name'),
-            iscsitarget1_target_id   => $conf_row->get_column('iscsitarget1_target_id'),
-            luns => \@luns
-        };
+                 iscsitarget1_target_name => $access->getAttr(name => 'container_access_export'),
+                 iscsitarget1_target_id   => $access->getAttr(name => 'entity_id'),
+                 luns => \@luns
+             };
     }
-    
+
     $conf{targets} = \@targets;
     
     return \%conf;
@@ -157,65 +140,6 @@ sub setConf {
             last LUN;
         }        
     }
-}
-
-sub getTargetIdLike {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_target_name" ]);
-
-    return $self->{_dbix}->iscsitarget1_targets->search(
-               { iscsitarget1_target_name => { -like => $args{iscsitarget1_target_name} } }
-           )->first()->get_column('iscsitarget1_target_id');
-}
-
-sub getFullTargetName {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "lv_name" ]);
-
-    return $self->{_dbix}->iscsitarget1_targets->search(
-               { iscsitarget1_target_name => { -like => '%'.$args{lv_name} } }
-           )->first()->get_column('iscsitarget1_target_name');
-}
-
-sub getLunId {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_target_id", "iscsitarget1_lun_device" ]);
-
-    my $target_row = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
-    return $target_row->iscsitarget1_luns->first(
-               { iscsitarget1_lun_device=> $args{iscsitarget1_lun_device} }
-           )->get_column('iscsitarget1_lun_id');
-}
-
-sub removeLun {
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_target_id", "iscsitarget1_lun_id" ]);
-
-    my $target_rs = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
-    return $target_rs->iscsitarget1_luns->find($args{iscsitarget1_lun_id})->delete();
-}
-
-sub getTargetName {
-    my $self = shift;
-    my %args  = @_;    
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_target_id" ]);
-    
-    my $target_raw = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
-    return $target_raw->get_column('iscsitarget1_target_name');
 }
 
 # return a data structure to pass to the template processor 
@@ -307,11 +231,11 @@ sub createExport {
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            export_manager_id   => $self->getAttr(name => 'component_id'),
-            container_id        => $args{container}->getAttr(name => 'container_id'),
-            export_name         => $args{export_name},
-            typeio              => $args{typeio},
-            iomode              => $args{iomode}
+            export_manager_id => $self->getAttr(name => 'component_id'),
+            container_id      => $args{container}->getAttr(name => 'container_id'),
+            export_name       => $args{export_name},
+            typeio            => $args{typeio},
+            iomode            => $args{iomode}
         },
     );
 }
