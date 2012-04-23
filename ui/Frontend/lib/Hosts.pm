@@ -338,21 +338,18 @@ get '/hosts/:hostid/removeharddisk/:harddiskid' => sub {
     }
     else { redirect '/infrastructures/hosts/'.param('hostid'); }
 };
+
 get '/hosts/migrate/:host_id' => sub {
     my $hypervisors = [];
     my $host = Entity::Host->get(id => params->{'host_id'});
-    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $host->getAttr(name => 'cloud_cluster_id'));
-    my $opennebula = $cluster->getComponent(name => 'opennebula', version => 3);
-    my $hypervisors_r = $opennebula->{_dbix}->opennebula3->opennebula3_hypervisors->search({});
-    $log->info('<<<<<<<<<<'.ref($hypervisors_r));
+    my $opennebula = Entity->get(id => $host->getAttr(name => "host_manager_id"));
+    my $hypervisors_r = $opennebula->{_dbix}->opennebula3_hypervisors->search({});
     while (my $row = $hypervisors_r->next) {
-	$log->info('<<<<<<<<'.$row->get_column('hypervisor_id'));
-	my $h = Entity::Host->get(id => $row->get_column('hypervisor_host_id'));
-	my $tmp = {
+	my $hypervisor = Entity::Host->get(id => $row->get_column('hypervisor_host_id'));
+	push @$hypervisors, {
 	    hypervisor_id => $row->get_column('hypervisor_host_id'),
-	    hypervisor_hostname => $h->getAttr(name => 'host_hostname'),
+	    hypervisor_hostname => $hypervisor->getAttr(name => 'host_hostname'),
 	};
-	push @$hypervisors, $tmp;
     }
 
     template 'form_migratevm',  {

@@ -1,6 +1,6 @@
 <h2>Migrate a vm</h2>
 
-<form id="target" method="POST" action="/infrastructures/vms/migrate">
+<form id="target" method="POST" action="/infrastructures/hosts/migrate">
 <table class="form">
     <tr>
     <td class="label">Target Hypervisor:</td><td>

@@ -123,7 +123,7 @@ sub prepare {
 
         #TODO Check if a cloudmanager is in the cluster
         # Get OpenNebula Cluster (now fix but will be configurable)
-        $self->{_objs}->{'cloudmanager_comp'} = $self->{_objs}->{'host'}->getAttr(name => 'host_manager_id');
+        $self->{_objs}->{'cloudmanager_comp'} = Entity->get(id => $self->{_objs}->{'host'}->getAttr(name => 'host_manager_id'));
         $self->{_objs}->{'cloudmanager_ecomp'} = EFactory::newEEntity(data => $self->{_objs}->{'cloudmanager_comp'});
         
         # Check if host is on the hypervisors cluster
