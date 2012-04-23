@@ -225,10 +225,14 @@ sub getConf {
     my $config = {};
     $config->{aggregates} = [];
     $config->{volumes} = [];
+    $config->{luns} = [];
     my @aggr_object = $self->aggregates;
     my @vol_object = $self->volumes;
     my @lun_object = $self->luns;
     my @luns = Entity::Container::NetappLun->search(hash => {});
+    my $aggregate = [];
+    my $volume = [];
+    my $lun = [];
     
     # run through each aggr on xml/rpc fill and get comment from db
     foreach my $aggr (@aggr_object) {
@@ -265,6 +269,7 @@ sub getConf {
                     my $entity_id = Entity->find( hash => { entity_id => $lun_id })->getAttr(name => 'entity_comment_id');
                     if($lun->path =~ /$name/) {
                         my $tmp3 = {
+                            lun_id          => $lun_id,
                             lun_path        => $lun->path,
                             lun_state       => $lun->state,
                             lun_totalsize   => $lun->size,
@@ -280,7 +285,11 @@ sub getConf {
         
         push @{$config->{aggregates}}, $tmp;
     }
-     
+    return {
+            "aggregates"=>$aggregate,
+            "volumes"=>$volume,
+            "luns"=>$lun,
+    };
     return $config;
 }
 

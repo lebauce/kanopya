@@ -106,8 +106,8 @@ get '/netapp/:netappid' => sub {
         }
     } $netapp->getConnectors();
     
-    #my @volumes = $eenetapp->volumes;
-    #my @aggregates = $eenetapp->aggregates;
+    my @volumes = $eenetapp->volumes;
+    my @aggregates = $eenetapp->aggregates;
 
     template 'netapp_details', {
         netapp_id              => $netapp->getAttr('name' => 'netapp_id'),
@@ -120,8 +120,8 @@ get '/netapp/:netappid' => sub {
         connectors_list        => \@connectors,
         #entity_comment         => $entity_comment->getAttr('name' => 'entity_comment'),
         entity_comment         => $netapp->getComment(),
-        #netapp_volumes         => \@volumes,
-        #netapp_aggregates      => \@aggregates,
+        netapp_volumes         => \@volumes,
+        netapp_aggregates      => \@aggregates,
     };
 };
 

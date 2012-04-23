@@ -227,11 +227,14 @@ sub synchronize {
 
 sub getConf {
     my ($self) = @_;
+    my $config = {};
+    $config->{aggregates} = [];
+    $config->{volumes} = [];
     my @aggregates = Entity::NetappAggregate->search( hash => {} );
     my @aggr_object = $self->aggregates;
     my @vol_object = $self->volumes;
     my $aggregate = [];
-    my $volume = [];
+    my $volumes = [];
     
     foreach my $aggr (@aggr_object) {
         my $aggr_key = $aggr->name;
@@ -258,14 +261,16 @@ sub getConf {
                 disk_manager_id         => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'disk_manager_id'),
                 entity_comment          => EntityComment->find( hash => {entity_comment_id => $entity_comment_id})->getAttr(name => 'entity_comment'),
             };
-            push(@$volume, $vol_list);
+            push(@$volumes, $vol_list);
         }
+        $aggr_list->{volumes}=$volumes;
         push(@$aggregate, $aggr_list);
     }
     return {
             "aggregates"=>$aggregate,
-            "volumes"=>$volume
     };
+    #$config->{volumes} = $volumes;
+    return $config;
 }
 
 1;

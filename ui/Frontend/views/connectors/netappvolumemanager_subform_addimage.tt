@@ -1,8 +1,16 @@
+<td class="label">Aggregate:</td>
+<td>
+<select id="aggregate" name="disk_manager_param_netapp_aggregate_id">
+<% FOREACH aggregate IN aggregates %>
+	<option value="<% aggregate.aggregate_id %>"><% aggregate.aggregate_name %></option>
+</select>
+</td>
 <td class="label">Volume:</td>
 <td>
 <select id="volume" name="disk_manager_param_netapp_volume_id">
-    <option value="">getConf() not implemented on NetappLunManager</option>
+<% FOREACH vol IN netapp_volumes %>
+    <option value="<% vol.container_id %>"><% vol.volume_name %></option>
+<% END %>
+<% END %>
 </select>
 </td>
-
-
