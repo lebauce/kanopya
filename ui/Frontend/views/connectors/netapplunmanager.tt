@@ -7,7 +7,7 @@
 <input class="conf_simple_value" type="hidden" name="netapp_lun_manager_id" value="<% netapp_lun_manager_id %>"/>
 
 <table class="conf_array_value" id="volumes">
-    <tr><th></th><th></th><th></th><th>Name</th><th>State</th><th>Total Size</th><th>Size Used</th></tr>
+    <tr><th></th><th></th><th></th><th>Name</th><th>State</th><th>Total Size</th><th>Size Used</th><th>Comment</th></tr>
     <% FOREACH aggr IN aggregates %>
         <tr style="background-color: #DDD">
             <th>Aggregate:</th><th></th><th></th>
@@ -15,6 +15,7 @@
             <td style="min-width: 100px; text-align: center"><% aggr.aggregate_state %></td>
             <td style="min-width: 100px; text-align: right"><% aggr.aggregate_totalsize %></td>
             <td style="min-width: 100px; text-align: right"><% aggr.aggregate_sizeused %></td>
+            <td style="min-width: 100px; text-align: right"><% aggr.entity_comment %></td>
         </tr>
         <tr><td>&nbsp;</td></tr>
         <% FOREACH volume IN aggr.aggregates_volumes%>
@@ -25,6 +26,7 @@
                 <td style="min-width: 100px; text-align: center"><% volume.volume_state %></td>
                 <td style="min-width: 100px; text-align: right"><% volume.volume_totalsize %></td>
                 <td style="min-width: 100px; text-align: right"><% volume.volume_sizeused %></td>
+                <td style="min-width: 100px; text-align: right"><% volume.entity_comment %></td>
             </tr>
             <tr><td>&nbsp;</td></tr>
             <% FOREACH lun IN volume.volume_luns %>
@@ -34,6 +36,7 @@
                     <td style="min-width: 100px; text-align: center"><% lun.lun_state %></td>
                     <td style="min-width: 100px; text-align: right"><% lun.lun_totalsize %></td>
                     <td style="min-width: 100px; text-align: right"><% lun.lun_sizeused %></td>
+                    <td style="min-width: 100px; text-align: right"><% lun.entity_comment %></td>
                 </tr>
             <% END %>
         <% END %>
