@@ -17,6 +17,8 @@ package Cisco::UCS::Object;
 use warnings;
 use strict;
 
+use Cisco::UCS::Blade;
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -39,6 +41,9 @@ sub new {
     }
     elsif ($classId eq "fabricVlan") {
         bless $hash, "Cisco::UCS::VLAN";
+    }
+    elsif ($classId eq "computeBlade") {
+        bless $hash, "Cisco::UCS::Blade";
     }
     else {
         bless $hash;
