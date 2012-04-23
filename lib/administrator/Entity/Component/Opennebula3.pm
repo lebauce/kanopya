@@ -378,7 +378,6 @@ sub updateVm {
 	);
 }
 
-
 sub getImageRepository {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['container_access_id']);

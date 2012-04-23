@@ -359,40 +359,34 @@ get '/hosts/migrate/:host_id' => sub {
 };
 
 post '/hosts/migrate' => sub {
-    
-    #my $dest = 
-
     Operation->enqueue(
-	type => 'MigrateHost',
-	priority => 1,
-	params => {
-	    host_id => params->{host_id},
-	    hypervisor_dst => params->{hypervisors}
-	}
-   ); 
-redirect '/infrastructures/hosts';
+        type => 'MigrateHost',
+        priority => 1,
+        params => {
+           host_id => params->{host_id},
+           hypervisor_dst => params->{hypervisors}
+        }
+    );
+    redirect '/infrastructures/hosts';
 };
 
 
 get '/hosts/scale_memory/:host_id' => sub {
     template 'form_scalememory',  {
-	host_id => params->{'host_id'},   
+        host_id => params->{'host_id'},   
     }, { layout => '' };
 };
 
 post '/hosts/scale_memory' => sub {
-    
-   
-
     Operation->enqueue(
-	type => 'ScalememoryHost',
-	priority => 1,
-	params => {
-	    host_id => params->{host_id},
-	    memory_quantity => params->{memory_quantity}
-	}
-   ); 
-redirect '/infrastructures/hosts';
+        type => 'ScalememoryHost',
+        priority => 1,
+        params => {
+            host_id => params->{host_id},
+            memory_quantity => params->{memory_quantity}
+        }
+    );
+    redirect '/infrastructures/hosts';
 };
 
 get '/hosts/scale_cpu/:host_id' => sub {
@@ -402,21 +396,21 @@ get '/hosts/scale_cpu/:host_id' => sub {
 };
 
 post '/hosts/scale_cpu' => sub {
-     Operation->enqueue(
-	type => 'ScalecpuHost',
-	priority => 1,
-	params => {
-	    host_id => params->{host_id},
-	    memory_quantity => params->{vcpu_number}
-	}
-   ); 
-redirect '/infrastructures/vms';
+    Operation->enqueue(
+        type => 'ScalecpuHost',
+        priority => 1,
+        params => {
+            host_id => params->{host_id},
+            memory_quantity => params->{vcpu_number}
+        }
+    );
+    redirect '/infrastructures/hosts';
 };
 
 
 
 get '/hosts/:hostid' => sub {
-	 my $is_virtual;
+    my $is_virtual;
     my $host_model;
     my $processor_model;
     my $host_kernel;
@@ -426,10 +420,9 @@ get '/hosts/:hostid' => sub {
     my $host_state;
     my $timestamp;
     my $internal_ip;
-   my $vnc_port;
+    my $vnc_url;
     my $host_manager;
     my $ehost = Entity::Host->get(id => param('hostid'));
-   # my $vncport=$ehost->getVncport(host_id =>param('hostid'));
     my $methods = $ehost->getPerms();
     
     # host model
@@ -489,7 +482,7 @@ get '/hosts/:hostid' => sub {
         push @$hds, $tmp;
     }
 
- # interfaces list
+    # interfaces list
     my $interfaces = $ehost->getIfaces();
     my $ifcs= [];
     foreach my $ifc (@$interfaces) {
@@ -510,38 +503,30 @@ get '/hosts/:hostid' => sub {
     my $hostram = $ehost->getAttr('name' => 'host_ram');
     my $hostramConverted = General::convertFromBytes('value' => $hostram, 'units' => 'G');
 
-    $host_manager =$ehost->getHostManager();
-    $host_type=$host_manager->getHostType();
-    $log->info('host *********************'.$host_type.'****************');
-    if($host_type eq "Virtual Machine")
-    { $is_virtual=1;
-     $vnc_port=$ehost->getVncport(vm_host_id=>param('hostid'));
-     
-     $log->info('host ==========='.$is_virtual.'============');
-      # my $hyperhost_id=$ehost->getHypervisorid(vm_host_id=>param('hostid'));
-      # $log->info( '****host***&&&&***'.$hyperhost_id.'*****&&&&&&&******');
-     #my $hyper_id=Entity::Component::Opennebula3->getHypervisorIdFromHostId(host_id=>$hyperhost_id);
-    #$log->info( '****id***&&&&***'.$hyper_id.'*****&&&&&&&******');
-     #my $h = Entity::Host->get(id => $hyper_id);
-     #$internal_ip=$h->getInternalIP();
-	}
-     else
-     {
-     $is_virtual=0;
-	 $log->info('host ==========='.$is_virtual.'===========');
-	}
+    $host_manager = $ehost->getHostManager();
+    $host_type = $host_manager->getHostType();
 
-    template 'hosts_details', {
+    if ($host_type eq "Virtual Machine") {
+        $is_virtual = 1;
+        $vnc_url = "vnc://" . $ehost->getHypervisor()->getInternalIP()->{ipv4_internal_address} .
+                   ":" . $ehost->getVncport(vm_host_id => param('hostid'));
+     }
+     else {
+         $is_virtual = 0;
+         $vnc_url = "";
+     }
+
+     template 'hosts_details', {
         host_id          => $ehost->getAttr('name' => 'host_id'),
         host_hostname    => $ehost->getAttr('name' => 'host_hostname'),
         host_desc        => $ehost->getAttr('name' => 'host_desc'),
         host_ip          => $ehost->getInternalIP()->{ipv4_internal_address},
         host_sn          => $ehost->getAttr('name' => 'host_serial_number'),
-	    host_ram	 => $hostramConverted,
-	    host_core	 => $ehost->getAttr('name' => 'host_core'),
+        host_ram	 => $hostramConverted,
+        host_core	 => $ehost->getAttr('name' => 'host_core'),
         host_powersupply => $ehost->getAttr('name' => 'host_powersupply_id'),
         host_model       => $host_model,
-        processor_model         => $processor_model,
+        processor_model  => $processor_model,
         host_kernel      => $host_kernel,
         host_state       => $host_state,
         state_time              => _timestamp_format('timestamp' => $timestamp),
@@ -550,15 +535,14 @@ get '/hosts/:hostid' => sub {
         harddisks_list          => $hds,
         interfaces_list         => $ifcs,
         active                  => $active,
-        is_virtual               => $is_virtual,
-        url                      => "vnc://10.0.0.1:$vnc_port",
+        is_virtual              => $is_virtual,
+        url                     => $vnc_url,
         can_deactivate          => $methods->{'deactivate'}->{'granted'} && $active && $host_state =~ /down/,
         can_delete              => $methods->{'remove'}->{'granted'} && !$active,
         can_activate            => $methods->{'activate'}->{'granted'} && !$active,
         can_setperm             => $methods->{'setperm'}->{'granted'},
         can_addHarddisk         => $methods->{'addHarddisk'}->{'granted'} && !$active,
-        can_addinterface         => $methods->{'addIface'}->{'granted'} && !$active,
-        
+        can_addinterface        => $methods->{'addIface'}->{'granted'} && !$active,
     };
 };
 

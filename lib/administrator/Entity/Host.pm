@@ -713,29 +713,22 @@ sub getModel {
     }
     return;
 }
+
 sub getVncport {
-my $self =shift;
-my %args = @_;
-General::checkParams(args => \%args, required => ['vm_host_id']);
-my $vm = $self->{_dbix}->opennebula3_vms->search(vm_host_id=>$args{vm_host_id});
-$log->info( '**********'.$vm.'***********');
-my $vnc_port=$vm->single()->get_column('vnc_port');
-return "$vnc_port";
-}
-sub getHypervisorid {
-my $self =shift;
-my %args =@_;
+    my $self =shift;
+    my %args = @_;
 
-General::checkParams(args => \%args, required => ['vm_host_id']);
-my $vm = $self->{_dbix}->opennebula3_vms->search(vm_host_id=>$args{vm_host_id});
-my $opennebula3_hypervisor_id=$vm->single()->get_column('opennebula3_hypervisor_id');
-$log->info( '*******$opennebula3_hypervisor_id***'.$opennebula3_hypervisor_id.'***********');
-my $hyper = $self->{_dbix}->opennebula3_hypervisors->search(opennebula3_hypervisor_id=>$opennebula3_hypervisor_id);
-$log->info( '*****hyper*****'.$hyper.'***********');
-my $hyper_host_id = $opennebula3_hypervisor_id->single()->get_column('hypervisor_id');
-$log->info( '*****hyperid*****'.$hyper_host_id.'***********');
-return $hyper_host_id;					
+    my $vm = $self->{_dbix}->opennebula3_vms->search(vm_host_id => $self->getAttr(name => "host_id"));
+    return $vm->single()->get_column('vnc_port');
 }
 
+sub getHypervisor {
+    my $self = shift;
+    my %args = @_;
+
+    my $vm = $self->{_dbix}->opennebula3_vms->search(vm_host_id => $self->getAttr(name => "host_id"));
+    my $opennebula3_hypervisor_id = $vm->single()->get_column('opennebula3_hypervisor_id');
+    return Entity->get(id => $vm->single()->opennebula3_hypervisor->get_column('hypervisor_host_id'));
+}
 
 1;

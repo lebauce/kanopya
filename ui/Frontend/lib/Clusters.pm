@@ -589,8 +589,8 @@ get '/clusters/:clusterid' => sub {
             my ($node_state, $time_stamp) = $n->getNodeState();
             # The first elem is the regexp to match with the state and the second elem is the associated state for ui 
             for my $state ( ['^in', 'up'],                # node 'in' is displayed as 'Up'
-                            ['goingin', 'starting'],    # match pregoingin, goingin and diplayed as starting
-                            ['goingout', 'stopping'],    # match pregoingout, goingout and diplayed as stopping
+                            ['goingin', 'starting'],      # match pregoingin, goingin and diplayed as starting
+                            ['goingout', 'stopping'],     # match pregoingout, goingout and diplayed as stopping
                             ['broken','broken']) {        # broken
                 if ( $node_state =~ $state->[0] ) {
                     $tmp->{"state_$state->[1]"} = 1;
@@ -606,41 +606,41 @@ get '/clusters/:clusterid' => sub {
     my $link_stop = ! $link_start;
 
     template 'clusters_details', {
-        title_page         => "Clusters - Cluster's overview",
-        cluster_id         => $cluster_id,
-        can_configure      =>$can_configure,
-        cluster_name       => $ecluster->getAttr(name => 'cluster_name'),
-        cluster_desc       => $ecluster->getAttr(name => 'cluster_desc'),
-        cluster_priority   => $ecluster->getAttr(name => 'cluster_priority'),
-        cluster_domainname => $ecluster->getAttr(name => 'cluster_domainname'),
-        cluster_nameserver1 => $ecluster->getAttr(name => 'cluster_nameserver1'),
-        cluster_nameserver2 => $ecluster->getAttr(name => 'cluster_nameserver2'),
-        cluster_min_node   => $minnode,
-        cluster_max_node   => $maxnode,
+        title_page           => "Clusters - Cluster's overview",
+        cluster_id           => $cluster_id,
+        can_configure        => $can_configure,
+        cluster_name         => $ecluster->getAttr(name => 'cluster_name'),
+        cluster_desc         => $ecluster->getAttr(name => 'cluster_desc'),
+        cluster_priority     => $ecluster->getAttr(name => 'cluster_priority'),
+        cluster_domainname   => $ecluster->getAttr(name => 'cluster_domainname'),
+        cluster_nameserver1  => $ecluster->getAttr(name => 'cluster_nameserver1'),
+        cluster_nameserver2  => $ecluster->getAttr(name => 'cluster_nameserver2'),
+        cluster_min_node     => $minnode,
+        cluster_max_node     => $maxnode,
         cluster_basehostname => $cluster_basehostname,
-        user_id             => $user_id,
-        type               => $minnode == $maxnode ? 'Static cluster' : 'Dynamic cluster',
-        masterimage_name   => $masterimage_name,
-        masterimage_id     => $masterimage_id,
-        kernel             => $kernel,
-        networks_list      => $networks_list,
-        nbnetworks        => scalar(@$networks_list),
-        active             => $active,
-        cluster_state      => $cluster_state,
-        state_time         => _timestamp_format( timestamp => $timestamp ),
-        nbnodesup          => $nbnodesup,
-        nbcomponents       => scalar(@$comps),
-        components_list    => $comps,
-        nodes_list         => $nodes,
-        link_delete        => $methods->{'remove'}->{'granted'} ? $link_delete : 0,
-        link_activate      => $methods->{'activate'}->{'granted'} ? $link_activate : 0,
-        link_deactivate    => $methods->{'deactivate'}->{'granted'} ? $link_deactivate : 0,
-        link_start         => $methods->{'start'}->{'granted'} && $link_start,
-        link_stop          => $methods->{'stop'}->{'granted'} && $link_stop,
-        link_edit          => $methods->{'update'}->{'granted'}, 
-        link_addnode       => $methods->{'addNode'}->{'granted'} ? $link_addnode : 0,
-        link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
-        can_setperm        => $methods->{'setperm'}->{'granted'},        
+        user_id              => $user_id,
+        type                 => $minnode == $maxnode ? 'Static cluster' : 'Dynamic cluster',
+        masterimage_name     => $masterimage_name,
+        masterimage_id       => $masterimage_id,
+        kernel               => $kernel,
+        networks_list        => $networks_list,
+        nbnetworks           => scalar(@$networks_list),
+        active               => $active,
+        cluster_state        => $cluster_state,
+        state_time           => _timestamp_format( timestamp => $timestamp ),
+        nbnodesup            => $nbnodesup,
+        nbcomponents         => scalar(@$comps),
+        components_list      => $comps,
+        nodes_list           => $nodes,
+        link_delete          => $methods->{'remove'}->{'granted'} ? $link_delete : 0,
+        link_activate        => $methods->{'activate'}->{'granted'} ? $link_activate : 0,
+        link_deactivate      => $methods->{'deactivate'}->{'granted'} ? $link_deactivate : 0,
+        link_start           => $methods->{'start'}->{'granted'} && $link_start,
+        link_stop            => $methods->{'stop'}->{'granted'} && $link_stop,
+        link_edit            => $methods->{'update'}->{'granted'}, 
+        link_addnode         => $methods->{'addNode'}->{'granted'} ? $link_addnode : 0,
+        link_addcomponent    => $methods->{'addComponent'}->{'granted'} && ! $active,
+        can_setperm          => $methods->{'setperm'}->{'granted'},        
                        
      }, { layout => 'main' };
 };
@@ -653,8 +653,6 @@ get '/extclusters/:clusterid' => sub {
 
     my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id,extcluster => $extcluster);
     
-    #print Dumper $cluster_eval; 
-
     # Connectors
     my @connectors = map { 
         {
@@ -665,43 +663,6 @@ get '/extclusters/:clusterid' => sub {
         }
     } $extcluster->getConnectors();
     
-    
-    # Nodes list
-#    my $num_noderule_verif    = 0;
-#    
-#    my $nodes = $extcluster->getNodes(shortname => 1);
-#    
-#    my $num_node_nok = 0; 
-#    foreach my $node (@$nodes) {
-#        $node->{"state_" . $node->{state}} = 1;
-#        $num_noderule_verif += $node->{num_verified_rules};
-#        
-#        if($node->{num_verified_rules} > 0){
-#            $num_node_nok++;
-#        }
-#    }
-#    
-#    my $num_node_rule_total = scalar NodemetricRule->searchLight(
-#                                    hash=>{
-#                                        'nodemetric_rule_service_provider_id' => $cluster_id,
-#                                        'nodemetric_rule_state' => 'enabled',
-#                                    }
-#                                 );
-#
-#
-#    
-#    my $num_clusterrule_verif   = 0;
-#    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id=>$cluster_id);
-#
-#    my $num_cluster_rule_total = scalar @enabled_aggregaterules;
-#    
-#    foreach my $rule (@enabled_aggregaterules){        
-#        my $last_eval = $rule->getAttr(name => 'aggregate_rule_last_eval');
-#        if( defined $last_eval and $last_eval == 1){
-#            $num_clusterrule_verif++;
-#        } 
-#    }
-   
     my @action_insts = Action->search(
         hash => {
             'action_service_provider_id' => $cluster_id
@@ -712,23 +673,20 @@ get '/extclusters/:clusterid' => sub {
     my @node_actions;
     my @cluster_actions;
     
-    foreach my $action_inst (@action_insts){
+    foreach my $action_inst (@action_insts) {
         my $hash = {
             'id'   => $action_inst->getAttr('name' => 'action_id'),
             'name' => $action_inst->getAttr('name' => 'action_name'),
-			'type' => $action_inst->getParams()->{trigger_rule_type},
+            'type' => $action_inst->getParams()->{trigger_rule_type},
         };
         push @actions, $hash;
         
-        if($action_inst->getParams()->{trigger_rule_type} eq 'noderule'){
+        if ($action_inst->getParams()->{trigger_rule_type} eq 'noderule') {
             push @node_actions, $hash;
-        }elsif($action_inst->getParams()->{trigger_rule_type} eq 'clusterrule'){
+        } elsif($action_inst->getParams()->{trigger_rule_type} eq 'clusterrule') {
             push @cluster_actions, $hash;
         }
-        
     }
-    
-    #print Dumper \@action_hashs;
     
     my $order = {
         'up'        => 0,
@@ -738,38 +696,29 @@ get '/extclusters/:clusterid' => sub {
         'disabled'  => 4,
     };
     
-    
     my $disabled_nodes = $extcluster->getDisabledNodes();
     my $num_nodes_disabled = scalar @$disabled_nodes;
     
     my @nodes = (@$disabled_nodes,@{$cluster_eval->{nm_rule_nodes}});
     my @nodes_sort = sort {
-        
         $order->{$a->{state}} cmp $order->{$b->{state}} 
-        
     } @nodes;
     
-    
-    #my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$cluster_eval->{nm_rule_nodes}}; 
-    
-    #print Dumper \@nodes_sort;
-    
-    
     template 'extclusters_details', {
-        title_page            => "External Clusters - Cluster's overview",
-        active                => 1,
-        cluster_state         => $extcluster->getAttr(name => 'externalcluster_state'),
-        cluster_id            => $cluster_id,
-        cluster_name          => $extcluster->getAttr(name => 'externalcluster_name'),
-        nodes_list            => \@nodes_sort,#$nodes,
-        connectors_list       => \@connectors,
-        actions_list          => \@actions,
-        node_actions_list     => \@node_actions,
-        cluster_actions_list  => \@cluster_actions,
-        link_updatenodes      => 1,
-        link_addconnector     => 1,
-        link_delete           => 1,
-        can_configure         => 1,
+        title_page             => "External Clusters - Cluster's overview",
+        active                 => 1,
+        cluster_state          => $extcluster->getAttr(name => 'externalcluster_state'),
+        cluster_id             => $cluster_id,
+        cluster_name           => $extcluster->getAttr(name => 'externalcluster_name'),
+        nodes_list             => \@nodes_sort,
+        connectors_list        => \@connectors,
+        actions_list           => \@actions,
+        node_actions_list      => \@node_actions,
+        cluster_actions_list   => \@cluster_actions,
+        link_updatenodes       => 1,
+        link_addconnector      => 1,
+        link_delete            => 1,
+        can_configure          => 1,
         nm_rule_enabled        => $cluster_eval->{nm_rule_enabled},
         nm_rule_undef          => $cluster_eval->{nm_rule_undef},
         num_noderule_verif     => $cluster_eval->{nm_rule_nok},
@@ -793,7 +742,7 @@ get '/extclusters/:clusterid/remove' => sub {
         my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
         $cluster->delete();
     };
-    if($@) {
+    if ($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
