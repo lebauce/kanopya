@@ -322,8 +322,10 @@ CREATE TABLE `file_container` (
 CREATE TABLE `netapp_aggregate` (
   `aggregate_id` int(8) unsigned NOT NULL,
   `name` char(255) NOT NULL,
+  `netapp_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`aggregate_id`),
-  FOREIGN KEY (`aggregate_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`aggregate_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`netapp_id`) REFERENCES `netapp` (`netapp_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

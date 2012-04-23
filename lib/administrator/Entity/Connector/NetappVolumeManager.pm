@@ -173,42 +173,50 @@ sub synchronize {
     my $self = shift;
     my %args = @_;
     my $aggregates = {};
-    my $manager_ip  = $self->getServiceProvider->getMasterNodeIp;
+    my $manager_ip = $self->getServiceProvider->getMasterNodeIp;
+    my $netapp_id = $self->getAttr(name => "service_provider_id");
 
     foreach my $aggregate ($self->aggregates) {
-        # Check if an aggregrate with same name already exist :
-        my $existing_aggrs = Entity::NetappAggregate->search(hash => { name => $aggregate->name });
-        my $existing_aggr = scalar($existing_aggrs);
-        # if not, create the new aggregate :
-        if ($existing_aggr eq "0") {
-            my $aggr = Entity::NetappAggregate->new(
-                           name      => $aggregate->name
-                       );
+        my $aggr;
+        eval {
+            $aggr = Entity::NetappAggregate->find(
+                        hash => {
+                            name      => $aggregate->name,
+                            netapp_id => $netapp_id
+                        }
+                    );
+        };
+        if ($@) {
+            $aggr = Entity::NetappAggregate->new(
+                        name      => $aggregate->name,
+                        netapp_id => $netapp_id
+                    );
             $aggr->setComment(comment => "Default comment for " . $aggregate->name);
-            $aggregates->{$aggregate->name} = $aggr;
         }
+        $aggregates->{$aggregate->name} = $aggr;
     }
 
-    foreach my $vol ($self->volumes) {
-        my $existing_volumes = Entity::Container->search(hash => { container_name => $vol->name });
-        my $existing_volume = scalar($existing_volumes);
-        if ($existing_volume eq "0") {
-            my $aggregate = $aggregates->{$vol->containing_aggregate};
+    foreach my $volume ($self->volumes) {
+        eval {
+            Entity::Container->find(hash => { container_name => $volume->name });
+        };
+        if ($@) {
+            my $aggregate = $aggregates->{$volume->containing_aggregate};
             my $container = Entity::Container::NetappVolume->new(
                                 disk_manager_id      => $self->getAttr(name => 'entity_id'),
-                                container_name       => $vol->name,
-                                container_size       => $vol->size_used,
+                                container_name       => $volume->name,
+                                container_size       => $volume->size_used,
                                 container_filesystem => "wafl",
                                 container_freespace  => 0,
-                                container_device     => $vol->name,
+                                container_device     => $volume->name,
                                 aggregate_id         => $aggregate->getAttr(name => "aggregate_id"),
                             );
-            $container->setComment(comment => "Default comment for " . $vol->name);
+            $container->setComment(comment => "Default comment for " . $volume->name);
 
             my $container_access = Entity::ContainerAccess::NfsContainerAccess->new(
                                        container_id            => $container->getAttr(name => 'container_id'),
                                        export_manager_id       => $self->getAttr(name => 'entity_id'),
-                                       container_access_export => $manager_ip . ':/vol/' . $vol->name,
+                                       container_access_export => $manager_ip . ':/vol/' . $volume->name,
                                        container_access_ip     => $manager_ip,
                                        container_access_port   => 2049,
                                        options                 => 'rw,sync,no_root_squash',

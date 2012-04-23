@@ -32,6 +32,12 @@ __PACKAGE__->table("netapp_aggregate");
   is_nullable: 0
   size: 255
 
+=head2 netapp_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -44,6 +50,8 @@ __PACKAGE__->add_columns(
   },
   "name",
   { data_type => "char", is_nullable => 0, size => 255 },
+  "netapp_id",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("aggregate_id");
 
