@@ -243,7 +243,7 @@ sub getConf {
             aggregate_totalsize => $aggr->size_total,
             aggregate_sizeused  => $aggr->size_used,
             aggregate_volumes   => [],
-            entity_comment      => EntityComment->find( hash => {entity_comment_id => $aggr_id})->getAttr(name => 'entity_comment'),
+            entity_comment      => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
         };
         # run through each vol on xml/rpc fill and get comment from db
         foreach my $volume (@vol_object) {

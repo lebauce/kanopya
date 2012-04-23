@@ -225,51 +225,6 @@ sub synchronize {
     }
 }
 
-=head2 getConf 
-
-    Desc: return hash structure containing aggregates and volumes  
-
-=cut
-
-=head2
-sub getConf {
-    my ($self) = @_;
-    my $config = {};
-    $config->{aggregates} = [];
-    $config->{volumes} = [];
-    my @aggregates = $self->aggregates;
-    my @volumes = $self->volumes;
-    
-    foreach my $aggr (@aggregates) {
-        my $tmp = {
-            aggregate_name      => $aggr->name,
-            aggregate_state     => $aggr->state,
-            aggregate_totalsize => $aggr->size_total,
-            aggregate_sizeused  => $aggr->size_used,
-            aggregate_volumes   => []
-        };
-        foreach my $volume (@volumes) {
-            if($volume->containing_aggregate eq $aggr->name) {
-                my $tmp2 = {
-                    volume_name      => $volume->name,
-                    volume_state     => $volume->state,
-                    volume_totalsize => $volume->size_total,
-                    volume_sizeused  => $volume->size_used,
-                    volume_luns      => [],
-                    entity_comment   => $volume->getComment(),
-                };
-            
-                push @{$tmp->{aggregates_volumes}}, $tmp2;
-            }    
-        }
-        
-        push @{$config->{aggregates}}, $tmp;
-    }
-     
-    return $config;
-}
-=cut
-
 sub getConf {
     my ($self) = @_;
     my @aggregates = Entity::NetappAggregate->search( hash => {} );
@@ -290,22 +245,24 @@ sub getConf {
             entity_comment      => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
         };
         my @netappvolumes = Entity::Container::NetappVolume->search( hash => { aggregate_id => $aggr->getAttr(name => 'aggregate_id') } );
-        foreach my $vol (@netappvolumes) {
+        foreach my $vol (@vol_object) {
+            my $volume_id = Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_id');
+            my $entity_comment_id = Entity->find( hash => {entity_id => $volume_id})->getAttr(name => 'entity_comment_id');
             my $vol_list = {
-                container_id            => $vol->getAttr(name => 'container_id'),
-                container_name          => $vol->getAttr(name => 'container_name'),
-                container_size          => $vol->getAttr(name => 'container_size'),
-                container_device        => $vol->getAttr(name => 'container_device'),
-                container_filesystem    => $vol->getAttr(name => 'container_filesystem'),
-                container_freespace     => $vol->getAttr(name => 'container_freespace'),
-                disk_manager_id         => $vol->getAttr(name => 'disk_manager_id'),
-                entity_comment          => $vol->getComment(),
+                container_id            => $volume_id,
+                container_name          => $vol->name,
+                container_size          => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_size'),
+                container_device        => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_device'),
+                container_filesystem    => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_filesystem'),
+                container_freespace     => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_freespace'),
+                disk_manager_id         => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'disk_manager_id'),
+                entity_comment          => EntityComment->find( hash => {entity_comment_id => $entity_comment_id})->getAttr(name => 'entity_comment'),
             };
             push(@$volume, $vol_list);
         }
         push(@$aggregate, $aggr_list);
     }
-    return { 
+    return {
             "aggregates"=>$aggregate,
             "volumes"=>$volume
     };
