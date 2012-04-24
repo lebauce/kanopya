@@ -230,8 +230,8 @@ sub getConf {
     my @vol_object = $self->volumes;
     my @lun_object = $self->luns;
     my @luns = Entity::Container::NetappLun->search(hash => {});
-    my $aggregate = [];
-    my $volume = [];
+    my $aggregates = [];
+    my $volumes = [];
     my $lun = [];
     
     # run through each aggr on xml/rpc fill and get comment from db
@@ -282,13 +282,12 @@ sub getConf {
                 push @{$tmp->{aggregates_volumes}}, $tmp2;
             #}    
         }
-        
-        push @{$config->{aggregates}}, $tmp;
+        push @$aggregates, $tmp;
     }
+    # Must be remove :
+    #$log->info(Dumper($aggregates));
     return {
-            "aggregates"=>$aggregate,
-            "volumes"=>$volume,
-            "luns"=>$lun,
+            "aggregates"=>$aggregates,
     };
     return $config;
 }

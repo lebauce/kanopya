@@ -266,7 +266,8 @@ sub getConf {
         $aggr_list->{netapp_volumes}=$volumes;
         push(@$aggregate, $aggr_list);
     }
-    $log->info(Dumper($aggregate));
+    # Must be remove :
+    #$log->info(Dumper($aggregate));
     return {
             "aggregates"=>$aggregate,
     };
