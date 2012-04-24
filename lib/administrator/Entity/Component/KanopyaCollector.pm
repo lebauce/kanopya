@@ -72,9 +72,8 @@ use constant ATTR_DEF => {
 };
 sub getAttrDef { return ATTR_DEF; }
 
-sub getCollectorType {
-
-    return 'Natuve Kanopya collector tool';
+sub getCollectorType () {
+    return 'Native Kanopya collector tool';
 }
 
 sub getConf() {
@@ -84,3 +83,5 @@ sub getConf() {
 sub setConf() {
     
 }
+
+1;
