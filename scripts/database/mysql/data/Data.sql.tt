@@ -391,7 +391,7 @@ INSERT INTO `component_type` VALUES
 (13,'Openldap','1','Annuary'),
 (14,'Opennebula','3','Cloudmanager'),
 (15,'Physicalhoster','0','Cloudmanager'),
-(16,'Fileimagemanager','0','Storage');
+(16,'Fileimagemanager','0','Storage'),
 (17,'KanopyaCollector','1','DataCollector');
 
 --
