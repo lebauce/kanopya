@@ -70,19 +70,9 @@ __PACKAGE__->add_columns(
   },
 );
 
-=head1 PRIMARY KEY
-
-=over 4
-
-=item * L</kanopyacollector1_id>
-
-=back
-
-=cut
 
 __PACKAGE__->set_primary_key("kanopyacollector1_id");
 
-=head1 RELATIONS
 
 =head2 kanopyacollector1
 
@@ -98,10 +88,6 @@ __PACKAGE__->belongs_to(
   { component_id => "kanopyacollector1_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
-
-
-# Created by DBIx::Class::Schema::Loader v0.07022 @ 2012-04-26 12:51:00
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NSR6VHs5eek4q6V1oVqvrQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
