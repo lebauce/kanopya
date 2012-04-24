@@ -8,7 +8,6 @@ Volume:
 <select id="volume" name="disk_manager_param_netapp_volume_id">
 <% FOREACH container IN aggregate.aggregates_volumes %>
     <option value="<% container.volume_id %>"><% container.volume_name %></option>
-
 <% END %>
 <% END %>
 </select>

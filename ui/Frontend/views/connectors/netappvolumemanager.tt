@@ -18,7 +18,7 @@
             <td style="min-width: 100px; text-align: right"><% aggr.entity_comment %></td>
         </tr>
         <tr><td>&nbsp;</td></tr>
-        <% FOREACH volume IN aggr.volumes%>
+        <% FOREACH volume IN aggr.netapp_volumes%>
             <tr style="background-color: #EEE">
                 <th></th><th>Volume:</th>
                 <td style="min-width: 100px; text-align: center"><% volume.container_name %></td>
