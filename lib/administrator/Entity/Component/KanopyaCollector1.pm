@@ -51,7 +51,7 @@ This Entity is empty but present methods to set configuration.
 
 =cut
 
-package Entity::Component::KanopyaCollector;
+package Entity::Component::KanopyaCollector1;
 use base "Entity::Component";
 use base "CollectorManager";
 

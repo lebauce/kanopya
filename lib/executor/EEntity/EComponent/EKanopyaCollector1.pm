@@ -14,7 +14,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 23 april 2012
-package EEntity::EComponent::EKanopyaCollector;
+package EEntity::EComponent::EKanopyaCollector1;
 
 use strict;
 use Template;
