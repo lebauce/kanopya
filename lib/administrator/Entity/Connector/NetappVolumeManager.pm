@@ -263,9 +263,10 @@ sub getConf {
             };
             push(@$volumes, $vol_list);
         }
-        $aggr_list->{volumes}=$volumes;
+        $aggr_list->{netapp_volumes}=$volumes;
         push(@$aggregate, $aggr_list);
     }
+    $log->info(Dumper($aggregate));
     return {
             "aggregates"=>$aggregate,
     };
