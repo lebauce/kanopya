@@ -360,10 +360,7 @@ sub migrateHost {
 			  
 		}
 	);
-
-	
 }
-
 
 sub updateVm {
 	my $self = shift;
@@ -389,6 +386,38 @@ sub getImageRepository {
 
 sub supportHotConfiguration {
     return 1;
+}
+
+sub getVncport {
+    my $self =shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host']);
+
+    my $vm = $args{host}->{_dbix}->opennebula3_vms->search(vm_host_id => $args{host}->getAttr(name => "host_id"));
+
+    return $vm->single()->get_column('vnc_port');
+}
+
+sub getHypervisor {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host']);
+
+    my $vm = $args{host}->{_dbix}->opennebula3_vms->search(vm_host_id => $args{host}->getAttr(name => "host_id"));
+    my $opennebula3_hypervisor_id = $vm->single()->get_column('opennebula3_hypervisor_id');
+    return Entity->get(id => $vm->single()->opennebula3_hypervisor->get_column('hypervisor_host_id'));
+}
+
+sub getRemoteSessionURL {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host']);
+
+    return "vnc://" . $self->getHypervisor(host => $args{host})->getInternalIP()->{ipv4_internal_address} .
+           ":" . $self->getVncport(host => $args{host});
 }
 
 =head1 DIAGNOSTICS

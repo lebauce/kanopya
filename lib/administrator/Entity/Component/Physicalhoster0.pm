@@ -58,4 +58,8 @@ sub setConf {
     my ($conf) = @_;
 }
 
+sub getRemoteSessionURL {
+    return "";
+}
+
 1;

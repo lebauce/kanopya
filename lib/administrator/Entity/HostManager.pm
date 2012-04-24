@@ -204,5 +204,14 @@ sub getHostType {
     return "Host";
 }
 
+=head2 getRemoteSessionURL
+
+    Desc: return an URL to a remote session to the host
+
+=cut
+
+sub getRemoteSessionURL {
+    throw Kanopya::Exception::NotImplemented();
+}
 
 1;

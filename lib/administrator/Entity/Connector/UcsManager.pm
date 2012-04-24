@@ -197,4 +197,22 @@ sub synchronize {
     }
 }
 
+=head2 getRemoteSessionURL
+
+    Desc: return an URL to a remote session to the host
+
+=cut
+
+sub getRemoteSessionURL {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    $self->init();
+    my $blade = $self->{api}->get(dn => $args{host}->getAttr(name => 'host_serial_number'));
+
+    return $blade->KVM();
+}
+
 1;

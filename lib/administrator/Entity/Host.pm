@@ -714,21 +714,10 @@ sub getModel {
     return;
 }
 
-sub getVncport {
-    my $self =shift;
-    my %args = @_;
-
-    my $vm = $self->{_dbix}->opennebula3_vms->search(vm_host_id => $self->getAttr(name => "host_id"));
-    return $vm->single()->get_column('vnc_port');
-}
-
-sub getHypervisor {
+sub getRemoteSessionURL {
     my $self = shift;
-    my %args = @_;
 
-    my $vm = $self->{_dbix}->opennebula3_vms->search(vm_host_id => $self->getAttr(name => "host_id"));
-    my $opennebula3_hypervisor_id = $vm->single()->get_column('opennebula3_hypervisor_id');
-    return Entity->get(id => $vm->single()->opennebula3_hypervisor->get_column('hypervisor_host_id'));
+   return $self->getHostManager->getRemoteSessionURL(host => $self);
 }
 
 1;

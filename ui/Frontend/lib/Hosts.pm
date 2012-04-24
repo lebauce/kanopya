@@ -506,15 +506,8 @@ get '/hosts/:hostid' => sub {
     $host_manager = $ehost->getHostManager();
     $host_type = $host_manager->getHostType();
 
-    if ($host_type eq "Virtual Machine") {
-        $is_virtual = 1;
-        $vnc_url = "vnc://" . $ehost->getHypervisor()->getInternalIP()->{ipv4_internal_address} .
-                   ":" . $ehost->getVncport(vm_host_id => param('hostid'));
-     }
-     else {
-         $is_virtual = 0;
-         $vnc_url = "";
-     }
+    $is_virtual = $host_type eq "Virtual Machine";
+    $vnc_url = $ehost->getRemoteSessionURL();
 
      template 'hosts_details', {
         host_id          => $ehost->getAttr('name' => 'host_id'),
