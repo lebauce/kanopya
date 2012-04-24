@@ -17,8 +17,6 @@ package Cisco::UCS::Object;
 use warnings;
 use strict;
 
-use Cisco::UCS::Blade;
-
 sub new {
     my $class = shift;
     my %args = @_;
@@ -33,17 +31,25 @@ sub new {
 
     if ($classId eq "lsServer") {
         if ($hash->{type} eq "updating-template") {
+            use Cisco::UCS::ServiceProfileTemplate;
             bless $hash, "Cisco::UCS::ServiceProfileTemplate";
         }
         else {
+            use Cisco::UCS::ServiceProfile;
             bless $hash, "Cisco::UCS::ServiceProfile";
         }
     }
     elsif ($classId eq "fabricVlan") {
+        use Cisco::UCS::VLAN;
         bless $hash, "Cisco::UCS::VLAN";
     }
     elsif ($classId eq "computeBlade") {
+        use Cisco::UCS::Blade;
         bless $hash, "Cisco::UCS::Blade";
+    }
+    elsif ($classId eq "vnicEther") {
+        use Cisco::UCS::Ethernet;
+        bless $hash, "Cisco::UCS::Ethernet";
     }
     else {
         bless $hash;
