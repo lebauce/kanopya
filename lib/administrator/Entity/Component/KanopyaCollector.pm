@@ -69,9 +69,7 @@ my $errmsg;
 use constant ATTR_DEF => {
     collect_frequency   => 3600,
     storage_time        => 86400,
-}
-
-
+};
 sub getAttrDef { return ATTR_DEF; }
 
 sub getCollectorType {
