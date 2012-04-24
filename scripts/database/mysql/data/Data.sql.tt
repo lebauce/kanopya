@@ -3,7 +3,7 @@ SET foreign_key_checks=1;
 SET @admin_cluster := 1;
 SET @physical_hoster := 2;
 SET @eid := 3;
-SET @collector := 1;
+
 --
 -- permanents data
 --
@@ -632,7 +632,8 @@ INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
 
 INSERT INTO `entity` VALUES (@eid, 74, NULL);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 17, NULL, NULL);
-INSERT INTO `kanopyacollector1` VALUES(@collector, 3600, 86400);
+INSERT INTO `kanopyacollector1` VALUES(@eid, 3600, 86400);
+SET @eid := @eid +1;
 
 --
 -- Monitoring data
