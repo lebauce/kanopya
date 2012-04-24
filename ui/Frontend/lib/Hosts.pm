@@ -343,7 +343,10 @@ get '/hosts/migrate/:host_id' => sub {
     my $hypervisors = [];
     my $host = Entity::Host->get(id => params->{'host_id'});
     my $opennebula = Entity->get(id => $host->getAttr(name => "host_manager_id"));
-    my $hypervisors_r = $opennebula->{_dbix}->opennebula3_hypervisors->search({});
+    my $hypervisors_r = $opennebula->{_dbix}->opennebula3_hypervisors->search(
+        { -not => { 'opennebula3_vms.vm_host_id' => param('host_id') } },
+        { join => 'opennebula3_vms' }
+    );
     while (my $row = $hypervisors_r->next) {
 	my $hypervisor = Entity::Host->get(id => $row->get_column('hypervisor_host_id'));
 	push @$hypervisors, {
