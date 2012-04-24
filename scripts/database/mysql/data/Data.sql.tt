@@ -3,7 +3,7 @@ SET foreign_key_checks=1;
 SET @admin_cluster := 1;
 SET @physical_hoster := 2;
 SET @eid := 3;
-
+SET @collector := 1;
 --
 -- permanents data
 --
@@ -89,6 +89,7 @@ INSERT INTO `class_type` VALUES
 (73, 'Entity::Interface'),
 (74, 'Entity::Iface'),
 (75, 'Entity::NetappAggregate');
+(76, 'Entity::Component::KanopyaCollector');
 
 --
 -- entity comment list
@@ -391,6 +392,7 @@ INSERT INTO `component_type` VALUES
 (14,'Opennebula','3','Cloudmanager'),
 (15,'Physicalhoster','0','Cloudmanager'),
 (16,'Fileimagemanager','0','Storage');
+(17,'KanopyaCollector','1','DataCollector');
 
 --
 -- connectors type list
@@ -623,6 +625,14 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@physical_hoster, 48, NULL);
 INSERT INTO `component` VALUES(@physical_hoster, @admin_cluster, 15, NULL, NULL);
 INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
+
+--
+-- KanopyaCollector
+--
+
+INSERT INTO `entity` VALUES (@eid, 74, NULL);
+INSERT INTO `component` VALUES(@eid, @admin_cluster, 17, NULL, NULL);
+INSERT INTO `kanopyacollector1` VALUES(@collector, 3600, 86400);
 
 --
 -- Monitoring data
