@@ -86,7 +86,8 @@ INSERT INTO `class_type` VALUES
 (70, 'ActionTypeParameter'),
 (71, 'Entity::Network'),
 (72, 'Entity::InterfaceRole'),
-(73, 'Entity::NetappAggregate');
+(73, 'Entity::NetappAggregate'),
+(74, 'Entity::Component::KanopyaCollector');
 
 --
 -- entity comment list
@@ -388,7 +389,8 @@ INSERT INTO `component_type` VALUES
 (13,'Openldap','1','Annuary'),
 (14,'Opennebula','3','Cloudmanager'),
 (15,'Physicalhoster','0','Cloudmanager'),
-(16,'Fileimagemanager','0','Storage');
+(16,'Fileimagemanager','0','Storage'),
+(17,'KanopyaCollector','1','DataCollector');
 
 --
 -- connectors type list
@@ -584,6 +586,15 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@physical_hoster, 48, NULL);
 INSERT INTO `component` VALUES(@physical_hoster, @admin_cluster, 15, NULL, NULL);
 INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
+
+--
+-- KanopyaCollector
+--
+
+INSERT INTO `entity` VALUES (@eid, 74, NULL);
+INSERT INTO `component` VALUES(@eid, @admin_cluster, 17, NULL, NULL);
+INSERT INTO `kanopyacollector1` VALUES(@eid, 3600, 86400);
+SET @eid := @eid +1;
 
 --
 -- Monitoring data
