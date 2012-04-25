@@ -308,9 +308,10 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 
     if ($compute_result->{'error'}) {
         return to_json {error => $compute_result->{'error'}};
+    } else {
+        my $histovalues = $compute_result->{'histovalues'};
+        return to_json {first_histovalues => $histovalues, min => $start, max => $stop};
     }
-
-    return to_json {first_histovalues => $compute_result, min => $start, max => $stop};
 };
 
 =head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph'
@@ -324,7 +325,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph' => sub {
     my $cluster_id    = params->{extclusterid} || 0;
     my $nodemetric_combination_id = params->{'id'};
 
-    my $compute_result = _computeNodemetricCombination(cluster_id => $cluster_id, combination_id => $nodemetric_combination_id);
+    my $compute_result = _computeNodemetricCombination (cluster_id => $cluster_id, combination_id => $nodemetric_combination_id);
 
     if ($compute_result->{'error'}) {
         return to_json {error => $compute_result->{'error'}};
@@ -2339,10 +2340,11 @@ sub _computeNodemetricCombination () {
                 push @nodes_undef, $node;
             }
         }
-        if (scalar(@nodes_values_to_sort) == 0){
-            $error="no value could be retrieved for this metric";
+        if (scalar(@nodes_values_to_sort) == 0) {
+            $error = "no value could be retrieved for this metric";
             $log->error($error);
-            return to_json {error => $error};   
+            $rep{'error'};
+            return \%rep;
         }
         #we now sort this array
         my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
@@ -2374,6 +2376,7 @@ sub _computeClustermetricCombination () {
     my %aggregate_combination;
     my @histovalues;
     my %rep;
+    
     eval {
         %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
         # $log->info('values returned by compute values: '.Dumper \%aggregate_combination);
@@ -2401,12 +2404,14 @@ sub _computeClustermetricCombination () {
             }
         }
         if ($res_number == $undef_count) {
-            $error='all values retrieved for the selected time windows were undefined';
+            $error = 'all values retrieved for the selected time windows were undefined';
             $log->error($error);
-            return to_json {error => $error};
+            $rep{'error'};
+            return \%rep;
         }
 
-        return \@histovalues;
+        $rep{'histovalues'} = \@histovalues;
+        return \%rep;
     }
 }
 1;
