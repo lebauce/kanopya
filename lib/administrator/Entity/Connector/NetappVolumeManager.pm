@@ -243,8 +243,8 @@ sub getConf {
         my $aggr_list = {
             aggregate_name      => $aggr->name,
             aggregate_id        => $aggr_id,
-            aggregate_totalsize => $aggr->size_total,
-            aggregate_sizeused  => $aggr->size_used,
+            aggregate_totalsize => General::bytesToHuman(value => $aggr->size_total, precision => 5),
+            aggregate_sizeused  => General::bytesToHuman(value => $aggr->size_used, precision => 5),
             entity_comment      => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
         };
         my @netappvolumes = Entity::Container::NetappVolume->search( hash => { aggregate_id => $aggr->getAttr(name => 'aggregate_id') } );
@@ -254,10 +254,10 @@ sub getConf {
             my $vol_list = {
                 container_id            => $volume_id,
                 container_name          => $vol->name,
-                container_size          => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_size'),
+                container_size          => General::bytesToHuman(value => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_size'), precision => 5),
                 container_device        => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_device'),
-                container_filesystem    => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_filesystem'),
-                container_freespace     => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_freespace'),
+                container_filesystem    => General::bytesToHuman(value => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_filesystem'), precision => 5),
+                container_freespace     => General::bytesToHuman(value => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_freespace'), precision => 5),
                 disk_manager_id         => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'disk_manager_id'),
                 entity_comment          => EntityComment->find( hash => {entity_comment_id => $entity_comment_id})->getAttr(name => 'entity_comment'),
             };
@@ -266,12 +266,10 @@ sub getConf {
         $aggr_list->{netapp_volumes}=$volumes;
         push(@$aggregate, $aggr_list);
     }
-    # Must be remove :
-    #$log->info(Dumper($aggregate));
+    
     return {
             "aggregates"=>$aggregate,
     };
-    #$config->{volumes} = $volumes;
     return $config;
 }
 

@@ -44,6 +44,7 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use strict;
 use warnings;
+use Data::Dumper;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -296,5 +297,87 @@ sub convertFromBytes {
     
     return $args{value} / (1024**$convert{$args{units}}); 
 }
+
+=head2
+
+    Desc : bytesToHuman is a method for converting bytes values to human readable
+           value, rounded and with the right unit.
+           Example of return : 13.95 M (for value = 14630307)
+    
+    Args : bytesToHuman expect one argument 'value'
+        value : value of size in bytes
+    
+    Return : scalar containing rounded value with correct unit
+    
+=cut
+
+sub bytesToHuman {
+    my %args = @_;
+    # Check if argument is provided ;
+    if(! exists $args{value} or ! defined $args{value}) {
+        $errmsg = "bytesToHuman needs value named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    if(! $args{value}) { return 0; }
+    
+    my $value = $args{value};
+    my $precision = $args{precision}; # This include the separator '.' char
+    my $return_value; 
+    # Get the length of value (number of characters in integer) :
+    my $value_length = length($value);
+
+    # If value is minor than 3 length, the value is in Bytes :
+    if ( $value_length <= 3 ) {
+        $return_value = $value . " B";
+    }
+    # If the value length is include between 3 and 6 characters, the value is in KiloBytes :
+    elsif ( $value_length > 3 and $value_length < 6 ) {
+        # Divide by 1024 to get the new value in KB :
+        my $a = $value/1024;
+        # Round the new value with a precisoin parameter :
+        my $b = substr($a, 0, $precision);
+        # Return scalar :
+        $return_value = $b . " K";
+    }
+    # Etc ...
+    elsif ($value_length > 6 and $value_length <= 9 ) {
+        my $a = $value/1024/1024;
+        my $b = substr($a, 0, $precision);
+        $return_value = $b . " M";
+    }   
+    elsif ($value_length > 9 and $value_length <= 12 ) {
+        my $a = $value/1024/1024/1024;
+        my $b = substr($a, 0, $precision);
+        $return_value = $b . " G";
+    }
+    elsif ($value_length > 12 and $value_length <= 15 ) {
+        my $a = $value/1024/1024/1024/1024;
+        my $b = substr($a, 0, $precision);
+        $return_value = $b . " T";
+    }
+    elsif ($value_length > 15 and $value_length <= 18 ) {
+        my $a = $value/1024/1024/1024/1024/1024;
+        my $b = substr($a, 0, $precision);
+        $return_value = $b . " P";
+    }
+    elsif ($value_length > 18 and $value_length <= 21 ) {
+        my $a = $value/1024/1024/1024/1024/1024/1024;
+        my $b = substr($a, 0, $precision);
+        $return_value = $b . " E";
+    }
+    elsif ($value_length > 21 and $value_length <= 24 ) {
+        my $a = $value/1024/1024/1024/1024/1024/1024/1024;
+        my $b = substr($a, 0, $precision);
+        $return_value = $b . " Z";
+    }
+
+    return $return_value;
+
+}
+
+=head2
+    TODO : humanToBytes (Convert from K,M,G,T ... to bytes size)
+=cut
 
 1;

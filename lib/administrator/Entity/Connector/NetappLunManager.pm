@@ -24,7 +24,7 @@ use Entity::HostManager;
 use Entity::Container::NetappLun;
 use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::IscsiContainerAccess;
-
+use General;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -244,8 +244,8 @@ sub getConf {
             aggregate_id        => $aggr_id,
             aggregate_name      => $aggr->name,
             aggregate_state     => $aggr->state,
-            aggregate_totalsize => $aggr->size_total,
-            aggregate_sizeused  => $aggr->size_used,
+            aggregate_totalsize => General::bytesToHuman(value => $aggr->size_total, precision => 5),
+            aggregate_sizeused  => General::bytesToHuman(value => $aggr->size_used, precision => 5),
             aggregate_volumes   => [],
             entity_comment      => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
         };
@@ -258,8 +258,8 @@ sub getConf {
                     volume_id       => $volume_id,
                     volume_name      => $vol_key,
                     volume_state     => $volume->state,
-                    volume_totalsize => $volume->size_total,
-                    volume_sizeused  => $volume->size_used,
+                    volume_totalsize => General::bytesToHuman(value => $volume->size_total, precision => 5),
+                    volume_sizeused  => General::bytesToHuman(value => $volume->size_used, precision => 5),
                     volume_luns      => [],
                     entity_comment   => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
                 };
@@ -272,8 +272,8 @@ sub getConf {
                             lun_id          => $lun_id,
                             lun_path        => $lun->path,
                             lun_state       => $lun->state,
-                            lun_totalsize   => $lun->size,
-                            lun_sizeused    => $lun->size_used,
+                            lun_totalsize   => General::bytesToHuman(value => $lun->size, precision => 5),
+                            lun_sizeused    => General::bytesToHuman(value => $lun->size_used, precision => 5),
                             entity_comment   => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
                         };
                         push @{$tmp2->{volume_luns}}, $tmp3;
