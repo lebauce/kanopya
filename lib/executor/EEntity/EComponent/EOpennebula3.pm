@@ -211,7 +211,7 @@ sub generateLibvirtdconf {
     General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
     
     my $data = $self->_getEntity()->getTemplateDataLibvirtd();
-    $data->{listen_ip_address} = $args{host}->getInternalIP()->{ipv4_internal_address};
+    $data->{listen_ip_address} = $args{host}->getAdminIp;
     $self->generateFile(
             econtext => $args{econtext},
          mount_point => $args{mount_point},
@@ -312,7 +312,7 @@ sub postStartNode {
     General::checkParams(args => \%args, required => [ 'cluster', 'host', 'econtext' ]);
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
-    my $nodeip = $args{host}->getInternalIP()->{ipv4_internal_address};
+    my $nodeip = $args{host}->getAdminIp;
 
     #if(not $masternodeip eq $nodeip) {
         # this host is a new hypervisor node so we declare it to opennebula
@@ -359,7 +359,7 @@ sub isUp {
     my %args = @_;
     
     General::checkParams( args => \%args, required => ['cluster', 'host', 'host_econtext'] );
-    my $ip = $args{host}->getInternalIP()->{ipv4_internal_address};
+    my $ip = $args{host}->getAdminIp;
     
     if($args{cluster}->getMasterNodeIp() eq $ip) {
         # host is the opennebula frontend
@@ -481,7 +481,7 @@ sub getFreeHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "ram", "cpu" ]);
+    General::checkParams(args => \%args, required => [ "ram", "cpu", "ifaces" ]);
 
     if ($args{ram_unit}) {
         $args{ram} = General::convertToBytes(value => $args{ram}, units => $args{ram_unit});
@@ -491,8 +491,9 @@ sub getFreeHost {
     $log->info("Looking for a virtual host");
     my $host = eval{ 
         return $self->_getEntity->createVirtualHost(
-                   core => $args{cpu},
-                   ram  => $args{ram},
+                   core   => $args{cpu},
+                   ram    => $args{ram},
+                   ifaces => $args{ifaces},
                );
     };
     if ($@) {
@@ -540,7 +541,7 @@ sub _generateVmTemplate {
     
     for my $iface ($args{host}->getIfaces()) {
         my $tmp = {
-            mac => $iface->{iface_mac_addr}
+            mac => $iface->getAttr(name => 'iface_mac_addr')
         };
         push @{$data->{interfaces}}, $tmp;
     }

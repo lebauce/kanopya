@@ -92,6 +92,10 @@ sub addNode {
     my $host_manager = Entity->get(id => $self->_getEntity->getAttr(name => 'host_manager_id'));
     my $host_manager_params = $self->_getEntity->getManagerParameters(manager_type => 'host_manager');
 
+    # Add the number of required ifaces to paramaters.
+    my @interfaces = $self->_getEntity->getNetworkInterfaces;
+    $host_manager_params->{ifaces} = scalar(@interfaces);
+
     my $ehost_manager = EFactory::newEEntity(data => $host_manager);
     my $host = $ehost_manager->getFreeHost(%$host_manager_params);
 

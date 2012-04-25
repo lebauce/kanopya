@@ -132,6 +132,8 @@ sub getFreeHost {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, required => [ "ram", "cpu", "ifaces" ]);
+
     if ($args{ram_unit}) {
         $args{ram} .= $args{ram_unit};
         delete $args{ram_unit};

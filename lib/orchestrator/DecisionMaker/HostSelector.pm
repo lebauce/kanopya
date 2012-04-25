@@ -86,6 +86,8 @@ sub _matchHostConstraints {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, required => [ "host" ]);
+
     my $host = $args{host};
 
     for my $constraint ('core', 'ram') {
@@ -95,6 +97,15 @@ sub _matchHostConstraints {
             if ($host_value < $args{$constraint}) {
                 return 0;
             }
+        }
+    }
+
+    if (defined $args{ifaces}) {
+        my @ifaces = $host->getIfaces();
+        my $nb_ifaces = scalar(@ifaces);
+        if ($args{ifaces} > $nb_ifaces) {
+            $log->info("constraint 'ifaces' ($nb_ifaces) >= $args{ifaces}");
+            return 0;
         }
     }
 
