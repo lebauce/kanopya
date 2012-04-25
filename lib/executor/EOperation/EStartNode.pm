@@ -81,11 +81,11 @@ sub prepare {
     }
 
     # Instanciate bootserver Cluster
-    $self->{bootserver}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(
-                                     id => $args{internal_cluster}->{bootserver}
-                                 );
+    $self->{bootserver} = Entity::ServiceProvider::Inside::Cluster->get(
+                              id => $args{internal_cluster}->{bootserver}
+                          );
 
-    $log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}->{obj}));
+    $log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}));
 
     $self->loadContext(internal_cluster => $args{internal_cluster}, service => "bootserver");
     $self->loadContext(internal_cluster => $args{internal_cluster}, service => "executor");
@@ -95,13 +95,13 @@ sub prepare {
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
 
     # Instanciate tftpd component.
-    my $tftp_component = $self->{bootserver}->{obj}->getComponent(name => "Atftpd", version => "0");
+    my $tftp_component = $self->{bootserver}->getComponent(name => "Atftpd", version => "0");
     $self->{_objs}->{component_tftpd} = EFactory::newEEntity(data => $tftp_component);
 
     $log->debug("Loaded tftpd component (Atftpd version 0.7, it ref is " . ref($self->{_objs}->{component_tftpd}));
 
     # Instanciate dhcpd component.
-    my $dhcp_component = $self->{bootserver}->{obj}->getComponent(name => "Dhcpd", version => "3");
+    my $dhcp_component = $self->{bootserver}->getComponent(name => "Dhcpd", version => "3");
     $self->{_objs}->{component_dhcpd} = EFactory::newEEntity(data => $dhcp_component);
 
     $log->debug("Loaded dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
@@ -133,6 +133,15 @@ sub _cancel {
     if (! scalar keys %$hosts) {
         $cluster->setState(state => "down");
     }
+
+    # Try to umount the container.
+    eval {
+        my $mountpoint = $self->{_objs}->{container}->getMountPoint;
+
+        my $econtainer_access = EFactory::newEEntity(data => $self->{_objs}->{container_access});
+        $econtainer_access->umount(mountpoint => $mountpoint,
+                                   econtext   => $self->{executor}->{econtext});
+    }
 }
 
 sub execute {
@@ -149,9 +158,6 @@ sub execute {
         $self->{_objs}->{host}->setAttr(name  => 'host_powersupply_id',
                                         value => $powersupply_id);
     }
-
-    my ($access_mode, $mount_options) = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared')
-                      ? ("ro", "ro,noatime,nodiratime") : ("rw", "defaults");
 
     # Get the ECluster and EHost
     my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
@@ -186,11 +192,15 @@ sub execute {
         econtext => $self->{executor}->{econtext}
     );
 
-    # Apply node etc configuration
-    $self->_generateNodeConf(etc_path => $mountpoint . '/etc',
-                             options  => $mount_options);
+    $log->info("Generate Network Conf");
+    $self->_generateNetConf(etc_path => $mountpoint . '/etc');
+
+    $log->info("Generate ntpdate Conf");
+    $self->_generateNtpdateConf(etc_path => $mountpoint . '/etc');
 
     $log->info("Generate Boot Conf");
+    my ($access_mode, $mount_options) = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared')
+                      ? ("ro", "ro,noatime,nodiratime") : ("rw", "defaults");
 
     # Apply node boot configuration
     $self->_generateBootConf(mountpoint => $mountpoint,
@@ -234,22 +244,6 @@ sub execute {
     );
 }
 
-sub _generateNodeConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args,
-                         required => [ "etc_path", "options" ]);
-
-    $log->info("Generate Network Conf");
-    $self->_generateNetConf(etc_path => $args{etc_path});
-
-    # TODO generateRouteConf
-
-    $log->info("Generate ntpdate Conf");
-    $self->_generateNtpdateConf(etc_path => $args{etc_path});
-}
-
 sub _generateNetConf {
     my $self = shift;
     my %args = @_;
@@ -264,50 +258,19 @@ sub _generateNetConf {
     my $template = Template->new($config);
     my $input = "network_interfaces.tt";
 
-    my @cluster_interfaces = ();
-    my @host_ifaces = $self->{_objs}->{host}->getIfaces();
-    my @interfaces = ();
-    my $ip = $self->{_objs}->{host}->getInternalIP();
-    
-    foreach my $iface (@host_ifaces) {
-        next if $iface->{iface_pxe} eq "1";
-        if($iface->{iface_name} eq 'eth0') { 
-            my $iface = {
-                name    => $iface->{iface_name},
-                address => $ip->{ipv4_internal_address},
-                netmask => $ip->{ipv4_internal_mask}
-            }; 
-            push(@interfaces, $iface);
+    # Pop an IP adress for all host iface,
+    my @interfaces;
+    foreach my $iface (@{$self->{_objs}->{host}->getIfaces}) {
+        # Assign ip from the associated interface poolip
+        $iface->assignIp();
+
+        # Only add non pxe iface to /etc/network/interfaces
+        if ($iface->hasIp and not $iface->getAttr(name => 'iface_pxe')) {
+            push @interfaces, { name    => $iface->getAttr(name => 'iface_name'),
+                                address => $iface->getIPAddr,
+                                netmask => $iface->getNetMask };
         }
     }
-    
-    #my $ip = $self->{_objs}->{host}->getInternalIP();
-    #my %model = $self->{_objs}->{host}->getModel();
-
-    #~ my $need_bridge = 0;
-    #~ my $components = $self->{_objs}->{components};
-    #~ while (my ($id, $component) = each %$components) {
-        #~ $log->debug(ref($component) . " need_bridge: " . $component->needBridge());
-        #~ if ($component->needBridge()) {
-            #~ $need_bridge = 1;
-            #~ last;
-        #~ }
-    #~ }
-
-    
-
-
-
-    #~ if($need_bridge) {
-        #~ $iface->{name}           = 'br0';
-        #~ $iface->{bridge_ports}   = 'eth0';
-        #~ $iface->{bridge_stp}     = 'off';
-        #~ $iface->{bridge}         = 1;
-        #~ $iface->{bridge_fd}      = 2;
-        #~ $iface->{bridge_maxwait} = 0;
-    #~ }
-
-    
 
     if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
         my $i = 1;
@@ -509,31 +472,25 @@ sub _generatePXEConf {
     $cmd = "bzip2 $newinitrd && mv $newinitrd.bz2 $newinitrd";
     $self->{executor}->{econtext}->execute(command => $cmd);
 
-    my $node_mac_addr = $args{host}->getPXEMacAddress;
+    my $pxeiface = $args{host}->getPXEIface;
 
     # Add host in the dhcp
-    my $adm     = Administrator->new();
-    my $subnet  = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
-    my $host_ip = $adm->{manager}->{network}->getFreeInternalIP();
+    my $adm    = Administrator->new();
+    my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
 
     # Set Hostname
     my $host_hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
 
     # Configure DHCP Component
-    my $host_kernel_id;
     my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
-    if ($tmp_kernel_id) {
-        $host_kernel_id = $tmp_kernel_id;
-    } else {
-        $host_kernel_id = $self->{_objs}->{host}->getAttr(name => "kernel_id");
-    }
+    my $host_kernel_id = $tmp_kernel_id ? $tmp_kernel_id : $self->{_objs}->{host}->getAttr(name => "kernel_id");
 
     $self->{_objs}->{component_dhcpd}->addHost(
         dhcpd3_subnet_id                => $subnet,
-        dhcpd3_hosts_ipaddr             => $host_ip,
-        dhcpd3_hosts_mac_address        => $node_mac_addr,
+        dhcpd3_hosts_ipaddr             => $pxeiface->getIPAddr,
+        dhcpd3_hosts_mac_address        => $pxeiface->getAttr(name => 'iface_mac_addr'),
         dhcpd3_hosts_hostname           => $host_hostname,
-        dhcpd3_hosts_ntp_server         => $self->{bootserver}->{obj}->getMasterNodeIp(),
+        dhcpd3_hosts_ntp_server         => $self->{bootserver}->getMasterNodeIp(),
         dhcpd3_hosts_domain_name        => $self->{_objs}->{cluster}->getAttr(name => "cluster_domainname"),
         dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver1"),
         kernel_id                       => $host_kernel_id,
@@ -544,8 +501,8 @@ sub _generatePXEConf {
     $self->{erollback}->insertNextErollBefore(erollback => $eroll_add_dhcp_host);
 
     # Generate new configuration file
-    $self->{_objs}->{component_dhcpd}->generate(econtext    => $self->{bootserver}->{econtext},
-                                                erollback   => $self->{erollback});
+    $self->{_objs}->{component_dhcpd}->generate(econtext  => $self->{bootserver}->{econtext},
+                                                erollback => $self->{erollback});
 
     my $eroll_dhcp_generate = $self->{erollback}->getLastInserted();
     $self->{erollback}->insertNextErollBefore(erollback=>$eroll_dhcp_generate);
@@ -577,19 +534,16 @@ sub _generatePXEConf {
                      error => "Error when processing template $input."
                  );
 
+    my $node_mac_addr = $pxeiface->getAttr(name => 'iface_mac_addr');
     $node_mac_addr =~ s/:/-/g;
-    my $dest = $tftp_conf->{'repository'} . '/pxelinux.cfg/01-' . lc $node_mac_addr;
+    my $dest = $tftp_conf->{'repository'} . '/pxelinux.cfg/01-' . lc $node_mac_addr ;
 
     $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
     unlink "/tmp/$tmpfile";
 
     # Update Host internal ip
-    $log->info("get subnet <$subnet> and have host ip <$host_ip>");
+    $log->info("Get subnet <$subnet> and have host ip <$pxeiface->getIPAddr>");
     my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
-
-    my $ipv4_internal_id
-        = $self->{_objs}->{host}->setInternalIP(ipv4_address => $host_ip,
-                                                ipv4_mask    => $subnet_hash{'dhcpd3_subnet_mask'});
 }
 
 sub _generateKanopyaHalt{
@@ -671,7 +625,7 @@ sub _generateNtpdateConf {
     my $template = Template->new($config);
     my $input = "ntpdate.tt";
     my $data = {
-        ntpservers => $self->{bootserver}->{obj}->getMasterNodeIp(),
+        ntpservers => $self->{bootserver}->getMasterNodeIp(),
     };
 
     $template->process($input, $data, "/tmp/$tmpfile")
