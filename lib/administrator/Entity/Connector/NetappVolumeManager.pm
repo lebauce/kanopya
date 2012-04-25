@@ -243,6 +243,7 @@ sub getConf {
         my $aggr_list = {
             aggregate_name      => $aggr->name,
             aggregate_id        => $aggr_id,
+            aggregate_state     => $aggr->state,
             aggregate_totalsize => General::bytesToHuman(value => $aggr->size_total, precision => 5),
             aggregate_sizeused  => General::bytesToHuman(value => $aggr->size_used, precision => 5),
             entity_comment      => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
@@ -254,6 +255,7 @@ sub getConf {
             my $vol_list = {
                 container_id            => $volume_id,
                 container_name          => $vol->name,
+                container_state         => $vol->state,
                 container_size          => General::bytesToHuman(value => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_size'), precision => 5),
                 container_device        => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_device'),
                 container_filesystem    => General::bytesToHuman(value => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_filesystem'), precision => 5),

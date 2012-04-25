@@ -305,9 +305,11 @@ sub convertFromBytes {
            Example of return : 13.95 M (for value = 14630307)
     
     Args : bytesToHuman expect one argument 'value'
-        value : value of size in bytes
+            value :     value of size in bytes
+            precision : precision of rounding (the number of bit displayed included 
+                        the separator character '.'. For example, a precision)
     
-    Return : scalar containing rounded value with correct unit
+    Return : scalar containing rounded value with correct unit (Example of return : 13.95 M)
     
 =cut
 
@@ -328,7 +330,7 @@ sub bytesToHuman {
     my $value_length = length($value);
 
     # If value is minor than 3 length, the value is in Bytes :
-    if ( $value_length <= 3 ) {
+    if ( $value_length <= 3) {
         $return_value = $value . " B";
     }
     # If the value length is include between 3 and 6 characters, the value is in KiloBytes :
