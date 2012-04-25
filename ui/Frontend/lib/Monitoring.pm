@@ -73,7 +73,7 @@ get '/clusters/:clusterid/monitoring/graphs' => sub {
             $node_ip = $cluster_name;    
 
         } else {
-            $node_ip = $hosts->{$node_id}->getInternalIP()->{ipv4_internal_address};
+            $node_ip = $hosts->{$node_id}->getAdminIp;
         }
         
 #        foreach my $set ( defined $set_name ? ($set_name) : @sets_name ) {
@@ -112,7 +112,7 @@ get '/clusters/:clusterid/monitoring' => sub {
     my $hosts = $cluster->getHosts();
     my $masterId = $cluster->getMasterNodeId();
     my @nodes = map { { id => $_->getAttr(name=>'host_id'),
-                        name => $_->getInternalIP()->{ipv4_internal_address},
+                        name => $_->getAdminIp,
                         master => ($_->getAttr(name=>'host_id') == $masterId) }
                     } values %$hosts;
     

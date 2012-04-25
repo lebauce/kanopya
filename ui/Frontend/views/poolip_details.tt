@@ -5,8 +5,9 @@
 <table id="Xmainsettings" class="detailspart">
     <tr><td class="italic" colspan="2"><% poolip_desc %></td>
     </td>
-    <tr><td class="label">Pool definition :</td><td><% poolip_addr %>/<% poolip_mask %></td>
-    
+    <tr><td class="label">Network definition :</td><td><% poolip_net %></td></tr>
+    <tr><td class="label">First address :</td><td><% poolip_addr %></td>
+
     <td class="actions" rowspan="2">
         <a class="imgStart" href="/networks/poolip/<% poolip_id %>/remove">delete</a><br />
         <span class="desc">Delete this ip pool.</span>

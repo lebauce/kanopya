@@ -97,19 +97,18 @@ get '/poolip/:poolid' => sub {
         Entity::Poolip->get(id => $poolip_id)
     };
 
-    my $poolipaddr = $epoolip->getAttr('name' => 'poolip_addr');
-    my $poolipmask = $epoolip->getAttr('name' => 'poolip_mask');
-    my $numberofips = NetAddr::IP->new("$poolipaddr"."/"."$poolipmask")->num();
- 
+    my $network_def = NetAddr::IP->new($epoolip->getAttr('name' => 'poolip_addr'),
+                                       $epoolip->getAttr('name' => 'poolip_netmask'));
+
     template 'poolip_details', {
         poolip_id      => $epoolip->getAttr('name' => 'poolip_id'),
         poolip_name    => $epoolip->getAttr('name' => 'poolip_name'),
         poolip_desc    => $epoolip->getComment,
-        poolip_addr    => $poolipaddr,
-        poolip_mask    => $poolipmask,
+        poolip_addr    => $epoolip->getAttr('name' => 'poolip_addr'),
+        poolip_net     => $network_def->network(),
         poolip_netmask => $epoolip->getAttr('name' => 'poolip_netmask'),
         poolip_gateway => $epoolip->getAttr('name' => 'poolip_gateway'),
-        poolip_size    => $numberofips,
+        poolip_size    => $epoolip->getAttr('name' => 'poolip_mask'),
     };
 };
 

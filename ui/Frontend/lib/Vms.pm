@@ -48,7 +48,7 @@ sub _vms {
         $tmp->{host_label} = $m->toString();
         my $state = $m->getAttr(name => 'host_state');
         $tmp->{host_hostname} = $m->getAttr(name => 'host_hostname');
-        $tmp->{host_ip} = $m->getInternalIP()->{ipv4_internal_address};
+        $tmp->{host_ip} = $m->getAdminIp;
         $tmp->{active} = $m->getAttr(name => 'active');
         $tmp->{cloud_cluster_id} = $m->getAttr(name => 'cloud_cluster_id');
 
@@ -421,7 +421,7 @@ get '/vms/:hostid' => sub {
         host_id          => $ehost->getAttr('name' => 'host_id'),
         host_hostname    => $ehost->getAttr('name' => 'host_hostname'),
         host_desc        => $ehost->getAttr('name' => 'host_desc'),
-        host_ip          => $ehost->getInternalIP()->{ipv4_internal_address},
+        host_ip          => $ehost->getAdminIp,
         host_sn          => $ehost->getAttr('name' => 'host_serial_number'),
         host_powersupply => $ehost->getAttr('name' => 'host_powersupply_id'),
         host_model       => $host_model,

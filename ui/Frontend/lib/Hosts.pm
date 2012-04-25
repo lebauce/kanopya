@@ -56,7 +56,7 @@ sub _hosts {
         my $state = $m->getAttr(name => 'host_state');
 
         $tmp->{host_hostname} = $m->getAttr(name => 'host_hostname');
-        $tmp->{host_ip} = $m->getInternalIP()->{ipv4_internal_address};
+        $tmp->{host_ip} = $m->getAdminIp;
         $tmp->{active} = $m->getAttr(name => 'active');
 
         if($tmp->{active}) {
@@ -309,7 +309,7 @@ get '/hosts/:hostid/removeinterface/:ifaceid' => sub {
     my $adm = Administrator->new;
     eval {
         my $host = Entity::Host->get(id => param('hostid'));
-        $host->removeInterface(iface_id => param('ifaceid'));
+        $host->removeIface(iface_id => param('ifaceid'));
     };
     if($@) {
         my $exception = $@;
@@ -408,24 +408,23 @@ get '/hosts/:hostid' => sub {
         push @$hds, $tmp;
     }
 
- # interfaces list
-    my $interfaces = $ehost->getIfaces();
+    # interfaces list
+    my @interfaces = $ehost->getIfaces();
     my $ifcs= [];
-    foreach my $ifc (@$interfaces) {
+    foreach my $ifc (@interfaces) {
         my $tmp = {};
-        $tmp->{iface_id}       = $ifc->{iface_id};
-        $tmp->{iface_name}     = $ifc->{iface_name};
-        $tmp->{host_id}        = $ehost->getAttr(name => 'host_id');
-        $tmp->{iface_mac_addr} = $ifc->{iface_mac_addr};
-        $tmp->{iface_pxe}      =$ifc->{iface_pxe};
+        $tmp->{iface_id}       = $ifc->getAttr(name => 'iface_id');
+        $tmp->{iface_name}     = $ifc->getAttr(name => 'iface_name');
+        $tmp->{host_id}        = $ifc->getAttr(name => 'host_id');
+        $tmp->{iface_mac_addr} = $ifc->getAttr(name => 'iface_mac_addr');
+        $tmp->{iface_pxe}      = $ifc->getAttr(name => 'iface_pxe');
 
-        if((not $methods->{'removeInterface'}->{'granted'}) || $active) {
+        if((not $methods->{'removeIface'}->{'granted'}) || $active) {
             $tmp->{link_removeinterface} = 0;
-        } else { $tmp->{link_removeinterface} = 1;}
+        }
+        else { $tmp->{link_removeinterface} = 1;}
         push @$ifcs, $tmp;
     }
-
-
 
     # hostram
     my $hostram = $ehost->getAttr('name' => 'host_ram');
@@ -435,7 +434,7 @@ get '/hosts/:hostid' => sub {
         host_id          => $ehost->getAttr('name' => 'host_id'),
         host_hostname    => $ehost->getAttr('name' => 'host_hostname'),
         host_desc        => $ehost->getAttr('name' => 'host_desc'),
-        host_ip          => $ehost->getInternalIP()->{ipv4_internal_address},
+        host_ip          => $ehost->getAdminIp,
         host_sn          => $ehost->getAttr('name' => 'host_serial_number'),
 	    host_ram	 => $hostramConverted,
 	    host_core	 => $ehost->getAttr('name' => 'host_core'),
