@@ -36,6 +36,7 @@ use Kanopya::Exceptions;
 use General;
 use Entity::Component;
 use Entity::Connector;
+use Entity::Interface;
 use Administrator;
 
 use constant ATTR_DEF => {};
@@ -97,14 +98,21 @@ sub findManager {
 
 sub addNetworkInterface {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => ['interface_role_id']);
-    my $adm = Administrator->new;
-    $adm->{db}->resultset('Interface')->create(
-        {
-            interface_role_id   => $args{interface_role_id},
-            service_provider_id => $self->getAttr(name => 'service_provider_id')
+
+    my $interface = Entity::Interface->new(
+                        interface_role_id   => $args{interface_role_id},
+                        service_provider_id => $self->getAttr(name => 'entity_id')
+                    );
+
+    # Associate to networks if defined
+    if (defined $args{networks}) {
+        for my $network_id (@{$args{networks}}) {
+            my $network = Entity::Network->get(id => $network_id);
+            $interface->associateNetwork(network => $network);
         }
-    );
+    }
 }
 
 =head2 getNetworkInterfaces 
@@ -115,18 +123,13 @@ sub addNetworkInterface {
 
 sub getNetworkInterfaces {
     my ($self) = @_;
-    my $adm = Administrator->new;
-    my @rows = $adm->{db}->resultset('Interface')->search(
-        { service_provider_id => $self->getAttr(name => 'service_provider_id') },
-        { '+columns' => { 'interface_role_name' => 'interface_role.interface_role_name' },
-         join => ['interface_role']
-        }
-    );
-    my @interfaces = ();
-    foreach my $row (@rows) {
-        push @interfaces, { $row->get_columns };
-    }
-    
+
+    # TODO: use the new BaseDb feature,
+    # my @interfaces = $self->getRelated(name => 'interfaces');
+    my @interfaces = Entity::Interface->search(
+                         hash => { service_provider_id => $self->getAttr(name => 'entity_id') }
+                     );
+
     return wantarray ? @interfaces : \@interfaces;    
 }
 
@@ -138,9 +141,10 @@ sub getNetworkInterfaces {
 
 sub removeNetworkInterface {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => ['interface_id']);
-    my $adm = Administrator->new;
-    $adm->{db}->resultset('Interface')->find($args{interface_id})->delete;
+
+    Entity::Interface->get(id => $args{interface_id})->delete();
 }
 
 1;

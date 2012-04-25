@@ -26,8 +26,12 @@ use warnings;
 use Kanopya::Exceptions;
 use Operation;
 use General;
+use Node;
 
+use Entity::ServiceProvider;
 use Entity::Container;
+use Entity::Interface;
+use Entity::Iface;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -160,7 +164,7 @@ sub methods {
         'removeHarddisk'=> {'description' => 'remove a hard disk from this host',
                         'perm_holder' => 'entity',
         },
-        'removeInterface'=> {'description' => 'remove an interface from this host',
+        'removeIface'=> {'description' => 'remove an interface from this host',
                         'perm_holder' => 'entity',
         },
         'addIface'=> {'description' => 'add one or more interface to  this host',
@@ -281,6 +285,7 @@ sub setNodeNumber {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['node_number']);
+
     my $best_node_number = $args{'node_number'};
     $self->{_dbix}->node->update({'node_number' => $best_node_number});
 }
@@ -339,7 +344,81 @@ sub becomeNode {
                   systemimage_id => $args{systemimage_id},
               });
 
+    my $cluster = Entity::ServiceProvider->get(id => $args{inside_id});
+    $self->associateInterfaces(cluster => $cluster);
+
     return $res->get_column("node_id");
+}
+
+sub becomeMasterNode{
+    my $self = shift;
+
+    my $row = $self->{_dbix}->node;
+    if(not defined $row) {
+        $errmsg = "Entity::Host->becomeMasterNode :Host " . $self->getAttr(name => "entity_id") . " is not a node!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg);
+    }
+    $row->update({master_node => 1});
+}
+
+=head2 Entity::Host->stopToBeNode (%args)
+
+    Class : Public
+
+    Desc : Remove a node instance for a dedicated host.
+
+    args:
+        cluster_id : Int : Cluster identifier
+
+=cut
+
+sub stopToBeNode{
+    my $self = shift;
+
+    my $node;
+    eval {
+        # TODO: $node = $self->getRelated(name => 'node');
+        $node = Node->find(hash => { host_id => $self->getAttr(name => 'entity_id') });
+    };
+    if($@) {
+        $errmsg = "Node representing host " . $self->getAttr(name => "entity_id") . " not found!";
+        throw Kanopya::Exception::DB(error => $errmsg);
+    }
+
+    # Dissociate iface from cluster interfaces
+    $self->dissociateInterfaces();
+
+    # Remove node entry
+    $node->delete();
+
+    $self->setState(state => 'down');
+}
+
+sub associateInterfaces {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster' ]);
+
+    my @ifaces = $self->getIfaces;
+
+    my $iface_index = 0;
+    foreach my $interface (@{$args{cluster}->getNetworkInterfaces}) {
+        $ifaces[$iface_index]->associateInterface(interface => $interface);
+        $iface_index++;
+    }
+}
+
+sub dissociateInterfaces {
+    my $self = shift;
+    my %args = @_;
+
+    for my $iface (@{$self->getIfaces}) {
+        if ($iface->isAssociated) {
+            $iface->dissociateInterface();
+        }
+    }
 }
 
 =head2 Entity::Host->addIface (%args)
@@ -372,14 +451,12 @@ sub addIface {
                   error => "Permission denied to add an interface to this host"
               );
     }
-    my $res = $adm->{db}->resultset('Iface')->create(
-                  { iface_name     => $args{iface_name},
-                    iface_mac_addr => $args{iface_mac_addr},
-                    iface_pxe      => $args{iface_pxe},
-                    host_id        => $self->getAttr(name => 'host_id') }
-              );
+    my $iface = Entity::Iface->new(iface_name     => $args{iface_name},
+                                   iface_mac_addr => $args{iface_mac_addr},
+                                   iface_pxe      => $args{iface_pxe},
+                                   host_id        => $self->getAttr(name => 'host_id'));
 
-    return $res->get_column("iface_id");
+    return $iface->getAttr(name => 'entity_id');
 }
 
 =head2 getIfaces
@@ -388,44 +465,33 @@ sub addIface {
 
 sub getIfaces {
     my $self = shift;
-    my $ifcs = [];
-    my $interfaces = $self->{_dbix}->ifaces;
-    while(my $ifc = $interfaces->next) {
-        my $tmp = {};
-        $tmp->{iface_id}       = $ifc->get_column('iface_id');
-        $tmp->{iface_name}     = $ifc->get_column('iface_name');
-        $tmp->{iface_mac_addr} = $ifc->get_column('iface_mac_addr');
-        $tmp->{iface_pxe}      = $ifc->get_column('iface_pxe');
-        
-        push @$ifcs, $tmp;
-    }
-    return wantarray ? @$ifcs : $ifcs;
+    my @ifcs = Entity::Iface->search(hash => { host_id => $self->getAttr(name => 'host_id') });
+
+    return wantarray ? @ifcs : \@ifcs;
 }
 
-=head2 getPXEMacAddress
+=head2 getPXEIface
 
 =cut
 
-sub getPXEMacAddress {
+sub getPXEIface {
     my $self = shift;
 
-    my $interfaces = $self->{_dbix}->ifaces;
-    while(my $ifc = $interfaces->next) {
-        if ($ifc->get_column('iface_pxe')) {
-            return $ifc->get_column('iface_mac_addr');
-        }
-    }
+    return Entity::Iface->find(hash => {
+               host_id   => $self->getAttr(name => 'host_id'),
+               iface_pxe => 1
+           });
 }
 
-sub removeInterface {
+sub removeIface {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['iface_id']);
 
     my $adm = Administrator->new();
-    # removeInterface method concerns an existing entity so we use his entity_id
-   my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeInterface');
+    # removeIface method concerns an existing entity so we use his entity_id
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeIface');
     if(not $granted) {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove an interface from this host");
     }
@@ -434,41 +500,28 @@ sub removeInterface {
     $ifc->delete();
 }
 
-sub becomeMasterNode{
+sub getAdminIp {
     my $self = shift;
+    my %args = @_;
 
-    my $row = $self->{_dbix}->node;
-    if(not defined $row) {
-        $errmsg = "Entity::Host->becomeMasterNode :Host " . $self->getAttr(name => "entity_id") . " is not a node!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::DB(error => $errmsg);
+    # Can we make it smarter ?
+    for my $iface (@{$self->getIfaces}) {
+        my $interface_id;
+        if ($interface_id = $iface->isAssociated) {
+            # TODO: my $interface = $iface->getRelated(name => 'interface');
+            my $interface = Entity::Interface->get(id => $iface->getAttr(name => 'interface_id'));
+            if ($interface->getRole->getAttr(name => 'interface_role_name') eq 'admin') {
+                return $iface->getIPAddr;
+            }
+        }
     }
-    $row->update({master_node => 1});
-}
-
-=head2 Entity::Host->stopToBeNode (%args)
-
-    Class : Public
-
-    Desc : Remove a node instance for a dedicated host.
-
-    args:
-        cluster_id : Int : Cluster identifier
-
-=cut
-
-sub stopToBeNode{
-    my $self = shift;
-
-    my $row = $self->{_dbix}->node;
-    $log->debug("node <" . $self->getAttr(name => "entity_id") .  "> stop to be node");
-    if(not defined $row) {
-        $errmsg = "Entity::Host->stopToBeNode : node representing host " .
-                   $self->getAttr(name => "entity_id") . " not found!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::DB(error => $errmsg);
+    if (defined $args{throw}) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "Host <" . $self->getAttr(name => 'entity_id') .
+                           "> Could not find any iface associate to a admin interface."
+              );
     }
-    $row->delete;
+    return '';
 }
 
 =head2 getHosts
@@ -628,66 +681,6 @@ sub toString {
     my $self = shift;
 
     return 'Entity::Host <' . $self->getAttr(name => "entity_id") .'>';
-}
-
-sub getInternalIP {
-    my $self = shift;
-    my $adm = Administrator->new();
-
-    # For instance, return the first ip of the first iface found.
-    my $iface = $self->{_dbix}->ifaces->single();
-    if (defined $iface) {
-        my $ip = $iface->ips->single();
-        if (defined $ip) {
-            # TODO: Do not use ipv4_internal table, so do not use the NetworkManager any more ?
-            my $ipv4_id = $adm->{manager}->{network}->getInternalIPId(
-                              ipv4_internal_address => $ip->get_column('ip_addr')
-                          );
-            return $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $ipv4_id);
-        }
-    }
-    return {};
-}
-
-sub setInternalIP {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['ipv4_address','ipv4_mask']);
-
-    # For instance, add an IP to the frist iface found.
-    my $iface = $self->{_dbix}->ifaces->single();
-    if (defined $iface) {
-        # TODO: Do not use ipv4_internal table, so do not use the NetworkManager any more ?
-        my $adm = Administrator->new();
-        my $net_id = $adm->{manager}->{network}->newInternalIP(%args);
-
-        $iface->ips->create({ ip_addr => $args{ipv4_address} });
-
-        return $net_id;
-    }
-    throw Kanopya::Exception::DB(
-              error => "Not iface defined for Host <" . $self->getAttr(name => 'entity_id') . ">."
-          );
-}
-
-sub removeInternalIP {
-    my $self = shift;
-    my $adm = Administrator->new();
-
-    # For instance, remove all ip related to this host.
-    my $ifaces = $self->{_dbix}->ifaces;
-    while(my $iface = $ifaces->next) {
-        my $ips = $iface->ips;
-        while(my $ip = $ips->next) {
-            # TODO: Do not use ipv4_internal table, so do not use the NetworkManager any more ?
-            my $ipv4_id = $adm->{manager}->{network}->getInternalIPId(
-                              ipv4_internal_address => $ip->get_column('ip_addr')
-                          );
-            $adm->{manager}->{network}->delInternalIP(ipv4_id => $ipv4_id);
-            $ip->delete();
-        }
-    }
 }
 
 sub getClusterId {
