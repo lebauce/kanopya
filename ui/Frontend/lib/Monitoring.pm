@@ -2343,7 +2343,7 @@ sub _computeNodemetricCombination () {
         if (scalar(@nodes_values_to_sort) == 0) {
             $error = "no value could be retrieved for this metric";
             $log->error($error);
-            $rep{'error'};
+            $rep{'error'} = $error;
             return \%rep;
         }
         #we now sort this array
@@ -2406,7 +2406,7 @@ sub _computeClustermetricCombination () {
         if ($res_number == $undef_count) {
             $error = 'all values retrieved for the selected time windows were undefined';
             $log->error($error);
-            $rep{'error'};
+            $rep{'error'} = $error;
             return \%rep;
         }
 
