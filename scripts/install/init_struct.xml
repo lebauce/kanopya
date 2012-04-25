@@ -93,8 +93,23 @@
        is_searchable="0"
        search_command=""/>
     <internal_net_mask
-       question="which mask is associated to this network"
+       question="Which mask is associated to this network"
        default="255.255.255.0"
+       is_searchable="0"
+       search_command=""/>
+    <internal_net_pool_range
+       question="How many ip address to use in this network"
+       default="256"
+       is_searchable="0"
+       search_command=""/>
+    <internal_net_pool_first
+       question="Which is the first ip address to use in this network"
+       default="10.0.0.1"
+       is_searchable="0"
+       search_command=""/>
+    <internal_net_pool_gateway
+       question="Which is the address of the gateway to use in this pool"
+       default="0.0.0.0"
        is_searchable="0"
        search_command=""/>
     <dmz_net_add

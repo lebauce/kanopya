@@ -75,11 +75,12 @@ createUser();
 ###############
 #Network setup#
 ###############
-print "calculating the first host address available for this network...";
+#print "calculating the first host address available for this network...";
+#my $internal_ip_add = NetAddr::IP->new($answers->{internal_net_add}, $answers->{internal_net_mask});
+#my @c               = split("/",$internal_ip_add->first);
+#$internal_ip_add    = $c[0];
 
-my $internal_ip_add = NetAddr::IP->new($answers->{internal_net_add}, $answers->{internal_net_mask});
-my @c               = split("/",$internal_ip_add->first);
-$internal_ip_add    = $c[0];
+my $internal_ip_add = $answers->{internal_net_pool_first};
 
 print "done (first host address is $internal_ip_add)\n";
 print "setting up $answers->{internal_net_interface} ...";
@@ -197,8 +198,10 @@ my %datas = (
     kanopya_vg_size          => $kanopya_vg_size,
     kanopya_vg_free_space    => $kanopya_vg_free_space,
     kanopya_pvs              => \@kanopya_pvs,
-    ipv4_internal_ip         => $internal_ip_add,
-    ipv4_internal_netmask    => $answers->{internal_net_mask},
+    poolip_addr              => $internal_ip_add,
+    poolip_netmask           => $answers->{internal_net_mask},
+    poolip_mask              => $answers->{internal_net_pool_range},
+    poolip_gateway           => $answers->{internal_net_pool_gateway},
     ipv4_internal_network_ip => $answers->{internal_net_add},
     admin_domainname         => $answers->{kanopya_server_domain_name},
     mb_hw_address            => $internal_net_interface_mac_add,
