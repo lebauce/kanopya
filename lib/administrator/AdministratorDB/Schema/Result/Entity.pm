@@ -239,6 +239,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 iface
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Iface>
+
+=cut
+
+__PACKAGE__->might_have(
+  "iface",
+  "AdministratorDB::Schema::Result::Iface",
+  { "foreign.iface_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 infrastructure
 
 Type: might_have
@@ -266,6 +281,21 @@ __PACKAGE__->has_many(
   "ingroups",
   "AdministratorDB::Schema::Result::Ingroup",
   { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 interface
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Interface>
+
+=cut
+
+__PACKAGE__->might_have(
+  "interface",
+  "AdministratorDB::Schema::Result::Interface",
+  { "foreign.interface_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -329,21 +359,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 network
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Network>
-
-=cut
-
-__PACKAGE__->might_have(
-  "network",
-  "AdministratorDB::Schema::Result::Network",
-  { "foreign.network_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 netapp_aggregate
 
 Type: might_have
@@ -358,7 +373,6 @@ __PACKAGE__->might_have(
   { "foreign.aggregate_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
-
 
 =head2 network
 
@@ -511,8 +525,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-18 17:24:34
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BjkYSIrEdIPKc7vKL4IgmA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-19 15:36:22
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Y4ljDKG10e99GRZe1gsyHw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

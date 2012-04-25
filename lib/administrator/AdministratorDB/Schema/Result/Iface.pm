@@ -23,7 +23,7 @@ __PACKAGE__->table("iface");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 iface_name
@@ -51,6 +51,13 @@ __PACKAGE__->table("iface");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 interface_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -58,7 +65,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "iface_name",
@@ -74,12 +81,34 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "interface_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 __PACKAGE__->set_primary_key("iface_id");
 __PACKAGE__->add_unique_constraint("iface_name", ["iface_name", "host_id"]);
 __PACKAGE__->add_unique_constraint("iface_mac_addr", ["iface_mac_addr"]);
 
 =head1 RELATIONS
+
+=head2 iface
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "iface",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "iface_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 =head2 host
 
@@ -94,6 +123,26 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::Host",
   { host_id => "host_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 interface
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Interface>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "interface",
+  "AdministratorDB::Schema::Result::Interface",
+  { interface_id => "interface_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 ips
@@ -112,9 +161,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-14 18:09:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wrvgk0iPLsJ0QBTWwXs0lg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-24 16:15:57
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9ew0PifUSL1e3+JSSm3MWA
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { "foreign.entity_id" => "self.iface_id" },
+  { cascade_copy => 0, cascade_delete => 1 }
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

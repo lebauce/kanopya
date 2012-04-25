@@ -86,7 +86,9 @@ INSERT INTO `class_type` VALUES
 (70, 'ActionTypeParameter'),
 (71, 'Entity::Network'),
 (72, 'Entity::InterfaceRole'),
-(73, 'Entity::NetappAggregate');
+(73, 'Entity::Interface'),
+(74, 'Entity::Iface'),
+(75, 'Entity::NetappAggregate');
 
 --
 -- entity comment list
@@ -417,6 +419,7 @@ SET @eid := @eid +1;
 --
 INSERT INTO `entity` VALUES (@eid, 72, 2);
 INSERT INTO `interface_role` VALUES (@eid, 'admin');
+SET @adminrole = @eid;
 SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 72, 3);
@@ -450,6 +453,27 @@ INSERT INTO `inside` VALUES (@admin_cluster);
 INSERT INTO `cluster` VALUES (@admin_cluster,'Kanopya','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'',0,'[% admin_domainname %]', '127.0.0.1', '127.0.0.1', 'up:[% tmstp %]', NULL,'test_', 1, @adminuserid, @kernel, NULL, @physical_hoster, NULL, NULL);
 
 --
+-- kanopya cluster interface
+--
+INSERT INTO `entity` VALUES (@eid, 73, NULL);
+INSERT INTO `interface` VALUES (@eid, @adminrole, @admin_cluster);
+SET @kanopya_cluster_interface = @eid;
+SET @eid := @eid +1;
+
+--
+-- admin network
+--
+INSERT INTO `entity` VALUES (@eid, 71, NULL);
+INSERT INTO `network` VALUES (@eid, 'admin');
+SET @admin_network = @eid;
+SET @eid := @eid +1;
+
+--
+-- link admin network to kanopya cluster interface
+--
+INSERT INTO `interface_network` VALUES (@kanopya_cluster_interface, @admin_network);
+
+--
 -- admin host
 --
 
@@ -458,18 +482,33 @@ INSERT INTO `host` VALUES (@eid, @physical_hoster, NULL, NULL,@kernel,'',NULL, '
 SET @admin_host := @eid;
 SET @eid := @eid +1;
 
+--
+-- admin poolip 
+--
+INSERT INTO `entity` VALUES (@eid, 49, NULL);
+INSERT INTO `poolip` VALUES (@eid, 'kanopya_admin', '[% poolip_addr %]', '[% poolip_mask %]', '[% poolip_netmask %]', '[% poolip_gateway %]');
+SET @poolid = @eid;
+SET @eid := @eid +1;
+
+--
+-- link admin network to admin poolip
+--
+INSERT INTO `network_poolip` VALUES (@admin_network, @poolid);
 
 --
 -- admin iface 
 --
-INSERT INTO `iface` VALUES (1,'eth0','[% mb_hw_address %]',0,@admin_host);
+INSERT INTO `entity` VALUES (@eid, 74, NULL);
+INSERT INTO `iface` VALUES (@eid,'eth0','[% mb_hw_address %]',0,@admin_host, @kanopya_cluster_interface);
+SET @admin_iface := @eid; 
+SET @eid := @eid +1;
 
 --
 -- internal ip for admin node
 --
 
-INSERT INTO `ipv4_internal` VALUES (1,'[% ipv4_internal_ip %]','[% ipv4_internal_netmask %]', NULL);
-INSERT INTO `ip` VALUES (1,'[% ipv4_internal_ip %]', NULL, 1);
+INSERT INTO `ipv4_internal` VALUES (1,'[% poolip_addr %]','[% poolip_netmask %]', NULL);
+INSERT INTO `ip` VALUES (1,'[% poolip_addr %]', @poolid, @admin_iface);
 
 --
 -- admin node
@@ -529,7 +568,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 24, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,5,NULL,2);
 INSERT INTO `dhcpd3` VALUES (@eid,'hedera-technology.com',NULL,'node001');
-INSERT INTO `dhcpd3_subnet` VALUES (1,@eid,'[% ipv4_internal_network_ip %]','[% ipv4_internal_netmask %]');
+INSERT INTO `dhcpd3_subnet` VALUES (1,@eid,'[% ipv4_internal_network_ip %]','[% poolip_netmask %]');
 SET @eid := @eid +1;
 
 --
@@ -547,7 +586,7 @@ SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 37, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,7,NULL,3);
-INSERT INTO `snmpd5` VALUES(@eid, '[% ipv4_internal_ip %]', '-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
+INSERT INTO `snmpd5` VALUES(@eid, '[% poolip_addr %]', '-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
 SET @eid := @eid +1;
 
 --
