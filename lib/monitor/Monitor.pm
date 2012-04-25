@@ -148,7 +148,7 @@ sub retrieveHostsByCluster {
         my %mb_info;
         foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
             my $mb_name = $mb->getAttr( name => "host_hostname" );
-            my $mb_ip = $mb->getInternalIP()->{ipv4_internal_address};
+            my $mb_ip = $mb->getAdminIp;
             my $mb_state = $mb->getAttr( name => "host_state" );
 
             $mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, components => \@components_name };

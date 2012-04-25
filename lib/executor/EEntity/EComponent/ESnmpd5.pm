@@ -34,7 +34,7 @@ sub addNode {
 
     # generation of /etc/default/snmpd 
     my $data = {};
-    $data->{node_ip_address} = $args{host}->getInternalIP()->{ipv4_internal_address};
+    $data->{node_ip_address} = $args{host}->getAdminIp;
     $data->{options} = $conf->{snmpd_options};       
     
     $self->generateFile(econtext     => $args{econtext},

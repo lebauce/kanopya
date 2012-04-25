@@ -282,7 +282,7 @@ sub updateClusterData{
     # Group indicators values by set
     my %sets;
     foreach my $mb (@in_node_mb) {
-        my $host_ip = $mb->getInternalIP()->{ipv4_internal_address};
+        my $host_ip = $mb->getAdminIp;
         my @sets_name = keys %{ $hosts_values->{ $host_ip } };
         foreach my $set_name ( @sets_name ) {    
             push @{$sets{$set_name}}, $hosts_values->{ $host_ip }{$set_name};
@@ -317,7 +317,7 @@ sub updateClusterData{
     }
     
     # log cluster nodes state
-    my @state_log = map {     $_->getInternalIP()->{ipv4_internal_address} .
+    my @state_log = map {     $_->getAdminIp .
                             " (" . $_->getAttr( name => "host_state" ) .
                             ", node:" .  $_->getNodeState() . ")"
                         } @mbs;
@@ -368,7 +368,7 @@ sub update {
             # Collect data for nodes in the cluster
             foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
                 if ( $mb->getNodeState() =~ '^in' ) {
-                    my $host_ip = $mb->getInternalIP()->{ipv4_internal_address};
+                    my $host_ip = $mb->getAdminIp;
                     my %params = (
                         host_ip => $host_ip,
                         host_state => $mb->getAttr( name => "host_state" ),

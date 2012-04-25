@@ -153,7 +153,7 @@ sub isUp {
     }
 #    my $scanner = new Nmap::Scanner;
 #    $scanner->max_rtt_timeout(200);
-    my $ip = $args{host}->getInternalIP()->{ipv4_internal_address};
+    my $ip = $args{host}->getAdminIp;
 #    $scanner->add_target($ip);
 #        $scanner->fast_scan();
 

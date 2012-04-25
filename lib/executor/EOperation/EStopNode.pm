@@ -86,7 +86,7 @@ sub prepare {
     $log->debug("Get econtext for executor with ref ". ref($self->{executor}->{econtext}));
     # Get node context
     $self->{node_econtext} = EFactory::newEContext(ip_source      => $self->{executor}->{econtext}->getLocalIp,
-                                                   ip_destination => $self->{_objs}->{host}->getInternalIP()->{ipv4_internal_address});
+                                                   ip_destination => $self->{_objs}->{host}->getAdminIp);
     $log->debug("Get econtext for host with ref ". ref($self->{node_econtext}));
 
 }
