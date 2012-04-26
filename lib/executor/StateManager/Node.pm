@@ -80,7 +80,7 @@ sub checkNodeUp {
     my $node_available = 1;
     my $host_econtext;
 
-    my $node_ip = $args{host}->getInternalIP()->{ipv4_internal_address};
+    my $node_ip = $args{host}->getAdminIp;
     if (!$node_ip) {
         $errmsg = "Node without IP!";    
         $log->error($errmsg);
@@ -119,7 +119,7 @@ sub nodeBroken{
        
     $args{host}->setNodeState(state => 'broken');
     logNodeStateChange(
-        ip_address => $args{host}->getInternalIP()->{ipv4_internal_address},
+        ip_address => $args{host}->getAdminIp,
         newstatus => 'broken',
         level => 'warning'        
     );
@@ -131,7 +131,7 @@ sub nodeRepaired{
     
     $args{host}->setNodeState(state => $args{host}->getPrevNodeState());
     logNodeStateChange(
-        ip_address => $args{host}->getInternalIP()->{ipv4_internal_address},
+        ip_address => $args{host}->getAdminIp,
         newstatus => 'in',
         level => 'info'        
     );
@@ -150,7 +150,7 @@ sub nodeOut{
                    type     => 'PostStopNode',
                    params   => \%params);
 #    logNodeStateChange(
-#        ip_address => $args{host}->getInternalIP()->{ipv4_internal_address},
+#        ip_address => $args{host}->getAdminIp,
 #        newstatus => 'BAH LA JE SAIS PAS QUOI METTRE...',
 #        level => 'info'        
 #    );
@@ -161,7 +161,7 @@ sub nodeIn {
     General::checkParams(args => \%args, required => ['host']);
     $args{host}->setNodeState(state => "in");
     logNodeStateChange(
-        ip_address => $args{host}->getInternalIP()->{ipv4_internal_address},
+        ip_address => $args{host}->getAdminIp,
         newstatus => 'in',
         level => 'info'        
     );

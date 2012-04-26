@@ -240,17 +240,14 @@ sub createVirtualHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
-
-    my $adm =  Administrator->new();
-    my $new_mac_address = $adm->{manager}->{network}->generateMacAddress();
+    General::checkParams(args => \%args, required => [ 'ram', 'core', 'ifaces' ]);
 
     # Use the first kernel found...
     my $kernel = Entity::Kernel->find(hash => {});
 
     my $vm = Entity::Host->new(
                  host_manager_id    => $self->getAttr(name => 'entity_id'),
-                 host_serial_number => "Virtual Host with mac $new_mac_address",
+                 host_serial_number => "Virtual Host managed by component " . $self->getAttr(name => 'entity_id'),
                  kernel_id          => $kernel->getAttr(name => 'entity_id'),
                  host_ram           => $args{ram},
                  host_core          => $args{core},
@@ -259,19 +256,15 @@ sub createVirtualHost {
 
     $vm->save();
     $vm->{_dbix}->discard_changes();
-    # TODO: NETWORK REVIEW
 
-    $vm->addIface(
-        iface_name     => 'eth0',
-        iface_mac_addr => $new_mac_address,
-        iface_pxe      => 0
-    );
-
-    $vm->addIface(
-        iface_name     => 'eth1',
-        iface_mac_addr => $adm->{manager}->{network}->generateMacAddress(),
-        iface_pxe      => 0
-    );
+    my $adm = Administrator->new();
+    foreach (1 .. $args{ifaces}) {
+        $vm->addIface(
+            iface_name     => 'eth' . $_,
+            iface_mac_addr => $adm->{manager}->{network}->generateMacAddress(),
+            iface_pxe      => 0,
+        );
+    }
 
     $log->debug("return host with <" . $vm->getAttr(name => "host_id") . ">");
     return $vm;

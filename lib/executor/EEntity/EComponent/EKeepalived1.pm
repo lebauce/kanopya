@@ -69,7 +69,7 @@ sub addNode {
                 $log->debug("adding realserver definition in database");
                  my $rsid = $keepalived->addRealserver(
                     virtualserver_id => $vsid,
-                    realserver_ip => $args{host}->getInternalIP()->{ipv4_internal_address},
+                    realserver_ip => $args{host}->getAdminIp,
                     realserver_port => $port,
                     realserver_checkport => $port,
                     realserver_checktimeout => 15,
@@ -112,7 +112,7 @@ sub addNode {
         foreach my $vs (@$virtualservers) {
             my $rsid = $keepalived->addRealserver(
                 virtualserver_id => $vs->{virtualserver_id},
-                realserver_ip => $args{host}->getInternalIP()->{ipv4_internal_address},
+                realserver_ip => $args{host}->getAdminIp,
                 realserver_port => $vs->{virtualserver_port},
                 realserver_checkport => $vs->{virtualserver_port},
                 realserver_checktimeout => 15,
@@ -144,7 +144,7 @@ sub stopNode {
     
     my $keepalived = $self->_getEntity();
     my $masternodeip = $args{cluster}->getMasterNodeIp();
-    if($masternodeip eq $args{host}->getInternalIP()->{ipv4_internal_address}) {
+    if($masternodeip eq $args{host}->getAdminIp) {
         # this host is the masternode so we remove virtualserver definitions
         $log->debug('No master node ip retreived, we are stopping the master node');
         my $virtualservers = $keepalived->getVirtualservers();
@@ -160,7 +160,7 @@ sub stopNode {
         my $virtualservers = $keepalived->getVirtualservers();
         
         foreach my $vs (@$virtualservers) {
-            my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->{virtualserver_id}, realserver_ip => $args{host}->getInternalIP()->{ipv4_internal_address});
+            my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->{virtualserver_id}, realserver_ip => $args{host}->getAdminIp);
             
             $keepalived->removeRealserver(
                 virtualserver_id => $vs->{virtualserver_id},
@@ -186,7 +186,7 @@ sub cleanNode {
 
     foreach my $vs (@$virtualservers) {
        my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->{virtualserver_id},
-                                                        realserver_ip => $args{host}->getInternalIP()->{ipv4_internal_address});
+                                                        realserver_ip => $args{host}->getAdminIp);
 
 
        $keepalived->removeRealserver(
@@ -196,7 +196,7 @@ sub cleanNode {
 
     # If masternode then delete virtual server entry in db
     my $masternodeip = $args{cluster}->getMasterNodeIp();
-    if($masternodeip eq $args{host}->getInternalIP()->{ipv4_internal_address}) {
+    if($masternodeip eq $args{host}->getAdminIp) {
         foreach my $vs (@$virtualservers) {
            $keepalived->removeVirtualserver(virtualserver_id => $vs->{virtualserver_id});
         }
@@ -284,7 +284,7 @@ sub postStartNode{
     
     my $keepalived = $self->_getEntity();
     my $masternodeip = $args{cluster}->getMasterNodeIp();
-    if($masternodeip eq $args{host}->getInternalIP()->{ipv4_internal_address}) {
+    if($masternodeip eq $args{host}->getAdminIp) {
         # this host is the masternode so we remove virtualserver definitions
         $log->debug('First Node is started, nothing to do');
         return;        

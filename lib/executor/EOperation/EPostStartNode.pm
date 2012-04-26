@@ -129,7 +129,7 @@ sub execute {
     my $etc_hosts_file = $self->generateHosts(nodes => $nodes);
     foreach my $i (keys %$nodes) {
 	    my $node = $nodes->{$i};
-        my $node_ip = $nodes->{$i}->getInternalIP()->{ipv4_internal_address};
+        my $node_ip = $nodes->{$i}->getAdminIp;
         my $node_econtext = EFactory::newEContext(ip_source      => $self->{executor}->{econtext}->getLocalIp,
                                                   ip_destination => $node_ip);
         $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
@@ -154,12 +154,12 @@ sub generateHosts {
     my @nodes_list = ();
     
     foreach my $i (keys %$nodes) {
-        my $tmp = {hostname     => $nodes->{$i}->getAttr(name => 'host_hostname'),
-                   domainname    => "hedera-technology.com",
-                   ip            => $nodes->{$i}->getInternalIP()->{ipv4_internal_address}};
+        my $tmp = { hostname   => $nodes->{$i}->getAttr(name => 'host_hostname'),
+                    domainname => "hedera-technology.com",
+                    ip         => $nodes->{$i}->getAdminIp };
         push @nodes_list, $tmp;
     }
-    my $vars = { hosts       => \@nodes_list };
+    my $vars = { hosts => \@nodes_list };
     $log->debug(Dumper($vars));
     $template->process($input, $vars, "/tmp/$tmpfile") || die $template->error(), "\n";
 

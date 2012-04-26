@@ -507,8 +507,6 @@ get '/clusters/:clusterid' => sub {
     } else {
         $kernel = 'no specific kernel';
     }
-
-    my $networks_list = $ecluster->getNetworkInterfaces();
     
     # state info
     my ($cluster_state, $timestamp) = split ':', $ecluster->getAttr('name' => 'cluster_state');
@@ -571,7 +569,7 @@ get '/clusters/:clusterid' => sub {
             my $tmp = {
                 host_id => $id,
                 host_hostname => $n->getAttr(name => 'host_hostname'),
-                host_internal_ip => $n->getInternalIP()->{ipv4_internal_address},
+                host_internal_ip => $n->getAdminIp(),
                 cluster_id => $cluster_id,
             };
             
@@ -603,6 +601,16 @@ get '/clusters/:clusterid' => sub {
         }
     }
 
+    # Network interfacfes list
+    my @networks_list = ();
+    my @interfaces    = $ecluster->getNetworkInterfaces();
+    for my $interface (@interfaces) {
+        push @networks_list, {
+            interface_id        => $interface->getAttr(name => 'entity_id'),
+            interface_role_name => $interface->getRole->getAttr(name => 'interface_role_name'),
+        }
+    }
+
     my $link_stop = ! $link_start;
 
     template 'clusters_details', {
@@ -618,30 +626,29 @@ get '/clusters/:clusterid' => sub {
         cluster_min_node     => $minnode,
         cluster_max_node     => $maxnode,
         cluster_basehostname => $cluster_basehostname,
-        user_id              => $user_id,
-        type                 => $minnode == $maxnode ? 'Static cluster' : 'Dynamic cluster',
-        masterimage_name     => $masterimage_name,
-        masterimage_id       => $masterimage_id,
-        kernel               => $kernel,
-        networks_list        => $networks_list,
-        nbnetworks           => scalar(@$networks_list),
-        active               => $active,
-        cluster_state        => $cluster_state,
-        state_time           => _timestamp_format( timestamp => $timestamp ),
-        nbnodesup            => $nbnodesup,
-        nbcomponents         => scalar(@$comps),
-        components_list      => $comps,
-        nodes_list           => $nodes,
-        link_delete          => $methods->{'remove'}->{'granted'} ? $link_delete : 0,
-        link_activate        => $methods->{'activate'}->{'granted'} ? $link_activate : 0,
-        link_deactivate      => $methods->{'deactivate'}->{'granted'} ? $link_deactivate : 0,
-        link_start           => $methods->{'start'}->{'granted'} && $link_start,
-        link_stop            => $methods->{'stop'}->{'granted'} && $link_stop,
-        link_edit            => $methods->{'update'}->{'granted'}, 
-        link_addnode         => $methods->{'addNode'}->{'granted'} ? $link_addnode : 0,
-        link_addcomponent    => $methods->{'addComponent'}->{'granted'} && ! $active,
-        can_setperm          => $methods->{'setperm'}->{'granted'},        
-                       
+        user_id             => $user_id,
+        type               => $minnode == $maxnode ? 'Static cluster' : 'Dynamic cluster',
+        masterimage_name   => $masterimage_name,
+        masterimage_id     => $masterimage_id,
+        kernel             => $kernel,
+        networks_list      => \@networks_list,
+        nbnetworks         => scalar(@networks_list),
+        active             => $active,
+        cluster_state      => $cluster_state,
+        state_time         => _timestamp_format( timestamp => $timestamp ),
+        nbnodesup          => $nbnodesup,
+        nbcomponents       => scalar(@$comps),
+        components_list    => $comps,
+        nodes_list         => $nodes,
+        link_delete        => $methods->{'remove'}->{'granted'} ? $link_delete : 0,
+        link_activate      => $methods->{'activate'}->{'granted'} ? $link_activate : 0,
+        link_deactivate    => $methods->{'deactivate'}->{'granted'} ? $link_deactivate : 0,
+        link_start         => $methods->{'start'}->{'granted'} && $link_start,
+        link_stop          => $methods->{'stop'}->{'granted'} && $link_stop,
+        link_edit          => $methods->{'update'}->{'granted'}, 
+        link_addnode       => $methods->{'addNode'}->{'granted'} ? $link_addnode : 0,
+        link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
+        can_setperm        => $methods->{'setperm'}->{'granted'},        
      }, { layout => 'main' };
 };
 
@@ -1075,10 +1082,19 @@ get '/clusters/:clusterid/network/add' => sub {
 post '/clusters/:clusterid/network/add' => sub {
     my $adm = Administrator->new;
     my %params = params;
-    $log->info(Dumper(%params));
+    #$log->info(Dumper(%params));
+
+    my @networks = ();
+    for my $key (keys %params) {
+        if ($key =~ /^vlan_id_/) {
+            push @networks, $params{$key};
+        }
+    }
+
     eval {
         my $cluster = Entity::ServiceProvider->get(id => param('clusterid'));
-        $cluster->addNetworkInterface(interface_role_id => param('interface_role_id'));
+        $cluster->addNetworkInterface(interface_role_id => param('interface_role_id'),
+                                      networks          => \@networks);
     };
     if($@) {
         my $exception = $@;

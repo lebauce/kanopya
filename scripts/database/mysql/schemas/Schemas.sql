@@ -48,7 +48,7 @@ CREATE TABLE `entity` (
   `entity_comment_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`entity_id`),
   KEY (`class_type_id`),
-  FOREIGN KEY (`entity_comment_id`) REFERENCES `entity_comment` (`entity_comment_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`entity_comment_id`) REFERENCES `entity_comment` (`entity_comment_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -456,16 +456,20 @@ CREATE TABLE `host` (
 -- Table structure for table `iface`
 -- 
 CREATE TABLE `iface` (
-  `iface_id` int(8) UNSIGNED NOT NULL AUTO_INCREMENT ,
+  `iface_id` int(8) UNSIGNED NOT NULL,
   `iface_name` char(32) NOT NULL ,
   `iface_mac_addr` char(18) NOT NULL ,
   `iface_pxe` int(10) UNSIGNED NOT NULL,
   `host_id` int(8) UNSIGNED NOT NULL,
+  `interface_id` int(8) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (`iface_id`),
+  FOREIGN KEY (`iface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`iface_mac_addr`),
   UNIQUE KEY (`iface_name`,`host_id`),
   KEY (`host_id`),
-  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`interface_id`),
+  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -662,7 +666,7 @@ CREATE TABLE `poolip` (
 CREATE TABLE `ip` (
   `ip_id`     int(8) unsigned AUTO_INCREMENT,
   `ip_addr`   char(15) NOT NULL,
-  `poolip_id` int(8) unsigned NULL DEFAULT NULL,
+  `poolip_id` int(8) unsigned NOT NULL,
   `iface_id`  int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`ip_id`),
   UNIQUE KEY (`ip_addr`, `poolip_id`),
@@ -709,10 +713,11 @@ CREATE TABLE `interface_role` (
 -- Table structure for table `interface`
 --
 CREATE TABLE `interface` (
-  `interface_id`        int(8) unsigned AUTO_INCREMENT,
+  `interface_id`        int(8) unsigned,
   `interface_role_id`   int(8) unsigned NOT NULL,
   `service_provider_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`interface_id`),
+  FOREIGN KEY (`interface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`interface_role_id`),
   FOREIGN KEY (`interface_role_id`) REFERENCES `interface_role` (`interface_role_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`service_provider_id`),
@@ -725,14 +730,11 @@ CREATE TABLE `interface` (
 CREATE TABLE `interface_network` (
   `interface_id` int(8) unsigned NOT NULL,
   `network_id`   int(8) unsigned NOT NULL,
-  `poolip_id`    int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`interface_id`, `network_id`),
   KEY (`interface_id`),
   FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`network_id`),
-  FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`poolip_id`),
-  FOREIGN KEY (`poolip_id`) REFERENCES `poolip` (`poolip_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

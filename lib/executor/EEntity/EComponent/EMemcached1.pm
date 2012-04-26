@@ -29,13 +29,12 @@ sub configureNode {
     my $conf = $self->_getEntity()->getConf();
 
     # Generation of memcached.conf
-    my $data = { 
-                connection_port => $conf->{memcached1_port},
-                listening_address => $args{host}->getInternalIP()->{ipv4_internal_address},
-                };
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/memcached",
-                         input_file => "memcached.conf.tt", output => "/memcached.conf", data => $data);
+    my $data = { connection_port => $conf->{memcached1_port},
+                 listening_address => $args{host}->getAdminIp };
+
+    $self->generateFile(econtext     => $args{econtext}, mount_point => $args{mount_point},
+                        template_dir => "/templates/components/memcached",
+                        input_file   => "memcached.conf.tt", output => "/memcached.conf", data => $data);
 
 }
 
@@ -52,14 +51,14 @@ sub addNode {
         # no masternode defined, this host becomes the masternode
             
         $self->configureNode(
-               econtext => $args{econtext},
+            econtext    => $args{econtext},
             mount_point => $args{mount_point}.'/etc',
-                   host => $args{host}
+            host        => $args{host}
         );
         
         $self->addInitScripts(    
             mountpoint => $args{mount_point}, 
-              econtext => $args{econtext}, 
+            econtext   => $args{econtext},
             scriptname => 'memcached', 
         );
     }

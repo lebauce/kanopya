@@ -47,7 +47,7 @@ sub startHost {
             $log->error($errmsg);
             throw Kanopya::Exception::Execution(error => $errmsg);
         }
-        my $command = "/usr/sbin/etherwake " . $host->getPXEMacAddress;
+        my $command = "/usr/sbin/etherwake " . $host->getPXEIface->getAttr(name => 'iface_mac_addr');
         my $result = $args{econtext}->execute(command => $command);
     }
     else {

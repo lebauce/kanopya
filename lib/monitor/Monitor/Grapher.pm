@@ -632,7 +632,7 @@ sub graphFromConf {
             my $graphs_settings = $self->{_admin}->{manager}{monitor}->getClusterGraphSettings( cluster_id => $cluster_id );
             
             #my @nodes_ip = map { $_->{ip} } values %$cluster_nodes;
-            my @nodes_ip = map { $_->getInternalIP()->{ipv4_internal_address} } values %{ $cluster->getHosts( ) };
+            my @nodes_ip = map { $_->getAdminIp } values %{ $cluster->getHosts( ) };
             
             # Graph Node Count
             foreach my $laps (@time_laps) {

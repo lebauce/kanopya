@@ -5,8 +5,10 @@ package BaseDB;
 use Data::Dumper;
 use Administrator;
 use General;
+
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
@@ -306,7 +308,7 @@ sub get {
         $class   = $dbix->class_type->get_column('class_type');
     };
     if ($@) {
-        $log->error("Unable to retreive concrete class name:\n $@");
+        $log->error("Unable to retreive concrete class name, using $class.");
     }
     my $table = _buildClassNameFromString($class);
 

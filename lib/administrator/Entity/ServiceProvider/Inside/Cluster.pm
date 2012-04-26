@@ -549,7 +549,7 @@ sub getMasterNodeIp {
     my $master = $self->getMasterNode();
 
     if ($master) {
-        my $node_ip = $master->getInternalIP->{ipv4_internal_address};
+        my $node_ip = $master->getAdminIp;
 
         $log->debug("Master node found and its ip is $node_ip");
         return $node_ip;

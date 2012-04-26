@@ -32,7 +32,9 @@ Entity::Poolip
 package Entity::Poolip;
 use base "Entity";
 
+use Ip;
 use NetAddr::IP;
+use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -64,6 +66,61 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub popIp {
+    my $self = shift;
+    my %args = @_;
+
+    my $network = NetAddr::IP->new(
+                      $self->getAttr(name => 'poolip_addr'),
+                      $self->getAttr(name => 'poolip_netmask'),
+                  );
+
+    # Firstly iterate until the first ip of the range.
+    # TODO: make it smarter...
+    my $ipaddr;
+    my $index = 0;
+    while ($ipaddr = $network->nth($index)) {
+        $index++;
+
+        # If current ip is lower than the starting ip, continue
+        if ($ipaddr < $network) {
+            next;
+        }
+        # If current ip index is higher than poolip size, exit loop
+        elsif (($ipaddr - $network + 1 ) > $self->getAttr(name => 'poolip_mask')) {
+            last;
+        }
+
+        # Check if the current ip isn't already used
+        eval {
+            Ip->find(hash => { ip_addr   => $ipaddr->addr,
+                               poolip_id => $self->getAttr(name => 'entity_id') });
+        };
+        if ($@) {
+            # Create a new Ip instead.
+            $log->debug("New ip <" . $ipaddr->addr . "> from pool <" .
+                        $self->getAttr(name => 'poolip_name') . ">");
+
+            return Ip->new(ip_addr   => $ipaddr->addr,
+                           poolip_id => $self->getAttr(name => 'entity_id'));
+        }
+        next;
+    }
+    throw Kanopya::Exception::Internal::NotFound(
+              error => "No free ip in pool <" . $self->getAttr(name => 'poolip_name') . ">"
+          );
+}
+
+sub freeIp {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['ip']);
+
+    # Need other stuff ?
+    $args{ip}->delete();
+}
+
 sub getPoolip {
     my $class = shift;
     my %args = @_;
@@ -85,26 +142,12 @@ sub create {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    my $mask = $args{poolip_mask};
-    if($mask > 32) {
-        $errmsg = "Poolip->create : wrong value for mask!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    my $ip = new NetAddr::IP($args{poolip_addr});
-    if(not defined $addrip) {
-        $errmsg = "Poolip->create : wrong value for addrip!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
     my $poolip = Entity::Poolip->new(
-        poolip_name     => $args{poolip_name},
-        poolip_addr     => $args{poolip_addr},
-        poolip_mask     => $args{poolip_mask},
-        poolip_netmask  => $args{poolip_netmask},
-        poolip_gateway  => $args{poolip_gateway},
+        poolip_name    => $args{poolip_name},
+        poolip_addr    => $args{poolip_addr},
+        poolip_mask    => $args{poolip_mask},
+        poolip_netmask => $args{poolip_netmask},
+        poolip_gateway => $args{poolip_gateway},
     );
 }
 
@@ -118,4 +161,7 @@ sub toString {
     my $string = $self->{_dbix}->get_column('poolip_name'). " ". $self->{_dbix}->get_column('poolip_addr');
     return $string;
 }
+
+
+
 1;

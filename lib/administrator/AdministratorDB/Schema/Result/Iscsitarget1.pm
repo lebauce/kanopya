@@ -56,30 +56,15 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 iscsitarget1_targets
 
-Type: has_many
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-23 10:07:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XZucU0CkJT/oQDbkUO3MBg
 
-Related object: L<AdministratorDB::Schema::Result::Iscsitarget1Target>
-
-=cut
-
-__PACKAGE__->has_many(
-  "iscsitarget1_targets",
-  "AdministratorDB::Schema::Result::Iscsitarget1Target",
-  { "foreign.iscsitarget1_id" => "self.iscsitarget1_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 23:11:13
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YJ37EdndvBkuzR28C7Sa4A
-
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
     { "foreign.component_id" => "self.iscsitarget1_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+    { cascade_copy => 0, cascade_delete => 1 }
+);
+
 1;

@@ -111,7 +111,7 @@ sub checkUp {
     my $self = shift;
     my %args = @_;
 
-    my $ip = $self->{host}->getInternalIP()->{ipv4_internal_address};
+    my $ip = $self->{host}->getAdminIp;
     my $ping = Net::Ping->new();
     my $pingable = $ping->ping($ip);
     $ping->close();
@@ -149,8 +149,8 @@ sub generateUdevPersistentNetRules {
     
     for my $iface ($self->_getEntity()->getIfaces()) {
         my $tmp = {
-            mac_address   => lc($iface->{iface_mac_addr}),
-            net_interface => $iface->{iface_name}
+            mac_address   => lc($iface->getAttr(name => 'iface_mac_addr')),
+            net_interface => $iface->getAttr(name => 'iface_name')
         };
         push @interfaces, $tmp;
     }

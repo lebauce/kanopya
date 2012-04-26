@@ -132,7 +132,7 @@ sub execute {
             # Load Node Econtext to check its availability
             my $node_context = EFactory::newEContext(
                                    ip_source      => $self->{exec_cluster_ip},
-                                   ip_destination => $node->getInternalIP()->{ipv4_internal_address}
+                                   ip_destination => $node->getAdminIp
                                );
 
             # Halt Node
@@ -148,7 +148,7 @@ sub execute {
 
         eval {
             # Update Dhcp component conf
-            my $host_mac = $node->getPXEMacAddress;
+            my $host_mac = $node->getPXEIface->getAttr(name => 'iface_mac_addr');
             if ($host_mac) {
 	            my $hostid = $self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(
 	                             dhcpd3_subnet_id         => $subnet,
@@ -180,10 +180,6 @@ sub execute {
 
         $node->setAttr(name => "host_hostname", value => undef);
         $node->setAttr(name => "host_initiatorname", value => undef);
-
-        # Update Host internal ip
-        $node->removeInternalIP();
-        $node->setState(state => "down");
 
         # finaly save the host
         $node->save();
