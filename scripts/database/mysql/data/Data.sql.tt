@@ -87,7 +87,7 @@ INSERT INTO `class_type` VALUES
 (71, 'Entity::Network'),
 (72, 'Entity::InterfaceRole'),
 (73, 'Entity::NetappAggregate'),
-(74, 'Entity::Component::KanopyaCollector');
+(74, 'Entity::Component::Kanopyacollector1');
 
 --
 -- entity comment list
@@ -390,7 +390,7 @@ INSERT INTO `component_type` VALUES
 (14,'Opennebula','3','Cloudmanager'),
 (15,'Physicalhoster','0','Cloudmanager'),
 (16,'Fileimagemanager','0','Storage'),
-(17,'KanopyaCollector','1','DataCollector');
+(17,'Kanopyacollector','1','DataCollector');
 
 --
 -- connectors type list
