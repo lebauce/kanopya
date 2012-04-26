@@ -454,7 +454,7 @@ INSERT INTO `cluster` VALUES (@admin_cluster,'Kanopya','Main Cluster hosting Adm
 --
 
 INSERT INTO `entity` VALUES (@eid, 3, NULL);
-INSERT INTO `host` VALUES (@eid, @physical_hoster, NULL, NULL,@kernel,'',NULL, 'Admin host',1,'node1.[% admin_domainname %]','4294967296', '4','node001', 'up:[% tmstp %]',NULL);
+INSERT INTO `host` VALUES (@eid, @physical_hoster, NULL, NULL,@kernel,'',NULL, 'Admin host',1,'[% kanopya_initiator %]','4294967296', '4','node001', 'up:[% tmstp %]',NULL);
 SET @admin_host := @eid;
 SET @eid := @eid +1;
 

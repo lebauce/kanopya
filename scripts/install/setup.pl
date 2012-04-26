@@ -32,6 +32,7 @@ use Term::ReadKey;
 use Template;
 use NetAddr::IP;
 use XML::Simple;
+use Date::Simple (':all');
 
 die "You must be root to execute this scipts" if ( $< != 0 );
 
@@ -191,6 +192,16 @@ system('invoke-rc.d mysql start') if ( ! -e $mysqlpidfile );
 
 my ( $sysname, $nodename, $release, $version, $machine ) = POSIX::uname();
 
+my $date = today();
+my $year = $date->year;
+my $month = $date->month;
+
+if (length ($month) == 1) {
+    $month = '0' . $month;
+}
+
+my $kanopya_initiator = 'iqn.' . $year . '-' . $month . '.kanopya.master:' . time();
+
 ################We generate the Data.sql file and setup database
 my %datas = (
     kanopya_vg_name          => $answers->{vg},
@@ -201,16 +212,29 @@ my %datas = (
     ipv4_internal_netmask    => $answers->{internal_net_mask},
     ipv4_internal_network_ip => $answers->{internal_net_add},
     admin_domainname         => $answers->{kanopya_server_domain_name},
+    kanopya_initiator        => $kanopya_initiator,
     mb_hw_address            => $internal_net_interface_mac_add,
     admin_password           => $answers->{dbpassword1},
     admin_kernel             => $release,
     tmstp                    => time()
 );
+
 useTemplate(
     template => 'Data.sql.tt',
     datas    => \%datas,
     conf     => $conf_vars->{data_sql},
     include  => $conf_vars->{data_dir}
+);
+
+%datas = (
+    initiatorname => $kanopya_initiator
+);
+
+useTemplate(
+    template => "initiatorname.iscsi.tt",
+    datas    => \%datas,
+    conf     => "/etc/iscsi/initiatorname.iscsi",
+    include  => $conf_vars->{install_template_dir}
 );
 
 ###############Creation of database user
