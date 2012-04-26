@@ -70,9 +70,21 @@ __PACKAGE__->add_columns(
   },
 );
 
+__PACKAGE__->set_primary_key("kanopyacollector1_id");
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</kanopyacollector1_id>
+
+=back
+
+=cut
 
 __PACKAGE__->set_primary_key("kanopyacollector1_id");
 
+=head1 RELATIONS
 
 =head2 kanopyacollector1
 
