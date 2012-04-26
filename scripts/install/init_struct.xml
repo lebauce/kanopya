@@ -101,6 +101,7 @@
        question="How many ip address to use in this network"
        default="256"
        is_searchable="0"
+       pattern="^\d+$"
        search_command=""/>
     <internal_net_pool_first
        question="Which is the first ip address to use in this network"

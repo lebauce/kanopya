@@ -53,11 +53,13 @@ my %param_test = (
     internal_net_interface     => \&matchRegexp,
     internal_net_add           => \&checkIp,
     internal_net_mask          => \&checkIp,
+    internal_net_pool_range    => \&matchRegexp,
+    internal_net_pool_first    => \&checkIp,
+    internal_net_pool_gateway  => \&checkIp,
     dmz_net_add                => \&checkIp,
     dmz_net_mask               => \&checkIp,
     log_directory              => \&matchRegexp,
     vg                         => \&matchRegexp,
-
 );
 
 #Welcome message - accepting Licence is mandatory
