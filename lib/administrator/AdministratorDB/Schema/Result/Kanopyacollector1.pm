@@ -70,6 +70,18 @@ __PACKAGE__->add_columns(
   },
 );
 
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</kanopyacollector1_id>
+
+=back
+
+=cut
+
+__PACKAGE__->set_primary_key("kanopyacollector1_id");
+
 =head1 RELATIONS
 
 =head2 kanopyacollector1
@@ -88,8 +100,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07022 @ 2012-04-24 19:08:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:C9TGy65jgpHaUndlw+WfGQ
+# Created by DBIx::Class::Schema::Loader v0.07022 @ 2012-04-26 12:51:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NSR6VHs5eek4q6V1oVqvrQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
@@ -99,7 +111,6 @@ __PACKAGE__->belongs_to(
     { "foreign.component_id" => "self.kanopyacollector1_id" },
     { cascade_copy => 0, cascade_delete => 1 }
 );
-
 
 
 1;
