@@ -89,7 +89,7 @@ INSERT INTO `class_type` VALUES
 (73, 'Entity::Interface'),
 (74, 'Entity::Iface'),
 (75, 'Entity::NetappAggregate'),
-(76, 'Entity::Component::KanopyaCollector');
+(76, 'Entity::Component::Kanopyacollector1');
 
 --
 -- entity comment list
@@ -630,7 +630,7 @@ INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
 -- KanopyaCollector
 --
 
-INSERT INTO `entity` VALUES (@eid, 74, NULL);
+INSERT INTO `entity` VALUES (@eid, 76, NULL);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 17, NULL, NULL);
 INSERT INTO `kanopyacollector1` VALUES(@eid, 3600, 86400);
 SET @eid := @eid +1;
