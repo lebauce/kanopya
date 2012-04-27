@@ -287,13 +287,11 @@ post '/hosts/:hostid/addinterface' => sub {
     my $adm = Administrator->new;
     eval {
         my $host = Entity::Host->get(id => param('hostid'));
-        my $pxe = param('iface_pxe') eq 'checked' ? 1 : 0;
-        $host->addIface(
-                iface_name => param('iface_name'),
-            iface_mac_addr => param('iface_mac_addr'),
-                   host_id => param('hostid'),
-                 iface_pxe => 1
-        );
+        my $pxe  = param('iface_pxe') eq 'checked' ? 1 : 0;
+        $host->addIface(iface_name     => param('iface_name'),
+                        iface_mac_addr => param('iface_mac_addr'),
+                        host_id        => param('hostid'),
+                        iface_pxe      => $pxe);
     };
     if($@) {
         my $exception = $@;
