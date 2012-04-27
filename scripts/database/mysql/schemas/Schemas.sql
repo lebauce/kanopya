@@ -100,6 +100,7 @@ CREATE TABLE `cluster` (
   `host_manager_id` int(8) unsigned NOT NULL,
   `disk_manager_id` int(8) unsigned DEFAULT NULL,
   `export_manager_id` int(8) unsigned DEFAULT NULL,
+  `collector_manager_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`cluster_id`),
   UNIQUE KEY (`cluster_name`),
   FOREIGN KEY (`cluster_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
