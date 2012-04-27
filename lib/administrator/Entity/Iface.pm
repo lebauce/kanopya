@@ -117,7 +117,7 @@ sub assignIp {
     if ($@) {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "Iface " . $self->getAttr(name => 'iface_name') .
-                           " not associated to an cluster interface.\n$@"
+                           " not associated to a cluster interface."
               );
     }
     $interface->assignIpToIface(iface => $self);

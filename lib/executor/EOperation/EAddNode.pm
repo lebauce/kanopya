@@ -136,6 +136,18 @@ sub prepare {
     $self->{params} = $params;
 }
 
+sub _cancel {
+    my $self = shift;
+
+    my $params = $self->_getOperation()->getParams();
+
+    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
+    my $hosts = $cluster->getHosts();
+    if (! scalar keys %$hosts) {
+        $cluster->setState(state => "down");
+    }
+}
+
 sub execute {
     my $self = shift;
     $self->SUPER::execute();

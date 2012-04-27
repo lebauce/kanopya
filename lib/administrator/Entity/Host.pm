@@ -403,10 +403,25 @@ sub associateInterfaces {
 
     my @ifaces = $self->getIfaces;
 
-    my $iface_index = 0;
     foreach my $interface (@{$args{cluster}->getNetworkInterfaces}) {
-        $ifaces[$iface_index]->associateInterface(interface => $interface);
-        $iface_index++;
+        my $iface_index = 0;
+        for my $iface (@ifaces) {
+            eval {
+                $iface->associateInterface(interface => $interface);
+                last;
+            };
+            if ($@) {
+                $log->debug($@);
+            }
+            $iface_index++;
+        }
+        if ($iface_index >= scalar(@ifaces)) {
+            throw Kanopya::Exception::Internal(
+                      error => "Unable to associate interface <" . $interface->getAttr(name => 'entity_id') .
+                               "> to any iface of the host <" . $self->getAttr(name => 'entity_id') . ">"
+                  );
+        }
+        delete $ifaces[$iface_index];
     }
 }
 
@@ -477,10 +492,21 @@ sub getIfaces {
 sub getPXEIface {
     my $self = shift;
 
-    return Entity::Iface->find(hash => {
-               host_id   => $self->getAttr(name => 'host_id'),
-               iface_pxe => 1
-           });
+    my @pxe_ifaces = Entity::Iface->search(hash => {
+                         host_id   => $self->getAttr(name => 'host_id'),
+                         iface_pxe => 1,
+                     });
+
+    for my $iface (@pxe_ifaces) {
+        # An iface not associated to any cluster interface
+        # will not be assigned to an ip.
+        if ($iface->getAttr(name => 'interface_id')) {
+            return $iface;
+        }
+    }
+    throw Kanopya::Exception::Internal::NotFound(
+              error => "No pxe iface associated to a cluster interface found."
+          );
 }
 
 sub removeIface {

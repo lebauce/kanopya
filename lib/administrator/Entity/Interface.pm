@@ -20,6 +20,7 @@ use base "Entity";
 
 use Kanopya::Exceptions;
 
+use Entity::Iface;
 use Entity::Poolip;
 use Entity::Network;
 use Entity::InterfaceRole;
@@ -74,6 +75,7 @@ sub assignIpToIface {
         while (my $interface_network = $interface_networks->next){
             my $net_poolips = $interface_network->network->network_poolips;
 
+            # Try all asscoiated poolips
             while (my $net_poolip = $net_poolips->next){
                 my $poolip = Entity::Poolip->get(id => $net_poolip->poolip->get_column('poolip_id'));
 
@@ -93,6 +95,7 @@ sub assignIpToIface {
                 last;
             }
         }
+        # No free ip found
         if (not $assigned) {
             throw Kanopya::Exception::Internal::NotFound(
                       error => "Unable to assign ip to iface <" .
@@ -100,6 +103,16 @@ sub assignIpToIface {
                   );
         }
     }
+}
+
+sub getAssociatedIface {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return Entity::Iface->find(hash => { interface_id => $self->getAttr(name => 'entity_id'),
+                                         host_id      => $args{host}->getAttr(name => 'entity_id') });
 }
 
 1;
