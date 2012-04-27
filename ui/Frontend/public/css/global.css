@@ -209,3 +209,12 @@ a .action .disabled {
   cursor: default;
   color: #BBBBBB;
 }
+
+// Display Comment Editor
+updateComment  {
+  position: absolute;
+  background-color: #E0E0E0;
+  padding: 5px;
+  //border: dashed 1px #005040;
+  display: none;
+}

@@ -27,6 +27,9 @@ use UnifiedComputingSystem;
 use Connectors;
 use Netapp;
 
+# Entity is used for setComment method usage : 
+use Entity;
+
 use Log::Log4perl;
 
 our $VERSION = '0.1';
@@ -83,6 +86,19 @@ get '/' => sub {
         redirect '/login';
     }
 };
+
+# This route is used to set comment on entity :
+post '/entity/set_comment' => sub {
+    my $entityid = param('entityid');
+    my $entity_comment_input = param('entity_comment_input');
+    
+    my $entity = Entity->get(id => $entityid);
+    $entity->setComment(comment => $entity_comment_input);
+
+    my $referer = request->referer;
+    redirect $referer;
+};
+# END OF : 
 
 get '/permission_denied' => sub {
     template 'permission_denied';

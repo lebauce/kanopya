@@ -43,6 +43,10 @@
     <tr><td class="label">Password :</td><td>**********</td></tr>
     <tr><td class="label">Data Provider :</td><td><% ucs_dataprovider %></td></tr>
     <tr><td class="label">OU :</td><td><% ucs_ou %></td></tr>
+    <tr><td class="label">Comment :</td><td><% entity_comment %><% INCLUDE edit_comment.tt 
+        value = volume.entity_comment
+    	divid = ucs_id
+    %></td></tr>
     </tr>
 </table>
 

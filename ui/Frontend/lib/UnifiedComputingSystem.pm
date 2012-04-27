@@ -113,7 +113,8 @@ get '/ucs/:ucsid' => sub {
         ucs_state           => $eeucs->{state},
         ucs_serviceprofiles => \@sps,
         ucs_templates       => \@templates,
-        ucs_blades          => \@blades
+        ucs_blades          => \@blades,
+        entity_comment      => $eucs->getComment(),
     };
 };
 

@@ -1,4 +1,7 @@
 <% js_head.push('components.js') %>
+
+</script>
+
 <h2><% serviceprovider_tostring %> - Volumes Management</h2>
 <hr />
 <form class="elem_root" name="conf">
@@ -15,7 +18,10 @@
             <td style="min-width: 100px; text-align: center"><% aggr.aggregate_state %></td>
             <td style="min-width: 100px; text-align: right"><% aggr.aggregate_totalsize %></td>
             <td style="min-width: 100px; text-align: right"><% aggr.aggregate_sizeused %></td>
-            <td style="min-width: 100px; text-align: right"><% aggr.entity_comment %></td>
+            <td style="min-width: 100px; text-align: right"><% aggr.entity_comment %><% INCLUDE edit_comment.tt 
+                	value = aggr.entity_comment
+                	divid = aggr.aggregate_id
+                %></td>
         </tr>
         <tr><td>&nbsp;</td></tr>
         <% FOREACH volume IN aggr.netapp_volumes%>
@@ -25,7 +31,10 @@
                 <td style="min-width: 100px; text-align: center"><% volume.container_state %></td>
                 <td style="min-width: 100px; text-align: right"><% volume.container_size %></td>
                 <td style="min-width: 100px; text-align: right"><% volume.container_freespace %></td>
-                <td style="min-width: 100px; text-align: right"><% volume.entity_comment %></td>
+                <td style="min-width: 100px; text-align: right"><% volume.entity_comment %><% INCLUDE edit_comment.tt 
+                	value = volume.entity_comment
+                	divid = volume.container_id
+                %></td>
             </tr>
         
         <% END %>

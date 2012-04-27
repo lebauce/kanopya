@@ -304,19 +304,21 @@ sub convertFromBytes {
            value, rounded and with the right unit.
            Example of return : 13.95 M (for value = 14630307)
     
-    Args : bytesToHuman expect one argument 'value'
+    Args : bytesToHuman expect two argumens 'value' and 'precision'
             value :     value of size in bytes
             precision : precision of rounding (the number of bit displayed included 
-                        the separator character '.'. For example, a precision)
+                        the separator character '.'. For example, a precision of 5 chars will
+                        display 13.95 M, a precision of 7 chars will display 13.9502 M, etc)
     
-    Return : scalar containing rounded value with correct unit (Example of return : 13.95 M)
+    Return : scalar containing rounded value with correct unit (Example of return : '13.95 M')
     
 =cut
 
 sub bytesToHuman {
     my %args = @_;
     # Check if argument is provided ;
-    if(! exists $args{value} or ! defined $args{value}) {
+    if((! exists $args{value} or ! defined $args{value}) ||
+       (! exists $args{precision} or ! defined $args{precision})) {
         $errmsg = "bytesToHuman needs value named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
