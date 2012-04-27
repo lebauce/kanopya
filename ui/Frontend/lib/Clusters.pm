@@ -144,7 +144,7 @@ sub _collector_managers {
         push @collectors, %temp;
     }
     $log->debug("collectors: @collectors");
-    return @collectors;
+    return \@collectors;
 }
 
 # retrieve storage providers list
