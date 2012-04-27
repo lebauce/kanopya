@@ -133,6 +133,13 @@ sub _managers {
     return @datamanagers;
 }
 
+# retrieve collector managers
+sub _collector_managers {
+    my @collectors = _managers('DataCollector');
+    $log->debug('collectors: 'Dumper \@collectors);
+    return @collectors;
+}
+
 # retrieve storage providers list
 sub _storage_providers {
     my @storages = _managers('Storage');
@@ -140,14 +147,14 @@ sub _storage_providers {
     foreach my $s (@storages) {
         $temp{ $s->{service_provider_id} } = 0;
     }
-    
+
     my $sp = [];
     foreach my $id (keys %temp) {
         my $tmp = {};
         my $sp_entity = Entity::ServiceProvider->get(id => $id);
         $tmp->{id} = $id;
         $tmp->{name} = $sp_entity->toString();
-        
+
         push (@$sp, $tmp);
     }
     return $sp;

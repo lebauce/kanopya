@@ -57,6 +57,14 @@
             </select>
         </td>
     </tr>
+    <tr><td class="label">Collector Manager to use :</td>
+    <td><select id="collector_manager" name="collector_manager_id">
+        <% FOREACH cloudmanager IN cloudmanagers_list %>
+            <option value="<% cloudmanager.id %>"><% cloudmanager.name %></option>
+        <% END %>
+        </select>
+    </td>
+    </tr>
     <tr><td class="label">Boot Policy :</td>
         <td><select id="boot_policy" name="cluster_boot_policy"></select>
         </td>
