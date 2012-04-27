@@ -141,7 +141,7 @@ sub _collector_managers {
     foreach my $c (@collectors_full) {
         $temp{id} = $c->{id};
         $temp{name} = $c->{name};
-        push @collectors, %temp;
+        push @collectors, \%temp;
     }
     $log->debug("collectors: @collectors");
     return \@collectors;
