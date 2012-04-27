@@ -507,7 +507,6 @@ SET @eid := @eid +1;
 -- internal ip for admin node
 --
 
-INSERT INTO `ipv4_internal` VALUES (1,'[% poolip_addr %]','[% poolip_netmask %]', NULL);
 INSERT INTO `ip` VALUES (1,'[% poolip_addr %]', @poolid, @admin_iface);
 
 --
