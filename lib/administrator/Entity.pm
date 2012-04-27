@@ -106,7 +106,6 @@ sub getPerms {
     my $granted;
         
     foreach my $m (keys %$methods) {
-        
         if($methods->{$m}->{'perm_holder'} eq 'mastergroup') {
             $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroupeid, method => $m);    
             $methods->{$m}->{'granted'} = $granted;
@@ -119,7 +118,7 @@ sub getPerms {
             delete $methods->{$m};
         }
     }
-    $log->debug(Dumper $methods);    
+    #$log->debug(Dumper $methods);
     return $methods;
 }
 

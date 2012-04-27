@@ -350,7 +350,7 @@ sub search {
         if($@) {
             my $exception = $@; 
             if(Kanopya::Exception::Permission::Denied->caught()) {
-                $log->info("no right to access to object <$table> with <$row->id>");
+                $log->debug("no right to access to object <$table> with <$row->id>");
                 next;
             } 
             else { $exception->rethrow(); } 
@@ -439,7 +439,7 @@ sub save {
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
         
     }
-    $log->info(ref($self)." updated in database");
+    $log->debug(ref($self)." updated in database");
     return $id;
 }
 
