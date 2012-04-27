@@ -143,7 +143,7 @@ sub _collector_managers {
         $temp{name} = $c->{name};
         push @collectors, \%temp;
     }
-    $log->debug("collectors: @collectors");
+    $log->debug("collectors: \@collectors");
     return \@collectors;
 }
 
