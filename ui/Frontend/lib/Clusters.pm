@@ -136,7 +136,7 @@ sub _managers {
 # retrieve collector managers
 sub _collector_managers {
     my @collectors = _managers('DataCollector');
-    $log->debug('collectors: 'Dumper \@collectors);
+    $log->debug('collectors: '.Dumper \@collectors);
     return @collectors;
 }
 
