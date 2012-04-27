@@ -36,8 +36,8 @@ use Entity::Poolip;
 
 use constant ATTR_DEF => {
     network_name => {
-        pattern      => '^\w*$',
-        is_mandatory => 1,                               
+        pattern      => '^.*$',
+        is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 0,
     },

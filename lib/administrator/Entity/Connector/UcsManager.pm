@@ -19,16 +19,22 @@ use base "Entity::HostManager";
 
 use Administrator;
 use Entity::HostManager;
+use Entity::Processormodel;
+use Entity::Hostmodel;
+use Entity::Network;
+use Entity::Network::Vlan;
 use Data::Dumper;
 
 use warnings;
 
 use Cisco::UCS;
 use Cisco::UCS::VLAN;
+use Log::Log4perl "get_logger";
 
 use constant ATTR_DEF => {};
 
 my ($schema, $config, $oneinstance);
+my $log = get_logger("administrator");
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -108,93 +114,125 @@ sub synchronize {
     my $kernelhash =  Entity::Kernel->find(hash => {});
     my $kernelid = $kernelhash->getAttr('name' => 'kernel_id');
 
-    # Get a "random" host model for his id :
-    my $hostmodelhash = Entity::Hostmodel->find(hash => {});
-    my $hostmodelid = $hostmodelhash->getAttr('name' => 'hostmodel_id');
-
-    # Get a "random" processor model for his id :
-    my $processormodelhash = Entity::Processormodel->find(hash => {});
-    my $processormodelid = $processormodelhash->getAttr('name' => 'processormodel_id');
-
     # Get the hostmanager for his id :
     my $hostmanagerid = $self->getAttr('name' => 'entity_id');
-    my $adm = Administrator->new;
 
     foreach my $blade (@blades) {
-        # Add the blade to the host table :
-        my %parameters = (
-                kernel_id           => $kernelid,
-                host_serial_number  => $blade->{dn},
-                host_ram            => $blade->{totalMemory} * 1024 * 1024,
-                host_core           => $blade->{numOfCores},
-                hostmodel_id        => $hostmodelid,
-                processormodel_id   => $processormodelid,
-                host_desc           => $blade->{dn},
-                active              => "1",
-                host_manager_id     => $hostmanagerid,
-        );
-
         # Check if an entry with the same serial number exist in table
-        my $serial_number_exist = Entity::Host->search( hash => { host_serial_number => $blade->{dn} } );
-        my $nb_sn_occurences = scalar($serial_number_exist);
-        if( $nb_sn_occurences == '0' ) {
-            Entity::Host->new(%parameters);
+        my @existing_hosts = Entity::Host->search(
+                                 hash => {
+                                     host_serial_number => $blade->{dn},
+                                     host_manager_id    => $hostmanagerid
+                                 }
+                             );
+
+        next if scalar @existing_hosts;
+
+        # Look for an existing processor model
+        my $board = $self->{api}->get(dn => $blade->{dn} . "/board");
+        my @cpus = $board->children("processorUnit");
+        my $cpu = $cpus[0];
+        my $processormodel;
+
+        eval {
+            $processormodel = Entity::Processormodel->find(
+                                  hash => {
+                                      processormodel_name => $cpu->{model}
+                                  }
+                              );
+        };
+        if ($@) {
+            $processormodel = Entity::Processormodel->new(
+                                  processormodel_brand       => $cpu->{vendor},
+                                  processormodel_name        => $cpu->{model},
+                                  processormodel_core_num    => $blade->{numOfCores},
+                                  processormodel_clock_speed => $cpu->{speed},
+                                  processormodel_l2_cache    => 1,
+                                  processormodel_max_tdp     => 0,
+                                  processormodel_64bits      => 1,
+                                  processormodel_virtsupport => 1
+                              );
         }
+
+        # Look for an existing host model
+        my $hostmodelid;
+        eval {
+            $hostmodel = Entity::Hostmodel->find(
+                             hash => {
+                                 hostmodel_name => $blade->{model}
+                             }
+                         );
+        };
+        if ($@) {
+            my $budget = $self->{api}->get(dn => $blade->{dn} . "/budget");
+            $hostmodel = Entity::Hostmodel->new(
+                             hostmodel_brand         => $blade->{vendor},
+                             hostmodel_name          => $blade->{model},
+                             hostmodel_chipset       => "unknown",
+                             hostmodel_processor_num => $blade->{numOfCores},
+                             hostmodel_consumption   => $budget->{idlePower},
+                             hostmodel_iface_num     => 1,
+                             hostmodel_ram_slot_num  => 1,
+                             hostmodel_ram_max       => $blade->{totalMemory} * 1024 * 1024,
+                             processormodel_id       => $processormodel->getAttr(name => 'processormodel_id'),
+                         );
+        }
+
+        Entity::Host->new(
+            kernel_id           => $kernelid,
+            host_serial_number  => $blade->{dn},
+            host_ram            => $blade->{totalMemory} * 1024 * 1024,
+            host_core           => $blade->{numOfCores},
+            hostmodel_id        => $hostmodel->getAttr(name => 'hostmodel_id'),
+            processormodel_id   => $processormodel->getAttr(name => 'processormodel_id'),
+            host_desc           => $blade->{dn},
+            active              => "1",
+            host_manager_id     => $hostmanagerid,
+        );
     }
-    
-    # Synchronize VLANs from UCS to Kanopya :
+
+    # Synchronize VLANs from UCS to Kanopya
     my @ucsvlans = $self->get_vlans();
 
     foreach my $ucsvlan (@ucsvlans) {
-        my $ucsvlan_name = $ucsvlan->{name};
-        my $ucsvlan_nb = $ucsvlan->{id};
-        %parameters = (
-            network_name => $ucsvlan_name,
-            vlan_number  => $ucsvlan_nb,
-        );
-
-        # Get Vlans existing in Kanopya :
-        my $existingvlans = Entity::Network->search(hash => { network_name => $ucsvlan_name });
-        my $existingvlan = scalar($existingvlans);
-
-        # If the vlan not exist in Kanopya, create it :
-        if ($existingvlan eq "0") {
-            Entity::Network::Vlan->new(%parameters);
+        # Get Vlans existing in Kanopya
+        eval {
+            Entity::Network->find(hash => { network_name => $ucsvlan->{name} });
+        };
+        if ($@) {
+            # If the vlan not exist in Kanopya, create it
+            Entity::Network::Vlan->new(
+                network_name => $ucsvlan->{name},
+                vlan_number  => $ucsvlan->{id},
+            );
         }
     }
 
-    # Synchronize VLANs from Kanopya to UCS :
-    # Get all VLANs on Kanopya :
+    # Synchronize VLANs from Kanopya to UCS
+    # Get all VLANs on Kanopya
     my @vlans = Entity::Network::Vlan->search(hash => {});
     foreach my $vlan (@vlans) {
-        my $vlan_nb = $vlan->getAttr('name' => 'vlan_number');
-        my $vlan_name = $vlan->getAttr('name' => 'network_name');
+        my $vlan_id = $vlan->getAttr('name' => 'vlan_number');
 
         # We must ignore the VLAN 0 on Kanopya side, this is the default UCS Vlan too
-        if ($vlan_nb ne "0") {
-            %parameters = (
-                ucs         => $self,
-                defaultNet  => "no",
-                id          => $vlan_nb,
-                name        => $vlan_name,
-                pubNwName   => "",
-                sharing     => "none",
-                status      => "created",
-            );
-
-            # Create VLANs on UCS :
-            # Creation is encapsulated in an eval for avoid "already created" errors :
+        if ($vlan_id ne "0") {
+            # Create VLANs on UCS
+            # Creation is encapsulated in an eval for avoid "already created" errors
             eval {
-                Cisco::UCS::VLAN->create(%parameters);
+                Cisco::UCS::VLAN->create(
+                    ucs         => $self,
+                    defaultNet  => "no",
+                    id          => $vlan_id,
+                    name        => $vlan->getAttr('name' => 'network_name'),
+                    pubNwName   => "",
+                    sharing     => "none",
+                    status      => "created",
+                );
             };
         }
     }
 
     $self->logout();
-
-    if($@) {
-        print $@;
-    }
 }
 
 =head2 getRemoteSessionURL
