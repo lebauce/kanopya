@@ -143,7 +143,7 @@ sub _collector_managers {
         $temp{name} = $c->{name};
         push @collectors, %temp;
     }
-    $log->debug('collectors: @collectors');
+    $log->debug("collectors: @collectors");
     return @collectors;
 }
 
@@ -295,7 +295,7 @@ get '/clusters/add' => sub {
         kernels_list          => $kmodels,
         masterimages_list     => $masterimages_list,
         storageproviders_list => _storage_providers(),
-        datacollectors_list    => _collector_managers (),
+        datacollectors_list    => _collector_managers(),
         gp_list               => _users_groups(),
         hostproviders_list    => _host_providers(),
         nameserver            => $kanopya_cluster->getAttr(name => 'cluster_nameserver1'),
