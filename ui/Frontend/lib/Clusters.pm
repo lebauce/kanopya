@@ -135,7 +135,14 @@ sub _managers {
 
 # retrieve collector managers
 sub _collector_managers {
-    my @collectors = _managers('DataCollector');
+    my @collectors_full = _managers('DataCollector');
+    my @collectors;
+    my %temp;
+    foreach my $c (@collectors_full) {
+        $temp{id} = $c{id};
+        $temp{name} = $c{name};
+        push @collectors, %temp;
+    }
     $log->debug('collectors: '.Dumper \@collectors);
     return @collectors;
 }
