@@ -235,6 +235,11 @@ SET @eid := @eid +1;
 --
 
 INSERT INTO `entity` VALUES (@eid, 9, NULL);
+INSERT INTO `processormodel` VALUES (@eid,'Generic','Generic',1,1.0,1,1,1,1);
+SET @generic := @eid;
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 9, NULL);
 INSERT INTO `processormodel` VALUES (@eid,'Intel','Atom 330',2,1.6,1,8,1,0);
 SET @atom330 := @eid;
 SET @eid := @eid +1;
@@ -285,6 +290,10 @@ SET @eid := @eid +1;
 --
 -- host models
 --
+
+INSERT INTO `entity` VALUES (@eid, 4, NULL);
+INSERT INTO `hostmodel` VALUES (@eid,'Generic','Generic','Generic',1,1,20,1,1,@generic);
+SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 4, NULL);
 INSERT INTO `hostmodel` VALUES (@eid,'Intel','DG945GCLF2','945GC',1,42,1,1,2,@atom330);
