@@ -59,6 +59,7 @@
     </tr>
     <tr><td class="label">Collector Manager to use :</td>
     <td><select id="collector_manager" name="collector_manager_id">
+        <option value="default"> Select a Collector Manager</option>
         <% FOREACH datacollector IN datacollectors_list %>
             <option value="<% datacollector.id %>"><% datacollector.name %></option>
         <% END %>

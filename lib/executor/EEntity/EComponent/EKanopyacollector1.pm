@@ -20,6 +20,7 @@ use strict;
 use Template;
 use String::Random;
 use base "EEntity::EComponent";
+use base "ECollectorManager";
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
