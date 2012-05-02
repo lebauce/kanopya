@@ -361,6 +361,10 @@ print "To Connect to Kanopya web use :\n";
 print "user : <admin>\n";
 print "password : <$answers->{dbpassword1}>\n";
 
+# Prepare /tftp :
+print "Populate /tftp directory.\n";
+tftpPopulation();
+
 ##########################################################################################
 ##############################FUNCTIONS DECLARATION#######################################
 ##########################################################################################
@@ -593,6 +597,32 @@ sub noMethodToTest {
 sub default_error {
         print "Error, did you modify init script ?\n";
         exit;
+}
+
+# Method for populate tftp directory
+sub tftpPopulation {
+    my $dir = '/tftp';
+    # Check if /tftp exists :
+    if ( ! -d $dir) {
+        system('ln -s /opt/kanopya/tools/deployment/tftp /tftp');
+    }
+    
+    my $rsync_sshkey = '~/.ssh/rsync_rsa';
+    # Check if rsync sshkey exist on right place :
+    if ( ! -e $rsync_sshkey) {
+        # Get the rsync_rsa key :
+        system('wget http://download.kanopya.org:8011/rsync_rsa');
+        # Throw exceptions :
+        #if ( ! -e 'rsync_rsa') {
+        #    $errmsg = "tftpPopulation : Error while downloading rsync_rsa SSH Key.";
+        #    $log->error($errmsg);
+        #    throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+        #}
+        # Move the key and set the correct rights ;
+        system('mv rsync_rsa ~/.ssh/;chmod 400 ~/.ssh/rsync_rsa');
+    }
+    # Do a Rsync from download.kanopya.org of tftp directory content :
+    system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* /tftp/');
 }
 
 ###################################################### Following functions generates conf files for Kanopya
