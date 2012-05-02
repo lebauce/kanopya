@@ -87,8 +87,8 @@ sub assignIpToIface {
         my $interface_networks = $self->{_dbix}->interface_networks;
         while (my $interface_network = $interface_networks->next) {
             # Try all asscoiated poolips
-            my $networks_poolips = $self->{_dbix}->interface_networks;
-            while (my $net_poolip = $networks_poolips->next){
+            my $network_poolips = $interface_network->network->network_poolips;
+            while (my $net_poolip = $network_poolips->next){
                 my $poolip = Entity::Poolip->get(id => $net_poolip->poolip->get_column('poolip_id'));
 
                 # Try to pop an ip from the current pool
@@ -98,10 +98,9 @@ sub assignIpToIface {
                     $log->info("Cannot pop IP from pool <" . $poolip->getAttr(name => 'poolip_name') . ">\n$@");
                     next;
                 }
-                $ip->setAttr(name  => 'iface_id',
-                             value => $args{iface}->getAttr(name => 'entity_id'));
-
+                $ip->setAttr(name  => 'iface_id', value => $args{iface}->getAttr(name => 'entity_id'));
                 $ip->save();
+
                 $assigned = 1;
                 last;
             }

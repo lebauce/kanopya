@@ -1097,7 +1097,7 @@ post '/clusters/:clusterid/network/add' => sub {
         my $cluster = Entity::ServiceProvider->get(id => param('clusterid'));
         my $role    = Entity::InterfaceRole->get(id => param('interface_role_id'));
         $cluster->addNetworkInterface(interface_role => $role,
-                                      networks       => \@networks);
+                                      networks       => @networks);
     };
     if($@) {
         my $exception = $@;
