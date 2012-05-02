@@ -450,7 +450,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@admin_cluster, 13, NULL);
 INSERT INTO `service_provider` VALUES (@admin_cluster);
 INSERT INTO `inside` VALUES (@admin_cluster);
-INSERT INTO `cluster` VALUES (@admin_cluster,'Kanopya','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'',0,0,'[% admin_domainname %]', '127.0.0.1', '127.0.0.1', 'up:[% tmstp %]', NULL,'test_', 1, @adminuserid, @kernel, NULL, @physical_hoster, NULL, NULL);
+INSERT INTO `cluster` VALUES (@admin_cluster,'Kanopya','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'',0,0,'[% admin_domainname %]', '127.0.0.1', '127.0.0.1', 'up:[% tmstp %]', NULL,'[% kanopya_hostname %]', 1, @adminuserid, @kernel, NULL, @physical_hoster, NULL, NULL);
 
 --
 -- kanopya cluster interface
@@ -478,7 +478,7 @@ INSERT INTO `interface_network` VALUES (@kanopya_cluster_interface, @admin_netwo
 --
 
 INSERT INTO `entity` VALUES (@eid, 3, NULL);
-INSERT INTO `host` VALUES (@eid, @physical_hoster, NULL, NULL,@kernel,'',NULL, 'Admin host',1,'[% kanopya_initiator %]','4294967296', '4','node001', 'up:[% tmstp %]',NULL);
+INSERT INTO `host` VALUES (@eid, @physical_hoster, NULL, NULL,@kernel,'',NULL, 'Admin host',1,'[% kanopya_initiator %]','4294967296', '4','[% kanopya_hostname %]', 'up:[% tmstp %]',NULL);
 SET @admin_host := @eid;
 SET @eid := @eid +1;
 
