@@ -72,6 +72,21 @@ use constant ATTR_DEF => {
 };
 sub getAttrDef { return ATTR_DEF; }
 
+sub retrieveData () {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['nodelist', 'timespan']);
+
+    my %data = 
+        (
+            node1   => 1234,
+            node2   => 5678,
+            node3   => 4321,
+        );
+
+    return \%data;
+}
+
 sub getCollectorType () {
     return 'Native Kanopya collector tool';
 }

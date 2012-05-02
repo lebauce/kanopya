@@ -959,7 +959,7 @@ sub getNodesMetrics {
     my $collector_manager = Entity::Component->get ( id => $collector_manager_id ); 
 
     #return the data
-    my $data = $collector_manager->retrieveData ( $args{'nodelist'}, $args{'timespan'} );
+    my $data = $collector_manager->retrieveData ( nodelist => $args{'nodelist'}, timespan => $args{'timespan'} );
     return $data;
 }
 
