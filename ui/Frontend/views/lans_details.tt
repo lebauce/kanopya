@@ -1,0 +1,44 @@
+<%#
+<script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>Network : <% lan_name %></h2>
+
+<hr/>
+<span id="settings" class="title simpleexpand">Main settings</span>
+<table id="Xsettings" class="detailspart">
+<tr><td class="italic" colspan="4"><% lan_desc %></td>
+<td class="actions" rowspan="9">
+
+	<a class="modal" href="/networks/lans/<% lan_id %>/edit">edit</a><br />
+	<span class="desc">Modify these global parameters.</span><br /><br />
+	<a class="imgRemove" href="/networks/lans/<% lan_id %>/remove">remove</a><br />
+	<span class="desc">Delete this network.</span><br /><br />
+</td><tr/>
+
+</table>
+
+<hr />
+<span id="poolips" class="title simpleexpand">Pool ip</span>
+<table id="Xpoolips" class="detailspart list">
+<% IF poolips_list %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% nbpoolsips %>">
+		<a class="modal" href="/networks/lans/<% lan_id %>/addpoolip">associate pool ip</a><br />
+		<span class="desc">Associate a poolip to this Network.</span><br /><br />
+	</td></tr>
+	<% FOREACH pip IN poolips_list %>
+		<td class="label2">name: <% pip.poolip_name %> </td>
+		<td class="action"><a class="imgManage" href="<% pip.url %>">details</a></td>
+		<td class="action"><a class="imgRemove" href="/networks/lans/<% lan_id %>/removepoolip/<% pip.poolip_id %>/remove">dissociate</a></td></tr>
+	<% END %>
+<% ELSE %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions">
+		<% IF can_associate %>
+		<a class="modal" href="/networks/lans/<% lan_id %>/poolips/add">add pool ip</a><br />
+		<span class="desc">Add a pool ip to this network.</span>
+	    <%END%>
+	</td></tr>
+	<tr><td>This host has no poolip</td></tr>
+<% END %>
+</table>
