@@ -163,6 +163,12 @@ __PACKAGE__->table("cluster");
   extra: {unsigned => 1}
   is_nullable: 1
 
+=head2 collector_manager_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -242,6 +248,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "export_manager_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "collector_manager_id",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
 __PACKAGE__->set_primary_key("cluster_id");
 __PACKAGE__->add_unique_constraint("cluster_name", ["cluster_name"]);
@@ -260,7 +268,7 @@ __PACKAGE__->belongs_to(
   "cluster",
   "AdministratorDB::Schema::Result::Inside",
   { inside_id => "cluster_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 user
@@ -275,7 +283,7 @@ __PACKAGE__->belongs_to(
   "user",
   "AdministratorDB::Schema::Result::User",
   { user_id => "user_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 kernel
@@ -290,12 +298,7 @@ __PACKAGE__->belongs_to(
   "kernel",
   "AdministratorDB::Schema::Result::Kernel",
   { kernel_id => "kernel_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 masterimage
@@ -310,12 +313,7 @@ __PACKAGE__->belongs_to(
   "masterimage",
   "AdministratorDB::Schema::Result::Masterimage",
   { masterimage_id => "masterimage_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 cluster_ipv4_routes
@@ -454,8 +452,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-18 12:00:01
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/YFmOaKFXNgS7sf0XWcHOA
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-30 17:35:43
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3PTgsMlU016jrqt43zymHQ
 
 __PACKAGE__->belongs_to(
   "parent",
