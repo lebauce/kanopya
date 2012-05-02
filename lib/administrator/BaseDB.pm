@@ -165,7 +165,7 @@ sub new {
     };
     if ($@) {
         $errmsg = "Unregistred or abstract class name <$class>, assuming it is not an Entity.";
-        $log->error($errmsg);
+        $log->debug($errmsg);
         #throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
@@ -308,7 +308,7 @@ sub get {
         $class   = $dbix->class_type->get_column('class_type');
     };
     if ($@) {
-        $log->error("Unable to retreive concrete class name, using $class.");
+        $log->debug("Unable to retreive concrete class name, using $class.");
     }
     my $table = _buildClassNameFromString($class);
 
