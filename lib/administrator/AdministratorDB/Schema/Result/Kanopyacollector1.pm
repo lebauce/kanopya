@@ -23,7 +23,7 @@ __PACKAGE__->table("kanopyacollector1");
 
 =head1 ACCESSORS
 
-=head2 kanopyacollector1_id
+=head2 kanopya_collector1_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -47,7 +47,7 @@ __PACKAGE__->table("kanopyacollector1");
 =cut
 
 __PACKAGE__->add_columns(
-  "kanopyacollector1_id",
+  "kanopya_collector1_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -70,19 +70,19 @@ __PACKAGE__->add_columns(
   },
 );
 
-__PACKAGE__->set_primary_key("kanopyacollector1_id");
+__PACKAGE__->set_primary_key("kanopya_collector1_id");
 
 =head1 PRIMARY KEY
 
 =over 4
 
-=item * L</kanopyacollector1_id>
+=item * L</kanopya_collector1_id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("kanopyacollector1_id");
+__PACKAGE__->set_primary_key("kanopya_collector1_id");
 
 =head1 RELATIONS
 
@@ -97,7 +97,7 @@ Related object: L<AdministratorDB::Schema::Result::Component>
 __PACKAGE__->belongs_to(
   "kanopyacollector1",
   "AdministratorDB::Schema::Result::Component",
-  { component_id => "kanopyacollector1_id" },
+  { component_id => "kanopya_collector1_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -110,7 +110,7 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
-    { "foreign.component_id" => "self.kanopyacollector1_id" },
+    { "foreign.component_id" => "self.kanopya_collector1_id" },
     { cascade_copy => 0, cascade_delete => 1 }
 );
 
