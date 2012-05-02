@@ -165,6 +165,8 @@ sub prepare {
         = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
     $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
                                                           ip_destination => $exec_cluster->getMasterNodeIp());
+                                                          
+    $self->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
 }
 
 sub execute {
@@ -238,46 +240,12 @@ sub execute {
 
     $self->{_objs}->{host}->stopToBeNode();
 
-    $log->info("Generate Hosts Conf");
-    my $nodes = $self->{_objs}->{cluster}->getHosts();
-    my $etc_hosts_file = $self->generateHosts(nodes => $nodes);
-
-    foreach my $i (keys %$nodes) {
-	    my $node = $nodes->{$i};
-        my $node_econtext = EFactory::newEContext(
-                                ip_source      => $self->{executor}->{econtext}->getLocalIp,
-                                ip_destination => $nodes->{$i}->getAdminIp
-                            );
-        $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
-    }    
-}
-
-sub generateHosts {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "nodes" ]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    # create Template object
-    my $template = Template->new($config);
-    my $input = "hosts.tt";
-    my $nodes = $args{nodes};
-    my @nodes_list = ();
-    
-    foreach my $i (keys %$nodes) {
-        my $tmp = { hostname   => $nodes->{$i}->getAttr(name => 'host_hostname'),
-                    domainname => "hedera-technology.com",
-                    ip         => $nodes->{$i}->getAdminIp };
-        push @nodes_list, $tmp;
-    }
-
-    my $vars = { hosts => \@nodes_list };
-    $log->debug(Dumper($vars));
-    $template->process($input, $vars, "/tmp/$tmpfile") or die $template->error(), "\n";
-    return("/tmp/".$tmpfile);
+    my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
+    $ecluster->updateHostsFile(
+        executor_context   => $self->{executor}->{econtext},
+        kanopya_domainname => $self->{kanopya_domainname}
+    );
+   
 }
 
 =head1 DIAGNOSTICS
