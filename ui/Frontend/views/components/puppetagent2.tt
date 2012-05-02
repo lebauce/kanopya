@@ -1,0 +1,19 @@
+<% js_head.push('components.js') %>
+<h2>Cluster <% cluster_name %> - Puppet agent Configuration</h2>
+<hr />
+<form method="POST" action="/components/process_configurecomponent">
+<input type="hidden" name="component_id" value="<% component_instance_id %>"/>
+<input type="hidden" name="snmpd5_id" value="<% puppetagent2_id %>"/>
+<input type="hidden" name="component_name" value="Puppetagent2"/>
+<input type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<table>
+<tr><td>Start agent at boot time :</td><td><input type="checkbox" name="puppetagent2_bootstart" value="<% monitor_server_ip %>" checked="" /></td></tr>
+<tr><td>master server :</td><td><input type="text" name="puppetagent2_masterserver" size="64" value="<% puppetagent2_masterserver %>" /></td></tr>
+<tr><td>daemon options :</td><td><input type="text" name="puppetagent2_options" size="64" value="<% puppetagent2_options %>" /></td></tr>
+</table>
+<hr />
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
+</div>
+</form>
