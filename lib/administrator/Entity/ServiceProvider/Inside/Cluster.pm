@@ -943,4 +943,24 @@ sub getManagerParameters {
     return $params_hash;
 }
 
+=head2 _getNodesMetrics
+
+    Desc: call collector manager to retrieve nodes metrics values.
+    return \%data;
+
+=cut
+
+sub getNodesMetrics {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['nodelist', 'timespan']);
+
+    my $collector_manager_id = $self->getAttr ( name=>'collector_manager_id' );
+    my $collector_manager = Entity::Component->get ( id => $collector_manager_id ); 
+
+    #return the data
+    my $data = $collector_manager->retrieveData ( $args{'nodelist'}, $args{'timespan'} );
+    return $data;
+}
+
 1;

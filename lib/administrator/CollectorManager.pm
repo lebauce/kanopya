@@ -27,3 +27,18 @@ use Kanopya::Exceptions;
 use General;
 
 my $log = get_logger("administrator");
+
+sub retrieveData {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['nodelist', 'timespan']);
+
+    my %data = 
+        (
+            node1   => 1234,
+            node2   => 5678,
+            node3   => 4321,
+        );
+
+    return \%data;
+}

@@ -128,14 +128,19 @@ sub _externalclusters {
 
 # retrieve data managers
 sub _managers {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['category']);
+
     my ($category) = @_; 
-    my @datamanagers = Entity::ServiceProvider->findManager(category => $category);
+    my @datamanagers = Entity::ServiceProvider->findManager(category => $args{category}, service_provider_id => $args{service_provider_id});
+
     return @datamanagers;
 }
 
 # retrieve collector managers
 sub _collector_managers {
-    my @collectors_full = _managers('DataCollector');
+    my @collectors_full = _managers(category => 'DataCollector');
     my @collectors;
     my %temp;
     foreach my $c (@collectors_full) {
@@ -148,7 +153,7 @@ sub _collector_managers {
 
 # retrieve storage providers list
 sub _storage_providers {
-    my @storages = _managers('Storage');
+    my @storages = _managers(category => 'Storage');
     my %temp;
     foreach my $s (@storages) {
         $temp{ $s->{service_provider_id} } = 0;
@@ -174,7 +179,7 @@ sub _cloudmanagers {
 
 # retrieve hosts providers list
 sub _host_providers {
-    my @cloudmanagers = _managers('Cloudmanager');
+    my @cloudmanagers = _managers(category => 'Cloudmanager');
     my %temp;
     foreach my $s (@cloudmanagers) {
         $temp{ $s->{service_provider_id} } = 0;
@@ -307,7 +312,7 @@ get '/clusters/add' => sub {
 get '/clusters/cloudmanagers/:hostproviderid' => sub {
     my $id = param('hostproviderid');
     my $str = '';
-    my @managers = _managers('Cloudmanager');
+    my @managers = _managers(category => 'Cloudmanager');
     foreach my $manager (@managers) {
         if($manager->{service_provider_id} eq $id) {
             $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
@@ -323,7 +328,7 @@ get '/clusters/cloudmanagers/:hostproviderid' => sub {
 get '/clusters/exportmanagers/:storageproviderid' => sub {
     my $id = param('storageproviderid');
     my $str = '';
-    my @managers = _managers('Export');
+    my @managers = _managers(category => 'Export');
     foreach my $manager (@managers) {
         if($manager->{service_provider_id} eq $id) {
             $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
