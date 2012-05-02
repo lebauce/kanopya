@@ -29,7 +29,7 @@
 	<% FOREACH pip IN poolips_list %>
 		<td class="label2">name: <% pip.poolip_name %> </td>
 		<td class="action"><a class="imgManage" href="<% pip.url %>">details</a></td>
-		<td class="action"><a class="imgRemove" href="/networks/vlans/<% vlan_id %>/removepoolip/<% pip.poolip_id %>/remove">dissociate</a></td></tr>
+		<td class="action"><a class="imgRemove" href="/networks/lans/<% vlan_id %>/removepoolip/<% pip.poolip_id %>/remove">dissociate</a></td></tr>
 	<% END %>
 <% ELSE %>
 	<tr><td colspan="2">&nbsp;</td>

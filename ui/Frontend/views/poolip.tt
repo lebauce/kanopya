@@ -3,8 +3,8 @@
     <tr><td colspan="3"><h1><% poolip.poolip_name %></h1></td></tr>
     <tr><td class="italic" colspan="3"><span class="label">Description</span> : <% poolip.poolip_desc %></td><td class="toright">
     <a class="imgManage" href="/networks/poolip/<% poolip.poolip_id %>">details</a></td></tr>
-    <tr><td class="italic" colspan="3"><span class="label">Mask</span> : <% poolip.poolip_mask %></td></tr>
-    <tr><td class="italic" colspan="3"><span class="label">Address</span> : <% poolip.poolip_addr %></td></tr>
+    <tr><td class="italic" colspan="3"><span class="label">Pool size</span> : <% poolip.poolip_mask %></td></tr>
+    <tr><td class="italic" colspan="3"><span class="label">First address</span> : <% poolip.poolip_addr %></td></tr>
     </table>
 <% END %>
 

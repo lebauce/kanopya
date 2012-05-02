@@ -1,4 +1,4 @@
-<form id="target" method="POST" action="/networks/vlans/<% vlan_id %>/associate">
+<form id="target" method="POST" action="/networks/lans/<% lan_id %>/associate">
 <table class="form">
 
 <td><select id="ippool" name="poolipid">
@@ -7,15 +7,15 @@
 <% END %>
 </select></td>
 <div class="buttons">
-<input type="hidden" name="vlanid" value="<% vlan_id %>"/>
+<input type="hidden" name="lanid" value="<% lan_id %>"/>
 </div>
 <script type="text/javascript">
 function sendpoolipid() {
     var xhr = new XMLHttpRequest();
     var poolipid=document.getElementById("ippool").value;
-    var vlanid=document.getElementByName("vlanid").value;
-    alert(vlanid);
-    //var url = "/networks/vlans/"+ vlanid +"/" + poolipid;
+    var lanid=document.getElementByName("lanid").value;
+    alert(lanid);
+    //var url = "/networks/lans/"+ lanid +"/" + poolipid;
     alert (url);
     xhr.open("GET", url);
     
