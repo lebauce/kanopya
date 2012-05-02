@@ -406,15 +406,6 @@ INSERT INTO `connector_type` VALUES
 (7,'NetappVolumeManager','1','Export');
 
 --
--- initial vlan
---
-
-INSERT INTO `entity` VALUES (@eid, 50, 1);
-INSERT INTO `network` VALUES (@eid, 'novlan');
-INSERT INTO `vlan` VALUES (@eid, 0);
-SET @eid := @eid +1;
-
---
 -- interace role list
 --
 INSERT INTO `entity` VALUES (@eid, 72, 2);
