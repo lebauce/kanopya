@@ -602,9 +602,9 @@ sub default_error {
 # Method for populate tftp directory
 sub tftpPopulation {
     my $dir = '/tftp';
-    # Check if /tftp exists :
+    # Check if /tftp exists, create it if not :
     if ( ! -d $dir) {
-        system('ln -s /opt/kanopya/tools/deployment/tftp /tftp');
+        system('mkdir /tftp');
     }
     
     my $rsync_sshkey = '~/.ssh/rsync_rsa';
@@ -612,12 +612,6 @@ sub tftpPopulation {
     if ( ! -e $rsync_sshkey) {
         # Get the rsync_rsa key :
         system('wget http://download.kanopya.org:8011/rsync_rsa');
-        # Throw exceptions :
-        #if ( ! -e 'rsync_rsa') {
-        #    $errmsg = "tftpPopulation : Error while downloading rsync_rsa SSH Key.";
-        #    $log->error($errmsg);
-        #    throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-        #}
         # Move the key and set the correct rights ;
         system('mv rsync_rsa ~/.ssh/;chmod 400 ~/.ssh/rsync_rsa');
     }
