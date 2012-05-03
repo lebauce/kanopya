@@ -59,6 +59,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Monitor::Retriever;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -84,7 +85,9 @@ sub retrieveData () {
             node3   => 4321,
         );
 
-    return \%data;
+	my $retriever = Monitor::Retriever->new();	
+	my %return = $retriever->getData(rrd_name => 'apache_stats_10.0.0.7', time_laps => 7200);
+    return \%return;
 }
 
 sub getCollectorType () {
