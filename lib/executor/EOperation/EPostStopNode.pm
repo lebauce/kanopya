@@ -177,31 +177,6 @@ sub execute {
     my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
     $ehost->stop(econtext => $self->{executor}->{econtext});
 
-    my $systemimage_name = $self->{_objs}->{cluster}->getAttr(name => 'cluster_name');
-    $systemimage_name .= '_' . $self->{_objs}->{host}->getNodeNumber();
-    
-    # delete the image if persistent policy not set
-    if($self->{_objs}->{cluster}->getAttr(name => 'cluster_si_persistent') eq '0') {
-        $log->info("cluster image persistence is not set, deleting $systemimage_name");
-        eval {
-            $self->{_objs}->{systemimage} = Entity::Systemimage->find(
-                                                hash => { systemimage_name => $systemimage_name }
-                                            );
-        };
-        if ($@) {
-            $log->debug("Could not find systemimage with name <$systemimage_name> for removal.");
-        } 
-        my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
-        $esystemimage->deactivate(econtext  => $self->{executor}->{econtext},
-                                  erollback => $self->{erollback});
-
-        $esystemimage->remove(econtext  => $self->{executor}->{econtext},
-                              erollback => $self->{erollback});
-    
-    } else {
-        $log->info("cluster image persistence is set, keeping $systemimage_name image");
-    }
-
     # Remove Host from the dhcp
     my $host_mac = $self->{_objs}->{host}->getPXEIface->getAttr(name => 'iface_mac_addr');
     if ($host_mac) {
@@ -235,10 +210,37 @@ sub execute {
     $self->{_objs}->{host}->setAttr(name => "host_hostname", value => undef);
     $self->{_objs}->{host}->setAttr(name => "host_initiatorname", value => undef);
 
+    
+    my $systemimage_name = $self->{_objs}->{cluster}->getAttr(name => 'cluster_name');
+    $systemimage_name .= '_' . $self->{_objs}->{host}->getNodeNumber();
+    
     # Finally save the host
     $self->{_objs}->{host}->save();
 
     $self->{_objs}->{host}->stopToBeNode();
+    
+    # delete the image if persistent policy not set
+    if($self->{_objs}->{cluster}->getAttr(name => 'cluster_si_persistent') eq '0') {
+        $log->info("cluster image persistence is not set, deleting $systemimage_name");
+        eval {
+            $self->{_objs}->{systemimage} = Entity::Systemimage->find(
+                                                hash => { systemimage_name => $systemimage_name }
+                                            );
+        };
+        if ($@) {
+            $log->debug("Could not find systemimage with name <$systemimage_name> for removal.");
+        } 
+        my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+        $esystemimage->deactivate(econtext  => $self->{executor}->{econtext},
+                                  erollback => $self->{erollback});
+
+        $esystemimage->remove(econtext  => $self->{executor}->{econtext},
+                              erollback => $self->{erollback});
+    
+    } else {
+        $log->info("cluster image persistence is set, keeping $systemimage_name image");
+    }
+
 
     my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
     $ecluster->updateHostsFile(
