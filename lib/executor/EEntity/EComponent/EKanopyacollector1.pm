@@ -25,3 +25,5 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 my $errmsg;
+
+1;
