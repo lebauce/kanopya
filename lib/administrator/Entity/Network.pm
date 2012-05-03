@@ -1,5 +1,3 @@
-# Entity::Vlan.pm  
-
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -16,18 +14,6 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 16 july 2010
-
-=head1 NAME
-
-Entity::Vlan
-
-=head1 SYNOPSIS
-
-=head1 DESCRIPTION
-
-blablabla
-
-=cut
 
 package Entity::Network;
 use base "Entity";

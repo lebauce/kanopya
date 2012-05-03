@@ -41,6 +41,8 @@ use warnings;
 use Entity;
 use General;
 use EFactory;
+use Entity::InterfaceRole;
+
 use Template;
 use String::Random;
 use IO::Socket;
@@ -81,6 +83,19 @@ sub create {
         $self->_getEntity()->addComponent(component => $comp);
         $log->info("$compclass automatically added");
     }
+
+    # Automatically add the admin interface
+    my $adminrole = Entity::InterfaceRole->find(hash => { interface_role_name => 'admin' });
+    my $kanopya   = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
+    my $interface = Entity::Interface->find(
+                         hash => { service_provider_id => $kanopya->getAttr(name => 'entity_id'),
+                                   interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
+                     );
+
+    $self->_getEntity->addNetworkInterface(
+        interface_role => $adminrole,
+        networks       => $interface->getNetworks
+    );
 }
 
 sub addNode {

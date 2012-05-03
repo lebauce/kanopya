@@ -116,10 +116,15 @@ get '/vlans/:vlanid' => sub {
 
 get '/vlans/:vlanid/addpoolip' => sub {
     my @poolip = Entity::Poolip->getPoolip( hash => {} );
+    my $vlan   = Entity::Network->get(id => param('vlanid'));
+
+    my $associated = $vlan->getAssociatedPoolips();
     my $poolips = [];
-    foreach my $ep (@poolip)
-    {
+    foreach my $ep (@poolip) {
         my $poolip_id= $ep->getAttr(name => 'poolip_id');
+
+        if (grep {$_->getAttr(name => 'entity_id') == $poolip_id} @$associated) { next; }
+
         my $tmpp = {};
         $tmpp->{poolip_name} = $ep->getAttr(name => 'poolip_name');
         $tmpp->{poolip_id}   = $ep->getAttr(name => 'poolip_id');
@@ -128,55 +133,9 @@ get '/vlans/:vlanid/addpoolip' => sub {
     }
 
     template 'form_associatepoolip', {
-        vlan_id      => param('vlanid'),
+        lan_id      => param('vlanid'),
         poolips_list => $poolips,
     }, { layout => '' };
-};
-
-post '/vlans/:vlanid/associate' => sub {
-    my $adm = Administrator->new();
-    eval {
-        my $vlan   = Entity::Network::Vlan->get(id => param('vlanid'));
-        my $poolip = Entity::Poolip->get(id => param('poolipid'));
-
-        $vlan->associatePoolip(poolip => $poolip);
-    };
-    if($@) {
-        my $exception = $@;
-        if (Kanopya::Exception::Permission::Denied->caught()) {
-            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
-            redirect '/permission_denied';
-        }
-        else {
-            $exception->rethrow();
-        }
-    }
-    else {
-        redirect '/networks/vlans/'.param('vlanid');
-    }
-};
-
-get '/vlans/:vlanid/removepoolip/:poolipid/remove' => sub {
-    my $adm = Administrator->new;
-    eval {
-        my $vlan   = Entity::Network::Vlan->get(id => param('vlanid'));
-        my $poolip = Entity::Poolip->get(id => param('poolipid'));
-
-        $vlan->dissociatePoolip(poolip => $poolip);
-     };
-     if($@) {
-         my $exception = $@;
-         if (Kanopya::Exception::Permission::Denied->caught()) {
-             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
-             redirect '/permission_denied';
-         }
-         else {
-             $exception->rethrow();
-         }
-    }
-    else {
-        redirect '/networks/vlans/'.param('vlanid');
-    }
 };
 
 1;

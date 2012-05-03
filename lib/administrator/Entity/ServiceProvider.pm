@@ -39,6 +39,12 @@ use Entity::Connector;
 use Entity::Interface;
 use Administrator;
 
+use Log::Log4perl "get_logger";
+use Data::Dumper;
+
+my $log = get_logger("administrator");
+my $errmsg;
+
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
@@ -99,17 +105,16 @@ sub findManager {
 sub addNetworkInterface {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['interface_role_id']);
+    General::checkParams(args => \%args, required => [ 'interface_role' ]);
 
     my $interface = Entity::Interface->new(
-                        interface_role_id   => $args{interface_role_id},
+                        interface_role_id   => $args{interface_role}->getAttr(name => 'entity_id'),
                         service_provider_id => $self->getAttr(name => 'entity_id')
                     );
 
     # Associate to networks if defined
     if (defined $args{networks}) {
-        for my $network_id (@{$args{networks}}) {
-            my $network = Entity::Network->get(id => $network_id);
+        for my $network ($args{networks}) {
             $interface->associateNetwork(network => $network);
         }
     }
@@ -130,7 +135,7 @@ sub getNetworkInterfaces {
                          hash => { service_provider_id => $self->getAttr(name => 'entity_id') }
                      );
 
-    return wantarray ? @interfaces : \@interfaces;    
+    return wantarray ? @interfaces : \@interfaces;
 }
 
 =head2 removeNetworkInterface

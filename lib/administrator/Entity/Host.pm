@@ -402,26 +402,26 @@ sub associateInterfaces {
     General::checkParams(args => \%args, required => [ 'cluster' ]);
 
     my @ifaces = $self->getIfaces;
-
+    
+    # Try to find a proper iface to assign to each interfaces.
     foreach my $interface (@{$args{cluster}->getNetworkInterfaces}) {
-        my $iface_index = 0;
+        my $assigned = 0;
         for my $iface (@ifaces) {
-            eval {
-                $iface->associateInterface(interface => $interface);
-                last;
-            };
-            if ($@) {
-                $log->debug($@);
+            if (not $iface->isAssociated) {
+                eval {
+                    $iface->associateInterface(interface => $interface);
+                    $assigned = 1;
+                    last;
+                };
+                if ($@) { $log->debug($@); }
             }
-            $iface_index++;
         }
-        if ($iface_index >= scalar(@ifaces)) {
+        if (not $assigned) {
             throw Kanopya::Exception::Internal(
                       error => "Unable to associate interface <" . $interface->getAttr(name => 'entity_id') .
                                "> to any iface of the host <" . $self->getAttr(name => 'entity_id') . ">"
                   );
         }
-        delete $ifaces[$iface_index];
     }
 }
 
@@ -480,9 +480,18 @@ sub addIface {
 
 sub getIfaces {
     my $self = shift;
-    my @ifcs = Entity::Iface->search(hash => { host_id => $self->getAttr(name => 'host_id') });
+    my @ifaces = ();
+    
+    # Make sure to have all pxe ifaces before non pxe ones within the resulting array
+    foreach my $pxe (1, 0) {
+        my @ifcs = Entity::Iface->search(hash => { host_id   => $self->getAttr(name => 'host_id'),
+                                                   iface_pxe => $pxe });
+        for my $iface (@ifcs) {
+            push @ifaces, $iface;
+        }
+    }
 
-    return wantarray ? @ifcs : \@ifcs;
+    return wantarray ? @ifaces : \@ifaces;
 }
 
 =head2 getPXEIface
@@ -536,7 +545,7 @@ sub getAdminIp {
         if ($interface_id = $iface->isAssociated) {
             # TODO: my $interface = $iface->getRelated(name => 'interface');
             my $interface = Entity::Interface->get(id => $iface->getAttr(name => 'interface_id'));
-            if ($interface->getRole->getAttr(name => 'interface_role_name') eq 'admin') {
+            if ($interface->getRole->getAttr(name => 'interface_role_name') eq 'admin' and $iface->hasIp) {
                 return $iface->getIPAddr;
             }
         }

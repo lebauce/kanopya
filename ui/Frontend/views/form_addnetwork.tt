@@ -4,21 +4,21 @@
 <table class="form">
 	<tr><td class="label">role :</td>
         <td><select name="interface_role_id">
-                <% FOREACH role IN interfaceroles_list %>          
+                <% FOREACH role IN interfaceroles_list %>
                     <option value="<% role.interface_role_id %>"><% role.interface_role_name %> - <% role.interface_role_desc %></option>
                 <% END %>
             </select>
         </td>
     </tr>
     <tr><td colspan="2">       
-        <span class="label">vlans to associate to this network :</span>
+        <span class="label">Networks to associate to this interface :</span>
         </td>
     </tr>
-    <% FOREACH vlan IN vlans_list %>          
+    <% FOREACH lan IN lans_list %>
     <tr><td colspan="2">    
-        <input type="checkbox" name="vlan_id_<% vlan.vlan_id %>" value="<% vlan.vlan_id %>"> 
-        <span class="bold"><% vlan.vlan_name %></span> (<% vlan.vlan_number %>)</input>
-        <span style="font-size: small; font-style: italic"><% vlan.vlan_desc %></span>
+        <input type="checkbox" name="lan_id_<% lan.lan_id %>" value="<% lan.lan_id %>">
+        <span class="bold"><% lan.lan_name %></span> (<% lan.lan_type %>)</input>
+        <span style="font-size: small; font-style: italic"><% lan.lan_desc %></span>
         <hr/></td>
     </tr>
     <% END %>

@@ -21,6 +21,7 @@ use Orchestration;
 use Permissions;
 use Messager;
 use Vlans;
+use Lans;
 use Poolip;
 use UnifiedComputingSystem;
 use Connectors;
