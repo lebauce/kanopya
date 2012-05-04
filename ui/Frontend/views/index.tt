@@ -7,4 +7,5 @@
 <div class="ui-layout-north">
 </div>
 <div class="ui-layout-south">
+    <table id="grid-message"></table>
 </div>
