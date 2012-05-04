@@ -19,7 +19,7 @@
 
 =head1 NAME
 
-EOperation::EScaleMemoryHost - Operation class implementing vcpus scale in
+EOperation::EScaleCpuHost - Operation class implementing vcpus scale in
 
 =head1 SYNOPSIS
 
@@ -53,7 +53,7 @@ our $VERSION = '1.00';
 
 =head2 new
 
-    my $op = EOperation::EScaleMemoryHost->new();
+    my $op = EOperation::EScaleCpuHost->new();
 
     # Operation::EInstallComponentInSystemImage->new installs component on systemimage.
     # RETURN : EOperation::EInstallComponentInSystemImage : Operation activate cluster on execution side
@@ -106,7 +106,7 @@ sub prepare {
     $self->{_objs} = {};
     
     # Check Operation params
-    General::checkParams(args => $params, required => ["cpu_quantity", "host_id"]);
+    General::checkParams(args => $params, required => ["cpu_number", "host_id"]);
     $self->{params} = $params;
     
     eval {
@@ -114,6 +114,7 @@ sub prepare {
         # Get the host to scale 
         $self->{_objs}->{'host'} = Entity::Host->get(id => $params->{host_id});
         #Get OpenNebula Cluster
+        $self->{_objs}->{'cloudmanager_comp'} = Entity->get(id => $self->{_objs}->{'host'}->getAttr(name => 'host_manager_id'));
         $self->{_objs}->{'cloudmanager_ecomp'} = EFactory::newEEntity(data => $self->{_objs}->{'cloudmanager_comp'});
         
     };
@@ -128,8 +129,8 @@ sub prepare {
 
 sub execute{
     my $self = shift;
-    $self->{_objs}->{'cloudmanager_ecomp'}->scale_cpu(host                => $self->{_objs}->{'host'},
-                                                         memory_quantity     => $self->{params}->{cpu_number})  ;
+    $self->{_objs}->{'cloudmanager_ecomp'}->scale_cpu(host         => $self->{_objs}->{'host'},
+                                                      cpu_number   => $self->{params}->{cpu_number});
 
     $log->info(" Host <$self->{params}->{host_id}>  scale in  <$self->{params}->{cpu_number}> ");
 }
@@ -194,3 +195,4 @@ Boston, MA 02110-1301 USA.
 =cut
 
 1;
+

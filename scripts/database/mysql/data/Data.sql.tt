@@ -377,8 +377,9 @@ INSERT INTO `operationtype` VALUES
 (39,'RemoveExport'),
 (40,'DeployMasterimage'),
 (41,'RemoveMasterimage'),
-(42,'AddNode');
-
+(42,'AddNode'),
+(43,'ScaleCpuHost'),
+(44,'ScaleMemoryHost');
 --
 -- components type list
 --

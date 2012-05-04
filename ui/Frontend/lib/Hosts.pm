@@ -380,11 +380,11 @@ get '/hosts/scale_memory/:host_id' => sub {
 
 post '/hosts/scale_memory' => sub {
     Operation->enqueue(
-        type => 'ScalememoryHost',
+        type => 'ScaleMemoryHost',
         priority => 1,
         params => {
             host_id => params->{host_id},
-            memory_quantity => params->{memory_quantity}
+            memory  => params->{memory_quantity}
         }
     );
     redirect '/infrastructures/hosts';
@@ -398,11 +398,11 @@ get '/hosts/scale_cpu/:host_id' => sub {
 
 post '/hosts/scale_cpu' => sub {
     Operation->enqueue(
-        type => 'ScalecpuHost',
+        type => 'ScaleCpuHost',
         priority => 1,
         params => {
-            host_id => params->{host_id},
-            memory_quantity => params->{vcpu_number}
+            host_id    => params->{host_id},
+            cpu_number => params->{vcpu_number}
         }
     );
     redirect '/infrastructures/hosts';

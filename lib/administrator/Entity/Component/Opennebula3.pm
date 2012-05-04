@@ -413,6 +413,24 @@ sub getRemoteSessionURL {
            ":" . $self->getVncport(host => $args{host});
 }
 
+sub scaleCPU {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['host']);
+
+    $args{host}->setAttr(name  => "host_core",
+                         value => $args{cpu_number});
+    $args{host}->save();
+}
+
+sub scaleMemory {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
+
+    $args{host}->setAttr(name  => "host_ram",
+                         value => $args{memory});
+    $args{host}->save();
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

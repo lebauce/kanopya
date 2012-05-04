@@ -94,11 +94,10 @@ sub _init {
 sub prepare {
     my $self = shift;
     my %args = @_;
+
     $self->SUPER::prepare();
 
     $log->info("Operation preparation");
-
-
     General::checkParams(args => \%args, required => ["internal_cluster"]);
     
     # Get Operation parameters
@@ -106,32 +105,32 @@ sub prepare {
     $self->{_objs} = {};
     
     # Check Operation params
-    General::checkParams(args => $params, required => ["memory_quantity", "host_id"]);
+    General::checkParams(args => $params, required => [ "memory", "host_id" ]);
     $self->{params} = $params;
     
     eval {
-		
         # Get the host to scale 
         $self->{_objs}->{'host'} = Entity::Host->get(id => $params->{host_id});
-        #Get OpenNebula Cluster
+
+        # Get OpenNebula Cluster
+        $self->{_objs}->{'cloudmanager_comp'} = Entity->get(id => $self->{_objs}->{'host'}->getAttr(name => 'host_manager_id'));
         $self->{_objs}->{'cloudmanager_ecomp'} = EFactory::newEEntity(data => $self->{_objs}->{'cloudmanager_comp'});
         
     };
-    if($@) {
+    if ($@) {
         my $err = $@;
-      $errmsg = "EOperation::EScaleMemoryHost->prepare : Incorrect Parameters \n" . $err;
+        $errmsg = "EOperation::EScaleMemoryHost->prepare : Incorrect Parameters \n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    
 }
 
-sub execute{
+sub execute {
     my $self = shift;
-    $self->{_objs}->{'cloudmanager_ecomp'}->scale_memory(host                => $self->{_objs}->{'host'},
-                                                         memory_quantity     => $self->{params}->{memory_quantity})  ;
+    $self->{_objs}->{'cloudmanager_ecomp'}->scale_memory(host   => $self->{_objs}->{'host'},
+                                                         memory => $self->{params}->{memory});
 
-    $log->info(" Host <$self->{params}->{host_id}>  scale in  <$self->{params}->{memory_quantity}> ");
+    $log->info(" Host <$self->{params}->{host_id}> scale in <$self->{params}->{memory}> ");
 }
 
 =head1 DIAGNOSTICS

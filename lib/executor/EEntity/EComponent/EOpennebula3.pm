@@ -158,17 +158,20 @@ sub scale_memory {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'memory_quantity', 'hypervisor_cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
 
-    my $memory_quantity = $args{memory_quantity};
-    # instanciate opennebula master node econtext 
-    my $masternodeip = $args{hypervisor_cluster}->getMasterNodeIp();
-    my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
-    my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id")); 
-    my $command = $self->_oneadmin_command(command => "onevm memset $host_id $memory_quantity");
-    my $result = $masternode_econtext->execute(command => $command);
-    return $self->_getEntity()->scale_memory(%args);
-       
+    my $memory = $args{memory};
+    my $masternodeip = $self->_getEntity()->getServiceProvider->getMasterNodeIp();
+    my $masternode_econtext = EFactory::newEContext(ip_source      => '127.0.0.1',
+                                                    ip_destination => $masternodeip);
+    my $host_id = $self->_getEntity()->getVmIdFromHostId(
+                      host_id => $args{host}->getAttr(name => "host_id")
+                  );
+    my $command = $self->_oneadmin_command(command => "onevm memset $host_id $memory");
+
+    $masternode_econtext->execute(command => $command);
+
+    return $self->_getEntity()->scaleMemory(%args);
 }
 
 #execute cpu scale in
@@ -176,16 +179,20 @@ sub scale_cpu {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'cpu_number', 'hypervisor_cluster' ]);
-    my $cpu_number= $args{cpu_number};
-    # instanciate opennebula master node econtext 
-    my $masternodeip = $args{hypervisor_cluster}->getMasterNodeIp();
-    my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
-    my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
-    my $command = $self->_oneadmin_command(command => "onevm cpuset $host_id $cpu_number");
-    my $result = $masternode_econtext->execute(command => $command);
+    General::checkParams(args => \%args, required => [ 'host', 'cpu_number' ]);
+
+    my $cpu_number = $args{cpu_number};
+    my $masternodeip = $self->_getEntity()->getServiceProvider()->getMasterNodeIp();
+    my $masternode_econtext = EFactory::newEContext(ip_source      => '127.0.0.1',
+                                                    ip_destination => $masternodeip);
+    my $host_id = $self->_getEntity()->getVmIdFromHostId(
+                      host_id => $args{host}->getAttr(name => "host_id")
+                  );
+    my $command = $self->_oneadmin_command(command => "onevm vcpuset $host_id $cpu_number");
+
+    $masternode_econtext->execute(command => $command);
     
-    return $self->_getEntity()->scale_cpu(%args);
+    return $self->_getEntity()->scaleCPU(%args);
 }
 
 # generate $ONE_LOCATION/etc/oned.conf configuration file
