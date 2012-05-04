@@ -29,3 +29,5 @@ use General;
 my $log = get_logger("administrator");
 
 sub retrieveData { }
+
+1;
