@@ -1,4 +1,7 @@
 <% js_head.push('components.js') %>
+
+</script>
+
 <h2><% serviceprovider_tostring %> - Volumes Management</h2>
 <hr />
 <form class="elem_root" name="conf">
@@ -7,7 +10,7 @@
 <input class="conf_simple_value" type="hidden" name="netapp_volume_manager_id" value="<% netapp_volume_manager_id %>"/>
 
 <table class="conf_array_value" id="volumes">
-    <tr><th></th><th></th><th>Name</th><th>State</th><th>Total Size</th><th>size used</th></tr>
+    <tr><th></th><th></th><th>Name</th><th>State</th><th>Total Size</th><th>Free Space</th><th>Comment</th></tr>
     <% FOREACH aggr IN aggregates %>
         <tr style="background-color: #DDD">
             <th>Aggregate:</th><th></th>
@@ -15,16 +18,23 @@
             <td style="min-width: 100px; text-align: center"><% aggr.aggregate_state %></td>
             <td style="min-width: 100px; text-align: right"><% aggr.aggregate_totalsize %></td>
             <td style="min-width: 100px; text-align: right"><% aggr.aggregate_sizeused %></td>
+            <td style="min-width: 100px; text-align: right"><% aggr.entity_comment %><% INCLUDE edit_comment.tt 
+                	value = aggr.entity_comment
+                	divid = aggr.aggregate_id
+                %></td>
         </tr>
         <tr><td>&nbsp;</td></tr>
-        <% FOREACH volume IN aggr.aggregates_volumes%>
+        <% FOREACH volume IN aggr.netapp_volumes%>
             <tr style="background-color: #EEE">
                 <th></th><th>Volume:</th>
-                <td style="min-width: 100px; text-align: center"><% volume.volume_name %></td>
-                <td style="min-width: 100px; text-align: center"><% volume.volume_state %></td>
-                <td style="min-width: 100px; text-align: right"><% volume.volume_totalsize %></td>
-                <td style="min-width: 100px; text-align: right"><% volume.volume_sizeused %></td>
-                <td style="min-width: 100px; text-align: right"><% volume.entity_comment %></td>
+                <td style="min-width: 100px; text-align: center"><% volume.container_name %></td>
+                <td style="min-width: 100px; text-align: center"><% volume.container_state %></td>
+                <td style="min-width: 100px; text-align: right"><% volume.container_size %></td>
+                <td style="min-width: 100px; text-align: right"><% volume.container_freespace %></td>
+                <td style="min-width: 100px; text-align: right"><% volume.entity_comment %><% INCLUDE edit_comment.tt 
+                	value = volume.entity_comment
+                	divid = volume.container_id
+                %></td>
             </tr>
         
         <% END %>

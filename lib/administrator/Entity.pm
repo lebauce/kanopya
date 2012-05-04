@@ -106,7 +106,6 @@ sub getPerms {
     my $granted;
         
     foreach my $m (keys %$methods) {
-        
         if($methods->{$m}->{'perm_holder'} eq 'mastergroup') {
             $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroupeid, method => $m);    
             $methods->{$m}->{'granted'} = $granted;
@@ -119,7 +118,7 @@ sub getPerms {
             delete $methods->{$m};
         }
     }
-    $log->debug(Dumper $methods);    
+    #$log->debug(Dumper $methods);
     return $methods;
 }
 
@@ -234,12 +233,15 @@ sub setComment {
         my $comment = EntityComment->get(id => $comment_id);
         $comment->setAttr(name => 'entity_comment', value => $args{comment});
         $comment->save();
+        $log->info($comment);
     }
     else {
         my $comment = EntityComment->new(entity_comment => $args{comment});
         $self->setAttr(name => 'entity_comment_id', value => $comment->getAttr(name => 'entity_comment_id'));
         $self->save();
     }
+    
+    $log->info($comment);
 }
 
 1;

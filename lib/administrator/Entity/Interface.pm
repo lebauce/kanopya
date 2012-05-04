@@ -20,6 +20,7 @@ use base "Entity";
 
 use Kanopya::Exceptions;
 
+use Entity::Iface;
 use Entity::Poolip;
 use Entity::Network;
 use Entity::InterfaceRole;
@@ -50,6 +51,19 @@ sub getRole {
     return Entity::InterfaceRole->get(id => $self->getAttr(name => 'interface_role_id' ));
 }
 
+sub getNetworks {
+    my $self = shift;
+    my %args = @_;
+    my @networks = ();
+
+    my $interface_networks = $self->{_dbix}->interface_networks;
+    while (my $interface_network = $interface_networks->next) {
+        push @networks, Entity::Network->get(id => $interface_network->get_column('network_id'));
+    }
+
+    return @networks;
+}
+
 sub associateNetwork {
     my $self = shift;
     my %args = @_;
@@ -71,28 +85,27 @@ sub assignIpToIface {
     if ($self->getRole->getAttr(name => 'interface_role_name') ne 'vms') {
         # Try to use poolips of the first associated network.
         my $interface_networks = $self->{_dbix}->interface_networks;
-        while (my $interface_network = $interface_networks->next){
-            my $net_poolips = $interface_network->network->network_poolips;
-
-            while (my $net_poolip = $net_poolips->next){
+        while (my $interface_network = $interface_networks->next) {
+            # Try all asscoiated poolips
+            my $network_poolips = $interface_network->network->network_poolips;
+            while (my $net_poolip = $network_poolips->next){
                 my $poolip = Entity::Poolip->get(id => $net_poolip->poolip->get_column('poolip_id'));
 
                 # Try to pop an ip from the current pool
                 my $ip;
                 eval { $ip = $poolip->popIp(); };
                 if ($@) {
-                    $log->info("Cannot pop IP from pool <" .
-                               $poolip->getAttr(name => 'poolip_name') . ">\n$@");
+                    $log->info("Cannot pop IP from pool <" . $poolip->getAttr(name => 'poolip_name') . ">\n$@");
                     next;
                 }
-                $ip->setAttr(name  => 'iface_id',
-                             value => $args{iface}->getAttr(name => 'entity_id'));
-
+                $ip->setAttr(name  => 'iface_id', value => $args{iface}->getAttr(name => 'entity_id'));
                 $ip->save();
+
                 $assigned = 1;
                 last;
             }
         }
+        # No free ip found
         if (not $assigned) {
             throw Kanopya::Exception::Internal::NotFound(
                       error => "Unable to assign ip to iface <" .
@@ -100,6 +113,16 @@ sub assignIpToIface {
                   );
         }
     }
+}
+
+sub getAssociatedIface {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return Entity::Iface->find(hash => { interface_id => $self->getAttr(name => 'entity_id'),
+                                         host_id      => $args{host}->getAttr(name => 'entity_id') });
 }
 
 1;

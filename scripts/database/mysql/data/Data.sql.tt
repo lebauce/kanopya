@@ -236,6 +236,11 @@ SET @eid := @eid +1;
 --
 
 INSERT INTO `entity` VALUES (@eid, 9, NULL);
+INSERT INTO `processormodel` VALUES (@eid,'Generic','Generic',1,1.0,1,1,1,1);
+SET @generic := @eid;
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 9, NULL);
 INSERT INTO `processormodel` VALUES (@eid,'Intel','Atom 330',2,1.6,1,8,1,0);
 SET @atom330 := @eid;
 SET @eid := @eid +1;
@@ -286,6 +291,10 @@ SET @eid := @eid +1;
 --
 -- host models
 --
+
+INSERT INTO `entity` VALUES (@eid, 4, NULL);
+INSERT INTO `hostmodel` VALUES (@eid,'Generic','Generic','Generic',1,1,20,1,1,@generic);
+SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 4, NULL);
 INSERT INTO `hostmodel` VALUES (@eid,'Intel','DG945GCLF2','945GC',1,42,1,1,2,@atom330);
@@ -408,15 +417,6 @@ INSERT INTO `connector_type` VALUES
 (7,'NetappVolumeManager','1','Export');
 
 --
--- initial vlan
---
-
-INSERT INTO `entity` VALUES (@eid, 50, 1);
-INSERT INTO `network` VALUES (@eid, 'novlan');
-INSERT INTO `vlan` VALUES (@eid, 0);
-SET @eid := @eid +1;
-
---
 -- interace role list
 --
 INSERT INTO `entity` VALUES (@eid, 72, 2);
@@ -480,7 +480,7 @@ INSERT INTO `interface_network` VALUES (@kanopya_cluster_interface, @admin_netwo
 --
 
 INSERT INTO `entity` VALUES (@eid, 3, NULL);
-INSERT INTO `host` VALUES (@eid, @physical_hoster, NULL, NULL,@kernel,'',NULL, 'Admin host',1,'[% kanopya_initiator %]','4294967296', '4','node001', 'up:[% tmstp %]',NULL);
+INSERT INTO `host` VALUES (@eid, @physical_hoster, NULL, NULL,@kernel,'',NULL, 'Admin host',1,'[% kanopya_initiator %]','4294967296', '4','[% kanopya_hostname %]', 'up:[% tmstp %]',NULL);
 SET @admin_host := @eid;
 SET @eid := @eid +1;
 
@@ -509,7 +509,6 @@ SET @eid := @eid +1;
 -- internal ip for admin node
 --
 
-INSERT INTO `ipv4_internal` VALUES (1,'[% poolip_addr %]','[% poolip_netmask %]', NULL);
 INSERT INTO `ip` VALUES (1,'[% poolip_addr %]', @poolid, @admin_iface);
 
 --

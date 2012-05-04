@@ -9,22 +9,21 @@
     'jqplot/jqplot.canvasAxisTickRenderer.min.js',
     'jqplot/jqplot.trendline.min.js',
     'monitor.js') 
-    %>
+%>
 <% css_head.push('jquery-ui-1.8.18.custom.css', 'monitoring.css') %>
 
 <div class="cluster_overview">
-	<h2>cluster overview</h2>
+    <h2>cluster overview</h2>
         <div class="clustermetric_options">
             <div class="field">
                 <label for="combination_start_time">Start time (default is now - 1 day) </label>
                 <input type="text" id="combination_start_time" />
-            </div><br />
+            </div><br /><br /><br />
             <div class="field">
                 <label for="combination_end_time">End time (default is now) </label>
                 <input type="text" id="combination_end_time" />
             </div><br />
-			<div id="dropdown_container">
-                <label for="combination_list" class="list_label">Available combinations for external cluster </label><br /><br />
+            <div id="dropdown_container">
                 <% IF errors.combinations %>
                     <p class="error"> ERROR: <% errors.combinations %> </p>
                 <% ELSE %>
@@ -35,7 +34,7 @@
                     <% END %>
                 </select>
                 <% END %>
-			</div>
+            </div>
                 <br/>
                 <input id="trendlineinput" type="checkbox" onclick="toggleTrendLine()" value="show"> Trend line</input>
         </div>
@@ -43,24 +42,48 @@
         <div id="clusterCombinationView"></div><br />
 </div>
 <div class="nodes_overview">
-	<h2>nodes overview</h2>
-	<div class="indicator_dropdown">
-	<% IF errors.nodemetric_combinations %>
-		<p class="error"> ERROR: <% errors.nodemetric_combinations %> </p><br />
-		<p>no nodemetric_combinations could be retrieved for this external cluster</p>
-	<% ELSE %>
-		<label for="indicator_list" class="list_label">Available nodemetric combinations for external cluster </label>
-		<select id="indicator_list" onchange="showNodemetricCombinationGraph(this, this.options[this.selectedIndex].id);" >
-			<option selected="selected" id="default">Select an indicator</option>
-			<% FOREACH nodemetric_combination IN nodemetric_combinations %>
-				<option id ="<% nodemetric_combination.id %>"><% nodemetric_combination.label %></option>
-			<% END %>
-		</select>
-	<% END %>
-	</div>
-	<br />
-	<div id="nodes_charts"></div><br />
+    <h2>nodes overview</h2>
+    <div class="nmBarGraph">
+        <div class="indicator_dropdown">
+        <% IF errors.nodemetric_combinations %>
+            <p class="error"> ERROR: <% errors.nodemetric_combinations %> </p><br />
+            <p>no nodemetric_combinations could be retrieved for this external cluster</p>
+        <% ELSE %>
+            <select id="nmBargraph_list" onchange="showNodemetricCombinationBarGraph(this, this.options[this.selectedIndex].id, this.options[this.selectedIndex].value);" >
+                <option selected="selected" id="default">Select an indicator</option>
+                <% FOREACH nodemetric_combination IN nodemetric_combinations %>
+                    <option id ="<% nodemetric_combination.id %>" value="<% nodemetric_combination.label %>"><% nodemetric_combination.label %></option>
+                <% END %>
+            </select>
+        <% END %>
+        </div>
+        <br />
+        <div id="nodes_bargraph"></div><br />
+    </div>
+    <br />
+    <div class="nmHistogram">
+        <div class="indicator_dropdown">
+        <% IF errors.nodemetric_combinations %>
+            <p class="error"> ERROR: <% errors.nodemetric_combinations %> </p><br />
+            <p>no nodemetric_combinations could be retrieved for this external cluster</p>
+        <% ELSE %>
+            <p>Histogram </p>
+            <select id="nmHistogram_list" onchange="showNodemetricCombinationHistogram(this, this.options[this.selectedIndex].id, this.options[this.selectedIndex].value, document.getElementById('part_number').value);" >
+                <option selected="selected" id="default">Select an indicator</option>
+                <% FOREACH nodemetric_combination IN nodemetric_combinations %>
+                    <option id ="<% nodemetric_combination.id %>" value="<% nodemetric_combination.label %>"><% nodemetric_combination.label %></option>
+                <% END %>
+            </select>
+        <% END %>
+        </div>
+        <br />
+        <div>
+            <label for="part_number"> number of partitions(default 10)</label>
+            <input type="text" id="part_number">
+        </div>
+        <div id="nodes_histogram"></div><br />
+    </div>
 </div>
 <div class="single_node_overview">
-	<h2>Single node view</h2>
+    <h2>Single node view</h2>
 </div>

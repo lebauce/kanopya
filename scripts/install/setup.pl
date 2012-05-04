@@ -203,7 +203,13 @@ if (length ($month) == 1) {
     $month = '0' . $month;
 }
 
-my $kanopya_initiator = 'iqn.' . $year . '-' . $month . '.kanopya.master:' . time();
+my $hostname = `hostname`;
+chomp($hostname);
+
+my $domain = $answers->{kanopya_server_domain_name};
+
+my $kanopya_initiator = "iqn.$year-$month." 
+    . join('.', reverse split(/\./, $domain)) .':'.time();
 
 ################We generate the Data.sql file and setup database
 my %datas = (
@@ -217,6 +223,7 @@ my %datas = (
     poolip_gateway           => $answers->{internal_net_pool_gateway},
     ipv4_internal_network_ip => $answers->{internal_net_add},
     admin_domainname         => $answers->{kanopya_server_domain_name},
+    kanopya_hostname         => $hostname,
     kanopya_initiator        => $kanopya_initiator,
     mb_hw_address            => $internal_net_interface_mac_add,
     admin_password           => $answers->{dbpassword1},
@@ -347,6 +354,9 @@ useTemplate(
 # Configure log rotate
 copy("$conf_vars->{install_template_dir}/logrotate-kanopya", '/etc/logrotate.d') || die "Copy failed $!";
 
+# set /etc/hosts
+writeFile('/etc/hosts', "127.0.0.1 localhost\n$internal_ip_add $hostname.$domain $hostname\n");
+
 # Launching Kanopya's init scripts
 system('invoke-rc.d kanopya-executor restart');
 system('invoke-rc.d kanopya-state-manager restart');
@@ -360,6 +370,10 @@ print "You can now visit http://$internal_ip_add:5000 and start using Kanopya!\n
 print "To Connect to Kanopya web use :\n";
 print "user : <admin>\n";
 print "password : <$answers->{dbpassword1}>\n";
+
+# Prepare /tftp :
+print "Populate /tftp directory.\n";
+tftpPopulation();
 
 ##########################################################################################
 ##############################FUNCTIONS DECLARATION#######################################
@@ -593,6 +607,26 @@ sub noMethodToTest {
 sub default_error {
         print "Error, did you modify init script ?\n";
         exit;
+}
+
+# Method for populate tftp directory
+sub tftpPopulation {
+    my $dir = '/tftp';
+    # Check if /tftp exists, create it if not :
+    if ( ! -d $dir) {
+        system('mkdir /tftp');
+    }
+    
+    my $rsync_sshkey = '~/.ssh/rsync_rsa';
+    # Check if rsync sshkey exist on right place :
+    if ( ! -e $rsync_sshkey) {
+        # Get the rsync_rsa key :
+        system('wget http://download.kanopya.org:8011/rsync_rsa');
+        # Move the key and set the correct rights ;
+        system('mv rsync_rsa ~/.ssh/;chmod 400 ~/.ssh/rsync_rsa');
+    }
+    # Do a Rsync from download.kanopya.org of tftp directory content :
+    system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* /tftp/');
 }
 
 ###################################################### Following functions generates conf files for Kanopya

@@ -67,6 +67,20 @@ sub associateInterface {
 
     General::checkParams(args => \%args, required => [ 'interface' ]);
 
+    # Do not associate interface with role 'vms' to an pxe iface,
+    # because 'vms' associate iface will not be assigned to an ip,
+    # so could not be used as pxe boot iface.
+    if ($args{interface}->getRole->getAttr(name => 'interface_role_name') eq 'vms' and
+        $self->getAttr(name => 'iface_pxe')) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "Could not associate interface <" . $args{interface}->getAttr(name => 'entity_id') .
+                           "> with role 'vms' to a pxe iface <" . $self->getAttr(name => 'iface_mac_addr') . ">."
+              );
+    }
+
+    $log->info("Associate iface " .  $self->getAttr(name => 'iface_mac_addr') .
+               " to interface with role " . $args{interface}->getRole->getAttr(name => 'interface_role_name'));
+
     $self->setAttr(name  => 'interface_id',
                    value => $args{interface}->getAttr(name => 'entity_id'));
     $self->save();
@@ -103,7 +117,7 @@ sub assignIp {
     if ($@) {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "Iface " . $self->getAttr(name => 'iface_name') .
-                           " not associated to an cluster interface.\n$@"
+                           " not associated to a cluster interface."
               );
     }
     $interface->assignIpToIface(iface => $self);

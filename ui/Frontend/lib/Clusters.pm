@@ -7,11 +7,13 @@ use General;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider;
 use Entity::HostManager;
+use Entity::Interface;
 use Entity::Host;
 use Entity::Gp;
 use Entity::Masterimage;
 use Entity::Kernel;
 use Entity::InterfaceRole;
+use Entity::Network;
 use Entity::Network::Vlan;
 
 use Log::Log4perl "get_logger";
@@ -1082,21 +1084,21 @@ get '/clusters/:clusterid/network/add' => sub {
         };
     }
 
-    @rows =  Entity::Network::Vlan->search(hash => {});
-    my $vlans = [];
+    @rows =  Entity::Network->search(hash => {});
+    my $lans = [];
     foreach my $row (@rows) {
-        push @$vlans, {
-            vlan_id     => $row->getAttr(name => 'entity_id'),
-            vlan_name   => $row->getAttr(name => 'network_name'),
-            vlan_number => $row->getAttr(name => 'vlan_number'),
-            vlan_desc   => $row->getComment,
+        push @$lans, {
+            lan_id   => $row->getAttr(name => 'entity_id'),
+            lan_name => $row->getAttr(name => 'network_name'),
+            lan_desc => $row->getComment,
+            lan_type => $row->isa('Entity::Network::Vlan') ? 'VLAN ' . $row->getAttr(name => 'vlan_number') : 'Network'
         };
     }
- 
+
     template 'form_addnetwork', {
         cluster_id          => param('clusterid'),
         interfaceroles_list => $interfaceroles,
-        vlans_list          => $vlans,
+        lans_list           => $lans,
     }, { layout => '' };
 };
 
@@ -1109,15 +1111,16 @@ post '/clusters/:clusterid/network/add' => sub {
 
     my @networks = ();
     for my $key (keys %params) {
-        if ($key =~ /^vlan_id_/) {
-            push @networks, $params{$key};
+        if ($key =~ /^lan_id_/) {
+            push @networks, Entity::Network->get(id => $params{$key});
         }
     }
 
     eval {
         my $cluster = Entity::ServiceProvider->get(id => param('clusterid'));
-        $cluster->addNetworkInterface(interface_role_id => param('interface_role_id'),
-                                      networks          => \@networks);
+        my $role    = Entity::InterfaceRole->get(id => param('interface_role_id'));
+        $cluster->addNetworkInterface(interface_role => $role,
+                                      networks       => @networks);
     };
     if($@) {
         my $exception = $@;

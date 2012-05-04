@@ -89,7 +89,7 @@ sub updateClusterStatus {
                 if($@){
                    my $error = $@;
                    if ($error->isa('Kanopya::Exception::OperationAlreadyEnqueued')) {
-                       $log->info("PreStartNode operation is already enqueued");
+                       $log->debug("PreStartNode operation is already enqueued");
                    }
                 }
             } else {
@@ -147,7 +147,7 @@ sub updateClusterStatus {
                 if ($@){
                     my $error = $@;
                     if ($error->isa('Kanopya::Exception::OperationAlreadyEnqueued')) {
-                        $log->info("PreStopNode operation is already enqueued");
+                        $log->debug("PreStopNode operation is already enqueued");
                     }
                 }
             }
@@ -175,7 +175,7 @@ sub updateClusterStatus {
             if ($@){
                 my $error = $@;
                 if ($error->isa('Kanopya::Exception::OperationAlreadyEnqueued')) {
-                    $log->info("PreStopNode operation is already enqueued");}
+                    $log->debug("PreStopNode operation is already enqueued");}
             }
         }
         

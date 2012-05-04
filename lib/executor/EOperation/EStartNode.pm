@@ -209,10 +209,6 @@ sub execute {
                                            ),
                              options    => $mount_options);
 
-    # Apply node etc configuration
-    $self->_generateNodeConf(etc_path => $mountpoint . '/etc',
-                             options  => $mount_options);
-
     # TODO: Component migration (node, exec context?)
     my $components = $self->{_objs}->{components};
     foreach my $i (keys %$components) {
@@ -252,8 +248,7 @@ sub _generateNetConf {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'etc_path' ]);
+    General::checkParams(args => \%args, required => [ 'etc_path' ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -263,14 +258,16 @@ sub _generateNetConf {
     my $input = "network_interfaces.tt";
 
     # Pop an IP adress for all host iface,
-    my @interfaces;
-    foreach my $iface (@{$self->{_objs}->{host}->getIfaces}) {
+    my @net_ifaces;
+    foreach my $interface (@{$self->{_objs}->{cluster}->getNetworkInterfaces}) {
+        my $iface = $interface->getAssociatedIface(host => $self->{_objs}->{host});
+
         # Assign ip from the associated interface poolip
         $iface->assignIp();
 
         # Only add non pxe iface to /etc/network/interfaces
         if ($iface->hasIp and not $iface->getAttr(name => 'iface_pxe')) {
-            push @interfaces, { name    => $iface->getAttr(name => 'iface_name'),
+            push @net_ifaces, { name    => $iface->getAttr(name => 'iface_name'),
                                 address => $iface->getIPAddr,
                                 netmask => $iface->getNetMask };
         }
@@ -288,16 +285,16 @@ sub _generateNetConf {
                         address => $dmz_ip->{address},
                         netmask => $dmz_ip->{netmask}
                     };
-                    push (@interfaces, $tmp_iface);
+                    push (@net_ifaces, $tmp_iface);
                     $i++;
                 }
             }
         }
-        @interfaces = (@interfaces, @{$self->{_objs}->{cluster}->getPublicIps()});
+        @net_ifaces = (@net_ifaces, @{$self->{_objs}->{cluster}->getPublicIps()});
     }
 
     #$log->debug(Dumper(@interfaces));
-    $template->process($input, { interfaces => \@interfaces }, "/tmp/$tmpfile")
+    $template->process($input, { interfaces => \@net_ifaces }, "/tmp/$tmpfile")
         or throw Kanopya::Exception::Internal::IncorrectParam(
                      error => "Error when generate net conf ". $template->error() . "\n"
                  );

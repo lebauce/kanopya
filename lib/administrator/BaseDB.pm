@@ -165,7 +165,7 @@ sub new {
     };
     if ($@) {
         $errmsg = "Unregistred or abstract class name <$class>, assuming it is not an Entity.";
-        $log->error($errmsg);
+        $log->debug($errmsg);
         #throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
@@ -308,7 +308,7 @@ sub get {
         $class   = $dbix->class_type->get_column('class_type');
     };
     if ($@) {
-        $log->error("Unable to retreive concrete class name, using $class.");
+        $log->debug("Unable to retreive concrete class name, using $class.");
     }
     my $table = _buildClassNameFromString($class);
 
@@ -350,7 +350,7 @@ sub search {
         if($@) {
             my $exception = $@; 
             if(Kanopya::Exception::Permission::Denied->caught()) {
-                $log->info("no right to access to object <$table> with <$row->id>");
+                $log->debug("no right to access to object <$table> with <$row->id>");
                 next;
             } 
             else { $exception->rethrow(); } 
@@ -439,7 +439,7 @@ sub save {
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
         
     }
-    $log->info(ref($self)." updated in database");
+    $log->debug(ref($self)." updated in database");
     return $id;
 }
 

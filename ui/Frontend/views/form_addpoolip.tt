@@ -15,7 +15,7 @@
         <td><input type="text" name="addr" size="16" /></td>
     </tr>
     <tr>
-        <td class="label">Mask :</td>
+        <td class="label">Pool size:</td>
         <td><input type="text" name="mask" maxlength=2" size="2" /></td>
     </tr>
     <tr>

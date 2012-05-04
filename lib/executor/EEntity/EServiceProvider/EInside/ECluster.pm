@@ -39,8 +39,11 @@ use strict;
 use warnings;
 
 use Entity;
+use Entity::ServiceProvider::Inside::Cluster;
 use General;
 use EFactory;
+use Entity::InterfaceRole;
+
 use Template;
 use String::Random;
 use IO::Socket;
@@ -81,6 +84,19 @@ sub create {
         $self->_getEntity()->addComponent(component => $comp);
         $log->info("$compclass automatically added");
     }
+
+    # Automatically add the admin interface
+    my $adminrole = Entity::InterfaceRole->find(hash => { interface_role_name => 'admin' });
+    my $kanopya   = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
+    my $interface = Entity::Interface->find(
+                         hash => { service_provider_id => $kanopya->getAttr(name => 'entity_id'),
+                                   interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
+                     );
+
+    $self->_getEntity->addNetworkInterface(
+        interface_role => $adminrole,
+        networks       => $interface->getNetworks
+    );
 }
 
 sub addNode {
@@ -136,6 +152,66 @@ sub generateResolvConf {
         dest => "$args{etc_path}/resolv.conf"
     );
     unlink "/tmp/$tmpfile";
+}
+
+
+=head
+
+    $ecluster->updateHostsFile
+
+    regenerate /etc/hosts on the current cluster AND kanopya cluster.
+    Used to be called after a node has joined or has left a cluster
+
+=cut
+
+
+sub updateHostsFile {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['executor_context','kanopya_domainname']
+    );
+    
+    $log->info('Update cluster nodes /etc/hosts');
+    
+    my $rand = new String::Random;
+    my $kanopya_hostfile = '/tmp/' . $rand->randpattern("cccccccc");
+    my $node_hostfile = '/tmp/' . $rand->randpattern("cccccccc");
+    my $template = Template->new(General::getTemplateConfiguration());
+    my $input = "hosts.tt";
+    
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
+    my $cluster_id = $self->_getEntity->getAttr(name => 'cluster_id');
+    
+    my @all_nodes = ();
+    my @cluster_nodes = ();
+    
+    foreach my $cluster (@clusters) {
+        my $nodes = $cluster->getHosts();
+        foreach my $node (values %$nodes) {
+            my $tmp = { 
+                hostname   => $node->getAttr(name => 'host_hostname'),
+                domainname => $args{kanopya_domainname},
+                ip         => $node->getAdminIp 
+            };
+            if($cluster->getAttr(name => 'cluster_id') eq $cluster_id) {
+                push @cluster_nodes, $tmp;
+            }
+            push @all_nodes, $tmp;
+        }
+    }
+    
+    $template->process($input, {hosts => \@cluster_nodes}, $node_hostfile);
+    $template->process($input, {hosts => \@all_nodes}, $kanopya_hostfile);
+    
+    foreach my $node (@cluster_nodes) {
+        my $node_ip = $node->{ip};
+        my $node_econtext = EFactory::newEContext(ip_source      => $args{executor_context}->getLocalIp,
+                                                  ip_destination => $node_ip);
+        $node_econtext->send(src => $node_hostfile, dest => "/etc/hosts");
+    }
+    
+    $args{executor_context}->send(src => $kanopya_hostfile, dest => "/etc/hosts");
 }
 
 1;

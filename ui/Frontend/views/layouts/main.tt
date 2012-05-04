@@ -224,6 +224,7 @@
                     <% ELSIF is_menu_selected('networks') %>
                          <li <% submenu_selection('poolip') %>><a href="/networks/poolip">Pool IP</a></li>
                          <li <% submenu_selection('vlans') %>><a href="/networks/vlans">Vlan</a></li>
+                         <li <% submenu_selection('lans') %>><a href="/networks/lans">Networks</a></li>
                     <% ELSIF is_menu_selected('systems') %>
                         <li <% submenu_selection('masterimages') %>><a href="/systems/masterimages">Master Images</a></li>
                         <li <% submenu_selection('images') %>><a href="/systems/images">System images</a></li>

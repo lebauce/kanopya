@@ -6,5 +6,5 @@
 
 127.0.0.1 localhost 
 [% FOREACH host=hosts %]
-[% host.ip %] [% host.hostname %] [% host.hostname %].[% host.domainname %]
+[% host.ip %] [% host.hostname %].[% host.domainname %] [% host.hostname %]
 [% END %]

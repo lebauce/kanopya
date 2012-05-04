@@ -68,6 +68,12 @@ sub children {
                                      classId => $classId);
 }
 
+sub child {
+    my ($self, $name) = @_;
+
+    return $self->{ucs}->get(dn => $self->{dn} . "/" . $name);
+}
+
 sub delete {
     my $self = shift;
 

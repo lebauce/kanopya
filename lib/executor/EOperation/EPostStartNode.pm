@@ -53,14 +53,6 @@ use Template;
 my $log = get_logger("executor");
 my $errmsg;
 
-my $config = {
-    INCLUDE_PATH => '/templates/internal/',
-    INTERPOLATE  => 1,               # expand "$var" in plain text
-    POST_CHOMP   => 0,               # cleanup whitespace 
-    EVAL_PERL    => 1,               # evaluate Perl code blocks
-    RELATIVE => 1,                   # desactive par defaut
-};
-
 =head2 prepare
 
     $op->prepare(internal_cluster => \%internal_clust);
@@ -103,6 +95,8 @@ sub prepare {
         = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
     $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
                                                           ip_destination => $exec_cluster->getMasterNodeIp());
+    $self->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
+
 }
 
 sub execute {
@@ -123,50 +117,17 @@ sub execute {
                             econtext => $self->{executor}->{econtext});
     }
 
-    my $nodes = $self->{_objs}->{cluster}->getHosts();
-    $log->info("Generate Hosts Conf");
-
-    my $etc_hosts_file = $self->generateHosts(nodes => $nodes);
-    foreach my $i (keys %$nodes) {
-	    my $node = $nodes->{$i};
-        my $node_ip = $nodes->{$i}->getAdminIp;
-        my $node_econtext = EFactory::newEContext(ip_source      => $self->{executor}->{econtext}->getLocalIp,
-                                                  ip_destination => $node_ip);
-        $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
-    }    
+    my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
+    $ecluster->updateHostsFile(
+        executor_context   => $self->{executor}->{econtext},
+        kanopya_domainname => $self->{kanopya_domainname}
+    );
+        
 	my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
     $ehost->postStart(econtext => $self->{executor}->{econtext});
 }
  
-sub generateHosts {
-    my $self = shift;
-    my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "nodes" ]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    # create Template object
-    my $template = Template->new($config);
-    my $input = "hosts.tt";
-    my $nodes = $args{nodes};
-    my @nodes_list = ();
-    
-    foreach my $i (keys %$nodes) {
-        my $tmp = { hostname   => $nodes->{$i}->getAttr(name => 'host_hostname'),
-                    domainname => "hedera-technology.com",
-                    ip         => $nodes->{$i}->getAdminIp };
-        push @nodes_list, $tmp;
-    }
-    my $vars = { hosts => \@nodes_list };
-    $log->debug(Dumper($vars));
-    $template->process($input, $vars, "/tmp/$tmpfile") || die $template->error(), "\n";
-
-    return("/tmp/".$tmpfile);
-   # $self->{nas}->{econtext}->send(src => "/tmp/".$tmpfile, dest => "/etc/hosts");
-   # unlink     "/tmp/$tmpfile";
-}
 
 #sub finish {
 #    my $self = shift;

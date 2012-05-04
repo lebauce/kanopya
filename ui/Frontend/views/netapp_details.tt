@@ -41,7 +41,10 @@
     <tr><td class="label">Address :</td><td><% netapp_addr %></td></tr>
     <tr><td class="label">Login :</td><td><% netapp_login %></td></tr>
     <tr><td class="label">Password :</td><td>**********</td></tr>
-    <tr><td class="label">Comment :</td><td><% entity_comment %></td></tr>
+    <tr><td class="label">Comment :</td><td><% entity_comment %><% INCLUDE edit_comment.tt 
+        value = volume.entity_comment
+    	divid = netapp_id
+    %></td></tr>
     </tr>
 </table>
 

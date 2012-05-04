@@ -1,10 +1,14 @@
-<td class="label">Volume:</td>
+<td class="label">Aggregate:</td>
 <td>
-<select id="volume" name="disk_manager_param_volume_id">
-<% FOREACH netapp_volume IN netapp_volumes %>
-    <option value="<% netapp_volume.volume_id %>"><% netapp_volume.volume_name %></option>
+<select id="aggregate" name="disk_manager_param_netapp_aggregate_id">
+<% FOREACH aggregate IN aggregates %>
+	<option value="<% aggregate.aggregate_id %>"><% aggregate.aggregate_name %></option>
+</select>
+Volume:
+<select id="volume" name="disk_manager_param_netapp_volume_id">
+<% FOREACH container IN aggregate.aggregates_volumes %>
+    <option value="<% container.volume_id %>"><% container.volume_name %></option>
+<% END %>
 <% END %>
 </select>
 </td>
-
-
