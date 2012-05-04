@@ -1,21 +1,17 @@
-use utf8;
 package AdministratorDB::Schema::Result::Component;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Component
-
-=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<component>
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Component
 
 =cut
 
@@ -97,17 +93,6 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
-
-=head1 PRIMARY KEY
-
-=over 4
-
-=item * L</component_id>
-
-=back
-
-=cut
-
 __PACKAGE__->set_primary_key("component_id");
 
 =head1 RELATIONS
@@ -154,7 +139,22 @@ __PACKAGE__->belongs_to(
   "component",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "component_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Inside>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::Inside",
+  { inside_id => "service_provider_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 component_template
@@ -168,13 +168,8 @@ Related object: L<AdministratorDB::Schema::Result::ComponentTemplate>
 __PACKAGE__->belongs_to(
   "component_template",
   "AdministratorDB::Schema::Result::ComponentTemplate",
-  { "component_template_id" => "component_template_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { component_template_id => "component_template_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 component_type
@@ -189,7 +184,22 @@ __PACKAGE__->belongs_to(
   "component_type",
   "AdministratorDB::Schema::Result::ComponentType",
   { component_type_id => "component_type_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 tier
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Tier>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "tier",
+  "AdministratorDB::Schema::Result::Tier",
+  { tier_id => "tier_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 dhcpd3
@@ -432,26 +442,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Inside>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::Inside",
-  { inside_id => "service_provider_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
 =head2 snmpd5
 
 Type: might_have
@@ -482,30 +472,12 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 tier
 
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Tier>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "tier",
-  "AdministratorDB::Schema::Result::Tier",
-  { tier_id => "tier_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-30 17:35:43
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fKwLe1tubXmbf+s1yZdz6Q
 
 
-# Created by DBIx::Class::Schema::Loader v0.07022 @ 2012-04-26 12:51:00
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nWxPF0I96eFM/oIYf8FqYg
-
+# You can replace this text with custom content, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
@@ -513,6 +485,4 @@ __PACKAGE__->belongs_to(
     { cascade_copy => 0, cascade_delete => 1 }
 );
 
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
