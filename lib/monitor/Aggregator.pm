@@ -35,7 +35,7 @@ sub new {
     my %args = @_;
     my $self = {};
     bless $self, $class;
-    
+
     # Load conf
     my $conf = XMLin("/opt/kanopya/conf/monitor.conf");
     $self->{_time_step} = $conf->{time_step};
@@ -43,23 +43,29 @@ sub new {
     my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
     Administrator::authenticate( login => $login, password => $password );
     $self->{_admin} = Administrator->new();
-    
+
     return $self;
 };
 
 # 
 
 
+=head2 _contructRetrieverOutput
 
+    Desc : This function build the variable to be given to a Data Collector
+    args: cluster_id, 
+    return : \%rep (containing the indicator list and the timespan requested)
+
+=cut
 
 sub _contructRetrieverOutput {
     my $self = shift;
     my %args = @_;
-    
-    
+
+
     #my @clustermetrics = Clustermetric->search(hash => {clustermetrics_clustermetrics_cluster_id => });
-    
-    my $cluster_id                 = $args{cluster_id};
+
+    my $service_provider_id                 = $args{service_provider_id};
     my $clustermetric_cluster_id   = 0;
     my $clustermetric_indicator_id = 0;
     
@@ -73,25 +79,25 @@ sub _contructRetrieverOutput {
     my $clustermetric_time_span    = undef;
     my $time_span              = undef;
 
-    
-    
-        
+
+
+
         my @clustermetrics = Clustermetric->search(
             hash => {
-                clustermetric_service_provider_id => $cluster_id
+                clustermetric_service_provider_id => $service_provider_id
             }
         );
-        
+
         for my $clustermetric (@clustermetrics){
-        
+
             $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
             $clustermetric_time_span    = $clustermetric->getAttr(name => 'clustermetric_window_time');
-            
+
             $indicator = Indicator->get('id' => $clustermetric_indicator_id);
-            
+
             $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
-            
-            
+
+
             if(! defined $time_span)
             {
                 $time_span = $clustermetric_time_span
@@ -100,11 +106,11 @@ sub _contructRetrieverOutput {
                 if($time_span != $clustermetric_time_span)
                 {
                     $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
-                    print("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION ($time_span vs $clustermetric_time_span)\n");
+                    print("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION ($time_span != $clustermetric_time_span)\n");
                 }
             }
             $time_span = ($clustermetric_time_span > $time_span)?$clustermetric_time_span:$time_span;
-        
+
     }
     @indicators_array = keys(%$indicators_name);
     $rep->{indicators} = \@indicators_array;
@@ -119,38 +125,38 @@ sub _contructRetrieverOutput {
 
 sub update() {
     my $self = shift;
-    
+
     my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
-    
+
     CLUSTER:
     for my $externalCluster (@externalClusters){
         eval{
-            my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-            
+            my $service_provider_id = $externalCluster->getAttr(name => 'externalcluster_id');
+
             #FILTER CLUSTERS WITH MONITORING PROVIDER
             eval{
                 $externalCluster->getConnector(category => 'MonitoringService');
             };
             if($@){
-                print '*** Aggregator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
+                print '*** Aggregator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***'."\n";
             }else{
-                print '*** Aggregator collecting for cluster '.$cluster_id.' ***'."\n";
-                my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-                
+                print '*** Aggregator collecting for service provider '.$service_provider_id.' ***'."\n";
+                my $service_provider_id = $externalCluster->getAttr(name => 'externalcluster_id');
+
                 # Construct input of the SCOM retriever
-                my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
+                my $host_indicator_for_retriever = $self->_contructRetrieverOutput(service_provider_id => $service_provider_id );
                 print Dumper $host_indicator_for_retriever;
-                
+
                 # Call the retriever to get SCOM data
                 my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
                 print Dumper $monitored_values; 
-                    
+
                 # Verify answers received from SCOM to detect metrics anomalies
                 my $checker = $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
-                
+
                 # Parse retriever return, compute clustermetric values and store in DB
                 if($checker == 1){
-                    $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values, cluster_id => $cluster_id);
+                    $self->_computeCombinationAndUpdateTimeDB(values=>$monitored_values, cluster_id => $service_provider_id);
                 } 
             } #END EVAL
         1;
@@ -206,7 +212,7 @@ sub _checkNodesMetrics{
     Args : values : hash table from the Retriever
 =cut
 
-sub _computeAggregateValuesAndUpdateTimeDB{
+sub _computeCombinationAndUpdateTimeDB {
     my $self = shift;
     my %args = @_;
 
@@ -346,8 +352,8 @@ sub run {
 #    my $self = shift;
 #    my %args = @_;
 #
-#    print "THIS METHOD SEEMS DEPRECATED, please use _computeAggregateValuesAndUpdateTimeDB";
-#    $log->info("THIS METHOD SEEMS DEPRECATED, please use _computeAggregateValuesAndUpdateTimeDB"); 
+#    print "THIS METHOD SEEMS DEPRECATED, please use _computeCombinationAndUpdateTimeDB";
+#    $log->info("THIS METHOD SEEMS DEPRECATED, please use _computeCombinationAndUpdateTimeDB"); 
 #    General::checkParams(args => \%args, required => ['indicators']);
 #    my $indicators = $args{indicators};
 #    my $rep = {};

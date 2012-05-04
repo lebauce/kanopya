@@ -73,7 +73,7 @@ use constant ATTR_DEF => {
 };
 sub getAttrDef { return ATTR_DEF; }
 
-sub retrieveData () {
+sub retrieveData {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['nodelist', 'timespan']);
@@ -90,15 +90,15 @@ sub retrieveData () {
     return \%return;
 }
 
-sub getCollectorType () {
+sub getCollectorType {
     return 'Native Kanopya collector tool';
 }
 
-sub getConf() {
+sub getConf {
     
 }
 
-sub setConf() {
+sub setConf {
     
 }
 

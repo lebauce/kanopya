@@ -28,4 +28,4 @@ use General;
 
 my $log = get_logger("administrator");
 
-sub retrieveData () { }
+sub retrieveData { }
