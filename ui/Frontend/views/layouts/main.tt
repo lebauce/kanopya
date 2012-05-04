@@ -3,8 +3,11 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
-<title>Frontend</title>
-<link rel="stylesheet" href="<% request.uri_base %>/css/style.css" />
+<title>Kanopya</title>
+
+<!--link rel="stylesheet" href="<% request.uri_base %>/css/style.css" /-->
+
+<link rel="stylesheet" href="<% request.uri_base %>/css/theme/jquery-ui-1.8.19.custom.css" />
 
 <script src="/javascripts/jquery/jquery-1.7.2.min.js"></script>
 <script src="/javascripts/jquery/jquery.layout.js"></script>
