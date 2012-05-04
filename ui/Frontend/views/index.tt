@@ -1,11 +1,17 @@
-<div class="ui-layout-center">
+<div id='view-container' class="pane ui-layout-center">
+    <div id='view_a'>
+        coucou
+    </div>
+    <div id='view_i'>
+        pouet
+    </div>
 </div>
-<div class="ui-layout-east">
+<div class="pane ui-layout-east">
 </div>
-<div class="ui-layout-west">
+<div id='mainmenu-container' class="pane ui-layout-west">
 </div>
-<div class="ui-layout-north">
+<div class="pane ui-layout-north">
 </div>
-<div class="ui-layout-south">
+<div class="pane ui-layout-south">
     <table id="grid-message"></table>
 </div>
