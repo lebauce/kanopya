@@ -398,6 +398,10 @@ post '/clusters/add' => sub {
 
     my $persistent = param('cluster_si_persistent') eq 'checked' ? 1 : 0;
     $parameters{cluster_si_persistent} = $persistent;
+
+    if ($parameters{collector_manager_id} eq 'default') {
+        delete $parameters{collector_manager_id};
+    }
  
     eval {
         Entity::ServiceProvider::Inside::Cluster->create(%parameters);
