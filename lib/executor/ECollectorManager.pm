@@ -15,7 +15,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 24 april 2012
 
-package EEntity::EKanapyaCollector;
+package ECollectorManager;
 
 use strict;
 use warnings;
@@ -27,17 +27,4 @@ use Data::Dumper;
 
 my $log = get_logger("executor");
 
-=head2 retrieveData
-
-
-=cut
-
-sub retrieveData(){
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args => \%args, required => ['nodes', 'indicators', 'time_span']);
-
-    my %data = (indic1 => 3, indic2 => 5, indic3 => 7);
-    return \%data;
-}
+1;
