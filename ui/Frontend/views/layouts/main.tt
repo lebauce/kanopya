@@ -12,6 +12,7 @@
 <script src="/javascripts/jquery/jquery-1.7.2.min.js"></script>
 <script src="/javascripts/jquery/jquery.layout.js"></script>
 <script src="/javascripts/kanopya.ui.js"></script>
+<script src='/javascripts/jquery/jquery.jqGrid.min.js'></script>
 
 </head>
 <body style="visibility: hidden;">
