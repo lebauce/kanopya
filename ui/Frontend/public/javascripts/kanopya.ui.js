@@ -1,5 +1,9 @@
 $(document).ready(function () {
-    $('body').layout({ applyDefaultStyles: true });
+    //$('body').layout({ applyDefaultStyles: true });
+    $('body').layout({
+        resizable : true,
+        //applyDefaultStyles: true
+    });
 
 
     $("#grid-message").jqGrid({ 
