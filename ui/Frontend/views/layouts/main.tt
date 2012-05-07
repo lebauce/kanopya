@@ -8,11 +8,13 @@
 <!--link rel="stylesheet" href="<% request.uri_base %>/css/style.css" /-->
 
 <link rel="stylesheet" href="<% request.uri_base %>/css/theme/jquery-ui-1.8.19.custom.css" />
+<link rel="stylesheet" href="<% request.uri_base %>/css/layout.css">
 
 <script src="/javascripts/jquery/jquery-1.7.2.min.js"></script>
 <script src="/javascripts/jquery/jquery.layout.js"></script>
 <script src="/javascripts/jquery/jquery.ui.widget.js"></script>
 <script src="/javascripts/jquery/jquery.ui.accordion.js"></script>
+<script src='/javascripts/jquery/jquery.ui.tabs.js'></script>
 <script src='/javascripts/jquery/jquery.jqGrid.min.js'></script>
 
 <script src="/javascripts/kanopya.ui.js"></script>
