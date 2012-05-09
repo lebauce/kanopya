@@ -114,6 +114,8 @@ sub prepare {
     # 2. As systemimages always dedicated for instance, a system image container has
     #    onlky one container access.
     $self->{_objs}->{container_access} = pop @{ $self->{_objs}->{container}->getAccesses };
+    
+    $self->{kanopya_domainname} =  $self->{bootserver}->getAttr(name => 'cluster_domainname');
 
 }
 
@@ -220,6 +222,13 @@ sub execute {
                              econtext    => $self->{executor}->{econtext},
                              erollback   => $self->{erollback});
     }
+
+    # generate Hosts conf
+    $ecluster->generateHostsConf(
+        etc_path           => $mountpoint . '/etc',
+        executor_context   => $self->{executor}->{econtext},
+        kanopya_domainname => $self->{kanopya_domainname}
+    );
 
     # Umount system image container
     $econtainer_access->umount(mountpoint => $mountpoint,
