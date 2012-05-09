@@ -154,6 +154,45 @@ sub generateResolvConf {
     unlink "/tmp/$tmpfile";
 }
 
+sub generateHostsConf {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['executor_context','etc_path','kanopya_domainname']
+    );
+    $log->info('Generate /etc/hosts file');
+    my $rand = new String::Random;
+    my $hostsfile = '/tmp/' . $rand->randpattern('cccccccc');
+    my $template = Template->new(General::getTemplateConfiguration());
+    my $input = 'hosts.tt';
+    my $nodes = $self->_getEntity->getHosts();
+    my @hosts_entries = ();
+    # we add each nodes 
+    foreach my $node (values %$nodes) {
+        my $tmp = { 
+            hostname   => $node->getAttr(name => 'host_hostname'),
+            domainname => $args{kanopya_domainname},
+            ip         => $node->getAdminIp 
+        };
+
+        push @hosts_entries, $tmp;
+    }
+    # we ask components for additional hosts entries
+    my $components = $self->_getEntity->getComponents(category => 'all');
+    foreach my $component (values %$components) {
+        my $entries = $component->getHostsEntries();
+        if(defined $entries) {
+            foreach my $entry (@$entries) {
+                push @hosts_entries, $entry;
+            }
+        }
+    }
+    $template->process($input, {hosts => \@hosts_entries}, $hostsfile);
+    $args{executor_context}->send(
+        src => $hostsfile,
+        dest => "$args{etc_path}/hosts"
+    );
+}
 
 =head
 
@@ -163,7 +202,6 @@ sub generateResolvConf {
     Used to be called after a node has joined or has left a cluster
 
 =cut
-
 
 sub updateHostsFile {
     my ($self, %args) = @_;
@@ -196,6 +234,16 @@ sub updateHostsFile {
             };
             if($cluster->getAttr(name => 'cluster_id') eq $cluster_id) {
                 push @cluster_nodes, $tmp;
+                # we ask components for additional hosts entries
+                my $components = $cluster->getComponents(category => 'all');
+                foreach my $component (values %$components) {
+                    my $entries = $component->getHostsEntries();
+                    if(defined $entries) {
+                        foreach my $entry (@$entries) {
+                            push @cluster_nodes, $entry;
+                        }
+                    }
+                }
             }
             push @all_nodes, $tmp;
         }
