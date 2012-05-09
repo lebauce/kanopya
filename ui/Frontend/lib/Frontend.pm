@@ -7,4 +7,9 @@ get '/' => sub {
     template 'index';
 };
 
+get '/sandbox' => sub {
+    template 'sandbox', {}, {layout => ''};
+};
+
+
 true;
