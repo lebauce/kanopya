@@ -23,25 +23,40 @@ my $errmsg;
 
 # generate configuration files on node
 sub configureNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+    my $data;
 
     my $conf = $self->_getEntity()->getConf();
 
-    # Generation of memcached.conf
-    #~ my $data = { 
-        #~ connection_port   => $conf->{memcached1_port},
-        #~ listening_address => $args{host}->getInternalIP()->{ipv4_internal_address},
-    #~ };
-    #~ 
-    #~ $self->generateFile( 
-        #~ econtext     => $args{econtext},
-        #~ mount_point  => $args{mount_point},
-        #~ template_dir => "/templates/components/memcached",
-        #~ input_file   => "memcached.conf.tt", 
-        #~ output       => "/memcached.conf", 
-        #~ data         => $data
-    #~ );
+    # Generation of /etc/default/puppet
+    $data = { 
+        puppetagent2_bootstart => 'yes',
+        puppetagent2_options   => $conf->{puppetagent2_options},
+    };
+    
+    $self->generateFile( 
+        econtext     => $args{econtext},
+        mount_point  => $args{mount_point},
+        template_dir => "/templates/components/puppetagent",
+        input_file   => "default_puppet.tt", 
+        output       => "/default/puppet", 
+        data         => $data
+    );
+    
+    # Generation of puppet.conf
+    $data = { 
+        puppetagent2_masterserver => $conf->{puppetagent2_masterfqdn},
+    };
+    
+     
+    $self->generateFile( 
+        econtext     => $args{econtext},
+        mount_point  => $args{mount_point},
+        template_dir => "/templates/components/puppetagent",
+        input_file   => "puppet.conf.tt", 
+        output       => "/puppet/puppet.conf", 
+        data         => $data
+    );
 
 }
 
@@ -53,17 +68,17 @@ sub addNode {
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
   
-    #~ $self->configureNode(
-        #~ econtext    => $args{econtext},
-        #~ mount_point => $args{mount_point}.'/etc',
-        #~ host        => $args{host}
-    #~ );
-    #~ 
-    #~ $self->addInitScripts(    
-        #~ mountpoint => $args{mount_point}, 
-        #~ econtext   => $args{econtext}, 
-        #~ scriptname => 'memcached', 
-    #~ );
+    $self->configureNode(
+        econtext    => $args{econtext},
+        mount_point => $args{mount_point}.'/etc',
+        host        => $args{host}
+    );
+    
+    $self->addInitScripts(    
+        mountpoint => $args{mount_point}, 
+        econtext   => $args{econtext}, 
+        scriptname => 'puppet', 
+    );
     
 }
 

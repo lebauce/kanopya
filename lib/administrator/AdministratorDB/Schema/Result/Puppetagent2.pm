@@ -26,23 +26,29 @@ __PACKAGE__->table("puppetagent2");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 puppetagent2_bootstart
-
-  data_type: 'enum'
-  default_value: 'no'
-  extra: {list => ["no","yes"]}
-  is_nullable: 1
-
 =head2 puppetagent2_options
 
   data_type: 'char'
   is_nullable: 1
   size: 255
 
-=head2 puppetagent2_masterserver
+=head2 puppetagent2_mode
+
+  data_type: 'enum'
+  default_value: 'kanopya'
+  extra: {list => ["kanopya","custom"]}
+  is_nullable: 0
+
+=head2 puppetagent2_masterip
 
   data_type: 'char'
-  is_nullable: 1
+  is_nullable: 0
+  size: 15
+
+=head2 puppetagent2_masterfqdn
+
+  data_type: 'char'
+  is_nullable: 0
   size: 255
 
 =cut
@@ -55,17 +61,19 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "puppetagent2_bootstart",
-  {
-    data_type => "enum",
-    default_value => "no",
-    extra => { list => ["no", "yes"] },
-    is_nullable => 1,
-  },
   "puppetagent2_options",
   { data_type => "char", is_nullable => 1, size => 255 },
-  "puppetagent2_masterserver",
-  { data_type => "char", is_nullable => 1, size => 255 },
+  "puppetagent2_mode",
+  {
+    data_type => "enum",
+    default_value => "kanopya",
+    extra => { list => ["kanopya", "custom"] },
+    is_nullable => 0,
+  },
+  "puppetagent2_masterip",
+  { data_type => "char", is_nullable => 0, size => 15 },
+  "puppetagent2_masterfqdn",
+  { data_type => "char", is_nullable => 0, size => 255 },
 );
 __PACKAGE__->set_primary_key("puppetagent2_id");
 
@@ -87,14 +95,13 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-26 18:43:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uEqAKcfbHL9pwwvokN0DJg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-04 15:17:05
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QnPLOylQQF7YKtBMrl1oyA
 
 __PACKAGE__->belongs_to(
-  "parent",
-  "AdministratorDB::Schema::Result::Component",
+    "parent",
+    "AdministratorDB::Schema::Result::Component",
     { "foreign.component_id" => "self.puppetagent2_id" },
     { cascade_copy => 0, cascade_delete => 1 });
-
 
 1;

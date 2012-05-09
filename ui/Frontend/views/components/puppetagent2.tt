@@ -1,15 +1,28 @@
 <% js_head.push('components.js') %>
 <h2>Cluster <% cluster_name %> - Puppet agent Configuration</h2>
 <hr />
-<form method="POST" action="/components/process_configurecomponent">
-<input type="hidden" name="component_id" value="<% component_instance_id %>"/>
-<input type="hidden" name="snmpd5_id" value="<% puppetagent2_id %>"/>
-<input type="hidden" name="component_name" value="Puppetagent2"/>
-<input type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<form class="elem_root" name="conf">
+<input type="hidden" class="conf_simple_value" name="component_id" value="<% component_instance_id %>"/>
+<input type="hidden" class="conf_simple_value" name="puppetagent2_id" value="<% puppetagent2_id %>"/>
+<input type="hidden" class="conf_simple_value" name="component_name" value="Puppetagent2"/>
+<input type="hidden" class="conf_simple_value" name="cluster_id" value="<% cluster_id %>"/>
 <table>
-<tr><td>Start agent at boot time :</td><td><input type="checkbox" name="puppetagent2_bootstart" value="<% monitor_server_ip %>" checked="" /></td></tr>
-<tr><td>master server :</td><td><input type="text" name="puppetagent2_masterserver" size="64" value="<% puppetagent2_masterserver %>" /></td></tr>
-<tr><td>daemon options :</td><td><input type="text" name="puppetagent2_options" size="64" value="<% puppetagent2_options %>" /></td></tr>
+<tr><td>daemon options :</td>
+    <td><input class="conf_simple_value" type="text" name="puppetagent2_options" size="64" value="<% puppetagent2_options %>" /></td>
+</tr>   
+
+<tr><td>Puppet master to use :</td>
+    <td><select class="conf_simple_value" id="puppetagent2_mode" name="puppetagent2_mode">
+    <option value="kanopya">kanopya</option> 
+    <option value="custom">custom server</option> 
+    </select> </td>
+</tr>
+<tr id="custom_server">
+    <td>custom server :</td>
+    <td>ip address: <input class="conf_simple_value" name="puppetagent2_masterip" type="text" size="15" maxlength="15" value="<% puppetagent2_masterip %>" /> 
+    fqdn: <input class="conf_simple_value" name="puppetagent2_masterfqdn" type="text" size="30" maxlength="255" value="<% puppetagent2_masterfqdn %>" /></td>
+</tr>
+
 </table>
 <hr />
 <div class="right">
@@ -17,3 +30,19 @@
 <input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
 </div>
 </form>
+
+<script>
+
+$('#puppetagent2_mode').change(function() {
+   if($("#puppetagent2_mode option:selected").val() == 'custom') {
+        $("#custom_server").show();
+   } else {
+        $("#custom_server").hide();
+   }
+}); 
+
+
+$("#puppetagent2_mode option[value=<% puppetagent2_mode %>]").attr("selected", "selected");
+$('#puppetagent2_mode').change();
+
+</script>

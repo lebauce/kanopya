@@ -48,41 +48,29 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
-use constant ATTR_DEF => {
-	p1   => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-
-    p2 => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                           },
-};
-
+use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
     my ($self) = @_;
-    my $puppetagent_conf = {
-        snmpd5_id => undef,
-        monitor_server_ip => "10.0.0.1",
-        snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
-    };
-    
+    my %conf = ();
     my $confindb = $self->{_dbix};
     if($confindb) {
-       $puppetagent_conf = {
-
+        %conf = $confindb->get_columns();
+    } else {
+        %conf = {
+            puppetagent2_options    => '',
+            puppetagent2_mode       => 'kanopya',
+            puppetagent2_masterip   => '',
+            puppetagent2_masterfqdn => '' 
+        };
     }
-    return $puppetagent_conf; 
+    return \%conf; 
 }
 
 sub setConf {
     my ($self, $conf) = @_;
-        
+    # TODO if mode is kanopya, update master ip and fqdn with kanopya config
     if(not $conf->{puppetagent2_id}) {
         # new configuration -> create
         $self->{_dbix}->create($conf);
@@ -92,26 +80,17 @@ sub setConf {
     }
 }
 
-=head2 getNetConf
-B<Class>   : Public
-B<Desc>    : This method return component network configuration in a hash ref, it's indexed by port and value is the port
-B<args>    : None
-B<Return>  : hash ref containing network configuration with following format : {port => protocol}
-B<Comment>  : None
-B<throws>  : Nothing
-=cut
-
-sub getNetConf {
-    return { 161 => ['udp'] };
+sub getHostsEntries {
+    my ($self) = @_;
+    my $entry = {};
+    my $fqdn = $self->{_dbix}->get_column('puppetagent2_masterfqdn');
+    my @tmp = split(/\./, $fqdn);
+    $entry->{ip} = $self->{_dbix}->get_column('puppetagent2_masterip');
+    $entry->{hostname} = shift @tmp;
+    $entry->{domainname} = join('.', @tmp);
+    
+    return [ $entry ];
 }
-
-sub getBaseConfiguration {
-	return {
-        monitor_server_ip => '127.0.0.1',
-        snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
-    };
-}
-
 
 =head1 DIAGNOSTICS
 
