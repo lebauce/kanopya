@@ -92,10 +92,12 @@ sub checkParams {
     for my $param (@$required) {
         if (! exists $caller_args->{$param} or ! defined $caller_args->{$param}) {
             $errmsg = "$caller_sub_name needs a '$param' named argument!";
-            
-            # Log in general logger
-            # TODO log in the logger corresponding to caller package;
-            $log->error($errmsg);
+           
+            if (not $args{quiet}) {
+                # Log in general logger
+                # TODO log in the logger corresponding to caller package;
+                $log->error($errmsg);
+            } 
             
             throw Kanopya::Exception::Internal::MissingParam(sub_name   => $caller_sub_name,
                                                              param_name => $param );
@@ -114,12 +116,12 @@ sub checkParam {
 
     my $value;
     eval {
-        General::checkParams(args => $caller_args, required => [ $arg_name ]);
+        General::checkParams(args => $caller_args, required => [ $arg_name ], quiet => (exists $args{default}) ? 1 : 0);
         $value = $caller_args->{$arg_name};
         delete $caller_args->{$arg_name};
     };
     if ($@) {
-        if (exists $args{default} and defined $args{default}) {
+        if (exists $args{default} ) {
             $value = $args{default};
         }
         else {
