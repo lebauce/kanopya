@@ -511,7 +511,7 @@ get '/hosts/:hostid' => sub {
     $is_virtual = $host_type eq "Virtual Machine";
     $vnc_url = $ehost->getRemoteSessionURL();
 
-     template 'hosts_details', {
+    template 'hosts_details', {
         host_id          => $ehost->getAttr('name' => 'host_id'),
         host_hostname    => $ehost->getAttr('name' => 'host_hostname'),
         host_desc        => $ehost->getAttr('name' => 'host_desc'),
@@ -532,7 +532,7 @@ get '/hosts/:hostid' => sub {
         active                  => $active,
         is_virtual              => $is_virtual,
         url                     => $vnc_url,
-        can_deactivate          => $methods->{'deactivate'}->{'granted'} && $active && $host_state =~ /down/,
+        can_deactivate          => $methods->{'deactivate'}->{'granted'} && $active && ($host_state eq "down" ? 0 : 1),
         can_delete              => $methods->{'remove'}->{'granted'} && !$active,
         can_activate            => $methods->{'activate'}->{'granted'} && !$active,
         can_setperm             => $methods->{'setperm'}->{'granted'},
