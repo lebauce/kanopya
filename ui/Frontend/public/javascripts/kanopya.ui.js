@@ -1,9 +1,18 @@
 $(document).ready(function () {
-    //$('body').layout({ applyDefaultStyles: true });
-    $('body').layout({
-        resizable : true,
-        //applyDefaultStyles: true
-    });
+    $('body').layout(
+               { 
+                   applyDefaultStyles: true,
+                   defaults : { resizable : true, },
+                   south : { 
+                       togglerContent_closed : 'Messages',
+                       togglerLength_closed : 100,
+                       spacing_closed : 14,},
+                   north : { closable : false },
+               }
+    );
+//    $('body').layout({
+//        resizable : true,
+//    });
 
 
     $("#grid-message").jqGrid({ 

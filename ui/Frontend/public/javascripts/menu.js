@@ -1,9 +1,11 @@
 // each link will show the div with id "view_<link_name>" and hide all div in "#view-container"
 var mainmenu_def = {
     'Infrastructure'    : {
-        'Compute' : ['overview', 'hosts'],
+        'Compute' : [{label : 'Overview', id : 'overview'},
+                     {label : 'Hosts', id : 'hosts'}],
         'Storage' : [''],
-        'IaaS'    : ['All IaaS'],
+        'IaaS'    : [{label : 'IaaS', id : 'iaas'},
+                     {label : 'Log & Event', id : 'logs'}],
         'Network' : [],
         'System'  : [],
     },
@@ -48,12 +50,16 @@ function build_submenu(id, links) {
     var view = $('<div class="view" id="' + id + '"></div>').appendTo(container);
     var submenu_cont = $('<ul></ul>').appendTo(view);
     
-    for (var label in links) {
-        var content_id = 'content_' + label;
-        submenu_cont.append('<li><a href="#' + content_id + '">' + links[label] + '</a></li>');
-        view.append('<div id="' + content_id + '">' + links[label] + '</div>');
+    for (var smenu in links) {
+        var content_id = 'content_' + links[smenu]['id'];
+        submenu_cont.append('<li><a href="#' + content_id + '">' + links[smenu]['label'] + '</a></li>');
+        //view.append('<div id="' + content_id + '">' + links[label] + '</div>');
+        var content = $('<div id="' + content_id + '"></div>');
+        view.append(content);
     }
-    view.tabs();
+    view.tabs({
+            //select: function(event, ui) { alert('Event select : ' + ui) }
+    });
     view.hide();
 }
 
@@ -73,5 +79,4 @@ $(document).ready(function () {
     build_mainmenu();
     link_mainmenu();
 
-    //$('#example').tabs();
 });

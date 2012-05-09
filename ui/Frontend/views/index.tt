@@ -1,11 +1,12 @@
 <div id='view-container' class="ui-layout-center">
 </div>
-<div class="ui-layout-east">
-</div>
 <div id='mainmenu-container' class="ui-layout-west">
 </div>
 <div class="ui-layout-north">
+Kanopya Infrastructure Manager
 </div>
 <div class="ui-layout-south">
+<div>
     <table id="grid-message"></table>
+</div>
 </div>
