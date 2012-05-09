@@ -342,11 +342,38 @@ sub search {
 
     my $table = _buildClassNameFromString($class);
     my $adm = Administrator->new();
-    
-    my $rs = $adm->_getDbixFromHash( table => $table, hash => $args{hash} );
+
+    my $join;
+    my $depth = split("::", $class) - 1;
+    my $n = $depth;
+    while ($n > 0) {
+        $join = $join ? { parent => $join } :
+                          "parent";
+        $n -= 1;
+    }
+
+    my $rs = $adm->_getDbixFromHash(table => $table,
+                                    hash  => $args{hash},
+                                    page  => $args{page},
+                                    join  => $join);
 
     while ( my $row = $rs->next ) {
-        my $obj = eval { $class->get(id => $row->id); };
+        my $obj = {
+             _dbix => $row,
+        };
+
+        my $parent = $row;
+        while ($parent->can('parent')) {
+            $parent = $parent->parent;
+        }
+
+        my $class = $adm->getRow(
+                        table => "ClassType",
+                        id    => $parent->get_column("class_type_id")
+                    )->get_column('class_type');
+                                                                     
+        bless $obj, $class;
+
         if($@) {
             my $exception = $@; 
             if(Kanopya::Exception::Permission::Denied->caught()) {

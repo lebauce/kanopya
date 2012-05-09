@@ -346,7 +346,8 @@ sub _getDbixFromHash {
     eval {
         my $hash = $args{hash};
         if (keys(%$hash)) {
-            $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash} );
+            $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
+                                                                    { prefetch => $args{join} });
         } else {
             $dbix = $self->{db}->resultset( $args{table} )->search( undef );
         }
