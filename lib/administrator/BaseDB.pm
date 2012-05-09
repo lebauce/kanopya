@@ -344,7 +344,7 @@ sub search {
     my $adm = Administrator->new();
 
     my $join;
-    my $depth = split("::", $class) - 1;
+    my $depth = () = split(/::/, $class);
     my $n = $depth;
     while ($n > 0) {
         $join = $join ? { parent => $join } :
