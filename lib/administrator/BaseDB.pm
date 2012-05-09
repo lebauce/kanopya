@@ -367,12 +367,22 @@ sub search {
             $parent = $parent->parent;
         }
 
-        my $class = $adm->getRow(
-                        table => "ClassType",
-                        id    => $parent->get_column("class_type_id")
-                    )->get_column('class_type');
-                                                                     
-        bless $obj, $class;
+        my $class_type;
+        if ($parent->has_column("class_type_id")) {
+            $class_type = $adm->getRow(
+                              table => "ClassType",
+                              id    => $parent->get_column("class_type_id")
+                          )->get_column('class_type');
+
+            if (length($class_type) > length($class)) {
+                $obj = Entity->get(id => $parent->get_column("entity_id"));
+            }
+        }
+        else {
+            $class_type = $class;
+        }
+
+        bless $obj, $class_type;
 
         if($@) {
             my $exception = $@; 
