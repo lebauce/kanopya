@@ -2,6 +2,7 @@ package Frontend;
 use Dancer ':syntax';
 
 use Login;
+use REST::api;
 
 our $VERSION = '0.1';
 
