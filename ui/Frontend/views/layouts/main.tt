@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="<% request.uri_base %>/css/theme/jquery-ui-1.8.19.custom.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/layout.css">
 <link rel="stylesheet" href="<% request.uri_base %>/css/ui.jqgrid.css" />
+<link rel="stylesheet" href="<% request.uri_base %>/css/global.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/kanopya_style.css" />
 
 <script src="/javascripts/jquery/jquery-1.7.2.min.js"></script>

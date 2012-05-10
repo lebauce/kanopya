@@ -1,0 +1,32 @@
+<% IF errors %>
+    <div class="dfv_errors">
+        <% text = errors.size ? 'Missing field' : 'Missing    fields' %>
+        <% text %>:
+        <% FOREACH error IN errors.keys %>
+            <ul>
+                <li><% error %></li>
+            </ul>
+        <% END %>
+    </div>
+<% END %>
+
+<% IF fail %>
+    <div class="dfv_errors">
+     <% fail.user %>
+     <ul>
+         <li>wrong user or password</li>
+     </ul>
+    </div>
+<% END %>
+
+<h2>Administration Access</h2>
+<form method="post" action="/login">
+    <label for="login">Login: </label>
+    <input name="login" id="login" type="text" />
+
+    <br />
+
+    <label for="password">Password: </label>
+    <input name="password" id="password" type="password" />
+    <input type="submit" name="loguser" value="ok" />
+</form>
