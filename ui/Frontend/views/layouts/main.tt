@@ -23,6 +23,8 @@
 <!--script src='/javascripts/jquery/jquery.ui.tabs.js'></script-->
 <script src='/javascripts/jquery/jquery.jqGrid.min.js'></script>
 
+<script type='text/javascript' src='/javascripts/i18n/grid.locale-en.js'></script>
+
 <script src="/javascripts/kanopya.ui.js"></script>
 <script src="/javascripts/menu.js"></script>
 <script src="/javascripts/views.js"></script>
