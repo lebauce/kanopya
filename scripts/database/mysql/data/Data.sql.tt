@@ -89,7 +89,8 @@ INSERT INTO `class_type` VALUES
 (73, 'Entity::Interface'),
 (74, 'Entity::Iface'),
 (75, 'Entity::NetappAggregate'),
-(76, 'Entity::Component::Puppetagent3');
+(76, 'Entity::Component::Puppetagent2'),
+(77, 'Entity::Component::Puppetmaster2');
 
 --
 -- entity comment list
@@ -402,7 +403,8 @@ INSERT INTO `component_type` VALUES
 (14,'Opennebula','3','Cloudmanager'),
 (15,'Physicalhoster','0','Cloudmanager'),
 (16,'Fileimagemanager','0','Storage'),
-(17,'Puppetagent','2','Configurationagent');
+(17,'Puppetagent','2','Configurationagent'),
+(18,'Puppetmaster','2','Configurationserver');
 
 --
 -- connectors type list
@@ -607,6 +609,15 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 38, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,11,NULL,NULL);
 INSERT INTO `syslogng3` VALUES(@eid);
+SET @eid := @eid +1;
+
+--
+-- Puppetmaster
+--
+
+INSERT INTO `entity` VALUES (@eid, 77, NULL);
+INSERT INTO `component` VALUES(@eid,@admin_cluster,18,NULL,NULL);
+INSERT INTO `puppetmaster2` VALUES(@eid,NULL);
 SET @eid := @eid +1;
 
 --
