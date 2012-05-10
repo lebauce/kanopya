@@ -22,20 +22,21 @@ $(document).ready(function () {
     $("#grid-message").jqGrid({ 
         datatype: "local",
         loadonce: true,
-        height: '100%',
+        height: 'auto',
         width: 'auto',
         colNames:['Mess ID','User ID','From','Date','Time','Level','content'],
         colModel:[ 
                 {name:'mess_id',index:'entity_id',width:80,sorttype:"int",hidden:false,key:true},
-                {name:'user_id',index:'user_id',width:60,sorttype:"int",key:true},
+                {name:'user_id',index:'user_id',width:60,key:true},
                 {name:'from',index:'from',width:150},
-                {name:'date',index:'date',width:130, sorttype:"date"},
+                {name:'date',index:'date',width:130},
                 {name:'time',index:'time',width:130},
                 {name:'level',index:'level',width:150,editable:true},
-                {name:'content',index:'content', width:500,}],
+                {name:'content',index:'content', width:500,}
+        ],
         //multiselect: true,
         rowNum:5, rowList:[5,10,20,50],
-        pager: '#pager',
+        pager: '#msgGridPager',
         caption: "Messages",
         altRows: true,
         onSelectRow: function (id) {
@@ -43,7 +44,7 @@ $(document).ready(function () {
         },
     });
     
-    $("#grid-message").jqGrid('navGrid','#pager',{edit:false,add:false,del:false});
+    $("#grid-message").jqGrid('navGrid','#msgGridPager',{edit:false,add:false,del:false});
 
    var mydata = [ 
                     {mess_id:"1",user_id:"NULL",mess_from:"Executor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:18",mess_level:"warning",content:"Kanopya Executor stopped"},
