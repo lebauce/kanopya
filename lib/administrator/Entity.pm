@@ -255,4 +255,47 @@ sub setComment {
     $log->info($comment);
 }
 
+
+sub getAttr {
+    my $self = shift;
+    my %args = @_;
+
+    if ($args{name} eq "comment") {
+        return $self->getComment();
+    }
+    else {
+        return $self->SUPER::getAttr(%args);
+    }
+}
+
+sub setAttr {
+    my $self = shift;
+    my %args = @_;
+
+    if ($args{name} eq "comment") {
+        $self->setComment(comment => $args{value});
+    }
+    else {
+        $self->SUPER::setAttr(%args);
+    }
+}
+
+sub toJSON {
+    my ($self, %args) = @_;
+    my $class = ref $self || $self;
+    my $hash = $self->SUPER::toJSON(%args);
+
+    if (ref $self) {
+        $hash->{entity_id} = $self->getAttr(name => "entity_id");
+    }
+    else {
+        $hash->{entity_id} = {
+            pattern      => '^\d*$',
+            is_mandatory => 1,
+            is_extended  => 0
+        }
+    }
+    return $hash;
+}
+
 1;

@@ -4,6 +4,7 @@ use Dancer ':syntax';
 use Messager;
 
 use Login;
+use REST::api;
 
 our $VERSION = '0.1';
 

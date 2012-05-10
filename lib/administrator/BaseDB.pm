@@ -503,4 +503,28 @@ sub delete {
 sub toString{
     return "";
 }
+
+sub toJSON {
+    my ($self, %args) = @_;
+    my $hash = {};
+    my $class = ref ($self) || $self;
+    my $attributes = $class->getAttrDefs();
+
+    foreach my $class (keys %$attributes) {
+        foreach my $attr (keys %{$attributes->{$class}}) {
+            if (defined $args{model}) {
+                $hash->{$attr} = $attributes->{$class}->{$attr};
+            }
+            else {
+                if (defined $self->getAttr(name => $attr)) {
+                    $hash->{$attr} = $self->getAttr(name => $attr);
+                }
+            }
+        }
+    }
+
+    return $hash;
+}
+
+
 1;

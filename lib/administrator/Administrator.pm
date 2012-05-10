@@ -326,6 +326,9 @@ sub _getDbixFromHash {
         } else {
             $dbix = $self->{db}->resultset( $args{table} )->search( undef );
         }
+        if (defined $args{page}) {
+            $dbix = $dbix->page($args{page});
+        }
     };
     if ($@) {
         $errmsg = "Administrator->_getDbixFromHash error ".$@;
