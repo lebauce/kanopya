@@ -1,0 +1,14 @@
+<script src="/javascripts/KIO/menu.conf.js"></script>
+
+<div id='view-container' class="ui-layout-center">
+</div>
+<div id='mainmenu-container' class="ui-layout-west">
+</div>
+<div class="ui-layout-north">
+Kanopya Infrastructure Optimizer
+</div>
+<div class="ui-layout-south">
+<div>
+    <table id="grid-message"></table>
+</div>
+</div>

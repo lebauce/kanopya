@@ -2,12 +2,16 @@ $(document).ready(function () {
     $('body').layout(
                { 
                    applyDefaultStyles: true,
-                   defaults : { resizable : true, },
+                   defaults : { 
+                       resizable : true,
+                       slidable : true,
+                   },
                    south : { 
                        togglerContent_closed : 'Messages',
                        togglerLength_closed : 100,
                        spacing_closed : 14,},
                    north : { closable : false },
+                   west : { closable : false },
                }
     );
 //    $('body').layout({

@@ -1,3 +1,5 @@
+<script src="/javascripts/KIM/menu.conf.js"></script>
+
 <div id='view-container' class="ui-layout-center">
 </div>
 <div id='mainmenu-container' class="ui-layout-west">

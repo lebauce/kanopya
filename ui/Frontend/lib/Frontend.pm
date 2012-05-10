@@ -4,7 +4,8 @@ use Dancer ':syntax';
 our $VERSION = '0.1';
 
 get '/' => sub {
-    template 'index';
+    my $product = config->{kanopya_product};
+    template $product . '/index';
 };
 
 get '/sandbox' => sub {
