@@ -9,15 +9,12 @@ $(document).ready(function () {
                    south : { 
                        togglerContent_closed : 'Messages',
                        togglerLength_closed : 100,
-                       spacing_closed : 14,},
+                       spacing_closed : 14,
+                       initClosed : true,},
                    north : { closable : false },
                    west : { closable : false },
                }
     );
-//    $('body').layout({
-//        resizable : true,
-//    });
-
 
     $("#grid-message").jqGrid({ 
         datatype: "local",

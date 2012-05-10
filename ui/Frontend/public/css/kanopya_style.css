@@ -13,3 +13,8 @@
    font-weight: bold;
    text-align: center;
 }
+
+/* Restore jqgrid style overriden by .ui-widget .ui-widget */
+.ui-widget .ui-jqgrid {
+    font-size: 11px;
+}
