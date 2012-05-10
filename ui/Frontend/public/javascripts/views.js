@@ -7,7 +7,7 @@ function create_grid(content_container_id, colNames, colModel) {
     var content_container = $('#' + content_container_id);
     //content_container.append('<div>Host Content</div>');
     content_container.append("<table id='" + content_container_id + "_grid'></table>");
-    
+    content_container.append("<div id='" + content_container_id + "_pager'></div>");
 
 //    $("<table id='" + content_container_id + "_grid'></table>").appendTo(content_container);
     $('#' + content_container_id + '_grid').jqGrid({ 
@@ -20,13 +20,16 @@ function create_grid(content_container_id, colNames, colModel) {
         //multiselect: true,
         //rowNum:5, rowList:[5,10,20,50],
         //caption: "Messages",
+        pager : '#' + content_container_id + '_pager',
         altRows: true,
         onSelectRow: function (id) {
             alert('Select row: ' + id);
         },
     });
     
-    // Quick fix to remove unwanted bugged background (TODO study this bug)
+    $('#' + content_container_id + '_grid').jqGrid('navGrid','#' + content_container_id + '_pager',{edit:false,add:false,del:false});
+    
+    // Quick fix to remove unwanted bugged background (TODO study this bug, UPDATE: fix with good css include)
     //$('#lui_'  + content_container_id + '_grid').removeClass('ui-widget-overlay');
     
 }
@@ -35,6 +38,7 @@ function reload_grid (content_container_id) {
                   {mess_id:"1",date:"2007-10-01",content:"rha"},
               ]; 
     for(var i=0;i<=mydata.length;i++) jQuery('#' + content_container_id + '_grid').jqGrid('addRowData',i+1,mydata[i]);
+    $('#' + content_container_id + '_grid').trigger("reloadGrid");
 }
 
 $(document).ready(function () {

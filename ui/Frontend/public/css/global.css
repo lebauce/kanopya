@@ -1,0 +1,41 @@
+#header #logo {
+  top: 10px;
+  padding-left: 110px;
+  padding-right: 20px;
+  float: left;
+  padding-top: 10px;
+}
+
+#header #infologin {
+  position: absolute;
+  top: 5px;
+  right: 100px;
+  color: #C2C2C2;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+#header #infologin #username {
+  color: #7E388A;
+}
+
+#header .logout {
+  position: absolute;
+  top: 5px;
+  right: 0px;
+  color: white;
+  text-align: center;
+  width: 84px;
+  height: 25px;
+  /*padding-top: 10px;*/
+  font-size: 11px;
+  font-weight: bold;
+  /*background: #7E388A;*/
+}
+
+#header .logout a {
+  color: #C2C2C2;
+  text-decoration: none;
+  background: #FFFFFF url(/images/picto_logout.png) no-repeat left;
+  padding-left: 25px;
+}

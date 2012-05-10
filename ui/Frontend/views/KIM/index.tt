@@ -5,7 +5,16 @@
 <div id='mainmenu-container' class="ui-layout-west">
 </div>
 <div class="ui-layout-north">
-Kanopya Infrastructure Manager
+    <div id='header'>
+        Kanopya Infrastructure Manager
+        <div id="infologin">
+            logged as <span id="username"><% username %></span>
+        </div>
+        
+        <div class="logout">
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
 </div>
 <div class="ui-layout-south">
 <div>
