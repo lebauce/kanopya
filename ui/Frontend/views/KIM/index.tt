@@ -10,6 +10,6 @@ Kanopya Infrastructure Manager
 <div class="ui-layout-south">
 <div>
     <table id="grid-message"></table>
-    <div id="pager"></div>
+    <div id="msgGridPager"></div>
 </div>
 </div>
