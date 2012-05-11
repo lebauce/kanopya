@@ -1200,20 +1200,21 @@ get '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
 
 
 post '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
-    
+
     my $formula = param('formula');
-    
-    my @unknownId = NodemetricCombination->checkFormula(formula => $formula);
+    my $service_provider_id = param->{extclusterid};
+
+    my @unknownId = NodemetricCombination->checkFormula(formula => $formula, service_provider_id => $service_provider_id);
 
     if (scalar @unknownId){
-        
+
         template 'nodemetric_combination_error', {
             title_page     => "Nodemetric combination creation",
             error_type     => 'CREATION',
             cluster_id     => param('extclusterid'),
             indicator_ids  => \@unknownId,
         };
-        
+
     }else{
         my $params = {
             nodemetric_combination_formula => param('formula'),
@@ -1234,7 +1235,7 @@ get '/extclusters/:extclusterid/nodemetrics/conditions' => sub {
     my @nodemetric_conditions = NodemetricCondition->search(
         hash=>{'nodemetric_condition_service_provider_id' => param('extclusterid')}
         );
-    
+
     my @nodemetric_conditions_param;
     foreach my $nodemetric_condition (@nodemetric_conditions){
         my $hash = {

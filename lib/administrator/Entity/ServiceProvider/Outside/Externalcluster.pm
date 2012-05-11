@@ -29,7 +29,7 @@ use AggregateCombination;
 use AggregateCondition;
 use AggregateRule;
 use Clustermetric;
-
+use ScomIndicator;
 
 
 use Log::Log4perl "get_logger";
@@ -277,6 +277,43 @@ sub updateNodes {
      
      return {created_nodes => \@created_nodes, node_count => $new_node_count};
      # TODO remove dead nodes from db
+}
+
+sub getIndicatorsIds {
+    my ($self, %args) = @_;
+
+    my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
+    my @indicators          = ScomIndicator->search (
+        hash => {
+            service_provider_id => $service_provider_id
+        }
+    );
+    my @indicators_ids;
+    my $indicator_id;
+
+    foreach my $indicator (@indicators) {
+        $indicator_id = $indicator->getAttr( name => 'scom_indicator_id' );
+        push @indicators_ids, $indicator_id;
+    }
+
+    return \@indicators_ids;
+}
+
+sub getIndicatorOidFromId {
+    my ($self, %args) = @_;
+
+     General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
+    my $indicator_id        = $args{indicator_id};
+    my $indicator           = ScomIndicator->find (
+        hash => {
+            scom_indicator_id => $indicator_id, service_provider_id => $service_provider_id
+        }
+    );
+    my $indicator_oid   = $indicator->getAttr(name => 'scom_indicator_oid');
+
+    return $indicator_oid;
 }
 
 =head2 getNodesMetrics

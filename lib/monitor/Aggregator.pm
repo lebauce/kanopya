@@ -18,9 +18,8 @@ use warnings;
 use General;
 use Data::Dumper;
 use BaseDB;
-#use Entity::ServiceProvider::Inside::Cluster;
 use XML::Simple;
-use Entity::ServiceProvider::Outside::Externalcluster;
+use Entity::ServiceProvider;
 use Indicator;
 use TimeData::RRDTimeData;
 use Clustermetric;
@@ -118,37 +117,39 @@ sub _contructRetrieverOutput {
     return $rep;
 };
 
+=head2 update
 
+    Desc : This function containt the main aggregator loop. For every service provider that has a collector manager,  it build a valid input, retrieve the data, check them, and then store them in a TimeDB after having compute the clustermetric combinations.
+    args: service_provider_id, 
+    return : \%rep (containing the indicator list and the timespan requested)
 
-
-
+=cut
 
 sub update() {
     my $self = shift;
 
-    my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
+    my @service_providers = Entity::ServiceProvider->search(hash => {});
 
     CLUSTER:
-    for my $externalCluster (@externalClusters){
+    for my $service_provider (@service_providers){
         eval{
-            my $service_provider_id = $externalCluster->getAttr(name => 'externalcluster_id');
+            my $service_provider_id = $service_provider->getAttr(name => 'service_provider_id');
 
             #FILTER CLUSTERS WITH MONITORING PROVIDER
             eval{
-                $externalCluster->getConnector(category => 'MonitoringService');
+                $service_provider->getConnector(category => 'MonitoringService');
             };
             if($@){
                 print '*** Aggregator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***'."\n";
             }else{
                 print '*** Aggregator collecting for service provider '.$service_provider_id.' ***'."\n";
-                my $service_provider_id = $externalCluster->getAttr(name => 'externalcluster_id');
 
                 # Construct input of the SCOM retriever
                 my $host_indicator_for_retriever = $self->_contructRetrieverOutput(service_provider_id => $service_provider_id );
                 print Dumper $host_indicator_for_retriever;
 
                 # Call the retriever to get SCOM data
-                my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+                my $monitored_values = $service_provider->getNodesMetrics(indicators => $host_indicator_for_retriever->{indicators}, time_span => $host_indicator_for_retriever->{time_span});
                 print Dumper $monitored_values; 
 
                 # Verify answers received from SCOM to detect metrics anomalies
@@ -156,12 +157,12 @@ sub update() {
 
                 # Parse retriever return, compute clustermetric values and store in DB
                 if($checker == 1){
-                    $self->_computeCombinationAndUpdateTimeDB(values=>$monitored_values, cluster_id => $service_provider_id);
+                    $self->_computeCombinationAndFeedTimeDB(values=>$monitored_values, cluster_id => $service_provider_id);
                 } 
             } #END EVAL
         1;
         } or do{
-            print "Skip to next cluster due to error $@\n";
+            print "Skip to next service provider due to error $@\n";
             $log->error($@);
             next CLUSTER;
         }
@@ -202,43 +203,43 @@ sub _checkNodesMetrics{
     }
 }
 
-=head2 run
-    
+=head2 _computeCombinationAndFeedTimeDB
+
     Class : Public
-    
+
     Desc : Parse the hash table received from Retriever (input), compute 
     clustermetric values and store them in DB
     
     Args : values : hash table from the Retriever
 =cut
 
-sub _computeCombinationAndUpdateTimeDB {
+sub _computeCombinationAndFeedTimeDB {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['values']);
     my $values     = $args{values};
     my $cluster_id = $args{cluster_id};
-    
+
     # Array of all clustermetrics
     my @clustermetrics = Clustermetric->search(            hash => {
                 clustermetric_service_provider_id => $cluster_id
             });
-    
+
     my $clustermetric_indicator_id;
     my $indicator;
     my $indicators_name; 
-    
+
     # Loop on all the clustermetrics
     for my $clustermetric (@clustermetrics){
-        
+
         #TODO : To be modified when using ServerSets
-        
+
         # Array that will store all the values needed to compute $clustermetric val
         my @dataStored = (); 
 
         # Loop on all the host_name of the $clustermetric
-        
+
         for my $host_name (keys %$values){
             
             $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
@@ -253,13 +254,13 @@ sub _computeCombinationAndUpdateTimeDB {
             else {
                 $log->debug("Missing Value of indicator ".($indicator->getAttr(name=>'indicator_oid'))." for host $host_name");
             }
-                 
+
         }
-        
+
         #Compute the $clustermetric value from all @dataStored values
         if(0 < (scalar @dataStored)){
             my $statValue = $clustermetric->compute(values => \@dataStored);
-            
+
             if(defined $statValue){
                 #Store in DB and time stamp
                 my $time = time();
@@ -269,7 +270,7 @@ sub _computeCombinationAndUpdateTimeDB {
                     value         => $statValue,
                     );
             } else {
-                
+
                 $log->info("*** [WARNING] No statvalue computed for clustermetric ".($clustermetric->getAttr(name=>'clustermetric_id')));
             }
         } else {
@@ -280,24 +281,24 @@ sub _computeCombinationAndUpdateTimeDB {
 
 
 =head2 run
-    
+
     Class : Public
-    
+
     Desc : Retrieve indicator values for all the clustermetrics, compute the 
     aggregation statistics function and store them in TimeDb 
     every time_step (configuration)
-    
+
 =cut
 
 sub run {
     my $self = shift;
     my $running = shift;
-    
+
     $self->{_admin}->addMessage(from    => 'Aggregator', 
                                 level   => 'info', 
                                 content => "Kanopya Aggregator started."
                                 );
-    
+
     while ( $$running ) {
 
         my $start_time = time();
@@ -313,7 +314,7 @@ sub run {
         }
 
     }
-    
+
     $self->{_admin}->addMessage(
         from    => 'Aggregator', 
         level   => 'warning', 
