@@ -486,20 +486,26 @@ get '/extclusters/:extclusterid/clustermetrics' => sub {
 
 
 get '/extclusters/:extclusterid/clustermetrics/new' => sub {
-    
-   my $cluster_id    = params->{extclusterid} || 0;
-   
-    my $adm    = Administrator->new();
-    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
+
+    my $service_provider    = params->{extclusterid} || 0;
+
+    my $service_provider = Entity::ServiceProvider->find (
+        hash => { 
+            service_provider_id => $service_provider_id
+        }
+    );
+    my $indicators_ids = $service_provider->getIndicatorsIds;
     my @indicators;
-    
-    foreach my $indicator (@{$scom_indicatorset->{ds}}){
+
+    foreach my $indicator_id (@$indicators_ids) {
+        my $indicator_name = $service_provider->getIndicatorNameFromId ( indicator_id => $indicator_id );
         my $hash = {
-            id     => $indicator->{id},
-            label  => $indicator->{label},
+            id     => $indicator_id,
+            label  => $indicator_name,
         };
         push @indicators, $hash;
     }
+
     template 'clustermetric_new', {
         title_page => "Clustermetric creation",
         indicators => \@indicators,
