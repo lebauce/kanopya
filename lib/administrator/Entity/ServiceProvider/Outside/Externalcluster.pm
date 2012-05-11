@@ -282,9 +282,10 @@ sub updateNodes {
 sub getIndicatorsIds {
     my ($self, %args) = @_;
 
-    my @indicators = ScomIndicator->search (
+    my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
+    my @indicators          = ScomIndicator->search (
         hash => {
-            service_provider_id => 65
+            service_provider_id => $service_provider_id
         }
     );
     my @indicators_ids;
@@ -303,10 +304,11 @@ sub getIndicatorOidFromId {
 
      General::checkParams(args => \%args, required => ['indicator_id']);
 
-    my $indicator_id    = $args{indicator_id};
-    my $indicator       = ScomIndicator->find (
+    my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
+    my $indicator_id        = $args{indicator_id};
+    my $indicator           = ScomIndicator->find (
         hash => {
-            scom_indicator_id => $indicator_id, service_provider_id => 65
+            scom_indicator_id => $indicator_id, service_provider_id => $service_provider_id
         }
     );
     my $indicator_oid   = $indicator->getAttr(name => 'scom_indicator_oid');
