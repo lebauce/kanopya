@@ -60,10 +60,10 @@ sub configureNode {
                 scriptname => 'nfs-kernel-server', 
         );
         
-        my $ip = $args{host}->getInternalIP();
+        my $admin = $args{host}->getAdminIface();
         my $network = NetAddr::IP->new(
-            $ip->{ipv4_internal_address}, 
-            $ip->{ipv4_internal_mask}
+            $admin->getIPAddr(), 
+            $admin->getNetMask(),
         )->network();
         my $exports = "/var/lib/one $network(rw,no_root_squash,no_subtree_check)\n";
         my $cmd = "echo '$exports' > " .$args{mount_point}."/etc/exports";

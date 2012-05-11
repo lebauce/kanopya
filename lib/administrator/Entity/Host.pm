@@ -480,6 +480,7 @@ sub addIface {
 
 sub getIfaces {
     my $self = shift;
+    my %args = @_;
     my @ifaces = ();
     
     # Make sure to have all pxe ifaces before non pxe ones within the resulting array
@@ -487,6 +488,15 @@ sub getIfaces {
         my @ifcs = Entity::Iface->search(hash => { host_id   => $self->getAttr(name => 'host_id'),
                                                    iface_pxe => $pxe });
         for my $iface (@ifcs) {
+            if (defined ($args{role})) {
+                if (my $interface_id = $iface->isAssociated) { 
+                    my $interface = Entity::Interface->get(id => $iface->getAttr(name => 'interface_id'));
+                    if ($interface->getRole->getAttr(name => 'interface_role_name') ne $args{role}) {
+                        next;
+                    }
+                }
+            }
+
             push @ifaces, $iface;
         }
     }
@@ -535,28 +545,31 @@ sub removeIface {
     $ifc->delete();
 }
 
-sub getAdminIp {
+sub getAdminIface {
     my $self = shift;
     my %args = @_;
 
     # Can we make it smarter ?
-    for my $iface (@{$self->getIfaces}) {
-        my $interface_id;
-        if ($interface_id = $iface->isAssociated) {
-            # TODO: my $interface = $iface->getRelated(name => 'interface');
-            my $interface = Entity::Interface->get(id => $iface->getAttr(name => 'interface_id'));
-            if ($interface->getRole->getAttr(name => 'interface_role_name') eq 'admin' and $iface->hasIp) {
-                return $iface->getIPAddr;
-            }
-        }
-    }
-    if (defined $args{throw}) {
+    my @ifaces = $self->getIfaces(role => "admin");
+    if (scalar (@ifaces) == 0 and defined $args{throw}) {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "Host <" . $self->getAttr(name => 'entity_id') .
                            "> Could not find any iface associate to a admin interface."
               );
     }
-    return '';
+    return $ifaces[0];
+}
+                                                                           
+sub getAdminIp {
+    my $self = shift;
+    my %args = @_;
+     
+    my $iface = $self->getAdminIface();
+    if ($iface and $iface->hasIp) {
+        if (defined ($iface) and $iface->hasIp) {
+            return $iface->getIPAddr;
+        }
+    }
 }
 
 =head2 getHosts

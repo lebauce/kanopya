@@ -409,7 +409,7 @@ sub getRemoteSessionURL {
 
     General::checkParams(args => \%args, required => ['host']);
 
-    return "vnc://" . $self->getHypervisor(host => $args{host})->getInternalIP()->{ipv4_internal_address} .
+    return "vnc://" . $self->getHypervisor(host => $args{host})->getAdminIp() .
            ":" . $self->getVncport(host => $args{host});
 }
 
