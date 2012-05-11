@@ -291,7 +291,7 @@ sub getIndicatorsIds {
     my $indicator_id;
 
     foreach my $indicator (@indicators) {
-        $indicator_ids = $indicator->getAttr( name => 'scom_indicator_id' );
+        $indicator_id = $indicator->getAttr( name => 'scom_indicator_id' );
         push @indicators_ids, $indicator_id;
     }
 
