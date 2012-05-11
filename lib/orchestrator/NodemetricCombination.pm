@@ -153,16 +153,18 @@ sub computeValueFromMonitoredValues {
 
 
 sub checkFormula{
-    my $class = shift;
-    my %args  = @_;
-    
+    my ($class, %args) = @_;
+
     my $formula = $args{formula};
-    my $adm = Administrator->new();
-    
-    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
-    my @scom_indicators_ids = map {$_->{id}} @{$scom_indicatorset->{ds}};
-    
-        #Split aggregate_rule id from $formula
+    my $service_provider_id = $args{service_provider_id};
+
+    my $service_provider = Entity::ServiceProvider->find (
+        hash => { service_provider_id => $service_provider_id
+        }
+    );
+    my $indicators_ids = $service_provider->getIndicatorsIds();
+
+    #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     
     my @unkownIds;
@@ -172,7 +174,7 @@ sub checkFormula{
         {   
             #Check if element is a SCOM indicator
             my $indicator_id = substr($element,2);
-            if (not (grep {$_ eq $indicator_id} @scom_indicators_ids)) {
+            if (not (grep {$_ eq $indicator_id} @$indicators_ids)) {
                 push @unkownIds, $indicator_id;
             }
         }

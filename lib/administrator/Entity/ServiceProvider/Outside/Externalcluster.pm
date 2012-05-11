@@ -279,8 +279,24 @@ sub updateNodes {
      # TODO remove dead nodes from db
 }
 
+sub getIndicatorsIds {
+    my ($self, %args) = @_;
 
+    my @indicators = ScomIndicator->search (
+        hash => {
+            service_provider_id => 65
+        }
+    );
+    my @indicators_ids;
+    my $indicator_id;
 
+    foreach my $indicator (@indicators) {
+        $indicator_ids = $indicator->getAttr( name => 'scom_indicator_id' );
+        push @indicators_ids, $indicator_id;
+    }
+
+    return \@indicators_ids;
+}
 
 sub getIndicatorOidFromId {
     my ($self, %args) = @_;
@@ -288,7 +304,11 @@ sub getIndicatorOidFromId {
      General::checkParams(args => \%args, required => ['indicator_id']);
 
     my $indicator_id    = $args{indicator_id};
-    my $indicator       = ScomIndicator->find (hash => {scom_indicator_id => $indicator_id, service_provider_id => 65});
+    my $indicator       = ScomIndicator->find (
+        hash => {
+            scom_indicator_id => $indicator_id, service_provider_id => 65
+        }
+    );
     my $indicator_oid   = $indicator->getAttr(name => 'scom_indicator_oid');
 
     return $indicator_oid;
