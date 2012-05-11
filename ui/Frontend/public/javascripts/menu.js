@@ -24,18 +24,24 @@ function build_submenu(id, links) {
     
     // Create the div container for this view
     var view = $('<div class="view" id="' + id + '"></div>').appendTo(container);
+    // Tab container of the view
     var submenu_cont = $('<ul></ul>').appendTo(view);
+    
+    view.tabs({
+        select: function(event, ui) { 
+            var link = String(ui.tab);
+            //alert('Event select : ' + link.split('#')[1] + '  => ' + ui.panel);
+            reload_content(link.split('#')[1]);
+        }
+    });
     
     for (var smenu in links) {
         var content_id = 'content_' + links[smenu]['id'];
-        submenu_cont.append('<li><a href="#' + content_id + '">' + links[smenu]['label'] + '</a></li>');
-        //view.append('<div id="' + content_id + '">' + links[label] + '</div>');
         var content = $('<div id="' + content_id + '"></div>');
         view.append(content);
+        view.tabs('add', '#' + content_id , links[smenu]['label'])
     }
-    view.tabs({
-            //select: function(event, ui) { alert('Event select : ' + ui) }
-    });
+    
     view.hide();
 }
 

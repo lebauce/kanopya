@@ -3,8 +3,8 @@ $(document).ready(function () {
                { 
                    applyDefaultStyles: true,
                    defaults : { 
-                       resizable : true,
-                       slidable : true,
+                       resizable : false,
+                       slidable : false,
                    },
                    south : { 
                        togglerContent_closed : 'Messages',
