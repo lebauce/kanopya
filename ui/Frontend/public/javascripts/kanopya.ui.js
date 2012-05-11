@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    $('body').layout(
+    var main_layout = $('body').layout(
                { 
                    applyDefaultStyles: true,
                    defaults : { 
@@ -58,4 +58,7 @@ $(document).ready(function () {
                 ]; 
     for(var i=0;i<=mydata.length;i++) jQuery("#grid-message").jqGrid('addRowData',i+1,mydata[i]);
 
+    // Needed to fix bad panels resizing when opening Messages pane (south) for the first time
+    // Layout will take in account the massage grid size fill with data 
+    main_layout.resizeAll();
 });
