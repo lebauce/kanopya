@@ -348,7 +348,7 @@ sub search {
     my $n = $depth;
     while ($n > 0) {
         $join = $join ? { parent => $join } :
-                          "parent";
+                          $class->isa('Entity') ? "parent" : undef;
         $n -= 1;
     }
 
