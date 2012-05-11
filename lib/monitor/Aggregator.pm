@@ -149,7 +149,7 @@ sub update() {
                 print Dumper $host_indicator_for_retriever;
 
                 # Call the retriever to get SCOM data
-                my $monitored_values = $service_provider->getNodesMetrics(%$host_indicator_for_retriever);
+                my $monitored_values = $service_provider->getNodesMetrics(indicators => $host_indicator_for_retriever->{indicators}, time_span => $host_indicator_for_retriever->{time_span});
                 print Dumper $monitored_values; 
 
                 # Verify answers received from SCOM to detect metrics anomalies

@@ -89,7 +89,8 @@ INSERT INTO `class_type` VALUES
 (73, 'Entity::Interface'),
 (74, 'Entity::Iface'),
 (75, 'Entity::NetappAggregate'),
-(76, 'Entity::Component::Kanopyacollector1');
+(76, 'Entity::Component::Kanopyacollector1'),
+(77, 'ScomIndicator');
 
 --
 -- entity comment list

@@ -279,6 +279,21 @@ sub updateNodes {
      # TODO remove dead nodes from db
 }
 
+
+
+
+sub getIndicatorOidFromId {
+    my ($self, %args) = @_;
+
+     General::checkParams(args => \%args, required => ['indicators']);
+
+    my $indicator_id    = $args{indicator_id};
+    my $indicator       = ScomIndicator->find (hash => {scom_indicator_id => $indicator_id, service_provider_id => 65});
+    my $indicator_oid   = $indicator->getAttr(name => 'scom_indicator_oid');
+
+    return $indicator_oid;
+}
+
 =head2 getNodesMetrics
 
     Retrieve cluster nodes metrics values using the linked MonitoringService connector

@@ -111,6 +111,12 @@ sub computeValueFromMonitoredValues {
     my %args = @_;
 
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
+    my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
+
+    my $service_provider = Entity::ServiceProvider->find (
+        hash => { service_provider_id => $service_provider_id
+        }
+    );
 
     my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
 
@@ -123,22 +129,22 @@ sub computeValueFromMonitoredValues {
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
             my $indicator_id  = substr($element,2);
-            my $indicator_oid = Indicator->get('id' => $indicator_id)->getAttr(name => 'indicator_oid');
+            my $indicator_oid = $service_provider->getIndicatorOidFromId(indicator_id => $indicator_id);
+
             # Replace $element by its value
-            $element       = $monitored_values_for_one_node->{$indicator_oid};
+            $element          = $monitored_values_for_one_node->{$indicator_oid};
             if(not defined $element){
                 return undef;
             }
         }
      }
-     
+
     my $res = -1;
     my $arrayString = '$res = '."@array"; 
     #print $arrayString."\n";
-    
+
     #Evaluate the logic formula
     eval $arrayString;
-
 
     $log->info("$arrayString");
     return $res;
