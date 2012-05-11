@@ -58,6 +58,7 @@ function show_detail(id) {
         width: 500,
         height: 500,
         resizable: true,
+        draggable: false,
         buttons: {
             Ok: function() {
                 //$(this).find('#target').submit();

@@ -39,3 +39,7 @@
   background: #FFFFFF url(/images/picto_logout.png) no-repeat left;
   padding-left: 25px;
 }
+
+#header #product-name {
+    color: #7E388A;
+}
