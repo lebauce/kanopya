@@ -29,7 +29,7 @@ use AggregateCombination;
 use AggregateCondition;
 use AggregateRule;
 use Clustermetric;
-
+use ScomIndicator;
 
 
 use Log::Log4perl "get_logger";
@@ -285,7 +285,7 @@ sub updateNodes {
 sub getIndicatorOidFromId {
     my ($self, %args) = @_;
 
-     General::checkParams(args => \%args, required => ['indicators']);
+     General::checkParams(args => \%args, required => ['indicator_id']);
 
     my $indicator_id    = $args{indicator_id};
     my $indicator       = ScomIndicator->find (hash => {scom_indicator_id => $indicator_id, service_provider_id => 65});
