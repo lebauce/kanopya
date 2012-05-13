@@ -82,6 +82,12 @@ __PACKAGE__->table("opennebula3");
   extra: {list => [0,1,2,3]}
   is_nullable: 0
 
+=head2 hypervisor
+
+  data_type: 'varchar'
+  is_nullable: 0
+  size: 255
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -147,6 +153,12 @@ __PACKAGE__->add_columns(
     default_value => 3,
     extra => { list => [0 .. 3] },
     is_nullable => 0,
+  },
+  "hypervisor",
+  {
+    data_type => "varchar",
+    is_nullable => 0,
+    size => 255
   },
 );
 __PACKAGE__->set_primary_key("opennebula3_id");

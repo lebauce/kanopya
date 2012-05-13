@@ -578,6 +578,7 @@ sub _generateVmTemplate {
         kernelpath      => $repository_path . '/vmlinuz-3.2.6-xenvm',
         initrdpath      => $repository_path . '/initrd.img-3.2.6-xenvm',
         imagepath       => $repository_path . '/' . $image_name,
+        hypervisor_type => $self->_getEntity->getAttr(name => "hypervisor"),
         interfaces      => $interfaces
     };
 

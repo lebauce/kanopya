@@ -15,6 +15,7 @@ CREATE TABLE `opennebula3` (
   `scripts_remote_dir` char(255) NOT NULL DEFAULT '/var/tmp/one',
   `image_repository_path` char(255) NOT NULL DEFAULT '/srv/cloud/images',
   `port` int unsigned NOT NULL DEFAULT 2633,
+  `hypervisor` char(255) NOT NULL DEFAULT 'xen',
   `debug_level` enum('0','1','2','3') NOT NULL DEFAULT '3', 	
   PRIMARY KEY (`opennebula3_id`),
   CONSTRAINT FOREIGN KEY (`opennebula3_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION

@@ -165,6 +165,7 @@ sub getConf {
     $conf{opennebula3_repositories} = \@repositories;
     $conf{opennebula3_hypervisors}  = \@hypervisors;
     $conf{opennebula3_vms}          = \@vms;
+    $conf{opennebula3_hypervisor}   = $conf{"hypervisor"};
 
     return \%conf;
 }

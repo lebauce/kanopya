@@ -2,21 +2,27 @@ NAME = [% name %]
 MEMORY = [% memory %]
 CPU = [% cpu %]
 
+[% IF hypervisor_type %]
+REQUIREMENTS = "HYPERVISOR=\"[% hypervisor_type %]\""
+[% END %]
+
+[% IF hypervisor_type == "xen" %]
 RAW = [ type="xen", data="maxvcpus=4" ]
 RAW = [ type="xen", data="maxmem=4096" ]
+[% END %]
 
 OS = [
 	KERNEL = [% kernelpath %],
 	INITRD = [% initrdpath %],
 	ROOT = xvda1,
-    KERNEL_CMD = "xencons=tty console=hvc0"
+	KERNEL_CMD = "xencons=tty console=hvc0"
 ]
 
 DISK = [
 	TYPE = disk,
 	SOURCE = [% imagepath %],
- 	CLONE = no,
-    DRIVER = "file:",
+	CLONE = no,
+	DRIVER = "file:",
 	BUS = scsi,
 	TARGET = xvda
 ]
