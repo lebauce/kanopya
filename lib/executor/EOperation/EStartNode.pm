@@ -442,18 +442,6 @@ sub _generateBootConf {
             );
         }
     }
-    else {
-        my $adm     = Administrator->new();
-        my $subnet  = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
-        my $host_ip = $adm->{manager}->{network}->getFreeInternalIP();
-
-        # Update Host internal ip
-        $log->info("get subnet <$subnet> and have host ip <$host_ip>");
-        my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
-            
-        $self->{_objs}->{host}->setInternalIP(ipv4_address => $host_ip,
-                                              ipv4_mask    => $subnet_hash{'dhcpd3_subnet_mask'});
-    }
  
     # Set up fastboot
     $self->{executor}->{econtext}->execute(
