@@ -178,19 +178,24 @@ sub execute {
     $ehost->stop(econtext => $self->{executor}->{econtext});
 
     # Remove Host from the dhcp
-    my $host_mac = $self->{_objs}->{host}->getPXEIface->getAttr(name => 'iface_mac_addr');
-    if ($host_mac) {
-        my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
+    eval {
+        my $host_mac = $self->{_objs}->{host}->getPXEIface->getAttr(name => 'iface_mac_addr');
+        if ($host_mac) {
+            my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
 
-        my $hostid = $self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(
-                         dhcpd3_subnet_id         => $subnet,
-                         dhcpd3_hosts_mac_address => $host_mac
-                     );
+            my $hostid = $self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(
+                             dhcpd3_subnet_id         => $subnet,
+                             dhcpd3_hosts_mac_address => $host_mac
+                         );
 
-        $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
-                                                      dhcpd3_hosts_id  => $hostid);
-        $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
-        $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
+            $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
+                                                          dhcpd3_hosts_id  => $hostid);
+            $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
+            $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
+        }
+    };
+    if ($@) {
+        $log->warn("Could not remove from DHCP configuration, the cluster may not be using PXE");
     }
 
     # Component migration
