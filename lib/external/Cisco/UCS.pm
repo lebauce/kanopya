@@ -17,7 +17,7 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 @ISA               	= qw(Exporter);
 our $VERSION		= '0.031';
 
-my $debug_xmlrpc = 1;
+my $debug_xmlrpc = 0;
 
 =head1 NAME
 
