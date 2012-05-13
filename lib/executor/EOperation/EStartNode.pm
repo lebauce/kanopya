@@ -280,6 +280,20 @@ sub _generateNetConf {
                                 address => $iface->getIPAddr,
                                 netmask => $iface->getNetMask };
         }
+
+        # Apply VLAN's
+        $log->info("Applying VLANS");
+        for my $network ($interface->getNetworks) {
+            $log->info("Network " . $network);
+            if ($network->isa("Entity::Network::Vlan")) {
+                $log->info("Apply VLAN on " . $iface->getAttr(name => 'iface_name'));
+                my $ehost_manager = EFactory::newEEntity(data => $self->{_objs}->{host}->getHostManager);
+                $ehost_manager->applyVLAN(
+                    iface => $iface,
+                    vlan  => $network
+                );
+            }
+        }
     }
 
     if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
