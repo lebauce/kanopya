@@ -342,7 +342,7 @@ sub postStartNode {
 
     # this host is a new hypervisor node so we declare it to opennebula
     my $hostname = $args{host}->getAttr(name => 'host_hostname');
-    my $command = $self->_oneadmin_command(command => "onehost create $hostname im_xen vmm_xen tm_shared dummy");
+    my $command = $self->_oneadmin_command(command => "onehost create $hostname im_xen vmm_xen tm_shared 802.1Q");
     my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
                                                     ip_destination => $masternodeip);
 
@@ -427,11 +427,31 @@ sub startHost {
                                                     ip_destination => $masternodeip);
     delete $args{econtext};
 
+    # Pick up an hypervisor
+    my @hypervisors = values %{$self->_getEntity->getServiceProvider->getHosts()};
+    my $hypervisor = $hypervisors[int(rand(scalar @hypervisors))];
+    $log->info("Picked up hypervisor " . $hypervisor->getId());
+
     # generate template in opennebula master node
     my $vm_template = $self->_generateVmTemplate(
                           econtext   => $masternode_econtext,
                           host       => $args{host},
+                          hypervisor => $hypervisor,
                       );
+
+    # Apply the VLAN's on the hypervisor interface dedicated to virtual machines
+    my $bridge = ($hypervisor->getIfaces(role => 'vms'))[0];
+    for my $iface (@{$args{host}->getIfaces}) {
+        for my $network ($iface->getInterface->getNetworks) {
+            if ($network->isa("Entity::Network::Vlan")) {
+                $log->info("Applying vlan " . $network->getAttr(name => "network_name") .
+                           " on the bridge interface " . $iface->getAttr(name => "iface_name"));
+                my $ehost_manager = EFactory::newEEntity(data => $hypervisor->getHostManager);
+                $ehost_manager->applyVLAN(iface => $bridge,
+                                          vlan  => $network);
+            }
+        }
+    }
 
     # create the vm from template
     my $command = $self->_oneadmin_command(command => "onevm create $vm_template");
@@ -564,11 +584,18 @@ sub _generateVmTemplate {
     my $path = $repository_path . '/' . $hostname;
 
     my $interfaces = [];
+    my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
     for my $iface ($args{host}->getIfaces()) {
-        my $data = {
-            mac => $iface->getAttr(name => 'iface_mac_addr'),
+        for my $network ($iface->getInterface->getNetworks) {
+            my $data = {
+                mac => $iface->getAttr(name => 'iface_mac_addr'),
+                bridge  => "br-" . $hostname,
+                phydev  => "p" . $bridge->getAttr(name => "iface_name"),
+                vlan    => $network->isa("Entity::Network::Vlan") ?
+                               $network->getAttr(name => "vlan_number") : undef
+            };
+            push @{$interfaces}, $data;
         };
-        push @{$interfaces}, $data;
     }
 
     my $data = {
@@ -578,7 +605,9 @@ sub _generateVmTemplate {
         kernelpath      => $repository_path . '/vmlinuz-3.2.6-xenvm',
         initrdpath      => $repository_path . '/initrd.img-3.2.6-xenvm',
         imagepath       => $repository_path . '/' . $image_name,
+        bridge_iface    => ($args{hypervisor}->getIfaces(role => "vms"))[0]->getAttr(name => "iface_name"),
         hypervisor_type => $self->_getEntity->getAttr(name => "hypervisor"),
+        hypervisor_name => $args{hypervisor}->getAttr(name => "host_hostname"),
         interfaces      => $interfaces
     };
 
@@ -604,4 +633,14 @@ sub _oneadmin_command {
     return "su oneadmin -c '" . $args{command} . "'";
 }
 
+sub applyVLAN {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'iface', 'vlan' ]);
+
+    # In the case of OpenNebula, we need to apply the VLAN on the
+    # bridge interface of the hypervisor the VM is running on.
+}
+ 
 1;

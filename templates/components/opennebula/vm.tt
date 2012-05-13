@@ -30,8 +30,17 @@ DISK = [
 [% FOREACH iface IN interfaces %]
 NIC = [
 	MAC = [% iface.mac %],
-	MODEL = ioemu,
-	BRIDGE = eth1
+        [% IF iface.vlan %]
+        VLAN = YES,
+	VLAN_ID = [% iface.vlan %],
+        [% END %]
+	[% IF iface.phydev %]
+	PHYDEV = [% iface.phydev %],
+	[% END %]
+	[% IF iface.bridge %]
+	BRIDGE = [% iface.bridge %],
+	[% END %]
+	MODEL = ioemu
 ]
 [% END %]
 
