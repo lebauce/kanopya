@@ -13,6 +13,15 @@
 
 <table>
 	<tr>
+		<td class="bold right darkgreen">hypervisor :</td>
+		<td>
+			<select class="conf_simple_value" name="hypervisor">
+				<option id="0" value="xen"<%IF hypervisor == "xen" %> selected<% END %>>Xen</option>
+				<option id="1" value="kvm"<%IF hypervisor == "kvm" %> selected<% END %>>KVM</option>
+			</select>
+		</td>
+	</tr>
+	<tr>
 		<td class="bold right darkgreen">vm image base repository path :</td>
 		<td><input type="text" size="30" class="conf_simple_value" name="image_repository_path" value="<% image_repository_path %>"/></td>
 	</tr>

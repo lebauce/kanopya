@@ -118,7 +118,7 @@ sub postStart {
 =cut
 
 sub scaleHost {
-    $log->Debug("Scaling is not implemented by this host manager, doing nothing");
+    $log->debug("Scaling is not implemented by this host manager, doing nothing");
 }
 
 =head2 getFreeHost
@@ -142,6 +142,17 @@ sub getFreeHost {
     $args{host_manager_id} = $self->_getEntity->getAttr(name => 'entity_id');
 
     return DecisionMaker::HostSelector->getHost(%args);
+}
+
+=head2 applyVLAN
+
+    Desc: Apply a VLAN on an interface of a host
+    Args: vlan, iface
+
+=cut
+
+sub applyVLAN {
+    $log->debug("VLAN are not supported by this host manager, doing nothing");
 }
 
 1;

@@ -280,6 +280,20 @@ sub _generateNetConf {
                                 address => $iface->getIPAddr,
                                 netmask => $iface->getNetMask };
         }
+
+        # Apply VLAN's
+        $log->info("Applying VLANS");
+        for my $network ($interface->getNetworks) {
+            $log->info("Network " . $network);
+            if ($network->isa("Entity::Network::Vlan")) {
+                $log->info("Apply VLAN on " . $iface->getAttr(name => 'iface_name'));
+                my $ehost_manager = EFactory::newEEntity(data => $self->{_objs}->{host}->getHostManager);
+                $ehost_manager->applyVLAN(
+                    iface => $iface,
+                    vlan  => $network
+                );
+            }
+        }
     }
 
     if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
@@ -427,18 +441,6 @@ sub _generateBootConf {
                 command => "echo \"NETDOWN=no\" >> $etc_path/default/halt"
             );
         }
-    }
-    else {
-        my $adm     = Administrator->new();
-        my $subnet  = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
-        my $host_ip = $adm->{manager}->{network}->getFreeInternalIP();
-
-        # Update Host internal ip
-        $log->info("get subnet <$subnet> and have host ip <$host_ip>");
-        my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
-            
-        $self->{_objs}->{host}->setInternalIP(ipv4_address => $host_ip,
-                                              ipv4_mask    => $subnet_hash{'dhcpd3_subnet_mask'});
     }
  
     # Set up fastboot

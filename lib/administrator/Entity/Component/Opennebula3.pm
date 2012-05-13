@@ -72,7 +72,14 @@ use Entity::Kernel;
 my $log = get_logger("administrator");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    hypervisor => {
+        pattern => '^.*$',
+        is_mandatory => 1,
+        is_extended => 0
+    },
+};
+
 sub getAttrDef { return ATTR_DEF; }
 
 =head2 getBootPolicies
@@ -103,7 +110,7 @@ sub getConf {
     my @available_accesses = ();
     my @hypervisors = ();
     my @vms = ();
-   # my $hypervisors = [];
+
     my $repo_rs = $confindb->opennebula3_repositories;
     while (my $repo_row = $repo_rs->next) {
         my $container_access = Entity::ContainerAccess->get(
@@ -122,38 +129,44 @@ sub getConf {
             container_access_name => $access->getAttr(name => 'container_access_export'),
         }
     }
-my @hyper_rs = $self->{_dbix}->opennebula3_hypervisors->search({});
-    for my $row (@hyper_rs){
-   my @vms_rs = $self->{_dbix}->opennebula3_vms->search(opennebula3_hypervisor_id=>$row->get_column('opennebula3_hypervisor_id'));
-	my $tmp = {
-	    hypervisor_host_id        => $row->get_column('hypervisor_host_id'),
-	    hypervisor_id             => $row->get_column('hypervisor_id'),
-	    opennebula3_hypervisor_id => $row ->get_column('opennebula3_hypervisor_id'),
-	    vms                       => \@vms_rs,
-	    nbrevms                   =>scalar(@vms_rs)
+
+    my @hyper_rs = $self->{_dbix}->opennebula3_hypervisors->search({});
+    for my $row (@hyper_rs) {
+        my @vms_rs = $self->{_dbix}->opennebula3_vms->search(
+                         opennebula3_hypervisor_id => $row->get_column('opennebula3_hypervisor_id')
+                     );
+
+	push @hypervisors, {
+            hypervisor_host_id        => $row->get_column('hypervisor_host_id'),
+            hypervisor_id             => $row->get_column('hypervisor_id'),
+            opennebula3_hypervisor_id => $row ->get_column('opennebula3_hypervisor_id'),
+            vms                       => \@vms_rs,
+            nbrevms                   => scalar(@vms_rs)
 	};
-	
-	 push @hypervisors, $tmp;
     }
-    for my $hyper(@hypervisors)
-   {
-    my @vms_rs = $self->{_dbix}->opennebula3_vms->search(opennebula3_hypervisor_id=>$hyper->{opennebula3_hypervisor_id});
-		for my $row (@vms_rs){
-			 my $vm_id=$row->get_column('vm_host_id');
-			my $tmp = {
-				vm_id => $row ->get_column('vm_id'),
-				opennebula3_hypervisor_id=> $row->get_column('opennebula3_hypervisor_id'),
-				vm_host_id               =>$row->get_column('vm_host_id'),
-				url                      => "/infrastructures/hosts/$vm_id"
-				
-			};
-			push @vms,$tmp;
-		}
-	}
-    $conf{container_accesses} = \@available_accesses;
+
+    for my $hyper(@hypervisors) {
+        my @vms_rs = $self->{_dbix}->opennebula3_vms->search(
+                         opennebula3_hypervisor_id=>$hyper->{opennebula3_hypervisor_id}
+                     );
+
+        for my $row (@vms_rs) {
+            my $vm_id = $row->get_column('vm_host_id');
+            push @vms, {
+                vm_id                     => $row->get_column('vm_id'),
+                opennebula3_hypervisor_id => $row->get_column('opennebula3_hypervisor_id'),
+                vm_host_id                => $row->get_column('vm_host_id'),
+                url                       => "/infrastructures/hosts/$vm_id"
+            };
+        }
+    }
+			
+    $conf{container_accesses}       = \@available_accesses;
     $conf{opennebula3_repositories} = \@repositories;
-    $conf{opennebula3_hypervisors} =\@hypervisors;
-    $conf{opennebula3_vms}         =\@vms;
+    $conf{opennebula3_hypervisors}  = \@hypervisors;
+    $conf{opennebula3_vms}          = \@vms;
+    $conf{opennebula3_hypervisor}   = $conf{"hypervisor"};
+
     return \%conf;
 }
 
@@ -164,11 +177,9 @@ sub setConf {
     my $repos = $conf->{opennebula3_repositories};
     delete $conf->{opennebula3_repositories};
 
-    if(not $conf->{opennebula3_id}) {
-        # new configuration -> create
+    if (not $conf->{opennebula3_id}) {
         $self->{_dbix}->create($conf);
     } else {
-        # old configuration -> update
         $self->{_dbix}->update($conf);
     }
 
@@ -187,7 +198,7 @@ sub setConf {
                                        id => $repo->{container_access_id}
                                    );
 
-            my $mounttable_entry = {
+            push @mountentries, {
                 mounttable1_mount_dumpfreq   => 0,
                 mounttable1_mount_filesystem => 'nfs',
                 mounttable1_mount_point      => $conf->{image_repository_path} . '/' . $repo->{repository_name},
@@ -195,9 +206,9 @@ sub setConf {
                 mounttable1_mount_options    => 'rw,sync,vers=3',
                 mounttable1_mount_passnum    => 0,
             };
-            push @mountentries, $mounttable_entry
         }
     }
+
     $mounttable->setConf({ mounttable_mountdefs => \@mountentries});
 }
 
@@ -207,7 +218,9 @@ sub getNetConf {
     return { $port => ['tcp'] };
 }
 
-sub needBridge { return 1; }
+sub needBridge {
+    return 1;
+}
 
 sub getTemplateDataOned {
     my $self = shift;
@@ -234,7 +247,9 @@ sub getTemplateDataLibvirtd {
     return {};
 }
 
-sub getHostConstraints {return "physical";}
+sub getHostConstraints {
+    return "physical";
+}
 
 sub createVirtualHost {
     my $self = shift;
@@ -277,60 +292,79 @@ sub createVirtualHost {
 # since `hypervisor_id` is required
 
 sub addHypervisor {
-	my $self = shift;
-	my %args = @_;
-	General::checkParams(args => \%args, required => ['host_id', 'id']);
-	$self->{_dbix}->create_related(
-		'opennebula3_hypervisors',
-		{ hypervisor_host_id => $args{host_id},
-		  hypervisor_id		 => $args{id},
-		}
-	);
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host_id', 'id']);
+
+    $self->{_dbix}->create_related(
+        'opennebula3_hypervisors',
+        {
+            hypervisor_host_id => $args{host_id},
+            hypervisor_id      => $args{id},
+        }
+    );
 }
 
-
 sub removeHypervisor {
-	my $self = shift;
-	my %args = @_;
-	General::checkParams(args => \%args, required => ['host_id']);
-	$self->{_dbix}->opennebula3_hypervisors->search({hypervisor_host_id=>$args{host_id}})->single()->delete;
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host_id']);
+
+    $self->{_dbix}->opennebula3_hypervisors->search( {
+        hypervisor_host_id => $args{host_id}
+    } )->single()->delete;
 }
 
 sub getHypervisorIdFromHostId {
-	my $self = shift;
-	my %args = @_;
-	General::checkParams(args => \%args, required => ['host_id']);
-	my $id = $self->{_dbix}->opennebula3_hypervisors->search({hypervisor_host_id=>$args{host_id}})->single()->get_column('hypervisor_id');
-	return $id;
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host_id']);
+
+    return $self->{_dbix}->opennebula3_hypervisors->search( {
+               hypervisor_host_id => $args{host_id}
+           } )->single()->get_column('hypervisor_id');
 }
 
 ### VMs manipulations ###
 
-sub addVm {
-	my $self = shift;
-	my %args = @_;
-	General::checkParams(args => \%args, required => ['host_id', 'id']);
-	$self->{_dbix}->create_related(
-		'opennebula3_vms',
-		{ vm_host_id => $args{host_id},
-		  vm_id      => $args{id},
-		}
-	);
+sub addVM {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host', 'id']);
+
+    $self->{_dbix}->create_related(
+        'opennebula3_vms',
+        {
+            vm_host_id => $args{host}->getId(),
+            vm_id      => $args{id},
+        }
+    );
 }
 
-sub removeVm {
-	my $self = shift;
-	my %args = @_;
-	General::checkParams(args => \%args, required => ['host_id']);
-	$self->{_dbix}->opennebula3_vms->search({vm_host_id=>$args{host_id}})->single()->delete;
+sub removeVM {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host_id']);
+
+    $self->{_dbix}->opennebula3_vms->search( {
+        vm_host_id => $args{host_id}
+    } )->single()->delete;
 }
 
 sub getVmIdFromHostId {
-	my $self = shift;
-	my %args = @_;
-	General::checkParams(args => \%args, required => ['host_id']);
-	my $id = $self->{_dbix}->opennebula3_vms->search({vm_host_id=>$args{host_id}})->single()->get_column('vm_id');
-	return $id;
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host_id']);
+
+    return $self->{_dbix}->opennebula3_vms->search( {
+               vm_host_id => $args{host_id}
+           } )->single()->get_column('vm_id');
 }
 
 
@@ -339,41 +373,51 @@ sub migrateHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['host', 'hypervisor_dst', 'hypervisor_cluster']);
-    $log->info('<<<<< hypervisor_dst: '.$args{hypervisor_dst}->getAttr(name => 'host_id').'  host: '.$args{host}->getAttr(name => 'host_id'));
-    my $hypervisor_id = $self->getHypervisorIdFromHostId(host_id => $args{hypervisor_dst}->getAttr(name => "host_id"));
+    General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst', 'hypervisor_cluster' ]);
 
-    my $vm_id = $self->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    $log->info('Migrating host <' . $args{host}->getAttr(name => 'host_id') .
+               '> to hypervisor ' . $args{hypervisor_dst}->getAttr(name => 'host_id'));
 
-    my $opennebula3_hypervisor_id = $self->{_dbix}->opennebula3_hypervisors->search({hypervisor_id => $hypervisor_id})->single()->get_column('opennebula3_hypervisor_id'); 
+    my $hypervisor_id = $self->{_dbix}->opennebula3_hypervisors->search( {
+                            hypervisor_host_id => $args{hypervisor_dst}->getAttr(name => 'host_id')
+                        } )->single()->get_column('opennebula3_hypervisor_id');
 
-    $self->{_dbix}->opennebula3_vms->search(
-		{vm_id=>$vm_id})->single()->update(
-			{ opennebula3_hypervisor_id => $opennebula3_hypervisor_id,
-			  
-		}
-	);
+    my $vm_id = $self->getVmIdFromHostId(
+                    host_id => $args{host}->getAttr(name => "host_id")
+                );
+
+    $self->{_dbix}->opennebula3_vms->search( {
+        vm_id => $vm_id }
+    )->single()->update( {
+        opennebula3_hypervisor_id => $hypervisor_id
+    });
 }
 
-sub updateVm {
-	my $self = shift;
-	my %args = @_;
-	General::checkParams(args => \%args, required => ['vm_host_id', 'hypervisor_id', 'vnc_port']);
-	my $opennebula3_hypervisor_id = $self->{_dbix}->opennebula3_hypervisors->search({hypervisor_id=>$args{hypervisor_id}})->single()->get_column('opennebula3_hypervisor_id');
-	$self->{_dbix}->opennebula3_vms->search(
-		{vm_host_id=>$args{vm_host_id}})->single()->update(
-			{ opennebula3_hypervisor_id => $opennebula3_hypervisor_id,
-			  vnc_port                  => $args{vnc_port},
-		}
-	);
+sub updateVM {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'vm_host_id', 'hypervisor_id', 'vnc_port' ]);
+
+    my $opennebula3_hypervisor_id = $self->{_dbix}->opennebula3_hypervisors->search( {
+                                        hypervisor_id => $args{hypervisor_id}}
+                                    )->single()->get_column('opennebula3_hypervisor_id');
+
+    $self->{_dbix}->opennebula3_vms->search( {
+        vm_host_id => $args{vm_host_id}
+    } )->single()->update( {
+        opennebula3_hypervisor_id => $opennebula3_hypervisor_id,
+        vnc_port                  => $args{vnc_port}
+    } );
 }
 
 sub getImageRepository {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['container_access_id']);
-    my $row = $self->{_dbix}->opennebula3_repositories->search(
-        { container_access_id => $args{container_access_id} }
-    )->single;
+
+    my $row = $self->{_dbix}->opennebula3_repositories->search( {
+                  container_access_id => $args{container_access_id} }
+              )->single;
     return $row->get_columns();
 }
 
@@ -398,8 +442,10 @@ sub getHypervisor {
 
     General::checkParams(args => \%args, required => ['host']);
 
-    my $vm = $args{host}->{_dbix}->opennebula3_vms->search(vm_host_id => $args{host}->getAttr(name => "host_id"));
-    my $opennebula3_hypervisor_id = $vm->single()->get_column('opennebula3_hypervisor_id');
+    my $vm = $args{host}->{_dbix}->opennebula3_vms->search(
+                 vm_host_id => $args{host}->getAttr(name => "host_id")
+             );
+
     return Entity->get(id => $vm->single()->opennebula3_hypervisor->get_column('hypervisor_host_id'));
 }
 
