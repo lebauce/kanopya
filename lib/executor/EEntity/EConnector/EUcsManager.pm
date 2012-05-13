@@ -132,20 +132,19 @@ sub getFreeHost {
             };
 
             my @ethernets = $sp->children("vnicEther");
+            my $pxe = 1;
+
             for my $ethernet (@ethernets) {
-                my $pxe = 0;
                 my $ifname = $ethernet->{name};
                 $ifname =~ s/^v//g;
-
-                if ($ifname eq "eth0") {
-                    $pxe = 1;
-                }
 
                 $host->addIface(
                     iface_name     => $ifname,
                     iface_mac_addr => $ethernet->{addr},
                     iface_pxe      => $pxe
                 );
+
+                $pxe = 0;
             }
                                      
             $sp->stop();
