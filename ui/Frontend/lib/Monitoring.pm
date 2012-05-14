@@ -1258,11 +1258,10 @@ get '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
     };
 };
 
-
 post '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
 
     my $formula             = param('formula');
-    my $service_provider_id = param->{extclusterid};
+    my $service_provider_id = params->{extclusterid};
 
     my @unknownId           = NodemetricCombination->checkFormula(formula => $formula, service_provider_id => $service_provider_id);
 
@@ -1277,10 +1276,10 @@ post '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
     } else {
         my $params          = {
             nodemetric_combination_formula              => param('formula'),
-            nodemetric_combination_service_provider_id  => param('extclusterid'), 
+            nodemetric_combination_service_provider_id  => $service_provider_id, 
         };
         my $cm              = NodemetricCombination->new(%$params);
-        my $var             = param('extclusterid');
+        my $var             = $service_provider_id;
         redirect("/architectures/extclusters/$var/nodemetrics/combinations");
     };
 };
