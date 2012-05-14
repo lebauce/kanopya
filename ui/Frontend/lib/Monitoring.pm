@@ -1232,23 +1232,28 @@ get '/extclusters/:extclusterid/nodemetrics/combinations/:combinationid/delete' 
 
 
 get '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
-    
-   my $cluster_id    = params->{extclusterid} || 0;
-    
-    my $adm    = Administrator->new();
-    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
+
+    my $service_provider_id     = params->{extclusterid} || 0;
+    my $service_provider        = Entity::ServiceProvider->find (
+        hash => { 
+            service_provider_id => $service_provider_id
+        }
+    );
+    my $indicators_ids          = $service_provider->getIndicatorsIds;
     my @indicators;
-    
-    foreach my $indicator (@{$scom_indicatorset->{ds}}){
-        my $hash = {
-            id     => $indicator->{id},
-            label  => $indicator->{label},
+
+    foreach my $indicator_id (@$indicators_ids) {
+        my $indicator_name      = $service_provider->getIndicatorNameFromId ( indicator_id => $indicator_id );
+        my $hash                = {
+            id      => $indicator_id,
+            label   => $indicator_name,
         };
         push @indicators, $hash;
     }
+
     template 'nodemetric_combination_new', {
         title_page     => "Nodemetric combination creation",
-        cluster_id     => param('extclusterid'),
+        cluster_id     => $service_provider_id,
         indicators     => \@indicators,
     };
 };
@@ -1256,27 +1261,26 @@ get '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
 
 post '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
 
-    my $formula = param('formula');
+    my $formula             = param('formula');
     my $service_provider_id = param->{extclusterid};
 
-    my @unknownId = NodemetricCombination->checkFormula(formula => $formula, service_provider_id => $service_provider_id);
+    my @unknownId           = NodemetricCombination->checkFormula(formula => $formula, service_provider_id => $service_provider_id);
 
-    if (scalar @unknownId){
-
+    if (scalar @unknownId) {
         template 'nodemetric_combination_error', {
             title_page     => "Nodemetric combination creation",
             error_type     => 'CREATION',
-            cluster_id     => param('extclusterid'),
+            cluster_id     => $service_provider_id,
             indicator_ids  => \@unknownId,
         };
 
-    }else{
-        my $params = {
-            nodemetric_combination_formula => param('formula'),
-            nodemetric_combination_service_provider_id => param('extclusterid'), 
+    } else {
+        my $params          = {
+            nodemetric_combination_formula              => param('formula'),
+            nodemetric_combination_service_provider_id  => param('extclusterid'), 
         };
-        my $cm = NodemetricCombination->new(%$params);
-        my $var = param('extclusterid');
+        my $cm              = NodemetricCombination->new(%$params);
+        my $var             = param('extclusterid');
         redirect("/architectures/extclusters/$var/nodemetrics/combinations");
     };
 };
@@ -1943,9 +1947,9 @@ get '/:extclusterid/indicators' => sub {
     my @indicators;
 
     foreach my $indicator_id (@$indicators_ids) {
-        my $indicator_name   = $service_provider->getIndicatorNameFromId ( indicator_id => $indicator_id );
-        my $indicator_oid    = $service_provider->getIndicatorOidFromId ( indicator_id => $indicator_id );
-        my $indicator_unit   = $service_provider->getIndicatorUnitFromId ( indicator_id => $indicator_id );
+        my $indicator_name      = $service_provider->getIndicatorNameFromId ( indicator_id => $indicator_id );
+        my $indicator_oid       = $service_provider->getIndicatorOidFromId ( indicator_id => $indicator_id );
+        my $indicator_unit      = $service_provider->getIndicatorUnitFromId ( indicator_id => $indicator_id );
         my $hash = {
             id      => $indicator_id,
             label   => $indicator_name,
@@ -1957,9 +1961,9 @@ get '/:extclusterid/indicators' => sub {
 
     template 'indicators', {
         service_provider_id => $service_provider_id,
-        title_page => "Clustermetric creation",
-        indicators => \@indicators,
-    }, { layout => 'main' };
+        title_page          => "Clustermetric creation",
+        indicators          => \@indicators,
+    }, { layout             => 'main' };
 };
 
 post '/:extclusterid/indicators/new' => sub {
