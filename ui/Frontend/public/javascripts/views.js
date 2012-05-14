@@ -31,6 +31,7 @@ var content_def = {
 };
 
 function reload_content(container_id) { 
+    //alert('Reload' + container_id);
     if (content_def[container_id]) {
         if (content_def[container_id]['grid']) {
             reload_grid(container_id, content_def[container_id]['grid']['data_route']);

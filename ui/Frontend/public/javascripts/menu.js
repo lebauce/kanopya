@@ -50,9 +50,16 @@ function link_mainmenu() {
     all_view_links.click(function () {
         // Hide all view div
         $('#view-container .view').hide();
+        
         // Show div corresponding to this link 
         //$($(this).attr('href')).show(0, function(){alert('end show')});
         $($(this).attr('href')).show();
+        
+        //reload content of the current selected sub menu of the selected view (menu)
+        var content_link_selector = $(this).attr('href') + ' .ui-tabs-selected a';
+        var content_ref = $(content_link_selector).attr('href');
+        var content_id  = content_ref.split('#')[1]
+        reload_content(content_id);
     });
 }
 

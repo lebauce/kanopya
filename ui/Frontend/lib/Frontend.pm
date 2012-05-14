@@ -34,5 +34,8 @@ get '/sandbox' => sub {
     template 'sandbox', {}, {layout => ''};
 };
 
+get '/dashboard' => sub {
+    template 'dashboard', {}, {layout => ''};
+};
 
 true;
