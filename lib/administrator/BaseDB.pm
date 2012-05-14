@@ -349,7 +349,6 @@ sub search {
     while ($n > 0) {
         $join = $join ? { parent => $join } :
                           $class->isa('Entity') ? "parent" : undef;
-        $n -= 1;
     }
 
     my $rs = $adm->_getDbixFromHash(table => $table,
