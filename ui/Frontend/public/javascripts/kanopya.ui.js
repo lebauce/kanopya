@@ -16,34 +16,46 @@ $(document).ready(function () {
                }
     );
 
-    $("#grid-message").jqGrid({ 
-        datatype: "local",
+    $("#grid-message").jqGrid({
+    	url:'/messager/messages', 
+        datatype: "json",
         loadonce: true,
-        height: 'auto',
+        height: '200px',
         width: 'auto',
-        colNames:['Mess ID','User ID','From','Date','Time','Level','content'],
-        colModel:[ 
-                {name:'mess_id',index:'entity_id',width:80,sorttype:"int",hidden:false,key:true},
-                {name:'user_id',index:'user_id',width:60,key:true},
-                {name:'from',index:'from',width:150},
+        colNames:['Id','From','State','Level','Date','Time','Content'],
+        colModel:[
+        		{name:'id',index:'id', width:60, key:true},
+                {name:'from',index:'from',width:90},
+                {name:'state'},
+                {name:'level',index:'level',width:150},
                 {name:'date',index:'date',width:130},
                 {name:'time',index:'time',width:130},
-                {name:'level',index:'level',width:150,editable:true},
                 {name:'content',index:'content', width:500,}
         ],
         //multiselect: true,
-        rowNum:5, rowList:[5,10,20,50],
+        rowNum:30, rowList:[5,10,20,50],
         pager: '#msgGridPager',
         caption: "Messages",
-        altRows: true,
+        altRows: false,
         onSelectRow: function (id) {
             alert('Select row: ' + id);
         },
     });
     
     $("#grid-message").jqGrid('navGrid','#msgGridPager',{edit:false,add:false,del:false});
+    
+    // TEST ...
+    /*OrdersGrid.ClientSideEvents.GridInitialized = "gridInit";
+    
+    function gridInit() {
+Ê Ê 	$("#grid-message tbody tr td[aria-describedby='grid-message_mess_level']").filter(filterCells).parent("tr").addClass("rowchanged");
+	}
 
-   var mydata = [ 
+	function filterCells(mess_level) {
+Ê Ê 	return $(this).text() = 'error';
+    }*/
+
+   /*var mydata = [ 
                     {mess_id:"1",user_id:"NULL",mess_from:"Executor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:18",mess_level:"warning",content:"Kanopya Executor stopped"},
 					{mess_id:"2",user_id:"NULL",mess_from:"StateManager",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:20",mess_level:"warning",content:"Kanopya State Manager stopped"},
 					{mess_id:"3",user_id:"NULL",mess_from:"Executor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:21",mess_level:"info",content:"Kanopya Executor started"},
@@ -55,8 +67,10 @@ $(document).ready(function () {
 					{mess_id:"9",user_id:"NULL",mess_from:"Monitor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:27",mess_level:"info",content:"Kanopya Grapher started"},
 					{mess_id:"10",user_id:"NULL",mess_from:"Orchestrator",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:29",mess_level:"info",content:"Kanopya Orchestrator started"},
 					{mess_id:"11",user_id:"NULL",mess_from:"Executor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:35",mess_level:"error",content:"Cluster cluster01 failure"},
-                ]; 
-    for(var i=0;i<=mydata.length;i++) jQuery("#grid-message").jqGrid('addRowData',i+1,mydata[i]);
+                ];*/ 
+   /* for(var i=0;i<=mydata.length;i++) {
+    	jQuery("#grid-message").jqGrid('addRowData',i+1,mydata[i]);
+    }*/
 
     // Needed to fix bad panels resizing when opening Messages pane (south) for the first time
     // Layout will take in account the massage grid size fill with data 
