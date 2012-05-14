@@ -1,4 +1,4 @@
-<form METHOD="POST" ACTION="/architectures/indicators/new">
+<form METHOD="POST" ACTION="/architectures/<% service_provider_id %>/indicators/new">
 <table class="simplelisting">
     <caption>
     Indicators

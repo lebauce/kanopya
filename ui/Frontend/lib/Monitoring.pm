@@ -487,7 +487,7 @@ get '/extclusters/:extclusterid/clustermetrics' => sub {
 
 get '/extclusters/:extclusterid/clustermetrics/new' => sub {
 
-    my $service_provider    = params->{extclusterid} || 0;
+    my $service_provider_id    = params->{extclusterid} || 0;
 
     my $service_provider = Entity::ServiceProvider->find (
         hash => { 
@@ -1930,27 +1930,42 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/:ruleid/delete' =
 # ------------------------------ INDICATOR -----------------------------------#
 #----------- -----------------------------------------------------------------#
 
-get '/indicators' => sub {
-    my $adm    = Administrator->new();
-    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
+get '/:extclusterid/indicators' => sub {
+
+    my $service_provider_id     = param('extclusterid');
+
+    my $service_provider        = Entity::ServiceProvider->find (
+        hash => { 
+            service_provider_id => $service_provider_id
+        }
+    );
+    my $indicators_ids          = $service_provider->getIndicatorsIds;
     my @indicators;
-    
-    foreach my $indicator (@{$scom_indicatorset->{ds}}){
+
+    foreach my $indicator_id (@$indicators_ids) {
+        my $indicator_name   = $service_provider->getIndicatorNameFromId ( indicator_id => $indicator_id );
+        my $indicator_oid    = $service_provider->getIndicatorOidFromId ( indicator_id => $indicator_id );
+        my $indicator_unit   = $service_provider->getIndicatorUnitFromId ( indicator_id => $indicator_id );
         my $hash = {
-            id     => $indicator->{id},
-            label  => $indicator->{label},
-            oid  => $indicator->{oid},
-            unit  => $indicator->{unit},
+            id      => $indicator_id,
+            label   => $indicator_name,
+            oid     => $indicator_oid,
+            unit    => $indicator_unit,
         };
         push @indicators, $hash;
     }
+
     template 'indicators', {
+        service_provider_id => $service_provider_id,
         title_page => "Clustermetric creation",
         indicators => \@indicators,
     }, { layout => 'main' };
 };
 
-post '/indicators/new' => sub {
+post '/:extclusterid/indicators/new' => sub {
+
+    my $service_provider_id     = param('extclusterid');
+
     my $adm    = Administrator->new();
     my $indicatorset_id = $adm->{'manager'}{'monitor'}->getSetIdFromName( set_name => 'scom' );
 
@@ -1961,7 +1976,7 @@ post '/indicators/new' => sub {
             indicatorset_id => $indicatorset_id,
             indicator_color => 'FF000099',
     );
-    redirect '/architectures/indicators';
+    redirect '/architectures/'.$service_provider_id.'/indicators';
 };
 
 # ----------------------------------------------------------------------------#
