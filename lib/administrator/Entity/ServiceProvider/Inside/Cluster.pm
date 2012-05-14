@@ -166,6 +166,12 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 0
     },
+    collector_manager_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -937,4 +943,113 @@ sub getManagerParameters {
     return $params_hash;
 }
 
+
+=head2 getIndicatorsIds
+
+    Desc: call collector manager to retrieve indicators ids available for the service provider 
+    return \@indicators_ids;
+
+=cut
+
+sub getIndicatorsIds {
+    my ($self, %args) = @_;
+
+    my $collector_manager   = $self->getCollectorManager();
+
+    #return the name
+    my $indicators_ids      = $collector_manager->getIndicatorsIds ();
+    return $indicators_ids;
+}
+
+=head2 getIndicatorOidFromId
+
+    Desc: call collector manager to retrieve an indicator oid from it's id
+    return $indicators_oid;
+
+=cut
+
+sub getIndicatorOidFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $collector_manager = $self->getCollectorManager();
+ 
+    #return the name
+    my $indicator_oid = $collector_manager->getIndicatorOidFromId ( indicator_id => $args{'indicator_id'} );
+    return $indicator_oid;
+}
+
+=head2 getIndicatorNameFromId
+
+    Desc: call collector manager to retrieve an indicator name from it's id
+    return $indicator_name;
+
+=cut
+
+sub getIndicatorNameFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $collector_manager = $self->getCollectorManager();
+ 
+    #return the name
+    my $indicator_name = $collector_manager->getIndicatorNameFromId ( indicator_id => $args{'indicator_id'} );
+    return $indicator_name;
+}
+
+=head2 getIndicatorUnitFromId
+
+    Desc: call collector manager to retrieve an indicator unit from it's id
+    return $indicator_unit;
+
+=cut
+
+sub getIndicatorUnitFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $collector_manager = $self->getCollectorManager();
+ 
+    #return the unit
+    my $indicator_unit = $collector_manager->getIndicatorUnitFromId ( indicator_id => $args{'indicator_id'} );
+    return $indicator_unit;
+}
+
+=head2 getNodesMetrics
+
+    Desc: call collector manager to retrieve nodes metrics values.
+    return \%data;
+
+=cut
+
+sub getNodesMetrics {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['nodelist', 'timespan', 'indicators']);
+
+    my $collector_manager = $self->getCollectorManager();
+
+    #return the data
+    my $monitored_values = $collector_manager->retrieveData ( nodelist => $args{'nodelist'}, timespan => $args{'timespan'}, indicators => $args{'indicators'} );
+    return $monitored_values;
+}
+
+=head2 getCollectorManager
+
+    Desc: retrieve collector manager object for this service provider.
+    return $collector_manager;
+
+=cut
+
+sub getCollectorManager {
+    my $self = shift;
+
+    my $collector_manager_id = $self->getAttr ( name=>'collector_manager_id' );
+    my $collector_manager = Entity::Component->get ( id => $collector_manager_id );
+
+    return $collector_manager;
+}
 1;
