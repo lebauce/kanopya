@@ -16,9 +16,9 @@ $(document).ready(function () {
                }
     );
     
-    var stateUrl = '';
-    var upUrl = 'up.png';
-    var brokenUrl = 'broken.png';
+    /*var stateUrl = '/images/icons/question.png';
+    var upUrl = '/images/icons/up.png';
+    var brokenUrl = '/images/icons/broken.png';*/
 
     $("#grid-message").jqGrid({
     	url:'/messager/messages', 
@@ -43,36 +43,17 @@ $(document).ready(function () {
         onSelectRow: function (id) {
             alert('Select row: ' + id);
         },
-		beforeSubmit: function(postdata, formid){
-		
-			for (rowid = 1; rowid <= jQuery('#grid-message').jqGrid('getGridParam','rowNum'); rowid++) {
-        		var levelValue = $('#grid-message').getCell(rowid, 'level');
-        		
-        		if (levelValue == 'info') {
-        			stateUrl = upUrl;
-        		} else {
-        			stateUrl = brokenUrl;
-        		}
-    		}
-		}
     });
     
 	function stateFormatter(cell, options, row) {
-		return "<img src='/images/icons/" + stateUrl + "' />"; 
+		if (cell == 'info') {
+			return "<img src='/images/icons/up.png' />";
+		} else {
+			return "<img src='/images/icons/broken.png' />";
+		}
 	}
     
     $("#grid-message").jqGrid('navGrid','#msgGridPager',{edit:false,add:false,del:false});
-    
-    // TEST ...
-    /*OrdersGrid.ClientSideEvents.GridInitialized = "gridInit";
-    
-    function gridInit() {
-Ê Ê 	$("#grid-message tbody tr td[aria-describedby='grid-message_mess_level']").filter(filterCells).parent("tr").addClass("rowchanged");
-	}
-
-	function filterCells(mess_level) {
-Ê Ê 	return $(this).text() = 'error';
-    }*/
 
    /*var mydata = [ 
                     {mess_id:"1",user_id:"NULL",mess_from:"Executor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:18",mess_level:"warning",content:"Kanopya Executor stopped"},
