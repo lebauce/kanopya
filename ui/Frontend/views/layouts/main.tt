@@ -30,7 +30,7 @@
 <script src="/javascripts/views.js"></script>
 
 </head>
-<body style="visibility: hidden;">
+<body>
 <% content %>
 </body>
 </html>

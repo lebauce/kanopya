@@ -1,23 +1,20 @@
 $(document).ready(function () {
-    $('body').layout(
+    var main_layout = $('body').layout(
                { 
                    applyDefaultStyles: true,
                    defaults : { 
-                       resizable : true,
-                       slidable : true,
+                       resizable : false,
+                       slidable : false,
                    },
                    south : { 
                        togglerContent_closed : 'Messages',
                        togglerLength_closed : 100,
-                       spacing_closed : 14,},
+                       spacing_closed : 14,
+                       initClosed : true,},
                    north : { closable : false },
                    west : { closable : false },
                }
     );
-//    $('body').layout({
-//        resizable : true,
-//    });
-
 
     $("#grid-message").jqGrid({
     	url:'/messager/messages', 
@@ -75,4 +72,7 @@ $(document).ready(function () {
     	jQuery("#grid-message").jqGrid('addRowData',i+1,mydata[i]);
     }*/
 
+    // Needed to fix bad panels resizing when opening Messages pane (south) for the first time
+    // Layout will take in account the massage grid size fill with data 
+    main_layout.resizeAll();
 });
