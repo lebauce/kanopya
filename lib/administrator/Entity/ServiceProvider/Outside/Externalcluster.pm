@@ -299,10 +299,44 @@ sub getIndicatorsIds {
     return \@indicators_ids;
 }
 
+sub getIndicatorNameFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
+     my $indicator_id        = $args{indicator_id};
+     my $indicator           = ScomIndicator->find (
+        hash => {
+            scom_indicator_id => $indicator_id, service_provider_id => $service_provider_id
+        }
+    );
+    my $indicator_name      = $indicator->getAttr (name => 'scom_indicator_name' );
+
+    return $indicator_name;
+}
+
+sub getIndicatorUnitFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
+     my $indicator_id        = $args{indicator_id};
+     my $indicator           = ScomIndicator->find (
+        hash => {
+            scom_indicator_id => $indicator_id, service_provider_id => $service_provider_id
+        }
+    );
+    my $indicator_unit      = $indicator->getAttr (name => 'scom_indicator_unit' );
+
+    return $indicator_unit;
+}
+
 sub getIndicatorOidFromId {
     my ($self, %args) = @_;
 
-     General::checkParams(args => \%args, required => ['indicator_id']);
+    General::checkParams(args => \%args, required => ['indicator_id']);
 
     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
     my $indicator_id        = $args{indicator_id};
