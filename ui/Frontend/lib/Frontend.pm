@@ -1,6 +1,8 @@
 package Frontend;
 use Dancer ':syntax';
-#use Login;
+use Dancer::Plugin::Preprocess::Sass;
+use Dancer::Plugin::Ajax;
+use Login;
 use Messager;
 
 use Login;
