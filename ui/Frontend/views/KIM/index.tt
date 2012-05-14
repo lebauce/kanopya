@@ -19,5 +19,6 @@
 <div class="ui-layout-south">
 <div>
     <table id="grid-message"></table>
+    <div id="msgGridPager"></div>
 </div>
 </div>

@@ -1,10 +1,16 @@
 package Frontend;
 use Dancer ':syntax';
+use Dancer::Plugin::Preprocess::Sass;
+use Dancer::Plugin::Ajax;
+use Login;
+use Messager;
 
 use Login;
 use REST::api;
 
 our $VERSION = '0.1';
+
+prefix undef;
 
 Log::Log4perl->init('/opt/kanopya/conf/webui-log.conf');
 
@@ -22,6 +28,7 @@ get '/' => sub {
     my $product = config->{kanopya_product};
     template $product . '/index';
 };
+
 
 get '/sandbox' => sub {
     template 'sandbox', {}, {layout => ''};

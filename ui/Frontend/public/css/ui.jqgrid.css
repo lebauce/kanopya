@@ -142,3 +142,10 @@ tr.ui-search-toolbar select {margin: 1px 0px 0px 0px}
 .ui-jqgrid .tree-wrap-ltr {float: left;}
 .ui-jqgrid .tree-wrap-rtl {float: right;}
 .ui-jqgrid .ui-ellipsis {text-overflow:ellipsis;}
+
+.rowchanged td
+{background-color: #EB89EB;}
+.rowchanged.ui-state-hover td
+{background-color: #800080;}
+.rowchanged.ui-state-highlight td
+{background-color: #BB29BB;}
