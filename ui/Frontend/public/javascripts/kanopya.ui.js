@@ -73,6 +73,6 @@ $(document).ready(function () {
     }*/
 
     // Needed to fix bad panels resizing when opening Messages pane (south) for the first time
-    // Layout will take in account the massage grid size fill with data 
+    // Layout will take in account the message grid size fill with data 
     main_layout.resizeAll();
 });
