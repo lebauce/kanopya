@@ -3,6 +3,8 @@ package REST::api;
 use Dancer ':syntax';
 use Dancer::Plugin::REST;
 
+prefix undef;
+
 use General;
 
 prepare_serializer_for_format;
@@ -23,6 +25,7 @@ sub setupREST {
     foreach my $resource (keys %resources) {
         resource "/api/$resource" =>
             get    => sub {
+                content_type 'application/json';
                 return Entity->get(id => params->{id})->toJSON;
             },
 
@@ -90,6 +93,7 @@ sub setupREST {
             for my $obj ($class->search(%params)) {
                 push @$objs, $obj->toJSON();
             }
+            content_type 'application/json';
             return to_json($objs);
         }
     }
@@ -97,6 +101,7 @@ sub setupREST {
 
 get '/api/attributes/:resource' => sub {
     my $class = $resources{host};
+    content_type 'application/json';
     return to_json($class->toJSON(model => 1));
 };
 
