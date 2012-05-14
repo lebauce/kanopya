@@ -60,6 +60,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Monitor::Retriever;
+use Indicator;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -73,33 +74,125 @@ use constant ATTR_DEF => {
 };
 sub getAttrDef { return ATTR_DEF; }
 
+=head2 retrieveData
+
+    Desc: Call kanopya native monitoring API to retrieve indicators data 
+    return \%monitored_values;
+
+=cut
+
 sub retrieveData {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['nodelist', 'timespan']);
-
-    my %data = 
-        (
-            node1   => 1234,
-            node2   => 5678,
-            node3   => 4321,
-        );
+    General::checkParams(args => \%args, required => ['nodelist', 'timespan', 'indicators']);
 
 	my $retriever = Monitor::Retriever->new();	
 	my %return = $retriever->getData(rrd_name => 'apache_stats_10.0.0.7', time_laps => 7200);
     return \%return;
 }
 
+
+=head2 getIndicatorsIds
+
+    Desc: call collector manager to retrieve indicators ids available for the service provider 
+    return \@indicators_ids;
+
+=cut
+
+sub getIndicatorsIds {
+    my ($self, %args) = @_;
+
+    my $collector_id        = $self->getAttr ( name => 'kanopyacollector1_id' );
+    my @indicators          = Indicator->search ( hash => {} );
+    my @indicators_ids;
+    my $indicator_id;
+
+    foreach my $indicator (@indicators) {
+        $indicator_id = $indicator->getAttr ( name => 'indicator_id' );
+        push @indicators_ids, $indicator_id;
+    }
+
+    return \@indicators_ids;
+}
+
+=head2 getIndicatorOidFromId
+
+    Desc: call collector manager to retrieve an indicator oid from it's id
+    return $indicators_oid;
+
+=cut
+
+sub getIndicatorOidFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $indicator_id        = $args{indicator_id};
+    my $indicator           = Indicator->find (
+        hash => {
+            indicator_id => $indicator_id
+        }
+    );
+    my $indicator_oid      = $indicator->getAttr (name => 'indicator_oid' );
+
+    return $indicator_oid;
+}
+
+=head2 getIndicatorNameFromId
+
+    Desc: call collector manager to retrieve an indicator name from it's id
+    return $indicator_name;
+
+=cut
+
+sub getIndicatorNameFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $indicator_id        = $args{indicator_id};
+    my $indicator           = Indicator->find (
+        hash => {
+            indicator_id => $indicator_id
+        }
+    );
+    my $indicator_name      = $indicator->getAttr (name => 'indicator_name' );
+
+    return $indicator_name;
+}
+
+=head2 getIndicatorUnitFromId
+
+    Desc: call collector manager to retrieve an indicator unit from it's id
+    return $indicator_unit;
+
+=cut
+
+sub getIndicatorUnitFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $indicator_id        = $args{indicator_id};
+    my $indicator           = Indicator->find (
+        hash => {
+            indicator_id => $indicator_id
+        }
+    );
+    my $indicator_unit      = $indicator->getAttr (name => 'indicator_unit' );
+
+    return $indicator_unit;
+}
+
+=head2 getCollectorType
+
+    Desc: Usefull to give information about this component 
+    return 'Native Kanopya collector tool';
+
+=cut
+
 sub getCollectorType {
     return 'Native Kanopya collector tool';
-}
-
-sub getConf {
-    
-}
-
-sub setConf {
-    
 }
 
 1;
