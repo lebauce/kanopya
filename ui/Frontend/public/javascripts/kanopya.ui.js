@@ -15,6 +15,10 @@ $(document).ready(function () {
                    west : { closable : false },
                }
     );
+    
+    var stateUrl = '';
+    var upUrl = 'up.png';
+    var brokenUrl = 'broken.png';
 
     $("#grid-message").jqGrid({
     	url:'/messager/messages', 
@@ -22,25 +26,40 @@ $(document).ready(function () {
         loadonce: true,
         height: '200px',
         width: 'auto',
-        colNames:['Id','From','State','Level','Date','Time','Content'],
+        colNames:['Id','From','Level','Date','Time','Content'],
         colModel:[
         		{name:'id',index:'id', width:60, key:true},
                 {name:'from',index:'from',width:90},
-                {name:'state'},
-                {name:'level',index:'level',width:150},
+                {name:'level',index:'level',width:40,formatter:stateFormatter},
                 {name:'date',index:'date',width:130},
                 {name:'time',index:'time',width:130},
                 {name:'content',index:'content', width:500,}
         ],
         //multiselect: true,
-        rowNum:30, rowList:[5,10,20,50],
+        rowNum:8, rowList:[5,10,20,50],
         pager: '#msgGridPager',
         caption: "Messages",
         altRows: false,
         onSelectRow: function (id) {
             alert('Select row: ' + id);
         },
+		beforeSubmit: function(postdata, formid){
+		
+			for (rowid = 1; rowid <= jQuery('#grid-message').jqGrid('getGridParam','rowNum'); rowid++) {
+        		var levelValue = $('#grid-message').getCell(rowid, 'level');
+        		
+        		if (levelValue == 'info') {
+        			stateUrl = upUrl;
+        		} else {
+        			stateUrl = brokenUrl;
+        		}
+    		}
+		}
     });
+    
+	function stateFormatter(cell, options, row) {
+		return "<img src='/images/icons/" + stateUrl + "' />"; 
+	}
     
     $("#grid-message").jqGrid('navGrid','#msgGridPager',{edit:false,add:false,del:false});
     
