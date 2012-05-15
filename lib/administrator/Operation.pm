@@ -33,14 +33,18 @@ This Object represent an operation.
 =cut
 
 package Operation;
+use base 'BaseDB';
 
 use strict;
 use warnings;
-use Data::Dumper;
-use Log::Log4perl "get_logger";
+
 use General;
+use Workflow;
 use Kanopya::Exceptions;
 use DateTime;
+
+use Data::Dumper;
+use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
 our $VERSION = '1.00';
@@ -50,108 +54,81 @@ sub enqueue {
     my $class = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['priority','type','params']);
-    
+    General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
+
     # check for an identical operation in the queue
     my $params = $args{params};
     my @hash_keys = keys %$params;
     my $adm = Administrator->new();
     my $nbparams = scalar(@hash_keys);
-    my $whereclause = [];
-    while( my ($key, $value) = each %{$args{params}}) {
-        $log->debug("key $key value $value");
-        push @$whereclause, {name => $key, value =>$value};
-    }
-        
-    my $op_rs = $adm->{db}->resultset('Operation')->search(
-        {    type => $args{type}, 
-            -or => $whereclause,
-        },
-        {     select => [{ count => 'operation_parameters.operation_id', -as => 'mycount'}],
-            join => 'operation_parameters',
-            group_by => 'operation_parameters.operation_id',
-            having => { 'mycount' => $nbparams }
-        }
-    );
-    my @rows = $op_rs->all;
-    if(scalar(@rows)) {
-        $errmsg = "An operation with exactly same parameters already enqueued !";
-        throw Kanopya::Exception::OperationAlreadyEnqueued(error => $errmsg);
+    my $op_params = [];
+
+    if (defined $args{params}) {
+        $op_params = Workflow->buildParams(hash => $args{params});
     }
 
-    my $operation = Operation->new(%args);
+#    my $op_rs = $adm->{db}->resultset('Operation')->search(
+#                    { type => $args{type}, 
+#                      -or  => $op_params, },
+#                    { select   => [ { count => 'operation_parameters.operation_id', -as => 'mycount'} ],
+#                      join     => 'operation_parameters',
+#                      group_by => 'operation_parameters.operation_id',
+#                      having   => { 'mycount' => $nbparams } }
+#                );
+#
+#    my @rows = $op_rs->all;
+#    if(scalar(@rows)) {
+#        $errmsg = "An operation with exactly same parameters already enqueued !";
+#        throw Kanopya::Exception::OperationAlreadyEnqueued(error => $errmsg);
+#    }
+
+    $args{params} = $op_params;
+    return Operation->new(%args);
 }
 
 sub new {
     my $class = shift;
     my %args = @_;
     my $self = {};
-    
-    General::checkParams(args => \%args, required => ['priority','type','params']);
-    
+
+    General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
+
     my $adm = Administrator->new();
-    
-    my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef; 
-    my $execution_rank = $adm->_get_lastRank() + 1;
-    my $user_id = $adm->{_rightchecker}->{user_id};
-    
-    my $op_params = [];
-    while(my ($key, $value) = each %{$args{params}}) {
-        push @$op_params, { name => $key, value => $value };
+
+    # If workflow not defined, initiate a new one with parameters
+    if (not defined $args{workflow_id}) {
+        my $workflow = Workflow->new();
+        if (defined $args{params}) {
+            $workflow->setParams(params => $args{params});
+        }
+
+        $args{workflow_id} = $workflow->getAttr(name => 'workflow_id');
     }
-    
+
+    my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef;
+    my $execution_rank = $class->getNextRank(workflow_id => $args{workflow_id});
+    my $user_id = $adm->{_rightchecker}->{user_id};
+
+    $log->info("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>, " .
+                 "with params:\n" . Dumper(\$args{params}));
+
     my $row = {
         type                 => $args{type},
         execution_rank       => $execution_rank,
+        workflow_id          => $args{workflow_id},
         user_id              => $user_id,
         priority             => $args{priority},
         creation_date        => \"CURRENT_DATE()",
         creation_time        => \"CURRENT_TIME()",
         hoped_execution_time => $hoped_execution_time,
-        operation_parameters => $op_params
     };
-    
+
     $self->{_dbix} = $adm->{db}->resultset('Operation')->create($row);
     $log->info(ref($self)." saved to database (added in execution list)");
-    $self->{_params} = $args{params};
+
     bless $self, $class;
-    return $self;
-}
 
-=head2 get
-    
-    Class : Public
-    
-    Desc : This method instanciate Operation.
-    
-    Args :
-        data : DBIx class: object data
-        params : hashref : Operation parameters
-    Return : Operation, this class could not be instanciated !!
-    
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-    my $self = {};
-    
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $adm = Administrator->new();
-    $self->{_dbix} = $adm->{db}->resultset( "Operation" )->find(  $args{id});
-#    $self->{_dbix} = $adm->getRow(id=>$args{id}, table => "Operation");
-    # Get Operation parameters
-    my $params_rs = $self->{_dbix}->operation_parameters;
-    my %params;
-    while ( my $param = $params_rs->next ) {
-        $params{ $param->name } = $param->value;
-    }
-    $self->{_params} = \%params;
-    $log->debug("Parameters ", Dumper (%params));
-    bless $self, $class;
-    return $self;
-
+    return $args{workflow_id};
 }
 
 =head2 getNextOp
@@ -176,20 +153,16 @@ sub getNextOp {
     #$log->error("Time is : ", time);
     my $opdata = $all_ops->search( 
         { -or => [ hoped_execution_time => undef, hoped_execution_time => {'<',time}] }, 
-        { order_by => { -asc => 'execution_rank' }}   
+#        { order_by => { -asc => 'execution_rank' }}
+        { order_by => { -asc => 'operation_id' }}
     )->next();
     if (! defined $opdata){
         #$log->info("No operation in queue");
         return;
     }
     my $op = Operation->get(id => $opdata->get_column("operation_id"));
-    $log->info("Operation execution: ".$op->getAttr(attr_name => 'type'));
+    $log->info("Operation execution: ".$op->getAttr(name => 'type'));
     return $op;
-}
-
-sub getType{
-    my $self = shift;
-    return $self->{_dbix}->get_column('type');
 }
 
 =head2 delete
@@ -203,71 +176,45 @@ sub getType{
 sub delete {
     my $self = shift;
 
-    my $params_rs = $self->{_dbix}->operation_parameters;
     my $adm = Administrator->new();
+
     my $op_status = "Done";
     if ($self->{cancelled}){
         $op_status = "Cancelled";
     }
-    my $params = $self->getParams();
-    my $new_old_op = $adm->_newDbix(
-		table => 'OldOperation',
-		row => {
-			type             => $self->getAttr(attr_name =>"type"),
-			user_id          => $self->getAttr(attr_name =>"user_id"),
-			priority         => $self->getAttr(attr_name =>"priority"),
-			creation_date    => $self->getAttr(attr_name =>"creation_date"),
-			creation_time    => $self->getAttr(attr_name =>"creation_time"),
-			execution_date   => \"CURRENT_DATE()",
-			execution_time   => \"CURRENT_TIME()",
-			execution_status => $op_status,
-		}
-	);
-    $new_old_op->insert;
-    foreach my $k (keys %$params) {
-        $new_old_op->create_related( 'old_operation_parameters', { name => $k, value => $params->{$k} } );}
 
-    $params_rs->delete;
+    my $new_old_op = $adm->_newDbix(
+        table => 'OldOperation',
+        row => {
+            type             => $self->getAttr(name => "type"),
+            workflow_id      => $self->getAttr(name => "workflow_id"),
+            user_id          => $self->getAttr(name => "user_id"),
+            priority         => $self->getAttr(name => "priority"),
+            creation_date    => $self->getAttr(name => "creation_date"),
+            creation_time    => $self->getAttr(name => "creation_time"),
+            execution_date   => \"CURRENT_DATE()",
+            execution_time   => \"CURRENT_TIME()",
+            execution_status => $op_status,
+        }
+    );
+    $new_old_op->insert;
+
     $self->{_dbix}->delete();
     $log->info(ref($self)." deleted from database (removed from execution list)");
 }
 
-=head2 getAttr
-    
-    Class : Public
-    
-    Desc : This method return operation Attr specified in args
-    
-    args :
-        attr_name : String : Attribute name
-    
-    Return : String : Parameter specified
-    
-=cut
-
-sub getAttr {
+sub getWorkflow {
     my $self = shift;
     my %args = @_;
-    my $value;
 
-    General::checkParams(args => \%args, required => ['attr_name']);
-
-    if ( $self->{_dbix}->has_column( $args{attr_name} ) ) {
-        $value = $self->{_dbix}->get_column( $args{attr_name} );
-        $log->debug(ref($self) . " getAttr of $args{attr_name} : $value");
-    } else {
-        $errmsg = "Operation->getAttr : Wrong value asked!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    return $value;
+    # my $workflow = $self->getRelation(name => 'workflow');
+    return Workflow->get(id => $self->getAttr(name => 'workflow_id'));
 }
-
 =head2 getParams
     
     Class : Public
     
-    Desc : This method returns all params 
+    Desc : This method returns all params
     
     Return : hashref : all parameters of operation
 =cut
@@ -276,11 +223,7 @@ sub getParams {
     my $self = shift;
     my %params;
 
-    my $params_rs = $self->{_dbix}->operation_parameters;
-    while (my $param = $params_rs->next){
-        $params{$param->name} = $param->value;
-    }
-    return \%params;
+    return $self->getWorkflow->getParams();
 }
 
 =head setHopedExecutionTime
@@ -300,13 +243,28 @@ sub setHopedExecutionTime {
     $log->debug("hoped_execution_time updated with value : $t");
 }
 
-=head setProcessing
-    Set execution_rank to 0, it signifies that operation is in execution
-=cut
+sub getNextRank {
+    my $class = shift;
+    my %args = @_;
 
-sub setProcessing {
-    my $self = shift;
-    $self->{_dbix}->update({'execution_rank' => 0});
+    General::checkParams(args => \%args, required => [ 'workflow_id' ]);
+
+    my $adm = Administrator->new();
+    my $row = $adm->{db}->resultset('Operation')->search(
+                  { workflow_id => $args{workflow_id} },
+                  { column   => 'execution_rank',
+                    order_by => [ 'execution_rank desc' ]}
+              )->first;
+
+    if (! $row) {
+        $log->debug("No previous operation in queue for workflow $args{workflow_id}");
+        return 0;
+    }
+    else {
+        my $last_in_db = $row->get_column('execution_rank');
+        $log->debug("Previous operation in queue is $last_in_db");
+        return $last_in_db + 1;
+    }
 }
 
 1;
