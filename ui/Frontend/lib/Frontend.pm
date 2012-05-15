@@ -2,10 +2,9 @@ package Frontend;
 use Dancer ':syntax';
 use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
-use Login;
-use Messager;
 
 use Login;
+use Messager;
 use REST::api;
 
 our $VERSION = '0.1';
