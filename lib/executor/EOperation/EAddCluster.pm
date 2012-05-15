@@ -74,7 +74,7 @@ sub prepare {
     # Check required params within cluster params
     General::checkParams(args     => $self->{params}->{cluster_params},
                          required => [ "cluster_name", "disk_manager_id", "host_manager_id",
-                                       "collector_manager_id", "cluster_boot_policy", "cluster_si_shared" ]);
+                                       "cluster_boot_policy", "cluster_si_shared" ]);
 
     if (defined $self->{params}->{cluster_params}->{kernel_id} and
         not $self->{params}->{cluster_params}->{kernel_id}) {
