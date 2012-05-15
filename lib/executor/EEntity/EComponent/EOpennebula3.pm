@@ -485,18 +485,8 @@ sub startHost {
                       );
 
     # Apply the VLAN's on the hypervisor interface dedicated to virtual machines
-    my $bridge = ($hypervisor->getIfaces(role => 'vms'))[0];
-    for my $iface (@{$args{host}->getIfaces}) {
-        for my $network ($iface->getInterface->getNetworks) {
-            if ($network->isa("Entity::Network::Vlan")) {
-                $log->info("Applying vlan " . $network->getAttr(name => "network_name") .
-                           " on the bridge interface " . $iface->getAttr(name => "iface_name"));
-                my $ehost_manager = EFactory::newEEntity(data => $hypervisor->getHostManager);
-                $ehost_manager->applyVLAN(iface => $bridge,
-                                          vlan  => $network);
-            }
-        }
-    }
+    $self->propagateVLAN(host       => $args{host},
+                         hypervisor => $hypervisor);
 
     # create the vm from template
     my $command = $self->_oneadmin_command(command => "onevm create $vm_template");
@@ -632,12 +622,14 @@ sub _generateVmTemplate {
     my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
     for my $iface ($args{host}->getIfaces()) {
         for my $network ($iface->getInterface->getNetworks) {
+            my $vlan = $network->isa("Entity::Network::Vlan") ?
+                           $network->getAttr(name => "vlan_number") : undef;
+
             my $data = {
                 mac => $iface->getAttr(name => 'iface_mac_addr'),
-                bridge  => "br-" . $hostname,
+                bridge  => "br-" . ($vlan || "default"),
                 phydev  => "p" . $bridge->getAttr(name => "iface_name"),
-                vlan    => $network->isa("Entity::Network::Vlan") ?
-                               $network->getAttr(name => "vlan_number") : undef
+                vlan    => $vlan
             };
             push @{$interfaces}, $data;
         };
@@ -687,5 +679,27 @@ sub applyVLAN {
     # In the case of OpenNebula, we need to apply the VLAN on the
     # bridge interface of the hypervisor the VM is running on.
 }
- 
+
+# Apply the VLAN's on the hypervisor interface dedicated to virtual machines
+
+sub propagateVLAN {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'hypervisor' ]);
+
+    my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
+    for my $iface (@{$args{host}->getIfaces}) {
+        for my $network ($iface->getInterface->getNetworks) {
+            if ($network->isa("Entity::Network::Vlan")) {
+                $log->info("Applying vlan " . $network->getAttr(name => "network_name") .
+                           " on the bridge interface " . $iface->getAttr(name => "iface_name"));
+                my $ehost_manager = EFactory::newEEntity(data => $args{hypervisor}->getHostManager);
+                $ehost_manager->applyVLAN(iface => $bridge,
+                                          vlan  => $network);
+            }
+        }
+    }
+}
+
 1;
