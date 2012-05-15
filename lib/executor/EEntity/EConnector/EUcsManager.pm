@@ -131,12 +131,16 @@ sub getFreeHost {
 
             eval {
                 for my $iface (@{$host->getIfaces()}) {
-                    $host->removeInterface(iface_id => $iface->{iface_id});
+                    $host->removeIface(iface_id => $iface->getId);
                 }
             };
+            if ($@) {
+                $log->info("Failed to remove interface $@");
+            }
 
-            my @ethernets = $sp->children("vnicEther");
             my $pxe = 1;
+            my @ethernets = $sp->children("vnicEther");
+            @ethernets = reverse sort { $b->{name} <=> $a->{name} } @ethernets;
 
             for my $ethernet (@ethernets) {
                 my $ifname = $ethernet->{name};
