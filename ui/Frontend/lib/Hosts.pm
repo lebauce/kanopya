@@ -12,6 +12,7 @@ use Entity::Hostmodel;
 use Entity::Powersupplycard;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use CapacityManagement;
 
 my $log = get_logger("webui");
 
@@ -379,15 +380,31 @@ get '/hosts/scale_memory/:host_id' => sub {
 };
 
 post '/hosts/scale_memory' => sub {
-    Operation->enqueue(
-        type => 'ScaleMemoryHost',
-        priority => 1,
-        params => {
-            host_id => params->{host_id},
-            memory  => params->{memory_quantity}
-        }
+    
+    
+    my $host_id    = params->{host_id};
+    my $cluster_id = Entity::Host->get('id'=>$host_id)->getClusterId();
+
+    my $cm = CapacityManagement->new(cluster_id => $cluster_id);
+    
+    $log->info("post ".params->{host_id}." ".params->{memory_quantity});
+    $cm->scaleMemoryHost(
+        host_id => params->{host_id},
+        memory  => params->{memory_quantity}
     );
-    redirect '/infrastructures/hosts';
+
+
+
+#    Operation->enqueue(
+#        type => 'ScaleMemoryHost',
+#        priority => 1,
+#        params => {
+#            host_id => params->{host_id},
+#            memory  => params->{memory_quantity}
+#        }
+#    );
+
+    redirect '/infrastructures/hosts/'.$host_id;
 };
 
 get '/hosts/scale_cpu/:host_id' => sub {
@@ -397,15 +414,29 @@ get '/hosts/scale_cpu/:host_id' => sub {
 };
 
 post '/hosts/scale_cpu' => sub {
-    Operation->enqueue(
-        type => 'ScaleCpuHost',
-        priority => 1,
-        params => {
-            host_id    => params->{host_id},
-            cpu_number => params->{vcpu_number}
-        }
+#    Operation->enqueue(
+#        type => 'ScaleCpuHost',
+#        priority => 1,
+#        params => {
+#            host_id    => params->{host_id},
+#            cpu_number => params->{vcpu_number}
+#        }
+#    );
+    
+    my $host_id    = params->{host_id};
+    my $cluster_id = Entity::Host->get('id'=>$host_id)->getClusterId();
+
+    my $cm = CapacityManagement->new(cluster_id => $cluster_id);
+    
+    $log->info("call scaleCpuHost ".params->{host_id}." ".params->{vcpu_number});
+    $cm->scaleCpuHost(
+        host_id     => params->{host_id},
+        vcpu_number => params->{vcpu_number}
     );
-    redirect '/infrastructures/hosts';
+
+    redirect '/infrastructures/hosts/'.$host_id;
+
+    #redirect '/infrastructures/hosts';
 };
 
 

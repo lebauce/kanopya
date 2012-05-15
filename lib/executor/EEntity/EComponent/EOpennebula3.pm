@@ -142,13 +142,58 @@ sub migrateHost {
 
 
     my $hypervisor_id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{hypervisor_dst}->getAttr(name => "host_id"));
+    my $hypervisor_host_name = $args{hypervisor_dst}->getAttr(name=>'host_hostname');
     
     my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
     
     my $command = $self->_oneadmin_command(command => "onevm livemigrate $host_id $hypervisor_id");
     my $result = $masternode_econtext->execute(command => $command);
     
+    $self->_checkMigration(
+        host_id             => $host_id,
+        hypervisor_dest_name  => $hypervisor_host_name,
+        masternode_econtext => $masternode_econtext,
+    );
+    
     return $self->_getEntity()->migrateHost(%args);
+}
+
+sub _checkMigration{
+    my ($self,%args) = @_;
+    my $host_id             = $args{host_id};
+    my $hypervisor_dest_name       = $args{hypervisor_dest_name};
+    my $masternode_econtext = $args{masternode_econtext};
+    
+    my $start_time   = time();
+    my $time_out     = 60; # 1 min timeout
+    
+    TIMELOOP:
+    while(1){
+
+        if(time() - $start_time > $time_out) {
+            my $errmsg = "Time out migration of host $host_id in hypervisor $hypervisor_dest_name\n";
+            throw Kanopya::Exception::Internal(error => $errmsg); 
+        } else {
+            # TODO: CHECK HV
+            # my $command = $self->_oneadmin_command(command => 'onevm show '.$host_id.' | grep "HOSTNAME" | grep -v "SEQ"');
+            # my $result = $masternode_econtext->execute(command => $command);
+            # $result->{stdout}  =~ s/\s+//g; # REMOVE WHITE SPACES
+            # my @result_split = split(/:/,$result->{stdout}); #split with :
+            
+            my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
+            my $result = $masternode_econtext->execute(command => $command);            
+            my $hxml = XMLin($result->{stdout});
+            # my $hypervisor_hostname = $hxml->{HISTORY_RECORDS}->{HISTORY}->{HOSTNAME};
+            my $state = $hxml->{LCM_STATE};
+            
+            if ($state == 3) {
+                 last TIMELOOP;
+            } else{
+                $log->info("wait for migration ".(time() - $start_time)." STATE = $state (4=MIGR; 3=RUNN");
+                sleep(5);
+            }
+        }
+    }
 }
 
 # execute memory scale in

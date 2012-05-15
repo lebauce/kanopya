@@ -1228,6 +1228,16 @@ post '/clusters/:clusterid/nodes/add' => sub {
     }
 };
 
+#OPTIMISE HV+VM INFRASTRUCTURE
+get '/clusters/:clusterid/optimiaas' => sub{
+    my $cm = CapacityManagement->new(cluster_id => param('clusterid'));
+    
+    $log->info("*** OPTIMIAAS***");
+    #$cm->optimiaas();
+    
+    redirect('/architectures/clusters/'.param('clusterid'));
+};
+
 # cluster node remove processing
 
 get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {

@@ -177,6 +177,40 @@ sub methods {
     };
 }
 
+
+
+=head2 getHyperVisor
+
+    desc: Return the hyper visor if the host is a VM, else return undef 
+
+=cut
+
+sub getHyperVisorHostId(){
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => []);
+
+            
+    my $host_type = $self->getHostManager()->getHostType();
+    if($host_type eq "Virtual Machine"){
+        
+#        my $hv_host_id = $self->{_dbix}->opennebula3_vms->first->opennebula3_hypervisor->get_column('hypervisor_host_id');        
+#        return $hv_host_id;
+        
+        my $opennebula3_vms = $self->{_dbix}->opennebula3_vms;
+        
+        if($opennebula3_vms->count > 1) {
+            throw Kanopya::Exception::Internal(
+             error => "VM must have only one HV host"
+            );
+        }else{
+            return $opennebula3_vms->first->opennebula3_hypervisor->get_column('hypervisor_host_id');
+        }
+    }else{
+        return undef;
+    }
+}
+
+
 =head2 getServiceProvider
 
     desc: Return the service provider that provides the host.
