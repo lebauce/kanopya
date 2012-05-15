@@ -52,10 +52,10 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $target = $self->_getEntity->getAttr(name => 'container_access_export');
-    my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
-    my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
-    my $lun    = $self->_getEntity->getAttr(name => 'lun_name');
+    my $target = $self->getAttr(name => 'container_access_export');
+    my $ip     = $self->getAttr(name => 'container_access_ip');
+    my $port   = $self->getAttr(name => 'container_access_port');
+    my $lun    = $self->getAttr(name => 'lun_name');
 
     $log->info("Creating open iscsi node <$target> from <$ip:$port>.");
 
@@ -84,8 +84,16 @@ sub connect {
     }
 
     $log->info("Device found (<$device>).");
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => $device);
+    $self->setAttr(name => 'device_connected', value => $device);
+    $self->save();
+
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('disconnect'),
+            parameters => [ $self, "econtext", $args{econtext} ]
+        );
+    }
+
     return $device;
 }
 
@@ -101,9 +109,9 @@ sub disconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $target = $self->_getEntity->getAttr(name => 'container_access_export');
-    my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
-    my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
+    my $target = $self->getAttr(name => 'container_access_export');
+    my $ip     = $self->getAttr(name => 'container_access_ip');
+    my $port   = $self->getAttr(name => 'container_access_port');
 
     $log->info("Logout from node <$target>");
 
@@ -115,8 +123,9 @@ sub disconnect {
     my $delete_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o delete";
     $args{econtext}->execute(command => $delete_node_cmd);
 
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => '');
+    $self->setAttr(name  => 'device_connected',
+                   value => '');
+    $self->save();
 
     # TODO: insert an eroolback with mount method ?
 }

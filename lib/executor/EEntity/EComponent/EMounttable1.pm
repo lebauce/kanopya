@@ -29,11 +29,10 @@ sub configureNode {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "econtext", "host", "mount_point" ]);
+                         required => [ "host", "mount_point" ]);
 
     my $data = $self->_getEntity()->getConf();
 
-    #$log->debug(Dumper($args{econtext}));
     #$log->debug(Dumper($args{mount_point}));
 
     foreach my $row (@{$data->{mountdefs}}) {
@@ -42,8 +41,7 @@ sub configureNode {
 
     #$log->debug(Dumper($data));
 
-    $self->generateFile(econtext     => $args{econtext},
-                        mount_point  => $args{mount_point} . "/etc",
+    $self->generateFile(mount_point  => $args{mount_point} . "/etc",
                         template_dir => "/templates/components/mounttable",
                         input_file   => "fstab.tt",
                         output       => "/fstab",
@@ -52,7 +50,7 @@ sub configureNode {
     my $automountnfs = 0;
     for my $mountdef (@{$data->{mountdefs}}) {
         my $mountpoint = $mountdef->{mounttable1_mount_point};
-        $args{econtext}->execute(command => "mkdir -p $args{mount_point}/$mountpoint");
+        $self->getExecutorEContext->execute(command => "mkdir -p $args{mount_point}/$mountpoint");
         
         if ($mountdef->{mounttable1_mount_filesystem} eq 'nfs') {
             $automountnfs = 1;
@@ -60,12 +58,12 @@ sub configureNode {
     }
     
     if ($automountnfs) {
-        my $grep_result = $args{econtext}->execute(
+        my $grep_result = $self->getExecutorEContext->execute(
                               command => "grep \"ASYNCMOUNTNFS=no\" $args{mount_point}/etc/default/rcS"
                           );
 
         if (not $grep_result->{stdout}) {
-            $args{econtext}->execute(
+            $self->getExecutorEContext->execute(
                 command => "echo \"ASYNCMOUNTNFS=no\" >> $args{mount_point}/etc/default/rcS"
             );
         }
@@ -77,7 +75,7 @@ sub addNode {
     my %args = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ "econtext", "host", "mount_point" ]);
+                         required => [ "host", "mount_point" ]);
 
     $self->configureNode(%args);
 }

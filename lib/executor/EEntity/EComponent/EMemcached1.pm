@@ -32,9 +32,11 @@ sub configureNode {
     my $data = { connection_port => $conf->{memcached1_port},
                  listening_address => $args{host}->getAdminIp };
 
-    $self->generateFile(econtext     => $args{econtext}, mount_point => $args{mount_point},
+    $self->generateFile(mount_point  => $args{mount_point},
                         template_dir => "/templates/components/memcached",
-                        input_file   => "memcached.conf.tt", output => "/memcached.conf", data => $data);
+                        input_file   => "memcached.conf.tt",
+                        output       => "/memcached.conf",
+                        data         => $data);
 
 }
 
@@ -42,7 +44,7 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    General::checkParams(args => \%args, required => ['mount_point', 'host']);
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     
@@ -51,14 +53,12 @@ sub addNode {
         # no masternode defined, this host becomes the masternode
             
         $self->configureNode(
-            econtext    => $args{econtext},
             mount_point => $args{mount_point}.'/etc',
             host        => $args{host}
         );
         
         $self->addInitScripts(    
-            mountpoint => $args{mount_point}, 
-            econtext   => $args{econtext},
+            mountpoint => $args{mount_point},
             scriptname => 'memcached', 
         );
     }

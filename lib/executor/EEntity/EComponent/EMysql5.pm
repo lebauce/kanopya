@@ -26,18 +26,19 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext','host','mount_point']);
+    General::checkParams(args => \%args, required => ['host','mount_point']);
 
     my $data = $self->_getEntity()->getConf();    
         
     # generation of /etc/mysql/my.cnf
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc',
-                         template_dir => "/templates/components/mysql5",
-                         input_file => "my.cnf.tt", output => "/mysql/my.cnf", data => $data);
+    $self->generateFile(mount_point  => $args{mount_point}.'/etc',
+                        template_dir => "/templates/components/mysql5",
+                        input_file   => "my.cnf.tt",
+                        output       => "/mysql/my.cnf",
+                        data         => $data);
 
     $self->addInitScripts(
-        mountpoint => $args{mount_point}, 
-          econtext => $args{econtext}, 
+        mountpoint => $args{mount_point},
         scriptname => 'mysql'
     );
         
@@ -48,11 +49,9 @@ sub removeNode {}
 sub reload {
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['econtext']);
 
     my $command = "invoke-rc.d mysql restart";
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
     return undef;
 }
 

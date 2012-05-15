@@ -19,7 +19,6 @@ use warnings;
 use strict;
 
 use General;
-use EContext::Local;
 use Kanopya::Exceptions;
 use Entity::Container::NetappLun;
 
@@ -31,13 +30,13 @@ my $errmsg;
 
 =head2 createDisk
 
-createDisk ( name, size, filesystem, econtext )
+createDisk ( name, size, filesystem)
     desc: This function creates a new volume on NetApp.
     args:
         name : string : new volume name
         size : String : disk size finishing by unit (M : Mega, K : kilo, G : Giga)
         filesystem : String : filesystem type
-        econtext : Econtext : execution context on the storage server
+
     return:
         1 if an error occurred, 0 otherwise
     
@@ -48,7 +47,7 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "volume_id", "name", "size", "filesystem", "econtext" ]);
+                         required => [ "volume_id", "name", "size", "filesystem" ]);
 
     my $volume = Entity::Container::NetappVolume->get(id => $args{volume_id});
     my $volume_name = "/vol/" . $volume->getAttr(name => "container_name") . "/" . $args{name};
@@ -60,48 +59,44 @@ sub createDisk {
                              type => "linux");
 
     my $noformat = $args{"noformat"};
-    my $econtext = $args{econtext};
     delete $args{noformat};
-    delete $args{econtext};
 
     # Insert the container into the database
-    my $container = Entity::Container::NetappLun->new(
-                        disk_manager_id      => $self->_getEntity->getAttr(name => 'entity_id'),
-                        container_name       => $args{name},
-                        container_size       => $args{size},
-                        container_filesystem => $args{filesystem},
-                        container_freespace  => 0,
-                        container_device     => $args{name},
-                        volume_id            => $args{volume_id}
-                    );
+    my $entity = Entity::Container::NetappLun->new(
+                     disk_manager_id      => $self->_getEntity->getAttr(name => 'entity_id'),
+                     container_name       => $args{name},
+                     container_size       => $args{size},
+                     container_filesystem => $args{filesystem},
+                     container_freespace  => 0,
+                     container_device     => $args{name},
+                     volume_id            => $args{volume_id}
+                 );
+    my $container = EFactory::newEEntity(data => $entity);
 
     if (! defined $noformat) {
         # Connect to the iSCSI target and format it locally
 
         my $export = $self->createExport(container   => $container,
                                          export_name => $args{name},
-                                         econtext    => $econtext,
                                          erollback   => $args{erollback});
 
         my $container_access = EFactory::newEEntity(data => $export);
-        my $local_context    = EContext::Local->new(local => '127.0.0.1');
 
-        my $newdevice = $container_access->connect(econtext => $local_context);
+        my $newdevice = $container_access->connect(econtext => $self->getExecutorEContext);
 
         $self->mkfs(device   => $newdevice,
                     fstype   => $args{filesystem},
-                    econtext => $local_context);
+                    econtext => $self->getExecutorEContext);
 
-        $container_access->disconnect(econtext => $local_context);
+        $container_access->disconnect(econtext => $self->getExecutorEContext);
 
-        $self->removeExport(container_access => $export,
-                            econtext         => $local_context);
+        $self->removeExport(container_access => $export);
     }
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
             function   => $self->can('removeDisk'),
-            parameters => [ $self, "container", $container, "econtext", $args{econtext} ]
+            parameters => [ $self, "container", $container ]
         );
     }
 
@@ -116,15 +111,16 @@ sub removeDisk {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args=>\%args, required=>[ "container", "econtext" ]);
+    General::checkParams(args => \%args, required => [ "container" ]);
 
-    if (! $args{container}->isa("Entity::Container::NetappLun")) {
+    if (! $args{container}->isa("EEntity::EContainer::ENetappLun")) {
         throw Kanopya::Exception::Execution(
-                  error => "Container must be a Entity::Container::NetappLun"
+                  error => "Container must be a EEntity::EContainer::ENetappLun, not " . 
+                           ref($args{container})
               );
     }
 
-    $self->_getEntity()->lun_destroy(path => $args{container}->getPath());
+    $self->lun_destroy(path => $args{container}->getPath());
 
     $args{container}->delete();
 
@@ -174,7 +170,7 @@ sub createExport {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'container', 'export_name', 'econtext' ]);
+                         required => [ 'container', 'export_name' ]);
 
     my $typeio = General::checkParam(args => \%args, name => 'typeio', default => 'fileio');
     my $iomode = General::checkParam(args => \%args, name => 'iomode', default => 'wb');
@@ -220,29 +216,25 @@ sub createExport {
         }
     }
 
-    my $container_access = Entity::ContainerAccess::IscsiContainerAccess->new(
-                               container_id            => $args{container}->getAttr(name => 'container_id'),
-                               export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
-                               container_access_export => $self->_getEntity->iscsi_node_get_name->node_name,
-                               container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
-                               container_access_port   => 3260,
-                               typeio                  => $typeio,
-                               iomode                  => $iomode,
-                               lun_name                => "lun-" . $lun_id
-                           );
+    my $entity = Entity::ContainerAccess::IscsiContainerAccess->new(
+                     container_id            => $args{container}->getAttr(name => 'container_id'),
+                     export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
+                     container_access_export => $self->_getEntity->iscsi_node_get_name->node_name,
+                     container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
+                     container_access_port   => 3260,
+                     typeio                  => $typeio,
+                     iomode                  => $iomode,
+                     lun_name                => "lun-" . $lun_id
+                 );
+    my $container_access = EFactory::newEEntity(data => $entity);
 
     $log->info("Added iSCSI export for lun " .
                $args{container}->getAttr(name => "container_name"));
 
     if (defined $args{erollback}) {
-        my $eroll_add_export = $args{erollback}->getLastInserted();
-        $args{erollback}->insertNextErollBefore(erollback => $eroll_add_export);
-
         $args{erollback}->add(
             function   => $self->can('removeExport'),
-            parameters => [ $self,
-                            "container_access", $container_access,
-                            "econtext", $args{econtext} ]
+            parameters => [ $self, "container_access", $container_access, ]
         );
     }
 
@@ -259,36 +251,16 @@ sub removeExport {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'container_access', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'container_access' ]);
 
-    if (! $args{container_access}->isa("Entity::ContainerAccess::IscsiContainerAccess")) {
-        throw Kanopya::Exception::Execution::WrongType(
-                  error => "ContainerAccess must be a Entity::ContainerAccess::IscsiContainerAccess"
+    if (! $args{container_access}->isa("EEntity::EContainerAccess::EIscsiContainerAccess")) {
+        throw Kanopya::Exception::Internal::WrongType(
+                  error => "ContainerAccess must be a EEntity::EContainerAccess::EIscsiContainerAccess, not " .
+                           ref($args{container_access})
               );
     }
 
-    my $log_content      = "";
-    my $container_access = $args{container_access};
-    my $container        = $container_access->getContainer();
-    my $export_name      = $container_access->getAttr(name => "container_access_id");
-
     $args{container_access}->delete();
-
-    $log_content = "Remove export with export name <" . $export_name . ">";
-    if(exists $args{erollback} and defined $args{erollback}) {
-        $args{erollback}->add(
-            function   => $self->can('createExport'),
-            parameters => [ $self,
-                            "container", $container,
-                            "export_name", $export_name,
-                            "econtext", $args{econtext} ]);
-
-       $log_content .= " and will be rollbacked with add export of disk <" .
-                       $container->getAttr(name => 'container_device') . ">";
-    }
-
-    $log->debug($log_content);
 }
 
 =head2 addExportClient

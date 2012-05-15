@@ -32,7 +32,7 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "host", "econtext" ]);
+    General::checkParams(args => \%args, required => [ "host" ]);
 
     my $ucs = $self->_getEntity();
     $ucs->init();

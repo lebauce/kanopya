@@ -29,7 +29,7 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
         
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster']);
+    General::checkParams(args => \%args, required => ['host', 'mount_point', 'cluster']);
 
      #TODO insert configuration files generation
     my $cluster = $args{cluster};
@@ -76,11 +76,14 @@ sub configureNode {
             $data->{$element} = $$iptables_secure{$element};     
         }
      }
-     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc',
-             template_dir => "/templates/components/iptables",
-             input_file => "Iptables.tt", output => '/init.d/firewall', data => $data);             
+     $self->generateFile(mount_point  => $args{mount_point}.'/etc',
+                         template_dir => "/templates/components/iptables",
+                         input_file   => "Iptables.tt",
+                         output       => '/init.d/firewall',
+                         data         => $data);
+
      my $command = '/bin/chmod +x '.$args{mount_point}.'/etc/init.d/firewall';
-     my $result = $args{econtext}->execute(command => $command);        
+     my $result = $self->getExecutorEContext->execute(command => $command);
      $log->debug(Dumper $result);
      
 #    my $a=$self->_getEntity()->getClusterIp();
@@ -94,10 +97,9 @@ sub configureNode {
 sub addNode {
     my $self = shift;
     my %args = @_;    
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster']);
+    General::checkParams(args => \%args, required => ['host', 'mount_point', 'cluster']);
 
     $self->configureNode(
-           econtext => $args{econtext},
                host => $args{host},
         mount_point => $args{mount_point}.'/etc',
             cluster => $args{cluster}
@@ -107,7 +109,7 @@ sub addNode {
     # status iptables 
     $self->addInitScripts(      
         mountpoint => $args{mount_point}, 
-          econtext => $args{econtext}, 
+          econtext => $args{econtext},
         scriptname => 'firewall', 
     );
 }
@@ -118,9 +120,10 @@ sub activate{
    my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext']);
+    General::checkParams(args => \%args, required => ['mount_point']);
+
     my $command = '/bin/chmod +x'.$args{mount_point}.'/init.d/firewall';
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getExecutorEContext->execute(command => $command);
     return undef;
 }   
 
@@ -130,11 +133,9 @@ sub activate{
 sub reload {
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['econtext']);
 
     my $command = "invoke-rc.d iptables restart";
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
     return undef;
 }
 

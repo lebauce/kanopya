@@ -58,19 +58,17 @@ sub create {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ["econtext"]);
-
     # Create cluster directory
-    my $command = "mkdir -p /clusters/" . $self->_getEntity()->getAttr(name =>"cluster_name");
-    $args{econtext}->execute(command => $command);
-    $log->debug("Execution : mkdir -p /clusters/" . $self->_getEntity()->getAttr(name => "cluster_name"));
+    my $command = "mkdir -p /clusters/" . $self->getAttr(name => "cluster_name");
+    $self->getExecutorEContext->execute(command => $command);
+    $log->debug("Execution : mkdir -p /clusters/" . $self->getAttr(name => "cluster_name"));
 
     # set initial state to down
-    $self->_getEntity()->setAttr(name => 'cluster_state', value => 'down:'.time);
+    $self->setAttr(name => 'cluster_state', value => 'down:'.time);
     
     # Save the new cluster in db
     $log->debug("trying to update the new cluster previouly created");
-    $self->_getEntity()->save();
+    $self->save();
 
     # automatically add System|Monitoragent|Logger components
     foreach my $compclass (qw/Entity::Component::Mounttable1
@@ -81,7 +79,7 @@ sub create {
         $log->debug("trying to add $compclass to cluster");
         my $comp = $compclass->new();
         $comp->insertDefaultConfiguration();
-        $self->_getEntity()->addComponent(component => $comp);
+        $self->addComponent(component => $comp);
         $log->info("$compclass automatically added");
     }
 
@@ -93,7 +91,7 @@ sub create {
                                    interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
                      );
 
-    $self->_getEntity->addNetworkInterface(
+    $self->addNetworkInterface(
         interface_role => $adminrole,
         networks       => $interface->getNetworks
     );
@@ -103,19 +101,17 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ["econtext"]);
-
-    my $host_manager = Entity->get(id => $self->_getEntity->getAttr(name => 'host_manager_id'));
-    my $host_manager_params = $self->_getEntity->getManagerParameters(manager_type => 'host_manager');
+    my $host_manager = Entity->get(id => $self->getAttr(name => 'host_manager_id'));
+    my $host_manager_params = $self->getManagerParameters(manager_type => 'host_manager');
 
     # Add the number of required ifaces to paramaters.
-    my @interfaces = $self->_getEntity->getNetworkInterfaces;
+    my @interfaces = $self->getNetworkInterfaces;
     $host_manager_params->{ifaces} = scalar(@interfaces);
 
     my $ehost_manager = EFactory::newEEntity(data => $host_manager);
     my $host = $ehost_manager->getFreeHost(%$host_manager_params);
 
-    $log->debug("Host manager <" . $self->_getEntity->getAttr(name => 'host_manager_id') .
+    $log->debug("Host manager <" . $self->getAttr(name => 'host_manager_id') .
                 "> returned free host " . $host->getAttr(name => 'host_id'));
 
     return $host;
@@ -123,8 +119,7 @@ sub addNode {
 
 sub generateResolvConf {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args,
-                         required => ['econtext', 'etc_path' ]);
+    General::checkParams(args => \%args, required => [ 'etc_path' ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -133,12 +128,12 @@ sub generateResolvConf {
 
     for my $attr ('cluster_nameserver1','cluster_nameserver2') {
         push @nameservers, {
-            ipaddress => $self->_getEntity()->getAttr(name => $attr)
+            ipaddress => $self->getAttr(name => $attr)
         };
     }
 
     my $vars = {
-        domainname => $self->_getEntity()->getAttr(name => 'cluster_domainname'),
+        domainname => $self->getAttr(name => 'cluster_domainname'),
         nameservers => \@nameservers,
     };
 
@@ -147,7 +142,7 @@ sub generateResolvConf {
     my $input = "resolv.conf.tt";
 
     $template->process($input, $vars, "/tmp/".$tmpfile) or die $template->error(), "\n";
-    $args{econtext}->send(
+    $self->getExecutorEContext->send(
         src  => "/tmp/$tmpfile",
         dest => "$args{etc_path}/resolv.conf"
     );
@@ -156,17 +151,17 @@ sub generateResolvConf {
 
 sub generateHostsConf {
     my ($self, %args) = @_;
-    General::checkParams(
-        args     => \%args, 
-        required => ['executor_context','etc_path','kanopya_domainname']
-    );
+
+    General::checkParams(args => \%args, required => [ 'etc_path', 'kanopya_domainname' ]);
+
     $log->info('Generate /etc/hosts file');
     my $rand = new String::Random;
     my $hostsfile = '/tmp/' . $rand->randpattern('cccccccc');
     my $template = Template->new(General::getTemplateConfiguration());
     my $input = 'hosts.tt';
-    my $nodes = $self->_getEntity->getHosts();
+    my $nodes = $self->getHosts();
     my @hosts_entries = ();
+
     # we add each nodes 
     foreach my $node (values %$nodes) {
         my $tmp = { 
@@ -177,8 +172,9 @@ sub generateHostsConf {
 
         push @hosts_entries, $tmp;
     }
+
     # we ask components for additional hosts entries
-    my $components = $self->_getEntity->getComponents(category => 'all');
+    my $components = $self->getComponents(category => 'all');
     foreach my $component (values %$components) {
         my $entries = $component->getHostsEntries();
         if(defined $entries) {
@@ -187,8 +183,9 @@ sub generateHostsConf {
             }
         }
     }
-    $template->process($input, {hosts => \@hosts_entries}, $hostsfile);
-    $args{executor_context}->send(
+
+    $template->process($input, { hosts => \@hosts_entries }, $hostsfile);
+    $self->getExecutorEContext->send(
         src => $hostsfile,
         dest => "$args{etc_path}/hosts"
     );
@@ -205,10 +202,8 @@ sub generateHostsConf {
 
 sub updateHostsFile {
     my ($self, %args) = @_;
-    General::checkParams(
-        args     => \%args, 
-        required => ['executor_context','kanopya_domainname']
-    );
+
+    General::checkParams(args => \%args, required => [ 'kanopya_domainname' ]);
     
     $log->info('Update cluster nodes /etc/hosts');
     
@@ -219,7 +214,7 @@ sub updateHostsFile {
     my $input = "hosts.tt";
     
     my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
-    my $cluster_id = $self->_getEntity->getAttr(name => 'cluster_id');
+    my $cluster_id = $self->getAttr(name => 'cluster_id');
     
     my @all_nodes = ();
     my @cluster_nodes = ();
@@ -254,12 +249,25 @@ sub updateHostsFile {
     
     foreach my $node (@cluster_nodes) {
         my $node_ip = $node->{ip};
-        my $node_econtext = EFactory::newEContext(ip_source      => $args{executor_context}->getLocalIp,
-                                                  ip_destination => $node_ip);
-        $node_econtext->send(src => $node_hostfile, dest => "/etc/hosts");
+        eval {
+            my $node_econtext = EFactory::newEContext(ip_source      => $self->getExecutorEContext->getLocalIp,
+                                                      ip_destination => $node_ip);
+            $node_econtext->send(src => $node_hostfile, dest => "/etc/hosts");
+            #$node->getEContext->send(src => $node_hostfile, dest => "/etc/hosts");
+        };
+        if ($@) {
+            $log->debug("Could not update of node <$node->{hostname}>, with ip <$node->{ip}>:\n$@")
+        }
     }
-    
-    $args{executor_context}->send(src => $kanopya_hostfile, dest => "/etc/hosts");
+
+    $self->getExecutorEContext->send(src => $kanopya_hostfile, dest => "/etc/hosts");
+}
+
+sub getEContext {
+    my $self = shift;
+
+    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
+                                 ip_destination => $self->getMasterNodeIp());
 }
 
 1;
