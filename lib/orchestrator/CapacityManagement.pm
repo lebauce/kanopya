@@ -288,30 +288,33 @@ sub _scaleOrder{
     $vms->{$vm_id}->{$scale_metric} = $new_value;
 
     
-     if($scale_metric eq 'ram'){
-       $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
-
-        Operation->enqueue(
-            type => 'ScaleMemoryHost',
-            priority => 1,
-            params => {
-                host_id => $vm_id,
-                memory  => $new_value / (1024*1024)
-            }
+    if ($scale_metric eq 'ram'){
+        $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
+         Operation->enqueue(
+             type => 'ScaleMemoryHost',
+             priority => 1,
+             params => {
+                 context => {
+                     host => Entity->get(id => $vm_id),
+                 },
+                 memory  => $new_value / (1024*1024),
+             }
         );
-    }elsif ($scale_metric eq 'cpu'){
+    }
+    elsif ($scale_metric eq 'cpu') {
         $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
 
-       Operation->enqueue(
-        type => 'ScaleCpuHost',
-        priority => 1,
-        params => {
-            host_id    => $vm_id,
-            cpu_number => $new_value
-        }
-    );
-        
-     }
+        Operation->enqueue(
+            type => 'ScaleCpuHost',
+            priority => 1,
+            params => {
+                context => {
+                    host => Entity->get(id => $vm_id),
+                },
+                cpu_number => $new_value,
+            }
+        );
+    }
 }
 
 sub _migrateVmOrder{
