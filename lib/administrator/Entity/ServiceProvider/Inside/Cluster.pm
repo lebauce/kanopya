@@ -267,20 +267,27 @@ sub create {
     my %managers_params = ();
     for my $key (keys %params) {
         if($key =~ /(^host_manager_param|^disk_manager_param|^export_manager_param)/) {
-           $managers_params{$key} = $params{$key};
+           my $realkey = $key;
+           my $manager = $key;
+           my $param   = $key;
+           $manager =~ s/_param.*//g;
+           $param =~ s/.*_param_//g;
+
+           $managers_params{$manager . '_params'}->{$param} = $params{$key};
            delete $params{$key};
         }
     }
 
     $class->checkAttrs(attrs => \%params);
 
-    %params = (%params, %managers_params);
-
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(
         priority => 200,
         type     => 'AddCluster',
-        params   => \%params,
+        params   => {
+            cluster_params => \%params,
+            %managers_params,
+        }
     );
 }
 
@@ -306,37 +313,44 @@ sub update {
 sub remove {
     my $self = shift;
     my $adm = Administrator->new();
+
     # delete method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'delete');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this entity");
-       }
-    my %params;
-    $params{'cluster_id'}= $self->getAttr(name =>"cluster_id");
-    $log->debug("New Operation Remove Cluster with attrs : " . %params);
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'delete');
+    if (not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this entity");
+    }
+
+    $log->debug("New Operation Remove Cluster with cluster id : " .  $self->getAttr(name => 'cluster_id'));
     Operation->enqueue(
         priority => 200,
         type     => 'RemoveCluster',
-        params   => \%params,
+        params   => {
+            context => {
+                cluster => $self,
+            },
+        },
     );
 }
 
 sub forceStop {
     my $self = shift;
     my $adm = Administrator->new();
+
     # delete method concerns an existing entity so we use his entity_id
     my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'forceStop');
     if (not $granted) {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to force stop this entity");
     }
-    my %params;
-    $params{'cluster_id'} = $self->getAttr(name => "cluster_id");
 
-    $log->debug("New Operation Force Stop Cluster with attrs : " . %params);
+    $log->debug("New Operation Force Stop Cluster with cluster: " . $self->getAttr(name => "cluster_id"));
     Operation->enqueue(
         priority => 200,
         type     => 'ForceStopCluster',
-        params   => \%params,
+        params   => {
+            context => {
+                cluster => $self,
+            },
+        },
     );
 }
 
@@ -345,19 +359,31 @@ sub extension { return "clusterdetails"; }
 sub activate {
     my $self = shift;
 
-    $log->debug("New Operation ActivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'ActivateCluster',
-                   params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
+    $log->debug("New Operation ActivateCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
+    Operation->enqueue(
+        priority => 200,
+        type     => 'ActivateCluster',
+        params   => {
+            context => {
+                cluster => $self,
+            },
+        },
+    );
 }
 
 sub deactivate {
     my $self = shift;
 
-    $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'DeactivateCluster',
-                   params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
+    $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
+    Operation->enqueue(
+        priority => 200,
+        type     => 'DeactivateCluster',
+        params   => {
+            context => {
+                cluster => $self,
+            },
+        },
+    );
 }
 
 
@@ -739,7 +765,6 @@ sub getQoSConstraints {
 sub addNode {
     my $self = shift;
     my %args = @_;
-    my %params = (cluster_id  => $self->getAttr(name => "cluster_id"));
 
     my $adm = Administrator->new();
 
@@ -753,11 +778,15 @@ sub addNode {
               );
     }
 
-    $log->debug("New Operation AddNode with attrs : " . %params);
+    $log->debug("New Operation AddNode with attrs cluster_id: " . $self->getAttr(name => "cluster_id"));
     Operation->enqueue(
         priority => 200,
         type     => 'AddNode',
-        params   => \%params
+        params   => {
+            context => {
+                cluster => $self,
+            }
+        }
     );
 }
 
@@ -789,20 +818,20 @@ sub removeNode {
 
     my $adm = Administrator->new();
     # removeNode method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeNode');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a node from this cluster");
-       }
-    my %params = (
-        cluster_id => $self->getAttr(name =>"cluster_id"),
-        host_id => $args{host_id},
-    );
-    $log->debug("New Operation PreStopNode with attrs : " . %params);
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeNode');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a node from this cluster");
+    }
 
     Operation->enqueue(
         priority => 200,
         type     => 'PreStopNode',
-        params   => \%params,
+        params   => {
+            context => {
+                cluster => $self,
+                host    => Entity::Host->get(id => $args{host_id})
+            }
+        }
     );
 }
 
@@ -820,16 +849,8 @@ sub start {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to start this cluster");
     }
 
+    # Enqueue operation AddNode.
     $self->addNode();
-    $self->setState(state => 'starting');
-    $self->save();
-
-#    $log->debug("New Operation StartCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
-#    Operation->enqueue(
-#        priority => 200,
-#        type     => 'StartCluster',
-#        params   => { cluster_id => $self->getAttr(name =>"cluster_id") },
-#    );
 }
 
 =head2 stop
@@ -841,20 +862,22 @@ sub stop {
 
     my $adm = Administrator->new();
     # stop method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'stop');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to stop this cluster");
-       }
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'stop');
+    if (not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to stop this cluster");
+    }
 
-    $log->debug("New Operation StopCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
+    $log->debug("New Operation StopCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
     Operation->enqueue(
         priority => 200,
         type     => 'StopCluster',
-        params   => { cluster_id => $self->getAttr(name =>"cluster_id") },
+        params   => {
+            context => {
+                cluster => $self,
+            }
+        },
     );
 }
-
-
 
 =head2 getState
 

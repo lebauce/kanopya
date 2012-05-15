@@ -635,14 +635,15 @@ sub update {}
 sub remove {
     my $self = shift;
 
-    $log->debug("New Operation RemoveHost with host_id : <" .
-                $self->getAttr(name => "host_id") . ">");
+    $log->debug("New Operation RemoveHost with host_id : <" . $self->getAttr(name => "host_id") . ">");
 
     Operation->enqueue(
         priority => 200,
         type     => 'RemoveHost',
         params   => {
-            host_id => $self->getAttr(name => "host_id")
+            context  => {
+                host => $self,
+            },
         },
     );
 }
@@ -705,18 +706,30 @@ sub activate{
     my $self = shift;
 
     $log->debug("New Operation ActivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'ActivateHost',
-                   params   => {host_id => $self->getAttr(name=>'host_id')});
+    Operation->enqueue(
+        priority => 200,
+        type     => 'ActivateHost',
+        params   => {
+            context => {
+                host => $self
+           }
+       }
+   );
 }
 
 sub deactivate{
     my $self = shift;
 
     $log->debug("New Operation EDeactivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'DeactivateHost',
-                   params   => {host_id => $self->getAttr(name=>'host_id')});
+    Operation->enqueue(
+        priority => 200,
+        type     => 'DeactivateHost',
+        params   => {
+            context => {
+                host => $self
+           }
+       }
+   );
 }
 
 =head2 toString

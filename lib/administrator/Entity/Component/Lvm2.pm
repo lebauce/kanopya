@@ -241,11 +241,13 @@ sub createDisk {
         priority => 200,
         type     => 'CreateDisk',
         params   => {
-            disk_manager_id     => $self->getAttr(name => 'component_id'),
-            name                => $args{name},
-            size                => $args{size},
-            filesystem          => $args{filesystem},
-            vg_id               => $args{vg_id},
+            name       => $args{name},
+            size       => $args{size},
+            filesystem => $args{filesystem},
+            vg_id      => $args{vg_id},
+            context    => {
+                disk_manager => $self,
+            }
         },
     );
 }
@@ -269,7 +271,9 @@ sub removeDisk {
         priority => 200,
         type     => 'RemoveDisk',
         params   => {
-            container_id => $args{container}->getAttr(name => 'container_id'),
+            context => {
+                container => $args{container},
+            }
         },
     );
 }

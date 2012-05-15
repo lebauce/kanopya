@@ -4,6 +4,8 @@ use Dancer ':syntax';
 
 use General;
 use Administrator;
+
+use Entity;
 use Entity::Host;
 use Entity::Kernel;
 use Entity::ServiceProvider::Inside::Cluster;
@@ -360,12 +362,15 @@ get '/hosts/migrate/:host_id' => sub {
 };
 
 post '/hosts/migrate' => sub {
+    #TODO: Move this into a Host method.
     Operation->enqueue(
         type => 'MigrateHost',
         priority => 1,
         params => {
-           host_id => params->{host_id},
-           hypervisor_dst => params->{hypervisors}
+            context => {
+                host           => Entity->get(id => params->{host_id}),
+                hypervisor_dst => Entity->get(id => params->{hypervisors})
+            }
         }
     );
     redirect '/infrastructures/hosts';
@@ -383,8 +388,10 @@ post '/hosts/scale_memory' => sub {
         type => 'ScaleMemoryHost',
         priority => 1,
         params => {
-            host_id => params->{host_id},
-            memory  => params->{memory_quantity}
+            context => {
+                host => Entity->get(id => params->{host_id}),
+            },
+            memory  => params->{memory_quantity},
         }
     );
     redirect '/infrastructures/hosts';
@@ -401,8 +408,10 @@ post '/hosts/scale_cpu' => sub {
         type => 'ScaleCpuHost',
         priority => 1,
         params => {
-            host_id    => params->{host_id},
-            cpu_number => params->{vcpu_number}
+            context => {
+                host => Entity->get(id => params->{host_id}),
+            },
+            cpu_number => params->{vcpu_number},
         }
     );
     redirect '/infrastructures/hosts';

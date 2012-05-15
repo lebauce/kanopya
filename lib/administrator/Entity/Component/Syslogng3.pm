@@ -161,9 +161,6 @@ sub insertDefaultConfiguration {
     
     # Retrieve admin ip
     my $admin_ip = "0.0.0.0";
-    if(defined $args{internal_cluster}) {    
-        $admin_ip = $args{internal_cluster}->getMasterNodeIp(),
-    } 
     
     # Conf to send all node logs to admin
     $self->{_dbix}->syslogng3_logs->populate([ 
