@@ -109,7 +109,6 @@ sub addNode {
     # status iptables 
     $self->addInitScripts(      
         mountpoint => $args{mount_point}, 
-          econtext => $args{econtext},
         scriptname => 'firewall', 
     );
 }
