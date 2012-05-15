@@ -1,0 +1,103 @@
+package AdministratorDB::Schema::Result::Workflow;
+
+# Created by DBIx::Class::Schema::Loader
+# DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Workflow
+
+=cut
+
+__PACKAGE__->table("workflow");
+
+=head1 ACCESSORS
+
+=head2 workflow_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_auto_increment: 1
+  is_nullable: 0
+
+=head2 workflow_name
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 64
+
+=cut
+
+__PACKAGE__->add_columns(
+  "workflow_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_auto_increment => 1,
+    is_nullable => 0,
+  },
+  "workflow_name",
+  { data_type => "char", is_nullable => 1, size => 64 },
+);
+__PACKAGE__->set_primary_key("workflow_id");
+
+=head1 RELATIONS
+
+=head2 old_operations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::OldOperation>
+
+=cut
+
+__PACKAGE__->has_many(
+  "old_operations",
+  "AdministratorDB::Schema::Result::OldOperation",
+  { "foreign.workflow_id" => "self.workflow_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 operations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Operation>
+
+=cut
+
+__PACKAGE__->has_many(
+  "operations",
+  "AdministratorDB::Schema::Result::Operation",
+  { "foreign.workflow_id" => "self.workflow_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 workflow_parameters
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowParameter>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_parameters",
+  "AdministratorDB::Schema::Result::WorkflowParameter",
+  { "foreign.workflow_id" => "self.workflow_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-11 11:05:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xmbAQGX1nJfRzMGTczefZg
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
+1;

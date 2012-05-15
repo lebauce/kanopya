@@ -30,10 +30,10 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    General::checkParams(args => \%args, required => ['mount_point', 'host']);
 
     my $keepalived = $self->_getEntity();
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
+    my $masternodeip = $self->getServiceProvider->getMasterNodeIp();
         
     # recuperer les adresses ips publiques et les ports
     
@@ -78,19 +78,17 @@ sub addNode {
         }
     
         $log->debug("generate /etc/default/ipvsadm file");
-        $self->generateIpvsadm(econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc');
+        $self->generateIpvsadm(mount_point => $args{mount_point}.'/etc');
         $log->debug("generate /etc/keepalived/keepalived.conf file");
-        $self->generateKeepalived(econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc');
+        $self->generateKeepalived(mount_point => $args{mount_point}.'/etc');
         
         $self->addInitScripts(
-            mountpoint => $args{mount_point}, 
-              econtext => $args{econtext}, 
+            mountpoint => $args{mount_point},
             scriptname => 'ipvsadm'
         );
             
         $self->addInitScripts(
             mountpoint => $args{mount_point}, 
-              econtext => $args{econtext}, 
             scriptname => 'keepalived'
         );
                                 
@@ -98,13 +96,11 @@ sub addNode {
         $log->debug('activating ipv4 forwarding to sysctl.conf');
         my $command = "echo 'net.ipv4.ip_forward=1' >> $args{mount_point}/sysctl.conf";
         $log->debug($command);
-        $args{econtext}->execute(command => $command);
+        $self->getExecutorEContext->execute(command => $command);
     
     } else {
         # a masternode exists so we update his keepalived configuration
         $log->debug("Keepalived update");
-        use EFactory;
-        my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
         
         # add this host as realserver for each virtualserver of this cluster
         my $virtualservers = $keepalived->getVirtualservers();
@@ -120,19 +116,17 @@ sub addNode {
         }
         
         $log->debug('Generation of network_routes script');
-        $self->addnetwork_routes(mount_point => $args{mount_point}.'/etc',
-                                econtext => $args{econtext},
-                                loadbalancer_internal_ip => $masternodeip);
+        $self->addnetwork_routes(mount_point              => $args{mount_point}.'/etc',
+                                 loadbalancer_internal_ip => $masternodeip);
         
         $log->debug('init script generation for network_routes script');
         $self->addInitScripts(
-            mountpoint => $args{mount_point}, 
-              econtext => $args{econtext}, 
+            mountpoint => $args{mount_point},
             scriptname => 'network_routes'
         );
         
-#        $self->generateKeepalived(mount_point => '/etc', econtext => $masternode_econtext);
-#        $self->reload(econtext => $masternode_econtext);
+#        $self->generateKeepalived(mount_point => '/etc');
+#        $self->reload();
         
     }
 }
@@ -153,9 +147,6 @@ sub stopNode {
         }
         
     } else {
-        use EFactory;
-        my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
-        
         # remove this host as realserver for each virtualserver of this cluster
         my $virtualservers = $keepalived->getVirtualservers();
         
@@ -167,8 +158,8 @@ sub stopNode {
                 realserver_id => $realserver_id);
         }
         
-        $self->generateKeepalived(mount_point => '/etc', econtext => $masternode_econtext);
-        $self->reload(econtext => $masternode_econtext);    
+        $self->generateKeepalived(mount_point => '/etc');
+        $self->reload();
     }
     
 }
@@ -207,11 +198,9 @@ sub cleanNode {
 sub reload {
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['econtext']);
 
     my $command = "invoke-rc.d keepalived reload";
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
     return undef;
 }
 
@@ -220,12 +209,14 @@ sub generateKeepalived {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
+    General::checkParams(args => \%args, required => ['mount_point']);
     
     my $data = $self->_getEntity()->getTemplateDataKeepalived();
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/keepalived",
-                         input_file => "keepalived.conf.tt", output => "/keepalived/keepalived.conf", data => $data);         
+    $self->generateFile(mount_point  => $args{mount_point},
+                        template_dir => "/templates/components/keepalived",
+                        input_file   => "keepalived.conf.tt",
+                        output       => "/keepalived/keepalived.conf",
+                        data         => $data);
 }
 
 # generate /etc/default/ipvsadm configuration file for the master node
@@ -233,12 +224,14 @@ sub generateIpvsadm {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
+    General::checkParams(args => \%args, required => ['mount_point']);
     
     my $data = $self->_getEntity()->getTemplateDataIpvsadm();
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/keepalived",
-                         input_file => "default_ipvsadm.tt", output => "/default/ipvsadm", data => $data);
+    $self->generateFile(mount_point  => $args{mount_point},
+                        template_dir => "/templates/components/keepalived",
+                        input_file   => "default_ipvsadm.tt",
+                        output       => "/default/ipvsadm",
+                        data         => $data);
 }
 
 # add network_routes script to the node 
@@ -246,7 +239,7 @@ sub addnetwork_routes {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'loadbalancer_internal_ip']);
+    General::checkParams(args => \%args, required => ['mount_point', 'loadbalancer_internal_ip']);
     
     
 
@@ -271,10 +264,10 @@ sub addnetwork_routes {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);    
     };
-    $args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/init.d/network_routes");    
+    $self->getExecutorEContext->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/init.d/network_routes");
     my $command = '/bin/chmod +x '.$args{mount_point}.'/init.d/network_routes';
     $log->debug($command);
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getExecutorEContext->execute(command => $command);
     unlink "/tmp/$tmpfile";        
 }
 
@@ -289,11 +282,8 @@ sub postStartNode{
         $log->debug('First Node is started, nothing to do');
         return;        
     } else {
-        use EFactory;
-        my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
-        
-        $self->generateKeepalived(mount_point => '/etc', econtext => $masternode_econtext);
-        $self->reload(econtext => $masternode_econtext);    
+        $self->generateKeepalived(mount_point => '/etc');
+        $self->reload();
     }
 }
 1;

@@ -34,7 +34,7 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => [ 'econtext', 'host', 'mount_point', 'cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
      
@@ -44,82 +44,72 @@ sub configureNode {
         $log->debug('generate /etc/one/oned.conf');    
        
         $self->generateOnedConf(
-               econtext => $args{econtext}, 
             mount_point => $args{mount_point}.'/etc'
         );
               
         $self->addInitScripts(
                 mountpoint => $args{mount_point}, 
-                  econtext => $args{econtext}, 
                 scriptname => 'opennebula', 
         );
         
         $self->addInitScripts(
                 mountpoint => $args{mount_point}, 
-                  econtext => $args{econtext}, 
                 scriptname => 'nfs-kernel-server', 
         );
         
         my $admin = $args{host}->getAdminIface();
         my $network = NetAddr::IP->new(
-            $admin->getIPAddr(), 
+            $admin->getIPAddr(),
             $admin->getNetMask(),
         )->network();
         my $exports = "/var/lib/one $network(rw,no_root_squash,no_subtree_check)\n";
-        my $cmd = "echo '$exports' > " .$args{mount_point} . "/etc/exports";
-        $args{econtext}->execute(command => $cmd);
+        my $cmd = "echo '$exports' > " .$args{mount_point}."/etc/exports";
+        $self->getExecutorEContext->execute(command => $cmd);
+
     } else {
         my $mount = $masternodeip.":/var/lib/one /var/lib/one nfs rw,sync,vers=3 0 0\n";
-        my $cmd = "echo '$mount' >> ".$args{mount_point} . "/etc/fstab";
-        $args{econtext}->execute(command => $cmd);
+        my $cmd = "echo '$mount' >> ".$args{mount_point}."/etc/fstab";
+        $self->getExecutorEContext->execute(command => $cmd);
     }
-     
+
     $log->info("Opennebula cluster's node configuration");
     $log->debug('generate /etc/default/libvirt-bin');
-    $self->generateLibvirtbin(econtext    => $args{econtext},
-                              mount_point => $args{mount_point}.'/etc');
-    
+    $self->generateLibvirtbin(mount_point => $args{mount_point}.'/etc');
+
     $log->debug('generate /etc/libvirt/libvirtd.conf');
     $self->generateLibvirtdconf(
-        econtext    => $args{econtext},
-        mount_point => $args{mount_point} . '/etc',
-        host        => $args{host}
+        mount_point => $args{mount_point}.'/etc',
+        host => $args{host}
     );
 
     $log->debug('generate /etc/libvirt/qemu.conf');
     $self->generateQemuconf(
-           econtext => $args{econtext},
-        mount_point => $args{mount_point} . '/etc',
+        mount_point => $args{mount_point}.'/etc',
                host => $args{host}
     );
 
     $self->generateXenconf(
-           econtext => $args{econtext},
-        mount_point => $args{mount_point} . '/etc',
+        mount_point => $args{mount_point}.'/etc',
                host => $args{host}
     );
 
     $self->addInitScripts(
           mountpoint => $args{mount_point},
-            econtext => $args{econtext},
           scriptname => 'xend',
     );
    
-    $self->addInitScripts(
+   $self->addInitScripts(
           mountpoint => $args{mount_point},
-            econtext => $args{econtext},
           scriptname => 'xendomains',
-    );
-
+   );
+    
     $self->addInitScripts(
           mountpoint => $args{mount_point},
-            econtext => $args{econtext},
           scriptname => 'libvirt-bin',
-    );
+   );
    
-    $self->addInitScripts(
+   $self->addInitScripts(
           mountpoint => $args{mount_point},
-            econtext => $args{econtext},
           scriptname => 'qemu-kvm',
    );
 }
@@ -130,14 +120,12 @@ sub migrateHost {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'host', 'hypervisor_dst',
-                                       'hypervisor_cluster', 'econtext']);
+                         required => [ 'host', 'hypervisor_dst', 'hypervisor_cluster']);
 
     # instanciate opennebula master node econtext
     my $masternodeip = $args{hypervisor_cluster}->getMasterNodeIp();
 
-
-    my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
+    my $masternode_econtext = EFactory::newEContext(ip_source      => $self->getExecutorEContext->getLocalIp,
                                                     ip_destination => $masternodeip);
 
 
@@ -204,15 +192,13 @@ sub scale_memory {
     General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
 
     my $memory = $args{memory};
-    my $masternodeip = $self->_getEntity()->getServiceProvider->getMasterNodeIp();
-    my $masternode_econtext = EFactory::newEContext(ip_source      => '127.0.0.1',
-                                                    ip_destination => $masternodeip);
+
     my $host_id = $self->_getEntity()->getVmIdFromHostId(
                       host_id => $args{host}->getAttr(name => "host_id")
                   );
     my $command = $self->_oneadmin_command(command => "onevm memset $host_id $memory");
 
-    $masternode_econtext->execute(command => $command);
+    $self->getEContext->execute(command => $command);
 
     return $self->_getEntity()->scaleMemory(%args);
 }
@@ -225,15 +211,13 @@ sub scale_cpu {
     General::checkParams(args => \%args, required => [ 'host', 'cpu_number' ]);
 
     my $cpu_number = $args{cpu_number};
-    my $masternodeip = $self->_getEntity()->getServiceProvider()->getMasterNodeIp();
-    my $masternode_econtext = EFactory::newEContext(ip_source      => '127.0.0.1',
-                                                    ip_destination => $masternodeip);
+
     my $host_id = $self->_getEntity()->getVmIdFromHostId(
                       host_id => $args{host}->getAttr(name => "host_id")
                   );
     my $command = $self->_oneadmin_command(command => "onevm vcpuset $host_id $cpu_number");
 
-    $masternode_econtext->execute(command => $command);
+    $self->getEContext->execute(command => $command);
     
     return $self->_getEntity()->scaleCPU(%args);
 }
@@ -243,11 +227,10 @@ sub generateOnedConf {
      my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => [ 'econtext', 'mount_point' ]);
+    General::checkParams(args => \%args, required => [ 'mount_point' ]);
     
     my $data = $self->_getEntity()->getTemplateDataOned();
     $self->generateFile(
-            econtext => $args{econtext},
          mount_point => $args{mount_point},
         template_dir => "/templates/components/opennebula",
           input_file => "oned.conf.tt",
@@ -261,11 +244,10 @@ sub generateLibvirtbin {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
+    General::checkParams(args => \%args, required => [ 'mount_point' ]);
     
     my $data = $self->_getEntity()->getTemplateDataLibvirtbin();
     $self->generateFile(
-            econtext => $args{econtext}, 
          mount_point => $args{mount_point},
         template_dir => "/templates/components/opennebula",
           input_file => "libvirt-bin.tt", 
@@ -279,12 +261,11 @@ sub generateLibvirtdconf {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
     
     my $data = $self->_getEntity()->getTemplateDataLibvirtd();
     $data->{listen_ip_address} = $args{host}->getAdminIp;
     $self->generateFile(
-            econtext => $args{econtext},
          mount_point => $args{mount_point},
         template_dir => "/templates/components/opennebula",
           input_file => "libvirtd.conf.tt", 
@@ -298,11 +279,10 @@ sub generateQemuconf {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
     
     my $data = {};
     $self->generateFile(
-            econtext => $args{econtext}, 
          mount_point => $args{mount_point},
         template_dir => "/templates/components/opennebula",
           input_file => "qemu.conf.tt", 
@@ -316,7 +296,7 @@ sub generateXenconf {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
     
     # TODO recup de l'interface pour les vms
     my $data = {
@@ -325,7 +305,6 @@ sub generateXenconf {
     };
     
     $self->generateFile( 
-            econtext => $args{econtext}, 
          mount_point => $args{mount_point},
         template_dir => "/templates/components/opennebula",
           input_file => "xend-config.sxp.tt",
@@ -338,11 +317,10 @@ sub generatemultivlanconf {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
     
     my $data = {};
     $self->generateFile( 
-            econtext => $args{econtext}, 
          mount_point => $args{mount_point},
         template_dir => "/templates/components/opennebula",
           input_file => "network-multi-vlan.tt", 
@@ -355,11 +333,10 @@ sub generatevlanconf {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
     
     my $data = {};
     $self->generateFile(
-            econtext => $args{econtext}, 
          mount_point => $args{mount_point},
         template_dir => "/templates/components/opennebula",
           input_file => "network-bridge-vlan.tt", 
@@ -372,7 +349,7 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
     $self->configureNode(%args);    
 }
 
@@ -380,19 +357,14 @@ sub postStartNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'econtext' ]);
-
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
-    my $nodeip = $args{host}->getAdminIp;
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
     # this host is a new hypervisor node so we declare it to opennebula
     my $hostname = $args{host}->getAttr(name => 'host_hostname');
     my $command = $self->_oneadmin_command(command => "onehost create $hostname im_xen vmm_xen tm_shared 802.1Q");
-    my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
-                                                    ip_destination => $masternodeip);
 
     sleep(10);
-    my $result = $masternode_econtext->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
     my $id = substr($result->{stdout}, 4);
 
     $log->info('hypervisor id returned by opennebula: '.$id);
@@ -406,28 +378,22 @@ sub preStopNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['cluster', 'host', 'econtext']);
-
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
+    General::checkParams(args => \%args, required => ['cluster', 'host' ]);
 
     my $id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
     my $command = $self->_oneadmin_command(command => "onehost delete $id");
 
-    my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
-                                                    ip_destination => $masternodeip);
-
-    sleep(10);
-    my $result = $masternode_econtext->execute(command => $command);
-
-    # TODO verifier le succes de la commande
-    $self->_getEntity()->removeHypervisor(host_id => $args{host}->getAttr(name => 'host_id'));
+     sleep(10);
+     my $result = $self->getEContext->execute(command => $command);
+     # TODO verifier le succes de la commande
+     $self->_getEntity()->removeHypervisor(host_id => $args{host}->getAttr(name => 'host_id'));
 }
 
 sub isUp {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams( args => \%args, required => ['cluster', 'host', 'host_econtext'] );
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ] );
     my $ip = $args{host}->getAdminIp;
     
     if($args{cluster}->getMasterNodeIp() eq $ip) {
@@ -464,13 +430,7 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'econtext' ]);
-
-    # instanciate opennebula master node econtext
-    my $masternodeip = $args{host}->getServiceProvider->getMasterNodeIp();
-    my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
-                                                    ip_destination => $masternodeip);
-    delete $args{econtext};
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     # Pick up an hypervisor
     my @hypervisors = values %{$self->_getEntity->getServiceProvider->getHosts()};
@@ -479,7 +439,6 @@ sub startHost {
 
     # generate template in opennebula master node
     my $vm_template = $self->_generateVmTemplate(
-                          econtext   => $masternode_econtext,
                           host       => $args{host},
                           hypervisor => $hypervisor,
                       );
@@ -490,7 +449,7 @@ sub startHost {
 
     # create the vm from template
     my $command = $self->_oneadmin_command(command => "onevm create $vm_template");
-    my $result = $masternode_econtext->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
 
     # declare vm in database
     my $id = substr($result->{stdout}, 4);
@@ -512,17 +471,13 @@ sub stopHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'econtext' ]);
-	
-    # instanciate opennebula master node econtext
-    my $masternodeip = $args{host}->getServiceProvider->getMasterNodeIp();
-    my $masternode_econtext = EFactory::newEContext(ip_source => $args{econtext}->getLocalIp,
-                                                    ip_destination => $masternodeip);
-	
+    General::checkParams(args => \%args, required => [ 'host' ]);
+    
     # retrieve vm info from opennebula
+    
     my $id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
     my $command = $self->_oneadmin_command(command => "onevm delete $id");
-    my $result = $masternode_econtext->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
 
     # In the case of OpenNebula, we delete the host once it's stopped
     $args{host}->setAttr(name  => 'active',
@@ -536,27 +491,21 @@ sub postStart {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
-    # instanciate opennebula master node econtext
-    my $masternodeip = $args{host}->getServiceProvider->getMasterNodeIp();
-
-    my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
-                                                    ip_destination => $masternodeip);
-	
     # retrieve hypervisor hostname for the vm from opennebula
     my $id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
     my $command = $self->_oneadmin_command(command => "onevm show $id --xml");
-    my $result = $masternode_econtext->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
     my $hxml = XMLin($result->{stdout});
     my $hypervisor_hostname = $hxml->{HISTORY_RECORDS}->{HISTORY}->{HOSTNAME};
     my $vnc_port = $hxml->{TEMPLATE}->{GRAPHICS}->{PORT};
-	
+    
     # retrieve hypervisor id from his hostname
     $command = $self->_oneadmin_command(command => "onehost show $hypervisor_hostname --xml");
-    $result = $masternode_econtext->execute(command => $command);
+    $result = $self->getEContext->execute(command => $command);
     $hxml = XMLin($result->{stdout});
-	
+    
     $self->_getEntity()->updateVM(
         vm_host_id    => $args{host}->getAttr(name => 'host_id'),
         hypervisor_id => $hxml->{ID},
@@ -598,13 +547,13 @@ sub _generateVmTemplate {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['econtext', 'host']);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     # host_ram is stored in octect, so we convert it to megaoctect
     my $ram = General::convertFromBytes(
-                  value => $args{host}->getAttr(name => 'host_ram'),
-                  units => 'M'
-	      );
+        value => $args{host}->getAttr(name => 'host_ram'),
+        units => 'M'
+    );
 
     my $cluster = Entity->get(id => $args{host}->getClusterId());
     my $tmp = $cluster->getManagerParameters(manager_type => 'disk_manager');
@@ -648,8 +597,7 @@ sub _generateVmTemplate {
         interfaces      => $interfaces
     };
 
-    $self->generateFile(econtext     => $args{econtext},
-                        mount_point  => '',
+    $self->generateFile(mount_point  => '',
                         template_dir => "/templates/components/opennebula",
                         input_file   => "vm.tt",
                         output       => "/tmp/vm.template",

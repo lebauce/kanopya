@@ -41,7 +41,9 @@ use warnings;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+
 use Kanopya::Exceptions;
+use Entity;
 
 use EFactory;
 
@@ -60,88 +62,35 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("Operation preparation");
-
-    General::checkParams(args => \%args,
-                         required => ["internal_cluster"]);
-
-    my $params = $self->_getOperation()->getParams();
-    
-    # Cluster instantiation
-    $log->debug("checking cluster existence with id <$params->{cluster_id}>");
-    eval {
-        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(
-                                        id => $params->{cluster_id}
-                                    );
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EActivateCluster->prepare : " .
-                  "cluster_id $params->{cluster_id} does not find\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Get cluster components Entities
-    $log->info("Load cluster component instances");
-    $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
-    $log->debug("Loaded all component from cluster");
-    
-    # Instanciate cluster nodes.
-    $self->{_objs}->{hosts} = $self->{_objs}->{cluster}->getHosts();
-
-    # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(
-                                   id => $args{internal_cluster}->{executor}
-                               );
-
-    $log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
+    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
     # Instanciate bootserver Cluster
-    $self->{bootserver}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(
-                                     id => $args{internal_cluster}->{bootserver}
-                                 );
-
-    $log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}->{obj}));
-    
-    # Instanciate contexts
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "bootserver");
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "executor");
+    my $bootserver = Entity->get(id => $self->{config}->{cluster}->{bootserver});
 
     # Instanciate dhcpd component.
-    $self->{_objs}->{component_dhcpd}
+    $self->{context}->{component_dhcpd}
         = EFactory::newEEntity(
-              data => $self->{bootserver}->{obj}->getComponent(name=>"Dhcpd", version=> "3")
+              data => $bootserver->getComponent(name => "Dhcpd", version => "3")
           );
-
-    $log->info("Load dhcp component (Dhcpd version 3, it ref is " .
-               ref($self->{_objs}->{component_tftpd}));
 }
 
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    my $errmsg;
-    my $nodes = $self->{_objs}->{hosts};
-    my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
+    my $nodes = $self->{context}->{cluster}->getHosts();
+    my $subnet = $self->{context}->{component_dhcpd}->getInternalSubNetId();
 
     foreach my $key (keys %$nodes) {
         my $node = $nodes->{$key};
         eval {
-            # Load Node Econtext to check its availability
-            my $node_context = EFactory::newEContext(
-                                   ip_source      => $self->{exec_cluster_ip},
-                                   ip_destination => $node->getAdminIp
-                               );
-
             # Halt Node
             my $ehost = EFactory::newEEntity(data => $node);
-            $ehost->halt(node_econtext =>$node_context);
+            $ehost->halt();
         };
         if ($@) {
             my $error = $@;
-            $errmsg = "Problem with node <" .$node->getAttr(name=>"host_id").
+            $errmsg = "Problem with node <" . $node->getAttr(name=>"host_id").
                       "> during force stop cluster : $error";
             $log->info($errmsg);
         }
@@ -150,23 +99,24 @@ sub execute {
             # Update Dhcp component conf
             my $host_mac = $node->getPXEIface->getAttr(name => 'iface_mac_addr');
             if ($host_mac) {
-	            my $hostid = $self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(
+	            my $hostid = $self->{context}->{component_dhcpd}->getHostId(
 	                             dhcpd3_subnet_id         => $subnet,
 	                             dhcpd3_hosts_mac_address => $host_mac
 	                         );
-	            $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
-	                                                          dhcpd3_hosts_id  => $hostid);
+
+	            $self->{context}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
+	                                                            dhcpd3_hosts_id  => $hostid);
             }
         };
         if ($@) {
             my $error = $@;
-            $errmsg = "Problem with node <" .$node->getAttr(name=>"host_id").
+            $errmsg = "Problem with node <" . $node->getAttr(name=>"host_id").
                       "> during dhcp configuration update : $error";
             $log->info($errmsg);
         }
 
         # component migration
-        my $components = $self->{_objs}->{components};
+        my $components = $self->{context}->{cluster}->getComponents(category => "all");
         $log->info('Processing cluster components quick remove for node <' .
                    $node->getAttr(name => 'host_id') . '>');
 
@@ -174,7 +124,7 @@ sub execute {
             my $tmp = EFactory::newEEntity(data => $components->{$i});
             $log->debug("component is " . ref($tmp));
             $tmp->cleanNode(
-                host => $node, mount_point => '', cluster => $self->{_objs}->{cluster}
+                host => $node, mount_point => '', cluster => $self->{context}->{cluster}
             );
         }
 
@@ -184,14 +134,14 @@ sub execute {
         # finaly save the host
         $node->save();
 
-        $node->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"));
+        $node->stopToBeNode(cluster_id => $self->{context}->{cluster}->getAttr(name => "cluster_id"));
     }
 
     # Generate and reload Dhcp conf
-    $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
-    $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
+    $self->{context}->{component_dhcpd}->generate();
+    $self->{context}->{component_dhcpd}->reload();
 
-    $self->{_objs}->{cluster}->setState(state => "down");
+    $self->{context}->{cluster}->setState(state => "down");
 }
 
 =head1 DIAGNOSTICS

@@ -45,6 +45,8 @@ use EEntity::EContainer::ELocalContainer;
 
 use Log::Log4perl "get_logger";
 
+use Data::Dumper;
+
 my $log = get_logger("executor");
 my $errmsg;
 
@@ -53,22 +55,21 @@ sub createFromMasterimage {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "masterimage", "edisk_manager",
-                                       "manager_params", "erollback", "econtext" ]);
+                         required => [ "masterimage", "disk_manager",
+                                       "manager_params", "erollback" ]);
     
-    my $emaster_container = EEntity::EContainer::ELocalContainer->new(
-                                path => $args{masterimage}->getAttr(name => 'masterimage_file'),
-                                size => $args{masterimage}->getAttr(name => 'masterimage_size'),
-                                # TODO: get this value from masterimage attrs.
-                                filesystem => 'ext3',
-                            );
+    my $master_container = EEntity::EContainer::ELocalContainer->new(
+                               path => $args{masterimage}->getAttr(name => 'masterimage_file'),
+                               size => $args{masterimage}->getAttr(name => 'masterimage_size'),
+                               # TODO: get this value from masterimage attrs.
+                               filesystem => 'ext3',
+                           );
 
-    # Instance a fake econtainer for the masterimage raw file.
+    # Instanciate a fake econtainer for the masterimage raw file.
     $self->create(
-        esrc_container => $emaster_container,
-        edisk_manager  => $args{edisk_manager},
-        econtext       => $args{econtext},
-        erollback      => $args{erollback},
+        src_container => $master_container,
+        disk_manager  => $args{disk_manager},
+        erollback     => $args{erollback},
         %{$args{manager_params}}
     );
 
@@ -89,34 +90,25 @@ sub create {
     my $cmd_res;
 
     General::checkParams(args     => \%args,
-                         required => [ "edisk_manager", "esrc_container",
-                                       "erollback", "econtext" ]);
+                         required => [ "disk_manager", "src_container", "erollback" ]);
 
     $log->info('Device creation for new systemimage');
 
-    my $edisk_manager     = General::checkParam(args => \%args, name => 'edisk_manager');
-    my $esource_container = General::checkParam(args => \%args, name => 'esrc_container');
-    my $erollback         = General::checkParam(args => \%args, name => 'erollback');
-    my $econtext          = General::checkParam(args => \%args, name => 'econtext');
-    my $systemimage_size  = General::checkParam(
+    my $disk_manager     = General::checkParam(args => \%args, name => 'disk_manager');
+    my $source_container = General::checkParam(args => \%args, name => 'src_container');
+    my $erollback        = General::checkParam(args => \%args, name => 'erollback');
+
+    my $systemimage_size = General::checkParam(
                                args    => \%args,
                                name    => 'systemimage_size',
-                               default => $esource_container->_getEntity->getAttr(
-                                              name => 'container_size'
-                                          )
+                               default => $source_container->getAttr(name => 'container_size')
                            );
 
-    my $storage_provider = Entity->get(id => $edisk_manager->_getEntity->getAttr(name => 'service_provider_id'));
-    my $disk_manager_econtext
-        = EFactory::newEContext(ip_source      => $econtext->getLocalIp,
-                                ip_destination => $storage_provider->getMasterNodeIp);
-
     # Creation of the device based on distribution device
-    my $container = $edisk_manager->createDisk(
-                        name       => $self->_getEntity->getAttr(name => 'systemimage_name'),
+    my $container = $disk_manager->createDisk(
+                        name       => $self->getAttr(name => 'systemimage_name'),
                         size       => $systemimage_size,
-                        filesystem => $esource_container->_getEntity->getAttr(name => 'container_filesystem'),
-                        econtext   => $disk_manager_econtext,
+                        filesystem => $source_container->getAttr(name => 'container_filesystem'),
                         erollback  => $erollback,
                         %args
                     );
@@ -124,63 +116,49 @@ sub create {
     # Copy of distribution data to systemimage devices
     $log->info('Fill the container with source data for new systemimage');
 
-    # Get the corresponding EContainer
-    my $edest_container = EFactory::newEEntity(data => $container);
+    $source_container->copy(dest      => $container,
+                            econtext  => $self->getExecutorEContext,
+                            erollback => $erollback);
 
-    $esource_container->copy(dest      => $edest_container,
-                             econtext  => $econtext,
-                             erollback => $erollback);
+    $self->setAttr(name  => "container_id",
+                   value => $container->getAttr(name => 'container_id'));
 
-    $self->_getEntity()->setAttr(name  => "container_id",
-                                 value => $container->getAttr(name => 'container_id'));
+    $self->setAttr(name => "active", value => 0);
+    $self->save();
 
-    $self->_getEntity()->setAttr(name => "active", value => 0);
-    $self->_getEntity()->save();
+    $log->info('System image <' . $self->getAttr(name => 'systemimage_name') . '> is added');
 
-    $log->info('System image <'. $self->_getEntity()->getAttr(name => 'systemimage_name') . '> is added');
-
-    return $self->_getEntity()->getAttr(name => "systemimage_id");
+    return $self->getAttr(name => "systemimage_id");
 }
 
 sub generateAuthorizedKeys {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ "eexport_manager", "econtext" ]);
+    General::checkParams(args => \%args, required => [ "export_manager" ]);
 
     # mount the root systemimage device
-    my $container = $self->_getEntity()->getDevice();
+    my $container = $self->getDevice();
 
-    my $storage_provider = Entity->get(id => $args{eexport_manager}->_getEntity->getAttr(name => 'service_provider_id'));
-    my $export_manager_econtext
-        = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
-                                ip_destination => $storage_provider->getMasterNodeIp());
-
-    my $container_access = $args{eexport_manager}->createExport(
+    my $container_access = $args{export_manager}->createExport(
                                container   => $container,
                                export_name => $container->getAttr(name => 'container_name'),
-                               econtext    => $export_manager_econtext,
                                erollback   => $args{erollback}
                            );
 
-    # Get the corresponding EContainerAccess
-    my $econtainer_access = EFactory::newEEntity(data => $container_access);
-
     my $mount_point = $container->getMountPoint;
-    $econtainer_access->mount(mountpoint => $mount_point, econtext => $args{econtext});
+    $container_access->mount(mountpoint => $mount_point, econtext => $self->getExecutorEContext);
 
     my $rsapubkey_cmd = "mkdir -p $mount_point/root/.ssh ; cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";
-    $args{econtext}->execute(command => $rsapubkey_cmd);
+    $self->getExecutorEContext->execute(command => $rsapubkey_cmd);
 
     my $sync_cmd = "sync";
-    $args{econtext}->execute(command => $sync_cmd);
+    $self->getExecutorEContext->execute(command => $sync_cmd);
 
-    $econtainer_access->umount(mountpoint => $mount_point, econtext => $args{econtext});
+    $container_access->umount(mountpoint => $mount_point, econtext => $self->getExecutorEContext);
 
-    $args{eexport_manager}->removeExport(
+    $args{export_manager}->removeExport(
         container_access => $container_access,
-        econtext         => $export_manager_econtext,
         erollback        => $args{erollback}
     );
 }
@@ -191,34 +169,27 @@ sub activate {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "eexport_manager", "manager_params", "econtext", "erollback" ]);
+                         required => [ "export_manager", "manager_params", "erollback" ]);
 
-    my $container = $self->_getEntity()->getDevice();
-
-    my $storage_provider = Entity->get(id => $args{eexport_manager}->_getEntity->getAttr(name => 'service_provider_id'));
-    my $export_manager_econtext
-        = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
-                                ip_destination => $storage_provider->getMasterNodeIp());
+    my $container = $self->getDevice();
 
     # Provide root rsa pub key to provide ssh key authentication
-    $self->generateAuthorizedKeys(eexport_manager => $args{eexport_manager},
-                                  econtext        => $args{econtext},
-                                  erollback       => $args{erollback});
+    $self->generateAuthorizedKeys(export_manager => $args{export_manager},
+                                  erollback      => $args{erollback});
 
     # Get container export information
-    my $export_name = $self->_getEntity()->getAttr(name => 'systemimage_name');
+    my $export_name = $self->getAttr(name => 'systemimage_name');
 
-    my $export = $args{eexport_manager}->createExport(container   => $container,
-                                                      export_name => $export_name,
-                                                      econtext    => $export_manager_econtext,
-                                                      erollback   => $args{erollback},
-                                                      %{$args{manager_params}});
+    $args{export_manager}->createExport(container   => $container,
+                                        export_name => $export_name,
+                                        erollback   => $args{erollback},
+                                        %{$args{manager_params}});
 
     # Set system image active in db
-    $self->_getEntity()->setAttr(name => 'active', value => 1);
-    $self->_getEntity()->save();
+    $self->setAttr(name => 'active', value => 1);
+    $self->save();
 
-    $log->info("System image <" . $self->_getEntity()->getAttr(name => "systemimage_name") .
+    $log->info("System image <" . $self->getAttr(name => "systemimage_name") .
                "> is now active");
 }
 
@@ -226,68 +197,54 @@ sub deactivate {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ "econtext" ]);
+    General::checkParams(args => \%args, required => [ "erollback" ]);
 
     # Get instances of container accesses from systemimages root container
     $log->info("Remove all container accesses");
     eval {
         for my $container_access (@{ $self->_getEntity->getDevice->getAccesses }) {
-            my $eexport_manager  = EFactory::newEEntity(data => $container_access->getExportManager);
-            my $storage_provider = $container_access->getServiceProvider;
-            my $econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
-                                                 ip_destination => $storage_provider->getMasterNodeIp);
+            my $export_manager = EFactory::newEEntity(data => $container_access->getExportManager);
+            $container_access  = EFactory::newEEntity(data => $container_access);
 
-            $eexport_manager->removeExport(container_access => $container_access,
-                                           econtext         => $econtext,
-                                           erollback        => $self->{erollback});
+            $export_manager->removeExport(container_access => $container_access,
+                                          erollback        => $args{erollback});
         }
     };
     if($@) {
         throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
-            
-    # Set system image active in db
-    $self->_getEntity->setAttr(name => 'active', value => 0);
-    $self->_getEntity->save();
 
-    $log->info("System image <" . $self->_getEntity()->getAttr(name => "systemimage_name") .
-               "> is now unactive");
+    # Set system image active in db
+    $self->setAttr(name => 'active', value => 0);
+    $self->save();
+
+    $log->info("System image <" . $self->getAttr(name => "systemimage_name") . "> is now unactive");
 }
 
 sub remove {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ "econtext" ]);
-
-    if ($self->_getEntity->getAttr(name => 'active')) {
-        $self->deactivate(econtext  => $args{econtext},
-                          erollback => $args{erollback});
+    if ($self->getAttr(name => 'active')) {
+        $self->deactivate(erollback => $args{erollback});
     }
-    
+
     my $container;
     eval {
-        $container = $self->_getEntity->getDevice;
+        $container = EFactory::newEEntity(data => $self->getDevice);
 
         # Remove system image container.
         $log->info("Systemimage container deletion");
 
         # Get the disk manager of the current container
-        my $edisk_manager = EFactory::newEEntity(data => $container->getDiskManager);
-        my $econtext = EFactory::newEContext(
-                           ip_source      => $args{econtext}->getLocalIp(),
-                           ip_destination => $container->getServiceProvider->getMasterNodeIp()
-                       );
-
-        $edisk_manager->removeDisk(container => $container, econtext => $econtext);
+        my $disk_manager = EFactory::newEEntity(data => $container->getDiskManager);
+        $disk_manager->removeDisk(container => $container);
     };
     if($@) {
         $log->info("Unable to remove container while removing cluster:\n" . $@);
     }
 
-    $self->_getEntity->delete();
+    $self->delete();
 }
 
 1;

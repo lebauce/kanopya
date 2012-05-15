@@ -68,7 +68,7 @@ sub new {
 
     # do not reinstanciate local context, reuse 
     if(defined $localcontext) {
-        $log->info("EContext::Local instance retrieved");
+        $log->debug("EContext::Local instance retrieved");
         return $localcontext;
     }
 
@@ -77,7 +77,7 @@ sub new {
     bless $self, $class;
     $localcontext = $self;
 
-    $log->info("new EContext::Local instance");
+    $log->debug("new EContext::Local instance");
     return $self;
 }
 

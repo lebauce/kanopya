@@ -54,9 +54,11 @@ sub copy {
     my $dest_access   = $args{dest};
 
     $log->info('Try to connect to the source container...');
-    my $source_device = $source_access->tryConnect(econtext => $args{econtext});
+    my $source_device = $source_access->tryConnect(econtext  => $args{econtext},
+                                                   erollback => $args{erollback});
     $log->info('Try to connect to the destination container...');
-    my $dest_device = $dest_access->tryConnect(econtext => $args{econtext});
+    my $dest_device = $dest_access->tryConnect(econtext  => $args{econtext},
+                                               erollback => $args{erollback});
 
     # If devices exists, copy contents with 'dd'
     if (defined $source_device and defined $dest_device) {
@@ -74,8 +76,8 @@ sub copy {
         $command = "sync";
         $args{econtext}->execute(command => $command);
 
-        my $source_size = $source_access->_getEntity->getContainer->getAttr(name => 'container_size');
-        my $dest_size   = $dest_access->_getEntity->getContainer->getAttr(name => 'container_size');
+        my $source_size = $source_access->getContainer->getAttr(name => 'container_size');
+        my $dest_size   = $dest_access->getContainer->getAttr(name => 'container_size');
 
         # Check if the destination container is higher thant the source one,
         # resize it to maximum.
@@ -89,7 +91,8 @@ sub copy {
                 $result  = $args{econtext}->execute(command => $command);
             }
 
-            my $part_device = $dest_access->tryConnectPartition(econtext => $args{econtext});
+            my $part_device = $dest_access->tryConnectPartition(econtext  => $args{econtext},
+                                                                erollback => $args{erollback});
 
             # Finally resize2fs the partition
             $command = "e2fsck -y -f $part_device";
@@ -97,26 +100,34 @@ sub copy {
             $command = "resize2fs -F $part_device";
             $args{econtext}->execute(command => $command);
 
-            $dest_access->tryDisconnectPartition(econtext => $args{econtext});
+            $dest_access->tryDisconnectPartition(econtext  => $args{econtext},
+                                                 erollback => $args{erollback});
         }
 
         # Disconnect the containers.
         $log->info('Try to disconnect from the source container...');
-        $source_access->tryDisconnect(econtext => $args{econtext});
+        $source_access->tryDisconnect(econtext  => $args{econtext},
+                                      erollback => $args{erollback});
+
         $log->info('Try to disconnect from the destination container...');
-        $dest_access->tryDisconnect(econtext => $args{econtext});
+        $dest_access->tryDisconnect(econtext  => $args{econtext},
+                                    erollback => $args{erollback});
     }
     # One or both container access do not support device level (e.g. Nfs)
     else {
         # Mount the containers on the executor.
-        my $source_mountpoint = $source_access->_getEntity->getContainer->getMountPoint;
-        my $dest_mountpoint   = $dest_access->_getEntity->getContainer->getMountPoint;
+        my $source_mountpoint = $source_access->getContainer->getMountPoint;
+        my $dest_mountpoint   = $dest_access->getContainer->getMountPoint;
 
         $log->info('Mounting source container <' . $source_mountpoint . '>');
-        $source_access->mount(mountpoint => $source_mountpoint, econtext => $args{econtext});
+        $source_access->mount(mountpoint => $source_mountpoint,
+                              econtext   => $args{econtext},
+                              erollback  => $args{erollback});
 
         $log->info('Mounting destination container <' . $dest_mountpoint . '>');
-        $dest_access->mount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
+        $dest_access->mount(mountpoint => $dest_mountpoint,
+                            econtext   => $args{econtext},
+                            erollback  => $args{erollback});
 
         # Copy the filesystem.
         $command = "cp -R --preserve=all $source_mountpoint/. $dest_mountpoint/";
@@ -131,8 +142,12 @@ sub copy {
 
         # Unmount the containers.
         
-        $source_access->umount(mountpoint => $source_mountpoint, econtext => $args{econtext});
-        $dest_access->umount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
+        $source_access->umount(mountpoint => $source_mountpoint,
+                               econtext   => $args{econtext},
+                               erollback  => $args{erollback});
+        $dest_access->umount(mountpoint => $dest_mountpoint,
+                             econtext   => $args{econtext},
+                             erollback  => $args{erollback});
     }
 }
 
@@ -151,7 +166,8 @@ sub mount {
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
     # Connecting to the container access.
-    my $device = $self->tryConnectPartition(econtext => $args{econtext});
+    my $device = $self->tryConnectPartition(econtext  => $args{econtext},
+                                            erollback => $args{erollback});
 
     $command = "mkdir -p $args{mountpoint}";
     $args{econtext}->execute(command => $command);
@@ -168,6 +184,13 @@ sub mount {
     }
 
     $log->info("Device <$device> mounted on <$args{mountpoint}>.");
+    
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('umount'),
+            parameters => [ $self, "mountpoint", $args{mountpoint}, "econtext", $args{econtext} ]
+        );
+    }
 }
 
 =head2 umount
@@ -208,8 +231,10 @@ sub umount {
     }
 
     # Disconnecting from container access.
-    $self->tryDisconnectPartition(econtext => $args{econtext});
-    $self->tryDisconnect(econtext => $args{econtext});
+    $self->tryDisconnectPartition(econtext  => $args{econtext},
+                                  erollback => $args{erollback});
+    $self->tryDisconnect(econtext  => $args{econtext},
+                         erollback => $args{erollback});
 
     $command = "rm -R $args{mountpoint}";
     $args{econtext}->execute(command => $command);
@@ -254,7 +279,7 @@ sub getPartitionStart {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    my $device = $self->getAttr(name => 'device_connected');
     if (! $device) {
         my $msg = "A container access must be connected before getting partition start.";
         throw Kanopya::Exception::Execution(error => $msg);
@@ -280,7 +305,7 @@ sub getPartitionCount {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    my $device = $self->getAttr(name => 'device_connected');
     if (! $device) {
         my $msg = "A container access must be connected before getting partition start.";
         throw Kanopya::Exception::Execution(error => $msg);
@@ -299,8 +324,10 @@ sub connectPartition {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->tryConnect(econtext => $args{econtext});
-    my $part_start = $self->getPartitionStart(econtext => $args{econtext});
+    my $device = $self->tryConnect(econtext  => $args{econtext},
+                                   erollback => $args{erollback});
+    my $part_start = $self->getPartitionStart(econtext  => $args{econtext},
+                                              erollback => $args{erollback});
 
     if ($part_start and $part_start > 0) {
         # Get a free loop device
@@ -318,8 +345,16 @@ sub connectPartition {
             throw Kanopya::Exception::Execution(error => $result->{stderr});
         }
 
-        $self->_getEntity->setAttr(name  => 'partition_connected',
-                                   value => $loop);
+        $self->setAttr(name  => 'partition_connected',
+                       value => $loop);
+        $self->save();
+
+        if (exists $args{erollback} and defined $args{erollback}){
+            $args{erollback}->add(
+                function   => $self->can('disconnectPartition'),
+                parameters => [ $self, "econtext", $args{econtext} ]
+            );
+        }
         return $loop;
     }
     else {
@@ -332,7 +367,9 @@ sub disconnectPartition {
     my %args = @_;
     my ($command, $result);
 
-    my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    my $partition = $self->getAttr(name => 'partition_connected');
 
     $command = "sync";
     $args{econtext}->execute(command => $command);
@@ -343,8 +380,9 @@ sub disconnectPartition {
         throw Kanopya::Exception::Execution(error => $result->{stderr});
     }
 
-    $self->_getEntity->setAttr(name  => 'partition_connected',
-                               value => '');
+    $self->setAttr(name  => 'partition_connected',
+                   value => '');
+    $self->save();
 }
 
 sub tryConnect {
@@ -353,7 +391,7 @@ sub tryConnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    my $device = $self->getAttr(name => 'device_connected');
     if ($device) {
         $log->debug("Device already connected <$device>.");
         return $device;
@@ -367,7 +405,7 @@ sub tryDisconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    my $device = $self->getAttr(name => 'device_connected');
     if (! $device) {
         $log->debug('Device seems to be not connected, doing nothing.');
         return;
@@ -381,7 +419,7 @@ sub tryConnectPartition {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
+    my $partition = $self->getAttr(name => 'partition_connected');
     if ($partition) {
         $log->debug("Partition already connected <$partition>.");
         return $partition;
@@ -395,7 +433,7 @@ sub tryDisconnectPartition {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
+    my $partition = $self->getAttr(name => 'partition_connected');
     if (! $partition) {
         $log->debug('Partition seems to be not connected, doing nothing.');
         return;

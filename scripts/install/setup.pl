@@ -360,7 +360,6 @@ writeFile('/etc/hosts', "127.0.0.1 localhost\n$internal_ip_add $hostname.$domain
 # Launching Kanopya's init scripts
 system('invoke-rc.d kanopya-executor restart');
 system('invoke-rc.d kanopya-aggregator restart');
-system('invoke-rc.d kanopya-state-manager restart');
 system('invoke-rc.d kanopya-collector restart');
 system('invoke-rc.d kanopya-grapher restart');
 system('invoke-rc.d kanopya-orchestrator restart');

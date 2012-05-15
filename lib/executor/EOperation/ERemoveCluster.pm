@@ -51,20 +51,6 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-    
-    # check if cluster is not active
-    $log->debug("checking cluster active value <$args{params}->{cluster_id}>");
-       if($self->{_objs}->{cluster}->getAttr(name => 'active')) {
-            $errmsg = "EOperation::EActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-}
-
 =head2 prepare
 
     $op->prepare();
@@ -76,34 +62,14 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
-    my $params = $self->_getOperation()->getParams();
-
-    $self->{_objs} = {};
-
-    # Cluster instantiation
-    $log->debug("checking cluster existence with id <$params->{cluster_id}>");
-    eval {
-        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
-    };
-    if($@) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    # Check if cluster is active
+    if ($self->{context}->{cluster}->getAttr(name => 'active')) {
+        $errmsg = "Cluster <" . $self->{context}->{cluster}->getAttr(name => 'entity_id') . "> is active";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
-
-    # Check Parameters and context
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $@);
-    }
-
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
@@ -111,12 +77,10 @@ sub execute {
     $self->SUPER::execute();
 
     # Remove cluster directory
-    my $command = "rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name");
-    $self->{executor}->{econtext}->execute(command => $command);
+    my $command = "rm -rf /clusters/" . $self->{context}->{cluster}->getAttr(name => "cluster_name");
+    $self->getEContext->execute(command => $command);
 
-    $log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
-
-    $self->{_objs}->{cluster}->delete();
+    $self->{context}->{cluster}->delete();
 }
 
 =head1 DIAGNOSTICS

@@ -274,11 +274,15 @@ sub createExport {
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            export_manager_id   => $self->getAttr(name => 'component_id'),
-            container_id   => $args{container}->getAttr(name => 'container_id'),
-            export_name    => $args{export_name},
-            client_name    => $args{client_name},
-            client_options => $args{client_options},
+            context => {
+                export_manager => $self,
+                container      => $args{container},
+            },
+            manager_params => {
+                export_name    => $args{export_name},
+                client_name    => $args{client_name},
+                client_options => $args{client_options},
+            },
         },
     );
 }
@@ -302,7 +306,9 @@ sub removeExport {
         priority => 200,
         type     => 'RemoveExport',
         params   => {
-            container_access_id => $args{container_access}->getAttr(name => 'container_id'),
+            context => {
+                container_access => $args{container_access},
+            }
         },
     );
 }

@@ -35,7 +35,6 @@ sub configureNode {
     };
     
     $self->generateFile( 
-        econtext     => $args{econtext},
         mount_point  => $args{mount_point},
         template_dir => "/templates/components/puppetmaster",
         input_file   => "default_puppetmaster.tt", 
@@ -48,19 +47,17 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
   
     $self->configureNode(
-        econtext    => $args{econtext},
         mount_point => $args{mount_point}.'/etc',
         host        => $args{host}
     );
     
     $self->addInitScripts(    
         mountpoint => $args{mount_point}, 
-        econtext   => $args{econtext}, 
         scriptname => 'puppet', 
     );
     
@@ -69,60 +66,60 @@ sub addNode {
 sub createHostCertificate {
     my ($self, %args) = @_;
  
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host_fqdn']);
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host_fqdn' ]);
     
     my $certificate = $args{host_fqdn}.'.pem';
     
     # check if new certificate is required
     my $command = "find /etc/puppet/ssl/certs -name $certificate";
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getExecutorEContext->execute(command => $command);
     if(! $result->{stdout}) {
         # generate a certificate for the host
         $command = "puppetca --generate $args{host_fqdn}";
-        my $result = $args{econtext}->execute(command => $command);
+        my $result = $self->getExecutorEContext->execute(command => $command);
         # TODO check for error in command execution
     }
     
     # copy master certificate to the image
-    $args{econtext}->send(
+    $self->getExecutorEContext->send(
         src  => '/etc/puppet/ssl/certs/ca.pem',
         dest => $args{mount_point} .'/var/lib/puppet/ssl/certs/ca.pem'
     );
     
     # copy host certificate to the image
-    $args{econtext}->send(
+    $self->getExecutorEContext->send(
         src  => '/etc/puppet/ssl/certs/'.$certificate,
         dest => $args{mount_point} .'/var/lib/puppet/ssl/certs/'.$certificate
     );
     
     # copy host private key to the image
-    $args{econtext}->send(
+    $self->getExecutorEContext->send(
         src  => '/etc/puppet/ssl/private_keys/'.$certificate,
         dest => $args{mount_point} .'/var/lib/puppet/ssl/private_keys/'.$certificate
     );
     
     $command = 'touch /etc/puppet/manifest/site.pp';
-    $args{econtext}->execute(command => $command);
+    $self->getExecutorEContext->execute(command => $command);
 }    
 
 sub postStartNode {
     my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
     my $config = $self->_getEntity->getConf();
     if($config->{puppetagent2_mode} eq 'kanopya') {
-        my $ip = $args{host}->getAdminIp;
-        my $econtext = EFactory::newEContext(
-            ip_source => '127.0.0.1', 
-            ip_destination => $ip
-        );
-        $self->applyCatalog(econtext => $econtext);
+        $self->applyCatalog(host => $args{host});
     }
 }
 
 sub applyCatalog {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['econtext']);
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
     my $command = 'puppet agent --test';
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $args{host}->getEContext->execute(command => $command);
 }
 
 1;

@@ -27,6 +27,7 @@ use File::Basename;
 use Log::Log4perl "get_logger";
 use Operation;
 
+use Data::Dumper;
 my $log = get_logger("executor");
 
 sub new {
@@ -52,20 +53,23 @@ sub new {
     return $self;
 }
 
+sub save {}
+
 sub getAttr {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'name' ]);
 
+    if ($self->_getEntity and $self->_getEntity->isa('EEntity::EContainer::ELocalContainer')) {
+        return $self->_getEntity->{$args{name}};
+    }
     return $self->{$args{name}};
 }
 
 sub createDefaultExport {
     my $self = shift;
     my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
 
     return EEntity::EContainerAccess::ELocalContainerAccess->new(econtainer => $self);
 }
@@ -74,8 +78,7 @@ sub removeDefaultExport {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'container_access', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'container_access' ]);
 }
 
 1;

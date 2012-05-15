@@ -34,8 +34,7 @@ sub configureNode {
         puppetagent2_options   => $conf->{puppetagent2_options},
     };
     
-    $self->generateFile( 
-        econtext     => $args{econtext},
+    $self->generateFile(
         mount_point  => $args{mount_point},
         template_dir => "/templates/components/puppetagent",
         input_file   => "default_puppet.tt", 
@@ -50,7 +49,6 @@ sub configureNode {
     
      
     $self->generateFile( 
-        econtext     => $args{econtext},
         mount_point  => $args{mount_point},
         template_dir => "/templates/components/puppetagent",
         input_file   => "puppet.conf.tt", 
@@ -64,19 +62,15 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
-
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
   
     $self->configureNode(
-        econtext    => $args{econtext},
         mount_point => $args{mount_point}.'/etc',
         host        => $args{host}
     );
     
     $self->addInitScripts(    
         mountpoint => $args{mount_point}, 
-        econtext   => $args{econtext}, 
         scriptname => 'puppet', 
     );
     

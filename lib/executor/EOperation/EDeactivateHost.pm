@@ -50,100 +50,33 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-=head2 new
-
-    my $op = EOperation::EDeactivateHost->new();
-
-    # EOperation::EDeactivateHost->new creates a new EActivateHost Eoperation.
-    # RETURN : EOperation::EDeactivateHost : Operation activate host on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    return;
-}
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-    
-    # check if host is not active
-    $log->debug("checking host active value <$args{params}->{host_id}>");
-       if(!$self->{_objs}->{host}->getAttr(name => 'active')) {
-            $errmsg = "EOperation::EDeactivateHost->new : host $args{params}->{host_id} is already active";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-}
-
 =head2 prepare
-
-    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
-    
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EDeactivateHost->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    my $params = $self->_getOperation()->getParams();
-    
-    # Instantiate host and so check if exists
-    $log->debug("checking host existence with id <$params->{host_id}>");
-    eval {
-        $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
-    };
-    if($@) {
-        $errmsg = "EOperation::EDeactivateHost->new : host_id $params->{host_id} does not exist";
+
+    General::checkParams(args => $self->{context}, required => [ "host" ]);
+
+    # check if host is not active
+    if (not $self->{context}->{host}->getAttr(name => 'active')) {
+        $errmsg = "Host <" . $self->{context}->{host}->getAttr(name => 'entity_id') . "> is not active";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation DeactivateCluster failed an error occured :\n$error";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
+
 }
 
 sub execute{
     my $self = shift;
 
     # set host active in db
-    $self->{_objs}->{host}->setAttr(name => 'active', value => 0);
-    $self->{_objs}->{host}->save();
-    $log->info("Host <". $self->{_objs}->{host}->getAttr(name => 'entity_id') ."> deactivated");
+    $self->{context}->{host}->setAttr(name => 'active', value => 0);
+    $self->{context}->{host}->_getEntity->save();
+    $log->info("Host <" . $self->{context}->{host}->getAttr(name => 'entity_id') . "> deactivated");
 }
 
 

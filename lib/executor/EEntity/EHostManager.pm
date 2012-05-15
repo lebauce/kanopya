@@ -23,10 +23,16 @@ use warnings;
 use Kanopya::Exceptions;
 use DecisionMaker::HostSelector;
 
+use Entity::Powersupplycard;
+use Entity::Processormodel;
+use Entity::Hostmodel;
+use Entity::Kernel;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("administrator");
+my $errmsg;
 
 =head2 createHost
 
@@ -41,7 +47,50 @@ sub createHost {
                                        "hostmodel_id", "host_serial_number", "host_ram" ]);
 
     if (defined $args{erollback}) { delete $args{erollback}; }
-    if (defined $args{econtext})  { delete $args{econtext}; }
+
+    # Check if kernel_id exist
+    $log->debug("checking kernel existence with id <$args{kernel_id}>");
+    eval {
+        Entity::Kernel->get(id => $args{kernel_id});
+    };
+    if($@) {
+        $errmsg = "Wrong kernel_id attribute detected <$args{kernel_id}>\n" . $@;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
+    # Check if host_model_id exist
+    $log->debug("Checking host model existence with id <$args{hostmodel_id}>");
+    eval {
+          Entity::Hostmodel->get(id => $args{hostmodel_id});
+    };
+    if($@) {
+        $errmsg = "Wrong hostmodel_id attribute detected <$args{hostmodel_id}>\n" . $@;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
+    # Check if processor_model_id exist
+    $log->debug("Checking processor model existence with id <$args{processormodel_id}>");
+    eval {
+         Entity::Processormodel->get(id => $args{processormodel_id});
+    };
+    if($@) {
+        $errmsg = "Wrong processormodel_id attribute detected <$args{processormodel_id}>\n" . $@;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+    
+    if (defined $args{powersupplyport_number} and defined $args{powersupplycard_id}) {
+        # Check power supply
+        # Search if there is a power supply defined
+        my $powersupplycard = Entity::Powersupplycard->get(id => $args{powersupplycard_id});
+        if ($powersupplycard->isPortUsed(powersupplyport_number => $args{powersupplyport_number})) {
+            $errmsg = "This power supply port is already recorded!";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+    }
 
     my $host = $self->_getEntity()->addHost(%args);
 
@@ -59,7 +108,7 @@ sub removeHost {
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $host = $self->_getEntity()->delHost(%args);
+    my $host = $self->_getEntity()->delHost(host => $args{host}->_getEntity);
 
     #TODO: insert erollback ?
 }
@@ -75,7 +124,7 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "host", "econtext" ]);
+    General::checkParams(args => \%args, required => [ "host" ]);
 
     throw Kanopya::Exception::NotImplemented();
 }
@@ -91,7 +140,7 @@ sub stopHost {
     my $self = shift;
     my %args = @_;
 
-	General::checkParams(args => \%args, required => [ "host", "econtext" ]);
+	General::checkParams(args => \%args, required => [ "host" ]);
 
     throw Kanopya::Exception::NotImplemented();
 }
@@ -107,7 +156,7 @@ sub postStart {
     my $self = shift;
     my %args = @_;
 
-	General::checkParams(args => \%args, required => [ "host", "econtext" ]);
+	General::checkParams(args => \%args, required => [ "host" ]);
 }
 
 =head2 scaleHost

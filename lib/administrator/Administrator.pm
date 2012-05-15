@@ -283,31 +283,6 @@ sub getRow {
     return $dbix;
 }	
 
-
-=head2 _getLastRank
-
-    Class : Private
-
-    Desc : This method return last operation number
-
-=cut
-
-sub _get_lastRank {
-    my $self = shift;
-    my $row = $self->{db}->resultset('Operation')->search(undef, {column => 'execution_rank', order_by=> ['execution_rank desc']})->first;
-    if (! $row) {
-        $log->debug("No previous operation in queue");
-        return 0;
-    }
-    else {
-        my $last_in_db = $row->get_column('execution_rank');
-        $log->debug("Previous operation in queue is $last_in_db");
-        return $last_in_db;
-    }
-}
-
-
-
 =head2 Administrator::_getDbix(%args)
 
     Class : Private

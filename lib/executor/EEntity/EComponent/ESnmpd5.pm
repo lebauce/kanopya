@@ -28,7 +28,7 @@ sub addNode {
     my %args = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ "econtext", "host", "mount_point" ]);
+                         required => [ "host", "mount_point" ]);
 
     my $conf = $self->_getEntity()->getConf();
 
@@ -37,8 +37,7 @@ sub addNode {
     $data->{node_ip_address} = $args{host}->getAdminIp;
     $data->{options} = $conf->{snmpd_options};       
     
-    $self->generateFile(econtext     => $args{econtext},
-                        mount_point  => $args{mount_point}.'/etc',
+    $self->generateFile(mount_point  => $args{mount_point}.'/etc',
                         template_dir => "/templates/components/snmpd",
                         input_file   => "default_snmpd.tt",
                         output       => "/default/snmpd",
@@ -48,8 +47,7 @@ sub addNode {
     $data = {};
     $data->{monitor_server_ip} = $conf->{monitor_server_ip};
 
-    $self->generateFile(econtext     => $args{econtext},
-                        mount_point  => $args{mount_point}.'/etc',
+    $self->generateFile(mount_point  => $args{mount_point}.'/etc',
                         template_dir => "/templates/components/snmpd",
                         input_file   => "snmpd.conf.tt",
                         output       => "/snmp/snmpd.conf",
@@ -58,7 +56,6 @@ sub addNode {
     # add snmpd init scripts
     $self->addInitScripts(
         mountpoint => $args{mount_point},
-        econtext   => $args{econtext},
         scriptname => 'snmpd',
     );
           
@@ -68,11 +65,9 @@ sub addNode {
 sub reload {
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => [ "econtext" ]);
 
     my $command = "invoke-rc.d snmpd restart";
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
     return undef;
 }
 

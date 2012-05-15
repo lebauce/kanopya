@@ -30,7 +30,7 @@ sub getDefaultExportManager {
     my $self = shift;
     my %args = @_;
 
-    return $self->_getEntity->getDiskManager();
+    return $self->getDiskManager();
 }
 
 1;
