@@ -33,6 +33,20 @@ __PACKAGE__->table("operation");
   is_nullable: 0
   size: 64
 
+=head2 workflow_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
+=head2 state
+
+  data_type: 'char'
+  default_value: 'pending:0'
+  is_nullable: 0
+  size: 32
+
 =head2 user_id
 
   data_type: 'integer'
@@ -81,6 +95,20 @@ __PACKAGE__->add_columns(
   },
   "type",
   { data_type => "char", is_foreign_key => 1, is_nullable => 0, size => 64 },
+  "workflow_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
+  "state",
+  {
+    data_type => "char",
+    default_value => "pending:0",
+    is_nullable => 0,
+    size => 32,
+  },
   "user_id",
   {
     data_type => "integer",
@@ -119,6 +147,21 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 workflow
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Workflow>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "workflow",
+  "AdministratorDB::Schema::Result::Workflow",
+  { workflow_id => "workflow_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 =head2 type
 
 Type: belongs_to
@@ -134,30 +177,15 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 operation_parameters
 
-Type: has_many
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-11 11:05:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CzIaO+qJW0gQ7/fUkdr+yw
 
-Related object: L<AdministratorDB::Schema::Result::OperationParameter>
-
-=cut
-
-__PACKAGE__->has_many(
-  "operation_parameters",
-  "AdministratorDB::Schema::Result::OperationParameter",
-  { "foreign.operation_id" => "self.operation_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+ __PACKAGE__->has_one(
+   "entitylink",
+   "AdministratorDB::Schema::Result::OperationEntity",
+   { "foreign.operation_id" => "self.operation_id" },
+   { cascade_copy => 0, cascade_delete => 0 }
 );
 
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wqindFglX/ivjG+UUL61Lg
-
-
-# You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->has_one(
-  "entitylink",
-  "AdministratorDB::Schema::Result::OperationEntity",
-    { "foreign.operation_id" => "self.operation_id" },
-    { cascade_copy => 0, cascade_delete => 0 });
 1;
