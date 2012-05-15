@@ -6,14 +6,19 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
+use General;
+use Entity;
 use ERollback;
-use General;
-use Entity::ServiceProvider::Inside::Cluster;
-use General;
+use EFactory;
+use Operation;
+
+use Kanopya::Exceptions;
 
 my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
+
+use vars qw ( $AUTOLOAD );
 
 sub _getOperation{
     my $self = shift;
@@ -23,25 +28,68 @@ sub _getOperation{
 sub new {
     my $class = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args,
-                         required => ['data']);
-    
-    my $self = { _operation         => $args{data},
-                duration_report     => 20,
-                # default duration to wait during operation reporting (in seconds) 
-                internal_cluster    => {}
+
+    General::checkParams(args => \%args, required => [ 'data', 'config' ]);
+
+    my $params  = $args{data}->getParams;
+    my $context = $params->{context};
+    delete $params->{context};
+
+    my $self = { 
+        config     => $args{config},
+        params     => $params,
+        context    => defined $args{context} ? $args{context} : {},
+        _operation => $args{data},
+        _executor  => Entity->get(id => $args{config}->{cluster}->{executor})
     };
+
     bless $self, $class;
+
+    # Set the context environement
+    if ($context) {
+        $self->setContext(context => $context);
+    }
+
     return $self;
+}
+
+sub setContext {
+    my $self  = shift;
+    my $class = ref($self);
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'context' ]);
+
+    # Search for entities, and instanciate them
+    foreach my $key (keys %{$args{context}}) {
+        # Try to instanciate it as an entity.
+        my $value;
+        eval {
+            $value = EFactory::newEEntity(data => Entity->get(id => $args{context}->{$key}));
+        };
+        if ($@) {
+            $errmsg = "Operation <$class>, arg <$args{context}->{$key}>, seems not to be an entity id.\n$@";
+            $log->debug($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+
+        if (defined $self->{context}->{$key}) {
+            throw Kanopya::Exception::Execution(
+                      error => "Entity <" . $value->getAttr(name => 'entity_id') .
+                               ">, is already in context with key <$key>"
+                  );
+        }
+
+        $self->{context}->{$key} = $value;
+    }
 }
 
 sub prepare {
     my $self = shift;
-    
+
     my $id = $self->_getOperation();
     
-    $self->{userid} = $self->_getOperation()->getAttr(attr_name => "user_id");
+    $self->{userid} = $self->_getOperation()->getAttr(name => "user_id");
 #   To restore change user uncomment follow
 #   $log->debug("Change user by user_id : $self->{userid}");    
 #   my $adm = Administrator->new();
@@ -73,15 +121,27 @@ sub cancel {
     $self->_cancel;
 }
 
+sub prerequisites {
+    my $self = shift;
+
+    # Operations are not reported by default.
+    return 0;
+}
+
 #interface
 sub _cancel {}
 sub finish {}
 sub execute {}
+sub check {}
 
 sub report {
     my $self = shift;
-    $log->debug("Reporting operation with duration_report : $self->{duration_report}");
-    $self->_getOperation()->setHopedExecutionTime(value => $self->{duration_report});
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'duration' ]);
+
+    $log->debug("Reporting operation with duration_report : $args{duration}");
+    $self->_getOperation->setHopedExecutionTime(value => $args{duration});
 }
 
 sub delete {
@@ -90,22 +150,26 @@ sub delete {
     $self->{_operation}->delete();
 }
 
-sub loadContext {
+sub getEContext {
+    my $self = shift;
+
+    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
+                                 ip_destination => $self->{_executor}->getMasterNodeIp());
+}
+
+sub AUTOLOAD {
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams( args => \%args, required => ['internal_cluster', 'service'] );
-    
-    # Retrieve executor ip (used for source all context)
-    if (not defined $self->{exec_cluster_ip}) {
-        my $exec_cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
-        $self->{exec_cluster_ip} = $exec_cluster->getMasterNodeIp();
-    }
-    
-    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{$args{service}});
-    $self->{$args{service}}->{ip} = $cluster->getMasterNodeIp();
-    $self->{$args{service}}->{econtext} = EFactory::newEContext(ip_source => $self->{exec_cluster_ip}, ip_destination => $self->{$args{service}}->{ip});
-    
+
+    my @autoload = split(/::/, $AUTOLOAD);
+    my $method = $autoload[-1];
+
+    return $self->_getOperation->$method(%args);
+}
+
+sub DESTROY {
+    my $self = shift;
+    my %args = @_;
 }
 
 1;
@@ -129,7 +193,7 @@ EOperation - Abstract class of EOperation object.
     $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
     
     eval {
-        $eoperation->prepare(internal_cluster => $self->{config}->{cluster});
+        $eoperation->prepare();
         $eoperation->process();
     };
     if ($@) {
@@ -150,8 +214,6 @@ EOperations contain :
 - _operation : Operation : Operation send by user (human or software).
 This attribute is Operation created by user and saved in database. 
 This operation is loaded from database by EFactory and stored into EOperation
-- duration_report : Scalar (Int) : Default 20  : Report time duration. 
-It is time waited by operation when it is reported.
 
 =head1 METHODS
 
