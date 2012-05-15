@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 sept 2010
 package Message;
-
+use base 'BaseDB';
 
 use strict;
 use warnings;
@@ -29,20 +29,6 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
-
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-    my $self = {};
-    
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $adm = Administrator->new();
-    $self->{_dbix} = $adm->{db}->resultset( "Message" )->find(  $args{id});
-    bless $self, $class;
-    return $self;
-}
 
 sub getMessages {
     my $class = shift;
@@ -100,12 +86,6 @@ sub send {
 
     my $msg = Message->new(%args);
     $msg->save();
-}
-
-sub delete {
-    my $self = shift;
-    
-    $self->{_dbix}->delete();
 }
 
 sub getAttr {
