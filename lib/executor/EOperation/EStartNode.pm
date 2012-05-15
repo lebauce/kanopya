@@ -39,165 +39,103 @@ our $VERSION = '1.00';
 
 my $config = General::getTemplateConfiguration();
 
+
+sub check {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
+}
+
+sub prerequisites {
+    my $self  = shift;
+    my %args  = @_;
+    my $delay = 10;
+
+    my $cluster_id = $self->{context}->{cluster}->getAttr(name => 'entity_id');
+    my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
+
+    # Ask to all cluster component if they are ready for node addition.
+    my $components = $self->{context}->{cluster}->getComponents(category => "all");
+    foreach my $key (keys %$components) {
+        my $ready = $components->{$key}->readyNodeAddition(host_id => $host_id);
+        if (not $ready) {
+            $log->debug("Cluster <$cluster_id> not ready for node addition, retrying in $delay seconds");
+            return $delay;
+        }
+    }
+
+    $log->debug("Cluster <$cluster_id> ready for node addition, preparing StartNode.");
+    return 0;
+}
+
 sub prepare {
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
+    # Instanciate the bootserver Cluster
+    $self->{context}->{bootserver}
+        = EFactory::newEEntity(
+              data => Entity->get(id => $self->{config}->{cluster}->{bootserver})
+          );
 
-    my $params = $self->_getOperation()->getParams();
-
-    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
-
-    $self->{executor}   = {};
-    $self->{bootserver} = {};
-    $self->{_objs}      = {};
-
-    # Cluster instantiation
-    $log->debug("checking cluster existence with id <$params->{cluster_id}>");
-    eval {
-        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(
-                                        id => $params->{cluster_id}
-                                    );
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EStartNode->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Host instantiation
-    $log->debug("checking Host existence with id <$params->{host_id}>");
-    eval {
-        $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EStartNode->prepare : host_id $params->{host_id} does not find\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Instanciate bootserver Cluster
-    $self->{bootserver} = Entity::ServiceProvider::Inside::Cluster->get(
-                              id => $args{internal_cluster}->{bootserver}
-                          );
-
-    $log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}));
-
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "bootserver");
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "executor");
-
-    # Get cluster components Entities
-    $log->debug("Load cluster component instances");
-    $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
-
-    # Instanciate tftpd component.
-    my $tftp_component = $self->{bootserver}->getComponent(name => "Atftpd", version => "0");
-    $self->{_objs}->{component_tftpd} = EFactory::newEEntity(data => $tftp_component);
-
-    $log->debug("Loaded tftpd component (Atftpd version 0.7, it ref is " . ref($self->{_objs}->{component_tftpd}));
-
-    # Instanciate dhcpd component.
-    my $dhcp_component = $self->{bootserver}->getComponent(name => "Dhcpd", version => "3");
-    $self->{_objs}->{component_dhcpd} = EFactory::newEEntity(data => $dhcp_component);
-
+    # Instanciate dhcpd
+    my $dhcpd = $self->{context}->{bootserver}->getComponent(name => "Dhcpd", version => 3);
+    $self->{context}->{dhcpd_component} = EFactory::newEEntity(data => $dhcpd);
+ 
     # Instanciate puppetmaster
-    my $puppetmaster = $self->{bootserver}->getComponent(name => 'Puppetmaster', version => 2);
-    $self->{_objs}->{component_puppetmaster} = EFactory::newEEntity(data => $puppetmaster);
-
-    $log->debug("Loaded dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
+    my $puppetmaster = $self->{context}->{bootserver}->getComponent(name => 'Puppetmaster', version => 2);
+    $self->{context}->{component_puppetmaster} = EFactory::newEEntity(data => $puppetmaster);
 
     # Get container of the system image, get the container access of the container
-    $self->{_objs}->{container} = $self->{_objs}->{host}->getNodeSystemimage->getDevice;
+    my $container = $self->{context}->{host}->getNodeSystemimage->getDevice;
+    $self->{context}->{container} = EFactory::newEEntity(data => $container);
 
     # Warning:
     # 1. Systeme image should be activated, so at least one container access exists
     # 2. As systemimages always dedicated for instance, a system image container has
     #    onlky one container access.
-    $self->{_objs}->{container_access} = pop @{ $self->{_objs}->{container}->getAccesses };
-    
-    # kanopya domainname is needed for hosts file generation
-    $self->{kanopya_domainname} =  $self->{bootserver}->getAttr(name => 'cluster_domainname');
+    my $container_access = pop @{ $self->{context}->{container}->getAccesses };
+    $self->{context}->{container_access} = EFactory::newEEntity(data => $container_access);
 
-}
+    $self->{context}->{export_manager}
+        = EFactory::newEEntity(data => $self->{context}->{container_access}->getExportManager);
 
-sub _cancel {
-    my $self = shift;
+    $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->getAttr(name => 'cluster_domainname');
 
-    my $params = $self->_getOperation()->getParams();
-    my $host = Entity::Host->get(id => $params->{host_id});
-
-    $log->info("Cancel start node, we will try to remove node link for <" .
-               $host->getAttr(name => "entity_id") . ">");
-
-    $host->stopToBeNode();
-
-    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
-    my $hosts = $cluster->getHosts();
-    if (! scalar keys %$hosts) {
-        $cluster->setState(state => "down");
-    }
-
-    # Try to umount the container.
-    eval {
-        my $mountpoint = $self->{_objs}->{container}->getMountPoint;
-
-        my $econtainer_access = EFactory::newEEntity(data => $self->{_objs}->{container_access});
-        $econtainer_access->umount(mountpoint => $mountpoint,
-                                   econtext   => $self->{executor}->{econtext});
-    }
 }
 
 sub execute {
     my $self = shift;
 
     # Firstly compute the node configuration
-    $log->info("Compute node configuration for host <" . $self->{_objs}->{host}->getAttr(name => "entity_id"));
-    if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard}) and
-        (exists $self->{_objs}->{powersupplyport_number} and defined $self->{_objs}->{powersupplyport_number})) {
-        my $powersupply_id = $self->{_objs}->{powersupplycard}->addPowerSupplyPort(
-                                 powersupplyport_number => $self->{_objs}->{powersupplyport_number}
+    $log->info("Compute node configuration for host <" . $self->{context}->{host}->getAttr(name => "entity_id"));
+    if ((exists $self->{context}->{powersupplycard} and defined $self->{context}->{powersupplycard}) and
+        (exists $self->{params}->{powersupplyport_number} and defined $self->{params}->{powersupplyport_number})) {
+        my $powersupply_id = $self->{context}->{powersupplycard}->addPowerSupplyPort(
+                                 powersupplyport_number => $self->{params}->{powersupplyport_number}
                              );
 
-        $self->{_objs}->{host}->setAttr(name  => 'host_powersupply_id',
-                                        value => $powersupply_id);
+        $self->{context}->{host}->setAttr(name  => 'host_powersupply_id',
+                                          value => $powersupply_id);
     }
 
-    # Get the ECluster and EHost
-    my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
-    my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
-
-    # Get the corresponding EContainerAccess
-    my $econtainer_access = EFactory::newEEntity(data => $self->{_objs}->{container_access});
-    my $eexport_manager = EFactory::newEEntity(data => $self->{_objs}->{container_access}->getExportManager);
-
     # Mount the containers on the executor.
-    my $mountpoint = $self->{_objs}->{container}->getMountPoint;
+    my $mountpoint = $self->{context}->{container}->getMountPoint;
 
     $log->info('Mounting the container <' . $mountpoint . '>');
-    $econtainer_access->mount(mountpoint => $mountpoint,
-                              econtext => $self->{executor}->{econtext});
+    $self->{context}->{container_access}->mount(mountpoint => $mountpoint,
+                                                econtext   => $self->getEContext);
 
     # generate resolv.conf
-    $ecluster->generateResolvConf(
-        etc_path => $mountpoint . '/etc',
-        econtext => $self->{executor}->{econtext}
-    );
+    $self->{context}->{cluster}->generateResolvConf(etc_path => $mountpoint . '/etc');
 
     # generate node hostname
-    $ehost->generateHostname(
-        etc_path => $mountpoint . '/etc',
-        econtext => $self->{executor}->{econtext}
-    );
+    $self->{context}->{host}->generateHostname(etc_path => $mountpoint . '/etc');
 
     # generate node udev persistent net rules
-    $ehost->generateUdevPersistentNetRules(
-        etc_path => $mountpoint . '/etc',
-        econtext => $self->{executor}->{econtext}
-    );
+    $self->{context}->{host}->generateUdevPersistentNetRules(etc_path => $mountpoint . '/etc');
 
     $log->info("Generate Network Conf");
     $self->_generateNetConf(etc_path => $mountpoint . '/etc');
@@ -206,49 +144,46 @@ sub execute {
     $self->_generateNtpdateConf(etc_path => $mountpoint . '/etc');
 
     $log->info("Generate Boot Conf");
-    my ($access_mode, $mount_options) = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared')
+    my ($access_mode, $mount_options) = $self->{context}->{cluster}->getAttr(name => 'cluster_si_shared')
                       ? ("ro", "ro,noatime,nodiratime") : ("rw", "defaults");
 
     # Apply node boot configuration
     $self->_generateBootConf(mountpoint => $mountpoint,
-                             filesystem => $self->{_objs}->{container}->getAttr(
+                             filesystem => $self->{context}->{container}->getAttr(
                                                name => 'container_filesystem'
                                            ),
                              options    => $mount_options);
 
     # TODO: Component migration (node, exec context?)
-    my $components = $self->{_objs}->{components};
+    my $components = $self->{context}->{cluster}->getComponents(category => "all");
     foreach my $i (keys %$components) {
         my $ecomponent = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is " . ref($ecomponent));
-        $ecomponent->addNode(host        => $self->{_objs}->{host},
+        $ecomponent->addNode(host        => $self->{context}->{host},
                              mount_point => $mountpoint,
-                             cluster     => $self->{_objs}->{cluster},
-                             econtext    => $self->{executor}->{econtext},
+                             cluster     => $self->{context}->{cluster},
                              erollback   => $self->{erollback});
     }
 
     # generate Hosts conf
-    $ecluster->generateHostsConf(
+    $self->{context}->{cluster}->generateHostsConf(
         etc_path           => $mountpoint . '/etc',
-        executor_context   => $self->{executor}->{econtext},
-        kanopya_domainname => $self->{kanopya_domainname}
+        kanopya_domainname => $self->{params}->{kanopya_domainname}
     );
 
     # check if this cluster must be managed by puppet and kanopya puppetmaster
     my $puppetagent = eval { 
-        $self->{_objs}->{cluster}->getComponent(name    => 'Puppetagent',
-                                                version => 2
+        $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
+                                                  version => 2
         );
     };
     if($puppetagent) {
         my $conf = $puppetagent->getConf();
         if($conf->{puppetagent2_mode} eq 'kanopya') {
             $log->debug('Puppent agent component configured with kanopya puppet master');
-            my $fqdn = $self->{_objs}->{host}->getAttr(name => 'host_hostname');
+            my $fqdn = $self->{context}->{host}->getAttr(name => 'host_hostname');
             $fqdn .= '.' . $self->{kanopya_domainname};
-            $self->{_objs}->{component_puppetmaster}->createHostCertificate(
-                econtext    => $self->{executor}->{econtext},
+            $self->{context}->{component_puppetmaster}->createHostCertificate(
                 mount_point => $mountpoint,
                 host_fqdn   => $fqdn
             );
@@ -257,25 +192,57 @@ sub execute {
 
 
     # Umount system image container
-    $econtainer_access->umount(mountpoint => $mountpoint,
-                               econtext   => $self->{executor}->{econtext});
+    $self->{context}->{container_access}->umount(mountpoint => $mountpoint,
+                                                 econtext   => $self->getEContext);
 
     # Give access to the system image to the node
     $log->info('Giving access to the system image to the node');
-    $eexport_manager->addExportClient(
-        export  => $self->{_objs}->{container_access},
-        host    => $self->{_objs}->{host},
+    $self->{context}->{export_manager}->addExportClient(
+        export  => $self->{context}->{container_access},
+        host    => $self->{context}->{host},
         options => $access_mode
     );
 
     # Create node instance
-    $self->{_objs}->{host}->setNodeState(state => "goingin");
-    $self->{_objs}->{host}->save();
+    $self->{context}->{host}->setNodeState(state => "goingin");
+    $self->{context}->{host}->save();
 
     # Finally we start the node
-    $ehost->start(
-        econtext  => $self->{executor}->{econtext},
-        erollback => $self->{erollback}
+    $self->{context}->{host}->start(erollback => $self->{erollback});
+}
+
+sub _cancel {
+    my $self = shift;
+
+    $log->info("Cancel start node, we will try to remove node link for <" .
+               $self->{context}->{host}->getAttr(name => "entity_id") . ">");
+
+    $self->{context}->{host}->stopToBeNode();
+
+    my $hosts = $self->{context}->{cluster}->getHosts();
+    if (! scalar keys %$hosts) {
+        $self->{context}->{cluster}->setState(state => "down");
+    }
+
+    # Try to umount the container.
+    eval {
+        my $mountpoint = $self->{context}->{container}->getMountPoint;
+        $self->{context}->{container_access}->umount(mountpoint => $mountpoint,
+                                                     econtext   => $self->getEContext);
+    }
+}
+
+sub finish {
+    my $self = shift;
+
+    # No need to lock the bootserver
+    delete $self->{context}->{bootserver};
+    delete $self->{context}->{dhcpd_component};
+    delete $self->{context}->{component_puppetmaster};
+
+    $self->getWorkflow->enqueue(
+        priority => 200,
+        type     => 'PostStartNode',
     );
 }
 
@@ -294,8 +261,8 @@ sub _generateNetConf {
 
     # Pop an IP adress for all host iface,
     my @net_ifaces;
-    foreach my $interface (@{$self->{_objs}->{cluster}->getNetworkInterfaces}) {
-        my $iface = $interface->getAssociatedIface(host => $self->{_objs}->{host});
+    foreach my $interface (@{$self->{context}->{cluster}->getNetworkInterfaces}) {
+        my $iface = $interface->getAssociatedIface(host => $self->{context}->{host});
 
         # Assign ip from the associated interface poolip
         $iface->assignIp();
@@ -313,7 +280,7 @@ sub _generateNetConf {
             $log->info("Network " . $network);
             if ($network->isa("Entity::Network::Vlan")) {
                 $log->info("Apply VLAN on " . $iface->getAttr(name => 'iface_name'));
-                my $ehost_manager = EFactory::newEEntity(data => $self->{_objs}->{host}->getHostManager);
+                my $ehost_manager = EFactory::newEEntity(data => $self->{context}->{host}->getHostManager);
                 $ehost_manager->applyVLAN(
                     iface => $iface,
                     vlan  => $network
@@ -322,9 +289,9 @@ sub _generateNetConf {
         }
     }
 
-    if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
+    if (not $self->{context}->{cluster}->getMasterNodeId()) {
         my $i = 1;
-        my $tiers = $self->{_objs}->{cluster}->getTiers();
+        my $tiers = $self->{context}->{cluster}->getTiers();
         if ($tiers) {
             foreach my $tier_key (keys %$tiers){
                 my $dmz_ips = $tiers->{$tier_key}->getDmzIps();
@@ -339,7 +306,7 @@ sub _generateNetConf {
                 }
             }
         }
-        @net_ifaces = (@net_ifaces, @{$self->{_objs}->{cluster}->getPublicIps()});
+        @net_ifaces = (@net_ifaces, @{$self->{context}->{cluster}->getPublicIps()});
     }
 
     #$log->debug(Dumper(@interfaces));
@@ -348,7 +315,7 @@ sub _generateNetConf {
                      error => "Error when generate net conf ". $template->error() . "\n"
                  );
 
-    $self->{executor}->{econtext}->send(
+    $self->getEContext->send(
         src => "/tmp/$tmpfile",
         dest => "$args{etc_path}/network/interfaces"
     );
@@ -368,22 +335,22 @@ sub _generateBootConf {
     my $etc_path = $args{mountpoint} . '/etc';
 
     # Firstly create pxe config file if needed
-    my $boot_policy = $self->{_objs}->{cluster}->getAttr(name => 'cluster_boot_policy');
+    my $boot_policy = $self->{context}->{cluster}->getAttr(name => 'cluster_boot_policy');
 
     if ($boot_policy =~ m/PXE/) {
-        $self->_generatePXEConf(cluster    => $self->{_objs}->{cluster},
-                                host       => $self->{_objs}->{host},
+        $self->_generatePXEConf(cluster    => $self->{context}->{cluster},
+                                host       => $self->{context}->{host},
                                 mountpoint => $args{mountpoint});
 
         if ($boot_policy =~ m/ISCSI/) {
-            my $targetname = $self->{_objs}->{container_access}->getAttr(name => 'container_access_export');
+            my $targetname = $self->{context}->{container_access}->getAttr(name => 'container_access_export');
 
             #$log->info("Generate Kanopya Halt script Conf");
 
             #$self->_generateKanopyaHalt(etc_path   => $etc_path,
             #                            targetname => $targetname);
 
-            $self->{executor}->{econtext}->execute(
+            $self->getEContext->execute(
                 command => "touch $etc_path/iscsi.initramfs"
             );
 
@@ -397,18 +364,18 @@ sub _generateBootConf {
                 $month = '0'.$month;
             }
             my $initiatorname = 'iqn.'.$year.'-'.$month.'.';
-            $initiatorname .= $self->{_objs}->{cluster}->getAttr(name => 'cluster_name');
-            $initiatorname .= '.'.$self->{_objs}->{host}->getAttr(name => 'host_hostname');
+            $initiatorname .= $self->{context}->{cluster}->getAttr(name => 'cluster_name');
+            $initiatorname .= '.'.$self->{context}->{host}->getAttr(name => 'host_hostname');
             $initiatorname .= ':'.time();
 
-            my $lun_number = $self->{_objs}->{container_access}->getAttr(name => 'lun_name')
+            my $lun_number = $self->{context}->{container_access}->getAttr(name => 'lun_name')
                              || "lun-0";
 
             # Set initiatorName
-            $self->{_objs}->{host}->setAttr(name  => "host_initiatorname",
-                                            value => $initiatorname);
+            $self->{context}->{host}->setAttr(name  => "host_initiatorname",
+                                              value => $initiatorname);
 
-            $self->{executor}->{econtext}->execute(
+            $self->getEContext->execute(
                 command => "echo \"InitiatorName=$initiatorname\" > " .
                            "$etc_path/initiatorname.iscsi"
             );
@@ -421,18 +388,18 @@ sub _generateBootConf {
             my $input = "bootconf.tt";
 
             my $vars = {
-                filesystem    => $self->{_objs}->{container}->getAttr(name => 'container_filesystem'),
+                filesystem    => $self->{context}->{container}->getAttr(name => 'container_filesystem'),
                 initiatorname => $initiatorname,
                 target        => $targetname,
-                ip            => $self->{_objs}->{container_access}->getAttr(name => 'container_access_ip'),
-                port          => $self->{_objs}->{container_access}->getAttr(name => 'container_access_port'),
+                ip            => $self->{context}->{container_access}->getAttr(name => 'container_access_ip'),
+                port          => $self->{context}->{container_access}->getAttr(name => 'container_access_port'),
                 lun           => $lun_number,
                 mount_opts    => $args{options},
                 mounts_iscsi  => [],
                 additional_devices => "",
             };
 
-            my $components = $self->{_objs}->{components};
+            my $components = $self->{context}->{cluster}->getComponents(category => "all");
             foreach my $i (keys %$components) {
                 if ($components->{$i}->isa("Entity::Component")) {
                     if ($components->{$i}->isa("Entity::Component::Openiscsi2")){
@@ -451,26 +418,26 @@ sub _generateBootConf {
                              error => "Error when processing template $input."
                          );
 
-            my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
-            my $dest = $tftp_conf->{'repository'} . '/' . $self->{_objs}->{host}->getAttr(name => "host_hostname") . ".conf";
+            my $tftp_conf = $self->{context}->{bootserver}->getComponent(name => "Atftpd", version => "0")->getConf();
+            my $dest = $tftp_conf->{'repository'} . '/' . $self->{context}->{host}->getAttr(name => "host_hostname") . ".conf";
 
-            $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
+            $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
             unlink "/tmp/$tmpfile";
         }
 
-        my $grep_result = $self->{executor}->{econtext}->execute(
+        my $grep_result = $self->getEContext->execute(
                               command => "grep \"NETDOWN=no\" $etc_path/default/halt"
                           );
 
         if (not $grep_result->{stdout}) {
-            $self->{executor}->{econtext}->execute(
+            $self->getEContext->execute(
                 command => "echo \"NETDOWN=no\" >> $etc_path/default/halt"
             );
         }
     }
  
     # Set up fastboot
-    $self->{executor}->{econtext}->execute(
+    $self->getEContext->execute(
         command => "touch $args{mountpoint}/fastboot"
     );
 }
@@ -488,61 +455,59 @@ sub _generatePXEConf {
     my $clustername = $args{cluster}->getAttr(name => 'cluster_name');
     my $hostname = $args{host}->getAttr(name => 'host_hostname'); 
 
-    my $kernel_version   = Entity::Kernel->get(id => $kernel_id)->getAttr(name => 'kernel_version');
-    my $container_access = $self->{_objs}->{container_access};
-    my $boot_policy      = $args{cluster}->getAttr(name => 'cluster_boot_policy');
+    my $kernel_version = Entity::Kernel->get(id => $kernel_id)->getAttr(name => 'kernel_version');
+    my $boot_policy    = $args{cluster}->getAttr(name => 'cluster_boot_policy');
     
-    my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
+    my $tftp_conf = $self->{context}->{bootserver}->getComponent(name => "Atftpd", version => "0")->getConf();
 
     my $nfsexport = "";
     if ($boot_policy =~ m/NFS/) {
-        $nfsexport = $container_access->getAttr(name => 'container_access_export');
+        $nfsexport = $self->{context}->{container_access}->getAttr(name => 'container_access_export');
     }
 
     ## Here we create a dedicated initramfs for the node
     # create the storing directory
     my $path = $tftp_conf->{'repository'}."/$clustername/$hostname";
     my $cmd = "mkdir -p $path";
-    $self->{executor}->{econtext}->execute(command => $cmd);
+    $self->getEContext->execute(command => $cmd);
     
     # make a decompressed copy of the initrd to this directory
     my $initrd = $tftp_conf->{'repository'}."/initrd_$kernel_version";
     my $newinitrd = $path."/initrd_$kernel_version";
     $cmd = "bzcat $initrd > $newinitrd";
-    $self->{executor}->{econtext}->execute(command => $cmd);
+    $self->getEContext->execute(command => $cmd);
     
     # append files to the cpio archive
     $cmd = 'cd '.$args{mountpoint};
     $cmd .= ' && find . -name 70-persistent-net.rules';
     $cmd .= " | cpio -o -O $newinitrd -A -H newc";
     $cmd .= ' && cd -';
-    $self->{executor}->{econtext}->execute(command => $cmd);
+    $self->getEContext->execute(command => $cmd);
     
     # recompress the initrd in bz2
     $cmd = "bzip2 $newinitrd && mv $newinitrd.bz2 $newinitrd";
-    $self->{executor}->{econtext}->execute(command => $cmd);
+    $self->getEContext->execute(command => $cmd);
 
     my $pxeiface = $args{host}->getPXEIface;
 
     # Add host in the dhcp
-    my $adm    = Administrator->new();
-    my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
+    my $subnet = $self->{context}->{dhcpd_component}->getInternalSubNetId();
 
     # Set Hostname
-    my $host_hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
+    my $host_hostname = $self->{context}->{host}->getAttr(name => "host_hostname");
 
     # Configure DHCP Component
-    my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
-    my $host_kernel_id = $tmp_kernel_id ? $tmp_kernel_id : $self->{_objs}->{host}->getAttr(name => "kernel_id");
+    my $tmp_kernel_id = $self->{context}->{cluster}->getAttr(name => "kernel_id");
+    my $host_kernel_id = $tmp_kernel_id ? $tmp_kernel_id : $self->{context}->{host}->getAttr(name => "kernel_id");
 
-    $self->{_objs}->{component_dhcpd}->addHost(
+    $self->{context}->{dhcpd_component}->addHost(
         dhcpd3_subnet_id                => $subnet,
         dhcpd3_hosts_ipaddr             => $pxeiface->getIPAddr,
         dhcpd3_hosts_mac_address        => $pxeiface->getAttr(name => 'iface_mac_addr'),
         dhcpd3_hosts_hostname           => $host_hostname,
-        dhcpd3_hosts_ntp_server         => $self->{bootserver}->getMasterNodeIp(),
-        dhcpd3_hosts_domain_name        => $self->{_objs}->{cluster}->getAttr(name => "cluster_domainname"),
-        dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver1"),
+        dhcpd3_hosts_ntp_server         => $self->{context}->{bootserver}->getMasterNodeIp(),
+        dhcpd3_hosts_domain_name        => $self->{context}->{cluster}->getAttr(name => "cluster_domainname"),
+        dhcpd3_hosts_domain_name_server => $self->{context}->{cluster}->getAttr(name => "cluster_nameserver1"),
         kernel_id                       => $host_kernel_id,
         erollback                       => $self->{erollback}
     );
@@ -551,15 +516,13 @@ sub _generatePXEConf {
     $self->{erollback}->insertNextErollBefore(erollback => $eroll_add_dhcp_host);
 
     # Generate new configuration file
-    $self->{_objs}->{component_dhcpd}->generate(econtext  => $self->{bootserver}->{econtext},
-                                                erollback => $self->{erollback});
+    $self->{context}->{dhcpd_component}->generate(erollback => $self->{erollback});
 
     my $eroll_dhcp_generate = $self->{erollback}->getLastInserted();
     $self->{erollback}->insertNextErollBefore(erollback=>$eroll_dhcp_generate);
 
     # Generate new configuration file
-    $self->{_objs}->{component_dhcpd}->reload(econtext  => $self->{bootserver}->{econtext},
-                                              erollback => $self->{erollback});
+    $self->{context}->{dhcpd_component}->reload(erollback => $self->{erollback});
     $log->info('Adming dhcp server updated');
 
     # Here we generate pxelinux.cfg for the host
@@ -573,7 +536,7 @@ sub _generatePXEConf {
     my $vars = {
         nfsroot    => ($boot_policy =~ m/NFS/) ? 1 : 0,
         iscsiroot  => ($boot_policy =~ m/ISCSI/) ? 1 : 0,
-        xenkernel  => ($kernel_version =~ m/xen/) ? 1 : 0,
+        xenkernel  => 0, #($kernel_version =~ m/xen/) ? 1 : 0,
         kernelfile => "vmlinuz-$kernel_version",
         initrdfile => "$clustername/$hostname/initrd_$kernel_version",
         nfsexport  => $nfsexport,
@@ -588,12 +551,12 @@ sub _generatePXEConf {
     $node_mac_addr =~ s/:/-/g;
     my $dest = $tftp_conf->{'repository'} . '/pxelinux.cfg/01-' . lc $node_mac_addr ;
 
-    $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
+    $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
     unlink "/tmp/$tmpfile";
 
     # Update Host internal ip
     $log->info("Get subnet <$subnet> and have host ip <$pxeiface->getIPAddr>");
-    my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
+    my %subnet_hash = $self->{context}->{dhcpd_component}->getSubNet(dhcpd3_subnet_id => $subnet);
 }
 
 sub _generateKanopyaHalt {
@@ -613,11 +576,11 @@ sub _generateKanopyaHalt {
     #TODO: mettre en parametre le port du iscsi du nas!!
     my $vars = {
         target   => $args{targetname},
-        nas_ip   => $self->{_objs}->{container_access}->getAttr(name => 'container_access_ip'),
-        nas_port => $self->{_objs}->{container_access}->getAttr(name => 'container_access_port'),
+        nas_ip   => $self->{context}->{container_access}->getAttr(name => 'container_access_ip'),
+        nas_port => $self->{context}->{container_access}->getAttr(name => 'container_access_port'),
     };
 
-    my $components = $self->{_objs}->{components};
+    my $components = $self->{context}->{cluster}->getComponents(category => "all");
     foreach my $i (keys %$components) {
         # TODO: Check if it is an ExportClient and call generic method
         if ($components->{$i}->isa("Entity::Component")) {
@@ -633,31 +596,31 @@ sub _generateKanopyaHalt {
     $log->debug("Generate Kanopya Halt with :" . Dumper($vars));
     $template->process($input, $vars, "/tmp/" . $tmpfile) or die $template->error(), "\n";
 
-    $self->{executor}->{econtext}->send(src  => "/tmp/$tmpfile",
-                                        dest => "$args{etc_path}/init.d/Kanopya_halt");
+    $self->getEContext->send(src  => "/tmp/$tmpfile",
+                             dest => "$args{etc_path}/init.d/Kanopya_halt");
     unlink "/tmp/$tmpfile";
 
-    $self->{executor}->{econtext}->execute(
+    $self->getEContext->execute(
         command => "chmod 755 $args{etc_path}/init.d/Kanopya_halt"
     );
-    #$self->{executor}->{econtext}->execute(
+    #$self->getEContext->execute(
     #    command => "ln -sf ../init.d/Kanopya_halt $args{etc_path}/rc0.d/S89Kanopya_halt"
     #);
 
     $log->debug("Generate omitted file <$omitted_file>");
-    $self->{executor}->{econtext}->execute(
+    $self->getEContext->execute(
         command => "cp /templates/internal/$omitted_file /tmp/"
     );
-    $self->{executor}->{econtext}->send(
+    $self->getEContext->send(
         src  => "/tmp/$omitted_file",
         dest => "$args{etc_path}/init.d/Kanopya_omitted_iscsid"
     );
     unlink "/tmp/$omitted_file";
 
-    $self->{executor}->{econtext}->execute(
+    $self->getEContext->execute(
         command => "chmod 755 $args{etc_path}/init.d/Kanopya_omitted_iscsid"
     );
-    #$self->{executor}->{econtext}->execute(
+    #$self->getEContext->execute(
     #    command => "ln -sf ../init.d/Kanopya_omitted_iscsid " .
     #               "$args{etc_path}/rc0.d/S19Kanopya_omitted_iscsid"
     #);
@@ -675,7 +638,7 @@ sub _generateNtpdateConf {
     my $template = Template->new($config);
     my $input = "ntpdate.tt";
     my $data = {
-        ntpservers => $self->{bootserver}->getMasterNodeIp(),
+        ntpservers => $self->{context}->{bootserver}->getMasterNodeIp(),
     };
 
     $template->process($input, $data, "/tmp/$tmpfile")
@@ -683,7 +646,7 @@ sub _generateNtpdateConf {
                      error => "Error while generating ntpdate configuration ". $template->error() . "\n"
                  );
 
-    $self->{executor}->{econtext}->send(
+    $self->getEContext->send(
         src  => "/tmp/$tmpfile",
         dest => "$args{etc_path}/default/ntpdate"
     );
@@ -700,14 +663,13 @@ sub _generateNtpdateConf {
                      error => "Error while generating ntpdate init script ". $template->error() . "\n"
                  );
 
-    $self->{executor}->{econtext}->send(
+    $self->getEContext->send(
         src  => "/tmp/$tmpfile",
         dest => "$args{etc_path}/init.d/ntpdate"
     );
     
-    $self->{executor}->{econtext}->execute(command => "chmod +x $args{etc_path}/init.d/ntpdate");
-    $self->{executor}->{econtext}->execute(command => "chroot $args{etc_path}/.. /sbin/insserv -d ntpdate");
-    
+    $self->getEContext->execute(command => "chmod +x $args{etc_path}/init.d/ntpdate");
+    $self->getEContext->execute(command => "chroot $args{etc_path}/.. /sbin/insserv -d ntpdate");
 }
 
 1;
@@ -760,8 +722,6 @@ return : EOperation::EStartNode : Operation add host in a cluster
     Class : Private
 
     Desc : This private method is used to prepare the operation execution
-
-    Args : internal_cluster : Hash ref : config part of executor config file
 
 =head2 _generateNodeConf
 

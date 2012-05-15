@@ -63,76 +63,50 @@ our $VERSION = '1.00';
 
 sub prepare {
     my ($self, %args) = @_;
-    
     $self->SUPER::prepare();
 
-    $self->{_objs}    = {};
-    $self->{executor} = {};
+    General::checkParams(args => $self->{context}, required => [ "systemimage_src", "disk_manager" ]);
     
-    my $params = $self->_getOperation()->getParams();
-
-    my $imgsource_id     = General::checkParam(args => $params, name => 'systemimage_id');
-    my $systemimage_name = General::checkParam(args => $params, name => 'systemimage_name');
-    my $systemimage_desc = General::checkParam(args => $params, name => 'systemimage_desc');
-    my $disk_manager_id  = General::checkParam(args => $params, name => 'disk_manager_id');
-    
-    # Get instance of Systemimage to clone
-    eval {
-       $self->{_objs}->{systemimage_source} = Entity::Systemimage->get(id => $imgsource_id);
-    };
-    if($@) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $@);
-    }
+    General::checkParams(args => $self->{params}, required => [ "systemimage_name", "systemimage_desc", "disk_manager_params" ]);
 
     # Check if systemimage is not active
     $log->debug('Checking source systemimage active value <' .
-                $self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id') . '>');
+                $self->{context}->{systemimage_src}->getAttr(name => 'systemimage_id') . '>');
 
-    if($self->{_objs}->{systemimage_source}->getAttr(name => 'active')) {
-        $errmsg = 'EOperation::ECloneSystemimage->checkop : systemimage <' .
-                  $self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id') .
-                  '> is already active';
+    if ($self->{context}->{systemimage_src}->getAttr(name => 'active')) {
+        $errmsg = 'Systemimage <' . $self->{context}->{systemimage_src}->getAttr(name => 'systemimage_id') .
+                  '> is active.';
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     
     # Check if systemimage name does not already exist
-    $log->debug('checking unicity of systemimage_name <' . $systemimage_name . '>');
+    $log->debug('Checking unicity of systemimage_name <' . $self->{params}->{systemimage_name} . '>');
 
     my $sysimg_exists = Entity::Systemimage->getSystemimage(
-        hash => { systemimage_name => $systemimage_name }
-    );
+                            hash => { systemimage_name => $self->{params}->{systemimage_name} }
+                        );
 
     if (defined $sysimg_exists){
         $errmsg = 'EOperation::ECloneSystemimage->prepare : systemimage_name ' .
-                  $systemimage_name . ' already exist';
+                  $self->{params}->{systemimage_name} . ' already exist';
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
     # Create new systemimage instance
     eval {
-        $self->{_objs}->{systemimage} = Entity::Systemimage->new(
-            systemimage_name      => $systemimage_name,
-            systemimage_desc      => $systemimage_desc,
-        );
-    };
-    if($@) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $@);
-    }
-
-    # Get the edisk manager for disk creation.
-    eval {
-        $self->{_objs}->{edisk_manager}
-            = EFactory::newEEntity(data => Entity->get(id => $disk_manager_id));
+        my $entity = Entity::Systemimage->new(systemimage_name => $self->{params}->{systemimage_name},
+                                              systemimage_desc => $self->{params}->{systemimage_desc});
+        $self->{context}->{systemimage} = EFactory::newEEntity(data => $entity);
     };
     if($@) {
         throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
 
     # Check if disk manager has enough free space
-    my $neededsize = $self->{_objs}->{systemimage_source}->getDevice->getAttr(name => 'container_size');
-    my $freespace  = $self->{_objs}->{edisk_manager}->_getEntity->getFreeSpace(%{$params});
+    my $neededsize = $self->{context}->{systemimage_src}->getDevice->getAttr(name => 'container_size');
+    my $freespace  = $self->{context}->{disk_manager}->getFreeSpace(%{$self->{params}->{disk_manager_params}});
 
     $log->debug("Size needed for systemimage device : $neededsize, freespace left : $freespace");
 
@@ -143,34 +117,21 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
-
-    $self->{params} = $params;
 }
 
 sub execute {
     my $self = shift;
 
-    my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
-    my $esrc_container = EFactory::newEEntity(data => $self->{_objs}->{systemimage_source}->getDevice);
+    $self->{context}->{systemimage}->create(src_container => $self->{context}->{systemimage_src},
+                                            disk_manager  => $self->{context}->{disk_manager},
+                                            erollback     => $self->{erollback},
+                                            %{$self->{params}->{disk_manager_params}});
 
-    $esystemimage->create(esrc_container => $esrc_container,
-                          edisk_manager  => $self->{_objs}->{edisk_manager},
-                          econtext       => $self->{executor}->{econtext},
-                          erollback      => $self->{erollback},
-                          %{$self->{params}}
+    $self->{context}->{systemimage}->cloneComponentsInstalledFrom(
+        systemimage_source_id => $self->{context}->{systemimage_src}->getAttr(name => 'entity_id')
     );
 
-    $self->{_objs}->{systemimage}->cloneComponentsInstalledFrom(
-        systemimage_source_id => $self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id')
-    );
-
-    $log->info('System image <' . $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') . '> is cloned');
+    $log->info('System image <' . $self->{context}->{systemimage}->getAttr(name => 'systemimage_name') . '> is cloned');
 }
 
 1;

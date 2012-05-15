@@ -63,26 +63,19 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
-    
-    my $params = $self->_getOperation()->getParams();
+    General::checkParams(args => $self->{context}, required => [ "masterimage" ]);
 
-    General::checkParams(args => $params, required => [ "masterimage_id" ]);
+    # Check if the masterimage is used by any clusters
+    my $masterimage_id = $self->{context}->{masterimage}->getAttr(name => 'entity_id');
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {
+                       masterimage_id => $masterimage_id
+                   });
 
-    $self->{_objs} = {};
-    $self->{executor} = {};
-
-    # Get instance of Masterimage Entity
-    $self->{_objs}->{masterimage} = Entity::Masterimage->get(id => $params->{masterimage_id});
-  
-    # Get executor econtext
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
-    
-    $self->{executor}->{econtext} = EFactory::newEContext(
-        ip_source      => $exec_cluster->getMasterNodeIp(),
-        ip_destination => $exec_cluster->getMasterNodeIp()
-    );
+    if (scalar(@clusters)) {
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => "Masterimage <$masterimage_id> is used by at least one cluster."
+              );        
+    }
 }
 
 sub execute {
@@ -90,7 +83,7 @@ sub execute {
     $self->SUPER::execute();
 
     # delete master image directory
-    my $directory = dirname($self->{_objs}->{masterimage}->getAttr(name => 'masterimage_file'));
+    my $directory = dirname($self->{context}->{masterimage}->getAttr(name => 'masterimage_file'));
 
     if (dirname($directory) eq '/') {
         throw Kanopya::Exception::Internal::WrongValue(
@@ -100,8 +93,8 @@ sub execute {
 
     my $cmd = "rm -rf $directory";
     
-    $self->{executor}->{econtext}->execute(command => $cmd);
-    $self->{_objs}->{masterimage}->delete();
+    $self->getEContext->execute(command => $cmd);
+    $self->{context}->{masterimage}->delete();
 }
 
 =head1 DIAGNOSTICS

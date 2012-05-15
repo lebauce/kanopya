@@ -67,8 +67,6 @@ my $config = {
 
 =head2 prepare
 
-    $op->prepare(internal_cluster => \%internal_clust);
-
 =cut
 
 sub prepare {
@@ -76,41 +74,18 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("EPreStartNode Operation preparation");
+    General::checkParams(args => $self->{context}, required => [ "cluster", "host", "systemimage" ]);
 
-    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+    General::checkParams(args => $self->{params}, required => [ "node_number" ]);
 
-    $self->{_objs} = {};
-
-    my $params = $self->_getOperation()->getParams();
-
-    General::checkParams(args     => $params,
-                         required => [ "cluster_id", "host_id",
-                                       "systemimage_id", "node_number" ]);
-
-    # Get instance of Cluster Entity
-    $log->info("Load cluster instance");
-    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
-    $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
-
-    # Get cluster components Entities
-    $log->info("Load cluster component instances");
-    $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
-    $log->debug("Load all component from cluster");
-
-    # Get instance of Host Entity
-    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
-    $log->debug("get Host $params->{host_id} of type : " . ref($self->{_objs}->{host}));
-
-    my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
-    my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
+    my $master_node_id = $self->{context}->{cluster}->getMasterNodeId();
+    my $node_count = $self->{context}->{cluster}->getCurrentNodesCount();
     if (! $master_node_id && $node_count){
-        $errmsg = "No master node when host <$params->{host_id}> migrating, pls wait...";
+        $errmsg = "No master node when host <" . $self->{context}->{host}->getAttr(name => 'entity_id') .
+                  "> migrating, pls wait...";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
-    $self->{params} = $params;
 }
 
 sub execute {
@@ -118,53 +93,64 @@ sub execute {
     $self->SUPER::execute();
 
     #TODO  component migrate (node, exec context?)
-    my $components = $self->{_objs}->{components};
+    my $components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Processing cluster components configuration for this node');
     foreach my $i (keys %$components) {
-        my $tmp = EFactory::newEEntity(data => $components->{$i});
+        my $comp = EFactory::newEEntity(data => $components->{$i});
 
-        $log->debug("component is ".ref($tmp));
-        $tmp->preStartNode(host    => $self->{_objs}->{host},
-                           cluster => $self->{_objs}->{cluster});
+        $log->debug("component is ".ref($comp));
+        $comp->preStartNode(host    => $self->{context}->{host},
+                            cluster => $self->{context}->{cluster});
     }
 
-    $self->{_objs}->{host}->becomeNode(
-        inside_id      => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
+    $self->{context}->{host}->becomeNode(
+        inside_id      => $self->{context}->{cluster}->getAttr(name => "cluster_id"),
         master_node    => 0,
-        systemimage_id => $self->{params}->{systemimage_id},
+        systemimage_id => $self->{context}->{systemimage}->getAttr(name => "entity_id"),
         node_number    => $self->{params}->{node_number},
     );
 
     # Set Hostname
-    my $hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
+    my $hostname = $self->{context}->{host}->getAttr(name => "host_hostname");
     if (not $hostname) {
-        $hostname = $self->{_objs}->{cluster}->getAttr(name => 'cluster_basehostname');
-        if ($self->{_objs}->{cluster}->getAttr(name => 'cluster_max_node') > 1) {
-            $hostname .=  $self->{_objs}->{host}->getNodeNumber();
+        $hostname = $self->{context}->{cluster}->getAttr(name => 'cluster_basehostname');
+        if ($self->{context}->{cluster}->getAttr(name => 'cluster_max_node') > 1) {
+            $hostname .=  $self->{context}->{host}->getNodeNumber();
         }
-        $self->{_objs}->{host}->setAttr(
-            name  => "host_hostname",
-            value => $hostname
-        );
-        $self->{_objs}->{host}->save();
+        $self->{context}->{host}->setAttr(name  => "host_hostname",
+                                          value => $hostname);
+        $self->{context}->{host}->save();
     }    
 
-    $self->{_objs}->{host}->setNodeState(state => "pregoingin");
-    
-} 
+    $self->{context}->{host}->setNodeState(state => "pregoingin");
+}
+
+sub finish {
+    my $self = shift;
+
+    $self->getWorkflow->enqueue(
+        priority => 200,
+        type     => 'StartNode',
+    );
+}
 
 sub _cancel {
     my $self = shift;
 
-    my $params = $self->_getOperation()->getParams();
-
-    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
-    my $hosts = $cluster->getHosts();
-    if (! scalar keys %$hosts) {
-        $cluster->setState(state => 'down');
+    if ($self->{context}->{cluster}) {
+        my $hosts = $self->{context}->{cluster}->getHosts();
+        if (! scalar keys %$hosts) {
+            $self->{context}->{cluster}->setState(state => 'down');
+        }
+    }
+    
+    if ($self->{context}->{host}) {
+        $self->{context}->{host}->setState(state => "down");   
     }
 }
+
 1;
+
 __END__
 
 =head1 AUTHOR

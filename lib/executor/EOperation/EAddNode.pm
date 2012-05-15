@@ -42,38 +42,24 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
-
-    my $params = $self->_getOperation()->getParams();
-
-    General::checkParams(args => $params, required => [ "cluster_id" ]);
-
-    $self->{_objs} = {};
-
-    # Get cluster to start from param
-    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(
-                                    id => $params->{cluster_id}
-                                );
-
-    # Get the masterimage for node systemimage creation.
-    $self->{_objs}->{masterimage} = Entity::Masterimage->get(
-                                        id => $self->{_objs}->{cluster}->getAttr(name => 'masterimage_id')
-                                    );
+    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
     # Get the disk manager for disk creation
-    my $disk_manager = Entity->get(id => $self->{_objs}->{cluster}->getAttr(name => 'disk_manager_id'));
-    $self->{_objs}->{edisk_manager} = EFactory::newEEntity(data => $disk_manager);
+    my $disk_manager = Entity->get(id => $self->{context}->{cluster}->getAttr(name => 'disk_manager_id'));
+    $self->{context}->{disk_manager} = EFactory::newEEntity(data => $disk_manager);
 
     # Get the export manager for disk creation
-    my $export_manager = Entity->get(id => $self->{_objs}->{cluster}->getAttr(name => 'export_manager_id'));
-    $self->{_objs}->{eexport_manager} = EFactory::newEEntity(data => $export_manager);
+    my $export_manager = Entity->get(id => $self->{context}->{cluster}->getAttr(name => 'export_manager_id'));
+    $self->{context}->{export_manager} = EFactory::newEEntity(data => $export_manager);
+
+    # Get the masterimage for node systemimage creation.
+    my $masterimage =  Entity::Masterimage->get(id => $self->{context}->{cluster}->getAttr(name => 'masterimage_id'));
+    $self->{context}->{masterimage} = EFactory::newEEntity(data => $masterimage);
 
     # Check if a host is specified.
-    if (defined $params->{host_id}) {
-        $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
-
-        my $host_manager_id = $self->{_objs}->{host}->getAttr(name => 'host_manager_id');
-        my $cluster_host_manager_id = $self->{_objs}->{cluster}->getAttr(name => "host_manager_id");
+    if (defined $self->{context}->{host}) {
+        my $host_manager_id = $self->{context}->{host}->getAttr(name => 'host_manager_id');
+        my $cluster_host_manager_id = $self->{context}->{cluster}->getAttr(name => "host_manager_id");
 
         # Check if the specified host is managed by the cluster host manager
         if ($host_manager_id != $cluster_host_manager_id) {
@@ -84,11 +70,11 @@ sub prepare {
         }
     }
 
-    $params->{node_number} = $self->{_objs}->{cluster}->getNewNodeNumber();
-    $log->debug("Node number for this new node: $params->{node_number} ");
+    $self->{params}->{node_number} = $self->{context}->{cluster}->getNewNodeNumber();
+    $log->debug("Node number for this new node: $self->{params}->{node_number} ");
 
-    my $systemimage_name = $self->{_objs}->{cluster}->getAttr(name => 'cluster_name') . '_' .
-                           $params->{node_number};
+    my $systemimage_name = $self->{context}->{cluster}->getAttr(name => 'cluster_name') . '_' .
+                           $self->{params}->{node_number};
 
     # Check for existing systemimage for this node.
     my $existing_image;
@@ -96,55 +82,38 @@ sub prepare {
         $existing_image = Entity::Systemimage->find(hash => {systemimage_name => $systemimage_name});
     };
 
-    # If systemimage_id defined, force to use it.
-    if (defined $params->{systemimage_id}) {
-        $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
-    }
+    # If systemimage context defined, force to use it.
     # If systemimage already exist for this node, use it.
-    elsif ($existing_image) {
-        $log->info("Using existing systemimage instance <$systemimage_name>");
-        $self->{_objs}->{systemimage} = $existing_image;
-    }
-    # Else if it is the firest node, or the cluster si policy is dedicated, create a new one.
-    elsif (($params->{node_number} == 1) or (not $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared'))) {
-        $log->info("Create new systemimage instance <$systemimage_name>");
-
-        my $systemimage_desc = 'System image for node ' . $params->{node_number}  .' in cluster ' .
-                               $self->{_objs}->{cluster}->getAttr(name => 'cluster_name') . '.';
-
-        eval {
-           $self->{_objs}->{systemimage} = Entity::Systemimage->new(
-                systemimage_name => $systemimage_name,
-                systemimage_desc => $systemimage_desc,
-           );
-        };
-        if($@) {
-            throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    if (not $self->{context}->{systemimage}) {
+        if ($existing_image) {
+            $log->info("Using existing systemimage instance <$systemimage_name>");
+            $self->{context}->{systemimage} = EFactory::newEEntity(data => $existing_image);
         }
-        $params->{create_systemimage} = 1;
-    }
-    # Else if it is the firest node, or the cluster si policy is dedicated, create a new one.
-    else {
-        $self->{_objs}->{systemimage} = $self->{_objs}->{cluster}->getMasterNodeSystemimage;
-    }
+        # Else if it is the first node, or the cluster si policy is dedicated, create a new one.
+        elsif (($self->{params}->{node_number} == 1) or (not $self->{context}->{cluster}->getAttr(name => 'cluster_si_shared'))) {
+            $log->info("Create new systemimage instance <$systemimage_name>");
+    
+            my $systemimage_desc = 'System image for node ' . $self->{params}->{node_number}  .' in cluster ' .
+                                   $self->{context}->{cluster}->getAttr(name => 'cluster_name') . '.';
 
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
-    $self->{params} = $params;
-}
-
-sub _cancel {
-    my $self = shift;
-
-    my $params = $self->_getOperation()->getParams();
-
-    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
-    my $hosts = $cluster->getHosts();
-    if (! scalar keys %$hosts) {
-        $cluster->setState(state => "down");
+            eval {
+               my $entity = Entity::Systemimage->new(
+                                systemimage_name => $systemimage_name,
+                                systemimage_desc => $systemimage_desc,
+                            );
+               $self->{context}->{systemimage} = EFactory::newEEntity(data => $entity);
+            };
+            if($@) {
+                throw Kanopya::Exception::Internal::WrongValue(error => $@);
+            }
+            $self->{params}->{create_systemimage} = 1;
+        }
+        # Else if it is the firest node, or the cluster si policy is dedicated, create a new one.
+        else {
+            $self->{context}->{systemimage} = EFactory::newEEntity(
+                                                  data => $self->{context}->{cluster}->getMasterNodeSystemimage
+                                              );
+        }
     }
 }
 
@@ -152,48 +121,68 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    if (not defined $self->{_objs}->{host}) {
+    if (not defined $self->{context}->{host}) {
         # Just call Master node addition, other node will be add by the state manager
-        my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
-        $self->{_objs}->{host} = $ecluster->addNode(econtext => $self->{executor}->{econtext});
+        $self->{context}->{host} = $self->{context}->{cluster}->addNode();
     }
-    $self->{_objs}->{host}->setState(state => "locked");
+    $self->{context}->{host}->setState(state => "locked");
 
-    my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+    # If it is the first node, the cluster is starting
+    if ($self->{params}->{node_number} == 1) {
+        $self->{context}->{cluster}->setState(state => 'starting');
+        $self->{context}->{cluster}->save();
+    }
 
     # Create system image for node if required.
     if ($self->{params}->{create_systemimage}) {
-        $esystemimage->createFromMasterimage(
-            masterimage    => $self->{_objs}->{masterimage},
-            edisk_manager  => $self->{_objs}->{edisk_manager},
-            manager_params => $self->{_objs}->{cluster}->getManagerParameters(manager_type => 'disk_manager'),
-            econtext       => $self->{executor}->{econtext},
+        $self->{context}->{systemimage}->createFromMasterimage(
+            masterimage    => $self->{context}->{masterimage},
+            disk_manager   => $self->{context}->{disk_manager},
+            manager_params => $self->{context}->{cluster}->getManagerParameters(manager_type => 'disk_manager'),
             erollback      => $self->{erollback},
         );
     }
 
     # Export system image for node if required.
-    if (not $self->{_objs}->{systemimage}->getAttr(name => 'active')) {
-        $esystemimage->activate(
-            eexport_manager => $self->{_objs}->{eexport_manager},
-            manager_params  => $self->{_objs}->{cluster}->getManagerParameters(manager_type => 'export_manager'),
-            econtext        => $self->{executor}->{econtext},
-            erollback       => $self->{erollback}
+    if (not $self->{context}->{systemimage}->getAttr(name => 'active')) {
+        $self->{context}->{systemimage}->activate(
+            export_manager => $self->{context}->{export_manager},
+            manager_params => $self->{context}->{cluster}->getManagerParameters(manager_type => 'export_manager'),
+            erollback      => $self->{erollback},
         );
-        $self->{params}->{systemimage_id} = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id');
     }
+}
+
+sub finish {
+    my $self = shift;
+
+    # Not not require masterimage in context any more.
+    delete $self->{context}->{masterimage};
+
+    # Not not require storage managers in context any more.
+    delete $self->{context}->{disk_manager};
+    delete $self->{context}->{export_manager};
 
     $log->debug("New Operation PreStartNode");
-    Operation->enqueue(
+    $self->getWorkflow->enqueue(
         priority => 200,
         type     => 'PreStartNode',
-        params   => {
-            cluster_id     => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'),
-            host_id        => $self->{_objs}->{host}->getAttr(name => 'host_id'),
-            systemimage_id => $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id'),
-            node_number    => $self->{params}->{node_number},
-        }
     );
+}
+
+sub _cancel {
+    my $self = shift;
+
+    if ($self->{context}->{cluster}) {
+        my $hosts = $self->{context}->{cluster}->getHosts();
+        if (! scalar keys %$hosts) {
+            $self->{context}->{cluster}->setState(state => "down");
+        }
+    }
+
+    if ($self->{context}->{host}) {
+        $self->{context}->{host}->setState(state => "down");   
+    }
 }
 
 1;

@@ -50,64 +50,22 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-=head2 _checkOp
-
-    $op->_checkOp();
-    # This private method is used to verify parameters and prerequisite
-=cut
-
-sub _checkOp{
-    my $self = shift;
-    my %args = @_;
-
-    # check if cluster is not active
-    if($self->{_objs}->{cluster}->getAttr(name => 'active')) {
-            $errmsg = "EOperation::EActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-}
-
 =head2 prepare
-
-    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
-    $self->{_objs} = {};
-
-    # Get Operation parameters
-    my $params = $self->_getOperation()->getParams();
-    $self->{_objs} = {};
-
-     # Cluster instantiation
-    eval {
-        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+    # Check if cluster is not active
+    if ($self->{context}->{cluster}->getAttr(name => 'active')) {
+        $errmsg = "Cluster <" . $self->{context}->{cluster}->getAttr(name => 'entity_id') . "> is already active";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    ### Check Parameters and context
-    eval {
-        $self->_checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation ActivateCluster failed an error occured :\n$error";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
 
@@ -116,9 +74,10 @@ sub execute {
     $self->SUPER::execute();
 
     # set cluster active in db
-    $self->{_objs}->{cluster}->setAttr(name => 'active', value => 1);
-    $self->{_objs}->{cluster}->save();
-    $log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now active");
+    $self->{context}->{cluster}->setAttr(name => 'active', value => 1);
+    $self->{context}->{cluster}->_getEntity->save();
+
+    $log->info("Cluster <" . $self->{context}->{cluster}->getAttr(name => "cluster_name") ."> is now active");
 
 }
 

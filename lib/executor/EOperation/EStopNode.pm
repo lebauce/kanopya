@@ -50,66 +50,69 @@ use Data::Dumper;
 my $log = get_logger("executor");
 my $errmsg;
 
-=head2 prepare
+sub check {
+    my $self = shift;
+    my %args = @_;
 
-    $op->prepare();
+    General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
+}
 
-=cut
+sub prerequisites {
+    my $self  = shift;
+    my %args  = @_;
+    my $delay = 10;
+
+    my $cluster_id = $self->{context}->{cluster}->getAttr(name => 'entity_id');
+    my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
+
+    # Ask to all cluster component if they are ready for node addition.
+    my $components = $self->{context}->{cluster}->getComponents(category => "all");
+    foreach my $key (keys %$components) {
+        my $ready = $components->{$key}->readyNodeRemoving(host_id => $self->{context}->{host}->getAttr(name => "host_id"));
+        if (not $ready) {
+            $log->debug("Cluster <$cluster_id> not ready for node removing, retrying in $delay seconds");
+            return $delay;
+        }
+    }
+
+    $log->debug("Cluster <$cluster_id> ready for node removing, preparing StopNode.");
+    return 0;
+}
 
 sub prepare {
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
-
-    $log->info("Operation preparation");
-
-    my $params = $self->_getOperation()->getParams();
-
-    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
-
-    # Get instance of Host Entity
-    $log->info("Load Host instance");
-    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
-    
-    # Get instance of Cluster Entity
-    $log->info("Load cluster instance");
-    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
-    
-    $self->{_objs}->{components} = $self->{_objs}->{cluster}->getComponents(category => "all");
-    
-    # Get context for executor
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
-
-    $log->debug("Get econtext for executor with ref ". ref($self->{executor}->{econtext}));
-    # Get node context
-    $self->{node_econtext} = EFactory::newEContext(ip_source      => $self->{executor}->{econtext}->getLocalIp,
-                                                   ip_destination => $self->{_objs}->{host}->getAdminIp);
-    $log->debug("Get econtext for host with ref ". ref($self->{node_econtext}));
-
 }
 
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    my $components = $self->{_objs}->{components};
+    my $components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Processing cluster components configuration for this node');
+
     foreach my $i (keys %$components) {
-        my $tmp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is ".ref($tmp));
-        $tmp->stopNode(host    => $self->{_objs}->{host},
-                       cluster => $self->{_objs}->{cluster} );
+        my $comp = EFactory::newEEntity(data => $components->{$i});
+        $log->debug("component is ".ref($comp));
+        $comp->stopNode(host    => $self->{context}->{host},
+                        cluster => $self->{context}->{cluster} );
     }
     # finaly we halt the node
-    my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
-    $ehost->halt(node_econtext => $self->{node_econtext});
+    $self->{context}->{host}->halt();
 
-    $self->{_objs}->{host}->setNodeState(state => "goingout");
-    $self->{_objs}->{host}->save();
+    $self->{context}->{host}->setNodeState(state => "goingout");
+    $self->{context}->{host}->save();
 
+}
+
+sub finish {
+    my $self = shift;
+
+    $self->getWorkflow->enqueue(
+        priority => 200,
+        type     => 'PostStopNode',
+    );
 }
 
 1;

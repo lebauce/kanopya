@@ -53,28 +53,18 @@ our $VERSION = '1.00';
 
 =head2 prepare
 
-    $op->prepare(internal_cluster => \%internal_clust);
-
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
-
-    $self->{_objs} = {};
-
-    # Get Operation parameters
-    my $params = $self->_getOperation()->getParams();
+    General::checkParams(args => $self->{params}, required => [ "file_path" ]);
     
-    $self->{_file_path} = $params->{file_path};
-    
-    $self->{_file_path} =~ /.*\/(.*)$/;
+    $self->{params}->{file_path} =~ /.*\/(.*)$/;
     my $file_name = $1;
-    $self->{_file_name} = $file_name; 
+    $self->{params}->{file_path} = $file_name; 
 
     # Check tarball name and retrieve component info from tarball name (temporary. TODO: component def xml file) 
     if ((not defined $file_name) || $file_name !~ /component_(.*)_([a-zA-Z]+)([0-9]+)\.tar\.bz2/) {
@@ -86,43 +76,26 @@ sub prepare {
     $self->{comp_category} = $comp_cat; 
     $self->{comp_name} = $comp_name;
     $self->{comp_version} = $comp_version;
-    
-    #TODO test if tarball is good and contains good element
 
+    my $nas = Entity->get(id => $self->{config}->{cluster}->{nas});
+    $self->{context}->{nas} = EFactory::newEEntity(data => $nas);
 
-    ### Check Parameters and context
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation DeployComponent failed an error occured :\n$error";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
-
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => 'nas');
+    my $executor = Entity->get(id => $self->{config}->{cluster}->{executor});
+    $self->{context}->{executor} = EFactory::newEEntity(data => $executor);
 }
 
 sub execute{
     my $self = shift;
-    $log->debug("Before EOperation exec");
-    
+
     $log->debug("Deploy component '$self->{comp_name}' version $self->{comp_version} category '$self->{comp_category}'");
     
     my $comp_fullname_lc = lc $self->{comp_name} . $self->{comp_version};
     my ($cmd, $cmd_res);
     
     # untar component archive on local /tmp/<tar_root>
-    $log->debug("Deploy files from archive '$self->{_file_path}'");
-    $cmd = "tar -jxf $self->{_file_path} -C /tmp"; 
-    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    $log->debug("Deploy files from archive '$self->{params}->{file_path}'");
+    $cmd = "tar -jxf $self->{params}->{file_path} -C /tmp"; 
+    $cmd_res = $self->getEContext->execute(command => $cmd);
     
     $self->{_file_name} =~ /(.*)\.tar\.bz2/; 
     my $root_dir_name = $1;
@@ -130,7 +103,7 @@ sub execute{
     # retrieve package info
     my $desc_filename = $root_dir_name;
     $cmd = "cat /tmp/$root_dir_name/$desc_filename.xml";
-    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    $cmd_res = $self->getEContext->execute(command => $cmd);
     if ( $cmd_res->{stderr} ne '') {
         $errmsg = "While reading component archive info : $cmd_res->{stderr}";
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -147,17 +120,17 @@ sub execute{
         my $files = $package_info->{$srv};
         next if (not defined $files);
         for my $file (@$files) {
-            $self->{$srv}->{econtext}->send(     src  => "/tmp/$root_dir_name/" . $file->{src},
-                                                dest => "/opt/kanopya/" . $file->{dest} );    
+            $self->{context}->{$srv}->getEContext->send(src  => "/tmp/$root_dir_name/" . $file->{src},
+                                                        dest => "/opt/kanopya/" . $file->{dest});    
         }
     }
-    
+
     # Send templates files (actually cp in local)
     if (defined $package_info->{templates_dir}) {
         $package_info->{templates_dir} =~ /(.*)\/([^\/]*)$/;
         my $path = $1; 
         $cmd = "cp -r /tmp/$root_dir_name/$package_info->{templates_dir} /opt/kanopya/$path";
-        $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+        $cmd_res = $self->getEContext->execute(command => $cmd);
     }
     
     # Retriev admin db conf
@@ -175,7 +148,7 @@ sub execute{
         my $tables_file = "/tmp/$root_dir_name/" . $package_info->{tables_file};
         #TODO check if tables_file is in archive (or in local /tmp) because mysql don't do error if file doesn't exist
         $cmd = "mysql -u $dbuser -p$dbpwd -h $dbhost -P $dbport < '$tables_file'";
-        $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+        $cmd_res = $self->getEContext->execute(command => $cmd);
         if ( $cmd_res->{stderr} =~ "ERROR" ) {
             $errmsg = "While creating component tables : $cmd_res->{stderr}";
             $log->error($errmsg);

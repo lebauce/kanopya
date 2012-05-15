@@ -41,6 +41,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use EFactory;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 
@@ -53,95 +54,137 @@ use Template;
 my $log = get_logger("executor");
 my $errmsg;
 
+sub check {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
+}
+
+
 =head2 prepare
 
-    $op->prepare(internal_cluster => \%internal_clust);
-
 =cut
+
+sub prerequisites {
+    my $self  = shift;
+    my %args  = @_;
+
+    # Duration to wait before retrying prerequistes
+    my $delay = 10;
+
+    # Duration to wait for setting host broken
+    my $broken_time = 480;
+
+    my $cluster_id = $self->{context}->{cluster}->getAttr(name => 'entity_id');
+    my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
+
+    # Check how long the host is 'starting'
+    my @state = $self->{context}->{host}->getState;
+    my $starting_time = time() - time(); #$self->getAttr(name => 'beguin_time');
+
+    if($starting_time > $broken_time) {
+        $self->{context}->{host}->setState(state => 'broken');
+    }
+
+    my $node_ip = $self->{context}->{host}->getAdminIp;
+    if (not $node_ip) {
+        throw Kanopya::Exception::Internal(error => "Host <$host_id> has no admin ip.");
+    }
+
+    # Instanciate an econtext to try initiating an ssh connexion.
+    eval {
+        $self->{context}->{host}->getEContext;
+    };
+    if ($@) {
+        $log->debug("Could not connect to host <$host_id> from cluster <$cluster_id> with ip <$node_ip>.");
+        return $delay;
+    }
+
+    # Check if all host components are up.
+    my $components = $self->{context}->{cluster}->getComponents(category => "all");
+    foreach my $key (keys %$components) {
+        my $component_name = $components->{$key}->getComponentAttr()->{component_name};
+        $log->debug("Browse component: " . $component_name);
+
+        my $ecomponent = EFactory::newEEntity(data => $components->{$key});
+
+        if (not $ecomponent->isUp(host => $self->{context}->{host}, cluster => $self->{context}->{cluster})) {
+            $log->debug("Component <$component_name> on host <$host_id> from cluster <$cluster_id> not up.");
+            return $delay;
+        }
+    }
+
+    # Node is up
+    $self->{context}->{host}->setState(state => "up");
+    $self->{context}->{host}->setNodeState(state => "in");
+
+    $log->debug("Host <$host_id> in cluster <$cluster_id> is 'up', preparing PostStartNode.");
+    return 0;
+}
 
 sub prepare {
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("Operation preparation");
-
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
-    
-    my $params = $self->_getOperation()->getParams();
-
-    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
-
-    #$self->{nas}   = {};
-    $self->{_objs} = {};
-    
-    # Get instance of Cluster Entity
-    $log->info("Load cluster instance");
-    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
-    $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
-
-    # Get cluster components Entities
-    $log->info("Load cluster component instances");
-    $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
-    $log->debug("Load all component from cluster");
-
-    # Get instance of Host Entity
-    $log->info("Load Host instance");
-    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
-    $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
-
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
-    $self->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
-
+    my $exec_cluster = Entity::ServiceProvider->get(id => $self->{config}->{cluster}->{executor});
+    $self->{params}->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
 }
 
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
     
-    if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
-        $self->{_objs}->{host}->becomeMasterNode();
+    if (not $self->{context}->{cluster}->getMasterNodeId()) {
+        $self->{context}->{host}->becomeMasterNode();
     }
 
-    my $components = $self->{_objs}->{components};
+    my $components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Processing cluster components configuration for this node');
     foreach my $i (keys %$components) {
-        my $tmp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is ".ref($tmp));
-        $tmp->postStartNode(host     => $self->{_objs}->{host},
-                            cluster  => $self->{_objs}->{cluster},
-                            econtext => $self->{executor}->{econtext});
+        my $comp = EFactory::newEEntity(data => $components->{$i});
+        $log->debug("component is ".ref($comp));
+        $comp->postStartNode(host    => $self->{context}->{host},
+                             cluster => $self->{context}->{cluster});
     }
 
-    my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
-    $ecluster->updateHostsFile(
-        executor_context   => $self->{executor}->{econtext},
-        kanopya_domainname => $self->{kanopya_domainname}
+    $self->{context}->{cluster}->updateHostsFile(
+        kanopya_domainname => $self->{params}->{kanopya_domainname}
     );
-        
-	my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
-    $ehost->postStart(econtext => $self->{executor}->{econtext});
+
+    $self->{context}->{host}->postStart();
 }
- 
 
+sub finish {
+    my $self = shift;
 
-#sub finish {
-#    my $self = shift;
-#    my $masternode;
-#
-#    if ($self->{_objs}->{cluster}->getMasterNodeId()) {
-#        $masternode = 0;
-#    } else {
-#        $masternode =1;
-#    }
-#    
-#    $self->{_objs}->{host}->becomeMasterNode(master_node => $masternode);
-#}
+    my $cluster_nodes = $self->{context}->{cluster}->getHosts();
+
+    # Add another node if required
+    if ((scalar keys %$cluster_nodes) < $self->{context}->{cluster}->getAttr(name => "cluster_min_node")) {
+        # _getEntity is important here, cause we want to enqueue AddNode operation.
+        $self->{context}->{cluster}->_getEntity->addNode();
+    }
+    else {
+        my $nodes_states = 1;
+        foreach my $node (keys %$cluster_nodes) {
+            my @node_state = $cluster_nodes->{$node}->getNodeState();
+            if ($node_state[0] ne "in"){
+                $nodes_states = 0;
+            }
+        }
+        if ($nodes_states) {
+            $self->{context}->{cluster}->setState(state => "up");
+        }
+        else {
+            # Another node that the current one is broken
+        }
+    }
+}
+
 1;
+
 __END__
 
 =head1 AUTHOR

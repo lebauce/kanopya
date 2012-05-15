@@ -50,94 +50,23 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-
-=head2 new
-
-    my $op = EOperation::EInstallComponentOnSystemImage->new();
-
-    # Operation::EInstallComponentInSystemImage->new installs component on systemimage.
-    # RETURN : EOperation::EInstallComponentInSystemImage : Operation activate cluster on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    return;
-}
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-    
-    $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
-       if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
-            $errmsg = "EOperation::EInstallComponentOnSystemImage->checkOp : system image is active";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-}
-
 =head2 prepare
-
-    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("Operation preparation");
+    General::checkParams(args => $self->{context}, required => [ "systemimage" ]);
 
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
-    
-    # Get Operation parameters
-    my $params = $self->_getOperation()->getParams();
-    $self->{_objs} = {};
+    General::checkParams(args => $self->{params}, required => [ "component_type_id" ]);
 
-    #### Get instance of Systemimage Entity
-    $log->debug("Load systemimage instance");
-    eval {
-       $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EDeactivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
-
-    $self->{_objs}->{component_type_id} = $params->{component_type_id};
-
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation InstallComponent on systemimage failed an error occured :\n$error";
+    my $systemimage_id = $self->{context}->{systemimage}->getAttr(name => 'entity_id');
+    $log->debug("checking systemimage active value <$systemimage_id>");
+    if ($self->{context}->{systemimage}->getAttr(name => 'active')) {
+        $errmsg = "System image <$systemimage_id> is active";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -146,8 +75,9 @@ sub prepare {
 sub execute{
     my $self = shift;
     
-    $self->{_objs}->{systemimage}->installedComponentLinkCreation(component_type_id => $self->{_objs}->{component_type_id});
-    
+    $self->{context}->{systemimage}->installedComponentLinkCreation(
+        component_type_id => $self->{params}->{component_type_id}
+    );
 }
 
 =head1 DIAGNOSTICS
