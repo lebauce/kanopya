@@ -82,6 +82,10 @@ sub getFreeHost {
     # Get all free hosts of the specified host manager
     my @free_hosts = $self->_getEntity()->getFreeHosts();
 
+    # Do not apply the 'ifaces' constraint as we can create (almost) as
+    # many network interfaces as we want on a service profile
+    delete $args{ifaces};
+
     # Filter the one that match the contraints
     my @hosts = grep {
                     DecisionMaker::HostSelector->_matchHostConstraints(host => $_, %args)
