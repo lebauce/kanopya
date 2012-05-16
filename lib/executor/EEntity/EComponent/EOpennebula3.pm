@@ -601,7 +601,8 @@ sub _generateVmTemplate {
                         template_dir => "/templates/components/opennebula",
                         input_file   => "vm.tt",
                         output       => "/tmp/vm.template",
-                        data         => $data
+                        data         => $data,
+                        econtext     => $self->getEContext,
     );
 
     return "/tmp/vm.template";

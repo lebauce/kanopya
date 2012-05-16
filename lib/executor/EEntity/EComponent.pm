@@ -78,6 +78,10 @@ sub generateFile {
 
     General::checkParams( args => \%args, required => ['mount_point','input_file','data','output'] );
 
+    if (not defined $args{econtext}) {
+        $args{econtext} = $self->getExecutorEContext;
+    }
+
     my $template_dir = defined $args{template_dir} ? $args{template_dir}
                                                    : $self->_getEntity()->getTemplateDirectory();
 
@@ -100,7 +104,7 @@ sub generateFile {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     };
-    $self->getExecutorEContext->send(src => "/tmp/$tmpfile", dest => $args{mount_point} . $args{output});
+    $args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point} . $args{output});
     unlink "/tmp/$tmpfile";
 }
 
