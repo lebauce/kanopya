@@ -27,6 +27,9 @@ use Entity::Host;
 use Entity::Systemimage;
 use Entity::Tier;
 use Operation;
+use NodemetricCombination;
+use Clustermetric;
+use AggregateCombination;
 use Administrator;
 use General;
 use Entity::ManagerParameter;
@@ -161,6 +164,12 @@ use constant ATTR_DEF => {
         is_editable  => 0
     },
     export_manager_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    collector_manager_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
         is_extended  => 0,
@@ -937,4 +946,165 @@ sub getManagerParameters {
     return $params_hash;
 }
 
+
+=head2 getIndicatorsIds
+
+    Desc: call collector manager to retrieve indicators ids available for the service provider 
+    return \@indicators_ids;
+
+=cut
+
+sub getIndicatorsIds {
+    my ($self, %args) = @_;
+
+    my $collector_manager   = $self->getCollectorManager();
+
+    #return the name
+    my $indicators_ids      = $collector_manager->getIndicatorsIds ();
+    return $indicators_ids;
+}
+
+=head2 getIndicatorOidFromId
+
+    Desc: call collector manager to retrieve an indicator oid from it's id
+    return $indicators_oid;
+
+=cut
+
+sub getIndicatorOidFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $collector_manager = $self->getCollectorManager();
+ 
+    #return the name
+    my $indicator_oid = $collector_manager->getIndicatorOidFromId ( indicator_id => $args{'indicator_id'} );
+    return $indicator_oid;
+}
+
+=head2 getIndicatorNameFromId
+
+    Desc: call collector manager to retrieve an indicator name from it's id
+    return $indicator_name;
+
+=cut
+
+sub getIndicatorNameFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $collector_manager = $self->getCollectorManager();
+ 
+    #return the name
+    my $indicator_name = $collector_manager->getIndicatorNameFromId ( indicator_id => $args{'indicator_id'} );
+    return $indicator_name;
+}
+
+=head2 getIndicatorUnitFromId
+
+    Desc: call collector manager to retrieve an indicator unit from it's id
+    return $indicator_unit;
+
+=cut
+
+sub getIndicatorUnitFromId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $collector_manager = $self->getCollectorManager();
+ 
+    #return the unit
+    my $indicator_unit = $collector_manager->getIndicatorUnitFromId ( indicator_id => $args{'indicator_id'} );
+    return $indicator_unit;
+}
+
+=head2 getNodesMetrics
+
+    Desc: call collector manager to retrieve nodes metrics values.
+    return \%data;
+
+=cut
+
+sub getNodesMetrics {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['time_span', 'indicators_ids']);
+
+    my $collector_manager = $self->getCollectorManager();
+    
+    my $nodes = $self->getHosts();
+    my @nodelist;
+    
+    while (my ($host_id,$host_object) = each(%$nodes)) {
+        push @nodelist, $host_object->getAttr (name => 'host_hostname');
+    }
+ 
+    #return the data
+    my $monitored_values = $collector_manager->retrieveData ( nodelist => \@nodelist, time_span => $args{'time_span'}, indicators_ids => $args{'indicators_ids'} );
+    return $monitored_values;
+}
+
+=head2 generateDefaultMonitoringConfiguration
+
+    Desc: create default nodemetric combination and clustermetric for the service provider
+
+=cut
+
+
+sub generateDefaultMonitoringConfiguration {
+    my ($self, %args) = @_;
+
+    my $indicators_ids = $self->getIndicatorsIds();
+    my $service_provider_id = $self->getAttr( name => 'cluster_id' );
+   
+    #We create a nodemetric combination for each indicator 
+    foreach my $indicator (@$indicators_ids) {
+        my $combination_param = {
+            nodemetric_combination_formula => 'id'.$indicator,
+            nodemetric_combination_service_provider_id => $service_provider_id,
+         }; 
+        NodemetricCombination->new(%$combination_param);  
+    }
+
+    #definition of the functions
+    my @funcs = qw(mean max min std dataOut);
+
+    #we create the clustermetric and associate combination
+    foreach my $indicator (@$indicators_ids) {
+        foreach my $func (@funcs) {
+            my $cm_params = {
+                clustermetric_service_provider_id      => $service_provider_id,
+                clustermetric_indicator_id             => $indicator,
+                clustermetric_statistics_function_name => $func,
+                clustermetric_window_time              => '1200',
+            };
+            my $cm = Clustermetric->new(%$cm_params);
+
+            my $acf_params = {
+                aggregate_combination_service_provider_id   => $service_provider_id,
+                aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+            };
+            my $clustermetric_combination = AggregateCombination->new(%$acf_params);
+        }
+    }
+}
+
+=head2 getCollectorManager
+
+    Desc: retrieve collector manager object for this service provider.
+    return $collector_manager;
+
+=cut
+
+sub getCollectorManager {
+    my $self = shift;
+
+    my $collector_manager_id = $self->getAttr ( name=>'collector_manager_id' );
+    my $collector_manager = Entity::Component->get ( id => $collector_manager_id );
+
+    return $collector_manager;
+}
 1;
