@@ -72,7 +72,7 @@ function show_detail(elem_id) {
         },
     });
     
-    dialog.load('/api/host?id=' + elem_id);
+    dialog.load('/api/host/' + elem_id);
     
 //alert('pouet');
 //return false;
