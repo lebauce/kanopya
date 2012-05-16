@@ -27,6 +27,9 @@ use Entity::Host;
 use Entity::Systemimage;
 use Entity::Tier;
 use Operation;
+use NodemetricCombination;
+use Clustermetric;
+use AggregateCombination;
 use Administrator;
 use General;
 use Entity::ManagerParameter;
@@ -1028,13 +1031,58 @@ sub getIndicatorUnitFromId {
 sub getNodesMetrics {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['nodelist', 'timespan', 'indicators']);
+    General::checkParams(args => \%args, required => ['nodelist', 'timespan', 'indicators_ids']);
 
     my $collector_manager = $self->getCollectorManager();
-
+ 
     #return the data
-    my $monitored_values = $collector_manager->retrieveData ( nodelist => $args{'nodelist'}, timespan => $args{'timespan'}, indicators => $args{'indicators'} );
+    my $monitored_values = $collector_manager->retrieveData ( nodelist => $args{'nodelist'}, timespan => $args{'timespan'}, indicators_ids => $args{'indicators_ids'} );
     return $monitored_values;
+}
+
+=head2 generateDefaultMonitoringConfiguration
+
+    Desc: create default nodemetric combination and clustermetric for the service provider
+
+=cut
+
+
+sub generateDefaultMonitoringConfiguration {
+    my ($self, %args) = @_;
+
+    my $indicators_ids = $self->getIndicatorsIds();
+    my $service_provider_id = $self->getAttr( name => 'cluster_id' );
+   
+    #We create a nodemetric combination for each indicator 
+    foreach my $indicator (@$indicators_ids) {
+        my $combination_param = {
+            nodemetric_combination_formula => 'id'.$indicator,
+            nodemetric_combination_service_provider_id => $service_provider_id,
+         }; 
+        NodemetricCombination->new(%$combination_param);  
+    }
+
+    #definition of the functions
+    my @funcs = qw(mean max min std dataOut);
+
+    #we create the clustermetric and associate combination
+    foreach my $indicator (@$indicators_ids) {
+        foreach my $func (@funcs) {
+            my $cm_params = {
+                clustermetric_service_provider_id      => $service_provider_id,
+                clustermetric_indicator_id             => $indicator,
+                clustermetric_statistics_function_name => $func,
+                clustermetric_window_time              => '1200',
+            };
+            my $cm = Clustermetric->new(%$cm_params);
+
+            my $acf_params = {
+                aggregate_combination_service_provider_id   => $service_provider_id,
+                aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+            };
+            my $clustermetric_combination = AggregateCombination->new(%$acf_params);
+        }
+    }
 }
 
 =head2 getCollectorManager
