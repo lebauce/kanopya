@@ -61,7 +61,6 @@ sub check {
     General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
 }
 
-
 =head2 prepare
 
 =cut
@@ -180,6 +179,20 @@ sub finish {
         else {
             # Another node that the current one is broken
         }
+    }
+}
+
+sub _cancel {
+    my $self = shift;
+
+    $log->info("Cancel post start node, we will try to remove node link for <" .
+               $self->{context}->{host}->getAttr(name => "entity_id") . ">");
+
+    $self->{context}->{host}->stopToBeNode();
+
+    my $hosts = $self->{context}->{cluster}->getHosts();
+    if (! scalar keys %$hosts) {
+        $self->{context}->{cluster}->setState(state => "down");
     }
 }
 
