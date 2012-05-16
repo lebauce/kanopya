@@ -22,7 +22,8 @@ $(document).ready(function () {
     $("#grid-message").jqGrid({
     	url:'/messager/messages', 
         datatype: "json",
-        loadonce: true,
+        // By comment loadonce the user will able to refresh the grid content :
+        //loadonce: true,
         height: '200px',
         width: 'auto',
         colNames:['Id','From','Level','Date','Time','Content'],
@@ -58,7 +59,9 @@ $(document).ready(function () {
 	
 	// Resize the message grid to entire page width :
 	$(window).bind('resize', function() { $("#grid-message").setGridWidth($(window).width()-20); }).trigger('resize');
-    
+        
+
+        
     $("#grid-message").jqGrid('navGrid','#msgGridPager',{edit:false,add:false,del:false});
 
     // Needed to fix bad panels resizing when opening Messages pane (south) for the first time
