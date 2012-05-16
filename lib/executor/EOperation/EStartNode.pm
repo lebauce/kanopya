@@ -466,26 +466,49 @@ sub _generatePXEConf {
     }
 
     ## Here we create a dedicated initramfs for the node
-    # create the storing directory
-    my $path = $tftp_conf->{'repository'}."/$clustername/$hostname";
-    my $cmd = "mkdir -p $path";
+    # we create a temporary working directory for the initrd
+    $log->info('Dedicated initramfs build');
+    my $initrddir = "/tmp/$clustername-$hostname";
+    my $cmd = "mkdir -p $initrddir";
     $self->getEContext->execute(command => $cmd);
     
-    # make a decompressed copy of the initrd to this directory
+    # check and retrieve compression type  
     my $initrd = $tftp_conf->{'repository'}."/initrd_$kernel_version";
+    $cmd = "file $initrd | grep -o -E '(gzip|bzip2)'";
+    my $result = $self->getEContext->execute(command => $cmd);
+    my $decompress;
+    chomp($result->{stdout});
+    if($result->{stdout} eq 'gzip') {
+        $decompress = 'zcat';
+    } elsif($result->{stdout} eq 'bzip2') {
+        $decompress = 'bzcat';
+    } else {
+        throw Kanopya::Exception::Internal(
+            error => "Invalid compress type for $initrd ; must be gzip or bzip2"
+        );
+    }
+    
+    # we decompress and extract the original initrd to this directory
+    $cmd = "(cd $initrddir && $decompress $initrd | cpio -i)";
+    $self->getEContext->execute(command => $cmd);
+    
+    # append files to the archive directory
+    my $sourcefile = $args{mountpoint}.'/etc/udev/rules.d/70-persistent-net.rules'; 
+    $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
+    $self->getEContext->execute(command => $cmd);
+    
+    # create the final storing directory
+    my $path = $tftp_conf->{'repository'}."/$clustername/$hostname";
+    $cmd = "mkdir -p $path";
+    $self->getEContext->execute(command => $cmd);
+    
+    # rebuild and compress the new initrd
     my $newinitrd = $path."/initrd_$kernel_version";
-    $cmd = "bzcat $initrd > $newinitrd";
+    $cmd = "(cd $initrddir && find . | cpio -H newc -o | bzip2 > $newinitrd)";
     $self->getEContext->execute(command => $cmd);
-    
-    # append files to the cpio archive
-    $cmd = 'cd '.$args{mountpoint};
-    $cmd .= ' && find . -name 70-persistent-net.rules';
-    $cmd .= " | cpio -o -O $newinitrd -A -H newc";
-    $cmd .= ' && cd -';
-    $self->getEContext->execute(command => $cmd);
-    
-    # recompress the initrd in bz2
-    $cmd = "bzip2 $newinitrd && mv $newinitrd.bz2 $newinitrd";
+
+    # finaly we remove the temporary directory
+    $cmd = "rm -r $initrddir";
     $self->getEContext->execute(command => $cmd);
 
     my $pxeiface = $args{host}->getPXEIface;
