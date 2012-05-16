@@ -90,6 +90,14 @@ sub setupREST {
                 $params{page} = params->{page};
                 delete $params{hash}->{page};
             }
+            if (defined params->{rows}) {
+                $params{rows} = params->{rows};
+                delete $params{hash}->{rows};
+            }
+            if (defined params->{order_by}) {
+                $params{order_by} = params->{order_by};
+                delete $params{hash}->{order_by};
+            }
             require( General::getLocFromClass(entityclass => $class) );
             for my $obj ($class->search(%params)) {
                 push @$objs, $obj->toJSON();

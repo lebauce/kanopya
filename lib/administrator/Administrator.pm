@@ -319,16 +319,11 @@ sub _getDbixFromHash {
 
     my $dbix;
     eval {
-        my $hash = $args{hash};
-        if (keys(%$hash)) {
-            $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
-                                                                    { prefetch => $args{join} });
-        } else {
-            $dbix = $self->{db}->resultset( $args{table} )->search( undef );
-        }
-        if (defined $args{page}) {
-            $dbix = $dbix->page($args{page});
-        }
+        $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
+                                                                { prefetch => $args{join},
+                                                                  rows     => $args{rows},
+                                                                  page     => $args{page},
+                                                                  order_by => $args{order_by} });
     };
     if ($@) {
         $errmsg = "Administrator->_getDbixFromHash error ".$@;

@@ -354,10 +354,12 @@ sub search {
         $n -= 1;
     }
 
-    my $rs = $adm->_getDbixFromHash(table => $table,
-                                    hash  => $args{hash},
-                                    page  => $args{page},
-                                    join  => $join);
+    my $rs = $adm->_getDbixFromHash('table'    => $table,
+                                    'hash'     => $args{hash},
+                                    'page'     => $args{page},
+                                    'join'     => $join,
+                                    'rows'     => $args{rows},
+                                    'order_by' => $args{order_by});
 
     while ( my $row = $rs->next ) {
         my $obj = {
