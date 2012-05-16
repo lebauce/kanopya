@@ -6,6 +6,7 @@ use Dancer::Plugin::REST;
 prefix undef;
 
 use General;
+use Entity;
 
 prepare_serializer_for_format;
 
@@ -23,10 +24,10 @@ my %resources = ( "host"           => "Entity::Host",
 sub setupREST {
 
     foreach my $resource (keys %resources) {
-        resource "/api/$resource" =>
+        resource "api/$resource" =>
             get    => sub {
                 content_type 'application/json';
-                return Entity->get(id => params->{id})->toJSON;
+                return to_json( Entity->get(id => params->{id})->toJSON );
             },
 
             create => sub {
