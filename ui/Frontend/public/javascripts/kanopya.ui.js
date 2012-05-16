@@ -22,8 +22,16 @@ $(document).ready(function () {
     $("#grid-message").jqGrid({
     	url:'/messager/messages', 
         datatype: "json",
+        jsonReader : {
+      		root:"rows",
+      		page: "page",
+      		total: "total_pages",
+      		records: "records",
+      		repeatitems: false,
+      		//id: "id"
+   		},
         // By comment loadonce the user will able to refresh the grid content :
-        //loadonce: true,
+        loadonce: false,
         height: '200px',
         width: 'auto',
         colNames:['Id','From','Level','Date','Time','Content'],
