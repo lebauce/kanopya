@@ -75,12 +75,16 @@ get '/messages' => sub {
         my $content = $message->{'content'};
 
         my $row = { 
-            'id' => $msgid,
-            'cell' => [$msgid,$from,$level,$date,$time,$content],
+            #'id' => $msgid,
+            #'cell' => [$msgid,$from,$level,$date,$time,$content],
+            'id'  => $msgid,
+            'from' => $from,
+            'level' => $level,
+            'date' => $date,
+            'time' => $time,
+            'content' => $content,
         };
         push @rows,$row; 
-        #$response->{rows}[$msgid]->{id} = $msgid;
-        #$response->{rows}[$msgid]->{cell} = [$msgid,$from,$level,$date,$time,$content];
     }
 
     $response->{rows}=\@rows;
