@@ -383,7 +383,8 @@ INSERT INTO `operationtype` VALUES
 (41,'RemoveMasterimage'),
 (42,'AddNode'),
 (43,'ScaleCpuHost'),
-(44,'ScaleMemoryHost');
+(44,'ScaleMemoryHost'),
+(45,'CancelWorkflow');
 
 --
 -- components type list

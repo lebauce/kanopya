@@ -25,7 +25,8 @@
 		<span class="desc">Force this cluster to stop, to use when something went wrong.</span><br /><br />
 	<% END %>
 <% END %>
-</td></tr><tr>
+</td></tr>
+<tr>
 <% IF active %>
 	<td>
 	<% SWITCH cluster_state %>
@@ -45,7 +46,15 @@
 	<td></td>
 <% END %>
 </tr>
+    <% FOREACH workflow IN workflow_list %>
+        <tr><td class="label2"><% workflow.workflow_name %>, current operation: <% workflow.current_op %></td>
+            <td class="action">
+                <a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/workflow/<% workflow.workflow_id %>/cancel">cancel</a>
+            </td>
+        </tr>
+    <% END %>
 </table>
+
 
 <hr />
 <span id="mainsettings" class="title simpleexpand">Main settings</span>

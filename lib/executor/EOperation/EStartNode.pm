@@ -559,7 +559,7 @@ sub _generatePXEConf {
     my $vars = {
         nfsroot    => ($boot_policy =~ m/NFS/) ? 1 : 0,
         iscsiroot  => ($boot_policy =~ m/ISCSI/) ? 1 : 0,
-        xenkernel  => ($kernel_version =~ m/xen/) ? 1 : 0,
+        xenkernel  => 0, #($kernel_version =~ m/xen/) ? 1 : 0,
         kernelfile => "vmlinuz-$kernel_version",
         initrdfile => "$clustername/$hostname/initrd_$kernel_version",
         nfsexport  => $nfsexport,

@@ -143,6 +143,8 @@ sub oneRun {
             content => "Operation Processing [$opclass]..."
         );
 
+        $op->setState(state => 'processing');
+
         # start transaction
         $adm->{db}->txn_begin;
         eval {
@@ -174,7 +176,10 @@ sub oneRun {
             $log->info("Rollback, Cancel operation will be call");
             eval {
                 $adm->{db}->txn_begin;
+
                 $op->cancel();
+                $op->setState(state => 'canceled');
+
                 $adm->{db}->txn_commit;
             };
             if ($@){
@@ -214,10 +219,13 @@ sub oneRun {
                 level   => 'info',
                 content => "[$opclass] Execution Success"
             );
+
+            $op->setState(state => 'succeeded');
         }
 
         # Update the workflow context
-        $op->_getOperation->getWorkflow->updateParams(params => $op->{params}, context => $op->{context});
+        my $workflow = $op->_getOperation->getWorkflow;
+        $workflow->updateParams(params => $op->{params}, context => $op->{context});
         
         eval {
             $op->delete();
@@ -233,6 +241,8 @@ sub oneRun {
 
             $errors .= $err_delop;
         }
+
+        $workflow->updateState();
     }
     else { sleep 2; }
 

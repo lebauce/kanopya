@@ -5,6 +5,9 @@ use Data::Dumper;
 use Log::Log4perl 'get_logger';
 use EntityComment;
 
+use Workflow;
+use WorkflowParameter;
+
 my $log = get_logger('administrator');
 
 use constant ATTR_DEF => {
@@ -239,20 +242,44 @@ sub setComment {
 
     General::checkParams(args => \%args, required => [ 'comment' ]);
 
+    my $comment;
     my $comment_id = $self->getAttr(name => 'entity_comment_id');
     if ($comment_id) {
-        my $comment = EntityComment->get(id => $comment_id);
+        $comment = EntityComment->get(id => $comment_id);
         $comment->setAttr(name => 'entity_comment', value => $args{comment});
         $comment->save();
         $log->info($comment);
     }
     else {
-        my $comment = EntityComment->new(entity_comment => $args{comment});
+        $comment = EntityComment->new(entity_comment => $args{comment});
         $self->setAttr(name => 'entity_comment_id', value => $comment->getAttr(name => 'entity_comment_id'));
         $self->save();
     }
     
     $log->info($comment);
+}
+
+sub getWorkflows {
+    my $self = shift;
+    my %args = @_;
+
+    my @workflows = ();
+
+    # TODO: join tables workflow and workflow_parameter to get
+    #       paramters of running workflow only.
+    my @contexes = WorkflowParameter->search(hash => {
+                       tag   => 'context',
+                       value => $self->getId
+                   });
+
+    for my $context (@contexes) {
+        my $workflow = Workflow->get(id => $context->getAttr(name => 'workflow_id'));
+        if ($workflow->getAttr(name => 'state') eq 'running') {
+            push @workflows, $workflow;
+        }
+    }
+
+    return @workflows;
 }
 
 1;

@@ -559,6 +559,7 @@ CREATE TABLE `operationtype` (
 CREATE TABLE `workflow` (
   `workflow_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `workflow_name` char(64) DEFAULT NULL,
+  `state` char(32) NOT NULL DEFAULT 'running',
   PRIMARY KEY (`workflow_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -570,7 +571,7 @@ CREATE TABLE `operation` (
   `operation_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `type` char(64) NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
-  `state` char(32) NOT NULL DEFAULT 'pending:0',
+  `state` char(32) NOT NULL DEFAULT 'pending',
   `user_id` int(8) unsigned NOT NULL,
   `priority` int(2) unsigned NOT NULL,
   `creation_date` date NOT NULL,

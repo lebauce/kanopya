@@ -32,6 +32,11 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    state => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -44,7 +49,29 @@ sub enqueue {
         workflow_id => $self->getAttr(name => 'workflow_id'),
         %args,
     );
+}
 
+sub getCurrentOperation {
+    my $self = shift;
+    my %args = @_;
+
+    return Operation->find(hash => {
+               workflow_id => $self->getAttr(name => 'workflow_id'),
+               state       => 'processing'
+           });
+}
+
+sub cancel {
+    my $self = shift;
+    my %params;
+
+    Operation->enqueue(
+        priority => 1,
+        type     => 'CancelWorkflow',
+        params   => {
+            workflow_id => $self->getAttr(name => 'workflow_id'),
+        }
+    );
 }
 
 sub getParams {
@@ -120,6 +147,30 @@ sub buildParams {
         }
     }
     return $op_params;
+}
+
+sub setState {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'state' ]);
+
+    $self->setAttr(name => 'state', value => $args{state});
+    $self->save();
+}
+
+sub updateState {
+    my $self = shift;
+    my %args = @_;
+
+    eval {
+        Operation->find(hash => {
+            workflow_id => $self->getAttr(name => 'workflow_id'),
+        });
+    };
+    if ($@) {
+        $self->setState(state => 'done');
+    }
 }
 
 1;

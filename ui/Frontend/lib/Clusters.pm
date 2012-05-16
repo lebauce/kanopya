@@ -20,6 +20,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NodemetricRule;
 use Orchestrator;
+use Workflow;
 use Action;
 
 my $log = get_logger("webui");
@@ -636,6 +637,22 @@ get '/clusters/:clusterid' => sub {
         }
     }
 
+    # Workflow list
+    my @workflow_list = ();
+    my @workflows = $ecluster->getWorkflows();
+
+    for my $workflow (@workflows) {
+        my $operation_type = 'None';
+        eval {
+            $operation_type = $workflow->getCurrentOperation->getAttr(name => 'type');
+        };
+        push @workflow_list, {
+            workflow_id   => $workflow->getAttr(name => 'workflow_id'),
+            current_op    => $operation_type,
+            workflow_name => "Workflow <" . $workflow->getAttr(name => 'workflow_id') . "> ",
+        }
+    }
+
     my $link_stop = ! $link_start;
 
     template 'clusters_details', {
@@ -673,7 +690,8 @@ get '/clusters/:clusterid' => sub {
         link_edit          => $methods->{'update'}->{'granted'}, 
         link_addnode       => $methods->{'addNode'}->{'granted'} ? $link_addnode : 0,
         link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
-        can_setperm        => $methods->{'setperm'}->{'granted'},        
+        can_setperm        => $methods->{'setperm'}->{'granted'},
+        workflow_list      => \@workflow_list,
      }, { layout => 'main' };
 };
 
@@ -1142,6 +1160,27 @@ get '/clusters/:clusterid/network/:interfaceid/remove' => sub {
     eval {
         my $cluster = Entity::ServiceProvider->get(id => param('clusterid'));
         $cluster->removeNetworkInterface(interface_id => param('interfaceid'));
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+# cluster workflow cancelling
+
+get '/clusters/:clusterid/workflow/:workflowid/cancel' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $workflow = Workflow->get(id => param('workflowid'));
+        $workflow->cancel();
     };
     if($@) {
         my $exception = $@;

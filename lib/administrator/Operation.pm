@@ -267,4 +267,14 @@ sub getNextRank {
     }
 }
 
+sub setState {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'state' ]);
+
+    $self->setAttr(name => 'state', value => $args{state});
+    $self->save();
+}
+
 1;
