@@ -132,20 +132,19 @@ sub getFreeHost {
             };
 
             my @ethernets = $sp->children("vnicEther");
+            my $pxe = 1;
+
             for my $ethernet (@ethernets) {
-                my $pxe = 0;
                 my $ifname = $ethernet->{name};
                 $ifname =~ s/^v//g;
-
-                if ($ifname eq "eth0") {
-                    $pxe = 1;
-                }
 
                 $host->addIface(
                     iface_name     => $ifname,
                     iface_mac_addr => $ethernet->{addr},
                     iface_pxe      => $pxe
                 );
+
+                $pxe = 0;
             }
                                      
             $sp->stop();
@@ -155,6 +154,33 @@ sub getFreeHost {
     }
 
     throw Kanopya::Exception::Internal(error => "No blade without a service profile attached were found");
+}
+
+=head2 applyVLAN
+
+    Desc: apply a VLAN on an interface of a host
+
+=cut
+
+sub applyVLAN {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'iface', 'vlan' ]);
+
+    my $host = Entity->get(id => $args{iface}->getAttr(name => "host_id"));
+    my $api = $self->_getEntity()->init();
+    my $blade = $api->get(dn => $host->getAttr(name => "host_serial_number"));
+    my $sp = $api->get(dn => $blade->{assignedToDn});
+
+    my @ethernets = $sp->children("vnicEther");
+    for my $ethernet (@ethernets) {
+        if ($ethernet->{name} eq 'v' . $args{iface}->getAttr(name => "iface_name")) {
+            $log->info("Applying vlan " . $args{vlan}->getAttr(name => "network_name") .
+                       " on " . $ethernet->{name} . " interface of " . $host->getAttr(name => "host_serial_number"));
+            $ethernet->applyVLAN(name => $args{vlan}->getAttr(name => "network_name"));
+        }
+    }
 }
 
 1;

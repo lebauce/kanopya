@@ -344,11 +344,13 @@ sub search {
     my $adm = Administrator->new();
 
     my $join;
-    my $depth = () = split(/::/, $class);
+    my @hierarchy = split(/::/, $class);
+    my $depth = scalar @hierarchy;
     my $n = $depth;
     while ($n > 0) {
-        $join = $join ? { parent => $join } :
-                          "parent";
+        $join = $adm->{db}->source($hierarchy[$n - 1])->has_relationship("parent") ?
+                    ($join ? { parent => $join } : "parent") :
+                    $join;
         $n -= 1;
     }
 

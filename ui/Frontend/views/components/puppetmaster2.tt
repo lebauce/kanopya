@@ -1,0 +1,21 @@
+<% js_head.push('components.js') %>
+<h2>Cluster <% cluster_name %> - Puppet master Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input type="hidden" class="conf_simple_value" name="component_id" value="<% component_instance_id %>"/>
+<input type="hidden" class="conf_simple_value" name="puppetmaster2_id" value="<% puppetmaster2_id %>"/>
+<input type="hidden" class="conf_simple_value" name="component_name" value="Puppetmaster2"/>
+<input type="hidden" class="conf_simple_value" name="cluster_id" value="<% cluster_id %>"/>
+<table>
+<tr><td>daemon options :</td>
+    <td><input class="conf_simple_value" type="text" name="puppetmaster2_options" size="64" value="<% puppetmaster2_options %>" /></td>
+</tr>   
+
+</table>
+<hr />
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+

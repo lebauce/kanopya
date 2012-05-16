@@ -104,6 +104,10 @@ sub prepare {
     my $dhcp_component = $self->{bootserver}->getComponent(name => "Dhcpd", version => "3");
     $self->{_objs}->{component_dhcpd} = EFactory::newEEntity(data => $dhcp_component);
 
+    # Instanciate puppetmaster
+    my $puppetmaster = $self->{bootserver}->getComponent(name => 'Puppetmaster', version => 2);
+    $self->{_objs}->{component_puppetmaster} = EFactory::newEEntity(data => $puppetmaster);
+
     $log->debug("Loaded dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
 
     # Get container of the system image, get the container access of the container
@@ -115,6 +119,7 @@ sub prepare {
     #    onlky one container access.
     $self->{_objs}->{container_access} = pop @{ $self->{_objs}->{container}->getAccesses };
     
+    # kanopya domainname is needed for hosts file generation
     $self->{kanopya_domainname} =  $self->{bootserver}->getAttr(name => 'cluster_domainname');
 
 }
@@ -230,6 +235,27 @@ sub execute {
         kanopya_domainname => $self->{kanopya_domainname}
     );
 
+    # check if this cluster must be managed by puppet and kanopya puppetmaster
+    my $puppetagent = eval { 
+        $self->{_objs}->{cluster}->getComponent(name    => 'Puppetagent',
+                                                version => 2
+        );
+    };
+    if($puppetagent) {
+        my $conf = $puppetagent->getConf();
+        if($conf->{puppetagent2_mode} eq 'kanopya') {
+            $log->debug('Puppent agent component configured with kanopya puppet master');
+            my $fqdn = $self->{_objs}->{host}->getAttr(name => 'host_hostname');
+            $fqdn .= '.' . $self->{kanopya_domainname};
+            $self->{_objs}->{component_puppetmaster}->createHostCertificate(
+                econtext    => $self->{executor}->{econtext},
+                mount_point => $mountpoint,
+                host_fqdn   => $fqdn
+            );
+        }
+    }
+
+
     # Umount system image container
     $econtainer_access->umount(mountpoint => $mountpoint,
                                econtext   => $self->{executor}->{econtext});
@@ -279,6 +305,20 @@ sub _generateNetConf {
             push @net_ifaces, { name    => $iface->getAttr(name => 'iface_name'),
                                 address => $iface->getIPAddr,
                                 netmask => $iface->getNetMask };
+        }
+
+        # Apply VLAN's
+        $log->info("Applying VLANS");
+        for my $network ($interface->getNetworks) {
+            $log->info("Network " . $network);
+            if ($network->isa("Entity::Network::Vlan")) {
+                $log->info("Apply VLAN on " . $iface->getAttr(name => 'iface_name'));
+                my $ehost_manager = EFactory::newEEntity(data => $self->{_objs}->{host}->getHostManager);
+                $ehost_manager->applyVLAN(
+                    iface => $iface,
+                    vlan  => $network
+                );
+            }
         }
     }
 
@@ -428,18 +468,6 @@ sub _generateBootConf {
             );
         }
     }
-    else {
-        my $adm     = Administrator->new();
-        my $subnet  = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
-        my $host_ip = $adm->{manager}->{network}->getFreeInternalIP();
-
-        # Update Host internal ip
-        $log->info("get subnet <$subnet> and have host ip <$host_ip>");
-        my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
-            
-        $self->{_objs}->{host}->setInternalIP(ipv4_address => $host_ip,
-                                              ipv4_mask    => $subnet_hash{'dhcpd3_subnet_mask'});
-    }
  
     # Set up fastboot
     $self->{executor}->{econtext}->execute(
@@ -568,7 +596,7 @@ sub _generatePXEConf {
     my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
 }
 
-sub _generateKanopyaHalt{
+sub _generateKanopyaHalt {
     my $self = shift;
     my %args = @_;
 

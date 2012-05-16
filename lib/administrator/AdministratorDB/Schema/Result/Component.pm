@@ -277,6 +277,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kanopyacollector1
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Kanopyacollector1>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopyacollector1",
+  "AdministratorDB::Schema::Result::Kanopyacollector1",
+  { "foreign.kanopyacollector1_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 keepalived1
 
 Type: might_have
@@ -457,6 +472,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 puppetmaster2
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Puppetmaster2>
+
+=cut
+
+__PACKAGE__->might_have(
+  "puppetmaster2",
+  "AdministratorDB::Schema::Result::Puppetmaster2",
+  { "foreign.puppetmaster2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 snmpd5
 
 Type: might_have
@@ -488,12 +518,16 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-03 16:21:29
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9Tn0xSChR4B5Rm7f8ql47Q
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-30 17:35:43
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fKwLe1tubXmbf+s1yZdz6Q
 
+
+# You can replace this text with custom content, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
     { "foreign.entity_id" => "self.component_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+    { cascade_copy => 0, cascade_delete => 1 }
+);
+
 1;

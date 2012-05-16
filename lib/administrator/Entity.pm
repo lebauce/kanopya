@@ -217,6 +217,12 @@ sub getEntities {
     return  @objs;
 }
 
+sub getId() {
+    my $self = shift;
+
+    return $self->getAttr(name => "entity_id");
+}
+
 sub getComment {
     my $self = shift;
     

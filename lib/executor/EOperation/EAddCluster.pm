@@ -92,10 +92,14 @@ sub prepare {
         masterimage_id       => General::checkParam(args => $params, name => 'masterimage_id'),
         host_manager_id      => General::checkParam(args => $params, name => 'host_manager_id'),
         disk_manager_id      => General::checkParam(args => $params, name => 'disk_manager_id'),
+        collector_manager_id => General::checkParam(args => $params, name => 'collector_manager_id', default => undef),
     };
 
     if (not $cluster_params->{kernel_id}) {
         delete $cluster_params->{kernel_id};
+    }
+    if (not $cluster_params->{collector_manager_id}) {
+        delete $cluster_params->{collector_manager_id};
     }
 
     # Instiate the disk manager to get the export manager according to the boot policy.
@@ -126,7 +130,7 @@ sub prepare {
     }
 
     # Store managers paramaters for this cluster.
-    for my $manager ('host_manager', 'disk_manager', 'export_manager') {
+    for my $manager ('host_manager', 'disk_manager', 'export_manager','collector_manager') {
         for my $param_name (keys %$params) {
             if ($param_name =~ m/^${manager}_param/) {
                 my $value = $params->{$param_name};
