@@ -1,0 +1,15 @@
+{
+"result" :
+  {
+  "data" : [
+    {
+      "id" : "w03",
+      "title" : "Examples",
+      "description" : "Examples widget",
+      "creator" : "Mark Machielsen",
+      "url" : "widgets/widget3.html",
+      "image": "widgets/widget3.png"
+    }
+  ]
+  }
+}

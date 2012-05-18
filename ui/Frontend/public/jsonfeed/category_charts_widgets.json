@@ -1,0 +1,15 @@
+{
+"result" :
+  {
+  "data" : [
+    {
+      "id" : "w01",
+      "title" : "Pie chart",
+      "description" : "Pie chart widget",
+      "creator" : "Mark Machielsen",
+      "url" : "widgets/widget_chart.html",
+      "image": "widgets/widget_chart.png"
+    }    
+  ]
+  }
+}
