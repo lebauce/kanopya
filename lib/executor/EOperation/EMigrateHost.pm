@@ -43,7 +43,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider;
 use Entity::Host;
 use EFactory;
 
@@ -52,43 +52,7 @@ my $errmsg;
 our $VERSION = '1.00';
 
 
-=head2 new
-
-    my $op = EOperation::EMigrateHost->new();
-
-    # Operation::EInstallComponentInSystemImage->new installs component on systemimage.
-    # RETURN : EOperation::EInstallComponentInSystemImage : Operation activate cluster on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    $self->{executor} = {};
-    return;
-}
-
 =head2 prepare
-
-    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
@@ -97,64 +61,43 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("Operation preparation");
+    General::checkParams(args => $self->{context}, required => [ "hypervisor_dst", "host" ]);
 
-
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
-    
-    # Get Operation parameters
-    my $params = $self->_getOperation()->getParams();
-    $self->{_objs} = {};
-    
-    # Check Operation params
-    General::checkParams(args => $params, required => ["hypervisor_dst", "host_id"]);
-    $self->{params} = $params;
-    
     eval {
-
-        # Check if hypervisor_src node exists and is in a 
-        $self->{_objs}->{'hypervisor_dst'} = Entity::Host->get(id => $params->{hypervisor_dst});
-        
         # Check cloudCluster
-        $self->{_objs}->{'hypervisor_cluster'} = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_objs}->{'hypervisor_dst'}->getClusterId());
-
-        # Get the host to move
-        $self->{_objs}->{'host'} = Entity::Host->get(id => $params->{host_id});
+        $self->{context}->{hypervisor_cluster} = Entity::ServiceProvider->get(
+                                                     id => $self->{context}->{hypervisor_dst}->getClusterId()
+                                                 );
 
         #TODO Check if a cloudmanager is in the cluster
         # Get OpenNebula Cluster (now fix but will be configurable)
-        $self->{_objs}->{'cloudmanager_comp'} = Entity->get(id => $self->{_objs}->{'host'}->getAttr(name => 'host_manager_id'));
-        $self->{_objs}->{'cloudmanager_ecomp'} = EFactory::newEEntity(data => $self->{_objs}->{'cloudmanager_comp'});
+        my $entity = Entity->get(id => $self->{context}->{host}->getAttr(name => 'host_manager_id'));
+        $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(data => $entity);
         
         # Check if host is on the hypervisors cluster
-        if ($self->{_objs}->{'hypervisor_dst'}->getClusterId() !=
-            $self->{_objs}->{'host'}->getServiceProvider->getAttr(name => "entity_id")){
+        if ($self->{context}->{'hypervisor_dst'}->getClusterId() !=
+            $self->{context}->{'host'}->getServiceProvider->getAttr(name => "entity_id")) {
             throw Kanopya::Exception::Internal::WrongValue(error => "Host is not on the hypervisor cluster");
         }
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EMigrateHost->prepare : Incorrect Parameters dst<$params->{hypervisor_dst}> host <$params->{host_id}>\n" . $err;
+        $errmsg = "Incorrect params dst<" . $self->{context}->{hypervisor_dst}->getAttr(name => 'entity_id') .
+                  ">, host <" . $self->{context}->{host}->getAttr(name => 'entity_id') . "\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-
-    # Get context for executor
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute{
     my $self = shift;
-    # 
-    $self->{_objs}->{'cloudmanager_ecomp'}->migrateHost(host               => $self->{_objs}->{'host'},
-                                                        hypervisor_dst     => $self->{_objs}->{'hypervisor_dst'},
-                                                        hypervisor_cluster => $self->{_objs}->{'hypervisor_cluster'},
-                                                        econtext           => $self->{executor}->{econtext});
 
-    $log->info(" Host <$self->{params}->{host_id}> from <$self->{params}->{hypervisor_src}> to <$self->{params}->{hypervisor_dst}>");
+    $self->{context}->{cloudmanager_ecomp}->migrateHost(host               => $self->{context}->{host},
+                                                        hypervisor_dst     => $self->{context}->{hypervisor_dst},
+                                                        hypervisor_cluster => $self->{context}->{hypervisor_cluster});
+
+    $log->info("Host <" . $self->{context}->{host}->getAttr(name => 'entity_id') . "> is migrating to <" .
+               $self->{context}->{hypervisor_dst}->getAttr(name => 'entity_id') . ">");
 }
 
 =head1 DIAGNOSTICS

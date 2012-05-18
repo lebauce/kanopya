@@ -3,7 +3,10 @@ package REST::api;
 use Dancer ':syntax';
 use Dancer::Plugin::REST;
 
+prefix undef;
+
 use General;
+use Entity;
 
 prepare_serializer_for_format;
 
@@ -21,9 +24,10 @@ my %resources = ( "host"           => "Entity::Host",
 sub setupREST {
 
     foreach my $resource (keys %resources) {
-        resource "/api/$resource" =>
+        resource "api/$resource" =>
             get    => sub {
-                return Entity->get(id => params->{id})->toJSON;
+                content_type 'application/json';
+                return to_json( Entity->get(id => params->{id})->toJSON );
             },
 
             create => sub {
@@ -86,10 +90,19 @@ sub setupREST {
                 $params{page} = params->{page};
                 delete $params{hash}->{page};
             }
+            if (defined params->{rows}) {
+                $params{rows} = params->{rows};
+                delete $params{hash}->{rows};
+            }
+            if (defined params->{order_by}) {
+                $params{order_by} = params->{order_by};
+                delete $params{hash}->{order_by};
+            }
             require( General::getLocFromClass(entityclass => $class) );
             for my $obj ($class->search(%params)) {
                 push @$objs, $obj->toJSON();
             }
+            content_type 'application/json';
             return to_json($objs);
         }
     }
@@ -97,6 +110,7 @@ sub setupREST {
 
 get '/api/attributes/:resource' => sub {
     my $class = $resources{host};
+    content_type 'application/json';
     return to_json($class->toJSON(model => 1));
 };
 

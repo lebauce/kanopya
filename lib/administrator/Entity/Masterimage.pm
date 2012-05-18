@@ -118,7 +118,11 @@ sub remove {
     Operation->enqueue(
         priority => 200,
         type     => 'RemoveMasterimage',
-        params   => {masterimage_id => $id},
+        params  => {
+            context => {
+                masterimage => $self
+            }
+        },
     );
 }
 

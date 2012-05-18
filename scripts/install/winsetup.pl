@@ -117,7 +117,11 @@ my %db_data = (
     mb_hw_address            => 'FF:FF:FF:FF:FF:FF',
     admin_password           => $conf_data{admin_password},
     admin_kernel             => '2.39',
-    tmstp                    => time()
+    tmstp                    => time(),
+	poolip_addr				 =>	'10.0.0.1',
+	poolip_mask				 =>	'256',
+	poolip_netmask			 =>	'255.255.255.0',
+	poolip_gateway			 =>	'0.0.0.0',
 );
 
 print 'generating Data.sql...';

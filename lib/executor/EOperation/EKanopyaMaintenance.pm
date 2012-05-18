@@ -49,41 +49,6 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-=head2 new
-
-EOperation::EKanopyaMaintenance->new creates a new EKanopyaMaintenance operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{executor} = {};
-    return;
-}
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-    
- 
-}
-
 =head2 prepare
 
     $op->prepare();
@@ -91,12 +56,9 @@ sub checkOp{
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
-
-    $log->info("Operation preparation");
 
     my $messages = Message->getMessages(hash=>{});
     if (scalar @$messages < 1000) {
@@ -106,7 +68,6 @@ sub prepare {
     else {
         $self->{messages} = $messages;
     }
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "executor");
 }
 
 sub execute {
@@ -133,7 +94,7 @@ sub execute {
     }
     print( $MSGTXT "$msg_log");
     close $MSGTXT;
-    $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "/var/log/kanopya/msg_backup_".time());
+    $self->getEContext->send(src => "/tmp/$tmpfile", dest => "/var/log/kanopya/msg_backup_".time());
     unlink "/tmp/$tmpfile";
     
     

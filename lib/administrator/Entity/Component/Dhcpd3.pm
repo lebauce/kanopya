@@ -182,7 +182,7 @@ sub addHost {
                                       'dhcpd3_hosts_domain_name', 'dhcpd3_hosts_domain_name_server']);
 
     my $dhcpd3_hosts_rs = $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts;
-    my $res = $dhcpd3_hosts_rs->create(\%args);
+    my $res = $dhcpd3_hosts_rs->update_or_create(\%args);
     return $res->get_column('dhcpd3_hosts_id');
 }
 

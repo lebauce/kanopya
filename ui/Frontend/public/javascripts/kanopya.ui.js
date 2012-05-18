@@ -10,20 +10,28 @@ $(document).ready(function () {
                        togglerContent_closed : 'Messages',
                        togglerLength_closed : 100,
                        spacing_closed : 14,
+                       togglerContent_open : 'Messages',
+                       togglerLength_open : 100,
+                       spacing_open : 14,
                        initClosed : true,},
                    north : { closable : false },
                    west : { closable : false },
                }
     );
-    
-    var stateUrl = '';
-    var upUrl = 'up.png';
-    var brokenUrl = 'broken.png';
 
     $("#grid-message").jqGrid({
     	url:'/messager/messages', 
         datatype: "json",
-        loadonce: true,
+        jsonReader : {
+      		root:"rows",
+      		page: "page",
+      		total: "total_pages",
+      		records: "records",
+      		repeatitems: false,
+      		//id: "id"
+   		},
+        // By comment loadonce the user will able to refresh the grid content :
+        loadonce: false,
         height: '200px',
         width: 'auto',
         colNames:['Id','From','Level','Date','Time','Content'],
@@ -38,58 +46,31 @@ $(document).ready(function () {
         //multiselect: true,
         rowNum:8, rowList:[5,10,20,50],
         pager: '#msgGridPager',
-        caption: "Messages",
+        caption: "",
         altRows: false,
         onSelectRow: function (id) {
             alert('Select row: ' + id);
         },
-		beforeSubmit: function(postdata, formid){
-		
-			for (rowid = 1; rowid <= jQuery('#grid-message').jqGrid('getGridParam','rowNum'); rowid++) {
-        		var levelValue = $('#grid-message').getCell(rowid, 'level');
-        		
-        		if (levelValue == 'info') {
-        			stateUrl = upUrl;
-        		} else {
-        			stateUrl = brokenUrl;
-        		}
-    		}
-		}
     });
     
+    // Remove rollup icon
+	$("#grid-message.ui-jqgrid-titlebar-close").remove();
+    
+    // Set the correct state icon for each message :
 	function stateFormatter(cell, options, row) {
-		return "<img src='/images/icons/" + stateUrl + "' />"; 
+		if (cell == 'info') {
+			return "<img src='/images/icons/up.png' title='info' />";
+		} else {
+			return "<img src='/images/icons/broken.png' title='warning' />";
+		}
 	}
-    
+	
+	// Resize the message grid to entire page width :
+	$(window).bind('resize', function() { $("#grid-message").setGridWidth($(window).width()-20); }).trigger('resize');
+        
+
+        
     $("#grid-message").jqGrid('navGrid','#msgGridPager',{edit:false,add:false,del:false});
-    
-    // TEST ...
-    /*OrdersGrid.ClientSideEvents.GridInitialized = "gridInit";
-    
-    function gridInit() {
-Ê Ê 	$("#grid-message tbody tr td[aria-describedby='grid-message_mess_level']").filter(filterCells).parent("tr").addClass("rowchanged");
-	}
-
-	function filterCells(mess_level) {
-Ê Ê 	return $(this).text() = 'error';
-    }*/
-
-   /*var mydata = [ 
-                    {mess_id:"1",user_id:"NULL",mess_from:"Executor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:18",mess_level:"warning",content:"Kanopya Executor stopped"},
-					{mess_id:"2",user_id:"NULL",mess_from:"StateManager",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:20",mess_level:"warning",content:"Kanopya State Manager stopped"},
-					{mess_id:"3",user_id:"NULL",mess_from:"Executor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:21",mess_level:"info",content:"Kanopya Executor started"},
-					{mess_id:"4",user_id:"NULL",mess_from:"Monitor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:22",mess_level:"warning",content:"Kanopya Collector stopped"},
-					{mess_id:"5",user_id:"NULL",mess_from:"StateManager",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:23",mess_level:"info",content:"Kanopya State Manager started"},
-					{mess_id:"6",user_id:"NULL",mess_from:"Monitor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:24",mess_level:"warning",content:"Kanopya Grapher stopped"},
-					{mess_id:"7",user_id:"NULL",mess_from:"Monitor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:25",mess_level:"info",content:"Kanopya Collector started"},
-					{mess_id:"8",user_id:"NULL",mess_from:"Orchestrator",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:26",mess_level:"warning",content:"Kanopya Orchestrator stopped"},
-					{mess_id:"9",user_id:"NULL",mess_from:"Monitor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:27",mess_level:"info",content:"Kanopya Grapher started"},
-					{mess_id:"10",user_id:"NULL",mess_from:"Orchestrator",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:29",mess_level:"info",content:"Kanopya Orchestrator started"},
-					{mess_id:"11",user_id:"NULL",mess_from:"Executor",mess_creationdate:"2012-05-02",mess_creationtime:"16:06:35",mess_level:"error",content:"Cluster cluster01 failure"},
-                ];*/ 
-   /* for(var i=0;i<=mydata.length;i++) {
-    	jQuery("#grid-message").jqGrid('addRowData',i+1,mydata[i]);
-    }*/
 
     // Needed to fix bad panels resizing when opening Messages pane (south) for the first time
     // Layout will take in account the message grid size fill with data 

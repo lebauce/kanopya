@@ -177,6 +177,40 @@ sub methods {
     };
 }
 
+
+
+=head2 getHyperVisor
+
+    desc: Return the hyper visor if the host is a VM, else return undef 
+
+=cut
+
+sub getHyperVisorHostId(){
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => []);
+
+            
+    my $host_type = $self->getHostManager()->getHostType();
+    if($host_type eq "Virtual Machine"){
+        
+#        my $hv_host_id = $self->{_dbix}->opennebula3_vms->first->opennebula3_hypervisor->get_column('hypervisor_host_id');        
+#        return $hv_host_id;
+        
+        my $opennebula3_vms = $self->{_dbix}->opennebula3_vms;
+        
+        if($opennebula3_vms->count > 1) {
+            throw Kanopya::Exception::Internal(
+             error => "VM must have only one HV host"
+            );
+        }else{
+            return $opennebula3_vms->first->opennebula3_hypervisor->get_column('hypervisor_host_id');
+        }
+    }else{
+        return undef;
+    }
+}
+
+
 =head2 getServiceProvider
 
     desc: Return the service provider that provides the host.
@@ -480,6 +514,7 @@ sub addIface {
 
 sub getIfaces {
     my $self = shift;
+    my %args = @_;
     my @ifaces = ();
     
     # Make sure to have all pxe ifaces before non pxe ones within the resulting array
@@ -487,6 +522,15 @@ sub getIfaces {
         my @ifcs = Entity::Iface->search(hash => { host_id   => $self->getAttr(name => 'host_id'),
                                                    iface_pxe => $pxe });
         for my $iface (@ifcs) {
+            if (defined ($args{role})) {
+                if (my $interface_id = $iface->isAssociated) { 
+                    my $interface = Entity::Interface->get(id => $iface->getAttr(name => 'interface_id'));
+                    if ($interface->getRole->getAttr(name => 'interface_role_name') ne $args{role}) {
+                        next;
+                    }
+                }
+            }
+
             push @ifaces, $iface;
         }
     }
@@ -535,28 +579,31 @@ sub removeIface {
     $ifc->delete();
 }
 
-sub getAdminIp {
+sub getAdminIface {
     my $self = shift;
     my %args = @_;
 
     # Can we make it smarter ?
-    for my $iface (@{$self->getIfaces}) {
-        my $interface_id;
-        if ($interface_id = $iface->isAssociated) {
-            # TODO: my $interface = $iface->getRelated(name => 'interface');
-            my $interface = Entity::Interface->get(id => $iface->getAttr(name => 'interface_id'));
-            if ($interface->getRole->getAttr(name => 'interface_role_name') eq 'admin' and $iface->hasIp) {
-                return $iface->getIPAddr;
-            }
-        }
-    }
-    if (defined $args{throw}) {
+    my @ifaces = $self->getIfaces(role => "admin");
+    if (scalar (@ifaces) == 0 and defined $args{throw}) {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "Host <" . $self->getAttr(name => 'entity_id') .
                            "> Could not find any iface associate to a admin interface."
               );
     }
-    return '';
+    return $ifaces[0];
+}
+                                                                           
+sub getAdminIp {
+    my $self = shift;
+    my %args = @_;
+     
+    my $iface = $self->getAdminIface();
+    if ($iface and $iface->hasIp) {
+        if (defined ($iface) and $iface->hasIp) {
+            return $iface->getIPAddr;
+        }
+    }
 }
 
 =head2 getHosts
@@ -622,14 +669,15 @@ sub update {}
 sub remove {
     my $self = shift;
 
-    $log->debug("New Operation RemoveHost with host_id : <" .
-                $self->getAttr(name => "host_id") . ">");
+    $log->debug("New Operation RemoveHost with host_id : <" . $self->getAttr(name => "host_id") . ">");
 
     Operation->enqueue(
         priority => 200,
         type     => 'RemoveHost',
         params   => {
-            host_id => $self->getAttr(name => "host_id")
+            context  => {
+                host => $self,
+            },
         },
     );
 }
@@ -692,18 +740,30 @@ sub activate{
     my $self = shift;
 
     $log->debug("New Operation ActivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'ActivateHost',
-                   params   => {host_id => $self->getAttr(name=>'host_id')});
+    Operation->enqueue(
+        priority => 200,
+        type     => 'ActivateHost',
+        params   => {
+            context => {
+                host => $self
+           }
+       }
+   );
 }
 
 sub deactivate{
     my $self = shift;
 
     $log->debug("New Operation EDeactivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'DeactivateHost',
-                   params   => {host_id => $self->getAttr(name=>'host_id')});
+    Operation->enqueue(
+        priority => 200,
+        type     => 'DeactivateHost',
+        params   => {
+            context => {
+                host => $self
+           }
+       }
+   );
 }
 
 =head2 toString

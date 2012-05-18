@@ -52,8 +52,6 @@ our $VERSION = '1.00';
 
 =head2 prepare
 
-    $op->prepare(internal_cluster => \%internal_clust);
-
 =cut
 
 sub prepare {    
@@ -61,65 +59,26 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $self->{_objs} = {};
+    General::checkParams(args => $self->{context}, required => [ "export_manager", "container" ]);
 
-    $log->info("Operation preparation");
-
-    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
-
-    # Get Operation parameters
-    my $params = $self->_getOperation()->getParams();
-
-    # Test operation paramaters
-    eval {
-        General::checkParams(args     => $params,
-                             required => [ "export_manager_id", "container_id" ]);
-    };
-    if($@) {
-        $errmsg = "Operation::ECreateExport needs storage_provider_id, ".
-                  "component_id and container_id parameters";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Instanciate the export manager for export creation from params
-    eval {
-        $self->{_objs}->{eexport_manager}
-            = EFactory::newEEntity(data => Entity->get(id => $params->{export_manager_id}));
-    };
-    if($@) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $@);
-    }
+    General::checkParams(args => $self->{params}, required => [ "manager_params" ]);
 
     # Check state of the storage_provider
-    my $storage_provider = $self->{_objs}->{eexport_manager}->_getEntity->getServiceProvider;
+    my $storage_provider = $self->{context}->{export_manager}->getServiceProvider;
     my ($state, $timestamp) = $storage_provider->getState();
     if ($state ne 'up'){
         $errmsg = "ServiceProvider has to be up !";
         $log->error($errmsg);
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
-
-    # Instanciate container
-    $self->{_objs}->{container} = Entity::Container->get(id => $params->{container_id});
-
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                              ip_destination => $storage_provider->getMasterNodeIp());
-
-    $self->{params} = $params;
 }
 
 sub execute{
     my $self = shift;
 
-    $self->{_objs}->{eexport_manager}->createExport(container   => $self->{_objs}->{container},
-                                                    export_name => $self->{params}->{export_name},
-                                                    erollback   => $self->{erollback},
-                                                    econtext    => $self->{econtext},
-                                                    %{$self->{params}});
+    $self->{context}->{export_manager}->createExport(container => $self->{context}->{container},
+                                                     erollback => $self->{erollback},
+                                                     %{$self->{params}->{manager_params}});
 }
 
 =head1 DIAGNOSTICS

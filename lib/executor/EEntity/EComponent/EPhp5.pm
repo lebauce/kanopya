@@ -42,16 +42,17 @@ sub configureNode {
         my $port = '11211';
         $data->{session_path} = "tcp://$masternodeip:$port";
     }
-    $self->generateFile(econtext     => $args{econtext}, mount_point => $args{mount_point},
-                        template_dir => "/templates/components/php5",
-                        input_file   => "php.ini.tt", output => "/php5/apache2/php.ini", data => $data);
+    $self->generateFile(template_dir => "/templates/components/php5",
+                        input_file   => "php.ini.tt",
+                        output       => "/php5/apache2/php.ini",
+                        data         => $data);
 }
 
 sub addNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
     $args{mount_point} .= '/etc';
 

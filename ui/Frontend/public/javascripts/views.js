@@ -2,7 +2,7 @@ var content_def = {
     'content_hosts' : {
         grid : { 
             params : {
-                colNames : ['ID','Base hostname', 'Initiator name XXXX'],
+                colNames : ['ID','Base hostname', 'Initiator name'],
                 colModel : [ 
                             {name:'entity_id',index:'entity_id', width:60, sorttype:"int", hidden:true, key:true},
                             {name:'host_hostname',index:'host_hostname', width:90, sorttype:"date"},
@@ -50,12 +50,12 @@ function create_all_content() {
     }
 }
 
-function show_detail(id) {
+function show_detail(elem_id) {
     var dialog = $('<div></div>')
     .dialog({
         autoOpen: true,
         modal: true,
-        title: "detail entity " + id,//link.attr('title' + '#content'),
+        title: "detail entity " + elem_id,//link.attr('title' + '#content'),
         width: 500,
         height: 500,
         resizable: true,
@@ -71,6 +71,9 @@ function show_detail(id) {
             }
         },
     });
+    
+    dialog.load('/api/host/' + elem_id);
+    
 //alert('pouet');
 //return false;
  

@@ -50,8 +50,6 @@ our $VERSION = '1.00';
 
 =head2 prepare
 
-    $op->prepare(internal_cluster => \%internal_clust);
-
 =cut
 
 sub prepare {
@@ -59,55 +57,28 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $self->{_objs} = {};
-    $self->{executor} = {};
+    General::checkParams(args => $self->{context}, required => [ "disk_manager" ]);
 
-    $log->info("Operation preparation");
-
-    # Check if internal_cluster exists
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
-
-    # Get Operation parameters
-    my $params = $self->_getOperation()->getParams();
-
-    General::checkParams(args     => $params,
-                         required => [ "disk_manager_id", "name", "size", "filesystem" ]);
-
-    # Get the edisk manager for disk creation.
-    eval {
-        $self->{_objs}->{edisk_manager}
-            = EFactory::newEEntity(data => Entity->get(id => $params->{disk_manager_id}));
-    };
-    if($@) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $@);
-    }
+    General::checkParams(args     => $self->{params},
+                         required => [ "name", "size", "filesystem" ]);
 
     # Check service provider state
-    my $storage_provider = $self->{_objs}->{edisk_manager}->_getEntity->getServiceProvider;
+    my $storage_provider = $self->{context}->{disk_manager}->_getEntity->getServiceProvider;
     my ($state, $timestamp) = $storage_provider->getState();
     if ($state ne 'up'){
         $errmsg = "Service provider has to be up !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                              ip_destination => $storage_provider->getMasterNodeIp());
-
-    $self->{params} = $params;
 }
 
 sub execute {
     my $self = shift;
 
-    my $container = $self->{_objs}->{edisk_manager}->createDisk(
+    my $container = $self->{context}->{disk_manager}->createDisk(
                         name       => $self->{params}->{name},
                         size       => $self->{params}->{size},
                         filesystem => $self->{params}->{filesystem},
-                        econtext   => $self->{econtext},
                         erollback  => $self->{erollback},
                         %{ $self->{params} }
                     );

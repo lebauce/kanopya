@@ -342,13 +342,52 @@ sub search {
 
     my $table = _buildClassNameFromString($class);
     my $adm = Administrator->new();
-    
-    my $rs = $adm->_getDbixFromHash( table => $table,
-                                     hash => $args{hash},
-                                     page  => $args{page});
+
+    my $join;
+    my @hierarchy = split(/::/, $class);
+    my $depth = scalar @hierarchy;
+    my $n = $depth;
+    while ($n > 0) {
+        $join = $adm->{db}->source($hierarchy[$n - 1])->has_relationship("parent") ?
+                    ($join ? { parent => $join } : "parent") :
+                    $join;
+        $n -= 1;
+    }
+
+    my $rs = $adm->_getDbixFromHash('table'    => $table,
+                                    'hash'     => $args{hash},
+                                    'page'     => $args{page},
+                                    'join'     => $join,
+                                    'rows'     => $args{rows},
+                                    'order_by' => $args{order_by});
 
     while ( my $row = $rs->next ) {
-        my $obj = eval { $class->get(id => $row->id); };
+        my $obj = {
+             _dbix => $row,
+        };
+
+        my $parent = $row;
+        while ($parent->can('parent')) {
+            $parent = $parent->parent;
+        }
+
+        my $class_type;
+        if ($parent->has_column("class_type_id")) {
+            $class_type = $adm->getRow(
+                              table => "ClassType",
+                              id    => $parent->get_column("class_type_id")
+                          )->get_column('class_type');
+
+            if (length($class_type) > length($class)) {
+                $obj = Entity->get(id => $parent->get_column("entity_id"));
+            }
+        }
+        else {
+            $class_type = $class;
+        }
+
+        bless $obj, $class_type;
+
         if($@) {
             my $exception = $@; 
             if(Kanopya::Exception::Permission::Denied->caught()) {

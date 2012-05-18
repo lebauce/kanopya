@@ -57,6 +57,15 @@
             </select>
         </td>
     </tr>
+    <tr><td class="label">Collector Manager to use :</td>
+    <td><select id="collector_manager" name="collector_manager_id">
+        <option value="default"> Select a Collector Manager</option>
+        <% FOREACH datacollector IN datacollectors_list %>
+            <option value="<% datacollector.id %>"><% datacollector.name %></option>
+        <% END %>
+        </select>
+    </td>
+    </tr>
     <tr><td class="label">Boot Policy :</td>
         <td><select id="boot_policy" name="cluster_boot_policy"></select>
         </td>

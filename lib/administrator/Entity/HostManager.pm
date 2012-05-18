@@ -24,7 +24,13 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
+use Entity::Powersupplycard;
+use Entity::Processormodel;
+use Entity::Hostmodel;
+use Entity::Kernel;
+
 my $log = get_logger("administrator");
+my $errmsg;
 
 use constant BOOT_POLICIES => {
     pxe_nfs      => 'PXE Boot via NFS',
@@ -51,7 +57,7 @@ sub addHost {
     my $host;
     eval {
         $host = Entity::Host->new(
-                    host_manager_id     => $host_manager_id,
+                    host_manager_id => $host_manager_id,
                     %args
                 );
     };
@@ -127,14 +133,14 @@ sub createHost {
                          required => [ "processormodel_id", "host_core", "kernel_id",
                                        "hostmodel_id", "host_serial_number", "host_ram" ]);
 
-    my $host_manager_id = $self->getAttr(name => 'entity_id');
-
-    $log->info("New Operation AddHost with attrs : " . Dumper(%args));
+    $log->debug("New Operation AddHost with attrs : " . Dumper(%args));
     Operation->enqueue(
         priority => 200,
         type     => 'AddHost',
         params   => {
-            host_manager_id  => $host_manager_id,
+            context  => {
+                host_manager => $self,
+            },
             %args
         }
     );
@@ -153,7 +159,9 @@ sub removeHost {
         priority => 200,
         type     => 'RemoveHost',
         params   => {
-            host_id => $args{host}->getAttr(name => "host_id")
+            context  => {
+                host => $args{host},
+            },
         },
     );
 }

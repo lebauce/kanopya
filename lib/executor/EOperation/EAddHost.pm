@@ -56,67 +56,6 @@ use Data::Dumper;
 
 my $log = get_logger("executor");
 my $errmsg;
-our $VERSION = '1.00';
-
-
-sub checkOp {
-    my $self = shift;
-    my %args = @_;
-    
-    # Check if kernel_id exist
-    $log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
-    eval {
-        Entity::Kernel->get(id => $self->{_objs}->{host}->getAttr(name => 'kernel_id'));
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EAddHost->prepare : Wrong kernel_id attribute detected <".
-                   $self->{_objs}->{host}->getAttr(name => 'kernel_id') .">\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Check if host_model_id exist
-    $log->debug("Checking host model existence with id <" .
-                $self->{_objs}->{host}->getAttr(name=>'hostmodel_id') .
-                ">");
-    eval {
-          Entity::Hostmodel->get(id => $self->{_objs}->{host}->getAttr(name => 'hostmodel_id'));
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EAddHost->prepare : Wrong hostmodel_id attribute detected <".
-                  $self->{_objs}->{host}->getAttr(name => 'hostmodel_id') . ">\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Check if processor_model_id exist
-    $log->debug("Checking processor model existence with id <" .
-                $self->{_objs}->{host}->getAttr(name=>'processormodel_id') .
-                ">");
-    eval {
-         Entity::Processormodel->get(id => $self->{_objs}->{host}->getAttr(name => 'processormodel_id'));
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EAddHost->prepare : Wrong processormodel_id attribute detected <" .
-                   $self->{_objs}->{host}->getAttr(name => 'processormodel_id')  . ">\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    
-    if (defined $self->{_objs}->{powersupplyport_number}) {
-        # Check power supply
-        # Search if there is a power supply defined
-        if ($self->{_objs}->{powersupplycard}->isPortUsed(
-                 powersupplyport_number => $self->{_objs}->{powersupplyport_number})) {
-            $errmsg = "Operation::AddHost->new : This power supply port is already recorded!";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal(error => $errmsg);
-        }
-    }
-}
 
 =head2 prepare
 
@@ -129,37 +68,17 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
-
-    my $params = $self->_getOperation()->getParams();
-
-    $self->{_objs} = {};
-    $self->{executor} = {};
-
-    my $host_manager_id = General::checkParam(args => $params, name => 'host_manager_id');
-
-    # TODO: Check parameters for addHost method.
-    $self->{_objs}->{ehost_manager}
-        = EFactory::newEEntity(data => Entity->get(id => $host_manager_id));
-
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
-    $self->{params} = $params;
+    General::checkParams(args => $self->{context}, required => [ "host_manager" ]);
 }
 
 sub execute {
     my $self = shift;
 
-    my $host = $self->{_objs}->{ehost_manager}->createHost(erollback => $self->{erollback},
-                                                           econtext  => $self->{executor}->{econtext},
-                                                           %{$self->{params}});
+    my $host = $self->{context}->{host_manager}->createHost(%{$self->{params}}, erollback => $self->{erollback});
 
     $log->info("Host <" . $host->getAttr(name => "entity_id") . "> is now created");
 
-    my @group = Entity::Gp->getGroups(hash => {gp_name => 'Host'});
+    my @group = Entity::Gp->getGroups(hash => { gp_name => 'Host' });
     $group[0]->appendEntity(entity => $host);
 }
 

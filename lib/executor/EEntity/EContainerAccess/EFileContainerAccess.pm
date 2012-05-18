@@ -49,7 +49,7 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $underlying_access_id = $self->_getEntity->getContainer->getAttr(
+    my $underlying_access_id = $self->getContainer->getAttr(
                                    name => 'container_access_id'
                                );
 
@@ -70,7 +70,7 @@ sub connect {
     chomp($result->{stdout});
     my $loop = $result->{stdout};
 
-    my $file = $mountpoint . '/' . $self->_getEntity->getContainer->getAttr(
+    my $file = $mountpoint . '/' . $self->getContainer->getAttr(
                                        name => 'container_device'
                                    );
 
@@ -80,8 +80,16 @@ sub connect {
         throw Kanopya::Exception::Execution(error => $result->{stderr});
     }
 
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => $loop);
+    $self->setAttr(name  => 'device_connected',
+                   value => $loop);
+    $self->save();
+    
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('disconnect'),
+            parameters => [ $self, "econtext", $args{econtext} ]
+        );
+    }
     return $loop;
 }
 
@@ -92,7 +100,7 @@ sub disconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    my $device = $self->getAttr(name => 'device_connected');
 
     my $counter = 5;
     while($counter != 0) {
@@ -109,7 +117,7 @@ sub disconnect {
         throw Kanopya::Exception::Execution(error => $result->{stderr});
     }
 
-    my $underlying_access_id = $self->_getEntity->getContainer->getAttr(
+    my $underlying_access_id = $self->getContainer->getAttr(
                                    name => 'container_access_id'
                                );
 
@@ -121,8 +129,9 @@ sub disconnect {
     $eunderlying_access->umount(mountpoint => $mountpoint,
                                 econtext   => $args{econtext});
 
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => '');
+    $self->setAttr(name  => 'device_connected',
+                   value => '');
+    $self->save();
 }
 
 sub buildMountpoint {

@@ -67,8 +67,6 @@ my $config = {
 
 =head2 prepare
 
-    $op->prepare(internal_cluster => \%internal_clust);
-
 =cut
 
 sub prepare {
@@ -77,63 +75,43 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("EPreStopNode Operation preparation");
+    General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
 
-    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
-
-    my $params = $self->_getOperation()->getParams();
-
-    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
-
-    $self->{_objs} = {};
+    my $master_node_id = $self->{context}->{cluster}->getMasterNodeId();
+    my $node_count = $self->{context}->{cluster}->getCurrentNodesCount();
+    my $host_id = $self->{context}->{host}->getAttr(name => 'entity_id');
     
-    # Get instance of Cluster Entity
-    $log->info("Load cluster instance");
-    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
-    $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
-
-    # Get cluster components Entities
-    $log->info("Load cluster component instances");
-    $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
-    $log->debug("Load all component from cluster");
-
-    # Get instance of Host Entity
-    $log->info("Load Host instance");
-    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
-    $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
-
-    my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
-    my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
-    if ($node_count > 1 && $master_node_id == $params->{host_id}){
-        $errmsg = "Node <$params->{host_id}> is master node and not alone";
+    if ($node_count > 1 && $master_node_id == $host_id){
+        $errmsg = "Node <$host_id> is master node and not alone";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg, hidden => 1);
     }
-
-    # Get context for executor
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    my $components = $self->{_objs}->{components};
+    my $components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Processing cluster components configuration for this node');
-    $self->{cluster_need_wait} = 0;
-    foreach my $i (keys %$components) {        
-        my $tmp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is " . ref($tmp));
-        $tmp->preStopNode(host     => $self->{_objs}->{host},
-                          cluster  => $self->{_objs}->{cluster},
-                          econtext => $self->{executor}->{econtext});
+
+    foreach my $i (keys %$components) {
+        my $comp = EFactory::newEEntity(data => $components->{$i});
+        $log->debug("component is " . ref($comp));
+        $comp->preStopNode(host     => $self->{context}->{host},
+                           cluster  => $self->{context}->{cluster});
     }
-    $self->{_objs}->{host}->setNodeState(state => "pregoingout");
+    $self->{context}->{host}->setNodeState(state => "pregoingout");
 }
 
+sub finish {
+    my $self = shift;
+
+    $self->getWorkflow->enqueue(
+        priority => 200,
+        type     => 'StopNode',
+    );
+}
 
 1;
 __END__

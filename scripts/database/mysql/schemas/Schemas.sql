@@ -100,6 +100,7 @@ CREATE TABLE `cluster` (
   `host_manager_id` int(8) unsigned NOT NULL,
   `disk_manager_id` int(8) unsigned DEFAULT NULL,
   `export_manager_id` int(8) unsigned DEFAULT NULL,
+  `collector_manager_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`cluster_id`),
   UNIQUE KEY (`cluster_name`),
   FOREIGN KEY (`cluster_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -542,7 +543,7 @@ CREATE TABLE `node` (
 
 --
 -- Table structure for table `operationtype`
--- 
+--
 
 CREATE TABLE `operationtype` (
   `operationtype_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -552,12 +553,24 @@ CREATE TABLE `operationtype` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `workflow`
+--
+
+CREATE TABLE `workflow` (
+  `workflow_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `workflow_name` char(64) DEFAULT NULL,
+  PRIMARY KEY (`workflow_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `operation`
 -- Operation class
 
 CREATE TABLE `operation` (
   `operation_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `type` char(64) NOT NULL,
+  `workflow_id` int(8) unsigned NOT NULL,
+  `state` char(32) NOT NULL DEFAULT 'pending:0',
   `user_id` int(8) unsigned NOT NULL,
   `priority` int(2) unsigned NOT NULL,
   `creation_date` date NOT NULL,
@@ -565,25 +578,29 @@ CREATE TABLE `operation` (
   `hoped_execution_time` int(4) unsigned DEFAULT NULL,
   `execution_rank` int(8) unsigned NOT NULL,
   PRIMARY KEY (`operation_id`),
-  UNIQUE KEY (`execution_rank`),
+  UNIQUE KEY (`execution_rank`, `workflow_id`),
   KEY (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`workflow_id`),
+  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`type`),
   FOREIGN KEY (`type`) REFERENCES `operationtype` (`operationtype_name`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `operation_parameter`
+-- Table structure for table `workflow_parameter`
 -- 
 
-CREATE TABLE `operation_parameter` (
-  `operation_param_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+CREATE TABLE `workflow_parameter` (
+  `workflow_param_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `workflow_id` int(8) unsigned NOT NULL,
   `name` char(64) NOT NULL,
   `value` char(255) NOT NULL,
-  `operation_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`operation_param_id`),
-  KEY (`operation_id`),
-  FOREIGN KEY (`operation_id`) REFERENCES `operation` (`operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  `tag` char(64) DEFAULT NULL,
+  PRIMARY KEY (`workflow_param_id`),
+  UNIQUE KEY (`workflow_id`, `name`, `tag`),
+  KEY (`workflow_id`),
+  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -594,6 +611,7 @@ CREATE TABLE `operation_parameter` (
 CREATE TABLE `old_operation` (
   `old_operation_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `type` char(64) NOT NULL,
+  `workflow_id` int(8) unsigned NOT NULL,
   `user_id` int(8) unsigned NOT NULL,
   `priority` int(2) unsigned NOT NULL,
   `creation_date` date NOT NULL,
@@ -604,24 +622,11 @@ CREATE TABLE `old_operation` (
   PRIMARY KEY (`old_operation_id`),
   KEY (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`workflow_id`),
+  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`type`),
   FOREIGN KEY (`type`) REFERENCES `operationtype` (`operationtype_name`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `operation_parameter`
---
-
-CREATE TABLE `old_operation_parameter` (
-  `old_operation_param_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `name` char(64) NOT NULL,
-  `value` char(255) NOT NULL,
-  `old_operation_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`old_operation_param_id`),
-  KEY (`old_operation_id`),
-  FOREIGN KEY (`old_operation_id`) REFERENCES `old_operation` (`old_operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 
 --
 -- Table structure for table `systemimage`

@@ -32,9 +32,6 @@
     <orchestrator-log.conf template="orchestrator-log.conf.tt">
         <datas logdir="log_directory"/>
     </orchestrator-log.conf>
-    <state-manager-log.conf template="state-manager-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </state-manager-log.conf>
 
     <components.conf template="components.conf.tt">
         <datas />

@@ -37,7 +37,7 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "host", "econtext" ]);
+    General::checkParams(args => \%args, required => [ "host" ]);
 
     my $host = $args{host};
     my $powersupplycard_id = $host->getPowerSupplyCardId();
@@ -48,7 +48,7 @@ sub startHost {
             throw Kanopya::Exception::Execution(error => $errmsg);
         }
         my $command = "/usr/sbin/etherwake " . $host->getPXEIface->getAttr(name => 'iface_mac_addr');
-        my $result = $args{econtext}->execute(command => $command);
+        my $result = $self->getExecutorEContext->execute(command => $command);
     }
     else {
         my $powersupplycard = Entity::Powersupplycard->get(id => $powersupplycard_id);

@@ -169,4 +169,10 @@ sub getNetMask {
     return $poolip->getAttr(name => 'poolip_netmask');
 }
 
+sub getInterface {
+    my $self = shift;
+
+    return Entity::Interface->get(id => $self->getAttr(name => 'interface_id'));
+}
+    
 1;

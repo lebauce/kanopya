@@ -50,31 +50,7 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-
-    # check if cluster is active
-    $log->debug("Checking cluster active value <$args{params}->{cluster_id}>");
-    if (! $self->{_objs}->{cluster}->getAttr(name => 'active')) {
-        $errmsg = "EOperation::EDeactivateCluster->new : cluster $args{params}->{cluster_id} is already active";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    $log->debug("Checking cluster state value <$args{params}->{cluster_id}>");
-    my ($cluster_state, $timestamp) = split ':', $self->{_objs}->{cluster}->getAttr(name => 'cluster_state');
-
-    if ($cluster_state eq 'up') {
-        $errmsg = "EOperation::EDeactivateCluster->new : cluster $args{params}->{cluster_id} is not down";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-}
-
 =head2 prepare
-
-    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
@@ -83,46 +59,32 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("Operation preparation");
+    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
-    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+    # Check if cluster is active
+    if (not $self->{context}->{cluster}->getAttr(name => 'active')) {
+        $errmsg = "Cluster <" . $self->{context}->{cluster}->getAttr(name => 'entity_id') . "> is not active";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 
-    # Get Operation parameters
-    my $params = $self->_getOperation()->getParams();
-    $self->{_objs} = {};
+    # Check the cluster state
+    my ($cluster_state, $timestamp) = split ':', $self->{context}->{cluster}->getAttr(name => 'cluster_state');
 
-     # Cluster instantiation
-    $log->debug("checking cluster existence with id <$params->{cluster_id}>");
-    eval {
-        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EDeactivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+    if ($cluster_state eq 'up') {
+        $errmsg = "Cluster <" . $self->{context}->{cluster}->getAttr(name => 'entity_id') . "> is not down";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-
-    ### Check Parameters and context
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation DeactivateCluster failed an error occured :\n$error";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
 }
 
 sub execute{
     my $self = shift;
     
     # set cluster active in db
-    $self->{_objs}->{cluster}->setAttr(name => 'active', value => 0);
-    $self->{_objs}->{cluster}->save();
-    $log->info("Cluster <" . $self->{_objs}->{cluster}->getAttr(name => 'cluster_name') . "> deactivated");
+    $self->{context}->{cluster}->setAttr(name => 'active', value => 0);
+    $self->{context}->{cluster}->_getEntity->save();
+    $log->info("Cluster <" . $self->{context}->{cluster}->getAttr(name => 'cluster_name') . "> deactivated");
 }
 
 

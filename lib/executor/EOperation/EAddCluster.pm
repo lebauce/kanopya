@@ -67,57 +67,43 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
-    
-    my $params = $self->_getOperation()->getParams();
+    # Check if all required params group are defined
+    General::checkParams(args     => $self->{params},
+                         required => [ "cluster_params", "disk_manager_params", "host_manager_params" ]);
 
-    $self->{_objs} = {};
+    # Check required params within cluster params
+    General::checkParams(args     => $self->{params}->{cluster_params},
+                         required => [ "cluster_name", "disk_manager_id", "host_manager_id",
+                                       "cluster_boot_policy", "cluster_si_shared" ]);
 
-    # Pop the cluster paramaters.
-    my $cluster_params = {
-        cluster_name         => General::checkParam(args => $params, name => 'cluster_name'),
-        cluster_desc         => General::checkParam(args => $params, name => 'cluster_desc', default => ''),
-        cluster_si_shared    => General::checkParam(args => $params, name => 'cluster_si_shared'),
-        cluster_si_persistent=> General::checkParam(args => $params, name => 'cluster_si_persistent'),
-        cluster_boot_policy  => General::checkParam(args => $params, name => 'cluster_boot_policy'),
-        cluster_priority     => General::checkParam(args => $params, name => 'cluster_priority'),
-        cluster_min_node     => General::checkParam(args => $params, name => 'cluster_min_node'),
-        cluster_max_node     => General::checkParam(args => $params, name => 'cluster_max_node'),
-        cluster_basehostname => General::checkParam(args => $params, name => 'cluster_basehostname'),
-        cluster_domainname   => General::checkParam(args => $params, name => 'cluster_domainname'),
-        cluster_nameserver1  => General::checkParam(args => $params, name => 'cluster_nameserver1'),
-        cluster_nameserver2  => General::checkParam(args => $params, name => 'cluster_nameserver2'),
-        kernel_id            => General::checkParam(args => $params, name => 'kernel_id'),
-        user_id              => General::checkParam(args => $params, name => 'user_id'),
-        masterimage_id       => General::checkParam(args => $params, name => 'masterimage_id'),
-        host_manager_id      => General::checkParam(args => $params, name => 'host_manager_id'),
-        disk_manager_id      => General::checkParam(args => $params, name => 'disk_manager_id'),
-    };
-
-    if (not $cluster_params->{kernel_id}) {
-        delete $cluster_params->{kernel_id};
+    if (defined $self->{params}->{cluster_params}->{kernel_id} and
+        not $self->{params}->{cluster_params}->{kernel_id}) {
+        delete $self->{params}->{cluster_params}->{kernel_id};
+    }
+    if (defined $self->{params}->{cluster_params}->{collector_manager_id} and
+        not $self->{params}->{cluster_params}->{collector_manager_id}) {
+        delete $self->{params}->{cluster_params}->{collector_manager_id};
     }
 
-    # Instiate the disk manager to get the export manager according to the boot policy.
+    # Instanciate the disk manager to get the export manager according to the boot policy.
     my $disk_manager;
     eval {
-        $disk_manager = Entity->get(id => $cluster_params->{disk_manager_id});
+        $disk_manager = Entity->get(id => $self->{params}->{cluster_params}->{disk_manager_id});
     };
     if($@) {
         throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
 
     my $export_manager = $disk_manager->getExportManagerFromBootPolicy(
-                             boot_policy => $cluster_params->{cluster_boot_policy}
+                             boot_policy => $self->{params}->{cluster_params}->{cluster_boot_policy}
                          );
 
-    $cluster_params->{export_manager_id} = General::checkParam(args    => $params,
-                                                               name    => 'export_manager_id',
-                                                               default => $export_manager->getAttr(name => 'entity_id'));
+    $self->{params}->{cluster_params}->{export_manager_id} = $export_manager->getAttr(name => 'entity_id');
 
-    # Cluster instantiation
+    # Cluster creation
     eval {
-        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->new(%$cluster_params);
+        my $cluster = Entity::ServiceProvider::Inside::Cluster->new(%{$self->{params}->{cluster_params}});
+        $self->{context}->{cluster} = EFactory::newEEntity(data => $cluster);
     };
     if($@) {
         $errmsg = "EOperation::EAddCluster->prepare : Cluster instanciation failed because : " . $@;
@@ -126,15 +112,14 @@ sub prepare {
     }
 
     # Store managers paramaters for this cluster.
-    for my $manager ('host_manager', 'disk_manager', 'export_manager') {
-        for my $param_name (keys %$params) {
-            if ($param_name =~ m/^${manager}_param/) {
-                my $value = $params->{$param_name};
-                $param_name =~ s/^${manager}_param_//g;
-                $self->{_objs}->{cluster}->addManagerParameter(
+    for my $manager ('host_manager', 'disk_manager', 'export_manager', 'collector_manager') {
+        my $manager_params = $self->{params}->{$manager . '_params'};
+        if ($manager_params) {
+            for my $param_name (keys %{$manager_params}) {
+                $self->{context}->{cluster}->addManagerParameter(
                     manager_type => $manager,
                     name         => $param_name,
-                    value        => $value,
+                    value        => $manager_params->{$param_name},
                 );
             }
         }
@@ -142,29 +127,24 @@ sub prepare {
 
     # Get export manager parameter related to si shared value.
     my $readonly_param = $export_manager->getReadOnlyParameter(
-                             readonly => $cluster_params->{cluster_si_shared}
+                             readonly => $self->{params}->{cluster_params}->{cluster_si_shared}
                          );
 
     if ($readonly_param) {
-        $self->{_objs}->{cluster}->addManagerParameter(manager_type => 'export_manager',
-                                                       name         => $readonly_param->{name},
-                                                       value        => $readonly_param->{value});
+        $self->{context}->{cluster}->_getEntity->addManagerParameter(
+            manager_type => 'export_manager',
+            name         => $readonly_param->{name},
+            value        => $readonly_param->{value}
+        );
     }
-    # Get context for executor
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
     my $self = shift;
 
-    my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
-    $ecluster->create(econtext  => $self->{executor}->{econtext},
-                      erollback => $self->{erollback});
+    $self->{context}->{cluster}->create(erollback => $self->{erollback});
 
-    $log->info("Cluster <" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name") . "> is now added");
+    $log->info("Cluster <" . $self->{context}->{cluster}->getAttr(name => "cluster_name") . "> is now added");
 }
 
 =head1 DIAGNOSTICS

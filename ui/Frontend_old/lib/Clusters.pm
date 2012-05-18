@@ -130,26 +130,44 @@ sub _externalclusters {
 
 # retrieve data managers
 sub _managers {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['category']);
+
     my ($category) = @_; 
-    my @datamanagers = Entity::ServiceProvider->findManager(category => $category);
+    my @datamanagers = Entity::ServiceProvider->findManager(category => $args{category}, service_provider_id => $args{service_provider_id});
+
     return @datamanagers;
+}
+
+# retrieve collector managers
+sub _collector_managers {
+    my @collectors_full = _managers(category => 'DataCollector');
+    my @collectors;
+    my %temp;
+    foreach my $c (@collectors_full) {
+        $temp{id} = $c->{id};
+        $temp{name} = $c->{name};
+        push @collectors, \%temp;
+    }
+    return \@collectors;
 }
 
 # retrieve storage providers list
 sub _storage_providers {
-    my @storages = _managers('Storage');
+    my @storages = _managers(category => 'Storage');
     my %temp;
     foreach my $s (@storages) {
         $temp{ $s->{service_provider_id} } = 0;
     }
-    
+
     my $sp = [];
     foreach my $id (keys %temp) {
         my $tmp = {};
         my $sp_entity = Entity::ServiceProvider->get(id => $id);
         $tmp->{id} = $id;
         $tmp->{name} = $sp_entity->toString();
-        
+
         push (@$sp, $tmp);
     }
     return $sp;
@@ -163,7 +181,7 @@ sub _cloudmanagers {
 
 # retrieve hosts providers list
 sub _host_providers {
-    my @cloudmanagers = _managers('Cloudmanager');
+    my @cloudmanagers = _managers(category => 'Cloudmanager');
     my %temp;
     foreach my $s (@cloudmanagers) {
         $temp{ $s->{service_provider_id} } = 0;
@@ -283,6 +301,7 @@ get '/clusters/add' => sub {
         kernels_list          => $kmodels,
         masterimages_list     => $masterimages_list,
         storageproviders_list => _storage_providers(),
+        datacollectors_list    => _collector_managers(),
         gp_list               => _users_groups(),
         hostproviders_list    => _host_providers(),
         nameserver            => $kanopya_cluster->getAttr(name => 'cluster_nameserver1'),
@@ -295,7 +314,7 @@ get '/clusters/add' => sub {
 get '/clusters/cloudmanagers/:hostproviderid' => sub {
     my $id = param('hostproviderid');
     my $str = '';
-    my @managers = _managers('Cloudmanager');
+    my @managers = _managers(category => 'Cloudmanager');
     foreach my $manager (@managers) {
         if($manager->{service_provider_id} eq $id) {
             $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
@@ -311,7 +330,7 @@ get '/clusters/cloudmanagers/:hostproviderid' => sub {
 get '/clusters/exportmanagers/:storageproviderid' => sub {
     my $id = param('storageproviderid');
     my $str = '';
-    my @managers = _managers('Export');
+    my @managers = _managers(category => 'Export');
     foreach my $manager (@managers) {
         if($manager->{service_provider_id} eq $id) {
             $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
@@ -381,6 +400,10 @@ post '/clusters/add' => sub {
 
     my $persistent = param('cluster_si_persistent') eq 'checked' ? 1 : 0;
     $parameters{cluster_si_persistent} = $persistent;
+
+    if ($parameters{collector_manager_id} eq 'default') {
+        delete $parameters{collector_manager_id};
+    }
  
     eval {
         Entity::ServiceProvider::Inside::Cluster->create(%parameters);
@@ -1203,6 +1226,16 @@ post '/clusters/:clusterid/nodes/add' => sub {
     else {
         redirect('/architectures/clusters/'.param('clusterid'));
     }
+};
+
+#OPTIMISE HV+VM INFRASTRUCTURE
+get '/clusters/:clusterid/optimiaas' => sub{
+    my $cm = CapacityManagement->new(cluster_id => param('clusterid'));
+    
+    $log->info("*** OPTIMIAAS***");
+    #$cm->optimiaas();
+    
+    redirect('/architectures/clusters/'.param('clusterid'));
 };
 
 # cluster node remove processing

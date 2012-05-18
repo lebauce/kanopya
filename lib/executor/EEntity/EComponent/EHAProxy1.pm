@@ -28,7 +28,7 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster']);
+    General::checkParams(args => \%args, required => ['host', 'mount_point', 'cluster']);
 
     my $template_path = $args{template_path} || "/templates/components/haproxy";
     
@@ -44,13 +44,14 @@ sub configureNode {
     my $vip = shift @$publicips;
     $data{public_ip} = defined $vip ? $vip->{address} : "127.0.0.1";
     
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => $template_path,
-                         input_file => "haproxy.cfg.tt", output => "/haproxy/haproxy.cfg",
-                         data => \%data);
+    $self->generateFile(mount_point  => $args{mount_point},
+                        template_dir => $template_path,
+                        input_file   => "haproxy.cfg.tt",
+                        output       => "/haproxy/haproxy.cfg",
+                        data         => \%data);
     
     # send default haproxy conf (allowing haproxy to be started with init script)
-    $args{econtext}->send(src => $template_path . "/haproxy_default", dest => $args{mount_point} . "/default/haproxy");
+    $self->getExecutorEContext->send(src => $template_path . "/haproxy_default", dest => $args{mount_point} . "/default/haproxy");
     
 }
 
@@ -58,13 +59,12 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster']);
+    General::checkParams(args => \%args, required => ['host', 'mount_point', 'cluster']);
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     
     # Run only on master node
     if(not defined $masternodeip) {
 	    $self->configureNode(
-            econtext => $args{econtext},
                 host => $args{host},
          mount_point => $args{mount_point}.'/etc',
              cluster => $args{cluster}
@@ -72,7 +72,6 @@ sub addNode {
 	    
 	    $self->addInitScripts(
             mountpoint => $args{mount_point}, 
-	          econtext => $args{econtext}, 
 	        scriptname => 'haproxy', 
         );
     }
@@ -82,9 +81,6 @@ sub addNode {
 sub reload {
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['econtext']);
-
 }
 
 1;

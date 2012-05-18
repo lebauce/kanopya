@@ -196,14 +196,6 @@ sub getNetConf {
     return { 3260 => ['tcp'] };
 }
 
-=head2 createExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ECreateExport operation.
-    args : export_name, device, typeio, iomode
-
-=cut
-
 sub getReadOnlyParameter {
     my $self = shift;
     my %args = @_;
@@ -219,6 +211,14 @@ sub getReadOnlyParameter {
     }
 }
 
+=head2 createExport
+
+    Desc : Implement createExport from ExportManager interface.
+           This function enqueue a ECreateExport operation.
+    args : export_name, device, typeio, iomode
+
+=cut
+
 sub createExport {
     my $self = shift;
     my %args = @_;
@@ -231,11 +231,15 @@ sub createExport {
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            export_manager_id => $self->getAttr(name => 'component_id'),
-            container_id      => $args{container}->getAttr(name => 'container_id'),
-            export_name       => $args{export_name},
-            typeio            => $args{typeio},
-            iomode            => $args{iomode}
+            context => {
+                export_manager => $self,
+                container      => $args{container},
+            },
+            manager_params => {
+                export_name => $args{export_name},
+                typeio      => $args{typeio},
+                iomode      => $args{iomode},
+            },
         },
     );
 }
@@ -259,7 +263,9 @@ sub removeExport {
         priority => 200,
         type     => 'RemoveExport',
         params   => {
-            container_access_id => $args{container_access}->getAttr(name => 'container_access_id'),
+            context => {
+                container_access => $args{container_access},
+            }
         },
     );
 }

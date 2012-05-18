@@ -12,6 +12,5 @@
 		/etc/init.d/kanopya-grapher restart > /dev/null
 		/etc/init.d/kanopya-executor restart > /dev/null
 		/etc/init.d/kanopya-orchestrator restart > /dev/null
-		/etc/init.d/kanopya-state-manager restart > /dev/null
 	endscript
 }

@@ -25,13 +25,12 @@ my $log = get_logger('executor');
 
 =head2 mkfs
 
-_mkfs ( device, fstype, fsoptions, econtext)
+_mkfs ( device, fstype, fsoptions)
     desc: This function create a filesystem on a device.
     args:
         device : string: device full path (like /dev/sda2 or /dev/vg/lv)
         fstype : string: name of filesystem (ext2, ext3, ext4)
         fsoptions : string: filesystem options to use during creation (optional) 
-        econtext : Econtext : execution context on the storage server
 =cut
 
 sub mkfs {
@@ -39,7 +38,7 @@ sub mkfs {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "device", "fstype", "econtext" ]);
+                         required => [ "device", "fstype" ]);
     
     my $command = "mkfs -t $args{fstype} ";
     if($args{fsoptions}) {
@@ -47,7 +46,7 @@ sub mkfs {
     }
 
     $command .= " $args{device}";
-    my $ret = $args{econtext}->execute(command => $command);
+    my $ret = $self->getEContext->execute(command => $command);
     if($ret->{exitcode} != 0) {
         my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
         $log->error($errmsg);

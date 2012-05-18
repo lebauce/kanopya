@@ -19,7 +19,7 @@
 
 =head1 NAME
 
-EOperation::EScaleMemoryHost - Operation class implementing vcpus scale in
+EOperation::EScaleCpuHost - Operation class implementing vcpus scale in
 
 =head1 SYNOPSIS
 
@@ -50,44 +50,7 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-
-=head2 new
-
-    my $op = EOperation::EScaleMemoryHost->new();
-
-    # Operation::EInstallComponentInSystemImage->new installs component on systemimage.
-    # RETURN : EOperation::EInstallComponentInSystemImage : Operation activate cluster on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    $self->{executor} = {};
-    return;
-}
-
 =head2 prepare
-
-    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
@@ -96,42 +59,22 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("Operation preparation");
-
-
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
+    General::checkParams(args => $self->{context}, required => [ "host" ]);
     
-    # Get Operation parameters
-    my $params = $self->_getOperation()->getParams();
-    $self->{_objs} = {};
+    General::checkParams(args => $self->{params}, required => [ "cpu_number" ]);
     
-    # Check Operation params
-    General::checkParams(args => $params, required => ["cpu_quantity", "host_id"]);
-    $self->{params} = $params;
-    
-    eval {
-		
-        # Get the host to scale 
-        $self->{_objs}->{'host'} = Entity::Host->get(id => $params->{host_id});
-        #Get OpenNebula Cluster
-        $self->{_objs}->{'cloudmanager_ecomp'} = EFactory::newEEntity(data => $self->{_objs}->{'cloudmanager_comp'});
-        
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EScaleMemoryHost->prepare : Incorrect Parameters \n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    
+    # Get OpenNebula Cluster
+    my $entity = Entity->get(id => $self->{context}->{host}->getAttr(name => 'host_manager_id'));
+    $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(data => $entity);
 }
 
 sub execute{
     my $self = shift;
-    $self->{_objs}->{'cloudmanager_ecomp'}->scale_cpu(host                => $self->{_objs}->{'host'},
-                                                         memory_quantity     => $self->{params}->{cpu_number})  ;
+    $self->{context}->{cloudmanager_comp}->scale_cpu(host       => $self->{context}->{host},
+                                                     cpu_number => $self->{params}->{cpu_number});
 
-    $log->info(" Host <$self->{params}->{host_id}>  scale in  <$self->{params}->{cpu_number}> ");
+    $log->info("Host <" .  $self->{context}->{host}->getAttr(name => 'entity_id') .
+               "> scale in to <$self->{params}->{cpu_number}> cpu number.");
 }
 
 =head1 DIAGNOSTICS
@@ -194,3 +137,4 @@ Boston, MA 02110-1301 USA.
 =cut
 
 1;
+

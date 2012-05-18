@@ -29,7 +29,7 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
+    General::checkParams(args => \%args, required => ['host', 'mount_point']);
 
     #TODO insert configuration files generation
 }
@@ -38,7 +38,7 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
+    General::checkParams(args => \%args, required => ['host', 'mount_point']);
 
     $self->configureNode(%args);
     #TODO addInitScript(..) if there is a daemon associated to this component
@@ -56,24 +56,29 @@ sub addNode {
     
     
     # generation of /etc/ldap/slapd.conf
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc',
-                         template_dir => "/templates/components/openldap",
-                         input_file => "slapd.conf.tt", output => "/ldap/slapd.conf", data => $data1);
+    $self->generateFile(mount_point  => $args{mount_point}.'/etc',
+                        template_dir => "/templates/components/openldap",
+                        input_file   => "slapd.conf.tt",
+                        output       => "/ldap/slapd.conf",
+                        data         => $data1);
                          
      # generation of /etc/ldap/ldap.conf
-     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc',
+     $self->generateFile(mount_point  => $args{mount_point}.'/etc',
                          template_dir => "/templates/components/openldap",
-                         input_file => "ldap.conf.tt", output => "/ldap/ldap.conf", data => $data2);
+                         input_file   => "ldap.conf.tt",
+                         output       => "/ldap/ldap.conf",
+                         data         => $data2);
     
     
      # generation of /etc/default/slapd
-     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc',
+     $self->generateFile(mount_point  => $args{mount_point}.'/etc',
                          template_dir => "/templates/components/openldap",
-                         input_file => "default.slapd.conf.tt", output => "/default/slapd", data => $data3);
+                         input_file   => "default.slapd.conf.tt",
+                         output       => "/default/slapd",
+                         data         => $data3);
     
     $self->addInitScripts(
         mountpoint => $args{mount_point}, 
-          econtext => $args{econtext}, 
         scriptname => 'slapd'
     );
                                 
@@ -89,9 +94,9 @@ sub removeNode {}
 sub reload {
     my $self = shift;
     my %args = @_;   
-    General::checkParams(args => \%args, required => ['econtext']);
+
     my $command = "/etc.init.d/slapd restart";
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
     return undef;
 }
 1;

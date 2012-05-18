@@ -72,7 +72,12 @@ sub mount {
     }
     $log->info("NFS export $target mounted on <$args{mountpoint}>.");
 
-    # TODO: insert an erollback to umount nfs volume
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('umount'),
+            parameters => [ $self, "mountpoint", $args{mountpoint}, "econtext", $args{econtext} ]
+        );
+    }
 }
 
 =head2 connect

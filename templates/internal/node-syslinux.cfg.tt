@@ -14,6 +14,6 @@ label linux
   append xen-4.0-amd64.gz noreboot dom0_mem=1024M --- [% kernelfile %] fastboot boot=kanopya ip=::::diskless:eth0:dhcp --- [% initrdfile %]
 [% ELSE %]
   kernel [% kernelfile %]
-  append initrd=[% initrdfile %] vga=0x317 fastboot boot=kanopya
+  append initrd=[% initrdfile %] vga=0x317 fastboot boot=kanopya ip=::::diskless:eth0:dhcp
 [% END %]
 [% END %]

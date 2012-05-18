@@ -15,7 +15,7 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext','host','mount_point']);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
     my $apache2_conf = $self->_getEntity()->getGeneralConf();    
     my $data = {};
@@ -23,7 +23,6 @@ sub addNode {
     # generation of /etc/apache2/apache2.conf 
     $data->{serverroot} = $apache2_conf->{'apache2_serverroot'};
     $self->generateFile( 
-            econtext => $args{econtext},
          mount_point => $args{mount_point}.'/etc',
         template_dir => "/templates/components/apache2",
           input_file => "apache2.conf.tt",
@@ -35,16 +34,15 @@ sub addNode {
     $data = {};
     $data->{ports} = $apache2_conf->{apache2_ports};
     $data->{sslports} = $apache2_conf->{apache2_sslports};
-    
+
     $self->generateFile(
-            econtext => $args{econtext},
          mount_point => $args{mount_point}.'/etc',
         template_dir => "/templates/components/apache2",
           input_file => "ports.conf.tt",
               output => '/apache2/ports.conf',
                 data => $data
     );
-        
+
     # generation of /etc/apache2/sites-available/default
     $data = {};
     $data->{virtualhosts} = $self->_getEntity()->getVirtualhostConf();
@@ -52,7 +50,6 @@ sub addNode {
     $data->{sslports} = $apache2_conf->{apache2_sslports};
     
     $self->generateFile(
-            econtext => $args{econtext}, 
          mount_point => $args{mount_point}.'/etc',
         template_dir => "/templates/components/apache2",
           input_file => "virtualhost.tt", 
@@ -65,7 +62,6 @@ sub addNode {
     $data->{monitor_server_ip} = 'all';
     
     $self->generateFile(
-            econtext => $args{econtext}, 
          mount_point => $args{mount_point}.'/etc',
         template_dir => "/templates/components/apache2",
           input_file => "status.conf.tt", 
@@ -73,12 +69,10 @@ sub addNode {
                 data => $data
     );
 
-    $self->addInitScripts(   
-        mountpoint => $args{mount_point}, 
-          econtext => $args{econtext}, 
+    $self->addInitScripts(
         scriptname => 'apache2', 
     );
-    
+
 }
 
 sub removeNode {}
@@ -86,11 +80,9 @@ sub removeNode {}
 sub reload {
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['econtext']);
 
     my $command = "invoke-rc.d apache2 restart";
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
     return undef;
 }
 

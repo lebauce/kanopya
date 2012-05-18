@@ -252,11 +252,7 @@ sub adminComponentsDef {
               comps => [{
                   label => 'executor',
                   name  => 'kanopya-executor'
-              },
-              {
-                  label => 'state-manager',
-                  name  => 'kanopya-state-manager'
-              }]
+              },]
           },],
           [{
               id    => 'Monitor',
