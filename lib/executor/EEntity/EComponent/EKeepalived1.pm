@@ -153,9 +153,11 @@ sub stopNode {
         foreach my $vs (@$virtualservers) {
             my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->{virtualserver_id}, realserver_ip => $args{host}->getAdminIp);
             
-            $keepalived->removeRealserver(
-                virtualserver_id => $vs->{virtualserver_id},
-                realserver_id => $realserver_id);
+            $keepalived->setRealServerWeightToZero(virtualserver_id => $vs->{virtualserver_id},
+                                                   realserver_id    => $realserver_id);
+            #$keepalived->removeRealserver(
+            #    virtualserver_id => $vs->{virtualserver_id},
+            #    realserver_id => $realserver_id);
         }
         
         $self->generateKeepalived(mount_point => '/etc');
