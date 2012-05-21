@@ -188,6 +188,8 @@ sub oneRun {
         if ($@) {
             my $err_exec = $@;
 
+            # TODO: Cancel the whole workflow.
+
             # rollback transaction
             $adm->{db}->txn_rollback;
             $log->info("Rollback, Cancel operation will be call");
