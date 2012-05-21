@@ -47,6 +47,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 our $VERSION = '1.00';
 use General;
+use Kanopya::Config;
 use Kanopya::Exceptions;
 use Administrator;
 use XML::Simple;
@@ -85,7 +86,7 @@ Executor::_init is a private method used to define internal parameters.
 sub _init {
     my $self = shift;
     
-    $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
+    $self->{config} = Kanopya::Config::get('executor');
 
     General::checkParams(args => $self->{config}->{user}, required => [ "name", "password" ]);
 
