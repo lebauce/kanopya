@@ -92,7 +92,7 @@ sub prepare {
 sub execute{
     my $self = shift;
 
-    $self->{context}->{cloudmanager_ecomp}->migrateHost(host               => $self->{context}->{host},
+    $self->{context}->{cloudmanager_comp}->migrateHost(host               => $self->{context}->{host},
                                                         hypervisor_dst     => $self->{context}->{hypervisor_dst},
                                                         hypervisor_cluster => $self->{context}->{hypervisor_cluster});
 
