@@ -5,6 +5,10 @@
 # Your application's name
 appname: "Frontend"
 
+# Select for wich product we want ui (KIM/KIO)
+kanopya_product: "KIM"
+
+
 # The default layout to use for your application (located in
 # views/layouts/main.tt)
 layout: "main"
@@ -38,10 +42,6 @@ engines:
 #     end_tag:   '
 
 plugins:
-  "Preprocess::Sass":
-    save: 1
-    paths:
-      - css
   FormValidator:
     profil_file: 'profiles.pl'
     msg:
