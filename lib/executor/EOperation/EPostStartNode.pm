@@ -73,14 +73,14 @@ sub prerequisites {
     my $delay = 10;
 
     # Duration to wait for setting host broken
-    my $broken_time = 480;
+    my $broken_time = 240;
 
     my $cluster_id = $self->{context}->{cluster}->getAttr(name => 'entity_id');
     my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
 
     # Check how long the host is 'starting'
     my @state = $self->{context}->{host}->getState;
-    my $starting_time = time() - time(); #$self->getAttr(name => 'beguin_time');
+    my $starting_time = time() - $state[1];
 
     if($starting_time > $broken_time) {
         $self->{context}->{host}->setState(state => 'broken');
