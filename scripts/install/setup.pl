@@ -121,25 +121,31 @@ chomp(@kanopya_pvs);
 #Directory manipulations#
 #########################
 
-# We create the logging directory and give rights
+# logs directory creation
 
 print "creating the logging directory...";
-$answers->{log_directory} = $answers->{log_directory} . '/'
-    if ( $answers->{log_directory} !~ /\/$/ );
-make_path("$answers->{log_directory}", { verbose => 1 });
+$answers->{log_directory} .= '/' if($answers->{log_directory} !~ /\/$/);
+make_path("$answers->{log_directory}", { verbose => 1, mode => 0757 });
 # Give write access to nobody /!\ TEMPORARY
-chmod 0757, $answers->{log_directory};
-#chownRecursif($conf_vars->{apache_user}, $answers->{log_directory});
 print "done\n";
 
-# We create the master images directory and give rights
+# master images directory creation
 print "creating the master images directory...";
-$answers->{masterimages_directory} = $answers->{masterimages_directory} . '/'
-    if ( $answers->{log_directory} !~ /\/$/ );
-
-make_path("$answers->{masterimages_directory}", { verbose => 1 });
+$answers->{masterimages_directory} .= '/' if($answers->{masterimages_directory} !~ /\/$/ );
+make_path("$answers->{masterimages_directory}", { verbose => 1, mode => 0755 });
 print "done\n";
 
+# tftp directory creation
+print "creating the tftp directory...";
+$answers->{tftp_directory} .= '/' if($answers->{tftp_directory} !~ /\/$/ );
+make_path("$answers->{tftp_directory}", { verbose => 1, mode => 0755 });
+print "done\n";
+
+# clusters directory creation
+print "creating the clusters directory...";
+$answers->{clusters_directory} .= '/' if($answers->{clusters_directory} !~ /\/$/);
+make_path("$answers->{clusters_directory}", { verbose => 1, mode => 0755 });
+print "done\n";
 
 ######################
 # SSH key generation #
@@ -184,7 +190,7 @@ else {
 }
 
 #Atftpd configuration
-writeFile('/etc/default/atftpd', "USE_INETD=false\nOPTIONS=\"--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --bind-address $internal_ip_add --maxthread 100 --verbose=5 --logfile=/var/log/tftp.log /tftp\"");
+writeFile('/etc/default/atftpd', "USE_INETD=false\nOPTIONS=\"--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --bind-address $internal_ip_add --maxthread 100 --verbose=5 --logfile=/var/log/tftp.log $answers->{tftp_directory}\"");
 
 ########################
 #Database configuration#
@@ -372,7 +378,7 @@ print "user : <admin>\n";
 print "password : <$answers->{dbpassword1}>\n";
 
 # Prepare /tftp :
-print "Populate /tftp directory.\n";
+print "Populate $answers->{tftp_directory} directory.\n";
 tftpPopulation();
 
 ##########################################################################################
@@ -611,11 +617,6 @@ sub default_error {
 
 # Method for populate tftp directory
 sub tftpPopulation {
-    my $dir = '/tftp';
-    # Check if /tftp exists, create it if not :
-    if ( ! -d $dir) {
-        system('mkdir /tftp');
-    }
     
     my $rsync_sshkey = '~/.ssh/rsync_rsa';
     # Check if rsync sshkey exist on right place :
@@ -626,7 +627,7 @@ sub tftpPopulation {
         system('mv rsync_rsa ~/.ssh/;chmod 400 ~/.ssh/rsync_rsa');
     }
     # Do a Rsync from download.kanopya.org of tftp directory content :
-    system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* /tftp/');
+    system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* '.$answers->{tftp_directory});
 }
 
 ###################################################### Following functions generates conf files for Kanopya

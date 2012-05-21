@@ -41,6 +41,7 @@ use warnings;
 use Entity;
 use Entity::ServiceProvider::Inside::Cluster;
 use General;
+use Kanopya::Config;
 use EFactory;
 use Entity::InterfaceRole;
 
@@ -57,11 +58,13 @@ my $errmsg;
 sub create {
     my $self = shift;
     my %args = @_;
-
+    my $config = Kanopya::Config::get('executor');
+    
     # Create cluster directory
-    my $command = "mkdir -p /clusters/" . $self->getAttr(name => "cluster_name");
+    my $dir = "$config->{clusters}->{directory}/" . $self->getAttr(name => "cluster_name");
+    my $command = "mkdir -p $dir";
     $self->getExecutorEContext->execute(command => $command);
-    $log->debug("Execution : mkdir -p /clusters/" . $self->getAttr(name => "cluster_name"));
+    $log->debug("Execution : mkdir -p $dir");
 
     # set initial state to down
     $self->setAttr(name => 'cluster_state', value => 'down:'.time);
