@@ -55,10 +55,18 @@ sub getCurrentOperation {
     my $self = shift;
     my %args = @_;
 
-    return Operation->find(hash => {
-               workflow_id => $self->getAttr(name => 'workflow_id'),
-               state       => 'processing'
-           });
+    my $adm = Administrator->new();
+    my $current = $adm->{db}->resultset('Operation')->search(
+                      { workflow_id => $self->getAttr(name => 'workflow_id') },
+                      { order_by => { -asc => 'execution_rank' }}
+                  )->single();
+
+    return Operation->get(id => $current->get_column("operation_id"));
+
+#    return Operation->find(hash => {
+#               workflow_id => $self->getAttr(name => 'workflow_id'),
+#               state       => 'processing'
+#           });
 }
 
 sub cancel {
