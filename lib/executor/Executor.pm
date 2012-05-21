@@ -133,6 +133,7 @@ sub oneRun {
 
     if ($opdata){
         my $op = EFactory::newEOperation(op => $opdata, config => $self->{config});
+        my $workflow = $op->getWorkflow;
 
         my $opclass = ref($op);
 
@@ -143,16 +144,38 @@ sub oneRun {
             content => "Operation Processing [$opclass]..."
         );
 
-        $op->setState(state => 'processing');
-
         # start transaction
         $adm->{db}->txn_begin;
         eval {
+            my $delay;
+
             $log->debug("Calling check of operation $opclass.");
             $op->check();
 
-            $log->debug("Calling prerequisite of operation $opclass.");
-            my $delay = $op->prerequisites();
+            # If the operation never been processed, check its prerequisite
+            if ($op->getAttr(name => 'state') eq 'pending') {
+                $log->debug("Calling prerequisite of operation $opclass.");
+                $delay = $op->prerequisites();
+
+                # If the prerequisite are validated, process the operation
+                if (not $delay) {
+                    $op->setState(state => 'processing');
+
+                    $log->debug("Calling prepare of operation $opclass.");
+                    $op->prepare();
+
+                    $log->debug("Calling execute of operation $opclass.");
+                    $op->process();
+                }
+            }
+
+            # If the operation has been processed, check its postrequisite
+            if ($op->getAttr(name => 'state') eq 'processing') {
+                $log->debug("Calling postrequisite of operation $opclass.");
+                $delay = $op->postrequisites();
+            }
+
+            # Report the operation if required
             if ($delay) {
                 $op->report(duration => $delay);
 
@@ -161,12 +184,6 @@ sub oneRun {
                 $log->info("---- [$opclass] Execution reported ($delay s.) ----");
                 next;
             }
-
-            $log->debug("Calling prepare of operation $opclass.");
-            $op->prepare();
-
-            $log->debug("Calling execute of operation $opclass.");
-            $op->process();
         };
         if ($@) {
             my $err_exec = $@;
@@ -221,12 +238,11 @@ sub oneRun {
             );
 
             $op->setState(state => 'succeeded');
+
+            # Update the workflow context
+            $workflow->updateParams(params => $op->{params}, context => $op->{context});
         }
 
-        # Update the workflow context
-        my $workflow = $op->_getOperation->getWorkflow;
-        $workflow->updateParams(params => $op->{params}, context => $op->{context});
-        
         eval {
             $op->delete();
         };

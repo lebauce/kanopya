@@ -849,6 +849,8 @@ sub start {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to start this cluster");
     }
 
+    $self->setState(state => 'starting');
+
     # Enqueue operation AddNode.
     $self->addNode();
 }

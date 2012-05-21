@@ -128,7 +128,7 @@ sub new {
 
     bless $self, $class;
 
-    return $args{workflow_id};
+    return $self;
 }
 
 =head2 getNextOp

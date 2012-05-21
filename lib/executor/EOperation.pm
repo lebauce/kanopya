@@ -128,6 +128,13 @@ sub prerequisites {
     return 0;
 }
 
+sub postrequisites {
+    my $self = shift;
+
+    # Operations are not reported by default.
+    return 0;
+}
+
 #interface
 sub _cancel {}
 sub finish {}
