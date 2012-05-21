@@ -418,7 +418,7 @@ sub _generateBootConf {
                              error => "Error when processing template $input."
                          );
 
-            my $tftp_conf = $self->{context}->{bootserver}->getComponent(name => "Atftpd", version => "0")->getConf();
+            my $tftp_conf = $self->{config}->{tftp}->{directory};
             my $dest = $tftp_conf->{'repository'} . '/' . $self->{context}->{host}->getAttr(name => "host_hostname") . ".conf";
 
             $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
@@ -458,7 +458,7 @@ sub _generatePXEConf {
     my $kernel_version = Entity::Kernel->get(id => $kernel_id)->getAttr(name => 'kernel_version');
     my $boot_policy    = $args{cluster}->getAttr(name => 'cluster_boot_policy');
     
-    my $tftp_conf = $self->{context}->{bootserver}->getComponent(name => "Atftpd", version => "0")->getConf();
+    my $tftpdir = $self->{config}->{tftp}->{directory};
 
     my $nfsexport = "";
     if ($boot_policy =~ m/NFS/) {
@@ -467,13 +467,14 @@ sub _generatePXEConf {
 
     ## Here we create a dedicated initramfs for the node
     # we create a temporary working directory for the initrd
+    
     $log->info('Dedicated initramfs build');
     my $initrddir = "/tmp/$clustername-$hostname";
     my $cmd = "mkdir -p $initrddir";
     $self->getEContext->execute(command => $cmd);
     
     # check and retrieve compression type  
-    my $initrd = $tftp_conf->{'repository'}."/initrd_$kernel_version";
+    my $initrd = "$tftpdir/initrd_$kernel_version";
     $cmd = "file $initrd | grep -o -E '(gzip|bzip2)'";
     my $result = $self->getEContext->execute(command => $cmd);
     my $decompress;
@@ -498,7 +499,7 @@ sub _generatePXEConf {
     $self->getEContext->execute(command => $cmd);
     
     # create the final storing directory
-    my $path = $tftp_conf->{'repository'}."/$clustername/$hostname";
+    my $path = "$tftpdir/$clustername/$hostname";
     $cmd = "mkdir -p $path";
     $self->getEContext->execute(command => $cmd);
     
@@ -572,7 +573,7 @@ sub _generatePXEConf {
 
     my $node_mac_addr = $pxeiface->getAttr(name => 'iface_mac_addr');
     $node_mac_addr =~ s/:/-/g;
-    my $dest = $tftp_conf->{'repository'} . '/pxelinux.cfg/01-' . lc $node_mac_addr ;
+    my $dest = $tftpdir . '/pxelinux.cfg/01-' . lc $node_mac_addr ;
 
     $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
     unlink "/tmp/$tmpfile";
