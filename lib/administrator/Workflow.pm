@@ -21,6 +21,8 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
+use WorkflowDef;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -40,6 +42,29 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub run {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'name', 'params' ]);
+
+    my $def = WorkflowDef->find(hash => { workflow_de_name => $args{name} });
+    my $workflow = Workflow->new(workflow_name => $args{name});
+    delete $args{name};
+
+    my $steps = $def->{_dbix}->workflow_steps;
+    while(my $step = $steps->next) {
+        $workflow->enqueue(
+            priority => 200,
+            type     => $step->get_column('operationtype_name'),
+            %args
+        );
+        if (defined $args{params}) {
+            delete $args{params};
+        }
+    }
+}
 
 sub enqueue {
     my $self = shift;

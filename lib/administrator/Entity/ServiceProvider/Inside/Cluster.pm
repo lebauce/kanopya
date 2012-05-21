@@ -27,6 +27,7 @@ use Entity::Host;
 use Entity::Systemimage;
 use Entity::Tier;
 use Operation;
+use Workflow;
 use Administrator;
 use General;
 use Entity::ManagerParameter;
@@ -778,16 +779,14 @@ sub addNode {
               );
     }
 
-    $log->debug("New Operation AddNode with attrs cluster_id: " . $self->getAttr(name => "cluster_id"));
-    Operation->enqueue(
-        priority => 200,
-        type     => 'AddNode',
+    Workflow->run(
+        name => 'AddNode',
         params   => {
             context => {
                 cluster => $self,
             }
         }
-    );
+     );
 }
 
 sub getHostConstraints {
