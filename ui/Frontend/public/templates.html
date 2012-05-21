@@ -1,9 +1,8 @@
 <script type="text/html" id="categorytemplate">
 	<li id="<%= id %>" class="selectcategory"><button><%= title %> (<%= amount %>)</button></li>
 </script>
-
-
 <script type="text/html" id="widgettemplate">
+	
 	<div class="ui-widget ui-corner-all ui-widget-content widget" id="<%= id %>" title="<%= title %>">
 		<div class="ui-widget-header ui-corner-all widgetheader">
 			<span class="widgettitle"><%= title %></span>
@@ -24,9 +23,9 @@
 							<span class="ui-icon ui-icon-close"></span>
 							<a class="delete" href="#">Delete</a>
 						</li>		
-						<li class="widgetEdit">
+						<li class="widgetSetTitle">
 							<span class="ui-icon ui-icon-tag"></span>
-							<a class="edit" onclick="msg()">Edit</a>
+							<a class="setTitle" href="#">Edit</a>
 						</li>
 					
 						<li class="widgetRefresh">
@@ -44,11 +43,6 @@
 
 <script type="text/html" id="selectlayouttemplate">
 	<li class="layoutchoice" id="<%= id %>" style="background-image: url('<%= image %>')"></li>
-</script>
-<script>
-	function msg(){
-	alert("toto");
-	}
 </script>
 <script type="text/html" id="addwidgettemplate">
 

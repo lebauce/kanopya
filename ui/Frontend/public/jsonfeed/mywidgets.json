@@ -13,7 +13,7 @@
     },
     {
       "title" : "tabletest2",
-      "column" : "second",
+      "column" : "first",
       "id" : "widget3",
       "url" : "widgets/widget3.html",
       "editurl" : "widgets/editwidget3.html",
@@ -22,7 +22,7 @@
     {
       "title" : "tabletest3",
       "id" : "widget2",
-      "column" : "second",
+      "column" : "first",
       "url" : "widgets/widget2.html",
       "editurl" : "widgets/editwidget2.html",
       "open" : true

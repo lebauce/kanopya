@@ -1,12 +1,9 @@
 # This is the main configuration file of your Dancer app
-# env-related settings should go to environments/$env.yml
+# env-related settings should go to environments/
 # all the settings in this file will be loaded at Dancer's startup.
 
 # Your application's name
 appname: "Frontend"
-
-# Select for wich product we want ui (KIM/KIO)
-kanopya_product: "KIM"
 
 # The default layout to use for your application (located in
 # views/layouts/main.tt)
@@ -20,6 +17,12 @@ charset: "UTF-8"
 session: "YAML"
 session_dir: "/tmp/kanopya-sessions"
 session_expires: "1800"
+
+# Log dir
+log_path: "/var/log/kanopya/"
+
+log_file: "starman.log"
+
 
 # template engine
 # simple: default and very basic template engine
@@ -35,10 +38,12 @@ engines:
 #     end_tag:   '
 
 plugins:
+  "Preprocess::Sass":
+    save: 1
+    paths:
+      - css
   FormValidator:
     profil_file: 'profiles.pl'
     msg:
       single: 'Missing field'
       several: 'Missing fields'
-
-
