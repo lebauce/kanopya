@@ -59,6 +59,8 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
+use EFactory;
+
 my $log = get_logger("administrator");
 my $errmsg;
 
@@ -365,6 +367,28 @@ sub getBaseConfiguration {
         smtp_connect_timeout    => 30,
         lvs_id                  => 'MAIN_LVS' 
     };
+}
+
+sub readyNodeRemoving {
+    my $self = shift;
+    my %args = @_;
+ 
+    General::checkParams(args => \%args, required => ['host_id']);
+    
+    my $host = Entity::Host->find(hash => {host_id => $args{host_id}});
+    
+    my $EKeepalived = EFactory::newEEntity(data => $self);
+
+    my $context = $EKeepalived->getEContext();
+    my $result = $context->execute(command => "ipvsadm -L -n | grep " . $host->getAdminIp());
+    my @result = split(/\n/, $result->{stdout});
+    foreach my $line (@result) {
+        my @cols = split(/[\t| ]+/, $line);
+        if ($cols[5] > 0) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 =head1 DIAGNOSTICS
