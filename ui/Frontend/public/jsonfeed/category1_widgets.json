@@ -3,18 +3,18 @@
   {
   "data" : [
     {
-      "id" : "w01",
-      "title" : "tabletest2",
+      "id" : "widget1",
+      "title" : "tabletest1",
       "description" : "Documentation widget",
-      "creator" : "Mark Machielsen",
+      "creator" : "Mongia",
       "url" : "widgets/widget1.html",
       "image": "widgets/widget1.png"
     },
     {
-      "id" : "w02",
-      "title" : "tabletest1",
+      "id" : "widget2",
+      "title" : "tabletest2",
       "description" : "This is download plugin widget",
-      "creator" : "Mark Machielsen",
+      "creator" : "Mongia",
       "url" : "widgets/widget2.html",
       "image": "widgets/widget2.png"
     }
