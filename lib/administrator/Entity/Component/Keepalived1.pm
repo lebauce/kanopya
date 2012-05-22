@@ -59,10 +59,56 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
+use EFactory;
+
 my $log = get_logger("administrator");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    notification_email_from => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    notification_email      => {
+    
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    daemon_method           => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    smtp_connect_timeout    => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    smtp_server             => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    lvs_id                  => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    iface                   => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    }
+};
 sub getAttrDef { return ATTR_DEF; }
 
 =head2 getVirtualservers
@@ -104,12 +150,9 @@ sub getRealserverId {
     my $self = shift;
     my %args = @_;
 
-    if ((! exists $args{realserver_ip} or ! defined $args{realserver_ip}) ||
-        (! exists $args{virtualserver_id} or ! defined $args{virtualserver_id})){
-        $errmsg = "Component::Keepalived1->getRealserverId needs a virtualserver_id and a realserver_ip named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['realserver_ip',
+                                                      'virtualserver_id']);
+    
     my $virtualserver = $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id});
     $log->debug("Virtualserver found with id <$args{virtualserver_id}>");
     my $realserver = $virtualserver->keepalived1_realservers->search({ realserver_ip => $args{realserver_ip} })->single;
@@ -131,14 +174,11 @@ sub addVirtualserver {
     my $self = shift;
     my %args = @_;
 
-    if ((! exists $args{virtualserver_ip} or ! defined $args{virtualserver_ip}) ||
-        (! exists $args{virtualserver_port} or ! defined $args{virtualserver_port}) ||
-        (! exists $args{virtualserver_lbkind} or ! defined $args{virtualserver_lbkind}) ||
-        (! exists $args{virtualserver_lbalgo} or ! defined $args{virtualserver_lbalgo})) {
-        $errmsg = "Component::Keepalived1->addVirtualserver needs a ... named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['virtualserver_ip',
+                                                      'virtualserver_port',
+                                                      'virtualserver_lbkind',
+                                                      'virtualserver_lbalgo']);
+    
     my $virtualserver_rs = $self->{_dbix}->keepalived1_virtualservers;
     my $row = $virtualserver_rs->create(\%args);
     $log->info("New virtualserver added with ip $args{virtualserver_ip} and port $args{virtualserver_port}");
@@ -159,16 +199,12 @@ sub addRealserver {
     my $self = shift;
     my %args = @_;
 
-    if ((! exists $args{virtualserver_id} or ! defined $args{virtualserver_id}) ||
-        (! exists $args{realserver_ip} or ! defined $args{realserver_ip}) ||
-        (! exists $args{realserver_port} or ! defined $args{realserver_port}) ||
-        (! exists $args{realserver_checkport} or ! defined $args{realserver_checkport}) ||
-        (! exists $args{realserver_checktimeout} or ! defined $args{realserver_checktimeout}) ||
-        (! exists $args{realserver_weight} or ! defined $args{realserver_weight})) {
-            $errmsg = "Component::Keepalived1->addRealserver needs a ... named argument!";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['virtualserver_id',
+                                                      'realserver_ip',
+                                                      'realserver_port',
+                                                      'realserver_checkport',
+                                                      'realserver_checktimeout',
+                                                      'realserver_weight']);
     
     $log->debug("New real server try to be added on virtualserver_id <$args{virtualserver_id}>");
     my $realserver_rs = $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers;
@@ -189,12 +225,10 @@ sub addRealserver {
 
 sub removeVirtualserver {
     my $self = shift;
-    my %args  = @_;    
-    if (! exists $args{virtualserver_id} or ! defined $args{virtualserver_id}) {
-        $errmsg = "Component::Keepalived1->removeVirtualserver needs a virtualserver_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    my %args  = @_;
+    
+    General::checkParams(args => \%args, required => ['virtualserver_id']);
+    
     $log->debug("Trying to delete virtualserver with id <$args{virtualserver_id}>");
     return $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->delete;
 }
@@ -211,14 +245,26 @@ sub removeVirtualserver {
 sub removeRealserver {
     my $self = shift;
     my %args  = @_;
-    if ((! exists $args{virtualserver_id} or ! defined $args{virtualserver_id})||
-        (! exists $args{realserver_id} or ! defined $args{realserver_id})) {
-        $errmsg = "Component::Keepalived1->removeRealserver needs a virtualserver_id and a realserver_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['virtualserver_id',
+                                                      'realserver_id']);
+    
     $log->debug("Trying to delete realserver with id <$args{realserver_id}>");
     return $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
+}
+
+sub setRealServerWeightToZero {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, require => ['realserver_id',
+                                                    'virtualserver_id']);
+    
+    $log->debug("Setting realserver <$args{realserver_id}> weight to 0");
+    my $virtualServer   = $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id});
+    my $realServer      = $virtualServer->keepalived1_realservers->find($args{realserver_id});
+    $realServer->set_column(realserver_weight => 0);
+    $realServer->update();
 }
 
 =head2 getConf
@@ -321,6 +367,28 @@ sub getBaseConfiguration {
         smtp_connect_timeout    => 30,
         lvs_id                  => 'MAIN_LVS' 
     };
+}
+
+sub readyNodeRemoving {
+    my $self = shift;
+    my %args = @_;
+ 
+    General::checkParams(args => \%args, required => ['host_id']);
+    
+    my $host = Entity::Host->find(hash => {host_id => $args{host_id}});
+    
+    my $EKeepalived = EFactory::newEEntity(data => $self);
+
+    my $context = $EKeepalived->getEContext();
+    my $result = $context->execute(command => "ipvsadm -L -n | grep " . $host->getAdminIp());
+    my @result = split(/\n/, $result->{stdout});
+    foreach my $line (@result) {
+        my @cols = split(/[\t| ]+/, $line);
+        if ($cols[5] > 0 || $cols[6] > 0) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 =head1 DIAGNOSTICS

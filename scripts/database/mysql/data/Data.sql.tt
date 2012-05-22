@@ -409,7 +409,8 @@ INSERT INTO `component_type` VALUES
 (16,'Fileimagemanager','0','Storage'),
 (17,'Puppetagent','2','Configurationagent'),
 (18,'Puppetmaster','2','Configurationserver'),
-(19,'Kanopyacollector','1','DataCollector');
+(19,'Kanopyacollector','1','DataCollector'),
+(20, 'Keepalived','1','LoadBalancer');
 
 --
 -- connectors type list

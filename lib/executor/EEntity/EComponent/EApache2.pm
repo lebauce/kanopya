@@ -70,7 +70,8 @@ sub addNode {
     );
 
     $self->addInitScripts(
-        scriptname => 'apache2', 
+        scriptname  => 'apache2',
+        mountpoint => $args{mount_point}
     );
 
 }

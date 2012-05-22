@@ -163,5 +163,19 @@ sub toString {
 }
 
 
+sub getAllIps {
+    my $self = shift;
+    my $ips = [];
+ 
+    my $ip = new NetAddr::IP($self->getAttr(name => 'poolip_addr'), $self->getAttr(name => 'poolip_netmask'));   
+    
+    for (my $i = 0; $i < $self->getAttr(name => 'poolip_mask'); ++$i) {
+        push(@{$ips}, $ip);
+        ++$ip;
+    }
+    
+    return $ips;
+}
+
 
 1;
