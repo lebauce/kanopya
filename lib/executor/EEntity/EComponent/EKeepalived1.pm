@@ -42,9 +42,24 @@ sub addNode {
         # no masternode defined, this host becomes the masternode
         #  so it is the first initialization of keepalived
         
-        my $publicips =  $args{cluster}->getPublicIps();
+        # retrieve all public ips associated with the cluster
+        my $publicips  = [];
+        my $interfaces = $args{cluster}->getNetworkInterfaces();
+        foreach my $interface (@{$interfaces}) {
+            if ($interface->getRole()->getAttr(name => 'interface_role_name') eq "public") {
+                my $networks = $interface->{_dbix}->interface_networks;
+                while (my $interface_network = $networks->next) {
+                    my $network = Entity::Network->get(id => $interface_network->get_column('network_id'));
+                    my $poolIps = $network->getAssociatedPoolips();
+                    foreach my $poolIp (@{$poolIps}) {
+                        push(@{$publicips}, @{$poolIp->getAllIps()});
+                    }
+                }
+            }
+        }
+                
         my $components = $args{cluster}->getComponents(category => 'all');
-        
+
         # retrieved loadbalanced components and there ports
         my $ports = [];
         foreach my $component(values %$components) {
@@ -61,7 +76,7 @@ sub addNode {
                 
                 #$log->debug("adding virtualserver  definition in database");
                 my $vsid = $keepalived->addVirtualserver(
-                    virtualserver_ip => $vip->{address}.'/'.$vip->{netmask},
+                    virtualserver_ip => $vip,
                     virtualserver_port => $port,
                     virtualserver_lbkind => 'NAT',
                     virtualserver_lbalgo => 'wlc');
