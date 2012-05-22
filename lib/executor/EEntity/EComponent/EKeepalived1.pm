@@ -124,10 +124,33 @@ sub addNode {
             mountpoint => $args{mount_point},
             scriptname => 'network_routes'
         );
+ 
+        $self->generateAndSendKeepalived();
+        $self->reload();
         
-#        $self->generateKeepalived(mount_point => '/etc');
-#        $self->reload();
+    }
+}
+
+sub preStopNode {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['host', 'cluster']);
+    
+    if ($args{cluster}->getMasterNodeIp() ne $args{host}->getAdminIp()) {
+        my $keepalived      = $self->_getEntity();
+        my $virtualservers  = $keepalived->getVirtualservers();
         
+        foreach my $vs (@{$virtualservers}) {
+            my $realserver_id = $keepalived->getRealserverId(virtualserver_id   => $vs->{virtualserver_id},
+                                                             realserver_ip      => $args{host}->getAdminIp());
+            
+            $keepalived->setRealServerWeightToZero(virtualserver_id => $vs->{virtualserver_id},
+                                                   realserver_id    => $realserver_id);
+        }
+        
+        $self->generateAndSendKeepalived();
+        $self->reload();
     }
 }
 
@@ -147,20 +170,17 @@ sub stopNode {
         }
         
     } else {
-        # remove this host as realserver for each virtualserver of this cluster
         my $virtualservers = $keepalived->getVirtualservers();
         
-        foreach my $vs (@$virtualservers) {
-            my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->{virtualserver_id}, realserver_ip => $args{host}->getAdminIp);
+        foreach my $vs (@{$virtualservers}) {
+            my $realserver_id = $keepalived->getRealserverId(virtualserver_id   => $vs->{virtualserver_id},
+                                                             realserver_ip      => $args{host}->getAdminIp());
             
-            $keepalived->setRealServerWeightToZero(virtualserver_id => $vs->{virtualserver_id},
-                                                   realserver_id    => $realserver_id);
-            #$keepalived->removeRealserver(
-            #    virtualserver_id => $vs->{virtualserver_id},
-            #    realserver_id => $realserver_id);
+            $keepalived->removeRealserver(virtualserver_id  => $vs->{virtualserver_id},
+                                          realserver_id     => $realserver_id);
         }
         
-        $self->generateKeepalived(mount_point => '/etc');
+        $self->generateAndSendKeepalived();
         $self->reload();
     }
     
@@ -219,6 +239,22 @@ sub generateKeepalived {
                         input_file   => "keepalived.conf.tt",
                         output       => "/keepalived/keepalived.conf",
                         data         => $data);
+}
+
+sub generateAndSendKeepalived {
+    my $self = shift;
+    
+    my $rand    = new String::Random;
+    my $tmpfile = $rand->randpattern("cccccccc");
+    my $data = $self->_getEntity()->getTemplateDataKeepalived();
+    $self->generateFile(mount_point  => '/',
+                        template_dir => "/templates/components/keepalived",
+                        input_file   => "keepalived.conf.tt",
+                        output       => "/tmp/" . $tmpfile,
+                        data         => $data);
+    $self->getEContext()->send(src  => '/tmp/' . $tmpfile,
+                               dest => '/etc/keepalived/keepalived.conf');
+    unlink('/tmp/' . $tmpfile);
 }
 
 # generate /etc/default/ipvsadm configuration file for the master node
