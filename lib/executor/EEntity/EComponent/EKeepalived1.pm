@@ -76,7 +76,7 @@ sub addNode {
                 
                 #$log->debug("adding virtualserver  definition in database");
                 my $vsid = $keepalived->addVirtualserver(
-                    virtualserver_ip => $vip,
+                    virtualserver_ip => $vip->addr(),
                     virtualserver_port => $port,
                     virtualserver_lbkind => 'NAT',
                     virtualserver_lbalgo => 'wlc');

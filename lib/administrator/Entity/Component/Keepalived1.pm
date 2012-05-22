@@ -384,7 +384,7 @@ sub readyNodeRemoving {
     my @result = split(/\n/, $result->{stdout});
     foreach my $line (@result) {
         my @cols = split(/[\t| ]+/, $line);
-        if ($cols[5] > 0) {
+        if ($cols[5] > 0 || $cols[6] > 0) {
             return 0;
         }
     }
