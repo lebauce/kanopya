@@ -29,7 +29,17 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("timedata");
 
-my $dir = 'C:\\tmp\\monitor\\TimeData\\';
+my $dir;
+my $rrd;
+
+#Quick solution to handle windows and linux
+if ($^O eq 'MSWin32') {
+    $dir = 'C:\\tmp\\monitor\\TimeData\\';
+    $rrd = '$rrd';
+} elsif ($^O eq 'linux') {
+    $rrd = '/usr/bin/rrdtool';
+    $dir = '/var/cache/kanopya/monitor/';
+}
 
 ####################################################################################################################
 #########################################RRD MANIPULATION FUNCTIONS#################################################
@@ -47,7 +57,7 @@ B<throws>  : 'RRD creation failed' if the creation is a failure §WARNING§: the
 =cut
 
 sub createTimeDataStore{
-	#rrd creation example: system ('rrdtool.exe create target.rrd --start 1328190055 --step 300 DS:mem:GAUGE:600:0:671744 RRA:AVERAGE:0.5:12:24');
+	#rrd creation example: system ('$rrd create target.rrd --start 1328190055 --step 300 DS:mem:GAUGE:600:0:671744 RRA:AVERAGE:0.5:12:24');
     my %args = @_;
     $log->debug(Dumper(\%args));
 	
@@ -128,7 +138,7 @@ sub createTimeDataStore{
     $DS_chain = 'DS:'.$DS_params{'DSname'}.':'.$DS_params{'type'}.':'.$DS_params{'heartbeat'}.':'.$DS_params{'min'}.':'.$DS_params{'max'};
 
     #final command
-    my $cmd = 'rrdtool.exe create '.$dir.$name.' '.$opts.' '.$DS_chain.' '.$RRA_chain;
+    my $cmd = $rrd.' create '.$dir.$name.' '.$opts.' '.$DS_chain.' '.$RRA_chain;
     # print $cmd."\n";
     $log->info($cmd);
 
@@ -178,7 +188,7 @@ sub getTimeDataStoreInfo {
     General::checkParams(args => \%args, required => ['name']); 
 
 	my $name = _formatName(name => $args{'name'});
-    my $cmd = 'rrdtool.exe info '.$dir.$name;
+    my $cmd = $rrd.' info '.$dir.$name;
 
     system ($cmd);	
 }
@@ -202,7 +212,7 @@ sub fetchTimeDataStore {
     my $CF    = 'LAST';
     my $start = $args{'start'};
     my $end   = $args{'end'};
-    my $cmd   = 'rrdtool.exe fetch '.$dir.$name.' '.$CF;
+    my $cmd   = $rrd.' fetch '.$dir.$name.' '.$CF;
 
     #if not defined, start is (end - 1 day), and end is (now)
     if (defined $start){ 
@@ -274,7 +284,7 @@ sub updateTimeDataStore {
     my $time = $args{'time'};
     my $value = $args{'value'};
 
-    my $cmd = 'rrdtool.exe updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
+    my $cmd = $rrd.' updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
     $log->debug($cmd);
     #print $cmd."\n";
 
@@ -305,7 +315,7 @@ sub getLastUpdatedValue {
 
     my $name = _formatName(name => $args{'clustermetric_id'});
     
-    my $cmd = 'rrdtool.exe lastupdate '.$dir.$name;
+    my $cmd = $rrd.' lastupdate '.$dir.$name;
     $log->info($cmd);
     
     my $exec =`$cmd 2>&1`;

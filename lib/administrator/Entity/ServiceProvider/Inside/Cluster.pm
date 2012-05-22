@@ -1031,7 +1031,7 @@ sub getIndicatorUnitFromId {
 sub getNodesMetrics {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['time_span', 'indicators_ids']);
+    General::checkParams(args => \%args, required => ['time_span', 'indicators']);
 
     my $collector_manager = $self->getCollectorManager();
     
@@ -1043,7 +1043,7 @@ sub getNodesMetrics {
     }
  
     #return the data
-    my $monitored_values = $collector_manager->retrieveData ( nodelist => \@nodelist, time_span => $args{'time_span'}, indicators_ids => $args{'indicators_ids'} );
+    my $monitored_values = $collector_manager->retrieveData ( nodelist => \@nodelist, time_span => $args{'time_span'}, indicators_ids => $args{'indicators'} );
     return $monitored_values;
 }
 

@@ -137,7 +137,11 @@ sub update() {
 
             #FILTER CLUSTERS WITH MONITORING PROVIDER
             eval{
-                $service_provider->getConnector(category => 'MonitoringService');
+                if ($^O eq 'MSWin32') {
+                    $service_provider->getConnector(category => 'MonitoringService');
+                } elsif ($^O eq 'linux') {
+                    $service_provider->getCollectorManager();
+                }
             };
             if($@){
                 print '*** Aggregator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***'."\n";

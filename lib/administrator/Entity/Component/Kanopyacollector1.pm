@@ -84,7 +84,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub retrieveData {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['nodelist', 'timespan', 'indicators_ids']);
+    General::checkParams(args => \%args, required => ['nodelist', 'time_span', 'indicators_ids']);
 
     my $nodelist       = $args{'nodelist'};
     my $indicators_ids = $args{'indicators_ids'};
@@ -122,12 +122,12 @@ sub retrieveData {
   #  }
 
     my $monitored_values = { '192.168.2.12' => {
-                                '.1.3.6.1.4.1.2021.4.5.0' => 1,
-                                '.1.3.6.1.4.1.2021.4.6.0'   => 2, 
+                                '.1.3.6.1.4.1.2021.4.5.0' => '111111',
+                                '.1.3.6.1.4.1.2021.4.6.0'   => '222222', 
                                 },
                              '192.168.2.13' => {
-                                '.1.3.6.1.4.1.2021.4.5.0' => 1,
-                                '.1.3.6.1.4.1.2021.4.6.0'   => 2, 
+                                '.1.3.6.1.4.1.2021.4.5.0' => '111111',
+                                '.1.3.6.1.4.1.2021.4.6.0'   => '222222', 
                                 },
                             };
 

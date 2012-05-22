@@ -17,6 +17,7 @@ use strict;
 use warnings;
 use base 'BaseDB';
 use Indicator;
+use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -133,6 +134,7 @@ sub computeValueFromMonitoredValues {
 
             # Replace $element by its value
             $element          = $monitored_values_for_one_node->{$indicator_oid};
+
             if(not defined $element){
                 return undef;
             }
