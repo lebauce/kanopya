@@ -12,18 +12,18 @@ function build_mainmenu() {
             var submenu_links = mainmenu_def[label][sublabel];
             var id = 'view_' + sublabel;
             content.append('<li><a class="view_link" href="#' + id + '">' + sublabel + '</a></li>');
-            build_submenu(id, submenu_links);
+            build_submenu($('#view-container'), id, submenu_links);
         }
     }
     
     container.accordion();
 }
 
-function build_submenu(id, links) {
-    var container = $('#view-container');
+function build_submenu(container, view_id, links) {
+    //var container = $('#view-container');
     
     // Create the div container for this view
-    var view = $('<div class="view" id="' + id + '"></div>').appendTo(container);
+    var view = $('<div class="view" id="' + view_id + '"></div>').appendTo(container);
     // Tab container of the view
     var submenu_cont = $('<ul></ul>').appendTo(view);
     
@@ -39,10 +39,40 @@ function build_submenu(id, links) {
         var content_id = 'content_' + links[smenu]['id'];
         var content = $('<div id="' + content_id + '"></div>');
         view.append(content);
-        view.tabs('add', '#' + content_id , links[smenu]['label'])
+        view.tabs('add', '#' + content_id , links[smenu]['label']);
+        
+        if (links[smenu]['onLoad']) {
+            _content_handlers[content_id] = {'onLoad' : links[smenu]['onLoad']};
+        }
     }
     
     view.hide();
+}
+
+function build_detailmenu(container, view_id, links, elem_id) {
+    // Create the div container for this view
+    var view = $('<div class="view" id="' + view_id + '"></div>').appendTo(container);
+    // Tab container of the view
+    var submenu_cont = $('<ul></ul>').appendTo(view);
+    
+    view.tabs({
+        select: function(event, ui) { 
+            var link = String(ui.tab);
+            //alert('Event select : ' + link.split('#')[1] + '  => ' + ui.panel);
+            reload_content(link.split('#')[1], elem_id);
+        }
+    });
+    
+    for (var smenu in links) {
+        var content_id = 'content_' + links[smenu]['id'];
+        var content = $('<div id="' + content_id + '"></div>');
+        view.append(content);
+        view.tabs('add', '#' + content_id , links[smenu]['label'])
+        
+        if (links[smenu]['onLoad']) {
+            _content_handlers[content_id] = {'onLoad' : links[smenu]['onLoad']};
+        }
+    }
 }
 
 function link_mainmenu() {
