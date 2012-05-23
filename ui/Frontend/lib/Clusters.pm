@@ -638,6 +638,8 @@ get '/clusters/:clusterid' => sub {
 
     my $link_stop = ! $link_start;
 
+    my $isVirtual = ($ecluster->getHostManager()->getHostType() eq 'Virtual Machine' ) ? 1 : 0 ;
+
     template 'clusters_details', {
         title_page           => "Clusters - Cluster's overview",
         cluster_id           => $cluster_id,
@@ -673,7 +675,8 @@ get '/clusters/:clusterid' => sub {
         link_edit          => $methods->{'update'}->{'granted'}, 
         link_addnode       => $methods->{'addNode'}->{'granted'} ? $link_addnode : 0,
         link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
-        can_setperm        => $methods->{'setperm'}->{'granted'},        
+        can_setperm        => $methods->{'setperm'}->{'granted'},
+        isVirtual          => $isVirtual,
      }, { layout => 'main' };
 };
 

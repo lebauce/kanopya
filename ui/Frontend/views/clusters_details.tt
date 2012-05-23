@@ -151,6 +151,12 @@
 		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/nodes/add">add a node</a><br />
 		<span class="desc">Add a node to this cluster.</span><br /><br />
 	<% END %>
+
+    <% IF isVirtual %>
+        <a class="" href="/architectures/clusters/<% cluster_id %>/optimiaas">optimize infrastructure</a><br />
+        <span class="desc">Optimize VM placement on the hypervisors <br/> Warning : this may take some time.</span><br /><br />
+    <% END %>
+	
 	</td></tr>
 	<% FOREACH node IN nodes_list %>
 		<tr><td class="label2"><span class="bold"><a href="/infrastructures/hosts/<% node.host_id %>"><% node.host_hostname %></a></span><% IF node.master_node %> (master)<% END %></td>
