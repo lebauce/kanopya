@@ -1,4 +1,4 @@
-// used to store handlers during menu creation
+// store handlers during menu creation, used for content callbacks
 var _content_handlers = {};
 
 function reload_content(container_id, elem_id) {

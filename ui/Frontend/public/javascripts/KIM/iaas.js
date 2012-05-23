@@ -1,7 +1,7 @@
 function load_iaas_detail_hypervisor (container_id, elem_id) {
     var container = $('#' + container_id);
     $('<div>Hypervisor for iaas ID = ' + elem_id + '<div>').appendTo(container);
-    create_grid(container_id, 'host_list',
+    create_grid(container_id, 'iaas_hyp_list',
             ['ID','Base hostname', 'Initiator name'],
             [ 
              {name:'entity_id',index:'entity_id', width:60, sorttype:"int", hidden:true, key:true},
