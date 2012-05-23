@@ -1236,7 +1236,7 @@ get '/clusters/:clusterid/optimiaas' => sub{
     my $cm = CapacityManagement->new(cluster_id => param('clusterid'));
     
     $log->info("*** OPTIMIAAS***");
-    #$cm->optimiaas();
+    $cm->optimIaas();
     
     redirect('/architectures/clusters/'.param('clusterid'));
 };
