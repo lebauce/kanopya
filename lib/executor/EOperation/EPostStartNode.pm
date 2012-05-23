@@ -149,7 +149,8 @@ sub execute {
     }
 
     $self->{context}->{cluster}->updateHostsFile(
-        kanopya_domainname => $self->{params}->{kanopya_domainname}
+        kanopya_domainname => $self->{params}->{kanopya_domainname},
+        host               => $self->{context}->{host}
     );
 
     $self->{context}->{host}->postStart();

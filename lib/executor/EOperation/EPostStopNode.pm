@@ -112,6 +112,8 @@ sub prerequisites {
     if ($@) {
         $log->debug("Could not connect to host <$host_id> from cluster <$cluster_id> with ip <$node_ip>.");
     }
+    
+    return $delay if $self->{context}->{host}->ping();
 
     $self->{context}->{host}->setState(state => "down");
 
@@ -175,6 +177,14 @@ sub execute {
         $log->warn("Could not remove from DHCP configuration, the cluster may not be using PXE");
     }
 
+    # remove the node working directory where generated files are
+    # stored.
+    my $dir = $self->{config}->{clusters}->{directory};
+    $dir .= '/' . $self->{context}->{cluster}->getAttr(name => 'cluster_name');
+    $dir .= '/' . $self->{context}->{host}->getAttr(name => 'host_hostname');
+    my $econtext = $self->getEContext();
+    $econtext->execute(command => "rm -r $dir");
+
     # Component migration
     $log->info('Processing cluster components configuration for this node');
     my $components = $self->{context}->{cluster}->getComponents(category => "all");
@@ -219,7 +229,8 @@ sub execute {
     }
 
     $self->{context}->{cluster}->updateHostsFile(
-        kanopya_domainname => $self->{params}->{kanopya_domainname}
+        kanopya_domainname => $self->{params}->{kanopya_domainname},
+        host               => $self->{context}->{host}
     );
 }
 
