@@ -20,7 +20,7 @@ use warnings;
 use Entity;
 use EFactory;
 use General;
-
+use CapacityManagement;
 use XML::Simple;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -153,7 +153,7 @@ sub _checkMigration{
     my $masternode_econtext = $args{masternode_econtext};
     
     my $start_time   = time();
-    my $time_out     = 60; # 1 min timeout
+    my $time_out     = 3*60; # 3 min migration timeout
     
     TIMELOOP:
     while(1){
@@ -432,9 +432,23 @@ sub startHost {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
+    my $cm = CapacityManagement->new(cluster_id => $args{host}->getClusterId());
+
+    my $hypervisor_id = $cm->getHypervisorIdForVM(
+        wanted_values => {
+            ram => $args{host}->getAttr(name => 'host_ram'),
+            cpu => $args{host}->getAttr(name => 'host_core'),
+        }
+    );
+
+    if( !defined $hypervisor_id){
+        my $errmsg = "Cannot add node in cluster ".$args{host}->getClusterId().", not enough resources\n";
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
     # Pick up an hypervisor
-    my @hypervisors = values %{$self->_getEntity->getServiceProvider->getHosts()};
-    my $hypervisor = $hypervisors[int(rand(scalar @hypervisors))];
+
+    my $hypervisor = Entity::Host->get(id => $hypervisor_id);
     $log->info("Picked up hypervisor " . $hypervisor->getId());
 
     # generate template in opennebula master node
