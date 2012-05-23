@@ -705,6 +705,18 @@ sub getHosts {
     return \%hosts;
 }
 
+=head2 getHostManager
+
+    desc: Return the component/conector that manage this cluster.
+
+=cut
+
+sub getHostManager {
+    my $self = shift;
+
+    return Entity->get(id => $self->getAttr(name => 'host_manager_id'));
+}
+
 =head2 getCurrentNodesCount
 
     class : public
