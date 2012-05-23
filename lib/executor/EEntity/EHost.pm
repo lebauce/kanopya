@@ -95,6 +95,15 @@ sub postStart {
     $self->{host_manager}->postStart(host => $self);
 }
 
+sub ping {
+    my ($self) = @_;
+    my $ip = $self->getAdminIp;
+    my $ping = Net::Ping->new();
+    my $pingable = $ping->ping($ip, 2);
+    $ping->close();
+    return $pingable ? $pingable : 0;
+}
+    
 sub checkUp {
     my $self = shift;
     my %args = @_;
@@ -122,14 +131,7 @@ sub checkUp {
 sub generateUdevPersistentNetRules {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'etc_path' ]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    # create Template object
-    my $template = Template->new(General::getTemplateConfiguration());
-    my $input = "udev_70-persistent-net.rules.tt";
+    General::checkParams(args => \%args, required => [ 'cluster','mount_point' ]);
 
     my @interfaces = ();
     
@@ -141,24 +143,40 @@ sub generateUdevPersistentNetRules {
         push @interfaces, $tmp;
     }
        
-    $template->process($input, { interfaces => \@interfaces }, "/tmp/" . $tmpfile)
-        or die $template->error(), "\n";
-
-    $self->getExecutorEContext->send(
-        src => "/tmp/$tmpfile",
-        dest => "$args{etc_path}/udev/rules.d/70-persistent-net.rules"
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $self,
+        file          => '/etc/udev/rules.d/70-persistent-net.rules',
+        template_dir  => '/templates/internal',
+        template_file => 'udev_70-persistent-net.rules.tt',
+        data          => { interfaces => \@interfaces }
     );
-    unlink "/tmp/$tmpfile";
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/udev/rules.d'
+    );
+    
 }
 
 sub generateHostname {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'etc_path' ]);
+    General::checkParams(args => \%args, required => [ 'mount_point', 'cluster' ]);
 
     my $hostname = $self->getAttr(name => 'host_hostname');
-    $self->getExecutorEContext->execute(
-        command => "echo $hostname > $args{etc_path}/hostname"
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $self,
+        file          => '/etc/hostname',
+        template_dir  => '/templates/internal',
+        template_file => 'hostname.tt',
+        data          => { hostname => $hostname }
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc'
     );
 }
 
