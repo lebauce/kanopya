@@ -361,6 +361,12 @@ sub getIndicatorInst () {
     return $indicator;
 }
 
+sub getCollectorManager {
+    my $self = shift;
+
+    my $collector_manager_id = $self->getAttr ( name=>'collector_manager_id' );
+
+}
 
 =head2 getNodesMetrics
 
@@ -918,46 +924,4 @@ sub generateNodeMetricRules{
         my $rule = NodemetricRule->new(%$prule);
     }
 }
-
 1;
-
-
-#    foreach my $indicator (@indicators) {
-#        #For each indicator id get the mean aggregate and the standartdev aggregate to compute mean / standard_dev
-#        
-#        my @cm_mean = Clustermetric->search(hash => {
-#            clustermetric_service_provider_id      => $extcluster_id, 
-#            clustermetric_indicator_id             => $indicator,
-#            clustermetric_statistics_function_name => 'mean',
-#        });
-#        
-#        my @cm_std = Clustermetric->search(hash => {
-#            clustermetric_service_provider_id      => $extcluster_id, 
-#            clustermetric_indicator_id             => $indicator,
-#            clustermetric_statistics_function_name => 'standard_deviation',
-#        });
-#        
-#        my @cm_ooa = Clustermetric->search(hash => { 
-#            clustermetric_service_provider_id      => $extcluster_id, 
-#            clustermetric_indicator_id             => $indicator,
-#            clustermetric_statistics_function_name => 'numOfDataOutOfRange',
-#        });
-#        
-#        my $id_mean = $cm_mean[0]->getAttr(name=>'clustermetric_id');
-#        my $id_std  = $cm_std[0]->getAttr(name=>'clustermetric_id');
-#        my $id_ooa  = $cm_ooa[0]->getAttr(name=>'clustermetric_id');
-#        
-#        $self->generateOutOfRangeRules(
-#            id_ooa        => $id_ooa,
-#            extcluster_id => $extcluster_id,
-#        );
-#        $self->generateCoefficientOfVariationRules(
-#            id_mean       => $id_mean,
-#            id_std        => $id_std,
-#            extcluster_id => $extcluster_id,
-#        );
-#        $self->generateStandardDevRuleForNormalizedIndicatorsRules(
-#            id_std        => $id_std,
-#            extcluster_id => $extcluster_id,
-#        );
-#    } #END FOR
