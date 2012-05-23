@@ -822,16 +822,15 @@ sub removeNode {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a node from this cluster");
     }
 
-    Operation->enqueue(
-        priority => 200,
-        type     => 'PreStopNode',
+    Workflow->run(
+        name => 'StopNode',
         params   => {
             context => {
                 cluster => $self,
                 host    => Entity::Host->get(id => $args{host_id})
             }
         }
-    );
+     );
 }
 
 =head2 start
