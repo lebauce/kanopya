@@ -8,7 +8,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
              {name:'host_hostname',index:'host_hostname', width:90, sorttype:"date"},
              {name:'host_initiatorname',index:'host_initiatorname', width:200,}
            ]);
-    reload_grid('host_list', '/api/host');
+    reload_grid('iaas_hyp_list', '/api/host');
 }
 
 function load_iaas_content (container_id) {
