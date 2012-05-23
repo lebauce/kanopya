@@ -12,11 +12,10 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EHAProxy1;
+use base 'EEntity::EComponent';
 
 use strict;
-use Template;
-use String::Random;
-use base "EEntity::EComponent";
+use warnings;
 use Log::Log4perl "get_logger";
 use General;
 
@@ -25,13 +24,11 @@ my $errmsg;
 
 # generate configuration files on node
 sub configureNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => ['host', 'mount_point', 'cluster']);
-
-    my $template_path = $args{template_path} || "/templates/components/haproxy";
+    General::checkParams(args => \%args, required => ['host', 'mount_point']);
     
+    my $cluster = $self->_getEntity->getServiceProvider;
     my $conf = $self->_getEntity()->getConf();
     my %data;
     # remove prefix of var name
@@ -44,32 +41,38 @@ sub configureNode {
     my $vip = shift @$publicips;
     $data{public_ip} = defined $vip ? $vip->{address} : "127.0.0.1";
     
-    $self->generateFile(mount_point  => $args{mount_point},
-                        template_dir => $template_path,
-                        input_file   => "haproxy.cfg.tt",
-                        output       => "/haproxy/haproxy.cfg",
-                        data         => \%data);
+     my $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/haproxy/haproxy.cfg',
+        template_dir  => '/templates/components/haproxy',
+        template_file => 'haproxy.cfg.tt',
+        data          => \%data 
+    );
+    
+     $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/haproxy'
+    );
     
     # send default haproxy conf (allowing haproxy to be started with init script)
-    $self->getExecutorEContext->send(src => $template_path . "/haproxy_default", dest => $args{mount_point} . "/default/haproxy");
-    
+    $self->getExecutorEContext->send(
+        src  => '/templates/components/haproxy/haproxy_default', 
+        dest => $args{mount_point} . '/etc/default/haproxy'
+    );
 }
 
 sub addNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
     General::checkParams(args => \%args, required => ['host', 'mount_point', 'cluster']);
+    
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     
     # Run only on master node
     if(not defined $masternodeip) {
-	    $self->configureNode(
-                host => $args{host},
-         mount_point => $args{mount_point}.'/etc',
-             cluster => $args{cluster}
-        );
-	    
+	    $self->configureNode(%args);
+        	    
 	    $self->addInitScripts(
             mountpoint => $args{mount_point}, 
 	        scriptname => 'haproxy', 
@@ -77,10 +80,6 @@ sub addNode {
     }
 }
 
-# Reload process
-sub reload {
-    my $self = shift;
-    my %args = @_;
-}
+
 
 1;

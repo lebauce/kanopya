@@ -12,11 +12,10 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::ESyslogng3;
+use base "EEntity::EComponent";
 
 use strict;
-use Template;
-use String::Random;
-use base "EEntity::EComponent";
+use warnings;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
@@ -24,8 +23,7 @@ my $errmsg;
 
 # generate configuration files on node
 sub configureNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
     General::checkParams(args     => \%args,
                          required => [ "host", "mount_point" ]);
@@ -34,25 +32,28 @@ sub configureNode {
     
     my $data = $self->_getEntity()->getConf();
         
-    $self->generateFile(
-         mount_point => $args{mount_point},
+    my $file = $self->generateNodeFile(
+        cluster      => $args{cluster},
+        host         => $args{host},
+        file         => '/etc/syslog-ng/syslog-ng.conf',
         template_dir => $template_path,
-          input_file => "syslog-ng.conf.tt", 
-              output => "/syslog-ng/syslog-ng.conf",
-                data => $data
+        template_file => 'syslog-ng.conf.tt',
+        data         => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/syslog-ng'
     );
 }
 
 sub addNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ "host", "mount_point" ]);
+                         required => [ 'host', 'mount_point', 'cluster' ]);
 
-    $self->configureNode(
-               host => $args{host},
-        mount_point => $args{mount_point}.'/etc');
+    $self->configureNode(%args);
 
     # add init scripts
     $self->addInitScripts(
@@ -63,8 +64,7 @@ sub addNode {
 
 # Reload process
 sub reload {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $command = "invoke-rc.d syslog-ng restart";
     my $result = $self->getEContext->execute(command => $command);

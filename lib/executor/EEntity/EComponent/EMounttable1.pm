@@ -12,11 +12,10 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EMounttable1;
+use base 'EEntity::EComponent';
 
 use strict;
-use Template;
-use String::Random;
-use base "EEntity::EComponent";
+use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -24,13 +23,13 @@ my $log = get_logger("executor");
 my $errmsg;
 
 # generate configuration files on node
-sub configureNode {
-    my $self = shift;
-    my %args = @_;
+sub addNode {
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "host", "mount_point" ]);
+                         required => ['host','mount_point']);
 
+    my $cluster = $self->_getEntity->getServiceProvider;
     my $data = $self->_getEntity()->getConf();
 
     #$log->debug(Dumper($args{mount_point}));
@@ -39,13 +38,19 @@ sub configureNode {
         delete $row->{mounttable1_id};
     }
 
-    #$log->debug(Dumper($data));
-
-    $self->generateFile(mount_point  => $args{mount_point} . "/etc",
-                        template_dir => "/templates/components/mounttable",
-                        input_file   => "fstab.tt",
-                        output       => "/fstab",
-                        data         => $data);
+    my $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/fstab',
+        template_dir  => '/templates/components/mounttable',
+        template_file => 'fstab.tt',
+        data          => $data 
+    );
+          
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc'
+    );
 
     my $automountnfs = 0;
     for my $mountdef (@{$data->{mountdefs}}) {
@@ -70,14 +75,6 @@ sub configureNode {
     }
 }
 
-sub addNode {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args     => \%args,
-                         required => [ "host", "mount_point" ]);
 
-    $self->configureNode(%args);
-}
 
 1;
