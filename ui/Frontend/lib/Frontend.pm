@@ -28,6 +28,15 @@ get '/' => sub {
     template $product . '/index';
 };
 
+get '/kim' => sub {
+    my $product = 'KIM';
+    template $product . '/index';
+};
+
+get '/kio' => sub {
+    my $product = 'KIO';
+    template $product . '/index';
+};
 
 get '/sandbox' => sub {
     template 'sandbox', {}, {layout => ''};
