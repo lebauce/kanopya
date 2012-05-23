@@ -86,13 +86,12 @@ sub _contructRetrieverOutput {
             }
         );
         my $service_provider  = Entity::ServiceProvider->get('id' => $service_provider_id);
-        my $collector_manager = $service_provider->getCollectorManager();
 
         for my $clustermetric (@clustermetrics){
 
             $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
             $clustermetric_time_span    = $clustermetric->getAttr(name => 'clustermetric_window_time');
-            $indicator_oid              = $collector_manager->getIndicatorOidFromId(indicator_id => $clustermetric_indicator_id);
+            $indicator_oid              = $service_provider->getIndicatorOidFromId(indicator_id => $clustermetric_indicator_id);
 
             $indicators_name->{$indicator_oid} = undef;
 
@@ -230,7 +229,6 @@ sub _computeCombinationAndFeedTimeDB {
                 clustermetric_service_provider_id => $cluster_id
             });
     my $service_provider = Entity::ServiceProvider->get('id' => $cluster_id);
-    my $collector_manager = $service_provider->getCollectorManager();
 
     my $clustermetric_indicator_id;
     my $indicator_oid;
@@ -249,7 +247,7 @@ sub _computeCombinationAndFeedTimeDB {
         for my $host_name (keys %$values){
             
             $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
-            $indicator_oid = $collector_manager->getIndicatorOidFromId(indicator_id => $clustermetric_indicator_id);
+            $indicator_oid = $service_provider->getIndicatorOidFromId(indicator_id => $clustermetric_indicator_id);
 
             # Parse $values to store needed value in @dataStored 
             my $the_value = $values->{$host_name}
@@ -327,72 +325,4 @@ sub run {
         content => "Kanopya Aggregator stopped"
         );
 }
-
-#=head2 run
-#    
-#    Class : Public
-#    
-#    Desc : Recreate all the DB for all the existing clustermetric
-#    
-#=cut
-#
-#sub create_clustermetrics_db{
-#    my $self = shift;
-#    my @clustermetrics = Clustermetric->search(hash => {});
-#    for my $clustermetric (@clustermetrics){
-#        my $clustermetric_id = $clustermetric->getAttr(name=>'clustermetric_id');        
-#        RRDTimeData::createTimeDataStore(name => $clustermetric_id);
-#    }
-#}
-
-
-#=head2 computeAggregates
-#    
-#    Class : Public
-#    
-#    Desc : [DEPRECTATED] Compute all the clustermetrics according to the retrieved values received from Retriever
-#    
-#=cut
-#
-# 
-#sub _computeAggregates{
-#    my $self = shift;
-#    my %args = @_;
-#
-#    print "THIS METHOD SEEMS DEPRECATED, please use _computeCombinationAndUpdateTimeDB";
-#    $log->info("THIS METHOD SEEMS DEPRECATED, please use _computeCombinationAndUpdateTimeDB"); 
-#    General::checkParams(args => \%args, required => ['indicators']);
-#    my $indicators = $args{indicators};
-#    my $rep = {};
-#    my $clustermetric_cluster_id   = 0;
-#    my $clustermetric_indicator_id = 0;
-#    my $cluster                = undef;
-#    my $hosts                  = undef;
-#    my $host_id                = undef;
-#    my $indicator_value        = undef;
-#    my @values                 = ();
-#
-#    # Array to loop on all the clustermetrics
-#    my @clustermetrics = Clustermetric->search(hash => {});
-#    for my $clustermetric (@clustermetrics){
-#        
-#        @values = ();
-#        
-#        
-#        $clustermetric_cluster_id   = $clustermetric->getAttr(name => 'clustermetric_service_provider_id');
-#        $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
-#        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $clustermetric_cluster_id);
-#        $hosts   = $cluster->getHosts();
-#        
-#        for my $host (values(%$hosts)){
-#            $host_id = $host->getAttr(name => 'host_id');
-#            $indicator_value = $indicators->{$host_id}->{$clustermetric_indicator_id};
-#            
-#            push(@values,$indicator_value);
-#        }
-#        $rep->{$clustermetric->getAttr(name => 'clustermetric_id')} = $clustermetric->compute(values => \@values);
-#    }
-#    return $rep;
-#};
-
 1;
