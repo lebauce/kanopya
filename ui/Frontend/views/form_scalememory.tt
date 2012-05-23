@@ -3,7 +3,7 @@
 <form id="target" method="POST" action="/infrastructures/hosts/scale_memory">
 <table class="form">
 	<tr>
-		<td class="label">Quantity of memory :</td>
+		<td class="label">Quantity of memory (in MB):</td>
 		<td><input type="text" name="memory_quantity" size="32"/>
 		<span style="color: red"><% err_memory_quantity %></span></td>
 		</td>
