@@ -122,7 +122,7 @@ sub addNode {
 
 sub generateResolvConf {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'etc_path' ]);
+    General::checkParams(args => \%args, required => ['host', 'mount_point' ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -135,33 +135,33 @@ sub generateResolvConf {
         };
     }
 
-    my $vars = {
+    my $data = {
         domainname => $self->getAttr(name => 'cluster_domainname'),
         nameservers => \@nameservers,
     };
 
-
-    my $template = Template->new(General::getTemplateConfiguration());
-    my $input = "resolv.conf.tt";
-
-    $template->process($input, $vars, "/tmp/".$tmpfile) or die $template->error(), "\n";
-    $self->getExecutorEContext->send(
-        src  => "/tmp/$tmpfile",
-        dest => "$args{etc_path}/resolv.conf"
+    my $file = $self->generateNodeFile(
+        cluster       => $self->_getEntity,
+        host          => $args{host},
+        file          => '/etc/resolv.conf',
+        template_dir  => '/templates/internal',
+        template_file => 'resolv.conf.tt',
+        data          => $data
     );
-    unlink "/tmp/$tmpfile";
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/resolv.conf'
+    );
 }
 
 sub generateHostsConf {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'etc_path', 'kanopya_domainname' ]);
+    General::checkParams(args => \%args, required => [ 'host','mount_point', 'kanopya_domainname' ]);
 
     $log->info('Generate /etc/hosts file');
-    my $rand = new String::Random;
-    my $hostsfile = '/tmp/' . $rand->randpattern('cccccccc');
-    my $template = Template->new(General::getTemplateConfiguration());
-    my $input = 'hosts.tt';
+
     my $nodes = $self->getHosts();
     my @hosts_entries = ();
 
@@ -187,10 +187,18 @@ sub generateHostsConf {
         }
     }
 
-    $template->process($input, { hosts => \@hosts_entries }, $hostsfile);
+    my $file = $self->generateNodeFile(
+        cluster       => $self->_getEntity,
+        host          => $args{host},
+        file          => '/etc/hosts',
+        template_dir  => '/templates/internal',
+        template_file => 'hosts.tt',
+        data          => { hosts => \@hosts_entries }
+    );
+    
     $self->getExecutorEContext->send(
-        src => $hostsfile,
-        dest => "$args{etc_path}/hosts"
+        src => $file,
+        dest => $args{mount_point}.'/etc/hosts'
     );
 }
 
@@ -206,13 +214,12 @@ sub generateHostsConf {
 sub updateHostsFile {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'kanopya_domainname' ]);
+    General::checkParams(args => \%args, required => [ 'host','kanopya_domainname' ]);
     
     $log->info('Update cluster nodes /etc/hosts');
     
     my $rand = new String::Random;
     my $kanopya_hostfile = '/tmp/' . $rand->randpattern("cccccccc");
-    my $node_hostfile = '/tmp/' . $rand->randpattern("cccccccc");
     my $template = Template->new(General::getTemplateConfiguration());
     my $input = "hosts.tt";
     
@@ -247,7 +254,15 @@ sub updateHostsFile {
         }
     }
     
-    $template->process($input, {hosts => \@cluster_nodes}, $node_hostfile);
+    my $nodefile = $self->generateNodeFile(
+        cluster       => $self->_getEntity,
+        host          => $args{host},
+        file          => '/etc/hosts',
+        template_dir  => '/templates/internal',
+        template_file => 'hosts.tt',
+        data          => { hosts => \@cluster_nodes }
+    );
+    
     $template->process($input, {hosts => \@all_nodes}, $kanopya_hostfile);
     
     foreach my $node (@cluster_nodes) {
@@ -255,7 +270,7 @@ sub updateHostsFile {
         eval {
             my $node_econtext = EFactory::newEContext(ip_source      => $self->getExecutorEContext->getLocalIp,
                                                       ip_destination => $node_ip);
-            $node_econtext->send(src => $node_hostfile, dest => "/etc/hosts");
+            $node_econtext->send(src => $nodefile, dest => '/etc/hosts');
             #$node->getEContext->send(src => $node_hostfile, dest => "/etc/hosts");
         };
         if ($@) {
