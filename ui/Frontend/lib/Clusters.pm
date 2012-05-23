@@ -655,6 +655,8 @@ get '/clusters/:clusterid' => sub {
 
     my $link_stop = ! $link_start;
 
+    my $isVirtual = ($ecluster->getHostManager()->getHostType() eq 'Virtual Machine' ) ? 1 : 0 ;
+
     template 'clusters_details', {
         title_page           => "Clusters - Cluster's overview",
         cluster_id           => $cluster_id,
@@ -692,6 +694,7 @@ get '/clusters/:clusterid' => sub {
         link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
         can_setperm        => $methods->{'setperm'}->{'granted'},
         workflow_list      => \@workflow_list,
+        isVirtual          => $isVirtual,
      }, { layout => 'main' };
 };
 
@@ -1272,7 +1275,7 @@ get '/clusters/:clusterid/optimiaas' => sub{
     my $cm = CapacityManagement->new(cluster_id => param('clusterid'));
     
     $log->info("*** OPTIMIAAS***");
-    #$cm->optimiaas();
+    $cm->optimIaas();
     
     redirect('/architectures/clusters/'.param('clusterid'));
 };

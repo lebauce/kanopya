@@ -35,6 +35,7 @@ Component is an abstract class of operation objects
 =cut
 package EOperation::EScaleMemoryHost;
 use base "EOperation";
+use CapacityManagement;
 
 use strict;
 use warnings;
@@ -66,6 +67,24 @@ sub prepare {
     # Get OpenNebula Cluster
     my $entity = Entity->get(id => $self->{context}->{host}->getAttr(name => 'host_manager_id'));
     $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(data => $entity);
+    
+    # Verify if there is enough resource in HV
+
+    my $vm_id = $self->{context}->{host}->getId();
+    my $hv_id = $self->{context}->{host}->getHyperVisorHostId();
+
+    my $cm    = CapacityManagement->new(cluster_id => $self->{context}->{host}->getClusterId());
+    my $check = $cm->isScalingAuthorized(
+                    vm_id           => $vm_id,
+                    hv_id           => $hv_id,
+                    resource_type   => 'ram',
+                    wanted_resource => $self->{params}->{memory} * 1024 * 1024, #GIVEN IN MB MUST BE IN B
+                );
+
+    if($check == 0){
+        my $errmsg = "Not enough memory in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 }
 
 sub execute {
