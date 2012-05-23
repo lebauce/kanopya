@@ -21,6 +21,7 @@ use base "EOperation";
 use Kanopya::Exceptions;
 use EFactory;
 use Workflow;
+use EWorkflow;
 
 use strict;
 use warnings;
@@ -44,7 +45,8 @@ sub prepare {
     $self->SUPER::prepare();
 
     # Workflow is not an entity...
-    $self->{context}->{workflow} = Workflow->get(id => $self->{params}->{workflow_id});
+    my $workflow = Workflow->get(id => $self->{params}->{workflow_id});
+    $self->{context}->{workflow} = EWorkflow->new(data => $workflow, config => $self->{config});
 
     # Check if the workflow is 'running'
     if ($self->{context}->{workflow}->getAttr(name => 'state') ne 'running') {
@@ -58,22 +60,11 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    my @operations = Operation->search(hash => {
-                         workflow_id => $self->{context}->{workflow}->getAttr(name => 'workflow_id'),
-                     });
-
-    for my $operation (@operations) {
-        my $eoperation = EFactory::newEOperation(op => $operation, config => $self->{config});
-
-        $eoperation->cancel();
-        $eoperation->delete();
-    }
+    $self->{context}->{workflow}->cancel(config => $self->{config});
 }
 
 sub finish {
     my $self = shift;
-
-    $self->{context}->{workflow}->setState(state => 'cancelled');
 
     delete $self->{context}->{workflow};
 }

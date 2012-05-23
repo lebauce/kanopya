@@ -27,6 +27,7 @@ use Entity::Host;
 use Entity::Systemimage;
 use Entity::Tier;
 use Operation;
+use Workflow;
 use Administrator;
 use General;
 use Entity::ManagerParameter;
@@ -790,16 +791,14 @@ sub addNode {
               );
     }
 
-    $log->debug("New Operation AddNode with attrs cluster_id: " . $self->getAttr(name => "cluster_id"));
-    Operation->enqueue(
-        priority => 200,
-        type     => 'AddNode',
+    Workflow->run(
+        name => 'AddNode',
         params   => {
             context => {
                 cluster => $self,
             }
         }
-    );
+     );
 }
 
 sub getHostConstraints {
@@ -835,16 +834,15 @@ sub removeNode {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a node from this cluster");
     }
 
-    Operation->enqueue(
-        priority => 200,
-        type     => 'PreStopNode',
+    Workflow->run(
+        name => 'StopNode',
         params   => {
             context => {
                 cluster => $self,
                 host    => Entity::Host->get(id => $args{host_id})
             }
         }
-    );
+     );
 }
 
 =head2 start

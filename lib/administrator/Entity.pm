@@ -3,10 +3,12 @@ use base 'BaseDB';
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
-use EntityComment;
 
+use EntityLock;
+use EntityComment;
 use Workflow;
 use WorkflowParameter;
+use Kanopya::Exceptions;
 
 my $log = get_logger('administrator');
 
@@ -209,8 +211,8 @@ sub getEntities {
         my $obj = eval { $entity_class->get(id => $id); }; 
         if($@) {
             my $exception = $@; 
-            if(Kanopya::Exception::Permission::Denied->caught()) {
-                               $log->info("no right to access to object <$args{type}> with  <$id>");
+            if (Kanopya::Exception::Permission::Denied->caught()) {
+                $log->info("no right to access to object <$args{type}> with  <$id>");
                 next;
             }
             else { $exception->rethrow(); } 
@@ -278,8 +280,46 @@ sub getWorkflows {
             push @workflows, $workflow;
         }
     }
-
     return @workflows;
+}
+
+sub lock {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow' ]);
+
+    my $workflow_id = $args{workflow}->getAttr(name => 'workflow_id');
+    eval {
+        EntityLock->new(entity_id => $self->getId, workflow_id => $workflow_id);
+    };
+    if ($@) {
+        # Check if the lock is already owned by the workflow
+        my $lock;
+        eval {
+            $lock = EntityLock->find(hash => { entity_id   => $self->getId(),
+                                               workflow_id => $workflow_id });
+        };
+        if (not $lock) {
+            throw Kanopya::Exception::Execution::Locked(
+                      error => "Entity <" . $self->getId . "> already locked."
+                  );
+        }
+    }
+}
+
+sub unlock {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow' ]);
+
+    my $lock = EntityLock->find(hash => {
+                   entity_id   => $self->getId(),
+                   workflow_id => $args{workflow}->getAttr(name => 'workflow_id')
+               });
+
+    $lock->delete();
 }
 
 1;

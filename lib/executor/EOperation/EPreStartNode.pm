@@ -130,15 +130,6 @@ sub execute {
     $self->{context}->{host}->setNodeState(state => "pregoingin");
 }
 
-sub finish {
-    my $self = shift;
-
-    $self->getWorkflow->enqueue(
-        priority => 200,
-        type     => 'StartNode',
-    );
-}
-
 sub _cancel {
     my $self = shift;
 
@@ -148,7 +139,7 @@ sub _cancel {
             $self->{context}->{cluster}->setState(state => 'down');
         }
     }
-    
+
     if ($self->{context}->{host}) {
         $self->{context}->{host}->setAttr(name  => 'host_hostname',
                                           value => undef);

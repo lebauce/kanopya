@@ -414,7 +414,7 @@ sub stopToBeNode{
     };
     if($@) {
         $errmsg = "Node representing host " . $self->getAttr(name => "entity_id") . " not found!";
-        throw Kanopya::Exception::DB(error => $errmsg);
+        #throw Kanopya::Exception::DB(error => $errmsg);
     }
 
     # Dissociate iface from cluster interfaces
