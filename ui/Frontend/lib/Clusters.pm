@@ -643,13 +643,17 @@ get '/clusters/:clusterid' => sub {
 
     for my $workflow (@workflows) {
         my $operation_type = 'None';
+        my $operation_state;
         eval {
-            $operation_type = $workflow->getCurrentOperation->getAttr(name => 'type');
+            my $current = $workflow->getCurrentOperation;
+            $operation_type = $current->getAttr(name => 'type');
+            $operation_state = $current->getAttr(name => 'state');
         };
         push @workflow_list, {
-            workflow_id   => $workflow->getAttr(name => 'workflow_id'),
-            current_op    => $operation_type,
-            workflow_name => "Workflow <" . $workflow->getAttr(name => 'workflow_id') . "> ",
+            workflow_id      => $workflow->getAttr(name => 'workflow_id'),
+            current_op       => $operation_type,
+            current_op_state => "($operation_state)",
+            workflow_name    => "Workflow <" . $workflow->getAttr(name => 'workflow_id') . "> ",
         }
     }
 
