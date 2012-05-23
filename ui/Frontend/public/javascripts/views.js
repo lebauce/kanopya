@@ -56,7 +56,7 @@ function show_detail(elem_id) {
         autoOpen: true,
         modal: true,
         title: "detail entity " + elem_id,//link.attr('title' + '#content'),
-        width: 500,
+        width: 800,
         height: 500,
         resizable: true,
         draggable: false,
@@ -121,7 +121,11 @@ function create_grid(content_container_id, colNames, colModel) {
     
     $('#' + grid_id).jqGrid('navGrid','#' + pager_id,{edit:false,add:false,del:false}); 
     
+    $('#content_hosts').jqGrid('setGridWidth', $('#' + grid_id).parent().width()-20);
+    
 }
+
+
 function reload_grid (content_container_id,  data_route) {
     var grid = $('#' + content_container_id + '_grid');
     grid.jqGrid("clearGridData");
@@ -135,5 +139,9 @@ function reload_grid (content_container_id,  data_route) {
 }
 
 $(document).ready(function () {
+
     create_all_content();
 });
+
+
+

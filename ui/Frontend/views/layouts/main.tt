@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="<% request.uri_base %>/css/ui.jqgrid.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/global.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/kanopya_style.css" />
+<link rel="stylesheet" href="<% request.uri_base %>/css/jquery.gritter.css" />
 
 <script src="/javascripts/jquery/jquery-1.7.2.min.js"></script>
 <script src="/javascripts/jquery/jquery-ui-1.8.19.custom.js"></script>
@@ -22,6 +23,7 @@
 <!--script src="/javascripts/jquery/jquery.ui.accordion.js"></script-->
 <!--script src='/javascripts/jquery/jquery.ui.tabs.js'></script-->
 <script src='/javascripts/jquery/jquery.jqGrid.min.js'></script>
+<!--<script src='/javascript/jquery/jquery.simpletooltip-min.js'></script>-->
 
 <script type='text/javascript' src='/javascripts/i18n/grid.locale-en.js'></script>
 

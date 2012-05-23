@@ -54,9 +54,10 @@ get '/messages' => sub {
     my $msgid = 0;
     my @rows;
     my @msg;
+    my $page = params->{'page'} || 1;
     my $limit = params->{'rowNum'} || 20;
     #print 'Number of messages : ' . $nbOfMessages . "\n";
-    if( $nbOfMessages > 0 ) {
+    if ( $nbOfMessages > 0 ) {
         if( $limit != 0 ) {
 	       $total_pages = ceil($nbOfMessages / $limit);
         } else {
@@ -75,8 +76,6 @@ get '/messages' => sub {
         my $content = $message->{'content'};
 
         my $row = { 
-            #'id' => $msgid,
-            #'cell' => [$msgid,$from,$level,$date,$time,$content],
             'id'  => $msgid,
             'from' => $from,
             'level' => $level,
@@ -88,7 +87,7 @@ get '/messages' => sub {
     }
 
     $response->{rows}=\@rows;
-    $response->{page}=1;
+    $response->{page}=$page;
     $response->{total_pages}=$total_pages;
     $response->{records}=$nbOfMessages;
     

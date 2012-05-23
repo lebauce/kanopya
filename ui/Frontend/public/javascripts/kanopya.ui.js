@@ -16,6 +16,7 @@ $(document).ready(function () {
                        initClosed : true,},
                    north : { closable : false },
                    west : { closable : false },
+                   
                }
     );
 
@@ -39,12 +40,12 @@ $(document).ready(function () {
         		{name:'id',index:'id', width:60, key:true},
                 {name:'from',index:'from',width:90},
                 {name:'level',index:'level',width:40,formatter:stateFormatter},
-                {name:'date',index:'date',width:130},
-                {name:'time',index:'time',width:130},
-                {name:'content',index:'content', width:500,}
+                {name:'date',index:'date',width:100},
+                {name:'time',index:'time',width:100},
+                {name:'content',index:'content', width:130,}
         ],
         //multiselect: true,
-        rowNum:8, rowList:[5,10,20,50],
+        rowNum:10, rowList:[5,10,20,50,100],
         pager: '#msgGridPager',
         caption: "",
         altRows: false,
@@ -66,8 +67,8 @@ $(document).ready(function () {
 	}
 	
 	// Resize the message grid to entire page width :
-	$(window).bind('resize', function() { $("#grid-message").setGridWidth($(window).width()-20); }).trigger('resize');
-        
+	//$(window).bind('resize', function() { $("#grid-message").setGridWidth($(window).width()-20); }).trigger('resize');
+	$('#grid-message').jqGrid('setGridWidth', $('#view-container').parent().width()-20);
 
         
     $("#grid-message").jqGrid('navGrid','#msgGridPager',{edit:false,add:false,del:false});
