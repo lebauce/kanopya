@@ -188,7 +188,12 @@ sub _cancel {
     $log->info("Cancel post start node, we will try to remove node link for <" .
                $self->{context}->{host}->getAttr(name => "entity_id") . ">");
 
-    $self->{context}->{host}->stopToBeNode();
+    eval {
+        $self->{context}->{host}->stopToBeNode();
+    };
+    if ($@) {
+        $log->debug($@);
+    }
 
     my $hosts = $self->{context}->{cluster}->getHosts();
     if (! scalar keys %$hosts) {

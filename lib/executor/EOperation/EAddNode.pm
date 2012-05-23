@@ -162,12 +162,6 @@ sub finish {
     # Not not require storage managers in context any more.
     delete $self->{context}->{disk_manager};
     delete $self->{context}->{export_manager};
-
-    $log->debug("New Operation PreStartNode");
-    $self->getWorkflow->enqueue(
-        priority => 200,
-        type     => 'PreStartNode',
-    );
 }
 
 sub _cancel {

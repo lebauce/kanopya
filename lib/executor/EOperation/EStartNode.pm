@@ -239,11 +239,6 @@ sub finish {
     delete $self->{context}->{bootserver};
     delete $self->{context}->{dhcpd_component};
     delete $self->{context}->{component_puppetmaster};
-
-    $self->getWorkflow->enqueue(
-        priority => 200,
-        type     => 'PostStartNode',
-    );
 }
 
 sub _generateNetConf {
