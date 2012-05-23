@@ -145,7 +145,7 @@ sub oneRun {
             $log->error("Error during operation context initilisation:\n$@");
 
             # Probably a compilation error on the operation class.
-            $workflow->ecancel(config => $self->{config});
+            $workflow->cancel(config => $self->{config});
             next;
         }
 
@@ -237,7 +237,7 @@ sub oneRun {
                 $adm->{db}->txn_begin;
 
                 # Try to cancel all workflow operations, and delete them.
-                $workflow->ecancel(config => $self->{config});
+                $workflow->cancel(config => $self->{config});
 
                 $adm->{db}->txn_commit;
             };
@@ -316,7 +316,7 @@ sub oneRun {
         $self->{include_blocked} = 1;
     }
     else {
-        sleep 2;
+        sleep 5;
     }
 
     if (defined $errors) {
