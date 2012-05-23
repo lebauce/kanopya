@@ -29,7 +29,7 @@ CREATE TABLE `class_type` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `entity`
+-- Table structure for table `entity_comment`
 -- EntityComment class
 
 CREATE TABLE `entity_comment` (
@@ -50,6 +50,21 @@ CREATE TABLE `entity` (
   KEY (`class_type_id`),
   FOREIGN KEY (`entity_comment_id`) REFERENCES `entity_comment` (`entity_comment_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `entity_lock`
+-- EntityComment class
+
+CREATE TABLE `entity_lock` (
+  `entity_lock_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `entity_id` int(8) unsigned NOT NULL,
+  `workflow_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_lock_id`),
+  UNIQUE KEY (`entity_id`),
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`workflow_id`),
+  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -646,12 +661,12 @@ CREATE TABLE `workflow_def` (
 CREATE TABLE `workflow_step` (
   `workflow_step_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `workflow_def_id` int(8) unsigned NOT NULL,
-  `operation_type_id` int(8) unsigned NOT NULL,
+  `operationtype_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`workflow_step_id`),
   KEY (`workflow_def_id`),
   FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`operation_type_id`),
-  FOREIGN KEY (`operation_type_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY (`operationtype_id`),
+  FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
