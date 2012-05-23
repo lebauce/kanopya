@@ -81,16 +81,18 @@ sub setupREST {
             };
 
         get '/api/' . $resource => sub {
+            content_type 'application/json';
+
             my $objs = [];
             my $class = $resources{$resource};
             my %query = params('query');
             my %params = (
                 hash => \%query,
             );
-            if (defined params->{page}) {
-                $params{page} = params->{page};
-                delete $params{hash}->{page};
-            }
+
+            $params{page} = params->{page} || undef;
+            delete $params{hash}->{page};
+            
             if (defined params->{rows}) {
                 $params{rows} = params->{rows};
                 delete $params{hash}->{rows};
@@ -99,22 +101,46 @@ sub setupREST {
                 $params{order_by} = params->{order_by};
                 delete $params{hash}->{order_by};
             }
-            require( General::getLocFromClass(entityclass => $class) );
-            for my $obj ($class->search(%params)) {
-                push @$objs, $obj->toJSON();
+            if (defined params->{dataType}) {
+                $params{dataType} = params->{dataType};
+                delete $params{hash}->{dataType};
             }
-            content_type 'application/json';
-            return to_json($objs);
+
+            require (General::getLocFromClass(entityclass => $class));
+
+            if (defined (params->{dataType}) and params->{dataType} eq "jqGrid") {
+                my $result = $class->search(%params);
+                for my $obj (@{$result->{rows}}) {
+                    push @$objs, $obj->toJSON();
+                }
+
+                return to_json( {
+                    rows    => $objs,
+                    page    => $result->{page} || 1,
+                    total   => $result->{total},
+                    records => scalar @$objs
+                } );
+            }
+            else {
+                for my $obj ($class->search(%params)) {
+                    push @$objs, $obj->toJSON();
+                }
+
+                return to_json($objs);
+            }
         }
     }
 }
 
 get '/api/attributes/:resource' => sub {
-    my $class = $resources{host};
     content_type 'application/json';
+
+    my $class = $resources{host};
+
     return to_json($class->toJSON(model => 1));
 };
 
 setupREST;
 
 true;
+

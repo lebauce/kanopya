@@ -317,6 +317,10 @@ sub _getDbixFromHash {
 
     General::checkParams(args => \%args, required => ['table', 'hash']);
 
+    if (defined ($args{rows}) and not defined ($args{page})) {
+        $args{page} = 1;
+    }
+
     my $dbix;
     eval {
         $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},

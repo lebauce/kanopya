@@ -400,8 +400,18 @@ sub search {
             push @objs, $obj;
         }
     }
-    
-    return  @objs;
+
+    if (defined ($args{dataType}) and $args{dataType} eq "jqGrid") {
+        return {
+            rows    => \@objs,
+            page    => $args{page} || undef,
+            total   => (defined ($args{page}) or defined ($args{rows})) ?
+                           $rs->pager->total_entries : $rs->count,
+            records => scalar @objs
+        }
+    }
+
+    return @objs;
 }
 
 # Quick fix for perf optim (TODO refacto)
