@@ -29,13 +29,12 @@ my $errmsg;
 
 =head2 createDisk
 
-createDisk ( name, size, filesystem, econtext )
+createDisk ( name, size, filesystem)
     desc: This function create a new lv on storage server.
     args:
         name : string : new lv name
         size : String : disk size finishing by unit (M : Mega, K : kilo, G : Giga)
         filesystem : String : The filesystem is defined by mkfs filesystem option
-        econtext : Econtext : execution context on the storage server
     return:
         code returned by EEntity::EComponent::ELvm2->lvCreate
     
@@ -45,23 +44,22 @@ sub createDisk {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'name', 'size', 'filesystem', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'name', 'size', 'filesystem' ]);
 
     my $vg_id = General::checkParam(args    => \%args,
                                     name    => 'vg_id',
                                     default => $self->_getEntity->getMainVg->{vgid});
 
-    my $container = $self->lvCreate(lvm2_vg_id         => $vg_id,
-                                    lvm2_lv_name       => $args{name},
-                                    lvm2_lv_filesystem => $args{filesystem},
-                                    lvm2_lv_size       => $args{size},
-                                    econtext           => $args{econtext});
+    my $entity = $self->lvCreate(lvm2_vg_id         => $vg_id,
+                                 lvm2_lv_name       => $args{name},
+                                 lvm2_lv_filesystem => $args{filesystem},
+                                 lvm2_lv_size       => $args{size});
+    my $container = EFactory::newEEntity(data => $entity);
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
             function   => $self->can('removeDisk'),
-            parameters => [ $self, "container", $container, "econtext", $args{econtext} ]
+            parameters => [ $self, "container", $container ]
         );
     }
 
@@ -76,19 +74,19 @@ sub removeDisk{
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args=>\%args, required=>[ "container", "econtext" ]);
+    General::checkParams(args=>\%args, required => [ "container" ]);
 
-    if (! $args{container}->isa("Entity::Container::LvmContainer")) {
+    if (! $args{container}->isa("EEntity::EContainer::ELvmContainer")) {
         throw Kanopya::Exception::Execution(
-                  error => "Container must be a Entity::Container::LvmContainer"
+                  error => "Container must be a EEntity::EContainer::ELvmContainer, not " . 
+                           ref($args{container})
               );
     }
 
-    my $vg = $self->_getEntity()->getMainVg();
+    my $vg = $self->getMainVg();
     $self->lvRemove(lvm2_vg_id   => $vg->{vgid},
                     lvm2_lv_name => $args{container}->getAttr(name => 'container_name'),
-                    lvm2_vg_name => $vg->{vgname},
-                    econtext     => $args{econtext});
+                    lvm2_vg_name => $vg->{vgname});
 
     $args{container}->delete();
 
@@ -97,13 +95,12 @@ sub removeDisk{
 
 =head2 lvCreate
 
-createDisk ( lvm2_lv_name, lvm2_lv_size, lvm2_lv_filesystem, lvm2_vg_id, econtext, lvm2_vg_name)
+createDisk ( lvm2_lv_name, lvm2_lv_size, lvm2_lv_filesystem, lvm2_vg_id, lvm2_vg_name)
     desc: This function create a new lv on storage server and add it in db through entity part
     args:
         lvm2_lv_name : string : new lv name
         lvm2_lv_size : String : disk size finishing by unit (M : Mega, K : kilo, G : Giga)
         lvm2_lv_filesystem : String : The filesystem is defined by mkfs filesystem option
-        econtext : Econtext : execution context on the storage server
         lvm2_vg_id : Int : VG id on which lv will be created
         lvm2_vg_name : String : vg name
     return:
@@ -117,17 +114,14 @@ sub lvCreate{
     
     General::checkParams(args     => \%args,
                          required => [ "lvm2_lv_name", "lvm2_lv_size",
-                                       "lvm2_lv_filesystem", "econtext",
-                                       "lvm2_vg_id" ]);
-
-    $log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
+                                       "lvm2_lv_filesystem", "lvm2_vg_id" ]);
 
     my $vg_name = $self->_getEntity()->getVg(lvm2_vg_id => $args{lvm2_vg_id});
 
     my $command = "lvcreate $vg_name -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}B";
     $log->debug($command);
 
-    my $ret = $args{econtext}->execute(command => $command);
+    my $ret = $self->getEContext->execute(command => $command);
     if ($ret->{exitcode} != 0) {
         my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
         $log->error($errmsg);
@@ -136,27 +130,21 @@ sub lvCreate{
 
     my $newdevice = "/dev/$vg_name/$args{lvm2_lv_name}";
     if (! defined $args{"noformat"}) {
-        $self->mkfs(device => $newdevice,
-                    fstype => $args{lvm2_lv_filesystem},
-                    econtext => $args{econtext});
+        $self->mkfs(device => $newdevice, fstype => $args{lvm2_lv_filesystem});
     }
     delete $args{noformat};
     
     $self->vgSpaceUpdate(lvm2_vg_id   => $args{lvm2_vg_id},
-                         lvm2_vg_name => $vg_name,
-                         econtext     => $args{econtext});
-
-    delete $args{econtext};
+                         lvm2_vg_name => $vg_name);
     
     return $self->_getEntity()->lvCreate(%args);
 }
 
 =head2 vgSizeUpdate
 
-vgSizeUpdate ( lvm2_vg_id, econtext, lvm2_vg_name)
+vgSizeUpdate ( lvm2_vg_id, lvm2_vg_name)
     desc: This function update vg free space on storage server
     args:
-        econtext : Econtext : execution context on the storage server
         lvm2_vg_id : Int : identifier of vg update
         lvm2_vg_name : String : vg name
     return:
@@ -168,10 +156,10 @@ sub vgSpaceUpdate {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "lvm2_vg_id", "lvm2_vg_name", "econtext" ]);
+                         required => [ "lvm2_vg_id", "lvm2_vg_name" ]);
 
     my $command = "vgs $args{lvm2_vg_name} --noheadings -o vg_free --nosuffix --units B --rows";
-    my $ret = $args{econtext}->execute(command => $command);
+    my $ret = $self->getEContext->execute(command => $command);
 
     if($ret->{exitcode} != 0) {
         my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
@@ -189,12 +177,10 @@ sub vgSpaceUpdate {
 
 =head2 lvRemove
 
-lvRemove ( lvm2_lv_name, lvm2_vg_id, econtext, lvm2_vg_name)
+lvRemove ( lvm2_lv_name, lvm2_vg_id, lvm2_vg_name)
     desc: This function remove a lv.
     args:
         name : string: lv name
-        econtext : Econtext : execution context on the storage server
-
 
 =cut
 
@@ -203,19 +189,16 @@ sub lvRemove{
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "lvm2_vg_id", "lvm2_vg_name",
-                                       "lvm2_lv_name", "econtext" ]);
-
-    $log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
+                         required => [ "lvm2_vg_id", "lvm2_vg_name", "lvm2_lv_name" ]);
 
     my $ret;
     my $lvchange_cmd = "lvchange -a n /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}";
     $log->debug($lvchange_cmd);
-    $ret = $args{econtext}->execute(command => $lvchange_cmd);
+    $ret = $self->getEContext->execute(command => $lvchange_cmd);
 
     my $lvremove_cmd = "lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}";
     $log->debug($lvremove_cmd);
-    $ret = $args{econtext}->execute(command => $lvremove_cmd);
+    $ret = $self->getEContext->execute(command => $lvremove_cmd);
 
     if ($ret->{exitcode} != 0) {
         $errmsg = "Error with removing logical volume " .
@@ -228,8 +211,7 @@ sub lvRemove{
     }
 
     $self->_getEntity()->lvRemove(%args);
-    $self->vgSpaceUpdate(econtext     => $args{econtext},
-                         lvm2_vg_id   => $args{lvm2_vg_id}, 
+    $self->vgSpaceUpdate(lvm2_vg_id   => $args{lvm2_vg_id}, 
                          lvm2_vg_name => $args{lvm2_vg_name});
 }
 

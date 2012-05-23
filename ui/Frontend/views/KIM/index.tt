@@ -1,6 +1,5 @@
-
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
-
+<script src="/javascripts/KIM/iaas.js"></script>
 <script src="/javascripts/KIM/menu.conf.js"></script>
 
 <div id='view-container' class="ui-layout-center">

@@ -1,0 +1,13 @@
+<script language="JavaScript">
+function setVisibility(id, visibility) {
+document.getElementById(id).style.display = visibility;}
+</script>
+<div id="id<% divid %>" style="display: none" class="updateComment">
+	<form method="post" action="/entity/set_comment">
+	<input type="text" name="entity_comment_input" value="<% value %>"/>
+	<input type="submit" value="update"/> 
+	<input type="hidden" name="entityid" value="<% divid %>"/>
+	<input type=button name=type value='close' onclick="setVisibility('id<% divid %>', 'none');"/>
+	</form>
+</div>
+<input type=button name=type value='edit' onclick="setVisibility('id<% divid %>', 'table');"/>

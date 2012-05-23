@@ -118,27 +118,27 @@ sub getSystemimage {
     return pop @systemimages;
 }
 
-=head2 create
-
-=cut
-
-sub create {
-    my ($class, %params) = @_;
-    
-    my $admin = Administrator->new();
-    my $mastergroup_eid = $class->getMasterGroupEid();
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new system image");
-       }
-
-    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
-    Operation->enqueue(
-        priority => 200,
-        type     => 'AddSystemimage',
-        params   => \%params,
-    );
-}
+#=head2 create
+#
+#=cut
+#
+#sub create {
+#    my ($class, %params) = @_;
+#    
+#    my $admin = Administrator->new();
+#    my $mastergroup_eid = $class->getMasterGroupEid();
+#       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
+#       if(not $granted) {
+#           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new system image");
+#       }
+#
+#    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
+#    Operation->enqueue(
+#        priority => 200,
+#        type     => 'AddSystemimage',
+#        params   => \%params,
+#    );
+#}
 
 =head2 installComponent
 
@@ -150,15 +150,16 @@ sub installComponent {
     
     General::checkParams(args=>\%args,required=>["component_type_id"]);
     
-    my %params = ();
-    $params{systemimage_id} = $self->getAttr(name => 'systemimage_id');
-    $params{component_type_id} = $args{component_type_id};
-    
-    $log->debug("New Operation InstallComponentOnSystemImage with attrs : " . Dumper(%params));
+    $log->debug("New Operation InstallComponentOnSystemImage");
     Operation->enqueue(
         priority => 200,
         type     => 'InstallComponentOnSystemImage',
-        params   => \%params,
+        params   => {
+            context => {
+                systemimage => $self,
+            },
+            component_type_id => $args{component_type_id},
+        }
     );
 }
 
@@ -198,7 +199,11 @@ sub remove {
     Operation->enqueue(
         priority => 200,
         type     => 'RemoveSystemimage',
-        params   => {systemimage_id => $self->getAttr(name=>"systemimage_id")},
+        params   => {
+            context => {
+                systemimage => $self,
+            }
+        }
     );
 }
 
@@ -206,45 +211,45 @@ sub getAttrDef{
     return ATTR_DEF;
 }
 
-sub clone {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required=>[ "systemimage_name", "systemimage_desc" ]);
+#sub clone {
+#    my $self = shift;
+#    my %args = @_;
+#    
+#    General::checkParams(args => \%args, required=>[ "systemimage_name", "systemimage_desc" ]);
+#
+#    my $sysimg_id = $self->getAttr(name => 'systemimage_id');
+#    if (! defined $sysimg_id) {
+#        $errmsg = "Entity::Systemimage->clone needs a systemimage_id parameter!";
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::Internal(error => $errmsg);
+#    }
+#    $args{systemimage_id} = $sysimg_id;
+#    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%args));
+#    Operation->enqueue(priority => 200,
+#                       type     => 'CloneSystemimage',
+#                       params   => \%args);
+#       
+#}
 
-    my $sysimg_id = $self->getAttr(name => 'systemimage_id');
-    if (! defined $sysimg_id) {
-        $errmsg = "Entity::Systemimage->clone needs a systemimage_id parameter!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    $args{systemimage_id} = $sysimg_id;
-    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%args));
-    Operation->enqueue(priority => 200,
-                       type     => 'CloneSystemimage',
-                       params   => \%args);
-       
-}
+#sub activate{
+#    my $self = shift;
+#    
+#    my  $adm = Administrator->new();
+#    $log->debug("New Operation ActivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
+#    Operation->enqueue(priority => 200,
+#                   type     => 'ActivateSystemimage',
+#                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
+#}
 
-sub activate{
-    my $self = shift;
-    
-    my  $adm = Administrator->new();
-    $log->debug("New Operation ActivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'ActivateSystemimage',
-                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
-}
-
-sub deactivate{
-    my $self = shift;
-    
-    my  $adm = Administrator->new();
-    $log->debug("New Operation DeactivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'DeactivateSystemimage',
-                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
-}
+#sub deactivate{
+#    my $self = shift;
+#    
+#    my  $adm = Administrator->new();
+#    $log->debug("New Operation DeactivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
+#    Operation->enqueue(priority => 200,
+#                   type     => 'DeactivateSystemimage',
+#                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
+#}
 
 =head2 toString
 

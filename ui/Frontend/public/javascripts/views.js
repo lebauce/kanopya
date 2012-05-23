@@ -1,57 +1,44 @@
-var content_def = {
-    'content_hosts' : {
-        grid : { 
-            params : {
-                colNames : ['ID','Base hostname', 'Initiator name'],
-                colModel : [ 
-                            {name:'entity_id',index:'entity_id', width:60, sorttype:"int", hidden:true, key:true},
-                            {name:'host_hostname',index:'host_hostname', width:90, sorttype:"date"},
-                            {name:'host_initiatorname',index:'host_initiatorname', width:200,}
-                          ],
-            },
-            data_route : '/api/host',
-        }
-    },
-    'content_iaas' : { 
-        grid : { 
-            params : {
-                colNames : ['ID','Name', 'Type', 'Status', 'Admin IP', 'Auto-scale'],
-                colModel : [ 
-                            {name:'id',index:'entity_id', width:60, sorttype:"int", hidden:true, key:true},
-                            {name:'date',index:'date', width:90, sorttype:"date"},
-                            {name:'type',index:'type', width:200,},
-                            {name:'status',index:'status', width:200,},
-                            {name:'admin_ip',index:'admin_ip', width:200,},
-                            {name:'auto_scale',index:'auto_scale', width:200,},
-                            ],
-            },
-            data_route : '/api/cluster',
-        }
-    },
-};
+// used to store handlers during menu creation
+var _content_handlers = {};
 
-function reload_content(container_id) { 
+function reload_content(container_id, elem_id) {
+    //alert(_content_handlers['content_hosts']);
     //alert('Reload' + container_id);
-    if (content_def[container_id]) {
-        if (content_def[container_id]['grid']) {
-            reload_grid(container_id, content_def[container_id]['grid']['data_route']);
+    if (_content_handlers[container_id]) {
+        if (_content_handlers[container_id]['onLoad']) {
+           
+            // Clean container content
+            $('#' + container_id).html('');
+           
+            // Fill container using related handler
+            var handler = _content_handlers[container_id]['onLoad'];
+            handler(container_id, elem_id);
         }
     }
 }
 
-function create_content(container_id) {
-    var grid_params = content_def[container_id]['grid']['params'];
-    create_grid(container_id, grid_params['colNames'], grid_params['colModel'])
-}
-
+// Not used
 function create_all_content() {
     for (var container_id in content_def) {
         create_content(container_id);
     }
 }
 
-function show_detail(elem_id) {
-    var dialog = $('<div></div>')
+function show_detail(grid_id, elem_id) {
+
+    var id = 'view_detail_' + elem_id;
+    var menu_links = details_def[grid_id];
+    
+    if (menu_links === undefined) {
+        alert('Details not defined yet ( menu.conf.js -> details_def["' + grid_id + '"] )');
+        return;
+    }
+    
+    var view_detail_container = $('<div></div>');
+    build_detailmenu(view_detail_container, id, menu_links, elem_id);
+    
+    //var dialog = $('<div></div>')
+    var dialog = $(view_detail_container)
     .dialog({
         autoOpen: true,
         modal: true,
@@ -60,11 +47,13 @@ function show_detail(elem_id) {
         height: 500,
         resizable: true,
         draggable: false,
+        close: function(event, ui) { $(this).remove(); }, // detail modals are never closed, they are destroyed
         buttons: {
             Ok: function() {
                 //$(this).find('#target').submit();
                 //loading_start();
-                //$(this).dialog('close');
+                $(this).dialog('close');
+                
             },
             Cancel: function() {
                 $(this).dialog('close');
@@ -72,7 +61,14 @@ function show_detail(elem_id) {
         },
     });
     
-    dialog.load('/api/host/' + elem_id);
+    // Show the view
+    //$('#' + id).show();
+    
+    // Load first tab content
+    reload_content('content_' + menu_links[0]['id'], elem_id);
+        
+    //dialog.load('/api/host/' + elem_id);
+    //dialog.load('/details/iaas.html');
     
 //alert('pouet');
 //return false;
@@ -91,11 +87,11 @@ function show_detail(elem_id) {
 
 }
 
-function create_grid(content_container_id, colNames, colModel) {
+function create_grid(content_container_id, grid_id, colNames, colModel) {
     
     var content_container = $('#' + content_container_id);
-    var grid_id = content_container_id + '_grid';
-    var pager_id = content_container_id + '_pager';
+    //var grid_id = content_container_id + '_grid';
+    var pager_id = grid_id + '_pager';
     
     //content_container.append('<div>Host Content</div>');
     content_container.append("<table id='" + grid_id + "'></table>");
@@ -114,9 +110,15 @@ function create_grid(content_container_id, colNames, colModel) {
         pager : '#' + pager_id,
         altRows: true,
         onSelectRow: function (id) {
-            show_detail(id);
+            show_detail(grid_id, id);
             //alert('Select row: ' + id);
         },
+        loadError: function (xhr, status, error) {
+            var error_msg = xhr.responseText;
+            alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 
+        }
+        // onReload ????
+        //loadComplete: function (xhr) {}
     });
     
     $('#' + grid_id).jqGrid('navGrid','#' + pager_id,{edit:false,add:false,del:false}); 
@@ -124,10 +126,8 @@ function create_grid(content_container_id, colNames, colModel) {
     $('#content_hosts').jqGrid('setGridWidth', $('#' + grid_id).parent().width()-20);
     
 }
-
-
-function reload_grid (content_container_id,  data_route) {
-    var grid = $('#' + content_container_id + '_grid');
+function reload_grid (grid_id,  data_route) {
+    var grid = $('#' + grid_id);
     grid.jqGrid("clearGridData");
     $.getJSON(data_route, {}, function(data) { 
         //alert(data);
@@ -140,7 +140,6 @@ function reload_grid (content_container_id,  data_route) {
 
 $(document).ready(function () {
 
-    create_all_content();
 });
 
 

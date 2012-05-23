@@ -28,14 +28,13 @@ sub configureNode {
     my %args = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ "econtext", "host", "mount_point" ]);
+                         required => [ "host", "mount_point" ]);
 
     my $template_path = $args{template_path} || "/templates/components/syslogng";
     
     my $data = $self->_getEntity()->getConf();
         
     $self->generateFile(
-            econtext => $args{econtext}, 
          mount_point => $args{mount_point},
         template_dir => $template_path,
           input_file => "syslog-ng.conf.tt", 
@@ -49,17 +48,15 @@ sub addNode {
     my %args = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ "econtext", "host", "mount_point" ]);
+                         required => [ "host", "mount_point" ]);
 
     $self->configureNode(
-           econtext => $args{econtext}, 
                host => $args{host},
         mount_point => $args{mount_point}.'/etc');
 
     # add init scripts
     $self->addInitScripts(
         mountpoint => $args{mount_point},
-          econtext => $args{econtext},
         scriptname => 'syslog-ng',
     );
 }
@@ -68,11 +65,9 @@ sub addNode {
 sub reload {
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => [ "econtext" ]);
 
     my $command = "invoke-rc.d syslog-ng restart";
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
     return undef;
 }
 

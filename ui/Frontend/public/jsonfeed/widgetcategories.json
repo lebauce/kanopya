@@ -1,0 +1,19 @@
+{
+"categories" :
+  {
+  "category": [
+    {
+      "id":1,
+      "title" : "My category",
+      "amount" : 2,
+      "url" : "jsonfeed/category1_widgets.json"
+    },
+    {
+      "id":2,
+      "title" : "Another category",
+      "amount": 1,
+      "url" : "jsonfeed/category2_widgets.json"
+    }
+  ]
+  }
+}

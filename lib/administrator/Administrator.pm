@@ -283,31 +283,6 @@ sub getRow {
     return $dbix;
 }	
 
-
-=head2 _getLastRank
-
-    Class : Private
-
-    Desc : This method return last operation number
-
-=cut
-
-sub _get_lastRank {
-    my $self = shift;
-    my $row = $self->{db}->resultset('Operation')->search(undef, {column => 'execution_rank', order_by=> ['execution_rank desc']})->first;
-    if (! $row) {
-        $log->debug("No previous operation in queue");
-        return 0;
-    }
-    else {
-        my $last_in_db = $row->get_column('execution_rank');
-        $log->debug("Previous operation in queue is $last_in_db");
-        return $last_in_db;
-    }
-}
-
-
-
 =head2 Administrator::_getDbix(%args)
 
     Class : Private
@@ -344,15 +319,11 @@ sub _getDbixFromHash {
 
     my $dbix;
     eval {
-        my $hash = $args{hash};
-        if (keys(%$hash)) {
-            $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash} );
-        } else {
-            $dbix = $self->{db}->resultset( $args{table} )->search( undef );
-        }
-        if (defined $args{page}) {
-            $dbix = $dbix->page($args{page});
-        }
+        $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
+                                                                { prefetch => $args{join},
+                                                                  rows     => $args{rows},
+                                                                  page     => $args{page},
+                                                                  order_by => $args{order_by} });
     };
     if ($@) {
         $errmsg = "Administrator->_getDbixFromHash error ".$@;

@@ -8,6 +8,11 @@ use EntityComment;
 my $log = get_logger('administrator');
 
 use constant ATTR_DEF => {
+    class_type_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
     entity_comment_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,
@@ -210,6 +215,12 @@ sub getEntities {
         else { push @objs, $obj; }
     }
     return  @objs;
+}
+
+sub getId() {
+    my $self = shift;
+
+    return $self->getAttr(name => "entity_id");
 }
 
 sub getComment {

@@ -52,8 +52,6 @@ our $VERSION = '1.00';
 
 =head2 prepare
 
-    $op->prepare(internal_cluster => \%internal_clust);
-
 =cut
 
 sub prepare {
@@ -61,26 +59,11 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
-    
-    # Get Operation parameters
-    my $params = $self->_getOperation()->getParams();
-
-    General::checkParams(args => $params, required => [ "file_path" ]);
-
-    # Check for the keep_file param
-    eval {
-        General::checkParams(args => $params, required => [ "keep_file" ]);
-
-        $self->{keep_file} = $params->{keep_file};
-    };
-    if ($@) {
-        $self->{keep_file} = 0;
-    }
+    General::checkParams(args => $self->{params}, required => [ "file_path" ]);
 
     # check file_path set
-    my $file_path = $params->{file_path};
-    
+    my $file_path = $self->{params}->{file_path};
+
     if (not defined $file_path) {
         $errmsg = "Invalid operation argument ; $file_path not defined !";
         $log->error($errmsg);
@@ -99,16 +82,11 @@ sub prepare {
         $errmsg = "Invalid operation argument ; $file_path must be a gzip or bzip2 compressed file !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
-    } else {
-        $self->{compress_type} = $1;
-        $self->{file} = $file_path;
     }
-    
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
+    else {
+        $self->{params}->{compress_type} = $1;
+        $self->{params}->{file} = $file_path;
+    }
 }
 
 sub execute {
@@ -116,10 +94,10 @@ sub execute {
     my ($cmd, $cmd_res);
 
     # Untar master image archive on local /tmp
-    $log->debug("Unpack archive files from archive '$self->{file}' into /tmp");
-    my $compress = $self->{compress_type} eq 'bzip2' ? 'j' : 'z';
-    $cmd = "tar -x -$compress -f $self->{file} -C /tmp"; 
-    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    $log->debug("Unpack archive files from archive '$self->{params}->{file}' into /tmp");
+    my $compress = $self->{params}->{compress_type} eq 'bzip2' ? 'j' : 'z';
+    $cmd = "tar -x -$compress -f $self->{params}->{file} -C /tmp"; 
+    $cmd_res = $self->getEContext->execute(command => $cmd);
 
     # check metadata file exists
     my $metadatafile = '/tmp/img-metadata.xml';
@@ -135,28 +113,27 @@ sub execute {
     my $imagefile = $metadata->{file};
     
     # retrieve master images directory
-    my $config = XMLin("/opt/kanopya/conf/executor.conf");
     $log->debug(Dumper $metadata);
-    my $directory = $config->{masterimages}->{directory};
+    my $directory = $self->{config}->{masterimages}->{directory};
     $directory =~ s/\/$//g;
     
     # get the image size
     $cmd = "du -s --bytes /tmp/$imagefile | awk '{print \$1}'";
-    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    $cmd_res = $self->getEContext->execute(command => $cmd);
     my $image_size = $cmd_res->{stdout};  
     
     # create the directory for the image
     $cmd = "mkdir -p $directory/$imagefile";
-    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    $cmd_res = $self->getEContext->execute(command => $cmd);
     
     # move image and metadata to the directory
     $cmd = "mv /tmp/$imagefile /tmp/img-metadata.xml $directory/$imagefile";
-    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    $cmd_res = $self->getEContext->execute(command => $cmd);
     
     # delete uploaded archive
-    if (! $self->{keep_file}) {
-        $cmd = "rm $self->{file}";
-        $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    if (! $self->{params}->{keep_file}) {
+        $cmd = "rm $self->{params}->{file}";
+        $cmd_res = $self->getEContext->execute(command => $cmd);
     }
 
     my $args = {
@@ -178,8 +155,6 @@ sub execute {
             component_version => $vers
         );
     }
-    
-    
 }        
 
 =head1 DIAGNOSTICS

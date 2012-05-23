@@ -58,8 +58,7 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    $self->{host}         = $self->_getEntity();
-    $self->{host_manager} = EFactory::newEEntity(data => $self->{host}->getHostManager);
+    $self->{host_manager} = EFactory::newEEntity(data => $self->getHostManager);
 
     $log->debug("Created a EHost");
     return $self;
@@ -69,59 +68,46 @@ sub start {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "econtext" ]);
+    $self->{host_manager}->startHost(host => $self);
 
-    $self->{host_manager}->startHost(host     => $self->{host},
-                                     econtext => $args{econtext});
-
-    $self->{host}->setState(state => 'starting');
+    $self->setState(state => 'starting');
 }
 
 sub halt {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "node_econtext" ]);
-
-    my $result = $args{node_econtext}->execute(command => 'halt');
-    $self->{host}->setState(state => 'stopping');
+    my $result = $self->getEContext->execute(command => 'halt');
+    $self->setState(state => 'stopping');
 }
 
 sub stop {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "econtext" ]);
-
-    $self->{host_manager}->stopHost(host     => $self->{host},
-                                    econtext => $args{econtext});
+    $self->{host_manager}->stopHost(host => $self);
 }
 
 sub postStart {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "econtext" ]);
-
-    $self->{host_manager}->postStart(host     => $self->{host},
-                                     econtext => $args{econtext});
+    $self->{host_manager}->postStart(host => $self);
 }
 
 sub checkUp {
     my $self = shift;
     my %args = @_;
 
-    my $ip = $self->{host}->getAdminIp;
+    my $ip = $self->getAdminIp;
     my $ping = Net::Ping->new();
     my $pingable = $ping->ping($ip);
     $ping->close();
     
     if ($pingable) {
         eval {
-            my $node_econtext = EFactory::newEContext(
-                                    ip_source      => '127.0.0.1',
-                                    ip_destination => $ip
-                                );
+            $self->getEContext;
+
             $log->debug("In checkUP test if host <$ip> is pingable <$pingable>\n");
         };
         if ($@) {
@@ -135,8 +121,8 @@ sub checkUp {
 
 sub generateUdevPersistentNetRules {
     my ($self, %args) = @_;
-    General::checkParams(args     => \%args,
-                         required => [ 'econtext', 'etc_path' ]);
+
+    General::checkParams(args => \%args, required => [ 'etc_path' ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -158,7 +144,7 @@ sub generateUdevPersistentNetRules {
     $template->process($input, { interfaces => \@interfaces }, "/tmp/" . $tmpfile)
         or die $template->error(), "\n";
 
-    $args{econtext}->send(
+    $self->getExecutorEContext->send(
         src => "/tmp/$tmpfile",
         dest => "$args{etc_path}/udev/rules.d/70-persistent-net.rules"
     );
@@ -167,13 +153,20 @@ sub generateUdevPersistentNetRules {
 
 sub generateHostname {
     my ($self, %args) = @_;
-    General::checkParams(args     => \%args,
-                         required => ['econtext', 'etc_path']);
 
-    my $hostname = $self->_getEntity()->getAttr(name => 'host_hostname');
-    $args{econtext}->execute(
+    General::checkParams(args => \%args, required => [ 'etc_path' ]);
+
+    my $hostname = $self->getAttr(name => 'host_hostname');
+    $self->getExecutorEContext->execute(
         command => "echo $hostname > $args{etc_path}/hostname"
     );
+}
+
+sub getEContext {
+    my $self = shift;
+
+    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp,
+                                 ip_destination => $self->getAdminIp);
 }
 
 1;

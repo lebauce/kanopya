@@ -1,0 +1,39 @@
+
+<script>
+    $(document).ready(function () {
+        $("#grid2").jqGrid({ 
+            //url:'/api/host', datatype: "json",
+            datatype: "local",
+            loadonce: true,
+            height: 'auto',
+                colNames : ['ID','Base hostname', 'Initiator name'],
+                colModel : [ 
+                            {name:'entity_id',index:'entity_id', width:100, sorttype:"int", hidden:true, key:true},
+                            {name:'host_hostname',index:'host_hostname', width:150, sorttype:"date"},
+                            {name:'host_initiatorname',index:'host_initiatorname', width:200,}
+                          ],
+            rowNum:5, rowList:[5,10,20,50],
+            pager: '#grid_pager2',
+            caption: "Manipulating Array Data",
+            altRows: true,
+            onSelectRow: function (id) {
+                alert('Select row: ' + id);
+            },
+        });
+        $("#grid2").jqGrid('navGrid','#grid_pager2',{edit:false,add:false,del:false});
+        
+        $.getJSON('/api/host', {}, function(data) { 
+            //alert(data);
+            for(var i=0;i<=data.length;i++) $("#grid2").jqGrid('addRowData',i+1,data[i]);
+            $("#grid2").setGridParam({rowNum:5}).trigger("reloadGrid");
+            
+        });
+
+    });
+
+</script>
+<ul>
+ 
+<table id="grid2"></table>
+    <div id="grid_pager2"></div>
+</ul>

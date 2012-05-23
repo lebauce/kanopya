@@ -79,11 +79,13 @@ sub createDisk {
         priority => 200,
         type     => 'CreateDisk',
         params   => {
-            disk_manager_id     => $self->getAttr(name => 'connector_id'),
-            name                => $args{name},
-            size                => $args{size},
-            filesystem          => $args{filesystem},
-            volume_id           => $args{volume_id}
+            name       => $args{name},
+            size       => $args{size},
+            filesystem => $args{filesystem},
+            volume_id  => $args{volume_id},
+            context    => {
+                disk_manager => $self,
+            }
         },
     );
 }
@@ -107,7 +109,9 @@ sub removeDisk {
         priority => 200,
         type     => 'RemoveDisk',
         params   => {
-            container_id => $args{container}->getAttr(name => 'container_id'),
+            context => {
+                container => $args{container},
+            }
         },
     );
 }
@@ -132,9 +136,13 @@ sub createExport {
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            export_manager_id   => $self->getAttr(name => 'connector_id'),
-            container_id        => $args{container}->getAttr(name => 'container_id'),
-            export_name         => $args{export_name},
+            context => {
+                export_manager => $self,
+                container      => $args{container},
+            },
+            manager_params => {
+                export_name         => $args{export_name},
+            },
         },
     );
 }
@@ -158,7 +166,9 @@ sub removeExport {
         priority => 200,
         type     => 'RemoveExport',
         params   => {
-            container_access_id => $args{container_access}->getAttr(name => 'container_access_id'),
+            context => {
+                container_access => $args{container_access},
+            }
         },
     );
 }

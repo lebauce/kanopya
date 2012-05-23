@@ -45,10 +45,12 @@ sub new {
     return $self;
 }
 
+sub save {}
+
 sub getContainer {
     my $self = shift;
 
-    return $self->{econtainer}->_getEntity;
+    return $self->_getEntity->{econtainer};
 }
 
 sub getAttr {
@@ -57,7 +59,7 @@ sub getAttr {
 
     General::checkParams(args => \%args, required => [ 'name' ]);
 
-    return $self->{$args{name}};
+    return $self->_getEntity->{$args{name}};
 }
 
 sub setAttr {
@@ -66,7 +68,7 @@ sub setAttr {
 
     General::checkParams(args => \%args, required => [ 'name', 'value' ]);
 
-    $self->{$args{name}} = $args{value};
+    $self->_getEntity->{$args{name}} = $args{value};
 }
 
 =head2 connect
@@ -80,8 +82,7 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $file = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_device');
-
+    my $file = $self->_getEntity->{econtainer}->getAttr(name => 'container_device');
     my $device;
     if (-b $file) {
         $device = $file;
@@ -103,8 +104,15 @@ sub connect {
         }
     }
     $log->info("Return file loop dev (<$device>).");
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => $device);
+    $self->setAttr(name  => 'device_connected', value => $device);
+
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('disconnect'),
+            parameters => [ $self, "econtext", $args{econtext} ]
+        );
+    }
+
     return $device;
 }
 
@@ -122,7 +130,7 @@ sub disconnect {
     my $file = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_device');
 
     if (! -b $file) {
-        my $device = $self->_getEntity->getAttr(name => 'device_connected');
+        my $device = $self->getAttr(name => 'device_connected');
 
         $command = "losetup -d $device";
         $result  = $args{econtext}->execute(command => $command);
@@ -131,8 +139,8 @@ sub disconnect {
         }
     }
 
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => '');
+    $self->setAttr(name  => 'device_connected',
+                   value => '');
 }
 
 sub tryDisconnectPartition {
@@ -161,8 +169,9 @@ sub tryDisconnectPartition {
     $partition =~ s/\: .*$//g;
     chomp($partition);
 
-    $self->_getEntity->setAttr(name  => 'partition_connected',
-                               value => $partition);
+    $self->setAttr(name  => 'partition_connected',
+                   value => $partition);
+
     $self->disconnectPartition(%args);
 }
 

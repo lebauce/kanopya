@@ -44,6 +44,8 @@ use vars qw(@ISA $VERSION);
 
 use General;
 use Entity;
+use EEntity;
+
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Inside::Cluster;
 use Net::IP qw(:PROC);
@@ -56,9 +58,10 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 sub newEOperation{
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['op']);
+    General::checkParams(args => \%args, required => [ 'op', 'config' ]);
+
     my $data = $args{op};
-    my $class = "EOperation::E". $args{op}->getType();
+    my $class = "EOperation::E". $args{op}->getAttr(name => 'type');
 #    $log->debug("EOperation class is $class"); 
     my $location = General::getLocFromClass(entityclass => $class);
     
@@ -68,9 +71,9 @@ sub newEOperation{
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
+
 #    $log->info("$class instanciated");
-    return $class->new(data => $args{op});
+    return $class->new(data => $args{op}, config => $args{config}, context => $args{context});
 }
 
 =head2 newEEntity
@@ -95,10 +98,11 @@ sub newEEntity {
     eval { require $location; };
     if ($@){
         $errmsg = "EFactory->newEEntity : require locaction failed (location is $location) : $@";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        $log->debug($errmsg);
+        #throw Kanopya::Exception::Internal(error => $errmsg);
+        $class = 'EEntity';
     }
-    
+
 #    $log->info("$class instanciated");
     return $class->new(%params);
 }

@@ -41,7 +41,6 @@ use Data::Dumper;
 use String::Random;
 use Template;
 use Log::Log4perl "get_logger";
-#use Nmap::Scanner;
 use General;
 use EFactory;
 
@@ -59,12 +58,10 @@ add start and stop rc init scripts
 sub addInitScripts {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'mountpoint',
-                                                       'econtext',
-                                                       'scriptname' ]);
+    General::checkParams(args => \%args, required => [ 'mountpoint', 'scriptname' ]);
 
     my $cmd = "chroot $args{mountpoint} /sbin/insserv -d $args{scriptname}";
-    $args{econtext}->execute(command => $cmd);
+    $self->getExecutorEContext->execute(command => $cmd);
 }
 
 =head2 generateFile
@@ -79,7 +76,7 @@ sub generateFile {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams( args => \%args, required => ['econtext', 'mount_point','input_file','data','output'] );
+    General::checkParams( args => \%args, required => ['mount_point','input_file','data','output'] );
 
     my $template_dir = defined $args{template_dir} ? $args{template_dir}
                                                    : $self->_getEntity()->getTemplateDirectory();
@@ -103,9 +100,8 @@ sub generateFile {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     };
-    $args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point} . $args{output});
+    $self->getExecutorEContext->send(src => "/tmp/$tmpfile", dest => $args{mount_point} . $args{output});
     unlink "/tmp/$tmpfile";
-
 }
 
 sub addNode {}
@@ -129,7 +125,7 @@ sub isUp {
     my %args = @_;
     my $availability = 1;
 
-    General::checkParams( args => \%args, required => ['cluster', 'host', 'host_econtext'] );
+    General::checkParams( args => \%args, required => ['cluster', 'host' ] );
 
     my $execution_list = $self->{_entity}->getExecToTest();
     my $net_conf = $self->{_entity}->getNetConf();
@@ -139,17 +135,13 @@ sub isUp {
     foreach my $i (keys %$execution_list) {
         my $ret;
         eval {
-        $ret = $args{host_econtext}->execute(command=>$execution_list->{$i}->{cmd});
-        $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");
-        $log->debug("Value returned are <$ret->{stdout}> and has to match $execution_list->{$i}->{answer}")
+            $ret = $args{host}->getEContext->execute(command => $execution_list->{$i}->{cmd});
+            $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");
+            $log->debug("Value returned are <$ret->{stdout}> and has to match $execution_list->{$i}->{answer}")
         };
-        if ((not defined $ret->{stdout}) || $ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
+        if ($@ || (not defined $ret->{stdout}) || $ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
             return 0;
         }
-        if ($@) {
-            return 0;
-                   }
-
     }
 #    my $scanner = new Nmap::Scanner;
 #    $scanner->max_rtt_timeout(200);
@@ -203,6 +195,17 @@ sub isUp {
 #     }
 #    return 1;
 
+=head2 getEContext
+
+=cut
+
+sub getEContext {
+    my $self = shift;
+
+    my $service_provider = $self->getServiceProvider;
+    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
+                                 ip_destination => $service_provider->getMasterNodeIp());
+}
 
 1;
 

@@ -117,11 +117,6 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Hcp5tV6Yg7oYSMITG5+w5A
 
-
 # You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->belongs_to(
-  "parent",
-  "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.message_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+
 1;

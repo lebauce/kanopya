@@ -4,6 +4,8 @@ use Dancer ':syntax';
 
 use General;
 use Administrator;
+
+use Entity;
 use Entity::Host;
 use Entity::Kernel;
 use Entity::ServiceProvider::Inside::Cluster;
@@ -12,6 +14,7 @@ use Entity::Hostmodel;
 use Entity::Powersupplycard;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use CapacityManagement;
 
 my $log = get_logger("webui");
 
@@ -360,12 +363,15 @@ get '/hosts/migrate/:host_id' => sub {
 };
 
 post '/hosts/migrate' => sub {
+    #TODO: Move this into a Host method.
     Operation->enqueue(
         type => 'MigrateHost',
         priority => 1,
         params => {
-           host_id => params->{host_id},
-           hypervisor_dst => params->{hypervisors}
+            context => {
+                host           => Entity->get(id => params->{host_id}),
+                hypervisor_dst => Entity->get(id => params->{hypervisors})
+            }
         }
     );
     redirect '/infrastructures/hosts';
@@ -379,15 +385,27 @@ get '/hosts/scale_memory/:host_id' => sub {
 };
 
 post '/hosts/scale_memory' => sub {
-    Operation->enqueue(
-        type => 'ScalememoryHost',
-        priority => 1,
-        params => {
-            host_id => params->{host_id},
-            memory_quantity => params->{memory_quantity}
-        }
+    my $host_id    = params->{host_id};
+    my $cluster_id = Entity::Host->get('id'=>$host_id)->getClusterId();
+
+    my $cm = CapacityManagement->new(cluster_id => $cluster_id);
+    
+    $log->info("post ".params->{host_id}." ".params->{memory_quantity});
+    $cm->scaleMemoryHost(
+        host_id => params->{host_id},
+        memory  => params->{memory_quantity}
     );
-    redirect '/infrastructures/hosts';
+
+#    Operation->enqueue(
+#        type => 'ScaleMemoryHost',
+#        priority => 1,
+#        params => {
+#            host_id => params->{host_id},
+#            memory  => params->{memory_quantity}
+#        }
+#    );
+
+    redirect '/infrastructures/hosts/'.$host_id;
 };
 
 get '/hosts/scale_cpu/:host_id' => sub {
@@ -397,15 +415,29 @@ get '/hosts/scale_cpu/:host_id' => sub {
 };
 
 post '/hosts/scale_cpu' => sub {
-    Operation->enqueue(
-        type => 'ScalecpuHost',
-        priority => 1,
-        params => {
-            host_id => params->{host_id},
-            memory_quantity => params->{vcpu_number}
-        }
+#    Operation->enqueue(
+#        type => 'ScaleCpuHost',
+#        priority => 1,
+#        params => {
+#            host_id    => params->{host_id},
+#            cpu_number => params->{vcpu_number}
+#        }
+#    );
+    
+    my $host_id    = params->{host_id};
+    my $cluster_id = Entity::Host->get('id'=>$host_id)->getClusterId();
+
+    my $cm = CapacityManagement->new(cluster_id => $cluster_id);
+    
+    $log->info("call scaleCpuHost ".params->{host_id}." ".params->{vcpu_number});
+    $cm->scaleCpuHost(
+        host_id     => params->{host_id},
+        vcpu_number => params->{vcpu_number}
     );
-    redirect '/infrastructures/hosts';
+
+    redirect '/infrastructures/hosts/'.$host_id;
+
+    #redirect '/infrastructures/hosts';
 };
 
 
@@ -511,7 +543,7 @@ get '/hosts/:hostid' => sub {
     $is_virtual = $host_type eq "Virtual Machine";
     $vnc_url = $ehost->getRemoteSessionURL();
 
-     template 'hosts_details', {
+    template 'hosts_details', {
         host_id          => $ehost->getAttr('name' => 'host_id'),
         host_hostname    => $ehost->getAttr('name' => 'host_hostname'),
         host_desc        => $ehost->getAttr('name' => 'host_desc'),
@@ -532,7 +564,7 @@ get '/hosts/:hostid' => sub {
         active                  => $active,
         is_virtual              => $is_virtual,
         url                     => $vnc_url,
-        can_deactivate          => $methods->{'deactivate'}->{'granted'} && $active && $host_state =~ /down/,
+        can_deactivate          => $methods->{'deactivate'}->{'granted'} && $active && ($host_state eq "down" ? 0 : 1),
         can_delete              => $methods->{'remove'}->{'granted'} && !$active,
         can_activate            => $methods->{'activate'}->{'granted'} && !$active,
         can_setperm             => $methods->{'setperm'}->{'granted'},

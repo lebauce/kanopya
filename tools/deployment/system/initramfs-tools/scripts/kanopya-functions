@@ -46,7 +46,7 @@ do_iscsi_login ()
     DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-${DEV_TARGET_LUN}-part1"
 
     if [ ! -e "$DEVICE" ]; then
-        DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-${DEV_TARGET_LUN}-part1"
+        DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-${DEV_TARGET_LUN}"
     fi
 
     if [ ! -e "$DEVICE" ]; then

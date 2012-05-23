@@ -51,26 +51,7 @@ our $VERSION = '1.00';
 my $log = get_logger("executor");
 my $errmsg;
 
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-
-    # check if systemimage is not active
-    $log->debug("checking systemimage active value <" .
-                $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') . ">");
-
-    if ($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
-        $errmsg = "EOperation::ERemoveSystemiamge->new : systemimage <" .
-                  $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') .
-                  "> is already active";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-}
-
 =head2 prepare
-
-    $op->prepare();
 
 =cut
 
@@ -79,47 +60,24 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
-    
-    my $params = $self->_getOperation()->getParams();
+    General::checkParams(args => $self->{context}, required => [ "systemimage" ]);
 
-    General::checkParams(args => $params, required => [ "systemimage_id" ]);
+    # Check if systemimage is not active
+    my $systemimage_id = $self->{context}->{systemimage}->getAttr(name => 'systemimage_id');
+    $log->debug("checking systemimage active value <$systemimage_id>");
 
-    $self->{_objs} = {};
-    $self->{executor} = {};
-
-    # Get instance of Systemimage Entity
-    $log->info("Load systemimage instance");
-    eval {
-       $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
-    };
-    if($@) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    if ($self->{context}->{systemimage}->getAttr(name => 'active')) {
+        $errmsg = "EOperation::ERemoveSystemiamge->new : systemimage <$systemimage_id> is already active";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " .
-                ref($self->{_objs}->{systemimage}));
-
-    # Check Parameters and context
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $@);
-    }
-
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute{
     my $self = shift;
     $self->SUPER::execute();
 
-    my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
-    $esystemimage->remove(econtext => $self->{executor}->{econtext});
+    $self->{context}->{systemimage}->remove();
 }
 
 =head1 DIAGNOSTICS

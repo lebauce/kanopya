@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 sept 2010
 package Message;
-
+use base 'BaseDB';
 
 use strict;
 use warnings;
@@ -30,19 +30,40 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {
+    user_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    message_from => {
+        pattern      => '^.{32}$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    message_creationdate => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    message_creationtime => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    message_level => {
+        pattern      => '^.{32}$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    message_content => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+};
 
-sub get {
-    my $class = shift;
-    my %args = @_;
-    my $self = {};
-    
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $adm = Administrator->new();
-    $self->{_dbix} = $adm->{db}->resultset( "Message" )->find(  $args{id});
-    bless $self, $class;
-    return $self;
-}
+sub getAttrDef { return ATTR_DEF; }
 
 sub getMessages {
     my $class = shift;
@@ -100,30 +121,6 @@ sub send {
 
     my $msg = Message->new(%args);
     $msg->save();
-}
-
-sub delete {
-    my $self = shift;
-    
-    $self->{_dbix}->delete();
-}
-
-sub getAttr {
-    my $self = shift;
-    my %args = @_;
-    my $value;
-
-    General::checkParams(args => \%args, required => ['attr_name']);
-
-    if ( $self->{_dbix}->has_column( $args{attr_name} ) ) {
-        $value = $self->{_dbix}->get_column( $args{attr_name} );
-        $log->debug(ref($self) . " getAttr of $args{attr_name} : $value");
-    } else {
-        $errmsg = "Operation->getAttr : Wrong value asked!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    return $value;
 }
 
 sub save {

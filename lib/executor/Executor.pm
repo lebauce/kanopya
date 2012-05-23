@@ -70,10 +70,9 @@ sub new {
     my $self = {};
 
     bless $self, $class;
-        
-   $self->_init();
-    
-    # Plus tard rajouter autre chose
+
+    $self->_init();
+
     return $self;
 }
 
@@ -88,12 +87,13 @@ sub _init {
     
     $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
 
-    General::checkParams(args => $self->{config}->{user}, required => [ "name","password" ]);
+    General::checkParams(args => $self->{config}->{user}, required => [ "name", "password" ]);
 
     my $adm = Administrator::authenticate(
                   login    => $self->{config}->{user}->{name},
                   password => $self->{config}->{user}->{password}
               );
+
     return;
 }
 
@@ -114,7 +114,7 @@ sub run {
     );
 
     while ($$running) {
-       $self->execnround(run => 1);
+        $self->execnround(run => 1);
     }
 
     Message->send(
@@ -130,69 +130,83 @@ sub oneRun {
     my $adm = Administrator->new();
     my $errors;
     my $opdata = Operation::getNextOp();
-    
+
     if ($opdata){
-        # start transaction
-        $opdata->setProcessing();
-        my $op = EFactory::newEOperation(op => $opdata);
+        my $op = EFactory::newEOperation(op => $opdata, config => $self->{config});
+
         my $opclass = ref($op);
-        
+
         $log->info("---- [$opclass] retrieved ; execution processing ----");
         Message->send(
             from    => 'Executor',
             level   => 'info',
             content => "Operation Processing [$opclass]..."
         );
-        
+
+        # start transaction
         $adm->{db}->txn_begin;
         eval {
-            $op->prepare(internal_cluster => $self->{config}->{cluster});
+            $log->debug("Calling check of operation $opclass.");
+            $op->check();
+
+            $log->debug("Calling prerequisite of operation $opclass.");
+            my $delay = $op->prerequisites();
+            if ($delay) {
+                $op->report(duration => $delay);
+
+                # commit transaction
+                $adm->{db}->txn_commit;
+                $log->info("---- [$opclass] Execution reported ($delay s.) ----");
+                next;
+            }
+
+            $log->debug("Calling prepare of operation $opclass.");
+            $op->prepare();
+
+            $log->debug("Calling execute of operation $opclass.");
             $op->process();
         };
         if ($@) {
             my $err_exec = $@;
-            if($err_exec->isa('Kanopya::Exception::Execution::OperationReported')) {
-                $op->report();
-                # commit transaction
+
+            # rollback transaction
+            $adm->{db}->txn_rollback;
+            $log->info("Rollback, Cancel operation will be call");
+            eval {
+                $adm->{db}->txn_begin;
+                $op->cancel();
                 $adm->{db}->txn_commit;
-                #Message->send(
-                #    from    => 'Executor',
-                #    level   => 'info',
-                #    content => "Operation Execution Reported [$opclass]"
-                #);
-                $log->debug("Operation $opclass reported");
+            };
+            if ($@){
+                my $err_rollback = $@;
+                $log->error("Error during operation cancel :\n$err_rollback");
+
+                $errors .= $err_rollback;
+            }
+            if (!($err_exec =~ /HASH/) or !$err_exec->{hidden}){
+                Message->send(
+                    from    => 'Executor',
+                    level   => 'error',
+                    content => "[$opclass] Execution Aborted : $err_exec"
+                );
+                $log->error("Error during execution : $err_exec");
             }
             else {
-                # rollback transaction
-                $adm->{db}->txn_rollback;
-                $log->info("Rollback, Cancel operation will be call");
-                eval {
-                    $adm->{db}->txn_begin;
-                    $op->cancel();
-                    $adm->{db}->txn_commit;
-                };
-                if ($@){
-                    my $err_rollback = $@;
-                    $log->error("Error during operation cancel :\n$err_rollback");
-
-                    $errors .= $err_rollback;
-                }
-                if (!($err_exec =~ /HASH/) or !$err_exec->{hidden}){
-                    Message->send(
-                        from    => 'Executor',
-                        level   => 'error',
-                        content => "[$opclass] Execution Aborted : $err_exec"
-                    );
-                    $log->error("Error during execution : $err_exec");
-                }
-                else {
-                    $log->info("Warning : $err_exec");}
+                $log->info("Warning : $err_exec");
             }
-
             $errors .= $err_exec;
-        } else {
+        }
+        else {
             # commit transaction
-            $op->finish();
+            eval {
+                $op->finish();
+            };
+            if ($@) {
+                my $err_finish = $@;
+                $log->error("Error during operation finish :\n$err_finish");
+
+                $errors .= $err_finish;
+            }
             $adm->{db}->txn_commit;
             $log->info("---- [$opclass] Execution succeed ----");
             Message->send(
@@ -201,7 +215,13 @@ sub oneRun {
                 content => "[$opclass] Execution Success"
             );
         }
-        eval { $op->delete(); };
+
+        # Update the workflow context
+        $op->_getOperation->getWorkflow->updateParams(params => $op->{params}, context => $op->{context});
+        
+        eval {
+            $op->delete();
+        };
         if ($@) {
             my $err_delop = $@;
             $log->error("Error during operation deletion : $err_delop");
@@ -214,7 +234,7 @@ sub oneRun {
             $errors .= $err_delop;
         }
     }
-    else { sleep 5; }
+    else { sleep 2; }
 
     if (defined $errors) {
         throw Kanopya::Exception::Execution(error => $errors);
@@ -241,10 +261,6 @@ sub execnround {
         }
     }
 }
-
-
-
-
 
 1;
 

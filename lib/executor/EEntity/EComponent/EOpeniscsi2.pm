@@ -21,15 +21,17 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    General::checkParams(args => \%args, required => ['mount_point', 'host']);
  
     $args{mount_point} .= '/etc';
 
     # generation of /etc/iscsi/initiatorname.iscsi (needed to start the iscsid daemon)
     my $data = { initiatorname => $args{host}->getAttr(name => 'host_initiatorname')};
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/open-iscsi",
-                         input_file => "initiatorname.iscsi.tt", output => '/iscsi/initiatorname.iscsi', data => $data);
+    $self->generateFile(mount_point  => $args{mount_point},
+                        template_dir => "/templates/components/open-iscsi",
+                        input_file   => "initiatorname.iscsi.tt",
+                        output       => '/iscsi/initiatorname.iscsi',
+                        data         => $data);
     
     # TODO move internal/Kanopya_omitted_iscsid template generation here
 }

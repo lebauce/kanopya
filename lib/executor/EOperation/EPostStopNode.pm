@@ -58,15 +58,65 @@ my $config = {
     RELATIVE     => 1,               # desactive par defaut
 };
 
-sub checkOp{
+sub check {
     my $self = shift;
     my %args = @_;
-    
-    if($self->{_objs}->{host}->getAttr(name => 'host_state') =~ /^stopping:/) {
-        my $msg = "Node is still in stopping state.";
-        $log->error($msg);
-        throw Kanopya::Exception::Execution::OperationReported(error => $msg);
+
+    General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
+}
+
+sub prerequisites {
+    my $self  = shift;
+    my %args  = @_;
+
+    # Duration to wait before retrying prerequistes
+    my $delay = 10;
+
+    # Duration to wait for setting host broken
+    my $broken_time = 480;
+
+    my $cluster_id = $self->{context}->{cluster}->getAttr(name => 'entity_id');
+    my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
+
+    # Check how long the host is 'stopping'
+    my @state = $self->{context}->{host}->getState;
+    my $stopping_time = time() - time();#$args{begin_time};
+
+    if($stopping_time > $broken_time) {
+        $args{host}->setState(state => 'broken');
     }
+
+    my $node_ip = $self->{context}->{host}->getAdminIp;
+    if (not $node_ip) {
+        throw Kanopya::Exception::Internal(error => "Host <$host_id> has no admin ip.");
+    }
+
+    # Instanciate an econtext to try initiating an ssh connexion.
+    eval {
+        $self->{context}->{host}->getEContext;
+
+        # Check if all host components are up.
+        my $components = $self->{context}->{cluster}->getComponents(category => "all");
+        foreach my $key (keys %$components) {
+            my $component_name = $components->{$key}->getComponentAttr()->{component_name};
+            $log->debug("Browse component: " . $component_name);
+    
+            my $ecomponent = EFactory::newEEntity(data => $components->{$key});
+    
+            if ($ecomponent->isUp(host => $self->{context}->{host}, cluster => $self->{context}->{cluster})) {
+                $log->debug("Component <$component_name> on host <$host_id> from cluster <$cluster_id> up.");
+                return $delay;
+            }
+        }
+    };
+    if ($@) {
+        $log->debug("Could not connect to host <$host_id> from cluster <$cluster_id> with ip <$node_ip>.");
+    }
+
+    $self->{context}->{host}->setState(state => "down");
+
+    $log->info("Host <$host_id> in cluster <$cluster_id> is 'down', preparing PostStopNode.");
+    return 0;
 }
 
 =head2 prepare
@@ -80,93 +130,21 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("Operation preparation");
-
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
-
-    my $params = $self->_getOperation()->getParams();
-
-    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
-
-    # Instantiate host and so check if exists
-    $log->debug("checking host existence with id <$params->{host_id}>");
-    eval {
-        $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
-    };
-    if($@) {
-        $errmsg = "EOperation::EPostStopNode->prepare : host_id $params->{host_id} does not found";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    if($self->{context}->{host}->getAttr(name => 'host_state') =~ /^stopping:/) {
+        my $msg = "Node is still in stopping state.";
+        $log->error($msg);
+        throw Kanopya::Exception::Execution::OperationReported(error => $msg);
     }
-
-    # Cluster instantiation
-    $log->debug("checking cluster existence with id <$params->{cluster_id}>");
-    eval {
-        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(
-                                        id => $params->{cluster_id}
-                                    );
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EPostStopNode->prepare : cluster_id $params->{cluster_id} " .
-                  "could not be found\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Get cluster components Entities
-    $log->debug("Load all component from cluster");
-    $self->{_objs}->{components} = $self->{_objs}->{cluster}->getComponents(category => "all");
-    
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "EOperation::EPostStopNode->checkOp failed :\n$error";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(
-                                   id => $args{internal_cluster}->{executor}
-                               );
-    $log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
 
     # Instanciate bootserver Cluster
-    $self->{bootserver}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(
-                                     id => $args{internal_cluster}->{bootserver}
-                                 );
-    $log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}->{obj}));
-
-    # Instanciate context
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "bootserver");
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "executor");
-
-    # Instanciate tftpd component
-    $self->{_objs}->{component_tftpd}
-        = EFactory::newEEntity(
-              data => $self->{bootserver}->{obj}->getComponent(name => "Atftpd", version => "0")
-          );
-
-    $log->info("Load tftpd component (Atftpd version 0.7, it ref is " . ref($self->{_objs}->{component_tftpd}));
+    my $bootserver = Entity::ServiceProvider->get(id => $self->{config}->{cluster}->{bootserver});
 
     # Instanciate dhcpd component
-    $self->{_objs}->{component_dhcpd}
-        = EFactory::newEEntity(
-              data => $self->{bootserver}->{obj}->getComponent(name => "Dhcpd", version => "3")
-          );
+    $self->{context}->{component_dhcpd}
+        = EFactory::newEEntity(data => $bootserver->getComponent(name => "Dhcpd", version => "3"));
 
-    $log->info("Load dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
-
-    # Get context for executor
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                                          ip_destination => $exec_cluster->getMasterNodeIp());
-                                                          
-    $self->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
+    my $exec_cluster = Entity::ServiceProvider->get(id => $self->{config}->{cluster}->{executor});
+    $self->{params}->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
 }
 
 sub execute {
@@ -174,81 +152,97 @@ sub execute {
     $self->SUPER::execute();
 
     # We stop host (to update powersupply)
-    my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
-    $ehost->stop(econtext => $self->{executor}->{econtext});
+    $self->{context}->{host}->stop();
 
     # Remove Host from the dhcp
-    my $host_mac = $self->{_objs}->{host}->getPXEIface->getAttr(name => 'iface_mac_addr');
-    if ($host_mac) {
-        my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
+    eval {
+        my $host_mac = $self->{context}->{host}->getPXEIface->getAttr(name => 'iface_mac_addr');
+        if ($host_mac) {
+            my $subnet = $self->{context}->{component_dhcpd}->getInternalSubNetId();
 
-        my $hostid = $self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(
-                         dhcpd3_subnet_id         => $subnet,
-                         dhcpd3_hosts_mac_address => $host_mac
-                     );
+            my $hostid = $self->{context}->{component_dhcpd}->getHostId(
+                             dhcpd3_subnet_id         => $subnet,
+                             dhcpd3_hosts_mac_address => $host_mac
+                         );
 
-        $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
-                                                      dhcpd3_hosts_id  => $hostid);
-        $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
-        $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
+            $self->{context}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
+                                                            dhcpd3_hosts_id  => $hostid);
+            $self->{context}->{component_dhcpd}->generate();
+            $self->{context}->{component_dhcpd}->reload();
+        }
+    };
+    if ($@) {
+        $log->warn("Could not remove from DHCP configuration, the cluster may not be using PXE");
     }
 
     # Component migration
     $log->info('Processing cluster components configuration for this node');
-    my $components = $self->{_objs}->{components};
+    my $components = $self->{context}->{cluster}->getComponents(category => "all");
     foreach my $i (keys %$components) {
-        my $tmp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is ".ref($tmp));
+        my $comp = EFactory::newEEntity(data => $components->{$i});
+        $log->debug("component is ".ref($comp));
 
-        $tmp->removeNode(
-            host        => $self->{_objs}->{host},
-            cluster     => $self->{_objs}->{cluster},
+        $comp->removeNode(
+            host        => $self->{context}->{host},
+            cluster     => $self->{context}->{cluster},
             mount_point => ''
         );
     }
     
-    $self->{_objs}->{host}->setAttr(name => "host_hostname", value => undef);
-    $self->{_objs}->{host}->setAttr(name => "host_initiatorname", value => undef);
+    $self->{context}->{host}->setAttr(name => "host_hostname", value => undef);
+    $self->{context}->{host}->setAttr(name => "host_initiatorname", value => undef);
 
     
-    my $systemimage_name = $self->{_objs}->{cluster}->getAttr(name => 'cluster_name');
-    $systemimage_name .= '_' . $self->{_objs}->{host}->getNodeNumber();
+    my $systemimage_name = $self->{context}->{cluster}->getAttr(name => 'cluster_name');
+    $systemimage_name .= '_' . $self->{context}->{host}->getNodeNumber();
     
     # Finally save the host
-    $self->{_objs}->{host}->save();
+    $self->{context}->{host}->save();
 
-    $self->{_objs}->{host}->stopToBeNode();
+    $self->{context}->{host}->stopToBeNode();
     
     # delete the image if persistent policy not set
-    if($self->{_objs}->{cluster}->getAttr(name => 'cluster_si_persistent') eq '0') {
+    if($self->{context}->{cluster}->getAttr(name => 'cluster_si_persistent') eq '0') {
         $log->info("cluster image persistence is not set, deleting $systemimage_name");
         eval {
-            $self->{_objs}->{systemimage} = Entity::Systemimage->find(
-                                                hash => { systemimage_name => $systemimage_name }
-                                            );
+            my $entity = Entity::Systemimage->find(hash => { systemimage_name => $systemimage_name });
+            $self->{context}->{systemimage} = EFactory::newEEntity(data => $entity);   
         };
         if ($@) {
             $log->debug("Could not find systemimage with name <$systemimage_name> for removal.");
         } 
-        my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
-        $esystemimage->deactivate(econtext  => $self->{executor}->{econtext},
-                                  erollback => $self->{erollback});
+        $self->{context}->{systemimage}->deactivate(erollback => $self->{erollback});
+        $self->{context}->{systemimage}->remove(erollback => $self->{erollback});
 
-        $esystemimage->remove(econtext  => $self->{executor}->{econtext},
-                              erollback => $self->{erollback});
-    
     } else {
         $log->info("cluster image persistence is set, keeping $systemimage_name image");
     }
 
-
-    my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
-    $ecluster->updateHostsFile(
-        executor_context   => $self->{executor}->{econtext},
-        kanopya_domainname => $self->{kanopya_domainname}
+    $self->{context}->{cluster}->updateHostsFile(
+        kanopya_domainname => $self->{params}->{kanopya_domainname}
     );
-   
 }
+
+sub finish {
+    my $self = shift;
+
+    my @cluster_state = $self->{context}->{cluster}->getState;
+    my $cluster_nodes = $self->{context}->{cluster}->getHosts();
+
+    if ($cluster_state[0] eq 'stopping') {
+        # If the cluster has no node any more, it has been properly stoped
+        if ((scalar keys %$cluster_nodes) == 0) {
+            $self->{context}->{cluster}->setState(state => "down");
+        }
+        # If the cluster has one node left, this is must be the master node
+        elsif ((scalar keys %$cluster_nodes) == 1) {
+            $self->{context}->{cluster}->removeNode(
+                host_id => $self->{context}->{cluster}->getMasterNodeId()
+            );
+        }
+    }
+}
+
 
 =head1 DIAGNOSTICS
 

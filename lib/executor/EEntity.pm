@@ -36,6 +36,14 @@ package EEntity;
 
 use strict;
 use warnings;
+
+use Entity;
+use Kanopya::Exceptions;
+
+use XML::Simple;
+
+use vars qw ( $AUTOLOAD );
+
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
@@ -57,10 +65,17 @@ sub new {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['data']);
-        
+
     # $log->debug("Class is : $class");
 
-    my $self = { _entity => $args{data}};
+    # TODO: Use Config module
+    my $config = XMLin("/opt/kanopya/conf/executor.conf");
+
+    my $self = {
+        _entity   => $args{data},
+        _executor => Entity->get(id => $config->{cluster}->{executor}),
+    };
+
     bless $self, $class;
     return $self;
 }
@@ -68,6 +83,34 @@ sub new {
 sub _getEntity{
     my $self = shift;
     return $self->{_entity};
+}
+
+sub getEContext {
+    my $self = shift;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
+sub getExecutorEContext {
+    my $self = shift;
+
+    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
+                                 ip_destination => $self->{_executor}->getMasterNodeIp());
+}
+
+sub AUTOLOAD {
+    my $self = shift;
+    my %args = @_;
+
+    my @autoload = split(/::/, $AUTOLOAD);
+    my $method = $autoload[-1];
+
+    return $self->_getEntity->$method(%args);
+}
+
+sub DESTROY {
+    my $self = shift;
+    my %args = @_;
 }
 
 1;
