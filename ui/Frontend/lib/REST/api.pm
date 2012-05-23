@@ -19,6 +19,7 @@ my %resources = ( "host"           => "Entity::Host",
                   "hostmodel"      => "Entity::Hostmodel",
                   "permission"     => "Permissions",
                   "operation"      => "Operation",
+                  "message"        => "Message",
                   "vlan"           => "Entity::Network::Vlan" );
 
 sub setupREST {
