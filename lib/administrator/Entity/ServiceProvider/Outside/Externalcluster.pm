@@ -350,6 +350,18 @@ sub getIndicatorOidFromId {
     return $indicator_oid;
 }
 
+sub getIndicatorInst () {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $indicator_id   = $args{indicator_id};
+    my $indicator = ScomIndicator->get('scom_indicator_id' => $indicator_id);
+
+    return $indicator;
+}
+
+
 =head2 getNodesMetrics
 
     Retrieve cluster nodes metrics values using the linked MonitoringService connector

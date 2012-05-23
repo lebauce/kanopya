@@ -227,6 +227,24 @@ sub getIndicatorUnitFromId {
     return $indicator_unit;
 }
 
+=head2 getIndicatorInst
+
+    Desc: instanciate an indicator with it's id
+    return $indicator_inst;
+
+=cut
+
+sub getIndicatorInst () {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $indicator_id   = $args{indicator_id};
+    my $indicator = Indicator->get('id' => $indicator_id);
+
+    return $indicator;
+}
+
 =head2 getCollectorType
 
     Desc: Usefull to give information about this component 

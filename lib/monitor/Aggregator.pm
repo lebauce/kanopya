@@ -64,37 +64,37 @@ sub _contructRetrieverOutput {
 
     #my @clustermetrics = Clustermetric->search(hash => {clustermetrics_clustermetrics_cluster_id => });
 
-    my $service_provider_id                 = $args{service_provider_id};
+    my $service_provider_id        = $args{service_provider_id};
     my $clustermetric_cluster_id   = 0;
     my $clustermetric_indicator_id = 0;
-    
-    my $cluster                = undef;
-    my $hosts                  = undef;
-    my $rep                    = undef;
-    my $host_id                = undef;
-    my $indicator              = undef; 
-    my $indicators_name        = undef;
-    my @indicators_array       = undef;
+    my $cluster                    = undef;
+    my $hosts                      = undef;
+    my $rep                        = undef;
+    my $host_id                    = undef;
+    my $indicator_oid              = undef; 
+    my $indicators_name            = undef;
+    my @indicators_array           = undef;
     my $clustermetric_time_span    = undef;
-    my $time_span              = undef;
+    my $time_span                  = undef;
 
 
 
 
-        my @clustermetrics = Clustermetric->search(
+        my @clustermetrics    = Clustermetric->search(
             hash => {
                 clustermetric_service_provider_id => $service_provider_id
             }
         );
+        my $service_provider  = Entity::ServiceProvider->get('id' => $service_provider_id);
+        my $collector_manager = $service_provider->getCollectorManager();
 
         for my $clustermetric (@clustermetrics){
 
             $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
             $clustermetric_time_span    = $clustermetric->getAttr(name => 'clustermetric_window_time');
+            $indicator_oid              = $collector_manager->getIndicatorOidFromId(indicator_id => $clustermetric_indicator_id);
 
-            $indicator = Indicator->get('id' => $clustermetric_indicator_id);
-
-            $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
+            $indicators_name->{$indicator_oid} = undef;
 
 
             if(! defined $time_span)
@@ -229,9 +229,11 @@ sub _computeCombinationAndFeedTimeDB {
     my @clustermetrics = Clustermetric->search(            hash => {
                 clustermetric_service_provider_id => $cluster_id
             });
+    my $service_provider = Entity::ServiceProvider->get('id' => $cluster_id);
+    my $collector_manager = $service_provider->getCollectorManager();
 
     my $clustermetric_indicator_id;
-    my $indicator;
+    my $indicator_oid;
     my $indicators_name; 
 
     # Loop on all the clustermetrics
@@ -247,16 +249,16 @@ sub _computeCombinationAndFeedTimeDB {
         for my $host_name (keys %$values){
             
             $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
-            $indicator = Indicator->get('id' => $clustermetric_indicator_id);
+            $indicator_oid = $collector_manager->getIndicatorOidFromId(indicator_id => $clustermetric_indicator_id);
 
             # Parse $values to store needed value in @dataStored 
             my $the_value = $values->{$host_name}
-                                   ->{$indicator->getAttr(name=>'indicator_oid')};
+                                   ->{$indicator_oid};
             if(defined $the_value){
                 push(@dataStored,$the_value);
             }
             else {
-                $log->debug("Missing Value of indicator ".($indicator->getAttr(name=>'indicator_oid'))." for host $host_name");
+                $log->debug("Missing Value of indicator $indicator_oid for host $host_name");
             }
 
         }

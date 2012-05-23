@@ -1021,6 +1021,27 @@ sub getIndicatorUnitFromId {
     return $indicator_unit;
 }
 
+
+=head2 getIndicatorInst
+
+    Desc: call collector manager to retrieve an indicator instance from it's id
+    return $indicator_inst;
+
+=cut
+
+sub getIndicatorInst {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $indicator_id = $args{'indicator_id'};
+    my $collector_manager = $self->getCollectorManager();
+
+    #retrieve instance of the collector
+    my $indicator_inst = $collector_manager->getIndicatorInst(indicator_id => $indicator_id);
+    return $indicator_inst;
+}
+
 =head2 getNodesMetrics
 
     Desc: call collector manager to retrieve nodes metrics values.
