@@ -79,6 +79,20 @@ sub prepare {
             $self->{context}->{'host'}->getServiceProvider->getAttr(name => "entity_id")) {
             throw Kanopya::Exception::Internal::WrongValue(error => "Host is not on the hypervisor cluster");
         }
+
+        #Check if there is enough ressource in destination host
+
+        my $vm_id      = $self->{context}->{host}->getAttr(name => 'entity_id');
+        my $cluster_id = $self->{context}->{host}->getClusterId();
+        my $hv_id      = $self->{context}->{'hypervisor_dst'}->getId();
+
+        my $cm    = CapacityManagement->new(cluster_id => $cluster_id);
+        my $check = $cm->isMigrationAuthorized(vm_id => $vm_id, hv_id => $hv_id);
+
+        if($check == 0){
+            my $errmsg = "Not enough ressource in HV $hv_id for VM $vm_id migration";
+            throw Kanopya::Exception::Internal(error => $errmsg); 
+        }
     };
     if($@) {
         my $err = $@;
