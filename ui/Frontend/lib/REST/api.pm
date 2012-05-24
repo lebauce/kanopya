@@ -152,6 +152,14 @@ sub setupREST {
                 delete $params{hash}->{dataType};
             }
 
+            foreach my $attr (keys %{$params{hash}}) {
+                my @filter = split(',', $params{hash}->{$attr});
+                if (scalar (@filter) > 1) {
+                    my %filter = @filter;
+                    $params{hash}->{$attr} = \%filter;
+                }
+            }
+
             require (General::getLocFromClass(entityclass => $class));
 
             if (defined (params->{dataType}) and params->{dataType} eq "jqGrid") {
