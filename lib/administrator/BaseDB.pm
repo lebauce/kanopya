@@ -53,6 +53,27 @@ sub _rootTable {
     return $class;
 }
 
+sub classFromDbix {
+    my $dbix = shift;
+    my $name = ucfirst($dbix->result_source->from);
+
+    while (1) {
+        last if not $dbix->can("parent");
+        $dbix = $dbix->parent;
+        $name = ucfirst($dbix->result_source->from) . "::" . $name;
+    }
+
+    my $i = 0;
+    while ($i < length($name)) {
+        if (substr($name, $i, 1) eq "_") {
+            $name = substr($name, 0, $i) . ucfirst(substr($name, $i + 1, 1)) . substr($name, $i + 2)
+        }
+        $i += 1;
+    }
+
+    return $name;
+}
+
 # checkAttrs : check attribute validity in the class hierarchy 
 # return dbix class row where the attr is found
 

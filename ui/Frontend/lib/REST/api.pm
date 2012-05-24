@@ -80,6 +80,52 @@ sub setupREST {
                 $obj->save();
             };
 
+        get qr{ /api/$resource/([^/]+)/?(.*) }x => sub {
+            content_type 'application/json';
+
+            my ($id, $filters) = splat;
+            my $obj = Entity->get(id => $id);
+
+            my @filters = split("/", $filters);
+            my @objs;
+            my $result;
+
+            for my $filter (@filters) {
+                my $parent = $obj->{_dbix};
+
+                RELATION:
+                while (1) {
+                    if ($parent->result_source->has_relationship($filter)) {
+                        # TODO: prefetch filter so that we can just bless it
+                        # $obj = bless { _dbix => $parent->$filter }, "Entity";
+
+                        if ($parent->result_source->relationship_info($filter)->{attrs}->{accessor} eq "multi") {
+                            my @dbix = $parent->$filter;
+                            foreach my $item (@dbix) {
+                                my $class = BaseDB::classFromDbix($item);
+                                require (General::getLocFromClass(entityclass => $class));
+                                $obj = bless { _dbix => $item }, $class;
+                                push @objs, $obj->toJSON;
+                            }
+
+                            return to_json( \@objs );
+                        }
+                        else {
+                            my $dbix = $parent->$filter;
+                            $obj = Entity->get(id => $dbix->get_column(($dbix->result_source->primary_columns)[0]));
+                        }
+
+                        last RELATION;
+                    }
+
+                    last if (not $parent->can('parent'));
+                    $parent = $parent->parent;
+                }
+            }
+ 
+            return to_json($obj->toJSON);
+        };
+
         get '/api/' . $resource => sub {
             content_type 'application/json';
 
