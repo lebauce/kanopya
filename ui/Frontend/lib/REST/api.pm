@@ -181,7 +181,9 @@ sub setupREST {
 get '/api/attributes/:resource' => sub {
     content_type 'application/json';
 
-    my $class = $resources{host};
+    my $class = $resources{params->{resource}};
+
+    require (General::getLocFromClass(entityclass => $class));
 
     return to_json($class->toJSON(model => 1));
 };
