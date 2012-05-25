@@ -65,7 +65,8 @@ sub setupREST {
             },
 
             delete => sub {
-                 Entity->get(id => params->{id})->remove();
+                Entity->get(id => params->{id})->delete();
+                return to_json( { response => "ok" } );
             },
 
             update => sub {
