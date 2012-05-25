@@ -556,8 +556,25 @@ sub toJSON {
         }
     }
 
+    if ($args{model}) {
+        my $table = _buildClassNameFromString($class);
+        my $adm = Administrator->new();
+        my @hierarchy = split(/::/, $class);
+        my $depth = scalar @hierarchy;
+        my $n = $depth;
+        my $parent;
+
+        for (my $n = $depth - 1; $n >= 0; $n--) {
+            $parent = $adm->{db}->source($hierarchy[$n]);
+            my @relnames = $parent->relationships();
+            for my $relname (@relnames) {
+                $hash->{$relname} = $parent->relationship_info($relname);
+                $hash->{$relname};
+            }
+        }
+    }
+
     return $hash;
 }
-
 
 1;
