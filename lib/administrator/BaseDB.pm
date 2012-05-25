@@ -550,7 +550,7 @@ sub toJSON {
             }
             else {
                 if (defined $self->getAttr(name => $attr)) {
-                    $hash->{attributes}->{$attr} = $self->getAttr(name => $attr);
+                    $hash->{$attr} = $self->getAttr(name => $attr);
                 }
             }
         }
