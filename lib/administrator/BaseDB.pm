@@ -546,11 +546,11 @@ sub toJSON {
     foreach my $class (keys %$attributes) {
         foreach my $attr (keys %{$attributes->{$class}}) {
             if (defined $args{model}) {
-                $hash->{$attr} = $attributes->{$class}->{$attr};
+                $hash->{attributes}->{$attr} = $attributes->{$class}->{$attr};
             }
             else {
                 if (defined $self->getAttr(name => $attr)) {
-                    $hash->{$attr} = $self->getAttr(name => $attr);
+                    $hash->{attributes}->{$attr} = $self->getAttr(name => $attr);
                 }
             }
         }
@@ -568,8 +568,8 @@ sub toJSON {
             $parent = $adm->{db}->source($hierarchy[$n]);
             my @relnames = $parent->relationships();
             for my $relname (@relnames) {
-                $hash->{$relname} = $parent->relationship_info($relname);
-                $hash->{$relname};
+                $hash->{relations}->{$relname} = $parent->relationship_info($relname);
+                delete $hash->{attributes}->{$relname . "_id"};
             }
         }
     }

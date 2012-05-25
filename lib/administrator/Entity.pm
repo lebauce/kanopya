@@ -286,10 +286,10 @@ sub toJSON {
     my $hash = $self->SUPER::toJSON(%args);
 
     if (ref $self) {
-        $hash->{entity_id} = $self->getAttr(name => "entity_id");
+        $hash->{pk} = $self->getAttr(name => "entity_id");
     }
     else {
-        $hash->{entity_id} = {
+        $hash->{pk} = {
             pattern      => '^\d*$',
             is_mandatory => 1,
             is_extended  => 0
