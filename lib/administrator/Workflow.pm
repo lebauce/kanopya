@@ -172,9 +172,11 @@ sub pepareNextOp {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'context', 'params' ]);
-
     $self->getCurrentOperation->setState(state => 'succeeded');
+
+    if(not $args{params}) {
+        $args{params} = {};
+    }
 
     # Update the context with the last operation output context
     $args{params}->{context} = $args{context};
