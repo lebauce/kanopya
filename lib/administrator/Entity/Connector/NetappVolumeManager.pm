@@ -50,6 +50,23 @@ sub getExportManagerFromBootPolicy {
           );
 }
 
+sub getBootPolicyFromExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "export_manager" ]);
+
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+
+    if ($args{export_manager}->getId == $self->getId) {
+        return Entity::HostManager->BOOT_POLICIES->{pxe_nfs};
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported export manager:" . $args{export_manager}
+          );
+}
+
 sub getReadOnlyParameter {
     my $self = shift;
     my %args = @_;
