@@ -1623,6 +1623,60 @@ CREATE TABLE `workflow_instance_parameter` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `service_template`
+--
+
+CREATE TABLE `service_template` (
+  `service_template_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `service_name` char(64) NOT NULL,
+  `service_desc` char(255) DEFAULT NULL,
+  `hosting_policy_id` int(8) unsigned NOT NULL,
+  `storage_policy_id` int(8) unsigned DEFAULT NULL,
+  `network_policy_id` int(8) unsigned DEFAULT NULL,
+  `scalability_policy_id` int(8) unsigned DEFAULT NULL,
+  `system_policy_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`service_template_id`),
+  KEY (`hosting_policy_id`),
+  FOREIGN KEY (`hosting_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`storage_policy_id`),
+  FOREIGN KEY (`storage_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`network_policy_id`),
+  FOREIGN KEY (`network_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`scalability_policy_id`),
+  FOREIGN KEY (`scalability_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`system_policy_id`),
+  FOREIGN KEY (`system_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `policy`
+--
+
+CREATE TABLE `policy` (
+  `policy_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `policy_name` char(64) NOT NULL,
+  `policy_desc` char(255) DEFAULT NULL,
+  PRIMARY KEY (`policy_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `policy_preset`
+--
+
+CREATE TABLE `policy_preset` (
+  `policy_preset_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `policy_id` int(8) unsigned NOT NULL,
+  `key` char(128) NOT NULL,
+  `value` char(128) NOT NULL,
+  `parent` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`policy_preset_id`),
+  KEY (`policy_id`),
+  FOREIGN KEY (`policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`parent`),
+  FOREIGN KEY (`parent`) REFERENCES `policy_preset` (`policy_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `scope`
 --
 
