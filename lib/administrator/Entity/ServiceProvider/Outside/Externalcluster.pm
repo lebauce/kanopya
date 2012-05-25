@@ -448,99 +448,98 @@ sub insertCollectorIndicators {
                     scom_indicator_max  => 'null',
                     scom_indicator_unit => 'MBytes',
                     service_provider_id => $service_provider_id,
-    }
-    ScomIndicator->new(%params);
+    };
+    ScomIndicator->new(%$params);
 
-    my $params = { scom_indicator_id    =>'1',
+    $params = { scom_indicator_id    =>'1',
                     scom_indicator_name => 'RAM pool paged',
                     scom_indicator_oid  => 'Memory/Pool Paged Bytes',
                     scom_indicator_min  => 'null',
                     scom_indicator_max  => 'null',
                     scom_indicator_unit => 'Bytes',
                     service_provider_id => $service_provider_id,
-    }
-    ScomIndicator->new(%params);
+    };
+    ScomIndicator->new(%$params);
 
-    my $params = { scom_indicator_id    =>'1',
+    $params = { scom_indicator_id    =>'1',
                     scom_indicator_name => 'RAM used',
                     scom_indicator_oid  => 'Memory/PercentMemoryUsed',
                     scom_indicator_min  => 'null',
                     scom_indicator_max  => 'null',
                     scom_indicator_unit => '%',
                     service_provider_id => $service_provider_id,
-    }
-    ScomIndicator->new(%params);
+    };
+    ScomIndicator->new(%$params);
 
-    my $params = { scom_indicator_id    =>'1',
+    $params = { scom_indicator_id    =>'1',
                     scom_indicator_name => 'CPU used',
                     scom_indicator_oid  => 'Processor/% Processor Time',
                     scom_indicator_min  => 'null',
                     scom_indicator_max  => 'null',
                     scom_indicator_unit => '%',
                     service_provider_id => $service_provider_id,
-    }
-    ScomIndicator->new(%params);
+    };
+    ScomIndicator->new(%$params);
 
-    my $params = { scom_indicator_id    =>'1',
+    $params = { scom_indicator_id    =>'1',
                     scom_indicator_name => 'CPU Queue Length',
                     scom_indicator_oid  => 'System/Processor Queue Length',
                     scom_indicator_min  => 'null',
                     scom_indicator_max  => 'null',
                     scom_indicator_unit => 'process',
                     service_provider_id => $service_provider_id,
-    }
-    ScomIndicator->new(%params);
+    };
+    ScomIndicator->new(%$params);
 
-    my $params = { scom_indicator_id    =>'1',
+    $params = { scom_indicator_id    =>'1',
                     scom_indicator_name => 'Disk idle time',
                     scom_indicator_oid  => 'LogicalDisk/% Idle Time',
                     scom_indicator_min  => 'null',
                     scom_indicator_max  => 'null',
                     scom_indicator_unit => '%',
                     service_provider_id => $service_provider_id,
-    }
-    ScomIndicator->new(%params);
+    };
+    ScomIndicator->new(%$params);
 
-    my $params = { scom_indicator_id    =>'1',
+    $params = { scom_indicator_id    =>'1',
                     scom_indicator_name => 'Disk free space',
                     scom_indicator_oid  => 'LogicalDisk/% Free Space',
                     scom_indicator_min  => 'null',
                     scom_indicator_max  => 'null',
                     scom_indicator_unit => '%',
                     service_provider_id => $service_provider_id,
-    }
-    ScomIndicator->new(%params);
+    };
+    ScomIndicator->new(%$params);
 
-    my $params = { scom_indicator_id    =>'1',
+    $params = { scom_indicator_id    =>'1',
                     scom_indicator_name => 'Network used',
                     scom_indicator_oid  => 'Network Adapter/PercentBandwidthUsedTotal',
                     scom_indicator_min  => 'null',
                     scom_indicator_max  => 'null',
                     scom_indicator_unit => '%',
                     service_provider_id => $service_provider_id,
-    }
+    };
 
-    ScomIndicator->new(%params);
-    my $params = { scom_indicator_id    =>'1',
+    ScomIndicator->new(%$params);
+    $params = { scom_indicator_id    =>'1',
                     scom_indicator_name => 'Active Sessions',
                     scom_indicator_oid  => 'Terminal Services/Active Sessions',
                     scom_indicator_min  => 'null',
                     scom_indicator_max  => 'null',
                     scom_indicator_unit => 'sessions',
                     service_provider_id => $service_provider_id,
-    }
-    ScomIndicator->new(%params);
+    };
+    ScomIndicator->new(%$params);
 
-    ScomIndicator->new(%params);
-    my $params = { scom_indicator_id    =>'1',
+    $params = { scom_indicator_id    =>'1',
                     scom_indicator_name => 'RAM I/O',
                     scom_indicator_oid  => 'Memory/Pages/sec',
                     scom_indicator_min  => 'null',
                     scom_indicator_max  => 'null',
                     scom_indicator_unit => 'pages/sec',
                     service_provider_id => $service_provider_id,
-    }
-    ScomIndicator->new(%params);
+    };
+    ScomIndicator->new(%$params);
 }
 
 =head2 monitoringDefaultInit
@@ -566,7 +565,6 @@ sub monitoringDefaultInit {
     my $active_session_indicator_id; 
     my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
     my @funcs = qw(mean max min std dataOut);
-    my $service_provider_id = $self->getAttr( name => 'outside_id' );
 
     foreach my $indicator_id (@indicators_ids) {
         my $indicator_oid = $self->getIndicatorOidFromId (indicator_id => $indicator_id);
