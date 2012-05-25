@@ -78,8 +78,6 @@ sub _contructRetrieverOutput {
     my $time_span                  = undef;
 
 
-
-
         my @clustermetrics    = Clustermetric->search(
             hash => {
                 clustermetric_service_provider_id => $service_provider_id
@@ -149,11 +147,12 @@ sub update() {
 
                 # Construct input of the SCOM retriever
                 my $host_indicator_for_retriever = $self->_contructRetrieverOutput(service_provider_id => $service_provider_id );
-                print Dumper $host_indicator_for_retriever;
+                #print Dumper $host_indicator_for_retriever;
 
                 # Call the retriever to get SCOM data
                 my $monitored_values = $service_provider->getNodesMetrics(indicators => $host_indicator_for_retriever->{indicators}, time_span => $host_indicator_for_retriever->{time_span});
-                print Dumper $monitored_values; 
+                #print 'monitored values:'. "\n";    
+                #print Dumper $monitored_values; 
 
                 # Verify answers received from SCOM to detect metrics anomalies
                 my $checker = $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
@@ -184,26 +183,15 @@ sub _checkNodesMetrics{
     my $received         = $args{received};
     
     my $num_of_nodes     = scalar (keys %$received);
-    
+   
     foreach my $indicator_name (@$asked_indicators) {
-        my $count = 0;
-            while( my ($node_name,$metrics) = each(%$received) ) {
-                if(defined $metrics->{$indicator_name}) {
-                $count++;
-            } else {
-                $log->debug("Metric $indicator_name undefined from node $node_name");
+        while( my ($node_name,$metrics) = each(%$received) ) {
+            if(! defined $metrics->{$indicator_name}) {
+                $log->debug("Indicator $indicator_name was not retrieved by collector for node $node_name");
             }
         }
-        if($count eq 0){
-            return 0;
-            $log->info("*** [WARNING] $indicator_name given by no node !");
-        } elsif(($count / $num_of_nodes) le 0.75) {
-            $log->info("*** [WARNING] $indicator_name given by less than 75% of nodes ($count / $num_of_nodes)!");
-            return 1;
-        } else {
-            return 1;
-        }
     }
+    return 1; 
 }
 
 =head2 _computeCombinationAndFeedTimeDB
@@ -224,6 +212,8 @@ sub _computeCombinationAndFeedTimeDB {
     my $values     = $args{values};
     my $cluster_id = $args{cluster_id};
 
+print "the values received by compute function!: \n";
+print Dumper $values;
     # Array of all clustermetrics
     my @clustermetrics = Clustermetric->search(            hash => {
                 clustermetric_service_provider_id => $cluster_id
@@ -232,30 +222,25 @@ sub _computeCombinationAndFeedTimeDB {
 
     my $clustermetric_indicator_id;
     my $indicator_oid;
-    my $indicators_name; 
 
     # Loop on all the clustermetrics
     for my $clustermetric (@clustermetrics){
-
-        #TODO : To be modified when using ServerSets
-
-        # Array that will store all the values needed to compute $clustermetric val
+        
+    # Array that will store all the values needed to compute $clustermetric val
         my @dataStored = (); 
 
         # Loop on all the host_name of the $clustermetric
 
         for my $host_name (keys %$values){
-            
             $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
             $indicator_oid = $service_provider->getIndicatorOidFromId(indicator_id => $clustermetric_indicator_id);
 
-            # Parse $values to store needed value in @dataStored 
-            my $the_value = $values->{$host_name}
-                                   ->{$indicator_oid};
-            if(defined $the_value){
-                push(@dataStored,$the_value);
-            }
-            else {
+            #if indicator value is undef, do not store it in the array
+            if (defined $values->{$host_name}->{$indicator_oid}) {
+                my $the_value = $values->{$host_name}
+                                       ->{$indicator_oid};
+                push @dataStored, $the_value;
+            } else {
                 $log->debug("Missing Value of indicator $indicator_oid for host $host_name");
             }
 

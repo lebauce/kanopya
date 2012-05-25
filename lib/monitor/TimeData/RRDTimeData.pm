@@ -141,6 +141,7 @@ sub createTimeDataStore{
     my $cmd = $rrd.' create '.$dir.$name.' '.$opts.' '.$DS_chain.' '.$RRA_chain;
     # print $cmd."\n";
     $log->info($cmd);
+    $log->info("creating rrd $dir$name");
 
     #execution of the command
     my $exec = `$cmd 2>&1`;
