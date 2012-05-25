@@ -405,12 +405,9 @@ INSERT INTO `component_type` VALUES
 (14,'Opennebula','3','Cloudmanager'),
 (15,'Physicalhoster','0','Cloudmanager'),
 (16,'Fileimagemanager','0','Storage'),
-<<<<<<< HEAD
 (17,'Puppetagent','2','Configurationagent'),
 (18,'Puppetmaster','2','Configurationserver');
-=======
-(17,'Kanopyacollector','1','DataCollector');
->>>>>>> collector-dev
+(19,'Kanopyacollector','1','DataCollector');
 
 --
 -- connectors type list
@@ -648,7 +645,7 @@ INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
 --
 
 INSERT INTO `entity` VALUES (@eid, 76, NULL);
-INSERT INTO `component` VALUES(@eid, @admin_cluster, 17, NULL, NULL);
+INSERT INTO `component` VALUES(@eid, @admin_cluster, 19, NULL, NULL);
 INSERT INTO `kanopyacollector1` VALUES(@eid, 3600, 86400);
 SET @eid := @eid +1;
 
