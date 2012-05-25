@@ -7,7 +7,7 @@ SET foreign_key_checks=0;
 --
 
 CREATE TABLE `scom_indicator` (
-    `scom_indicator_id` int(8) unsigned NOT NULL,
+    `scom_indicator_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
     `scom_indicator_name` char(32) NOT NULL,
     `scom_indicator_oid` char(64) NOT NULL,
 	`scom_indicator_min` bigint unsigned,

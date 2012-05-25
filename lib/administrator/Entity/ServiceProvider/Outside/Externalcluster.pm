@@ -356,7 +356,7 @@ sub getIndicatorInst () {
     General::checkParams(args => \%args, required => ['indicator_id']);
 
     my $indicator_id   = $args{indicator_id};
-    my $indicator = ScomIndicator->get('scom_indicator_id' => $indicator_id);
+    my $indicator = ScomIndicator->get('id' => $indicator_id);
 
     return $indicator;
 }
@@ -406,21 +406,20 @@ sub getNodesMetrics {
     return $data;
 }
 
-
 sub generateClustermetricAndCombination{
-    my ($self,%args) = @_;
+    my ($self,%args)  = @_;
     my $extcluster_id = $args{extcluster_id};
-    my $indicator     = $args{indicator};
+    my $indicator_id  = $args{indicator};
     my $func          = $args{func};
-    
+
     my $cm_params = {
         clustermetric_service_provider_id      => $extcluster_id,
-        clustermetric_indicator_id             => $indicator->{id},
+        clustermetric_indicator_id             => $indicator_id,
         clustermetric_statistics_function_name => $func,
         clustermetric_window_time              => '1200',
     };
     my $cm = Clustermetric->new(%$cm_params);
-   
+
     my $acf_params = {
         aggregate_combination_service_provider_id   => $extcluster_id,
         aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
@@ -440,104 +439,75 @@ sub insertCollectorIndicators {
     my ($self,%args) = @_;
 
     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
+    my $params;
 
-    my $params = { scom_indicator_id    =>'1',
-                    scom_indicator_name => 'RAM Free',
-                    scom_indicator_oid  => 'Memory/Available MBytes',
-                    scom_indicator_min  => 'null',
-                    scom_indicator_max  => 'null',
-                    scom_indicator_unit => 'MBytes',
-                    service_provider_id => $service_provider_id,
+    $params = { scom_indicator_name => 'RAM Free',
+                scom_indicator_oid  => 'Memory/Available MBytes',
+                scom_indicator_unit => 'MBytes',
+                service_provider_id => $service_provider_id,
     };
     ScomIndicator->new(%$params);
 
-    $params = { scom_indicator_id    =>'1',
-                    scom_indicator_name => 'RAM pool paged',
-                    scom_indicator_oid  => 'Memory/Pool Paged Bytes',
-                    scom_indicator_min  => 'null',
-                    scom_indicator_max  => 'null',
-                    scom_indicator_unit => 'Bytes',
-                    service_provider_id => $service_provider_id,
+    $params = { scom_indicator_name => 'RAM pool paged',
+                scom_indicator_oid  => 'Memory/Pool Paged Bytes',
+                scom_indicator_unit => 'Bytes',
+                service_provider_id => $service_provider_id,
     };
     ScomIndicator->new(%$params);
 
-    $params = { scom_indicator_id    =>'1',
-                    scom_indicator_name => 'RAM used',
-                    scom_indicator_oid  => 'Memory/PercentMemoryUsed',
-                    scom_indicator_min  => 'null',
-                    scom_indicator_max  => 'null',
-                    scom_indicator_unit => '%',
-                    service_provider_id => $service_provider_id,
+    $params = { scom_indicator_name => 'RAM used',
+                scom_indicator_oid  => 'Memory/PercentMemoryUsed',
+                scom_indicator_unit => '%',
+                service_provider_id => $service_provider_id,
     };
     ScomIndicator->new(%$params);
 
-    $params = { scom_indicator_id    =>'1',
-                    scom_indicator_name => 'CPU used',
-                    scom_indicator_oid  => 'Processor/% Processor Time',
-                    scom_indicator_min  => 'null',
-                    scom_indicator_max  => 'null',
-                    scom_indicator_unit => '%',
-                    service_provider_id => $service_provider_id,
+    $params = { scom_indicator_name => 'CPU used',
+                scom_indicator_oid  => 'Processor/% Processor Time',
+                scom_indicator_unit => '%',
+                service_provider_id => $service_provider_id,
     };
     ScomIndicator->new(%$params);
 
-    $params = { scom_indicator_id    =>'1',
-                    scom_indicator_name => 'CPU Queue Length',
-                    scom_indicator_oid  => 'System/Processor Queue Length',
-                    scom_indicator_min  => 'null',
-                    scom_indicator_max  => 'null',
-                    scom_indicator_unit => 'process',
-                    service_provider_id => $service_provider_id,
+    $params = { scom_indicator_name => 'CPU Queue Length',
+                scom_indicator_oid  => 'System/Processor Queue Length',
+                scom_indicator_unit => 'process',
+                service_provider_id => $service_provider_id,
     };
     ScomIndicator->new(%$params);
 
-    $params = { scom_indicator_id    =>'1',
-                    scom_indicator_name => 'Disk idle time',
-                    scom_indicator_oid  => 'LogicalDisk/% Idle Time',
-                    scom_indicator_min  => 'null',
-                    scom_indicator_max  => 'null',
-                    scom_indicator_unit => '%',
-                    service_provider_id => $service_provider_id,
+    $params = { scom_indicator_name => 'Disk idle time',
+                scom_indicator_oid  => 'LogicalDisk/% Idle Time',
+                scom_indicator_unit => '%',
+                service_provider_id => $service_provider_id,
     };
     ScomIndicator->new(%$params);
 
-    $params = { scom_indicator_id    =>'1',
-                    scom_indicator_name => 'Disk free space',
-                    scom_indicator_oid  => 'LogicalDisk/% Free Space',
-                    scom_indicator_min  => 'null',
-                    scom_indicator_max  => 'null',
-                    scom_indicator_unit => '%',
-                    service_provider_id => $service_provider_id,
+    $params = { scom_indicator_name => 'Disk free space',
+                scom_indicator_oid  => 'LogicalDisk/% Free Space',
+                scom_indicator_unit => '%',
+                service_provider_id => $service_provider_id,
     };
     ScomIndicator->new(%$params);
 
-    $params = { scom_indicator_id    =>'1',
-                    scom_indicator_name => 'Network used',
-                    scom_indicator_oid  => 'Network Adapter/PercentBandwidthUsedTotal',
-                    scom_indicator_min  => 'null',
-                    scom_indicator_max  => 'null',
-                    scom_indicator_unit => '%',
-                    service_provider_id => $service_provider_id,
-    };
-
-    ScomIndicator->new(%$params);
-    $params = { scom_indicator_id    =>'1',
-                    scom_indicator_name => 'Active Sessions',
-                    scom_indicator_oid  => 'Terminal Services/Active Sessions',
-                    scom_indicator_min  => 'null',
-                    scom_indicator_max  => 'null',
-                    scom_indicator_unit => 'sessions',
-                    service_provider_id => $service_provider_id,
+    $params = { scom_indicator_name => 'Network used',
+                scom_indicator_oid  => 'Network Adapter/PercentBandwidthUsedTotal',
+                scom_indicator_unit => '%',
+                service_provider_id => $service_provider_id,
     };
     ScomIndicator->new(%$params);
 
-    $params = { scom_indicator_id    =>'1',
-                    scom_indicator_name => 'RAM I/O',
-                    scom_indicator_oid  => 'Memory/Pages/sec',
-                    scom_indicator_min  => 'null',
-                    scom_indicator_max  => 'null',
-                    scom_indicator_unit => 'pages/sec',
-                    service_provider_id => $service_provider_id,
+    $params = { scom_indicator_name => 'Active Sessions',
+                scom_indicator_oid  => 'Terminal Services/Active Sessions',
+                scom_indicator_unit => 'sessions',
+                service_provider_id => $service_provider_id,
+    };
+    ScomIndicator->new(%$params);
+
+    $params = { scom_indicator_name => 'RAM I/O',
+                scom_indicator_oid  => 'Memory/Pages/sec',
+                scom_indicator_unit => 'pages/sec',
+                service_provider_id => $service_provider_id,
     };
     ScomIndicator->new(%$params);
 }
@@ -560,15 +530,14 @@ sub monitoringDefaultInit {
     #generate the scom indicators
     $self->insertCollectorIndicators();
 
-    my @indicators_ids = $self->getIndicatorsIds();
+    my $indicators_ids = $self->getIndicatorsIds();
     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
     my $active_session_indicator_id; 
     my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
     my @funcs = qw(mean max min std dataOut);
 
-    foreach my $indicator_id (@indicators_ids) {
+    foreach my $indicator_id (@$indicators_ids) {
         my $indicator_oid = $self->getIndicatorOidFromId (indicator_id => $indicator_id);
-        my $indicator_inst = $self->getIndicatorInst (indicator_id => $indicator_id);
 
         if ($indicator_oid eq 'Terminal Services/Active Sessions') {
             $active_session_indicator_id = $indicator_id;
@@ -586,16 +555,16 @@ sub monitoringDefaultInit {
             foreach my $func (@funcs) {
                     my $ids = $self->generateClustermetricAndCombination(
                         extcluster_id => $service_provider_id,
-                        indicator     => $indicator_inst,
+                        indicator     => $indicator_id,
                         func          => $func,
                     );
             }
         }elsif($indicator_oid eq 'Memory/PercentMemoryUsed'){
-            $low_mean_cond_mem_id = $self->ruleGeneration(indicator => $indicator_inst, extcluster_id => $service_provider_id, label => 'Memory');
+            $low_mean_cond_mem_id = $self->ruleGeneration(indicator_id => $indicator_id, extcluster_id => $service_provider_id, label => 'Memory');
         }elsif($indicator_oid eq 'Processor/% Processor Time'){
-            $low_mean_cond_cpu_id = $self->ruleGeneration(indicator => $indicator_inst, extcluster_id => $service_provider_id, label => 'Processor');
+            $low_mean_cond_cpu_id = $self->ruleGeneration(indicator_id => $indicator_id, extcluster_id => $service_provider_id, label => 'Processor');
         }elsif($indicator_oid eq 'Network Adapter/PercentBandwidthUsedTotal'){
-            $low_mean_cond_net_id = $self->ruleGeneration(indicator => $indicator_inst, extcluster_id => $service_provider_id, label => 'Network');
+            $low_mean_cond_net_id = $self->ruleGeneration(indicator_id => $indicator_id, extcluster_id => $service_provider_id, label => 'Network');
         }
     }
 
@@ -628,44 +597,44 @@ sub monitoringDefaultInit {
 
 sub ruleGeneration{
     my ($self,%args) = @_;
-    my $indicator = $args{indicator};
+    my $indicator_id     = $args{indicator_id};
     my $extcluster_id = $args{extcluster_id};
     my $label         = $args{label};
     my $inverse       = $args{inverse};
-    
+
     my @funcs = qw(max min);
     foreach my $func (@funcs) {
             my $ids = $self->generateClustermetricAndCombination(
                 extcluster_id => $extcluster_id,
-                indicator     => $indicator,
+                indicator     => $indicator_id,
                 func          => $func,
             );
     }
-    
+
     my $mean_ids = $self->generateClustermetricAndCombination(
         extcluster_id => $extcluster_id,
-        indicator     => $indicator,
+        indicator     => $indicator_id,
         func          => 'mean',
     );
     my $std_ids = $self->generateClustermetricAndCombination(
         extcluster_id => $extcluster_id,
-        indicator     => $indicator,
+        indicator     => $indicator_id,
         func          => 'std',
     );
-    
+
     my $out_ids = $self->generateClustermetricAndCombination(
         extcluster_id => $extcluster_id,
-        indicator     => $indicator,
+        indicator     => $indicator_id,
         func          => 'dataOut',
     );
-    
+
     my $combination_params = {
         aggregate_combination_service_provider_id => $extcluster_id,
         aggregate_combination_formula             => 'id'.($std_ids->{cm_id}).'/ id'.($mean_ids->{cm_id}),
     };
-    
+
     my $coef_comb = AggregateCombination->new(%$combination_params);
-    
+
    my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
         aggregate_combination_id                => $coef_comb->getAttr(name=>'aggregate_combination_id'),
@@ -673,7 +642,7 @@ sub ruleGeneration{
         threshold                               => 0.2,
         state                                   => 'enabled',
     };
-     
+
    my $coef_cond = AggregateCondition->new(%$condition_params);
    my $coef_cond_id = $coef_cond->getAttr(name => 'aggregate_condition_id');
 
@@ -684,7 +653,7 @@ sub ruleGeneration{
         threshold                               => 10,
         state                                   => 'enabled',
     };
-     
+
    my $std_cond = AggregateCondition->new(%$condition_params);
    my $std_cond_id = $std_cond->getAttr(name => 'aggregate_condition_id'); 
 
@@ -695,10 +664,10 @@ sub ruleGeneration{
         threshold                               => 0,
         state                                   => 'enabled',
     };
-     
+
    my $out_cond = AggregateCondition->new(%$condition_params);
    my $out_cond_id = $out_cond->getAttr(name => 'aggregate_condition_id');
-   
+
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.$coef_cond_id.' && '.'id'.$std_cond_id,
@@ -708,7 +677,7 @@ sub ruleGeneration{
         aggregate_rule_description          => $label.' is not well balanced across the cluster',
     };
     my $homo_rule = AggregateRule->new(%$params_rule);
-    
+
    $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.$out_cond_id,
@@ -718,7 +687,7 @@ sub ruleGeneration{
         aggregate_rule_description          => 'The '.$label.' usage of some nodes of the cluster is far from the average behavior',
     };
     my $out_rule = AggregateRule->new(%$params_rule);
-    
+
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
         aggregate_combination_id                => $mean_ids->{comb_id},
@@ -726,7 +695,7 @@ sub ruleGeneration{
         threshold                               => 80,
         state                                   => 'enabled',
     };
-     
+
    my $mean_cond = AggregateCondition->new(%$condition_params);
    my $mean_cond_id = $mean_cond->getAttr(name => 'aggregate_condition_id');
    $params_rule = {
@@ -738,7 +707,7 @@ sub ruleGeneration{
         aggregate_rule_description          => 'Average '.$label.' is too high, your cluster may be undersized',
     };
     my $mean_rule = AggregateRule->new(%$params_rule);
-    
+
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
         aggregate_combination_id                => $mean_ids->{comb_id},
@@ -746,9 +715,9 @@ sub ruleGeneration{
         threshold                               => 10,
         state                                   => 'enabled',
     };
-     
+
    my $low_mean_cond = AggregateCondition->new(%$condition_params);
-    
+
    return $low_mean_cond->getAttr(name => 'aggregate_condition_id');
 }
 #        

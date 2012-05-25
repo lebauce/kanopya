@@ -1208,8 +1208,6 @@ CREATE TABLE `clustermetric` (
   KEY (`class_type_id`),
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`clustermetric_id`),
-  KEY (`clustermetric_indicator_id`),
-  FOREIGN KEY (`clustermetric_indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,  
   KEY (`clustermetric_service_provider_id`),
   FOREIGN KEY (`clustermetric_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
