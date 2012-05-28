@@ -53,6 +53,27 @@ sub _rootTable {
     return $class;
 }
 
+sub classFromDbix {
+    my $dbix = shift;
+    my $name = ucfirst($dbix->result_source->from);
+
+    while (1) {
+        last if not $dbix->can("parent");
+        $dbix = $dbix->parent;
+        $name = ucfirst($dbix->result_source->from) . "::" . $name;
+    }
+
+    my $i = 0;
+    while ($i < length($name)) {
+        if (substr($name, $i, 1) eq "_") {
+            $name = substr($name, 0, $i) . ucfirst(substr($name, $i + 1, 1)) . substr($name, $i + 2)
+        }
+        $i += 1;
+    }
+
+    return $name;
+}
+
 # checkAttrs : check attribute validity in the class hierarchy 
 # return dbix class row where the attr is found
 
@@ -354,10 +375,12 @@ sub search {
         $n -= 1;
     }
 
-    my $rs = $adm->_getDbixFromHash(table => $table,
-                                    hash  => $args{hash},
-                                    page  => $args{page},
-                                    join  => $join);
+    my $rs = $adm->_getDbixFromHash('table'    => $table,
+                                    'hash'     => $args{hash},
+                                    'page'     => $args{page},
+                                    'join'     => $join,
+                                    'rows'     => $args{rows},
+                                    'order_by' => $args{order_by});
 
     while ( my $row = $rs->next ) {
         my $obj = {
@@ -398,8 +421,18 @@ sub search {
             push @objs, $obj;
         }
     }
-    
-    return  @objs;
+
+    if (defined ($args{dataType}) and $args{dataType} eq "jqGrid") {
+        return {
+            rows    => \@objs,
+            page    => $args{page} || undef,
+            total   => (defined ($args{page}) or defined ($args{rows})) ?
+                           $rs->pager->total_entries : $rs->count,
+            records => scalar @objs
+        }
+    }
+
+    return @objs;
 }
 
 # Quick fix for perf optim (TODO refacto)
@@ -503,4 +536,51 @@ sub delete {
 sub toString{
     return "";
 }
+
+sub toJSON {
+    my ($self, %args) = @_;
+    my $hash = {};
+    my $class = ref ($self) || $self;
+    my $attributes = $class->getAttrDefs();
+
+    foreach my $class (keys %$attributes) {
+        foreach my $attr (keys %{$attributes->{$class}}) {
+            if (defined $args{model}) {
+                $hash->{attributes}->{$attr} = $attributes->{$class}->{$attr};
+            }
+            else {
+                if (defined $self->getAttr(name => $attr)) {
+                    $hash->{$attr} = $self->getAttr(name => $attr);
+                }
+            }
+        }
+    }
+
+    if ($args{model}) {
+        my $table = _buildClassNameFromString($class);
+        my $adm = Administrator->new();
+        my @hierarchy = split(/::/, $class);
+        my $depth = scalar @hierarchy;
+        my $n = $depth;
+        my $parent;
+
+        for (my $n = $depth - 1; $n >= 0; $n--) {
+            $parent = $adm->{db}->source($hierarchy[$n]);
+            my @relnames = $parent->relationships();
+            for my $relname (@relnames) {
+                my $relinfo = $parent->relationship_info($relname);
+                if ((scalar (grep { $_ eq (split('::', $relinfo->{source}))[-1] } @hierarchy) == 0) and
+                    ($relinfo->{attrs}->{is_foreign_key_constraint}) or
+                    ($relinfo->{attrs}->{accessor} eq "multi")) {
+                    $hash->{relations}->{$relname} = $relinfo;
+                    $hash->{relations}->{$relname}->{from} = $hierarchy[$n];
+                    delete $hash->{attributes}->{$relname . "_id"};
+                }
+            }
+        }
+    }
+
+    return $hash;
+}
+
 1;

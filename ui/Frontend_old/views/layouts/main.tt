@@ -1,0 +1,274 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
+        <title><% if title %><% title %><% else %><% title_page %><% end %></title>
+        <link rel="stylesheet" href="<% request.uri_base %>/css/normalize.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/global.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/details.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/listing.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/misc.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/modal.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/icon.css" />
+        <% FOREACH css IN css_head %>
+            <link rel="stylesheet" href="<% request.uri_base %>/css/<% css %>" />
+        <% END %>
+
+        <script type="text/javascript" src="/javascripts/jquery.js"></script>
+        <script type="text/javascript" src="/javascripts/jquery-ui-1.8.16.custom.min.js"></script>
+        <script type="text/javascript" src="/javascripts/kanopyaui-tools.js"></script>
+        
+        <% FOREACH js IN js_head %>
+            <script type="text/javascript" src="/javascripts/<% js %>"></script>
+        <% END %>
+
+        <script language="javascript" type="text/javascript">
+
+            // functions to active and deactive blocks visibility and javascript
+            // functions call. 
+           
+            function active(btn) {
+                $(btn).addClass('active');
+                $(btn.replace(/_btn/, '_content')).show();
+                var interval_id;
+                if(btn == '#operations_btn') {
+                    interval_id = setInterval("operations_update()", 5000);
+                    operations_update();
+                } else {
+                    interval_id = setInterval("messages_update()", 5000);  
+                    messages_update();
+                }
+                $(btn).prop('interval_id', interval_id);
+            }
+
+            function deactive(btn) {
+                $(btn).removeClass('active');
+                $(btn.replace(/_btn/, '_content')).hide();
+                clearInterval( $(btn).prop('interval_id') );
+                $(btn).prop('interval_id', '');
+            }
+
+
+            // function to get and update messages content
+            var messages_update = function() {
+                $.ajax({
+                    url: "/messager/messages",
+                    type: "POST",
+                    dataType: "json",
+                    success: function(msg){
+                        console.log(msg);
+                        $("#messages_content").empty();
+                        for(var i=0;i<msg.length;i++) {
+                            $("#messages_content").append(
+                                msg[i]['date']+"&nbsp&nbsp&nbsp"+
+                                msg[i]['time']+"&nbsp&nbsp&nbsp"+
+                                msg[i]['content']+"<br/>" );             
+                        }
+                    },
+                    error: function(error, text, thor) {
+                    $("#messages_content").empty();
+                    $("#messages_content").append(text+" "+error);
+                    }
+                });
+            };
+
+            // function to get and update operations queue content
+            var operations_update = function() {
+                $.ajax({
+                    url: "/messager/operation/queue",
+                    type: "POST",
+                    dataType: "json",
+                    success: function(msg){
+                        console.log(msg);
+                        $("#operations_content").empty();
+                        if(! msg.length) {
+                            $("#operations_content").append(
+                                "no operations in the queue");
+                        } else {
+			    for(var i=0;i<msg.length;i++) {
+                                $("#operations_content").append(
+                                    msg[i]['CREATION']+"&nbsp&nbsp&nbsp"+
+                                    msg[i]['FROM']+"&nbsp&nbsp&nbsp"+
+                                    msg[i]['TYPE']+"<br/>" );
+                            }
+                        }
+                    },
+                    error: function(error, text, thor) {
+                    $("#operations_content").empty();
+                    $("#operations_content").append(text+" "+error);
+                    }
+                });
+            };
+
+	    // this function is call to print the number of operations enqueued
+	    var operation_sum = function() {
+		$.ajax({
+		    url: "/messager/operation/quantity",
+                    type: "POST",
+                    dataType: "json",
+                    success: function(data) {
+			// display in html format the content of data var in a div
+			$("#operation_quantity").html(data);
+		    }
+		});
+	    }
+
+            $(document).ready(function() {  
+
+                // operations / messages
+
+                // add an attribute to track interval_id value returned by
+                // setInterval function and used by clearInterval
+                $('#operations_btn, #messages_btn').prop('interval_id', '');
+
+		// set operation_sum interval to 1s and call the function
+		//interval_id = setInterval("operation_sum()", 1000);
+		//$('#operation_quantity').prop('interval_id', '');
+		//operation_sum();
+
+                $('#operations_btn, #messages_btn').click(function () {
+                    var this_id = '#' + $(this).attr('id');
+
+                    // nothing is active
+                    if(! $('#operations_btn, #messages_btn').hasClass('active')) {
+                        active( this_id );
+                    // one is active, which ?
+                    } else {
+                        var active_element; 
+                            $('#operations_btn, #messages_btn').each(function (index, domEle) {
+                                if($(domEle).hasClass('active')) {
+                                    active_element = '#'+$(domEle).attr('id');
+                                }
+                            });
+                        // not this, so we deactive the other and active this
+                        if(active_element != this_id) {
+                            deactive( active_element);
+                            active( this_id );
+                        // this is active, we deactive it
+                        } else {
+                            deactive(this_id);
+                        }
+                    } 
+                });
+
+                // modals
+                $('.modal').each(function() {
+                    var link = $(this);
+
+                    var dialog = $('<div></div>')
+                        .dialog({
+                            autoOpen: false,
+                            modal: true,
+                            title: link.attr('title' + '#content'),
+                            width: 500,
+                            height: 500,
+                            resizable: true,
+                            buttons: {
+                                Ok: function() {
+                                    $(this).find('#target').submit();
+                                    loading_start();
+                                    $(this).dialog('close');
+                                },
+                                Cancel: function() {
+                                    $(this).dialog('close');
+                                }
+                            },
+                        });
+
+                    link.click(function() {
+                        if ($(this).parents(".disabled").length) {
+                            return false;
+                        }
+                        dialog.load($(this).attr('href'))
+                        dialog.dialog('open');
+                        return false;
+                    });
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div id="header">
+            <img id="logo" src="/images/kanopya_medium_logo.png" />
+            <div id="menu">
+                <ul>
+                    <% IF is_menu_visible('dashboard') %><li <% menu_selection('dashboard') %>><a href="/dashboard/status">Dashboard</a></li><% END %>
+                    <% IF is_menu_visible('rights') %><li <% menu_selection('rights') %>><a href="/rights/users">Rights</a></li><% END %>
+                    <% IF is_menu_visible('infrastructures') %><li <% menu_selection('infrastructures') %>><a href="/infrastructures/hosts">Infrastructures</a></li><% END %>
+                    <% IF is_menu_visible('networks') %><li <% menu_selection('networks') %>><a href="/networks/poolip">Networks</a></li><% END %>
+                    <% IF is_menu_visible('systems') %><li <% menu_selection('systems') %>><a href="/systems/masterimages">Systems</a></li><% END %>
+                    <% IF is_menu_visible('architectures') %><li <% menu_selection('architectures') %>><a href="/architectures/clusters">Architectures</a></li><% END %>
+                    <% IF is_menu_visible('equipments') %><li <% menu_selection('equipments') %>><a href="/equipments/ucs">Equipments</a></li><% END %>
+                </ul>
+            
+            </div>
+            <div id="menu_separator">
+            </div>
+            
+            <div id="submenu">
+                <ul>
+                    <% IF is_menu_selected('dashboard') %>
+                        <li <% submenu_selection('status') %>><a href="/dashboard/status" >Status</a></li>
+                        <li <% submenu_selection('logs') %>><a href="/dashboard/logs">Logs</a></li>
+                    <% ELSIF is_menu_selected('rights') %>
+                        <li <% submenu_selection('users') %>><a href="/rights/users">Users</a></li>
+                        <li <% submenu_selection('groups') %>><a href="/rights/groups">Groups</a></li>
+                        <li <% submenu_selection('permissions') %>><a href="/rights/permissions">Permissions</a></li>
+                    <% ELSIF is_menu_selected('infrastructures') %>
+                        <% FOREACH manager IN host_managers %>
+                            <li <%IF host_manager.id == manager.id %>class="selected"<% END %>>
+                                <a href="/infrastructures/hosts?manager=<% manager.id %>"><% manager.host_type %></a>
+                            </li>
+                        <% END %>
+                    <% ELSIF is_menu_selected('networks') %>
+                         <li <% submenu_selection('poolip') %>><a href="/networks/poolip">Pool IP</a></li>
+                         <li <% submenu_selection('vlans') %>><a href="/networks/vlans">Vlan</a></li>
+                         <li <% submenu_selection('lans') %>><a href="/networks/lans">Networks</a></li>
+                    <% ELSIF is_menu_selected('systems') %>
+                        <li <% submenu_selection('masterimages') %>><a href="/systems/masterimages">Master Images</a></li>
+                        <li <% submenu_selection('images') %>><a href="/systems/images">System images</a></li>
+                        <li <% submenu_selection('kernels') %>><a href="/systems/kernels">Kernels</a></li>
+                        <li <% submenu_selection('components') %>><a href="/systems/components">Components</a></li>
+                     <% ELSIF is_menu_selected('architectures') %>
+                        <li <% submenu_selection('clusters') %><% submenu_selection('extclusters') %>><a href="/architectures/clusters">Clusters</a></li>
+                        <li <% submenu_selection('networks') %>><a href="/architectures/networks">Networks</a></li>
+                    <% ELSIF is_menu_selected('equipments') %>
+                        <li <% submenu_selection('ucs') %>><a href="/equipments/ucs">UCS</a></li>
+                        <li <% submenu_selection('netapp') %>><a href="/equipments/netapp">NetApp</a></li>
+                    <% END %>
+                </ul>
+            </div>
+            
+            <div id="infologin">
+                logged as <span id="username"><% username %></span>
+            </div>
+
+            <div class="logout">
+                <a href="/logout">Logout</a>
+            </div>
+            
+        </div>
+
+        <div id="container">
+            <div id="content">
+                <% if exception %>
+                <% message %>
+                <% else %>
+                <% content %>
+                <% end %>
+            </div>
+           
+            <div id="opsmsg">
+                <table>
+                    <tr>
+                        <td id="operations_btn">operations queue <div style="display: inline;" id="operation_quantity"></div></td>
+                        <td id="messages_btn">messages</td>
+                    </tr>
+                </table>
+                <div id="operations_content">operations queue loading...</div>
+                <div id="messages_content">messages loading...</div>
+            </div>
+        </div>
+    </body>
+</html>

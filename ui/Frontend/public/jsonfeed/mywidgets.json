@@ -1,0 +1,32 @@
+{
+"result" :
+  {
+  "layout": "layout2",
+  "data" : [
+    {
+      "title" : "tabletest1",
+      "id" : "widget1",
+      "column" : "first",
+      "editurl" : "widgets/editwidget1.html",
+      "open" : true,
+      "url" : "widgets/widget1.html"
+    },
+    {
+      "title" : "tabletest2",
+      "column" : "first",
+      "id" : "widget3",
+      "url" : "widgets/widget3.html",
+      "editurl" : "widgets/editwidget3.html",
+      "open" : true
+    },
+    {
+      "title" : "tabletest3",
+      "id" : "widget2",
+      "column" : "first",
+      "url" : "widgets/widget2.html",
+      "editurl" : "widgets/editwidget2.html",
+      "open" : true
+    }
+  ]
+  }
+}

@@ -1,0 +1,220 @@
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  background-color: #7E388A;
+  color: #999999;
+  font-style: arial;
+  font-size: 0.9em;
+}
+
+#header {
+  position: fixed;
+  z-index: 10;
+  width: 100%;
+  background-color: white;
+  border-top: 2px solid #7E388A;
+  height: 140px;
+  border-bottom: 1px solid #7E388A;
+}
+
+#header #logo {
+  top: 10px;
+  padding-left: 110px;
+  padding-right: 20px;
+  float: left;
+  padding-top: 10px;
+}
+
+#header #infologin {
+  position: absolute;
+  top: 5px;
+  right: 100px;
+  color: #C2C2C2;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+#header #infologin #username {
+  color: #7E388A;
+}
+
+#header .logout {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  color: white;
+  text-align: center;
+  width: 84px;
+  height: 25px;
+  padding-top: 10px;
+  font-size: 11px;
+  font-weight: bold;
+  background: #7E388A;
+}
+
+#header .logout a {
+  color: white;
+  text-decoration: none;
+  background: #7E388A url(/images/picto_logout.png) no-repeat left;
+  padding-left: 25px;
+}
+
+#header #menu_separator {
+  border-bottom: 1px solid #C2C2C2;
+  width: 100%;
+  clear: both;
+  padding-top: 3px;
+}
+
+#header #menu {
+  margin-left: auto;
+  margin-right: auto;
+  width: 85%;
+}
+
+#header #menu ul {
+  list-style-type: none;
+}
+
+#header #menu li {
+  float: left;
+}
+
+#header #menu ul li {
+  padding: 8px 37px 8px 0px;
+}
+
+#header #menu ul li a {
+  display: block;
+  text-decoration: none;
+  color: #C2C2C2;
+  font-weight: bold;
+  //font-size: 1.0em;
+  font-size: 18px;
+}
+
+#header #menu ul li a:hover {
+  color: #80E254;
+}
+
+#header #menu ul .selected {
+  border-bottom: 3px solid #7E388A;
+  margin-bottom: -3px;
+}
+
+#header #menu ul .selected a {
+  color: #7E388A;
+}
+
+#header #submenu {
+  margin-top: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 75%;
+}
+
+#header #submenu ul {
+  list-style-type: none;
+  margin-top: 0px;
+  text-align: center;
+}
+
+#header #submenu ul li {
+  padding: 5px 15px 5px 15px;
+  background-color: #C2C2C2;
+  display: inline-block;
+}
+
+#header #submenu ul li a {
+  display: block;
+  float: left;
+  text-decoration: none;
+  color: white;
+  //font-size: 0.875em;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+#header #submenu ul li:hover {
+  background-color: #80E254;
+}
+
+#header #submenu ul .selected {
+  background-color: #7E388A;
+}
+
+#header hr {
+  margin-top: 30px;
+}
+
+#container {
+  width: 85%;
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: white;
+  padding-top: 140px;
+  padding-right: 20px;
+  padding-left: 20px;
+  min-height: 100%;
+}
+
+#opsmsg {
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  width: 100%;
+}
+
+#opsmsg table {
+  width: 100%;
+  collapse: collapse;
+}
+
+#opsmsg table td {
+  background-color: white;
+  border: thin solid #7E388A;
+  width: 15em;
+  text-align: center;
+  cursor: pointer;
+}
+
+#opsmsg table td.active {
+  background-color: #7E388A;
+  color: white;
+  font-weight: bold;
+}
+
+#opsmsg #operations_content, #opsmsg #messages_content {
+  background-color: white;
+  border: thin solid #7E388A;
+  display: none;
+  font-size: 0.7em;
+  line-height: 1.4em;
+}
+
+.disabled {
+  color: #BBBBBB;
+}
+
+a .action .disabled {
+  color: #BBBBBB;
+}
+
+.disabled a {
+  pointer-events: none;
+  cursor: default;
+  color: #BBBBBB;
+}
+
+// Display Comment Editor
+updateComment  {
+  position: absolute;
+  background-color: #E0E0E0;
+  padding: 5px;
+  //border: dashed 1px #005040;
+  display: none;
+}

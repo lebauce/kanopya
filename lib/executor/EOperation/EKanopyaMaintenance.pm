@@ -84,12 +84,12 @@ sub execute {
     open (my $MSGTXT, ">","/tmp/$tmpfile") or throw Kanopya::Exception::Internal(error => "Kanopya could not open tmp file");
    $msg_log = "msg id\tmsg from\tdate\ttime\tlevel\tmessage content\n";
     foreach my $msg (@$messages) {
-        $msg_log .= $msg->getAttr(attr_name => "message_id") . "\t";
-        $msg_log .= $msg->getAttr(attr_name => "message_from") . "\t";
-        $msg_log .= $msg->getAttr(attr_name => "message_creationdate") . "\t";
-        $msg_log .= $msg->getAttr(attr_name => "message_creationtime") . "\t";
-        $msg_log .= $msg->getAttr(attr_name => "message_level") . "\t";
-        $msg_log .= $msg->getAttr(attr_name => "message_content") . "\n";
+        $msg_log .= $msg->getAttr(name => "message_id") . "\t";
+        $msg_log .= $msg->getAttr(name => "message_from") . "\t";
+        $msg_log .= $msg->getAttr(name => "message_creationdate") . "\t";
+        $msg_log .= $msg->getAttr(name => "message_creationtime") . "\t";
+        $msg_log .= $msg->getAttr(name => "message_level") . "\t";
+        $msg_log .= $msg->getAttr(name => "message_content") . "\n";
         $msg->delete();
     }
     print( $MSGTXT "$msg_log");

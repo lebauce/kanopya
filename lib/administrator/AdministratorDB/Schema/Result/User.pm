@@ -130,6 +130,21 @@ __PACKAGE__->add_unique_constraint("user_login", ["user_login"]);
 
 =head1 RELATIONS
 
+=head2 clusters
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Cluster>
+
+=cut
+
+__PACKAGE__->has_many(
+  "clusters",
+  "AdministratorDB::Schema::Result::Cluster",
+  { "foreign.user_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 messages
 
 Type: has_many

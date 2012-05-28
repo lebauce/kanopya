@@ -317,15 +317,17 @@ sub _getDbixFromHash {
 
     General::checkParams(args => \%args, required => ['table', 'hash']);
 
+    if (defined ($args{rows}) and not defined ($args{page})) {
+        $args{page} = 1;
+    }
+
     my $dbix;
     eval {
-        my $hash = $args{hash};
-        if (keys(%$hash)) {
-            $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
-                                                                    { prefetch => $args{join} });
-        } else {
-            $dbix = $self->{db}->resultset( $args{table} )->search( undef );
-        }
+        $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
+                                                                { prefetch => $args{join},
+                                                                  rows     => $args{rows},
+                                                                  page     => $args{page},
+                                                                  order_by => $args{order_by} });
     };
     if ($@) {
         $errmsg = "Administrator->_getDbixFromHash error ".$@;
@@ -453,6 +455,15 @@ sub addMessage {
     return;
 }
 
+=head2
+
+    Desc:
+    
+    Args: limit -> This arg will specify the maximum number of messages returned
+    by method. If he's not provided, limite is set by default to 10.
+
+=cut
+
 sub getMessages {
     my $self  = shift;
     my %args  = @_;
@@ -465,6 +476,7 @@ sub getMessages {
     my @arr = ();
     while (my $row = $r->next) {
         push @arr, {
+            'id' => $row->get_column('message_id'),
             'from' => $row->get_column('message_from'),
             'level' => $row->get_column('message_level'),
             'date' => $row->get_column('message_creationdate'),

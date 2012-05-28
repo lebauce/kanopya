@@ -1,0 +1,20 @@
+
+/* Allow scroll inside view (tab content) */
+
+.view div {
+    height:100%;
+    overflow:auto;
+}
+
+
+/* format the text inside the toggler (layout) */
+.ui-layout-toggler .content {
+   font-size: 12px; /* IMPORTANT: default = 1px */
+   font-weight: bold;
+   text-align: center;
+}
+
+/* Restore jqgrid style overriden by .ui-widget .ui-widget */
+.ui-widget .ui-jqgrid {
+    font-size: 11px;
+}
