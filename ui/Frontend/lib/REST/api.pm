@@ -10,21 +10,27 @@ use Entity;
 
 prepare_serializer_for_format;
 
-my %resources = ( "host"           => "Entity::Host",
-                  "cluster"        => "Entity::ServiceProvider::Inside::Cluster",
-                  "user"           => "Entity::User",
-                  "masterimage"    => "Entity::Masterimage",
-                  "systemimage"    => "Entity::Systemimage",
-                  "processormodel" => "Entity::Processormodel",
-                  "hostmodel"      => "Entity::Hostmodel",
-                  "permission"     => "Permissions",
-                  "operation"      => "Operation",
-                  "message"        => "Message",
-                  "vlan"           => "Entity::Network::Vlan" );
+my %resources = ( "host"            => "Entity::Host",
+                  "cluster"         => "Entity::ServiceProvider::Inside::Cluster",
+                  "user"            => "Entity::User",
+                  "masterimage"     => "Entity::Masterimage",
+                  "systemimage"     => "Entity::Systemimage",
+                  "processormodel"  => "Entity::Processormodel",
+                  "hostmodel"       => "Entity::Hostmodel",
+                  "permission"      => "Permissions",
+                  "operation"       => "Operation",
+                  "message"         => "Message",
+                  "entity"          => "Entity",
+                  "inside"          => "Entity::ServiceProvider::Inside",
+                  "externalcluster" => "Entity::ServiceProvider::Outside::Externalcluster",
+                  "serviceprovider" => "Entity::ServiceProvider",
+                  "vlan"            => "Entity::Network::Vlan" );
 
 sub setupREST {
 
     foreach my $resource (keys %resources) {
+        my $class = $resources{$resource};
+
         resource "api/$resource" =>
             get    => sub {
                 content_type 'application/json';
@@ -32,7 +38,8 @@ sub setupREST {
             },
 
             create => sub {
-                my $class = $resources{$resource};
+                require (General::getLocFromClass(entityclass => $class));
+
                 my $hash = { };
                 my $params = params;
                 for my $attr (keys %$params) {
@@ -130,6 +137,8 @@ sub setupREST {
         get '/api/' . $resource => sub {
             content_type 'application/json';
 
+            require (General::getLocFromClass(entityclass => $class));
+
             my $objs = [];
             my $class = $resources{$resource};
             my %query = params('query');
@@ -160,8 +169,6 @@ sub setupREST {
                     $params{hash}->{$attr} = \%filter;
                 }
             }
-
-            require (General::getLocFromClass(entityclass => $class));
 
             if (defined (params->{dataType}) and params->{dataType} eq "jqGrid") {
                 my $result = $class->search(%params);
