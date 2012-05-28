@@ -1,7 +1,7 @@
 // mainmenu_def is set in product specific menu.conf.js
 function add_menu(container, label, submenu_links, elem_id) {
     var id_suffix = elem_id ? elem_id : 'static';
-    var view_id = 'view_' + label + '_' + id_suffix;
+    var view_id = 'view_' + label.replace(' ', '_') + '_' + id_suffix;
     var link_id = 'link_' + view_id;
     
     // If this link already exists for this menu then we don't repeat it
@@ -11,10 +11,12 @@ function add_menu(container, label, submenu_links, elem_id) {
         return;
     };
     
-    var link = $('<li id="' + link_id + '" class="view_link alive_link"><a href="#' + view_id + '">' + label + '</a></li>');
-    container.append(link);
+    var link_li = $('<li id="' + link_id + '" class="view_link alive_link"></li>');
+    var link_a = $('<a style="whitespace: nowrap" href="#' + view_id + '">' + label + '</a>');
+    link_li.append(link_a);
+    container.append(link_li);
     build_submenu($('#view-container'), view_id, submenu_links, elem_id);
-    link.find('a').click( function() {onViewLinkSelect($(this), elem_id)} );
+    link_li.find('a').click( function() {onViewLinkSelect($(this), elem_id)} );
 }
 
 // Create and link all generic menu elements based on mainmenu_def from conf
