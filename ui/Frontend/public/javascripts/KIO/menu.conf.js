@@ -13,7 +13,7 @@ var mainmenu_def = {
     },
     'Services'   : {
         //onLoad : load_services,
-        json : {url        : '/api/extcluster',
+        json : {url        : '/api/externalcluster',
                 label_key   : 'externalcluster_name',
                 id_key      : 'entity_id',
                 submenu     : [
