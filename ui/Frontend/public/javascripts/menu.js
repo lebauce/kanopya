@@ -11,13 +11,13 @@ function add_menu(container, label, submenu_links, elem_id) {
         return;
     };
     
-    var link_li = $('<li id="' + link_id + '" class="view_link alive_link"></li>');
-    var link_a = $('<a style="whitespace: nowrap" href="#' + view_id + '">' + label + '</a>');
+    var link_li = $('<li id="' + link_id + '" class="view_link_cont alive_link"></li>');
+    var link_a = $('<a class="view_link" style="whitespace: nowrap" href="#' + view_id + '">' + label + '</a>');
     link_li.append(link_a);
     container.append(link_li);
     build_submenu($('#view-container'), view_id, submenu_links, elem_id);
     //link_li.find('a').click( function() {onViewLinkSelect($(this), elem_id)} );
-    link_li.find('a').click( {view_id: view_id, elem_id: elem_id}, onViewLinkSelect);
+    link_li.find('.view_link').click( {view_id: view_id, elem_id: elem_id}, onViewLinkSelect);
 }
 
 // Create and link all generic menu elements based on mainmenu_def from conf
@@ -157,8 +157,8 @@ function loadMenuFromJSON(event) {
         }
         
         // Remove old links and view
-        var dead_links = container.find('.view_link:not(.alive_link)').each(function () {
-            var view = $($(this).find('a').attr('href'));
+        var dead_links = container.find('.view_link_cont:not(.alive_link)').each(function () {
+            var view = $($(this).find('.view_link').attr('href'));
             view.remove();
             $(this).remove();
         });
