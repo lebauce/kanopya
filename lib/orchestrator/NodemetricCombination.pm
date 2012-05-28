@@ -17,6 +17,7 @@ use strict;
 use warnings;
 use base 'BaseDB';
 use Indicator;
+use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -62,8 +63,12 @@ sub new {
 sub toString {
     my $self = shift;
 
-    my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
-    
+    my $formula             = $self->getAttr(name => 'nodemetric_combination_formula');
+    my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
+    my $service_provider    = Entity::ServiceProvider->find (
+        hash => { service_provider_id => $service_provider_id
+        }
+    );
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
@@ -71,13 +76,11 @@ sub toString {
         if( $element =~ m/id\d+/)
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = Indicator->get('id'=>substr($element,2))->getAttr(name => 'indicator_name');
+            $element = $service_provider->getIndicatorNameFromId (indicator_id => substr($element,2));
         }
     }
     return "@array";
 }
-
-
 
 # C/P of homonym method of AggregateCombination
 sub getDependantIndicatorIds{
@@ -133,6 +136,7 @@ sub computeValueFromMonitoredValues {
 
             # Replace $element by its value
             $element          = $monitored_values_for_one_node->{$indicator_oid};
+
             if(not defined $element){
                 return undef;
             }

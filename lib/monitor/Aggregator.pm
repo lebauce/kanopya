@@ -64,37 +64,34 @@ sub _contructRetrieverOutput {
 
     #my @clustermetrics = Clustermetric->search(hash => {clustermetrics_clustermetrics_cluster_id => });
 
-    my $service_provider_id                 = $args{service_provider_id};
+    my $service_provider_id        = $args{service_provider_id};
     my $clustermetric_cluster_id   = 0;
     my $clustermetric_indicator_id = 0;
-    
-    my $cluster                = undef;
-    my $hosts                  = undef;
-    my $rep                    = undef;
-    my $host_id                = undef;
-    my $indicator              = undef; 
-    my $indicators_name        = undef;
-    my @indicators_array       = undef;
+    my $cluster                    = undef;
+    my $hosts                      = undef;
+    my $rep                        = undef;
+    my $host_id                    = undef;
+    my $indicator_oid              = undef; 
+    my $indicators_name            = undef;
+    my @indicators_array           = undef;
     my $clustermetric_time_span    = undef;
-    my $time_span              = undef;
+    my $time_span                  = undef;
 
 
-
-
-        my @clustermetrics = Clustermetric->search(
+        my @clustermetrics    = Clustermetric->search(
             hash => {
                 clustermetric_service_provider_id => $service_provider_id
             }
         );
+        my $service_provider  = Entity::ServiceProvider->get('id' => $service_provider_id);
 
         for my $clustermetric (@clustermetrics){
 
             $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
             $clustermetric_time_span    = $clustermetric->getAttr(name => 'clustermetric_window_time');
+            $indicator_oid              = $service_provider->getIndicatorOidFromId(indicator_id => $clustermetric_indicator_id);
 
-            $indicator = Indicator->get('id' => $clustermetric_indicator_id);
-
-            $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
+            $indicators_name->{$indicator_oid} = undef;
 
 
             if(! defined $time_span)
@@ -137,7 +134,11 @@ sub update() {
 
             #FILTER CLUSTERS WITH MONITORING PROVIDER
             eval{
-                $service_provider->getConnector(category => 'MonitoringService');
+                if ($^O eq 'MSWin32') {
+                    $service_provider->getConnector(category => 'MonitoringService');
+                } elsif ($^O eq 'linux') {
+                    $service_provider->getCollectorManager();
+                }
             };
             if($@){
                 print '*** Aggregator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***'."\n";
@@ -146,11 +147,12 @@ sub update() {
 
                 # Construct input of the SCOM retriever
                 my $host_indicator_for_retriever = $self->_contructRetrieverOutput(service_provider_id => $service_provider_id );
-                print Dumper $host_indicator_for_retriever;
+                #print Dumper $host_indicator_for_retriever;
 
                 # Call the retriever to get SCOM data
                 my $monitored_values = $service_provider->getNodesMetrics(indicators => $host_indicator_for_retriever->{indicators}, time_span => $host_indicator_for_retriever->{time_span});
-                print Dumper $monitored_values; 
+                #print 'monitored values:'. "\n";    
+                #print Dumper $monitored_values; 
 
                 # Verify answers received from SCOM to detect metrics anomalies
                 my $checker = $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
@@ -181,26 +183,15 @@ sub _checkNodesMetrics{
     my $received         = $args{received};
     
     my $num_of_nodes     = scalar (keys %$received);
-    
+   
     foreach my $indicator_name (@$asked_indicators) {
-        my $count = 0;
-            while( my ($node_name,$metrics) = each(%$received) ) {
-                if(defined $metrics->{$indicator_name}) {
-                $count++;
-            } else {
-                $log->debug("Metric $indicator_name undefined from node $node_name");
+        while( my ($node_name,$metrics) = each(%$received) ) {
+            if(! defined $metrics->{$indicator_name}) {
+                $log->debug("Indicator $indicator_name was not retrieved by collector for node $node_name");
             }
         }
-        if($count eq 0){
-            return 0;
-            $log->info("*** [WARNING] $indicator_name given by no node !");
-        } elsif(($count / $num_of_nodes) le 0.75) {
-            $log->info("*** [WARNING] $indicator_name given by less than 75% of nodes ($count / $num_of_nodes)!");
-            return 1;
-        } else {
-            return 1;
-        }
     }
+    return 1; 
 }
 
 =head2 _computeCombinationAndFeedTimeDB
@@ -221,38 +212,36 @@ sub _computeCombinationAndFeedTimeDB {
     my $values     = $args{values};
     my $cluster_id = $args{cluster_id};
 
+print "the values received by compute function!: \n";
+print Dumper $values;
     # Array of all clustermetrics
     my @clustermetrics = Clustermetric->search(            hash => {
                 clustermetric_service_provider_id => $cluster_id
             });
+    my $service_provider = Entity::ServiceProvider->get('id' => $cluster_id);
 
     my $clustermetric_indicator_id;
-    my $indicator;
-    my $indicators_name; 
+    my $indicator_oid;
 
     # Loop on all the clustermetrics
     for my $clustermetric (@clustermetrics){
-
-        #TODO : To be modified when using ServerSets
-
-        # Array that will store all the values needed to compute $clustermetric val
+        
+    # Array that will store all the values needed to compute $clustermetric val
         my @dataStored = (); 
 
         # Loop on all the host_name of the $clustermetric
 
         for my $host_name (keys %$values){
-            
             $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
-            $indicator = Indicator->get('id' => $clustermetric_indicator_id);
+            $indicator_oid = $service_provider->getIndicatorOidFromId(indicator_id => $clustermetric_indicator_id);
 
-            # Parse $values to store needed value in @dataStored 
-            my $the_value = $values->{$host_name}
-                                   ->{$indicator->getAttr(name=>'indicator_oid')};
-            if(defined $the_value){
-                push(@dataStored,$the_value);
-            }
-            else {
-                $log->debug("Missing Value of indicator ".($indicator->getAttr(name=>'indicator_oid'))." for host $host_name");
+            #if indicator value is undef, do not store it in the array
+            if (defined $values->{$host_name}->{$indicator_oid}) {
+                my $the_value = $values->{$host_name}
+                                       ->{$indicator_oid};
+                push @dataStored, $the_value;
+            } else {
+                $log->debug("Missing Value of indicator $indicator_oid for host $host_name");
             }
 
         }
@@ -321,72 +310,4 @@ sub run {
         content => "Kanopya Aggregator stopped"
         );
 }
-
-#=head2 run
-#    
-#    Class : Public
-#    
-#    Desc : Recreate all the DB for all the existing clustermetric
-#    
-#=cut
-#
-#sub create_clustermetrics_db{
-#    my $self = shift;
-#    my @clustermetrics = Clustermetric->search(hash => {});
-#    for my $clustermetric (@clustermetrics){
-#        my $clustermetric_id = $clustermetric->getAttr(name=>'clustermetric_id');        
-#        RRDTimeData::createTimeDataStore(name => $clustermetric_id);
-#    }
-#}
-
-
-#=head2 computeAggregates
-#    
-#    Class : Public
-#    
-#    Desc : [DEPRECTATED] Compute all the clustermetrics according to the retrieved values received from Retriever
-#    
-#=cut
-#
-# 
-#sub _computeAggregates{
-#    my $self = shift;
-#    my %args = @_;
-#
-#    print "THIS METHOD SEEMS DEPRECATED, please use _computeCombinationAndUpdateTimeDB";
-#    $log->info("THIS METHOD SEEMS DEPRECATED, please use _computeCombinationAndUpdateTimeDB"); 
-#    General::checkParams(args => \%args, required => ['indicators']);
-#    my $indicators = $args{indicators};
-#    my $rep = {};
-#    my $clustermetric_cluster_id   = 0;
-#    my $clustermetric_indicator_id = 0;
-#    my $cluster                = undef;
-#    my $hosts                  = undef;
-#    my $host_id                = undef;
-#    my $indicator_value        = undef;
-#    my @values                 = ();
-#
-#    # Array to loop on all the clustermetrics
-#    my @clustermetrics = Clustermetric->search(hash => {});
-#    for my $clustermetric (@clustermetrics){
-#        
-#        @values = ();
-#        
-#        
-#        $clustermetric_cluster_id   = $clustermetric->getAttr(name => 'clustermetric_service_provider_id');
-#        $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
-#        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $clustermetric_cluster_id);
-#        $hosts   = $cluster->getHosts();
-#        
-#        for my $host (values(%$hosts)){
-#            $host_id = $host->getAttr(name => 'host_id');
-#            $indicator_value = $indicators->{$host_id}->{$clustermetric_indicator_id};
-#            
-#            push(@values,$indicator_value);
-#        }
-#        $rep->{$clustermetric->getAttr(name => 'clustermetric_id')} = $clustermetric->compute(values => \@values);
-#    }
-#    return $rep;
-#};
-
 1;

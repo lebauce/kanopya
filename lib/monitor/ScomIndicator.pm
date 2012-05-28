@@ -18,10 +18,6 @@ use warnings;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
-    scom_indicator_id               =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
     scom_indicator_name             =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,

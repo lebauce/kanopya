@@ -29,5 +29,11 @@ use General;
 my $log = get_logger("administrator");
 
 sub retrieveData { }
+sub getIndicatorsIds { }
+sub getIndicatorOidFromId { }
+sub getIndicatorNameFromId { }
+sub getIndicatorUnitFromId { }
+sub getIndicatorInst { }
+sub getCollectorType { }
 
 1;

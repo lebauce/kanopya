@@ -192,7 +192,7 @@
 <table id="Xmonitor" class="detailspart list">
 <tr>
 <td colspan="2">
-<a class="imgMonitor" href="/architectures/clusters/<% cluster_id %>/monitoring">activity</a>
+<a class="imgMonitor" href="/architectures/extclusters/<% cluster_id %>/monitoring">activity</a>
 </td>
 <td class="actions">
 <a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring/settings">settings</a><bd/>

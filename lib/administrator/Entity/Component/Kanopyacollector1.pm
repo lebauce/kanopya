@@ -69,8 +69,8 @@ my $errmsg;
 
 #Collect every hour, stock data during 24 hours
 use constant ATTR_DEF => {
-    collect_frequency   => 3600,
-    storage_time        => 86400,
+    collect_frequency => 3600,
+    storage_time      => 86400,
 };
 sub getAttrDef { return ATTR_DEF; }
 
@@ -84,11 +84,54 @@ sub getAttrDef { return ATTR_DEF; }
 sub retrieveData {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['nodelist', 'timespan', 'indicators']);
+    General::checkParams(args => \%args, required => ['nodelist', 'time_span', 'indicators_ids']);
 
-	my $retriever = Monitor::Retriever->new();	
-	my %return = $retriever->getData(rrd_name => 'apache_stats_10.0.0.7', time_laps => 7200);
-    return \%return;
+    my $nodelist       = $args{'nodelist'};
+    my $indicators_ids = $args{'indicators_ids'};
+#    my @sets_to_fetch;
+   
+    #We gather the list of sets containing a requested indicator 
+#    foreach my $indicator_id (@$indicators_ids) {
+        #here we fetch the indicator set related to the indicator
+#        my $indicator = Indicator->get(id => $indicator_id);
+#        my $set       = $indicator->{_dbix}->indicatorset->get_column('indicatorset_name');
+        
+#        #then we check if it was already inserted into the array of sets to fetch
+#        my %sets      = map { $_ => 1 } @sets_to_fetch;
+#        if ( ! exists($sets{$set}) ) {
+#            push @sets_to_fetch, $set;
+#        }
+#    }
+
+    #We then build the rrd names to fetch
+#    my @rrd_to_fetch;
+    
+#    foreach my $set (@sets_to_fetch) {
+#        foreach my $node (@$nodelist) {
+#            push @rrd_to_fetch, $set.'_'.$node;
+#        }
+#    }
+   
+    #Now we fetch the requested RRD
+#	my $retriever = Monitor::Retriever->new();
+#    my %monitored_values;   
+# 
+  #  foreach my $rrd (@rrd_to_fetch) {
+  #      my %data = $retriever->getData(rrd_name => $rrd, time_laps => 3600);
+  #  	$monitored_values{$rrd} = \%data;
+  #  }
+
+    my $monitored_values = { '192.168.2.12' => {
+                                '.1.3.6.1.4.1.2021.4.5.0' => '111111',
+                                '.1.3.6.1.4.1.2021.4.6.0'   => '222222', 
+                                },
+                             '192.168.2.13' => {
+                                '.1.3.6.1.4.1.2021.4.5.0' => '111111',
+                                '.1.3.6.1.4.1.2021.4.6.0'   => '222222', 
+                                },
+                            };
+
+    return $monitored_values;
 }
 
 
@@ -102,8 +145,8 @@ sub retrieveData {
 sub getIndicatorsIds {
     my ($self, %args) = @_;
 
-    my $collector_id        = $self->getAttr ( name => 'kanopyacollector1_id' );
-    my @indicators          = Indicator->search ( hash => {} );
+    my $collector_id  = $self->getAttr ( name => 'kanopyacollector1_id' );
+    my @indicators    = Indicator->search ( hash => {} );
     my @indicators_ids;
     my $indicator_id;
 
@@ -127,13 +170,13 @@ sub getIndicatorOidFromId {
 
     General::checkParams(args => \%args, required => ['indicator_id']);
 
-    my $indicator_id        = $args{indicator_id};
-    my $indicator           = Indicator->find (
+    my $indicator_id  = $args{indicator_id};
+    my $indicator     = Indicator->find (
         hash => {
             indicator_id => $indicator_id
         }
     );
-    my $indicator_oid      = $indicator->getAttr (name => 'indicator_oid' );
+    my $indicator_oid = $indicator->getAttr (name => 'indicator_oid' );
 
     return $indicator_oid;
 }
@@ -150,13 +193,13 @@ sub getIndicatorNameFromId {
 
     General::checkParams(args => \%args, required => ['indicator_id']);
 
-    my $indicator_id        = $args{indicator_id};
-    my $indicator           = Indicator->find (
+    my $indicator_id   = $args{indicator_id};
+    my $indicator      = Indicator->find (
         hash => {
             indicator_id => $indicator_id
         }
     );
-    my $indicator_name      = $indicator->getAttr (name => 'indicator_name' );
+    my $indicator_name = $indicator->getAttr (name => 'indicator_name' );
 
     return $indicator_name;
 }
@@ -173,15 +216,33 @@ sub getIndicatorUnitFromId {
 
     General::checkParams(args => \%args, required => ['indicator_id']);
 
-    my $indicator_id        = $args{indicator_id};
-    my $indicator           = Indicator->find (
+    my $indicator_id   = $args{indicator_id};
+    my $indicator      = Indicator->find (
         hash => {
             indicator_id => $indicator_id
         }
     );
-    my $indicator_unit      = $indicator->getAttr (name => 'indicator_unit' );
+    my $indicator_unit = $indicator->getAttr (name => 'indicator_unit' );
 
     return $indicator_unit;
+}
+
+=head2 getIndicatorInst
+
+    Desc: instanciate an indicator with it's id
+    return $indicator_inst;
+
+=cut
+
+sub getIndicatorInst {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicator_id']);
+
+    my $indicator_id   = $args{indicator_id};
+    my $indicator = Indicator->get('id' => $indicator_id);
+
+    return $indicator;
 }
 
 =head2 getCollectorType
@@ -194,5 +255,4 @@ sub getIndicatorUnitFromId {
 sub getCollectorType {
     return 'Native Kanopya collector tool';
 }
-
 1;
