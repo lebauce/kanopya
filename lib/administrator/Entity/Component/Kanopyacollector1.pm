@@ -68,10 +68,20 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 #Collect every hour, stock data during 24 hours
+
 use constant ATTR_DEF => {
-    collect_frequency => 3600,
-    storage_time      => 86400,
+    kanopyacollector1_collect_frequency => {
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    kanopyacollector1_storage_time => {
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
 };
+
 sub getAttrDef { return ATTR_DEF; }
 
 =head2 retrieveData
