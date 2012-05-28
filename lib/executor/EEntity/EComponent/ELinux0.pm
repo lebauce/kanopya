@@ -11,15 +11,15 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package EEntity::EComponent::EMounttable1;
+package EEntity::EComponent::ELinux0;
 use base 'EEntity::EComponent';
 
 use strict;
 use warnings;
-use Log::Log4perl "get_logger";
+use Log::Log4perl 'get_logger';
 use Data::Dumper;
 
-my $log = get_logger("executor");
+my $log = get_logger('executor');
 my $errmsg;
 
 # generate configuration files on node
@@ -35,14 +35,14 @@ sub addNode {
     #$log->debug(Dumper($args{mount_point}));
 
     foreach my $row (@{$data->{mountdefs}}) {
-        delete $row->{mounttable1_id};
+        delete $row->{linux0_id};
     }
 
     my $file = $self->generateNodeFile(
         cluster       => $cluster,
         host          => $args{host},
         file          => '/etc/fstab',
-        template_dir  => '/templates/components/mounttable',
+        template_dir  => '/templates/components/linux',
         template_file => 'fstab.tt',
         data          => $data 
     );
@@ -54,10 +54,10 @@ sub addNode {
 
     my $automountnfs = 0;
     for my $mountdef (@{$data->{mountdefs}}) {
-        my $mountpoint = $mountdef->{mounttable1_mount_point};
+        my $mountpoint = $mountdef->{linux0_mount_point};
         $self->getExecutorEContext->execute(command => "mkdir -p $args{mount_point}/$mountpoint");
         
-        if ($mountdef->{mounttable1_mount_filesystem} eq 'nfs') {
+        if ($mountdef->{linux0_mount_filesystem} eq 'nfs') {
             $automountnfs = 1;
         }
     }

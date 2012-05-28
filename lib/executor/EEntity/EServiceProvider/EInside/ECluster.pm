@@ -74,7 +74,7 @@ sub create {
     $self->save();
 
     # automatically add System|Monitoragent|Logger components
-    foreach my $compclass (qw/Entity::Component::Mounttable1
+    foreach my $compclass (qw/Entity::Component::Linux0
                               Entity::Component::Syslogng3
                               Entity::Component::Snmpd5/) {
         my $location = General::getLocFromClass(entityclass => $compclass);
