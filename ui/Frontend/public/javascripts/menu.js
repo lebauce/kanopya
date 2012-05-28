@@ -16,7 +16,8 @@ function add_menu(container, label, submenu_links, elem_id) {
     link_li.append(link_a);
     container.append(link_li);
     build_submenu($('#view-container'), view_id, submenu_links, elem_id);
-    link_li.find('a').click( function() {onViewLinkSelect($(this), elem_id)} );
+    //link_li.find('a').click( function() {onViewLinkSelect($(this), elem_id)} );
+    link_li.find('a').click( {view_id: view_id, elem_id: elem_id}, onViewLinkSelect);
 }
 
 // Create and link all generic menu elements based on mainmenu_def from conf
@@ -44,6 +45,13 @@ function build_mainmenu() {
                 var submenu_links = menu_def[sublabel];
                 add_menu(content, sublabel, submenu_links);
             }
+        }
+        
+        // Specific view when select menu head
+        if (menu_def['masterView']) {
+            var view_id = 'view_' + label.replace(' ', '_');
+            build_submenu($('#view-container'), view_id, menu_def['masterView']);
+            menu_head.click( {view_id: view_id}, onViewLinkSelect);
         }
     }
     
@@ -108,13 +116,17 @@ function build_detailmenu(container, view_id, links, elem_id) {
     }
 }
 
-function onViewLinkSelect(view_link, elem_id) {
+function onViewLinkSelect(event) {
+    var view_id = event.data.view_id;
+    var elem_id = event.data.elem_id;
+    
     // Hide all view div
     $('#view-container .view').hide();
     
     // Show div corresponding to this link 
     //$($(this).attr('href')).show(0, function(){alert('end show')});
-    var view = $(view_link.attr('href'));
+    //var view = $(view_link.attr('href'));
+    var view = $('#'+view_id);
     view.show();
     
     //var selected_tab_idx = view.tabs('option', 'selected');
