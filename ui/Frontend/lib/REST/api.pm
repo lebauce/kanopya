@@ -40,6 +40,7 @@ sub setupREST {
             create => sub {
                 require (General::getLocFromClass(entityclass => $class));
 
+                my $obj = { };
                 my $hash = { };
                 my $params = params;
                 for my $attr (keys %$params) {
@@ -57,7 +58,7 @@ sub setupREST {
                 };
                 if ($@) {
                     eval {
-                         $class->new(params);
+                        $obj = $class->new(params)->toJSON();
                     };
                     if ($@) {
                         my $exception = $@;
@@ -69,6 +70,8 @@ sub setupREST {
                         }
                     }
                 }
+
+                return to_json($obj);
             },
 
             delete => sub {
