@@ -11,4 +11,33 @@ var mainmenu_def = {
         'Right Management' : [],
         'Monitoring'       : [],
     },
+    'Services'   : {
+        //onLoad : load_services,
+        json : {url        : '/api/extcluster',
+                label_key   : 'externalcluster_name',
+                id_key      : 'entity_id',
+                submenu     : [
+                               {label : 'Overview', id : 'service_overview', onLoad : displayJSON},
+                               {label : 'Hosts', id : 'service_hosts'}
+                               ]
+                }
+    },
+    'Hosts'   : {
+        json : {url        : '/api/host',
+                label_key   : 'host_hostname',
+                id_key      : 'entity_id',
+                submenu     : [
+                               {label : 'Overview', id : 'service_overview', onLoad : displayJSON},
+                               {label : 'Hosts', id : 'service_hosts'}
+                               ]
+                }
+    }
 };
+
+
+// Placeholder handler wich display elem json from rest api
+function displayJSON (container_id, elem_id) {
+    $.getJSON('api/entity/'+elem_id, function (data) {
+        $('#'+container_id).append('<div>' + JSON.stringify(data) + '</div>');
+    });
+}

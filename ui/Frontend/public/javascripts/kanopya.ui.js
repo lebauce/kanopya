@@ -54,6 +54,8 @@ $(document).ready(function () {
         },
     });
     
+    //jQuery('#grid-message').jqGrid('searchGrid', {multipleSearch:true} );
+    
     // Remove rollup icon
 	$("#grid-message.ui-jqgrid-titlebar-close").remove();
     

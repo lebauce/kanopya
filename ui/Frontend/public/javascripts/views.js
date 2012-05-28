@@ -123,7 +123,7 @@ function create_grid(content_container_id, grid_id, colNames, colModel) {
     
     $('#' + grid_id).jqGrid('navGrid','#' + pager_id,{edit:false,add:false,del:false}); 
     
-    $('#content_hosts').jqGrid('setGridWidth', $('#' + grid_id).parent().width()-20);
+    $('#' + grid_id).jqGrid('setGridWidth', $('#' + grid_id).parent().width()-20);
     
 }
 function reload_grid (grid_id,  data_route) {
