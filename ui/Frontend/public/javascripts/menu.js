@@ -182,4 +182,10 @@ function loadMenuFromJSON(event) {
 
 $(document).ready(function () {
     build_mainmenu();
+    
+    $('#product-name').click( function () {
+            $('#view-container .view').hide();
+            $('#view-dashboard').show();
+        }
+    );
 });

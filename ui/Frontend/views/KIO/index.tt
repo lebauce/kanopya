@@ -1,6 +1,9 @@
 <script src="/javascripts/KIO/menu.conf.js"></script>
 
 <div id='view-container' class="ui-layout-center">
+    <div id='view-dashboard' class='view'>
+    DASHBOARD
+    </div>
 </div>
 <div id='mainmenu-container' class="ui-layout-west">
 </div>
