@@ -128,41 +128,12 @@ function onViewLinkSelect(view_link, elem_id) {
     
 }
 
-function remove_link (container) {
- // Remove dead links and associated view
-    console.log($(container));
-    console.log('######################');
-    console.log($($(container).context).children());
-    //$(container).find('.view_link').each(function (index,elem) {
-    $(container).context.children.each(function (index,elem) {
-        console.log('VIEW LINK');
-        console.log(elem);
-        if ($(elem).hasClass('alive_link')) {
-            console.log('remove class')
-            
-            $(elem.context).removeClass('alive_link');
-            console.log(elem);
-        } else {
-            var view = $($(this).find('a').attr('href'));
-            view.remove();
-        }
-        //$(this).empty();
-        //$(this).remove();
-        console.log(this);
-    });
-    return;
-    container.find('.view_link').each(function () {
-        console.log('VIEW LINK ====');
-        console.log(this);
-    });
-    //container.find('.view_link').remove();
-}
-
 function loadMenuFromJSON(event) {
     var menu_info = event.data;
     var container = $(this).next();
     
     $.getJSON(menu_info.url, function (data) {
+        // Add menu entry and associated view
         for (var elem in data) {
             add_menu(   container,
                         data[elem][menu_info.label_key],
@@ -170,19 +141,22 @@ function loadMenuFromJSON(event) {
                         data[elem][menu_info.id_key]
             );
         }
+        
+        // Remove old links and view
+        var dead_links = container.find('.view_link:not(.alive_link)').each(function () {
+            var view = $($(this).find('a').attr('href'));
+            view.remove();
+            $(this).remove();
+        });
+        container.find('.alive_link').removeClass('alive_link');
     });
-    console.log('AFTER CREATE');
-    console.log(container);
-    console.log($('.view_link'));
-    
-    //container.empty();
-    
-    //remove_link(container[0]);
+
 }
 
 $(document).ready(function () {
     build_mainmenu();
     
+    // Display dashboard when click on product name
     $('#product-name').click( function () {
             $('#view-container .view').hide();
             $('#view-dashboard').show();
