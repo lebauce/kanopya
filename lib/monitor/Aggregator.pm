@@ -102,7 +102,7 @@ sub _contructRetrieverOutput {
                 if($time_span != $clustermetric_time_span)
                 {
                     $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
-                    print("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION ($time_span != $clustermetric_time_span)\n");
+                    #print("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION ($time_span != $clustermetric_time_span)\n");
                 }
             }
             $time_span = ($clustermetric_time_span > $time_span)?$clustermetric_time_span:$time_span;
@@ -141,9 +141,9 @@ sub update() {
                 }
             };
             if($@){
-                print '*** Aggregator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***'."\n";
+                #print '*** Aggregator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***'."\n";
             }else{
-                print '*** Aggregator collecting for service provider '.$service_provider_id.' ***'."\n";
+                #print '*** Aggregator collecting for service provider '.$service_provider_id.' ***'."\n";
 
                 # Construct input of the SCOM retriever
                 my $host_indicator_for_retriever = $self->_contructRetrieverOutput(service_provider_id => $service_provider_id );
@@ -164,7 +164,7 @@ sub update() {
             } #END EVAL
         1;
         } or do{
-            print "Skip to next service provider due to error $@\n";
+            #print "Skip to next service provider due to error $@\n";
             $log->error($@);
             next CLUSTER;
         }
@@ -212,8 +212,8 @@ sub _computeCombinationAndFeedTimeDB {
     my $values     = $args{values};
     my $cluster_id = $args{cluster_id};
 
-print "the values received by compute function!: \n";
-print Dumper $values;
+    #print "the values received by compute function!: \n";
+    #print Dumper $values;
     # Array of all clustermetrics
     my @clustermetrics = Clustermetric->search(            hash => {
                 clustermetric_service_provider_id => $cluster_id
