@@ -13,6 +13,10 @@ var mainmenu_def = {
     },
     'Services'   : {
         //onLoad : load_services,
+        masterView : [
+                      {label : 'Overview', id : 'services_overview'},
+                      {label : 'Services', id : 'services_list', onLoad : servicesList}
+                      ],
         json : {url        : '/api/externalcluster',
                 label_key   : 'externalcluster_name',
                 id_key      : 'pk',
@@ -34,10 +38,27 @@ var mainmenu_def = {
     }
 };
 
+var details_def = {
+        'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'}
+};
 
 // Placeholder handler wich display elem json from rest api
 function displayJSON (container_id, elem_id) {
     $.getJSON('api/entity/'+elem_id, function (data) {
         $('#'+container_id).append('<div>' + JSON.stringify(data) + '</div>');
     });
+}
+
+// To move on specific service file
+function servicesList (container_id, elem_id) {
+    var container = $('#' + container_id);
+    
+    create_grid(container_id, 'services_list',
+                ['ID','Name', 'State'],
+                [ 
+                 {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+                 {name:'externalcluster_name',index:'service_name', width:200},
+                 {name:'externalcluster_state',index:'service_state', width:90,},
+                 ]);
+    reload_grid('services_list', '/api/externalcluster');
 }
