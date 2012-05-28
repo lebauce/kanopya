@@ -15,7 +15,7 @@ var mainmenu_def = {
         //onLoad : load_services,
         json : {url        : '/api/externalcluster',
                 label_key   : 'externalcluster_name',
-                id_key      : 'entity_id',
+                id_key      : 'pk',
                 submenu     : [
                                {label : 'Overview', id : 'service_overview', onLoad : displayJSON},
                                {label : 'Hosts', id : 'service_hosts'}
@@ -25,7 +25,7 @@ var mainmenu_def = {
     'Hosts'   : {
         json : {url        : '/api/host',
                 label_key   : 'host_hostname',
-                id_key      : 'entity_id',
+                id_key      : 'pk',
                 submenu     : [
                                {label : 'Overview', id : 'service_overview', onLoad : displayJSON},
                                {label : 'Hosts', id : 'service_hosts'}
