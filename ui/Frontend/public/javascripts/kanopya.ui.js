@@ -15,7 +15,7 @@ $(document).ready(function () {
                        spacing_open : 14,
                        initClosed : true,},
                    north : { closable : false },
-                   west : { closable : false },
+                   west : { closable : false, resizable : true},
                    
                }
     );
