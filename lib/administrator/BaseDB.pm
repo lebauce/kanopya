@@ -568,8 +568,14 @@ sub toJSON {
             $parent = $adm->{db}->source($hierarchy[$n]);
             my @relnames = $parent->relationships();
             for my $relname (@relnames) {
-                $hash->{relations}->{$relname} = $parent->relationship_info($relname);
-                delete $hash->{attributes}->{$relname . "_id"};
+                my $relinfo = $parent->relationship_info($relname);
+                if ((scalar (grep { $_ eq (split('::', $relinfo->{source}))[-1] } @hierarchy) == 0) and
+                    ($relinfo->{attrs}->{is_foreign_key_constraint}) or
+                    ($relinfo->{attrs}->{accessor} eq "multi")) {
+                    $hash->{relations}->{$relname} = $relinfo;
+                    $hash->{relations}->{$relname}->{from} = $hierarchy[$n];
+                    delete $hash->{attributes}->{$relname . "_id"};
+                }
             }
         }
     }
