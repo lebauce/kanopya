@@ -96,6 +96,7 @@ sub setupREST {
         resource "api/$resource" =>
             get    => sub {
                 content_type 'application/json';
+
                 return to_json( Entity->get(id => params->{id})->toJSON );
             },
 
@@ -138,11 +139,15 @@ sub setupREST {
             },
 
             delete => sub {
+                content_type 'application/json';
+
                 Entity->get(id => params->{id})->delete();
                 return to_json( { response => "ok" } );
             },
 
             update => sub {
+                content_type 'application/json';
+
                 my $obj = Entity->get(id => params->{id});
                 my $params = params;
                 for my $attr (keys %$params) {
