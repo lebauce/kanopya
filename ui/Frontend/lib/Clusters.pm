@@ -143,7 +143,7 @@ sub _managers {
 
 # retrieve collector managers
 sub _collector_managers {
-    my @collectors_full = _managers(category => 'DataCollector');
+    my @collectors_full = _managers(category => 'Collectormanager');
     my @collectors;
     my %temp;
     foreach my $c (@collectors_full) {
