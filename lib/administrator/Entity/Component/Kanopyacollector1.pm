@@ -234,7 +234,7 @@ sub getIndicatorUnitFromId {
 
 =cut
 
-sub getIndicatorInst () {
+sub getIndicatorInst {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['indicator_id']);
