@@ -26,7 +26,11 @@ my %resources = ( "host"            => "Entity::Host",
                   "serviceprovider" => "Entity::ServiceProvider",
                   "vlan"            => "Entity::Network::Vlan",
                   "connector"       => "Entity::Connector",
-                  "ucsmanager"      => "Entity::Connector::UcsManager", );
+                  "ucsmanager"      => "Entity::Connector::UcsManager",
+                  "kernel"              => "Entity::Kernel",
+                  "active_directory"    => "Entity::Connector::ActiveDirectory",
+                  "service_provider"    => "Entity::ServiceProvider",
+                  "component"           => "Entity::Component");
 
 sub setupREST {
 

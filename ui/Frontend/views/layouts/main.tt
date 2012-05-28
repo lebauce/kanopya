@@ -25,6 +25,12 @@
 <script src='/javascripts/jquery/jquery.jqGrid.min.js'></script>
 <!--<script src='/javascript/jquery/jquery.simpletooltip-min.js'></script>-->
 
+<script src='/javascripts/jquery/jquery.form.js'></script>
+<script src='/javascripts/jquery/jquery.validate.js'></script>
+<script src='/javascripts/jquery/jquery.form.wizard.js'></script>
+
+<script src="/javascripts/modalform.js"></script>
+
 <script type='text/javascript' src='/javascripts/i18n/grid.locale-en.js'></script>
 
 <script src="/javascripts/kanopya.ui.js"></script>
