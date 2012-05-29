@@ -12,7 +12,7 @@ function add_menu(container, label, submenu_links, elem_id) {
     };
     
     var link_li = $('<li id="' + link_id + '" class="view_link_cont alive_link"></li>');
-    var link_a = $('<a class="view_link" style="whitespace: nowrap" href="#' + view_id + '">' + label + '</a>');
+    var link_a = $('<a class="view_link" style="white-space: nowrap" href="#' + view_id + '">' + label + '</a>');
     link_li.append(link_a);
     container.append(link_li);
     build_submenu($('#view-container'), view_id, submenu_links, elem_id);
