@@ -22,8 +22,6 @@ var ModalForm = (function() {
         this.table      = $("<table>").css('width', '100%').appendTo($(this.form));
         this.stepTables = [];
         
-        $(document).append(this.content);
-      
         // Retrieve data structure from REST
         $.ajax({
             type        : 'GET',
@@ -61,6 +59,7 @@ var ModalForm = (function() {
     }
     
     ModalForm.prototype.start = function() {
+        $(document).append(this.content);
         // Open the modal and start the form wizard
         this.openDialog();
         this.startWizard();
