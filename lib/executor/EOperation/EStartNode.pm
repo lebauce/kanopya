@@ -128,24 +128,6 @@ sub execute {
     $self->{context}->{container_access}->mount(mountpoint => $mountpoint,
                                                 econtext   => $self->getEContext);
 
-    # generate resolv.conf
-    $self->{context}->{cluster}->generateResolvConf(
-        mount_point => $mountpoint,
-        host        => $self->{context}->{host}
-    );
-
-    # generate node hostname
-    $self->{context}->{host}->generateHostname(
-        mount_point => $mountpoint,
-        cluster     => $self->{context}->{cluster}
-    );
-
-    # generate node udev persistent net rules
-    $self->{context}->{host}->generateUdevPersistentNetRules(
-        mount_point => $mountpoint,
-        cluster     => $self->{context}->{cluster}
-    );
-
     $log->info("Generate Network Conf");
     $self->_generateNetConf(mount_point => $mountpoint);
 
@@ -173,13 +155,6 @@ sub execute {
                              cluster     => $self->{context}->{cluster},
                              erollback   => $self->{erollback});
     }
-
-    # generate Hosts conf
-    $self->{context}->{cluster}->generateHostsConf(
-        mount_point        => $mountpoint,
-        kanopya_domainname => $self->{params}->{kanopya_domainname},
-        host               => $self->{context}->{host}
-    );
 
     # check if this cluster must be managed by puppet and kanopya puppetmaster
     my $puppetagent = eval { 

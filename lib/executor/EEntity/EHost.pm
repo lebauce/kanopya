@@ -128,58 +128,6 @@ sub checkUp {
     return $pingable ? $pingable : 0;
 }
 
-sub generateUdevPersistentNetRules {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster','mount_point' ]);
-
-    my @interfaces = ();
-    
-    for my $iface ($self->_getEntity()->getIfaces()) {
-        my $tmp = {
-            mac_address   => lc($iface->getAttr(name => 'iface_mac_addr')),
-            net_interface => $iface->getAttr(name => 'iface_name')
-        };
-        push @interfaces, $tmp;
-    }
-       
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $self,
-        file          => '/etc/udev/rules.d/70-persistent-net.rules',
-        template_dir  => '/templates/internal',
-        template_file => 'udev_70-persistent-net.rules.tt',
-        data          => { interfaces => \@interfaces }
-    );
-    
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/udev/rules.d'
-    );
-    
-}
-
-sub generateHostname {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'mount_point', 'cluster' ]);
-
-    my $hostname = $self->getAttr(name => 'host_hostname');
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $self,
-        file          => '/etc/hostname',
-        template_dir  => '/templates/internal',
-        template_file => 'hostname.tt',
-        data          => { hostname => $hostname }
-    );
-    
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc'
-    );
-}
-
 sub getEContext {
     my $self = shift;
 
