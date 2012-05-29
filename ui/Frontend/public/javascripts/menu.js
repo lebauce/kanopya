@@ -55,7 +55,7 @@ function build_mainmenu() {
         }
     }
     
-    container.accordion();
+    container.accordion( {clearStyle: true} );
 }
 
 function build_submenu(container, view_id, links, elem_id) {
