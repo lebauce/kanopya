@@ -23,6 +23,7 @@ my %resources = (
     "entity"                   => "Entity",
     "entitycomment"            => "EntityComment",
     "externalcluster"          => "Entity::ServiceProvider::Outside::Externalcluster",
+    "externalnode"             => "Externalnode",
     "filecontaineraccess"      => "Entity::ContainerAccess::FileContainerAccess",
     "fileimagemanager0"        => "Entity::Component::Fileimagemanager0",
     "gp"                       => "Entity::Gp",
