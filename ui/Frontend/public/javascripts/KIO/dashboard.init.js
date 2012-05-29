@@ -1,23 +1,4 @@
-<html>
-<head>
-<meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
-<title>Sandbox</title>
-<link rel="stylesheet" href="<% request.uri_base %>/css/theme/jquery-ui-1.8.19.custom.css" />
-<link rel="stylesheet" href="<% request.uri_base %>/css/ui.jqgrid.css" />
-<link rel="stylesheet" href="<% request.uri_base %>/css/default/dashboardui.css" />
-<link rel="stylesheet" href="<% request.uri_base %>/css/default/jquery-ui-1.8.2.custom.css" />
-<script src="/javascripts/jquery/jquery-1.7.2.min.js"></script>
-<script src="/javascripts/jquery/jquery-ui-1.8.19.custom.js"></script>
-<script src='/javascripts/jquery/jquery.jqGrid.min.js'></script>
-<script type='text/javascript' src='/javascripts/i18n/grid.locale-en.js'></script>
-<script type="text/javascript" src="/javascripts/js/lib/jquery-ui-1.8.16.custom.min.js"></script>
-<script type="text/javascript" src="/javascripts/js/lib/jquery.dashboard.patch.js"></script>
-<script type="text/javascript" src="/javascripts/js/lib/themeroller.js"></script>
-<script type="text/javascript" src="/javascripts/js/lib/highcharts.js"></script>
-<script type="text/javascript" src="/javascripts/js/lib/exporting.js"></script>
-
- <script type="text/javascript">
-			var chart;
+var chart;
 
     	// Function for loading a highchart pie
 			function loadPie(title, data, obj) {
@@ -64,9 +45,8 @@
 
       // This is the code for definining the dashboard
       $(document).ready(function() {
-
         // load the templates
-        $('body').append('<div id="templates"></div>');
+        $('#view-dashboard').append('<div id="templates"></div>');
         $("#templates").hide();
         $("#templates").load("templates.html", initDashboard);
 
@@ -172,29 +152,4 @@
         }
       });
 
-    </script>
-    <link rel="stylesheet" type="text/css" href="../themes/default/dashboardui.css" />
-    <link rel="stylesheet" type="text/css" href="../themes/default/jquery-ui-1.8.2.custom.css" />
-</head>
-<body>
- <div class="header_tile_image">
-    <div class="headerbox">
-      <div id="switcher"></div>
-    </div>
-    <div class="headerlinks">
-      <a class="openaddwidgetdialog headerlink" href="#"><font color="black">Add Widget</font></a>&nbsp;<span class="headerlink">|</span>&nbsp;
-      <a class="editlayout headerlink" href="#"><font color="black">Edit layout</font></a>
-    </div>
-  </div>
 
-
-  <div id="dashboard" class="dashboard">
-    <!-- this HTML covers all layouts. The 5 different layouts are handled by setting another layout classname -->
-    <div class="layout">
-      <div class="column first column-first"></div>
-      <div class="column second column-second"></div>
-      <div class="column third column-third"></div>
-    </div>
-  </div>
-</body>
-</html>
