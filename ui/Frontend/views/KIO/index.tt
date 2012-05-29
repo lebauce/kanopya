@@ -1,4 +1,7 @@
+<script src="/javascripts/KIO/services.js"></script>
 <script src="/javascripts/KIO/menu.conf.js"></script>
+<script src='/javascripts/jquery/jquery.gritter.min.js'></script>
+<script src='/javascripts/gritter.js'></script>
 
 <div id='view-container' class="ui-layout-center">
     <div id='view-dashboard' class='view'>

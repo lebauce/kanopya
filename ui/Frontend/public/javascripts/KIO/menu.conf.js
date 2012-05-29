@@ -17,12 +17,13 @@ var mainmenu_def = {
                       {label : 'Overview', id : 'services_overview'},
                       {label : 'Services', id : 'services_list', onLoad : servicesList}
                       ],
-        json : {url        : '/api/externalcluster',
+        json : {url         : '/api/externalcluster',
                 label_key   : 'externalcluster_name',
                 id_key      : 'pk',
                 submenu     : [
-                               {label : 'Overview', id : 'service_overview', onLoad : displayJSON},
-                               {label : 'Hosts', id : 'service_hosts'}
+                               {label : 'Overview', id : 'service_overview', onLoad : loadServicesOverview},
+                               {label : 'Configuration', id : 'service_configuration', onLoad : loadServicesConfig},
+                               {label : 'Ressources', id : 'service_ressources', onLoad : loadServicesRessources}
                                ]
                 }
     },

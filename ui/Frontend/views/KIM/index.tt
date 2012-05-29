@@ -1,11 +1,9 @@
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
 <script src="/javascripts/KIM/iaas.js"></script>
 <script src="/javascripts/KIM/menu.conf.js"></script>
+<script src='/javascripts/gritter.js'></script>
 
 <div id='view-container' class="ui-layout-center">
-
-<a href="#" id="add-without-image">Add notification without image</a>
-			
 </div>
 <div id='mainmenu-container' class="ui-layout-west">
 </div>
@@ -27,57 +25,3 @@
     <div id="msgGridPager"></div>
 </div>
 </div>
-
-
-<script type="text/javascript">
-
-
-$('#add-without-image').click(function(){
-
-			$.gritter.add({
-				// (string | mandatory) the heading of the notification
-				title: 'This is a notice without an image!',
-				// (string | mandatory) the text inside the notification
-				text: 'This will fade out after a certain amount of time. Vivamus eget tincidunt velit. Cum sociis natoque penatibus et <a href="#" style="color:#ccc">magnis dis parturient</a> montes, nascetur ridiculus mus.'
-			});
-
-			return false;
-		});
-		
-		
-window.setInterval(function(){
-
-var jsondata = '';
-
-// Get Messages
-$.ajax({
-  url: '/messager/messages',
-  success: function(data) {
-  var lastMsg = $(data.rows).last();
-  var lastMsgId = lastMsg.id;
-  //console.log(lastMsgId);
-    $(data.rows).each(function(row) {
-    	// Get the ID of last emmited message :
-    	if ( data.rows[row].id == lastMsgId ) {
-    		var content = data.rows[row].content;
-    		console.log($(this));
-    		// Display the notification :
-    			$.gritter.add({
-					title: 'Message',
-					text: content,
-				});
-		}
-    });
-    
-  }
-});
-
-// Display the notification
-	//$.gritter.add({
-	//			title: 'Message',
-	//			text: jsondata,
-	//});
-	
-}, 5000);
-		
-</script>

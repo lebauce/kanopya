@@ -24,7 +24,9 @@ my %resources = ( "host"            => "Entity::Host",
                   "inside"          => "Entity::ServiceProvider::Inside",
                   "externalcluster" => "Entity::ServiceProvider::Outside::Externalcluster",
                   "serviceprovider" => "Entity::ServiceProvider",
-                  "vlan"            => "Entity::Network::Vlan" );
+                  "vlan"            => "Entity::Network::Vlan",
+                  "connector"       => "Entity::Connector",
+                  "ucsmanager"      => "Entity::Connector::UcsManager", );
 
 sub setupREST {
 
