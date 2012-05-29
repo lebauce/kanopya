@@ -8,11 +8,18 @@ $(document).ready(function () {
                    },
                    north : { closable : false },
                    west : { closable : false, resizable : true},
+                   south : {
+                       togglerContent_closed : 'Messages',
+                       togglerLength_closed : 100,
+                       spacing_closed : 14,
+                       togglerContent_open : 'Messages',
+                       togglerLength_open : 100,
+                       spacing_open : 14,
+                       initClosed : true,},
                }
     );
     
-
-    // Needed to fix bad panels resizing when opening Messages pane (south) for the first time
-    // Layout will take in account the message grid size fill with data 
-    //main_layout.resizeAll();
+    // call for the themeswitcher
+    $('#switcher').themeswitcher();
+    
 });

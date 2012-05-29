@@ -1,52 +1,40 @@
-
-<link rel="stylesheet" href="<% request.uri_base %>/css/theme/jquery-ui-1.8.19.custom.css" />
-<link rel="stylesheet" href="<% request.uri_base %>/css/ui.jqgrid.css" />
-<link rel="stylesheet" href="<% request.uri_base %>/css/theme/default/dashboardui.css" />
-<link rel="stylesheet" href="<% request.uri_base %>/css/theme/default/jquery-ui-1.8.2.custom.css" />
-<script src="/javascripts/jquery/jquery-ui-1.8.19.custom.js"></script>
-<script src='/javascripts/jquery/jquery.jqGrid.min.js'></script>
-<script src='/javascripts/i18n/grid.locale-en.js'></script>
-<script src="/javascripts/jquery/lib/jquery-ui-1.8.16.custom.min.js"></script>
 <script src="/javascripts/jquery/lib/jquery.dashboard.patch.js"></script>
 <script src="/javascripts/jquery/lib/highcharts.js"></script>
 <script src="/javascripts/jquery/lib/exporting.js"></script>
 <script src="/javascripts/jquery/lib/themeroller.js"></script>
+
 <script src="/javascripts/KIO/services.js"></script>
 <script src="/javascripts/KIO/menu.conf.js"></script>
 <script src="/javascripts/KIO/dashboard.init.js"></script>
 <script src='/javascripts/messages.js'></script>
-<script src='/javascripts/jquery/jquery.gritter.min.js'></script>
-<script src='/javascripts/gritter.js'></script>
+
 
 <div id='view-container' class="ui-layout-center">
     <div id='view-dashboard' class='view'>
-    DASHBOARD
-    <div class="header_tile_image">
-		<div class="headerbox">
-			<div id="switcher"></div>
-		</div>
-		<div class="headerlinks">
-			<a class="openaddwidgetdialog headerlink" href="#"><font color="black">Add Widget</font></a>&nbsp;<span class="headerlink">|</span>&nbsp;
-			<a class="editlayout headerlink" href="#"><font color="black">Edit layout</font></a>
-		</div>
-	</div>
-    <div id="dashboard" class="dashboard">
-		<!-- this HTML covers all layouts. The 5 different layouts are handled by setting another layout classname -->
-		<div class="layout">
-			<div class="column first column-first"></div>
-			<div class="column second column-second"></div>
-			<div class="column third column-third"></div>
-		</div>
-	</div>
-    
-    
+        <div>
+    		<div class="headerlinks">
+    			<a class="openaddwidgetdialog headerlink" href="#"><font color="black">Add Widget</font></a>&nbsp;&nbsp;
+    			<a class="editlayout headerlink" href="#"><font color="black">Edit layout</font></a>
+    		</div>
+    	</div>
+        <div id="dashboard" class="dashboard">
+    		<!-- this HTML covers all layouts. The 5 different layouts are handled by setting another layout classname -->
+    		<div class="layout">
+    			<div class="column first column-first"></div>
+    			<div class="column second column-second"></div>
+    			<div class="column third column-third"></div>
+    		</div>
+    	</div>
+        
+        
+        </div>
     </div>
-    </div>
- <div id='mainmenu-container' class="ui-layout-west">
+<div id='mainmenu-container' class="ui-layout-west">
 </div>
 <div class="ui-layout-north">
     <div id='header'>
         <span id='product-name'>Kanopya Infrastructure Optimizer</span>
+        <div id="switcher"></div>
         <div id="infologin">
             logged as <span id="username"><% username %></span>
         </div>
