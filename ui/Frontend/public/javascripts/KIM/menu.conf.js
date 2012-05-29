@@ -32,3 +32,4 @@ var details_def = {
                        {label : 'Hypervisor', id : 'iass_detail_hyp', onLoad : load_iaas_detail_hypervisor},
                       ],
 };
+

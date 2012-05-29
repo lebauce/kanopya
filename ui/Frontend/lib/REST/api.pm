@@ -10,21 +10,84 @@ use Entity;
 
 prepare_serializer_for_format;
 
-my %resources = ( "host"            => "Entity::Host",
-                  "cluster"         => "Entity::ServiceProvider::Inside::Cluster",
-                  "user"            => "Entity::User",
-                  "masterimage"     => "Entity::Masterimage",
-                  "systemimage"     => "Entity::Systemimage",
-                  "processormodel"  => "Entity::Processormodel",
-                  "hostmodel"       => "Entity::Hostmodel",
-                  "permission"      => "Permissions",
-                  "operation"       => "Operation",
-                  "message"         => "Message",
-                  "entity"          => "Entity",
-                  "inside"          => "Entity::ServiceProvider::Inside",
-                  "externalcluster" => "Entity::ServiceProvider::Outside::Externalcluster",
-                  "serviceprovider" => "Entity::ServiceProvider",
-                  "vlan"            => "Entity::Network::Vlan" );
+my %resources = (
+    "activedirectory"          => "Entity::Connector::ActiveDirectory",
+    "atftpd0"                  => "Entity::Component::Atftpd0",
+    "apache2"                  => "Entity::Component::Apache2",
+    "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
+    "component"                => "Entity::Component",
+    "connector"                => "Entity::Connector",
+    "connectortype"            => "ConnectorType",
+    "container"                => "Entity::Container",
+    "containeraccess"          => "Entity::ContainerAccess",
+    "entity"                   => "Entity",
+    "entitycomment"            => "EntityComment",
+    "externalcluster"          => "Entity::ServiceProvider::Outside::Externalcluster",
+    "filecontaineraccess"      => "Entity::ContainerAccess::FileContainerAccess",
+    "fileimagemanager0"        => "Entity::Component::Fileimagemanager0",
+    "gp"                       => "Entity::Gp",
+    "haproxy1"                 => "Entity::Component::HAProxy1",
+    "host"                     => "Entity::Host",
+    "hostmodel"                => "Entity::Hostmodel",
+    "iface"                    => "Entity::Iface",
+    "infrastructure"           => "Entity::Infrastructure",
+    "interface"                => "Entity::Interface",
+    "interfacerole"            => "Entity::InterfaceRole",
+    "inside"                   => "Entity::ServiceProvider::Inside",
+    "ip"                       => "Ip",
+    "iptables1"                => "Entity::Component::Iptables1",
+    "iscsicontaineraccess"     => "Entity::ContainerAccess::IscsiContainerAccess",
+    "iscsitarget1"             => "Entity::Component::Iscsitarget1",
+    "kanopyacollector1"        => "Entity::Component::Kanopyacollector1",
+    "keepalived1"              => "Entity::Component::Keepalived1",
+    "kernel"                   => "Entity::Kernel",
+    "lvm2"                     => "Entity::Component::Lvm2",
+    "lvmcontainer"             => "Entity::Container::LvmContainer",
+    "managerparam"             => "Entity::ManagerParameter",
+    "masterimage"              => "Entity::Masterimage",
+    "memcached1"               => "Entity::Component::Memcached1",
+    "message"                  => "Message",
+    "mounttable1"              => "Entity::Component::Mounttable1",
+    "mysql5"                   => "Entity::Component::Mysql5",
+    "netapp"                   => "Entity::ServiceProvider::Outside::Netapp",
+    "netappaggregate"          => "Entity::NetappAggregate",
+    "netapplun"                => "Entity::Container::NetappLun",
+    "netapplunmanager"         => "Entity::Connector::NetappLunManager",
+    "netappvolume"             => "Entity::Container::NetappVolume",
+    "netappvolumemanager"      => "Entity::Container::NetappVolumeManager",
+    "network"                  => "Entity::Network",
+    "nfscontaineraccessclient" => "Entity::NfsContainerAccessClient",
+    "nfscontaineraccess"       => "Entity::ContainerAccess::NfsContainerAccess",
+    "nfsd3"                    => "Entity::Component::Nfsd3",
+    "node"                     => "Node",
+    "openiscsi2"               => "Entity::Component::Openiscsi2",
+    "opennebula3"              => "Entity::Component::Opennebula3",
+    "permission"               => "Permissions",
+    "php5"                     => "Entity::Component::Php5",
+    "physicalhoster0"          => "Entity::Component::Physicalhoster0",
+    "pleskpanel10"             => "Entity::ParallelsProduct::Pleskpanel10",
+    "poolip"                   => "Entity::Poolip",
+    "powersupplycard"          => "Entity::Powersupplycard",
+    "powersupplycardmodel"     => "Entity::Powersupplycardmodel",
+    "processormodel"           => "Entity::Processormodel",
+    "puppetagent2"             => "Entity::Component::Puppetagent2",
+    "puppetmaster2"            => "Entity::Component::Puppetmaster2",
+    "openldap1"                => "Entity::Component::Openldap1",
+    "openssh5"                 => "Entity::Component::Openssh5",
+    "operation"                => "Operation",
+    "outside"                  => "Entity::ServiceProvider::Outside",
+    "scom"                     => "Entity::Connector::Scom",
+    "snmpd5"                   => "Entity::Component::Snmpd5",
+    "serviceprovider"          => "Entity::ServiceProvider",
+    "syslogng3"                => "Entity::Component::Syslogng3",
+    "systemimage"              => "Entity::Systemimage",
+    "tier"                     => "Entity::Tier",
+    "ucsmanager"               => "Entity::Connector::UcsManager",
+    "unifiedcomputingsystem"   => "Entity::ServiceProvider::Outside::UnifiedComputingSystem",
+    "user"                     => "Entity::User",
+    "vlan"                     => "Entity::Network::Vlan",
+    "workflow"                 => "Workflow",
+);
 
 sub setupREST {
 
@@ -34,12 +97,15 @@ sub setupREST {
         resource "api/$resource" =>
             get    => sub {
                 content_type 'application/json';
+
                 return to_json( Entity->get(id => params->{id})->toJSON );
             },
 
             create => sub {
+                content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
+                my $obj = { };
                 my $hash = { };
                 my $params = params;
                 for my $attr (keys %$params) {
@@ -57,7 +123,7 @@ sub setupREST {
                 };
                 if ($@) {
                     eval {
-                         $class->new(params);
+                        $obj = $class->new(params)->toJSON();
                     };
                     if ($@) {
                         my $exception = $@;
@@ -69,14 +135,20 @@ sub setupREST {
                         }
                     }
                 }
+
+                return to_json($obj);
             },
 
             delete => sub {
+                content_type 'application/json';
+
                 Entity->get(id => params->{id})->delete();
                 return to_json( { response => "ok" } );
             },
 
             update => sub {
+                content_type 'application/json';
+
                 my $obj = Entity->get(id => params->{id});
                 my $params = params;
                 for my $attr (keys %$params) {

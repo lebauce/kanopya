@@ -24,16 +24,25 @@ function create_all_content() {
     }
 }
 
-function show_detail(grid_id, elem_id) {
+function show_detail(grid_id, elem_id, row_data) {
 
-    var id = 'view_detail_' + elem_id;
     var menu_links = details_def[grid_id];
     
+    // Not defined details menu
     if (menu_links === undefined) {
         alert('Details not defined yet ( menu.conf.js -> details_def["' + grid_id + '"] )');
         return;
     }
     
+    // Details accessible from menu (dynamic loaded menu)
+    if (menu_links.link_to_menu) {
+        var view_link_id = 'link_view_' + row_data[menu_links.label_key].replace(' ', '_') + '_' + elem_id;
+        $('#' + view_link_id + ' > .view_link').click();
+        return;
+    }
+    
+    // Else, modal details
+    var id = 'view_detail_' + elem_id;
     var view_detail_container = $('<div></div>');
     build_detailmenu(view_detail_container, id, menu_links, elem_id);
     
@@ -69,21 +78,6 @@ function show_detail(grid_id, elem_id) {
         
     //dialog.load('/api/host/' + elem_id);
     //dialog.load('/details/iaas.html');
-    
-//alert('pouet');
-//return false;
- 
-    //dialog.dialog('open');
-    //dialog.show();
-    
-    //    link.click(function() {
-//        if ($(this).parents(".disabled").length) {
-//            return false;
-//        }
-//        dialog.load($(this).attr('href'))
-//        dialog.dialog('open');
-//        return false;
-//    });
 
 }
 
@@ -110,7 +104,8 @@ function create_grid(content_container_id, grid_id, colNames, colModel) {
         pager : '#' + pager_id,
         altRows: true,
         onSelectRow: function (id) {
-            show_detail(grid_id, id);
+            var row_data = $('#' + grid_id).getRowData(id);
+            show_detail(grid_id, id, row_data);
             //alert('Select row: ' + id);
         },
         loadError: function (xhr, status, error) {

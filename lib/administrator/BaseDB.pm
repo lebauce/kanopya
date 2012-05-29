@@ -41,6 +41,12 @@ sub getAttrDefs {
     return $result;
 }
 
+sub getId {
+    my $self = shift;
+
+    return $self->{_dbix}->get_column(($self->{_dbix}->result_source->primary_columns)[0]);
+}
+
 sub _buildClassNameFromString {
     my ($class) = @_;
     $class =~ s/.*\:\://g;
@@ -539,6 +545,7 @@ sub toString{
 
 sub toJSON {
     my ($self, %args) = @_;
+    my $pk;
     my $hash = {};
     my $class = ref ($self) || $self;
     my $attributes = $class->getAttrDefs();
@@ -578,6 +585,15 @@ sub toJSON {
                 }
             }
         }
+
+        $hash->{pk} = {
+            pattern      => '^\d*$',
+            is_mandatory => 1,
+            is_extended  => 0
+        }
+    }
+    else {
+        $hash->{pk} = $self->getId;
     }
 
     return $hash;

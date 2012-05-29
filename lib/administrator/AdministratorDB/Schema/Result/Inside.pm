@@ -101,22 +101,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 server
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Server>
-
-=cut
-
-__PACKAGE__->might_have(
-  "server",
-  "AdministratorDB::Schema::Result::Server",
-  { "foreign.server_id" => "self.inside_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:c71o52AbnH1FnaDPOn3bCg
 

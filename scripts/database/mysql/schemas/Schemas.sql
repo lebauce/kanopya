@@ -128,17 +128,6 @@ CREATE TABLE `manager_parameter` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `server`
--- Entity::ServiceProvider::Inside::Server class
-
-CREATE TABLE `server` (
-  `server_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`server_id`),
-  FOREIGN KEY (`server_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
---
 -- Table structure for table `outside`
 -- Entity::ServiceProvider::Outside class
 
