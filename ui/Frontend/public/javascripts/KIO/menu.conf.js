@@ -194,10 +194,10 @@ function servicesList (container_id, elem_id) {
         button.bind('click', function() {
             new ModalForm(service_opts).start();
         });   
-        $('#' + container_id).append(button);
+        $('#' + cid).append(button);
     };
     
-    var container = $('#' + cid);
+    var container = $('#' + container_id);
     
     create_grid(container_id, 'services_list',
                 ['ID','Name', 'State'],
