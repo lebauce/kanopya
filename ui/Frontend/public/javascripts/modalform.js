@@ -15,6 +15,9 @@ var ModalForm = (function() {
             method  = 'PUT';
             action  += '/' + this.id;
         }
+        if (args.prependElement !== undefined) {
+            this.content.prepend($(args.prependElement));
+        }
         this.form       = $("<form>", { method : method, action : action}).appendTo(this.content).append(this.table);
         this.table      = $("<table>").css('width', '100%').appendTo($(this.form));
         this.stepTables = [];
@@ -218,21 +221,24 @@ var ModalForm = (function() {
     }
     
     ModalForm.prototype.changeStep = function(event, data) {
-        var steps   = data.activatedSteps;
+        var steps   = $(this.form).children("table.step");
         var text    = "";
         var i       = 1;
-        for (step in steps) {
-            if (text === "") {
-                text += i + ". " +$(this.form).children("table#" + steps[step]).attr('rel');
-            } else {
-                text += " >> " + i + ". " + $(this.form).children("table#" + steps[step]).attr('rel');
+        $(steps).each(function() {
+            var prepend = "";
+            var append  = "";
+            if ($(this).attr("id") == data.currentStep) {
+                prepend = "<b>";
+                append  = "</b>";
             }
-            if (step == data.currentStep) {
-                break;
+            if (text === "") {
+                text += prepend + i + ". " + $(this).attr('rel') + append;
+            } else {
+                text += " >> " + prepend + i + ". " + $(this).attr('rel') + append;
             }
             ++i;
-        }
-        $(this.content).children("div#" + this.name + "_steps").text(text);
+        });
+        $(this.content).children("div#" + this.name + "_steps").html(text);
     }
     
     ModalForm.prototype.startWizard = function() {
@@ -267,13 +273,13 @@ var ModalForm = (function() {
                     $(this).remove();
                 }
             });
-            var stepName = $(this.form).children("table").first().attr('rel');
             $(this.content).prepend($("<br />"));
-            $(this.content).prepend($("<div>", { id : this.name + "_steps", text : '1. ' + stepName }).css({
+            $(this.content).prepend($("<div>", { id : this.name + "_steps" }).css({
                 width           : '100%',
                 'border-bottom' : '1px solid #AAA',
                 position        : 'relative'
             }));
+            this.changeStep({}, $(this.form).formwizard("state"));
             $(this.form).bind('step_shown', $.proxy(this.changeStep, this));
         }
     }
