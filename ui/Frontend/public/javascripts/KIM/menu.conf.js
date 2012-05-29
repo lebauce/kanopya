@@ -2,7 +2,7 @@
 // onLoad handlers are called with params (content_container_id)
 var mainmenu_def = {
     'Infrastructure'    : {
-        'Compute' : [{label : 'Overview', id : 'compute_overview', onLoad : func},
+        'Compute' : [{label : 'Overview', id : 'compute_overview'},
                      {label : 'Hosts', id : 'hosts'}],
         'Storage' : [{label : 'Overview', id : 'storage_overview'}],
         'IaaS'    : [{label : 'IaaS', id : 'iaas', onLoad : load_iaas_content},
