@@ -1,4 +1,5 @@
 package Frontend;
+
 use Dancer ':syntax';
 use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
@@ -44,6 +45,41 @@ get '/sandbox' => sub {
 
 get '/dashboard' => sub {
     template 'dashboard', {}, {layout => ''};
+};
+
+sub exception_to_status {
+    my $exception = shift;
+    my $status;
+
+    if ($exception->isa("Kanopya::Exception::Permission::Denied")) {
+        $status = 'forbidden';
+    }
+    elsif ($exception->isa("Kanopya::Exception::Internal::NotFound")) {
+        $status = 'not_found';
+    }
+    else {
+        $status = 'error';
+    }
+
+    # Really tricky : we store the status code in the request
+    # as the exception is not available in the 'after_error_render' hook
+    request->{status} = $status;
+
+    return $status;
+}
+
+hook 'before_error_init' => sub {
+    my $exception = shift;
+    my $status = exception_to_status($exception->{exception});
+
+    if (defined $status && request->is_ajax) {
+        content_type "application/json";
+        set error_template => '/json_error.tt';
+    }
+};
+
+hook 'after_error_render' => sub {
+    status request->{status};
 };
 
 true;
