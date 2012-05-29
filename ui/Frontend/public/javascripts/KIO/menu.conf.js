@@ -50,6 +50,11 @@ function displayJSON (container_id, elem_id) {
     });
 }
 
+function reloadServices () {
+    // Trigger click callback wich relaod grid content and dynamic menu
+    $('#menuhead_Services').click();
+}
+
 // To move on specific service file
 function servicesList (container_id, elem_id) {
     
@@ -92,7 +97,8 @@ function servicesList (container_id, elem_id) {
                 title       : 'Add a SCOM',
                 name        : 'scom',
                 skippable   : true,
-                fields      : scom_fields
+                fields      : scom_fields,
+                callback    : reloadServices
             }
             new ModalForm(scom_opts).start();
         }

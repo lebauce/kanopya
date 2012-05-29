@@ -26,7 +26,7 @@ function build_mainmenu() {
     var container = $('#mainmenu-container');
     
     for (var label in mainmenu_def) {
-        var menu_head = $('<h3><a href="#">' + label + '</a></h3>');
+        var menu_head = $('<h3 id="menuhead_' + label.replace(/ /g, '_') + '"><a href="#">' + label + '</a></h3>');
         var menu_def = mainmenu_def[label];
         container.append(menu_head);
         
@@ -145,7 +145,7 @@ function onViewLinkSelect(event) {
 function loadMenuFromJSON(event) {
     var menu_info = event.data;
     var container = $(this).next();
-    
+
     $.getJSON(menu_info.url, function (data) {
         // Add menu entry and associated view
         for (var elem in data) {
