@@ -1,7 +1,7 @@
 // mainmenu_def is set in product specific menu.conf.js
 function add_menu(container, label, submenu_links, elem_id) {
     var id_suffix = elem_id ? elem_id : 'static';
-    var view_id = 'view_' + label.replace(' ', '_') + '_' + id_suffix;
+    var view_id = 'view_' + label.replace(/ /g, '_') + '_' + id_suffix;
     var link_id = 'link_' + view_id;
     
     // If this link already exists for this menu then we don't repeat it
@@ -49,7 +49,7 @@ function build_mainmenu() {
         
         // Specific view when select menu head
         if (menu_def['masterView']) {
-            var view_id = 'view_' + label.replace(' ', '_');
+            var view_id = 'view_' + label.replace(/ /g, '_');
             build_submenu($('#view-container'), view_id, menu_def['masterView']);
             menu_head.click( {view_id: view_id}, onViewLinkSelect);
         }
