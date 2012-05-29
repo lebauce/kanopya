@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 <link rel="stylesheet" href="<% request.uri_base %>/css/theme/jquery-ui-1.8.19.custom.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/ui.jqgrid.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/theme/default/dashboardui.css" />
@@ -14,7 +14,6 @@
 <script src="/javascripts/KIO/menu.conf.js"></script>
 <script src="/javascripts/KIO/dashboard.init.js"></script>
 <script src="/javascripts/KIO/services.js"></script>
-<script src="/javascripts/KIO/menu.conf.js"></script>
 <script src='/javascripts/messages.js'></script>
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
 <script src='/javascripts/gritter.js'></script>
