@@ -261,7 +261,7 @@ var ModalForm = (function() {
                 beforeSerialize : $.proxy(this.beforeSerialize, this),
                 beforeSubmit    : $.proxy(this.handleBeforeSubmit, this),
                 success         : $.proxy(function(data) {
-                    // Must delete all DOM elements
+                    // Ugly but must delete all DOM elements
                     // but formwizard is using the element after this
                     // callback, so we delay the deletion
                     setTimeout($.proxy(function() { this.closeDialog(); }, this), 10);
