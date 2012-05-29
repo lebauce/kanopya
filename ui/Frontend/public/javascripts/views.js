@@ -36,7 +36,7 @@ function show_detail(grid_id, elem_id, row_data) {
     
     // Details accessible from menu (dynamic loaded menu)
     if (menu_links.link_to_menu) {
-        var view_link_id = 'link_view_' + row_data[menu_links.label_key].replace(' ', '_') + '_' + elem_id;
+        var view_link_id = 'link_view_' + row_data[menu_links.label_key].replace(/ /g, '_') + '_' + elem_id;
         $('#' + view_link_id + ' > .view_link').click();
         return;
     }

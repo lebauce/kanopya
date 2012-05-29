@@ -1,7 +1,7 @@
 // mainmenu_def is set in product specific menu.conf.js
 function add_menu(container, label, submenu_links, elem_id) {
     var id_suffix = elem_id ? elem_id : 'static';
-    var view_id = 'view_' + label.replace(' ', '_') + '_' + id_suffix;
+    var view_id = 'view_' + label.replace(/ /g, '_') + '_' + id_suffix;
     var link_id = 'link_' + view_id;
     
     // If this link already exists for this menu then we don't repeat it
@@ -12,7 +12,7 @@ function add_menu(container, label, submenu_links, elem_id) {
     };
     
     var link_li = $('<li id="' + link_id + '" class="view_link_cont alive_link"></li>');
-    var link_a = $('<a class="view_link" style="whitespace: nowrap" href="#' + view_id + '">' + label + '</a>');
+    var link_a = $('<a class="view_link" style="white-space: nowrap" href="#' + view_id + '">' + label + '</a>');
     link_li.append(link_a);
     container.append(link_li);
     build_submenu($('#view-container'), view_id, submenu_links, elem_id);
@@ -26,7 +26,7 @@ function build_mainmenu() {
     var container = $('#mainmenu-container');
     
     for (var label in mainmenu_def) {
-        var menu_head = $('<h3><a href="#">' + label + '</a></h3>');
+        var menu_head = $('<h3 id="menuhead_' + label.replace(/ /g, '_') + '"><a href="#">' + label + '</a></h3>');
         var menu_def = mainmenu_def[label];
         container.append(menu_head);
         
@@ -49,7 +49,7 @@ function build_mainmenu() {
         
         // Specific view when select menu head
         if (menu_def['masterView']) {
-            var view_id = 'view_' + label.replace(' ', '_');
+            var view_id = 'view_' + label.replace(/ /g, '_');
             build_submenu($('#view-container'), view_id, menu_def['masterView']);
             menu_head.click( {view_id: view_id}, onViewLinkSelect);
         }
@@ -145,7 +145,7 @@ function onViewLinkSelect(event) {
 function loadMenuFromJSON(event) {
     var menu_info = event.data;
     var container = $(this).next();
-    
+
     $.getJSON(menu_info.url, function (data) {
         // Add menu entry and associated view
         for (var elem in data) {
