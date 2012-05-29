@@ -104,6 +104,7 @@ var ModalForm = (function() {
         this.title          = args.title        || this.name;
         this.skippable      = args.skippable    || false;
         this.beforeSubmit   = args.beforeSubmit || $.noop;
+        this.cancelCallback = args.cancel       || $.noop;
     }
     
     ModalForm.prototype.newFormElement = function(elementName, element, value) {
@@ -253,7 +254,10 @@ var ModalForm = (function() {
             validationOptions   : {
                 rules           : this.validateRules,
                 messages        : this.validateMessages,
-                errorClass      : 'ui-state-error'
+                errorClass      : 'ui-state-error',
+                errorPlacement  : function(error, element) {
+                    error.insertBefore(element);
+                }
             },
             formPluginEnabled   : true,
             formOptions         : {
@@ -313,6 +317,7 @@ var ModalForm = (function() {
     ModalForm.prototype.cancel = function() {
         var state = $(this.form).formwizard("state");
         if (state.isFirstStep) {
+            this.cancelCallback();
             this.closeDialog();
         }
         else {

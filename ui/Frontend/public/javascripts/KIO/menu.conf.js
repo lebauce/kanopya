@@ -66,6 +66,34 @@ function servicesList (container_id, elem_id) {
      
         var newServicePK = undefined;
         
+        var chooseMonitoringModal = new ModalForm({
+            name            : 'connector',
+            skippable       : true,
+            fields          : {
+                connector_type_id   : {
+                    label   : 'Step 3 of 3 : Choose a monitoring service',
+                    display : 'connector_name',
+                    cond    : '?connector_category=MonitoringService'
+                }
+            },
+            beforeSubmit    : monitoringServiceCreation
+        });
+        
+        var chooseDirectoryModal = new ModalForm({
+            name            : 'connector',
+            skippable       : true,
+            title           : 'Step 2 of 3 : Choose a directory service',
+            fields          : {
+                connector_type_id   : {
+                    label   : 'Choose a directory service',
+                    display : 'connector_name',
+                    cond    : '?connector_category=DirectoryService'
+                }
+            },
+            callback        : function() { chooseMonitoringModal.start() },
+            beforeSubmit    : directoryServiceCreation
+        });
+        
         function monitoringServiceCreation(arr, $form, opts, dialog) {
             for (field in arr) if (arr.hasOwnProperty(field)) {
                 if (arr[field].name === 'connector_type_id') {
@@ -94,11 +122,12 @@ function servicesList (container_id, elem_id) {
                 }
             };
             var scom_opts   = {
-                title       : 'Add a SCOM',
+                title       : 'Step 3 of 3 : Add a SCOM',
                 name        : 'scom',
                 skippable   : true,
                 fields      : scom_fields,
-                callback    : reloadServices
+                callback    : reloadServices,
+                cancel      : function() { chooseMonitoringModal.start(); }
             }
             new ModalForm(scom_opts).start();
         }
@@ -113,21 +142,6 @@ function servicesList (container_id, elem_id) {
                 }
             }
             return false;
-        }
-        
-        function chooseAMonitoringService() {
-            new ModalForm({
-                name            : 'connector',
-                skippable       : true,
-                fields          : {
-                    connector_type_id   : {
-                        label   : 'Choose a monitoring service',
-                        display : 'connector_name',
-                        cond    : '?connector_category=MonitoringService'
-                    }
-                },
-                beforeSubmit    : monitoringServiceCreation
-            }).start();
         }
         
         function createADDialog() {
@@ -156,11 +170,12 @@ function servicesList (container_id, elem_id) {
                 }
             };
             var ad_opts     = {
-                title       : 'Add an Active Directory',
+                title       : 'Step 2 of 3 : Add an Active Directory',
                 name        : 'activedirectory',
                 skippable   : true,
                 fields      : ad_fields,
-                callback    : chooseAMonitoringService
+                callback    : function() { chooseMonitoringModal.start(); },
+                cancel      : function() { chooseDirectoryModal.start(); }
             };
             new ModalForm(ad_opts).start();
         }
@@ -175,24 +190,12 @@ function servicesList (container_id, elem_id) {
                 }
         };
         var service_opts    = {
-            title       : 'Add a Service',
+            title       : 'Step 1 of 3 : Add a Service',
             name        : 'externalcluster',
             fields      : service_fields,
             callback    : function(data) {
                 newServicePK = data.pk;
-                new ModalForm({
-                    name            : 'connector',
-                    skippable       : true,
-                    fields          : {
-                        connector_type_id   : {
-                            label   : 'Choose a directory service',
-                            display : 'connector_name',
-                            cond    : '?connector_category=DirectoryService'
-                        }
-                    },
-                    callback        : chooseAMonitoringService,
-                    beforeSubmit    : directoryServiceCreation
-                }).start();
+                chooseDirectoryModal.start();
             }
         };
                     
