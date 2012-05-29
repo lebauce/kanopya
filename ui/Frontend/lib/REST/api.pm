@@ -30,7 +30,9 @@ my %resources = ( "host"            => "Entity::Host",
                   "kernel"              => "Entity::Kernel",
                   "active_directory"    => "Entity::Connector::ActiveDirectory",
                   "service_provider"    => "Entity::ServiceProvider",
-                  "component"           => "Entity::Component");
+                  "component"           => "Entity::Component",
+                  "connector"           => "Entity::Connector",
+                  "scom"                => "Entity::Connector::Scom");
 
 sub setupREST {
 
@@ -44,6 +46,7 @@ sub setupREST {
             },
 
             create => sub {
+                content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
                 my $obj = { };

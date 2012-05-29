@@ -38,31 +38,39 @@ function func(container_id) {
         var re = new RegExp(regexp);
         return this.optional(element) || re.test(value);
     }, "Please check your input");
-                
-    var button = $("<button>", {html : 'Add form'});
-    button.bind('click', function() {
-        var theform = new ModalForm({
-            title   : 'Add an External Cluster',
-            name    : 'externalcluster',
-            fields  : {
-                externalcluster_name    : {
-                    label   : 'Name'
+ 
+    var newServicePK = undefined;
+ 
+    function createScomDialog(data) {
+        var scom_opts   = {
+            title       : 'Add a SCOM',
+            name        : 'scom',
+            skippable   : true,
+            fields      : {
+                scom_ms_name        : {
+                    label   : 'Root Management Server FQDN'
                 },
-                externalcluster_desc    : {
-                    label   : 'Description',
-                    type    : 'textarea'
+                scom_usessl         : {
+                    label   : 'Use SSL ?',
+                    type    : 'checkbox',
+                    value   : false
+                },
+                service_provider_id : {
+                    label   : '',
+                    type    : 'hidden',
+                    value   : newServicePK
                 }
             }
-        });
-    });   
-    $('#' + container_id).append(button);
+        }
+        new ModalForm(scom_opts).start();
+    }
     
-    button = $("<button>", {html : 'Add active directory'});
-    button.bind('click', function() {
-        var theform = new ModalForm({
-            title   : 'Add an Active Directory',
-            name    : 'active_directory', 
-            fields  : {
+    function createADDialog() {
+        var ad_opts = {
+            title       : 'Add an Active Directory',
+            name        : 'active_directory',
+            skippable   : true,
+            fields      : {
                 ad_host             : {
                     label   : 'Domain controller name'
                 },
@@ -78,15 +86,41 @@ function func(container_id) {
                 },
                 ad_usessl           : {
                     label   : 'Use SSL ?',
-                    type    : 'checkbox'
+                    type    : 'checkbox',
+                    value   : false
                 },
-                serviceprovider_id : {
+                service_provider_id : {
                     label   : '',
                     type    : 'hidden',
-                    value   : '119'
+                    value   : newServicePK
                 }
+            },
+            callback    : createScomDialog
+        };
+        new ModalForm(ad_opts).start();
+    }
+ 
+    var service_opts    = {
+        title       : 'Add a Service',
+        name        : 'externalcluster',
+        fields      : {
+            externalcluster_name    : {
+                label   : 'Name'
+            },
+            externalcluster_desc    : {
+                label   : 'Description',
+                type    : 'textarea'
             }
-        });
-    });
+        },
+        callback    : function(data) {
+            newServicePK = data.pk;
+            createADDialog();
+        }
+    };
+                
+    var button = $("<button>", {html : 'Add form'});
+    button.bind('click', function() {
+        new ModalForm(service_opts).start();
+    });   
     $('#' + container_id).append(button);
 };

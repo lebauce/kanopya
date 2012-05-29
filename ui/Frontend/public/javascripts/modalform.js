@@ -26,6 +26,7 @@ var ModalForm = (function() {
             type        : 'GET',
             url         : '/api/attributes/' + this.baseName,
             dataType    : 'json',
+            async       : false,
             success     : $.proxy(function(data) {
                     var values = {};
                     // If it is an update form, retrieve old datas from REST
@@ -45,52 +46,60 @@ var ModalForm = (function() {
                     // to the form
                     for (elem in this.fields) if (this.fields.hasOwnProperty(elem)) {
                         var val = this.fields[elem].value || values[elem];
-                        if (elem in data.attributes) {
+                        if (elem in data.attributes) { // Whether just an input
                             this.newFormElement(elem, data.attributes[elem], val);
-                        } else {
-                            for (relation in data.relations) {
-                                if (data.relations[relation].cond["foreign." + elem] !== undefined) {
-                                    $.ajax({
-                                        type        : 'GET',
-                                        async       : false,
-                                        url         : '/api/' + relation,
-                                        dataTYpe    : 'json',
-                                        success     : $.proxy(function(datavalues) {
-                                            this.newDropdownElement(elem, data.attributes[elem], val, datavalues);
-                                        }, this)
-                                    });
-                                    break;
-                                }
-                            }
+                        } else { // Or retrieve all possibles values and create a select element
+                            var datavalues = this.getForeignValues(data, elem);
+                            this.newDropdownElement(elem, data.attributes[elem], val, datavalues);
                         }
                     }
-                    
-                    // Open the modal and start the form wizard
-                    this.openDialog();
-                    this.startWizard();
             }, this)
         });
     }
     
-    ModalForm.prototype.handleArgs = function(args) {
-        this.callback   = $.noop;
-        this.fields     = {};
-        
-        if (typeof(args) === 'string') {
-            this.baseName   = args;
-            this.name       = 'form_' + args;
-            this.title      = this.baseName;
-        } else {
-            if ('name' in args) {
-                this.baseName   = args.name;
-                this.name       = 'form_' + args.name;
+    ModalForm.prototype.start = function() {
+        // Open the modal and start the form wizard
+        this.openDialog();
+        this.startWizard();
+    }
+    
+    ModalForm.prototype.getForeignValues = function(data, elem) {
+        var datavalues = undefined;
+        for (relation in data.relations) {
+            for (prop in data.relations[relation].cond)
+            if (data.relations[relation].cond.hasOwnProperty(prop)) {
+                if (data.relations[relation].cond[prop] === 'self.' + elem) {
+                    var cond = this.fields[elem].cond || "";
+                    $.ajax({
+                        type        : 'GET',
+                        async       : false,
+                        url         : '/api/' + relation + cond,
+                        dataTYpe    : 'json',
+                        success     : $.proxy(function(d) {
+                            datavalues = d;
+                        }, this)
+                    });
+                    break;
+                }
+                break;
             }
-            
-            this.id         = args.id;  
-            this.callback   = args.callback || $.noop;
-            this.fields     = args.fields   || {};
-            this.title      = args.title    || this.name;
         }
+        return datavalues;
+    }
+    
+    ModalForm.prototype.handleArgs = function(args) {
+        
+        if ('name' in args) {
+            this.baseName   = args.name;
+            this.name       = 'form_' + args.name;
+        }
+        
+        this.id             = args.id;  
+        this.callback       = args.callback     || $.noop;
+        this.fields         = args.fields       || {};
+        this.title          = args.title        || this.name;
+        this.skippable      = args.skippable    || false;
+        this.beforeSubmit   = args.beforeSubmit || $.noop;
     }
     
     ModalForm.prototype.newFormElement = function(elementName, element, value) {
@@ -107,11 +116,6 @@ var ModalForm = (function() {
             var input = $("<textarea>", { name : elementName, id : 'input_' + elementName });
         }
         
-        // Check if the field is editable
-        if (element.is_editable == false && value !== undefined) {
-            $(input).attr('disabled', 'disabled');
-        }
-        
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
         if (element.is_mandatory == true) {
@@ -125,7 +129,11 @@ var ModalForm = (function() {
         
         // Insert value if any
         if (value !== undefined) {
-            $(input).attr('value', value);
+            if (type == 'text') {
+                $(input).attr('value', value);
+            } else if (type === 'checkbox' && value == true) {
+                $(input).attr('checked', 'checked');
+            }
         }
         
         $(label).text($(label).text() + " : ");
@@ -167,6 +175,7 @@ var ModalForm = (function() {
             var table = this.stepTables[step];
             if (table === undefined) {
                var table = $("<table>", { id : this.name + '_step' + step }).appendTo(this.form);
+               table.attr('rel', step);
                $(table).css('width', '100%').addClass('step');
                this.stepTables[step] = table;
             }
@@ -193,6 +202,39 @@ var ModalForm = (function() {
         $(input).css('width', '100%');
     }
     
+    ModalForm.prototype.beforeSerialize = function(form, options) {
+        // Must transform all 'on' of 'off' values from checkboxes to '1' or '0'
+        for (field in this.fields) {
+            if (this.fields[field].type === 'checkbox') {
+                var checkbox = $(form).find('input[name="' + field + '"]');
+                if (checkbox.attr('value') === 'on' ||
+                    checkbox.attr('checked') === 'checked') {
+                    checkbox.attr('value', '1');
+                } else {
+                    checkbox.attr('value', '0');
+                }
+            }
+        }
+    }
+    
+    ModalForm.prototype.changeStep = function(event, data) {
+        var steps   = data.activatedSteps;
+        var text    = "";
+        var i       = 1;
+        for (step in steps) {
+            if (text === "") {
+                text += i + ". " +$(this.form).children("table#" + steps[step]).attr('rel');
+            } else {
+                text += " >> " + i + ". " + $(this.form).children("table#" + steps[step]).attr('rel');
+            }
+            if (step == data.currentStep) {
+                break;
+            }
+            ++i;
+        }
+        $(this.content).children("div#" + this.name + "_steps").text(text);
+    }
+    
     ModalForm.prototype.startWizard = function() {
         $(this.form).formwizard({
             disableUIStyles     : true,
@@ -206,28 +248,55 @@ var ModalForm = (function() {
             },
             formPluginEnabled   : true,
             formOptions         : {
-                success     : $.proxy(function(data) {
+                beforeSerialize : $.proxy(this.beforeSerialize, this),
+                beforeSubmit    : this.beforeSubmit,
+                success         : $.proxy(function(data) {
                     // Must delete all DOM elements
                     // but formwizard is using the element after this
                     // callback, so we delay the deletion
                     setTimeout($.proxy(function() { this.closeDialog(); }, this), 10);
-                    this.callback();
+                    this.callback(data);
                 }, this)
             }
         });
+        
+        var steps = $(this.form).children("table");
+        if (steps.length > 1) {
+            $(steps).each(function() {
+                if (!$(this).html()) {
+                    $(this).remove();
+                }
+            });
+            var stepName = $(this.form).children("table").first().attr('rel');
+            $(this.content).prepend($("<br />"));
+            $(this.content).prepend($("<div>", { id : this.name + "_steps", text : '1. ' + stepName }).css({
+                width           : '100%',
+                'border-bottom' : '1px solid #AAA',
+                position        : 'relative'
+            }));
+            $(this.form).bind('step_shown', $.proxy(this.changeStep, this));
+        }
     }
     
     ModalForm.prototype.openDialog = function() {
+        var buttons = {
+            'Cancel'    : $.proxy(this.cancel, this),
+            'Ok'        : $.proxy(this.validateForm, this)
+        };
+        if (this.skippable) {
+            buttons['Skip'] = $.proxy(function() {
+                this.closeDialog();
+                this.callback();
+            }, this);
+        }
         this.content.dialog({
-            title       : this.title,
-            modal       : true,
-            resizable   : false,
-            draggable   : false,
-            width       : 500,
-            buttons : {
-                'Cancel'    : $.proxy(this.cancel, this),
-                'Ok'        : $.proxy(this.validateForm, this)
-            }
+            title           : this.title,
+            modal           : true,
+            resizable       : false,
+            draggable       : false,
+            width           : 500,
+            buttons         : buttons,
+            closeOnEscape   : false
         });
         $('.ui-dialog-titlebar-close').remove();
     }

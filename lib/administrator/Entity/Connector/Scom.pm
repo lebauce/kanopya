@@ -33,6 +33,12 @@ use constant ATTR_DEF => {
                     is_extended    => 0,
                     is_editable    => 0
                  },
+                 scom_usessl => {
+                   pattern  => '^[01]$',
+                   is_mandatory => 0,
+                   is_extended => 0,
+                   is_editable => 0
+                 }
 };
 
 sub getAttrDef { return ATTR_DEF; }
