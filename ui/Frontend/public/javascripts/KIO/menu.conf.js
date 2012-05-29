@@ -112,7 +112,7 @@ function servicesList (container_id, elem_id) {
             };
             var ad_opts     = {
                 title       : 'Add an Active Directory',
-                name        : 'active_directory',
+                name        : 'activedirectory',
                 skippable   : true,
                 fields      : ad_fields,
                 callback    : createScomDialog

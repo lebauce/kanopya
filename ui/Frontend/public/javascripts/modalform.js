@@ -73,6 +73,7 @@ var ModalForm = (function() {
             if (data.relations[relation].cond.hasOwnProperty(prop)) {
                 if (data.relations[relation].cond[prop] === 'self.' + elem) {
                     var cond = this.fields[elem].cond || "";
+                    relation = relation.replace(/_/g, "");
                     $.ajax({
                         type        : 'GET',
                         async       : false,
