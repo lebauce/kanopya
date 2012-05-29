@@ -17,6 +17,7 @@ my %resources = (
     "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
     "component"                => "Entity::Component",
     "connector"                => "Entity::Connector",
+    "connectortype"            => "ConnectorType",
     "container"                => "Entity::Container",
     "containeraccess"          => "Entity::ContainerAccess",
     "entity"                   => "Entity",

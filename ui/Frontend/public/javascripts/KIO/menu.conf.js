@@ -53,13 +53,25 @@ function displayJSON (container_id, elem_id) {
 // To move on specific service file
 function servicesList (container_id, elem_id) {
     
-    function createAddServiceButton() {
+    function createAddServiceButton(cid) {
         $.validator.addMethod("regex", function(value, element, regexp) {
             var re = new RegExp(regexp);
             return this.optional(element) || re.test(value);
         }, "Please check your input");
      
         var newServicePK = undefined;
+        
+        function monitoringServiceCreation(arr, $form, opts, dialog) {
+            for (field in arr) if (arr.hasOwnProperty(field)) {
+                if (arr[field].name === 'connector_type_id') {
+                    if (arr[field].value == 2) { // Then must open SCOM's form
+                        dialog.closeDialog();
+                        createScomDialog();
+                    }
+                }
+            }
+            return false;
+        }
      
         function createScomDialog(data) {
             var scom_fields = {
@@ -83,6 +95,33 @@ function servicesList (container_id, elem_id) {
                 fields      : scom_fields
             }
             new ModalForm(scom_opts).start();
+        }
+        
+        function directoryServiceCreation(arr, $form, opts, dialog) {
+            for (field in arr) if (arr.hasOwnProperty(field)) {
+                if (arr[field].name === 'connector_type_id') {
+                    if (arr[field].value == 1) { // Then must open Active directory's form
+                        dialog.closeDialog();
+                        createADDialog();
+                    }
+                }
+            }
+            return false;
+        }
+        
+        function chooseAMonitoringService() {
+            new ModalForm({
+                name            : 'connector',
+                skippable       : true,
+                fields          : {
+                    connector_type_id   : {
+                        label   : 'Choose a monitoring service',
+                        display : 'connector_name',
+                        cond    : '?connector_category=MonitoringService'
+                    }
+                },
+                beforeSubmit    : monitoringServiceCreation
+            }).start();
         }
         
         function createADDialog() {
@@ -115,7 +154,7 @@ function servicesList (container_id, elem_id) {
                 name        : 'activedirectory',
                 skippable   : true,
                 fields      : ad_fields,
-                callback    : createScomDialog
+                callback    : chooseAMonitoringService
             };
             new ModalForm(ad_opts).start();
         }
@@ -135,7 +174,19 @@ function servicesList (container_id, elem_id) {
             fields      : service_fields,
             callback    : function(data) {
                 newServicePK = data.pk;
-                createADDialog();
+                new ModalForm({
+                    name            : 'connector',
+                    skippable       : true,
+                    fields          : {
+                        connector_type_id   : {
+                            label   : 'Choose a directory service',
+                            display : 'connector_name',
+                            cond    : '?connector_category=DirectoryService'
+                        }
+                    },
+                    callback        : chooseAMonitoringService,
+                    beforeSubmit    : directoryServiceCreation
+                }).start();
             }
         };
                     
@@ -146,7 +197,7 @@ function servicesList (container_id, elem_id) {
         $('#' + container_id).append(button);
     };
     
-    var container = $('#' + container_id);
+    var container = $('#' + cid);
     
     create_grid(container_id, 'services_list',
                 ['ID','Name', 'State'],
@@ -157,5 +208,5 @@ function servicesList (container_id, elem_id) {
                  ]);
     reload_grid('services_list', '/api/externalcluster');
     
-    createAddServiceButton();
+    createAddServiceButton(container_id);
 }

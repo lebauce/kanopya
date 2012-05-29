@@ -48,7 +48,7 @@ var ModalForm = (function() {
                     // For each element in the data structure, add an input
                     // to the form
                     for (elem in this.fields) if (this.fields.hasOwnProperty(elem)) {
-                        var val = this.fields[elem].value || values[elem];
+                        var val = values[elem] || this.fields[elem].value;
                         if (elem in data.attributes) { // Whether just an input
                             this.newFormElement(elem, data.attributes[elem], val);
                         } else { // Or retrieve all possibles values and create a select element
@@ -73,6 +73,7 @@ var ModalForm = (function() {
             if (data.relations[relation].cond.hasOwnProperty(prop)) {
                 if (data.relations[relation].cond[prop] === 'self.' + elem) {
                     var cond = this.fields[elem].cond || "";
+                    // Temporary remove '_' from relations names
                     relation = relation.replace(/_/g, "");
                     $.ajax({
                         type        : 'GET',
@@ -242,6 +243,10 @@ var ModalForm = (function() {
         $(this.content).children("div#" + this.name + "_steps").html(text);
     }
     
+    ModalForm.prototype.handleBeforeSubmit = function(arr, $form, opts) {
+        return this.beforeSubmit(arr, $form, opts, this);
+    }
+    
     ModalForm.prototype.startWizard = function() {
         $(this.form).formwizard({
             disableUIStyles     : true,
@@ -249,14 +254,12 @@ var ModalForm = (function() {
             validationOptions   : {
                 rules           : this.validateRules,
                 messages        : this.validateMessages,
-                errorClass      : 'ui-state-error',
-                errorPlacement  : function(error, element) {
-                }
+                errorClass      : 'ui-state-error'
             },
             formPluginEnabled   : true,
             formOptions         : {
                 beforeSerialize : $.proxy(this.beforeSerialize, this),
-                beforeSubmit    : this.beforeSubmit,
+                beforeSubmit    : $.proxy(this.handleBeforeSubmit, this),
                 success         : $.proxy(function(data) {
                     // Must delete all DOM elements
                     // but formwizard is using the element after this
