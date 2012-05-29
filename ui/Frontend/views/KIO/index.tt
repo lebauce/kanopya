@@ -11,9 +11,9 @@
 <script src="/javascripts/jquery/lib/highcharts.js"></script>
 <script src="/javascripts/jquery/lib/exporting.js"></script>
 <script src="/javascripts/jquery/lib/themeroller.js"></script>
+<script src="/javascripts/KIO/services.js"></script>
 <script src="/javascripts/KIO/menu.conf.js"></script>
 <script src="/javascripts/KIO/dashboard.init.js"></script>
-<script src="/javascripts/KIO/services.js"></script>
 <script src='/javascripts/messages.js'></script>
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
 <script src='/javascripts/gritter.js'></script>
