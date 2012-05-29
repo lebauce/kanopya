@@ -288,7 +288,7 @@ function loadServicesOverview (container_id, elem_id) {
 
 function loadServicesConfig (container_id, elem_id) {
 	var container = $('#' + container_id);
-    var externalclustername = 'TORTUE !!!!';
+    var externalclustername = '';
     
     if (isThereAConnector(elem_id, 'DirectoryService') === false) {
 	var b	= $("<button>", { text : 'Add a Directory Service' });
@@ -303,16 +303,17 @@ function loadServicesConfig (container_id, elem_id) {
     }
     
     $.ajax({
- 		url: '/api/externalcluster/' + elem_id + '/connectors?dataType=jqGrid',
+ 		url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
  		success: function(data) {
 			$(data.rows).each(function(row) {
-				if ( data.rows[row].pk == elem_id ) {
-    				externalclustername = data.rows[row].externalcluster_name;
-    				$('<div>Overview for Service ' + externalclustername + '<div>').appendTo(container);
+				if ( data.rows[row].service_provider_id == elem_id ) {
+    				ad_nodes_base_dn = data.rows[row].class_type_id;
+    				$('<div>Connectors for Service ' + ad_nodes_base_dn + '<div>').appendTo(container);
     			}
     		});
     	}
 	});
+	
 }
 
 function loadServicesRessources (container_id, elem_id) {
