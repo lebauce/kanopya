@@ -20,24 +20,57 @@ my $errmsg;
 sub getAttrDefs {
     my $class = shift;
     my $result = {};
-    my @classes = split(/::/, $class);
+    my @classes = split(/::/, (split("=", "$class"))[0]);
+
     while(@classes) {
+        my $attr_def = {};
         my $currentclass = join('::', @classes);
-        my $location = $currentclass;
-        $location =~ s/\:\:/\//g;
-        $location .= '.pm';
-        eval { require $location; };
-        if ($@) {
-            throw Kanopya::Exception::Internal::UnknownClass(
-                      error => "Could not find $location :\n$@"
-                  );
+        if ($currentclass ne "BaseDB") {
+            my $location = $currentclass;
+            $location =~ s/\:\:/\//g;
+            $location .= '.pm';
+            eval { require $location; };
+            if ($@) {
+                throw Kanopya::Exception::Internal::UnknownClass(
+                    error => "Could not find $location :\n$@"
+                );
+            }
+
+            eval {
+                $attr_def = $currentclass->getAttrDef();
+            };
         }
-        my $attr_def = eval { $currentclass->getAttrDef() };
-        if($attr_def) {
+
+        my $schema;
+        eval {
+            $schema = $class->{_dbix}->result_source();
+        };
+        if ($@) {
+            my $adm = Administrator->new();
+            $schema = $adm->{db}->source(_buildClassNameFromString($currentclass));
+        }
+
+        my @relnames = $schema->relationships();
+        for my $relname (@relnames) {
+            my $relinfo = $schema->relationship_info($relname);
+            if (($relname ne "parent") &&
+                ($relinfo->{attrs}->{is_foreign_key_constraint}) &&
+                ($schema->has_column($relname . "_id"))) {
+                $attr_def->{$relname . "_id"} = {
+                    pattern      => '^\d*$',
+                    is_mandatory => 0,
+                    is_extended  => 0
+                };
+            }
+        }
+
+        if ($attr_def) {
             $result->{$currentclass} = $attr_def;
         }
+
         pop @classes;
     }
+
     return $result;
 }
 
