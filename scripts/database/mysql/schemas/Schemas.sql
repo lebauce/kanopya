@@ -1606,16 +1606,16 @@ CREATE TABLE `workflow_instance` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `workflow_instance_param`
+-- Table structure for table `workflow_instance_parameter`
 --
 
-CREATE TABLE `workflow_instance_param` (
-  `workflow_instance_param_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+CREATE TABLE `workflow_instance_parameter` (
+  `workflow_instance_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `workflow_instance_id` int(8) unsigned NOT NULL,
-  `workflow_instance_param_name` int(8) unsigned NOT NULL,
-  `workflow_instance_param_value` int(8) unsigned NOT NULL,
+  `workflow_instance_parameter_name` int(8) unsigned NOT NULL,
+  `workflow_instance_parameter_value` int(8) unsigned NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`workflow_instance_param_id`),
+  PRIMARY KEY (`workflow_instance_parameter_id`),
   KEY (`class_type_id`),
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`workflow_instance_id`),
