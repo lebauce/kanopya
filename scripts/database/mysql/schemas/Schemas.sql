@@ -1612,8 +1612,8 @@ CREATE TABLE `workflow_instance` (
 CREATE TABLE `workflow_instance_parameter` (
   `workflow_instance_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `workflow_instance_id` int(8) unsigned NOT NULL,
-  `workflow_instance_parameter_name` int(8) unsigned NOT NULL,
-  `workflow_instance_parameter_value` int(8) unsigned NOT NULL,
+  `workflow_instance_parameter_name` char(255) NOT NULL,
+  `workflow_instance_parameter_value` char(255),
   `class_type_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`workflow_instance_parameter_id`),
   KEY (`class_type_id`),
