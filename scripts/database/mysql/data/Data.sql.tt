@@ -95,6 +95,8 @@ INSERT INTO `class_type` VALUES
 (79, 'ScomIndicator'),
 (80, 'Scope'),
 (81, 'ScopeParameter');
+(82, 'WorkflowInstance'),
+(83, 'WorkflowInstanceParameter');
 
 --
 -- entity comment list
