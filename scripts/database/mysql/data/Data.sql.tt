@@ -94,7 +94,7 @@ INSERT INTO `class_type` VALUES
 (78, 'Entity::Component::Kanopyacollector1'),
 (79, 'ScomIndicator'),
 (80, 'Scope'),
-(81, 'ScopeParameter');
+(81, 'ScopeParameter'),
 (82, 'WorkflowInstance'),
 (83, 'WorkflowInstanceParameter');
 
