@@ -121,6 +121,10 @@ use Exception::Class (
     isa => 'Kanopya::Exception::Execution',
     description => 'Operation execution reported',
     },
+    Kanopya::Exception::Execution::Locked => {
+    isa => 'Kanopya::Exception::Execution',
+    description => 'Entity already locked',
+    },
     Kanopya::Exception::AuthenticationRequired => {
     isa => 'Kanopya::Exception',
     description => 'Authentication required',

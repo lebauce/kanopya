@@ -12,26 +12,34 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EOpeniscsi2;
-use base "EEntity::EComponent";
+use base 'EEntity::EComponent';
 
 use strict;
+use warnings;
 use General;
 
 sub addNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
     General::checkParams(args => \%args, required => ['mount_point', 'host']);
  
-    $args{mount_point} .= '/etc';
-
     # generation of /etc/iscsi/initiatorname.iscsi (needed to start the iscsid daemon)
+    my $cluster = $self->_getEntity->getServiceProvider;
     my $data = { initiatorname => $args{host}->getAttr(name => 'host_initiatorname')};
-    $self->generateFile(mount_point  => $args{mount_point},
-                        template_dir => "/templates/components/open-iscsi",
-                        input_file   => "initiatorname.iscsi.tt",
-                        output       => '/iscsi/initiatorname.iscsi',
-                        data         => $data);
+    
+    my $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/iscsi/initiatorname.iscsi',
+        template_dir  => '/templates/components/open-iscsi',
+        template_file => 'initiatorname.iscsi.tt',
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/iscsi',
+    );
     
     # TODO move internal/Kanopya_omitted_iscsid template generation here
 }

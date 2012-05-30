@@ -95,6 +95,15 @@ sub postStart {
     $self->{host_manager}->postStart(host => $self);
 }
 
+sub ping {
+    my ($self) = @_;
+    my $ip = $self->getAdminIp;
+    my $ping = Net::Ping->new();
+    my $pingable = $ping->ping($ip, 2);
+    $ping->close();
+    return $pingable ? $pingable : 0;
+}
+    
 sub checkUp {
     my $self = shift;
     my %args = @_;
@@ -117,49 +126,6 @@ sub checkUp {
     }
 
     return $pingable ? $pingable : 0;
-}
-
-sub generateUdevPersistentNetRules {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'etc_path' ]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    # create Template object
-    my $template = Template->new(General::getTemplateConfiguration());
-    my $input = "udev_70-persistent-net.rules.tt";
-
-    my @interfaces = ();
-    
-    for my $iface ($self->_getEntity()->getIfaces()) {
-        my $tmp = {
-            mac_address   => lc($iface->getAttr(name => 'iface_mac_addr')),
-            net_interface => $iface->getAttr(name => 'iface_name')
-        };
-        push @interfaces, $tmp;
-    }
-       
-    $template->process($input, { interfaces => \@interfaces }, "/tmp/" . $tmpfile)
-        or die $template->error(), "\n";
-
-    $self->getExecutorEContext->send(
-        src => "/tmp/$tmpfile",
-        dest => "$args{etc_path}/udev/rules.d/70-persistent-net.rules"
-    );
-    unlink "/tmp/$tmpfile";
-}
-
-sub generateHostname {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'etc_path' ]);
-
-    my $hostname = $self->getAttr(name => 'host_hostname');
-    $self->getExecutorEContext->execute(
-        command => "echo $hostname > $args{etc_path}/hostname"
-    );
 }
 
 sub getEContext {

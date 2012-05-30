@@ -307,6 +307,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 linux0
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Linux0>
+
+=cut
+
+__PACKAGE__->might_have(
+  "linux0",
+  "AdministratorDB::Schema::Result::Linux0",
+  { "foreign.linux0_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 lvm2
 
 Type: might_have
@@ -518,8 +533,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-30 17:35:43
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fKwLe1tubXmbf+s1yZdz6Q
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-05-28 11:11:50
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:W2hl+LH9pBOkTgjv1dtAkw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
@@ -529,5 +544,4 @@ __PACKAGE__->belongs_to(
     { "foreign.entity_id" => "self.component_id" },
     { cascade_copy => 0, cascade_delete => 1 }
 );
-
 1;

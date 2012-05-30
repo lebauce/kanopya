@@ -41,6 +41,7 @@ use warnings;
 use Entity;
 use Entity::ServiceProvider::Inside::Cluster;
 use General;
+use Kanopya::Config;
 use EFactory;
 use Entity::InterfaceRole;
 
@@ -57,11 +58,13 @@ my $errmsg;
 sub create {
     my $self = shift;
     my %args = @_;
-
+    my $config = Kanopya::Config::get('executor');
+    
     # Create cluster directory
-    my $command = "mkdir -p /clusters/" . $self->getAttr(name => "cluster_name");
+    my $dir = "$config->{clusters}->{directory}/" . $self->getAttr(name => "cluster_name");
+    my $command = "mkdir -p $dir";
     $self->getExecutorEContext->execute(command => $command);
-    $log->debug("Execution : mkdir -p /clusters/" . $self->getAttr(name => "cluster_name"));
+    $log->debug("Execution : mkdir -p $dir");
 
     # set initial state to down
     $self->setAttr(name => 'cluster_state', value => 'down:'.time);
@@ -71,7 +74,7 @@ sub create {
     $self->save();
 
     # automatically add System|Monitoragent|Logger components
-    foreach my $compclass (qw/Entity::Component::Mounttable1
+    foreach my $compclass (qw/Entity::Component::Linux0
                               Entity::Component::Syslogng3
                               Entity::Component::Snmpd5/) {
         my $location = General::getLocFromClass(entityclass => $compclass);
@@ -117,80 +120,6 @@ sub addNode {
     return $host;
 }
 
-sub generateResolvConf {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'etc_path' ]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    my @nameservers = ();
-
-    for my $attr ('cluster_nameserver1','cluster_nameserver2') {
-        push @nameservers, {
-            ipaddress => $self->getAttr(name => $attr)
-        };
-    }
-
-    my $vars = {
-        domainname => $self->getAttr(name => 'cluster_domainname'),
-        nameservers => \@nameservers,
-    };
-
-
-    my $template = Template->new(General::getTemplateConfiguration());
-    my $input = "resolv.conf.tt";
-
-    $template->process($input, $vars, "/tmp/".$tmpfile) or die $template->error(), "\n";
-    $self->getExecutorEContext->send(
-        src  => "/tmp/$tmpfile",
-        dest => "$args{etc_path}/resolv.conf"
-    );
-    unlink "/tmp/$tmpfile";
-}
-
-sub generateHostsConf {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'etc_path', 'kanopya_domainname' ]);
-
-    $log->info('Generate /etc/hosts file');
-    my $rand = new String::Random;
-    my $hostsfile = '/tmp/' . $rand->randpattern('cccccccc');
-    my $template = Template->new(General::getTemplateConfiguration());
-    my $input = 'hosts.tt';
-    my $nodes = $self->getHosts();
-    my @hosts_entries = ();
-
-    # we add each nodes 
-    foreach my $node (values %$nodes) {
-        my $tmp = { 
-            hostname   => $node->getAttr(name => 'host_hostname'),
-            domainname => $args{kanopya_domainname},
-            ip         => $node->getAdminIp 
-        };
-
-        push @hosts_entries, $tmp;
-    }
-
-    # we ask components for additional hosts entries
-    my $components = $self->getComponents(category => 'all');
-    foreach my $component (values %$components) {
-        my $entries = $component->getHostsEntries();
-        if(defined $entries) {
-            foreach my $entry (@$entries) {
-                push @hosts_entries, $entry;
-            }
-        }
-    }
-
-    $template->process($input, { hosts => \@hosts_entries }, $hostsfile);
-    $self->getExecutorEContext->send(
-        src => $hostsfile,
-        dest => "$args{etc_path}/hosts"
-    );
-}
-
 =head
 
     $ecluster->updateHostsFile
@@ -203,13 +132,12 @@ sub generateHostsConf {
 sub updateHostsFile {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'kanopya_domainname' ]);
+    General::checkParams(args => \%args, required => [ 'host','kanopya_domainname' ]);
     
     $log->info('Update cluster nodes /etc/hosts');
     
     my $rand = new String::Random;
     my $kanopya_hostfile = '/tmp/' . $rand->randpattern("cccccccc");
-    my $node_hostfile = '/tmp/' . $rand->randpattern("cccccccc");
     my $template = Template->new(General::getTemplateConfiguration());
     my $input = "hosts.tt";
     
@@ -244,7 +172,15 @@ sub updateHostsFile {
         }
     }
     
-    $template->process($input, {hosts => \@cluster_nodes}, $node_hostfile);
+    my $nodefile = $self->generateNodeFile(
+        cluster       => $self->_getEntity,
+        host          => $args{host},
+        file          => '/etc/hosts',
+        template_dir  => '/templates/internal',
+        template_file => 'hosts.tt',
+        data          => { hosts => \@cluster_nodes }
+    );
+    
     $template->process($input, {hosts => \@all_nodes}, $kanopya_hostfile);
     
     foreach my $node (@cluster_nodes) {
@@ -252,7 +188,7 @@ sub updateHostsFile {
         eval {
             my $node_econtext = EFactory::newEContext(ip_source      => $self->getExecutorEContext->getLocalIp,
                                                       ip_destination => $node_ip);
-            $node_econtext->send(src => $node_hostfile, dest => "/etc/hosts");
+            $node_econtext->send(src => $nodefile, dest => '/etc/hosts');
             #$node->getEContext->send(src => $node_hostfile, dest => "/etc/hosts");
         };
         if ($@) {

@@ -3,7 +3,12 @@ use base 'BaseDB';
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
+
+use EntityLock;
 use EntityComment;
+use Workflow;
+use WorkflowParameter;
+use Kanopya::Exceptions;
 
 my $log = get_logger('administrator');
 
@@ -206,8 +211,8 @@ sub getEntities {
         my $obj = eval { $entity_class->get(id => $id); }; 
         if($@) {
             my $exception = $@; 
-            if(Kanopya::Exception::Permission::Denied->caught()) {
-                               $log->info("no right to access to object <$args{type}> with  <$id>");
+            if (Kanopya::Exception::Permission::Denied->caught()) {
+                $log->info("no right to access to object <$args{type}> with  <$id>");
                 next;
             }
             else { $exception->rethrow(); } 
@@ -239,15 +244,16 @@ sub setComment {
 
     General::checkParams(args => \%args, required => [ 'comment' ]);
 
+    my $comment;
     my $comment_id = $self->getAttr(name => 'entity_comment_id');
     if ($comment_id) {
-        my $comment = EntityComment->get(id => $comment_id);
+        $comment = EntityComment->get(id => $comment_id);
         $comment->setAttr(name => 'entity_comment', value => $args{comment});
         $comment->save();
         $log->info($comment);
     }
     else {
-        my $comment = EntityComment->new(entity_comment => $args{comment});
+        $comment = EntityComment->new(entity_comment => $args{comment});
         $self->setAttr(name => 'entity_comment_id', value => $comment->getAttr(name => 'entity_comment_id'));
         $self->save();
     }
@@ -255,6 +261,66 @@ sub setComment {
     $log->info($comment);
 }
 
+sub getWorkflows {
+    my $self = shift;
+    my %args = @_;
+
+    my @workflows = ();
+
+    # TODO: join tables workflow and workflow_parameter to get
+    #       paramters of running workflow only.
+    my @contexes = WorkflowParameter->search(hash => {
+                       tag   => 'context',
+                       value => $self->getId
+                   });
+
+    for my $context (@contexes) {
+        my $workflow = Workflow->get(id => $context->getAttr(name => 'workflow_id'));
+        if ($workflow->getAttr(name => 'state') eq 'running') {
+            push @workflows, $workflow;
+        }
+    }
+    return @workflows;
+}
+
+sub lock {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow' ]);
+
+    my $workflow_id = $args{workflow}->getAttr(name => 'workflow_id');
+    eval {
+        EntityLock->new(entity_id => $self->getId, workflow_id => $workflow_id);
+    };
+    if ($@) {
+        # Check if the lock is already owned by the workflow
+        my $lock;
+        eval {
+            $lock = EntityLock->find(hash => { entity_id   => $self->getId(),
+                                               workflow_id => $workflow_id });
+        };
+        if (not $lock) {
+            throw Kanopya::Exception::Execution::Locked(
+                      error => "Entity <" . $self->getId . "> already locked."
+                  );
+        }
+    }
+}
+
+sub unlock {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow' ]);
+
+    my $lock = EntityLock->find(hash => {
+                   entity_id   => $self->getId(),
+                   workflow_id => $args{workflow}->getAttr(name => 'workflow_id')
+               });
+
+    $lock->delete();
+}
 
 sub getAttr {
     my $self = shift;

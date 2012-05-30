@@ -42,7 +42,7 @@ INSERT INTO `class_type` VALUES
 (26, 'Entity::Component::Iptables1'),
 (27, 'Entity::Component::Keepalived1'),
 (28, 'Entity::Component::Memcached1'),
-(29, 'Entity::Component::Mounttable1'),
+(29, 'Entity::Component::Linux0'),
 (30, 'Entity::Component::Mysql5'),
 (31, 'Entity::Component::Openiscsi2'),
 (32, 'Entity::Component::Openldap1'),
@@ -383,7 +383,25 @@ INSERT INTO `operationtype` VALUES
 (41,'RemoveMasterimage'),
 (42,'AddNode'),
 (43,'ScaleCpuHost'),
-(44,'ScaleMemoryHost');
+(44,'ScaleMemoryHost'),
+(45,'CancelWorkflow');
+
+--
+-- Workflows definition
+--
+
+INSERT INTO `workflow_def` VALUES 
+(1,'AddNode'),
+(2,'StopNode');
+
+INSERT INTO `workflow_step` VALUES 
+(1, 1, 42),
+(2, 1, 23),
+(3, 1, 24),
+(4, 1, 27),
+(5, 2, 25),
+(6, 2, 21),
+(7, 2, 26);
 
 --
 -- components type list
@@ -398,7 +416,7 @@ INSERT INTO `component_type` VALUES
 (6,'Atftpd','0','Tftpserver'),
 (7,'Snmpd','5','Monitoragent'),
 (8,'Nfsd', '3', 'Export'),
-(9,'Mounttable','1','System'),
+(9,'Linux','0','System'),
 (10,'Mysql','5','DBMS'),
 (11,'Syslogng','3','Logger'),
 (12,'Iptables','1','Firewall'),
@@ -408,7 +426,8 @@ INSERT INTO `component_type` VALUES
 (16,'Fileimagemanager','0','Storage'),
 (17,'Puppetagent','2','Configurationagent'),
 (18,'Puppetmaster','2','Configurationserver'),
-(19,'Kanopyacollector','1','DataCollector');
+(19,'Kanopyacollector','1','Collectormanager'),
+(20, 'Keepalived','1','LoadBalancer');
 
 --
 -- connectors type list
@@ -532,7 +551,7 @@ INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/component
 INSERT INTO `component_template` VALUES (2,'dhcpd','/templates/components/dhcpd', 5);
 INSERT INTO `component_template` VALUES (3,'snmpd','/templates/components/snmpd', 7);
 INSERT INTO `component_template` VALUES (4,'iscsitarget','/templates/components/ietd', 3);
-INSERT INTO `component_template` VALUES (5,'mounttable','/templates/components/mounttable', 9);
+INSERT INTO `component_template` VALUES (5,'linux','/templates/components/linux', 9);
 INSERT INTO `component_template` VALUES (6,'nfsd','/templates/components/nfsd3', 8);
 
 

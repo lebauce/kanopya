@@ -12,11 +12,10 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EIptables1;
+use base 'EEntity::EComponent';
 
 use strict;
-use Template;
-use String::Random;
-use base "EEntity::EComponent";
+use warnings;
 use Log::Log4perl "get_logger";
 use General;
 use Data::Dumper;
@@ -26,13 +25,12 @@ my $errmsg;
 
 # generate de script iptables dans /etc/init.d/firewall
 sub configureNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
         
-    General::checkParams(args => \%args, required => ['host', 'mount_point', 'cluster']);
+    General::checkParams(args => \%args, required => ['host', 'mount_point']);
 
      #TODO insert configuration files generation
-    my $cluster = $args{cluster};
+    my $cluster = $self->_getEntity->getServiceProvider;
     my $data = {};
        
     my $components = $cluster->getComponents(category => "all"); 
@@ -76,11 +74,21 @@ sub configureNode {
             $data->{$element} = $$iptables_secure{$element};     
         }
      }
-     $self->generateFile(mount_point  => $args{mount_point}.'/etc',
-                         template_dir => "/templates/components/iptables",
-                         input_file   => "Iptables.tt",
-                         output       => '/init.d/firewall',
-                         data         => $data);
+     
+     my $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/init.d/firewall',
+        template_dir  => '/templates/components/iptables',
+        template_file => 'Iptables.tt',
+        data          => $data 
+    );
+    
+     $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/init.d'
+    );
+
 
      my $command = '/bin/chmod +x '.$args{mount_point}.'/etc/init.d/firewall';
      my $result = $self->getExecutorEContext->execute(command => $command);
@@ -95,15 +103,11 @@ sub configureNode {
 
                
 sub addNode {
-    my $self = shift;
-    my %args = @_;    
+    my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => ['host', 'mount_point', 'cluster']);
 
-    $self->configureNode(
-               host => $args{host},
-        mount_point => $args{mount_point}.'/etc',
-            cluster => $args{cluster}
-    );
+    $self->configureNode(%args);
     
     #TODO addInitScript(..) if there is a daemon associated to this component
     # status iptables 
@@ -114,25 +118,13 @@ sub addNode {
 }
 
 
-# Reload process
-sub activate{
-   my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['mount_point']);
 
-    my $command = '/bin/chmod +x'.$args{mount_point}.'/init.d/firewall';
-    my $result = $self->getExecutorEContext->execute(command => $command);
-    return undef;
-}   
 
 
 
   
 sub reload {
-    my $self = shift;
-    my %args = @_;
-
+    my ($self, %args) = @_;
     my $command = "invoke-rc.d iptables restart";
     my $result = $self->getEContext->execute(command => $command);
     return undef;

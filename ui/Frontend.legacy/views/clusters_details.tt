@@ -25,7 +25,8 @@
 		<span class="desc">Force this cluster to stop, to use when something went wrong.</span><br /><br />
 	<% END %>
 <% END %>
-</td></tr><tr>
+</td></tr>
+<tr>
 <% IF active %>
 	<td>
 	<% SWITCH cluster_state %>
@@ -45,7 +46,15 @@
 	<td></td>
 <% END %>
 </tr>
+    <% FOREACH workflow IN workflow_list %>
+        <tr><td class="label2"><% workflow.workflow_name %>, current operation: <% workflow.current_op %> <% workflow.current_op_state %></td>
+            <td class="action">
+                <a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/workflow/<% workflow.workflow_id %>/cancel">cancel</a>
+            </td>
+        </tr>
+    <% END %>
 </table>
+
 
 <hr />
 <span id="mainsettings" class="title simpleexpand">Main settings</span>
@@ -151,6 +160,12 @@
 		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/nodes/add">add a node</a><br />
 		<span class="desc">Add a node to this cluster.</span><br /><br />
 	<% END %>
+
+    <% IF isVirtual %>
+        <a class="" href="/architectures/clusters/<% cluster_id %>/optimiaas">optimize infrastructure</a><br />
+        <span class="desc">Optimize VM placement on the hypervisors <br/> Warning : this may take some time.</span><br /><br />
+    <% END %>
+	
 	</td></tr>
 	<% FOREACH node IN nodes_list %>
 		<tr><td class="label2"><span class="bold"><a href="/infrastructures/hosts/<% node.host_id %>"><% node.host_hostname %></a></span><% IF node.master_node %> (master)<% END %></td>
@@ -177,7 +192,7 @@
 <table id="Xmonitor" class="detailspart list">
 <tr>
 <td colspan="2">
-<a class="imgMonitor" href="/architectures/clusters/<% cluster_id %>/monitoring">activity</a>
+<a class="imgMonitor" href="/architectures/extclusters/<% cluster_id %>/monitoring">activity</a>
 </td>
 <td class="actions">
 <a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring/settings">settings</a><bd/>

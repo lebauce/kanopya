@@ -1,3 +1,20 @@
+# Copyright © 2011 Hedera Technology SAS
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+
 package EOperation;
 
 use strict;
@@ -35,53 +52,17 @@ sub new {
     my $context = $params->{context};
     delete $params->{context};
 
-    my $self = { 
+    my $self = {
         config     => $args{config},
         params     => $params,
-        context    => defined $args{context} ? $args{context} : {},
+        context    => $context,
         _operation => $args{data},
         _executor  => Entity->get(id => $args{config}->{cluster}->{executor})
     };
 
     bless $self, $class;
 
-    # Set the context environement
-    if ($context) {
-        $self->setContext(context => $context);
-    }
-
     return $self;
-}
-
-sub setContext {
-    my $self  = shift;
-    my $class = ref($self);
-    my %args  = @_;
-
-    General::checkParams(args => \%args, required => [ 'context' ]);
-
-    # Search for entities, and instanciate them
-    foreach my $key (keys %{$args{context}}) {
-        # Try to instanciate it as an entity.
-        my $value;
-        eval {
-            $value = EFactory::newEEntity(data => Entity->get(id => $args{context}->{$key}));
-        };
-        if ($@) {
-            $errmsg = "Operation <$class>, arg <$args{context}->{$key}>, seems not to be an entity id.\n$@";
-            $log->debug($errmsg);
-            throw Kanopya::Exception::Internal(error => $errmsg);
-        }
-
-        if (defined $self->{context}->{$key}) {
-            throw Kanopya::Exception::Execution(
-                      error => "Entity <" . $value->getAttr(name => 'entity_id') .
-                               ">, is already in context with key <$key>"
-                  );
-        }
-
-        $self->{context}->{$key} = $value;
-    }
 }
 
 sub prepare {
@@ -117,11 +98,19 @@ sub process{
 
 sub cancel {
     my $self = shift;
-    $self->{_operation}->{cancelled} = 1;
     $self->_cancel;
+
+    $self->setState(state => 'cancelled');
 }
 
 sub prerequisites {
+    my $self = shift;
+
+    # Operations are not reported by default.
+    return 0;
+}
+
+sub postrequisites {
     my $self = shift;
 
     # Operations are not reported by default.
@@ -142,12 +131,6 @@ sub report {
 
     $log->debug("Reporting operation with duration_report : $args{duration}");
     $self->_getOperation->setHopedExecutionTime(value => $args{duration});
-}
-
-sub delete {
-    my $self = shift;
-
-    $self->{_operation}->delete();
 }
 
 sub getEContext {

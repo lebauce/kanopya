@@ -189,12 +189,9 @@ sub getHyperVisorHostId(){
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => []);
 
-            
     my $host_type = $self->getHostManager()->getHostType();
-    if($host_type eq "Virtual Machine"){
-        
-#        my $hv_host_id = $self->{_dbix}->opennebula3_vms->first->opennebula3_hypervisor->get_column('hypervisor_host_id');        
-#        return $hv_host_id;
+    my ($state,$timestamp) = $self->getNodeState();
+    if($host_type eq "Virtual Machine" && $state eq 'in'){
         
         my $opennebula3_vms = $self->{_dbix}->opennebula3_vms;
         
@@ -417,7 +414,7 @@ sub stopToBeNode{
     };
     if($@) {
         $errmsg = "Node representing host " . $self->getAttr(name => "entity_id") . " not found!";
-        throw Kanopya::Exception::DB(error => $errmsg);
+        #throw Kanopya::Exception::DB(error => $errmsg);
     }
 
     # Dissociate iface from cluster interfaces
