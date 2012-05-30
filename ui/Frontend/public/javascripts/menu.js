@@ -62,7 +62,7 @@ function build_submenu(container, view_id, links, elem_id) {
     //var container = $('#view-container');
     
     // Create the div container for this view
-    var view = $('<div class="view" id="' + view_id + '"></div>').appendTo(container);
+    var view = $('<div class="master_view" id="' + view_id + '"></div>').appendTo(container);
     // Tab container of the view
     var submenu_cont = $('<ul></ul>').appendTo(view);
     
@@ -92,7 +92,7 @@ function build_submenu(container, view_id, links, elem_id) {
 
 function build_detailmenu(container, view_id, links, elem_id) {
     // Create the div container for this view
-    var view = $('<div class="view" id="' + view_id + '"></div>').appendTo(container);
+    var view = $('<div class="master_view" id="' + view_id + '"></div>').appendTo(container);
     // Tab container of the view
     var submenu_cont = $('<ul></ul>').appendTo(view);
     
@@ -121,7 +121,7 @@ function onViewLinkSelect(event) {
     var elem_id = event.data.elem_id;
     
     // Hide all view div
-    $('#view-container .view').hide();
+    $('#view-container .master_view').hide();
     
     // Show div corresponding to this link 
     //$($(this).attr('href')).show(0, function(){alert('end show')});
@@ -172,7 +172,7 @@ $(document).ready(function () {
     
     // Display dashboard when click on product name
     $('#product-name').click( function () {
-            $('#view-container .view').hide();
+            $('#view-container .master_view').hide();
             $('#view-dashboard').show();
         }
     );
