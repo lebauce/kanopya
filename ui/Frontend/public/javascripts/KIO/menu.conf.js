@@ -96,11 +96,23 @@ function servicesList (container_id, elem_id) {
           
             var SCOMMod;
             var select  = $("<select>");
-            $(select).append($("<option>", { value : '1', text : 'SCOM' }));
+            var options;
+            $.ajax({
+                async   : false,
+                type    : 'get',
+                url     : '/api/connectortype?connector_category=MonitoringService',
+                success : function(data) {
+                    options = data;
+                }
+            });
+            for (option in options) {
+                option = options[option];
+                $(select).append($("<option>", { value : option.pk, text : option.connector_name }));
+            }
             $(select).bind('change', function(event) {
                 var newMod;
                 switch(event.currentTarget.value) {
-                    case '1':
+                    case '2':
                         newMod = createScomDialog();
                         break;
                 }
@@ -155,7 +167,19 @@ function servicesList (container_id, elem_id) {
          
             var ADMod;
             select  = $("<select>");
-            $(select).append($("<option>", { value : '1', text : 'ActiveDirectory' }));
+            var options;
+            $.ajax({
+                async   : false,
+                type    : 'get',
+                url     : '/api/connectortype?connector_category=DirectoryService',
+                success : function(data) {
+                    options = data;
+                }
+            });
+            for (option in options) {
+                option = options[option];
+                $(select).append($("<option>", { value : option.pk, text : option.connector_name }));
+            }
             $(select).bind('change', function(event) {
                 var newMod;
                 switch(event.currentTarget.value) {
