@@ -302,29 +302,52 @@ function loadServicesConfig (container_id, elem_id) {
 	bu.appendTo(container);
     }
     
+    var connector_type_id = '';
+    var connector_name = '';
+    $('<h2>Connectors :</h2>').appendTo(container);
+ 
     $.ajax({
  		url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
  		success: function(data) {
 			$(data.rows).each(function(row) {
 				if ( data.rows[row].service_provider_id == elem_id ) {
     				ad_nodes_base_dn = data.rows[row].class_type_id;
-    				$('<div>Connectors for Service ' + ad_nodes_base_dn + '<div>').appendTo(container);
+    				connector_type_id = data.rows[row].connector_type_id;
+    				
     			}
     		});
     	}
 	});
 	
+	// Get the connectors types :
+	$.ajax({
+	url: '/api/connectortype?dataType=jqGrid',
+	success: function(data) {
+			$(data.rows).each(function(row) {
+				if ( data.rows[row].pk == connector_type_id ) {
+					connector_name = data.rows[row].connector_name;
+					$('<div><table><tr>' + connector_name + '&nbsp;Configure&nbsp;&nbsp;Delete</tr></table></div>').appendTo(container);
+				}
+			});
+		}
+	});
 }
 
 function loadServicesRessources (container_id, elem_id) {
 	create_grid(container_id, 'service_ressources_list',
-            ['ID','Base hostname', 'Initiator name'],
+            ['id','state', 'hostname'],
             [ 
-             {name:'entity_id',index:'entity_id', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'host_hostname',index:'host_hostname', width:90, sorttype:"date"},
-             {name:'host_initiatorname',index:'host_initiatorname', width:200,}
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'externalnode_state',index:'externalnode_state', width:90, sorttype:"date"},
+             {name:'externalnode_hostname',index:'externalnode_hostname', width:200,}
            ]);
+<<<<<<< HEAD
     reload_grid('service_ressources_list', '/api/host');
 
     createUpdateNodeButton($('#' + container_id), elem_id);
+=======
+    reload_grid('service_ressources_list','/api/externalnode?outside_id=' + elem_id);
+    $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
+    
+>>>>>>> [UI] [Services] list ressources for services
 }
