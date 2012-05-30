@@ -93,13 +93,15 @@ sub _rootTable {
 }
 
 sub classFromDbix {
-    my $dbix = shift;
-    my $name = ucfirst($dbix->result_source->from);
+    my $source = shift;
+    my $args = @_;
+
+    my $name = ucfirst($source->from);
 
     while (1) {
-        last if not $dbix->can("parent");
-        $dbix = $dbix->parent;
-        $name = ucfirst($dbix->result_source->from) . "::" . $name;
+        last if not $source->has_relationship("parent");
+        $source = $source->parent;
+        $name = ucfirst($source->from) . "::" . $name;
     }
 
     my $i = 0;
@@ -408,9 +410,11 @@ sub search {
     my $depth = scalar @hierarchy;
     my $n = $depth;
     while ($n > 0) {
+        last if $hierarchy[$n - 1] eq "BaseDB";
         $join = $adm->{db}->source($hierarchy[$n - 1])->has_relationship("parent") ?
                     ($join ? { parent => $join } : "parent") :
                     $join;
+
         $n -= 1;
     }
 
@@ -581,7 +585,14 @@ sub toJSON {
     my $pk;
     my $hash = {};
     my $class = ref ($self) || $self;
-    my $attributes = $class->getAttrDefs();
+    my $attributes;
+
+    eval {
+        $attributes = $class->getAttrDefs();
+    };
+    if ($@) {
+        $attributes = $self->getAttrDefs();
+    }
 
     foreach my $class (keys %$attributes) {
         foreach my $attr (keys %{$attributes->{$class}}) {
