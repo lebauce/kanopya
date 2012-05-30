@@ -128,7 +128,14 @@ sub format_results {
         my $results = $class->search_rs(\%args, \%params);
         while (my $obj = $results->next) {
             my $basedb = bless { _dbix => $obj }, "BaseDB";
-            push @$objs, ($basedb->toJSON);
+            my $json = $basedb->toJSON;
+            my %columns = $obj->get_columns;
+            for my $key (keys %columns) {
+                if (defined $columns{$key}) {
+                    $json->{$key} = $columns{$key};
+                }
+            }
+            push @$objs, $json;
         }
 
         $result = {
