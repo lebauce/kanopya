@@ -465,7 +465,7 @@ sub search {
         }
     }
 
-    if (defined ($args{dataType}) and $args{dataType} eq "jqGrid") {
+    if (defined ($args{dataType}) and $args{dataType} eq "hash") {
         return {
             rows    => \@objs,
             page    => $args{page} || undef,
