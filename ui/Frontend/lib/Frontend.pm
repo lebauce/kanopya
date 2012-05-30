@@ -52,6 +52,8 @@ sub exception_to_status {
     my $exception = shift;
     my $status;
 
+    return $status if not defined $exception; 
+
     if ($exception->isa("Kanopya::Exception::Permission::Denied")) {
         $status = 'forbidden';
     }
