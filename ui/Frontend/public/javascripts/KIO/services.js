@@ -1,16 +1,20 @@
 
+// Check if there is a configured directory service
 function isTheADirectoryService(elem_id) {
     var is	= false;
     
+    // Get all configured connectors on the service
     $.ajax({
 	async	: false,
 	url	: '/api/connector?service_provider_id=' + elem_id,
 	success	: function(connectors) {
 	    for (i in connectors) if (connectors.hasOwnProperty(i)) {
+		// Get the connector type for each
 		$.ajax({
 		    async	: false,
 		    url		: '/api/connectortype?connector_type_id=' + connectors[i].connector_type_id,
 		    success	: function(data) {
+			// If this is a Directory Service, then we can return true
 			if (data[0].connector_category === 'DirectoryService') {
 			    is	= true;
 			}
@@ -29,11 +33,13 @@ function isTheADirectoryService(elem_id) {
 function createUpdateNodeButton(container, elem_id) {
     var button = $("<button>", { text : 'Update Nodes' });
     isTheADirectoryService(elem_id);
+    // Check if there is a configured directory service
     if (isTheADirectoryService(elem_id) === true) {
 	$(button).bind('click', function(event) {
 	    var dialog = $("<div>", { css : { 'text-align' : 'center' } });
 	    dialog.append($("<label>", { for : 'adpassword', text : 'Please enter your password :' }));
 	    dialog.append($("<input>", { id : 'adpassword', name : 'adpassword' }));
+	    // Create the modal dialog
 	    $(dialog).dialog({
 		modal		: true,
 		title		: "Update service nodes",
@@ -44,6 +50,7 @@ function createUpdateNodeButton(container, elem_id) {
 		    'Ok'	: function() {
 			var passwd 	= $("input#adpassword").attr('value');
 			var ok		= false;
+			// If a password was typen, then we can submit the form
 			if (passwd !== "" && passwd !== undefined) {
 			    $.ajax({
 				url	: '/kio/services/' + elem_id + '/nodes/update',
@@ -56,6 +63,7 @@ function createUpdateNodeButton(container, elem_id) {
 				    ok	= true;
 				}
 			    });
+			    // If the form succeed, then we can close the dialog
 			    if (ok === true) {
 				$(this).dialog('destroy');
 			    }
@@ -72,7 +80,9 @@ function createUpdateNodeButton(container, elem_id) {
 	});
     } else {
 	$(button).attr('disabled', 'disabled');
+	$(button).attr('title', 'Your service must be connected with a directory.')
     }
+    // Finally, append the button in the DOM tree
     $(container).append(button);
 }
 
