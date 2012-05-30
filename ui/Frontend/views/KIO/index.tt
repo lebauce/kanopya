@@ -1,7 +1,6 @@
 <script src="/javascripts/jquery/lib/jquery.dashboard.patch.js"></script>
 <script src="/javascripts/jquery/lib/highcharts.js"></script>
 <script src="/javascripts/jquery/lib/exporting.js"></script>
-<script src="/javascripts/jquery/lib/themeroller.js"></script>
 
 <script src="/javascripts/KIO/services.js"></script>
 <script src="/javascripts/KIO/menu.conf.js"></script>
@@ -34,7 +33,6 @@
 <div class="ui-layout-north">
     <div id='header'>
         <span id='product-name'>Kanopya Infrastructure Optimizer</span>
-        <div id="switcher"></div>
         <div id="infologin">
             logged as <span id="username"><% username %></span>
         </div>

@@ -20,6 +20,6 @@ $(document).ready(function () {
     );
     
     // call for the themeswitcher
-    $('#switcher').themeswitcher();
+    //$('#switcher').themeswitcher();
     
 });
