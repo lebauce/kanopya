@@ -5,6 +5,7 @@ use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
 
 use Login;
+use KIO::Services;
 use Messager;
 use REST::api;
 
