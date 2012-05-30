@@ -1608,7 +1608,8 @@ CREATE TABLE `scope_parameter` (
   `class_type_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`scope_parameter_id`),
   UNIQUE KEY (`scope_parameter_name`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`scope_id`) REFERENCES `scope` (`scope_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;
