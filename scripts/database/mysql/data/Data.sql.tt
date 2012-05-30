@@ -676,12 +676,13 @@ SET @eid := @eid +1;
 --
 -- Scopes
 --
+
 INSERT INTO `scope` VALUES (1,'node',80);
 INSERT INTO `scope` VALUES (2,'service_provider',80);
 
 
 --
---Scopes Parameters
+-- Scopes Parameters
 --
 
 INSERT INTO `scope_parameter` VALUES (1,1,'node_id',81);
