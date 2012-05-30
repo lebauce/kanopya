@@ -280,7 +280,7 @@ sub setupREST {
             return to_json($obj->toJSON);
         };
 
-        get '/api/' . $resource => sub {
+        get '/api/' . $resource . '/?' => sub {
             content_type 'application/json';
 
             require (General::getLocFromClass(entityclass => $class));
