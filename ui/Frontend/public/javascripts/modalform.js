@@ -106,6 +106,19 @@ var ModalForm = (function() {
         this.beforeSubmit   = args.beforeSubmit || $.noop;
         this.cancelCallback = args.cancel       || $.noop;
     }
+ 
+    ModalForm.prototype.exportArgs = function() {
+        return {
+            name            : this.name,
+            id              : this.id,
+            callback        : this.callback,
+            fields          : this.fields,
+            title           : this.title,
+            skippable       : this.skippable,
+            beforeSubmit    : this.beforeSubmit,
+            cancelCallback  : this.cancelCallback
+        };
+    }
     
     ModalForm.prototype.newFormElement = function(elementName, element, value) {
         // Create input and label DOM elements
