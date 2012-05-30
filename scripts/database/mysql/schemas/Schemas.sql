@@ -1671,4 +1671,21 @@ CREATE TABLE `workflow_instance` (
   FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `workflow_instance_param`
+--
+
+CREATE TABLE `workflow_instance_param` (
+  `workflow_instance_param_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `workflow_instance_id` int(8) unsigned NOT NULL,
+  `workflow_instance_param_name` int(8) unsigned NOT NULL,
+  `workflow_instance_param_value` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`workflow_instance_param_id`),
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`workflow_instance_id`),
+  FOREIGN KEY (`workflow_instance_id`) REFERENCES `workflow_instance` (`workflow_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks=1;
