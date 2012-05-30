@@ -389,7 +389,8 @@ INSERT INTO `operationtype` VALUES
 (43,'ScaleCpuHost'),
 (44,'ScaleMemoryHost'),
 (45,'CancelWorkflow'),
-(46,'LaunchSCOWorkflow');
+(46,'LaunchSCOWorkflow'),
+(47,'UpdatePuppetCluster');
 
 --
 -- Workflows definition
