@@ -50,6 +50,21 @@ __PACKAGE__->add_unique_constraint("workflow_def_name", ["workflow_def_name"]);
 
 =head1 RELATIONS
 
+=head2 workflow_instances
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowInstance>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_instances",
+  "AdministratorDB::Schema::Result::WorkflowInstance",
+  { "foreign.workflow_def_id" => "self.workflow_def_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 workflow_steps
 
 Type: has_many
@@ -66,8 +81,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-05-21 22:53:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:j81HTzbgpAtVe0/Day5Yfw
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-05-30 14:27:01
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zmLJUFs9yUl/TrdMHAKFiw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
