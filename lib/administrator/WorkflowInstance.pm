@@ -22,9 +22,10 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+
 use General;
 use ScopeParameter;
-
+use Scope;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -75,9 +76,7 @@ sub getSpecificParams {
 
     General::checkParams(args => \%args, required => [ 'scope_name' ]);
     my $scope_name = $args{scope_name};
-
-    my $scope    = Scope->find(hash => {scope_name => $scope_name});
-    my $scope_id = $scope->getAttr(name => 'scope_id');
+    my $scope_id = Scope->getIdFromName(scope_name => $scope_name);
     my $scope_parameter_list = $self->getScopeParameterNameList(
         scope_id => $scope_id
     );
