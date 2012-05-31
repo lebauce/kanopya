@@ -185,7 +185,21 @@ function createAddServiceButton(container) {
         title       : 'Step 1 of 3 : Add a Service',
         name        : 'externalcluster',
         fields      : service_fields,
+        beforeSubmit: function() {
+            setTimeout(function() {
+                var dialog = $("<div>", { id : "waiting_default_insert", text : "Initializing configuration" });
+                dialog.css('text-align', 'center');
+                dialog.appendTo("body").dialog({
+                    draggable   : false,
+                    resizable   : false,
+                    title       : ""
+                });
+                $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
+            }, 10);
+            return true;
+        },
         callback    : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
             reloadServices();
             createDirectoryDialog(data.pk, true).start();
         }
