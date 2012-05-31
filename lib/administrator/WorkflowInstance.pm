@@ -56,7 +56,11 @@ sub getAttrDef { return ATTR_DEF; }
 
 
 sub getValues {
+    my ($self,%args) = @_;
 
+    my $specific_parameter_values = $self->_getSpecificValues();
+
+    return $specific_parameter_values;
 }
 
 sub setSpecificValues {
@@ -105,7 +109,25 @@ sub getSpecificParams {
 }
 
 sub _getSpecificValues {
+    my ($self,%args) = @_;
+    
+    my $workflow_instance_id = $self->getAttr(name => 'workflow_instance_id');
 
+    my @specific_parameter = WorkflowInstanceParameter->search(
+        hash => {workflow_instance_id => $workflow_instance_id}
+    );
+
+    my $specific_parameter_values;
+    my $specific_parameter_name;
+    my $specific_parameter_value;
+
+    foreach my $specific_parameter (@specific_parameter) {
+        $specific_parameter_name  = $specific_parameter->getAttr (name => 'workflow_instance_parameter_name');
+        $specific_parameter_value = $specific_parameter->getAttr (name => 'workflow_instance_parameter_value'); 
+        $specific_parameter_values->{$specific_parameter_name} = $specific_parameter_value;
+    }  
+
+    return $specific_parameter_values;
 }
 
 sub _getAutomaticParams {
