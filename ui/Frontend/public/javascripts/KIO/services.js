@@ -71,6 +71,26 @@ function createMonitoringDialog(elem_id, firstDialog) {
         return new ModalForm(scom_opts);
     }
   
+    function createMockMonitorDialog(elem) {
+        var mock_opts   = {
+                title       : 'Add a Monitoring Service',
+                name        : 'mockmonitor',
+                fields      : {
+                    service_provider_id : {
+                        label   : '',
+                        type    : 'hidden',
+                        value   : elem_id
+                    }
+                }
+            }
+            
+        if (firstDialog) {
+            mock_opts.skippable = true;
+            mock_opts.title = 'Step 3 of 3 : ' + mock_opts.title;
+        }
+        return new ModalForm(mock_opts);
+    }
+    
     var SCOMMod;
     var select  = $("<select>");
     var options;
@@ -92,11 +112,14 @@ function createMonitoringDialog(elem_id, firstDialog) {
             case '2':
                 newMod = createScomDialog();
                 break;
+            case '8':
+                newMod = createMockMonitorDialog();
+                break;
         }
         $(SCOMMod.form).remove();
         SCOMMod.form = newMod.form;
         SCOMMod.handleArgs(newMod.exportArgs());
-        $(SCOMMod.content).append(ADMod.form);
+        $(SCOMMod.content).append(SCOMMod.form);
         SCOMMod.startWizard();
     });
     SCOMMod   = createScomDialog(select);

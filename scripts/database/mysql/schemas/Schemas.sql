@@ -1559,6 +1559,17 @@ CREATE TABLE `scom` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for connector `mock_monitor`
+--
+
+CREATE TABLE `mock_monitor` (
+  `mock_monitor_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`mock_monitor_id`),
+  FOREIGN KEY (`mock_monitor_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
 -- Table structure for table `masterimage`
 -- Entity::Masterimage class
 
