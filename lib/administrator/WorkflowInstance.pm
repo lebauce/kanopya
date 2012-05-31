@@ -95,7 +95,24 @@ sub _getSpecificValues {
 }
 
 sub _getAutomaticParams {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => [ 'scope_name', 'all_params' ]);
+    my $all_params = $args{all_params};
+    my $scope_name = $args{scope_name};
+    my $scope_id   = Scope->getIdFromName(scope_name => $scope_name);
+    my $scope_parameter_list = $self->getScopeParameterNameList(
+        scope_id => $scope_id
+    );
 
+    my $automatic_params = {};
+
+    for my $param (@$scope_parameter_list) {
+        if (exists $all_params->{$param}){
+            $automatic_params->{$param} = undef;
+        }
+    }
+
+    return $automatic_params;
 }
 
 sub _getAutomaticValues {
