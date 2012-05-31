@@ -27,6 +27,9 @@ use General;
 use ScopeParameter;
 use Scope;
 use WorkflowInstanceParameter;
+use Entity::ServiceProvider::Outside;
+use Node;
+use Entity::Host;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -151,8 +154,73 @@ sub _getAutomaticParams {
     return $automatic_params;
 }
 
-sub _getAutomaticValues {
+sub _getAutomaticValue {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['automatic_param_name']);
 
+    if(defined $args{node_id}){
+        return $self->_getAutomaticNodeValues(%args);
+    }elsif(defined $args{cluster_id}){
+        return $self->_getAutomaticClusterValues(%args);
+    }else {
+        throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
+    }
+}
+
+sub _getAutomaticNodeValue{
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['automatic_param_name','node_id']);
+    my $automatic_param_name = $args{automatic_param_name};
+    my $node_id              = $args{node_id};
+
+    if($automatic_param_name eq 'node_id'){
+        return $node_id;
+    }
+    elsif($automatic_param_name eq 'node_ip'){
+
+        my $node                = Node->get(id => $node_id);
+        my $host_id             = $node->getAttr(name => 'host_id');
+        my $host                = Entity::Host->get(id=>$host_id);
+        return $host->getAdminIp();
+
+    }
+    elsif($automatic_param_name eq 'node_name'){
+
+        my $node                = Node->get(id => $node_id);
+        my $host_id             = $node->getAttr(name => 'host_id');
+        my $host                = Entity::Host->get(id=>$host_id);
+        return $host->getAttr(name => 'host_hostname');
+
+    }
+    elsif($automatic_param_name eq 'ou_from'){
+
+        my $node                = Node->get(id => $node_id);
+        my $service_provider_id = $node->getAttr(name => 'inside_id');
+        my $outside    = Entity::ServiceProvider::Outside
+                              ->get('id' => $service_provider_id);
+        my $directoryServiceConnector = $outside->getConnector(
+                                                      'category' => 'DirectoryService'
+                                                  );
+        my $ou_from    = $directoryServiceConnector->getAttr(
+                                                         'name' => 'ad_nodes_base_dn'
+                                                 );
+    }
+    else{
+        throw Kanopya::Exception(error => "Unknown automatic parameter $automatic_param_name in node scope");
+    }
+}
+
+sub _getAutomaticClusterValue{
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['automatic_param_name','cluster_id']);
+    my $automatic_param_name = $args{automatic_param_name};
+    my $cluster_id           = $args{cluster_id};
+    if($automatic_param_name eq 'cluster_id'){
+        return $cluster_id;
+    }
+    else{
+        throw Kanopya::Exception(error => "Unknown automatic parameter $automatic_param_name in node scope");
+    }
 }
 
 sub _parse{
