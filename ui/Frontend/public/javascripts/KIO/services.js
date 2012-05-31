@@ -1,6 +1,10 @@
-
+$.validator.addMethod("regex", function(value, element, regexp) {
+    var re = new RegExp(regexp);
+    return this.optional(element) || re.test(value);
+}, "Please check your input");
+ 
 // Check if there is a configured directory service
-function isTheADirectoryService(elem_id) {
+function isThereAConnector(elem_id, connector_category) {
     var is	= false;
     
     // Get all configured connectors on the service
@@ -15,7 +19,7 @@ function isTheADirectoryService(elem_id) {
 		    url		: '/api/connectortype?connector_type_id=' + connectors[i].connector_type_id,
 		    success	: function(data) {
 			// If this is a Directory Service, then we can return true
-			if (data[0].connector_category === 'DirectoryService') {
+			if (data[0].connector_category === connector_category) {
 			    is	= true;
 			}
 		    }
@@ -30,11 +34,190 @@ function isTheADirectoryService(elem_id) {
     return is;
 }
 
+function createMonitoringDialog(elem_id, firstDialog) {
+    function createScomDialog(elem) {
+	var scom_fields = {
+	    scom_ms_name        : {
+		label   : 'Root Management Server FQDN'
+	    },
+	    scom_usessl         : {
+		label   : 'Use SSL ?',
+		type    : 'checkbox'
+	    },
+	    service_provider_id : {
+		label   : '',
+		type    : 'hidden',
+		value   : elem_id
+	    }
+	};
+	var scom_opts   = {
+	    title       : 'Add a Monitoring Service',
+	    name        : 'scom',
+	    fields      : scom_fields,
+	}
+	if (elem !== undefined) {
+	    scom_opts.prependElement = elem;
+	}
+	if (firstDialog) {
+	    scom_opts.skippable = true;
+	    scom_opts.title	= 'Step 3 of 3 : ' + scom_opts.title;
+	}
+	return new ModalForm(scom_opts);
+    }
+  
+    var SCOMMod;
+    var select  = $("<select>");
+    var options;
+    $.ajax({
+	async   : false,
+	type    : 'get',
+	url     : '/api/connectortype?connector_category=MonitoringService',
+	success : function(data) {
+	    options = data;
+	}
+    });
+    for (option in options) {
+	option = options[option];
+	$(select).append($("<option>", { value : option.pk, text : option.connector_name }));
+    }
+    $(select).bind('change', function(event) {
+	var newMod;
+	switch(event.currentTarget.value) {
+	    case '2':
+		newMod = createScomDialog();
+		break;
+	}
+	$(SCOMMod.form).remove();
+	SCOMMod.form = newMod.form;
+	SCOMMod.handleArgs(newMod.exportArgs());
+	$(SCOMMod.content).append(ADMod.form);
+	SCOMMod.startWizard();
+    });
+    SCOMMod   = createScomDialog(select);
+    return SCOMMod;
+}
+
+function createDirectoryDialog(elem_id, firstDialog) {
+    function createADDialog(elem) {
+	var ad_fields   = {
+	    ad_host             : {
+		label   : 'Domain controller name'
+	    },
+	    ad_nodes_base_dn    : {
+		label   : 'Nodes container domain name'
+	    },
+	    ad_user             : {
+		label   : 'User@domain'
+	    },
+	    ad_pwd              : {
+		label   : 'Password',
+		type    : 'password'
+	    },
+	    ad_usessl           : {
+		label   : 'Use SSL ?',
+		type    : 'checkbox'
+	    },
+	    service_provider_id : {
+		label   : '',
+		type    : 'hidden',
+		value   : elem_id
+	    }
+	};
+	var ad_opts     = {
+	    title       : 'Add an Directory Service',
+	    name        : 'activedirectory',
+	    fields      : ad_fields
+	};
+	if (elem !== undefined) {
+	    ad_opts.prependElement = elem;
+	}
+	if (firstDialog) {
+	    ad_opts.skippable	= true;
+	    ad_opts.callback	= function() { createMonitoringDialog(elem_id, firstDialog).start(); };
+	    ad_opts.title	= 'Step 2 of 3 : ' + ad_opts.title;
+	}
+	return new ModalForm(ad_opts);
+    }
+ 
+    var ADMod;
+    select  = $("<select>");
+    var options;
+    $.ajax({
+	async   : false,
+	type    : 'get',
+	url     : '/api/connectortype?connector_category=DirectoryService',
+	success : function(data) {
+	    options = data;
+	}
+    });
+    for (option in options) {
+	option = options[option];
+	$(select).append($("<option>", { value : option.pk, text : option.connector_name }));
+    }
+    $(select).bind('change', function(event) {
+	var newMod;
+	switch(event.currentTarget.value) {
+	    case '1':
+		newMod = createADDialog();
+		break;
+	}
+	$(ADMod.form).remove();
+	ADMod.form = newMod.form;
+	ADMod.handleArgs(newMod.exportArgs());
+	$(ADMod.content).append(ADMod.form);
+	ADMod.startWizard();
+    });
+    ADMod   = createADDialog(select);
+    return ADMod;
+}
+
+function createAddServiceButton(container) {
+    var service_fields  = {
+	    externalcluster_name    : {
+		label   : 'Name'
+	    },
+	    externalcluster_desc    : {
+		label   : 'Description',
+		type    : 'textarea'
+	    }
+    };
+    var service_opts    = {
+	title       : 'Step 1 of 3 : Add a Service',
+	name        : 'externalcluster',
+	fields      : service_fields,
+	callback    : function(data) {
+	    reloadServices();
+	    createDirectoryDialog(data.pk, true).start();
+	}
+    };
+		
+    var button = $("<button>", {html : 'Add a service'});
+    button.bind('click', function() {
+	mod = new ModalForm(service_opts);
+	mod.start();
+    });   
+    $(container).append(button);
+};
+
+function servicesList (container_id, elem_id) {
+    var container = $('#' + container_id);
+    
+    create_grid(container_id, 'services_list',
+                ['ID','Name', 'State'],
+                [ 
+                 {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+                 {name:'externalcluster_name',index:'service_name', width:200},
+                 {name:'externalcluster_state',index:'service_state', width:90,},
+                 ]);
+    reload_grid('services_list', '/api/externalcluster');
+    
+    createAddServiceButton(container);
+}
+
 function createUpdateNodeButton(container, elem_id) {
     var button = $("<button>", { text : 'Update Nodes' });
-    isTheADirectoryService(elem_id);
     // Check if there is a configured directory service
-    if (isTheADirectoryService(elem_id) === true) {
+    if (isThereAConnector(elem_id, 'DirectoryService') === true) {
 	$(button).bind('click', function(event) {
 	    var dialog = $("<div>", { css : { 'text-align' : 'center' } });
 	    dialog.append($("<label>", { for : 'adpassword', text : 'Please enter your password :' }));
@@ -106,6 +289,18 @@ function loadServicesOverview (container_id, elem_id) {
 function loadServicesConfig (container_id, elem_id) {
 	var container = $('#' + container_id);
     var externalclustername = 'TORTUE !!!!';
+    
+    if (isThereAConnector(elem_id, 'DirectoryService') === false) {
+	var b	= $("<button>", { text : 'Add a Directory Service' });
+	b.bind('click', function() { createDirectoryDialog(elem_id).start(); });
+	b.appendTo(container);
+    }
+    
+    if (isThereAConnector(elem_id, 'MonitoringService') === false) {
+	var bu	= $("<button>", { text : 'Add a Monitoring Service' });
+	bu.bind('click', function() { createMonitoringDialog(elem_id).start(); });
+	bu.appendTo(container);
+    }
     
     $.ajax({
  		url: '/api/externalcluster/' + elem_id + '/connectors?dataType=jqGrid',
