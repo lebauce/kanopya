@@ -449,7 +449,6 @@ post '/extclusters/add' => sub {
         my $new_extcluster = Entity::ServiceProvider::Outside::Externalcluster->new(%$params);
         $new_cluster_id = $new_extcluster->getAttr(name => 'externalcluster_id');
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'external cluster created. Inserting initial data...');
-        $new_extcluster->monitoringDefaultInit();
     };
     if($@) {
         my $exception = $@;

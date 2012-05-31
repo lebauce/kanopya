@@ -81,6 +81,21 @@ sub toString() {
     return 'External Cluster ' . $self->getAttr( name => 'externalcluster_name');
 }
 
+=head2 new
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = $class->SUPER::new( %args );
+
+    $self->monitoringDefaultInit();
+
+    return $self;
+}
+
 =head2 getState
 
 =cut
