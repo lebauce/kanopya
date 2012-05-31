@@ -90,18 +90,54 @@ my %resources = (
     "workflow"                 => "Workflow",
 );
 
+sub db_to_json {
+    my $obj = shift;
+    my $expand = shift || [];
+
+    my $json;
+    if ($obj->isa("BaseDB")) {
+        $json = $obj->toJSON;
+
+        if (defined ($expand) and $expand) {
+           for my $key (@$expand) {
+               $json->{$key} = db_to_json($obj->getAttr(name => $key));
+           }
+        }
+    }
+    else {
+        my $basedb = bless { _dbix => $obj }, "BaseDB";
+        $json = $basedb->toJSON;
+        my %columns = $obj->get_columns;
+        for my $key (keys %columns) {
+            if (defined $columns{$key}) {
+                $json->{$key} = $columns{$key};
+            }
+        }
+
+        if (scalar @$expand) {
+            for my $key (@$expand) {
+                $json->{$key} = db_to_json($obj->$key, []);
+            }
+        }
+    }
+
+    return $json;
+}
+
 sub format_results {
     my %args = @_;
 
     my $objs = [];
     my $class = $args{class};
     my $dataType = $args{dataType} || "";
+    my $expand = $args{expand} || [];
     my $table;
     my $result;
     my %params = ();
 
     delete $args{class};
     delete $args{dataType};
+    delete $args{expand};
 
     $params{page} = $args{page} || 1;
     delete $args{page};
@@ -127,15 +163,7 @@ sub format_results {
     if ($class->isa("DBIx::Class::ResultSet")) {
         my $results = $class->search_rs(\%args, \%params);
         while (my $obj = $results->next) {
-            my $basedb = bless { _dbix => $obj }, "BaseDB";
-            my $json = $basedb->toJSON;
-            my %columns = $obj->get_columns;
-            for my $key (keys %columns) {
-                if (defined $columns{$key}) {
-                    $json->{$key} = $columns{$key};
-                }
-            }
-            push @$objs, $json;
+            push @$objs, db_to_json($obj, $expand);
         }
 
         $result = {
@@ -178,7 +206,9 @@ sub setupREST {
             get    => sub {
                 content_type 'application/json';
 
-                return to_json( Entity->get(id => params->{id})->toJSON );
+                my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
+                return to_json( db_to_json(Entity->get(id => params->{id}),
+                                           \@expand) );
             },
 
             create => sub {
@@ -273,7 +303,15 @@ sub setupREST {
                         }
                         else {
                             my $dbix = $parent->$filter;
-                            $obj = Entity->get(id => $dbix->get_column(($dbix->result_source->primary_columns)[0]));
+
+                            $obj = $dbix->has_relationship("class_type") ?
+                                       Entity->get(
+                                           id => $dbix->get_column(($dbix->result_source->primary_columns)[0])
+                                       ) :
+                                       $dbix; 
+
+                            my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
+                            return to_json(db_to_json($obj, \@expand));
                         }
 
                         last RELATION;
