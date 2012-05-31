@@ -25,6 +25,9 @@ use Kanopya::Exceptions;
 use Administrator;
 use General;
 
+use NodemetricCombination;
+use NodemetricCondition;
+use NodemetricRule;
 use AggregateCombination;
 use AggregateCondition;
 use AggregateRule;
