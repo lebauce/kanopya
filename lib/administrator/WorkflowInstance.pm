@@ -68,6 +68,27 @@ sub getScopeParameterNameList{
     return \@array;
 }
 
+sub getSpecificParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'scope_name' ]);
+    my $scope_name = $args{scope_name};
+
+    my $scope    = Scope->find(hash => {scope_name => $scope_name});
+    my $scope_id = $scope->getAttr(name => 'scope_id');
+    my $scope_parameter_list = $self->getScopeParameterNameList(
+        scope_id => $scope_id
+    );
+
+    my $all_params = $self->_parse();
+    # Remove automatic params
+    for my $scope_parameter (@$scope_parameter_list){
+        delete $all_params->{$scope_parameter};
+    };
+
+    return $all_params;
+}
+
 sub _getSpecificValues {
 
 }
