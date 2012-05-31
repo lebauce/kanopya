@@ -94,18 +94,14 @@ sub db_to_json {
     my $obj = shift;
     my $expand = shift || [];
 
+    my $basedb;
     my $json;
     if ($obj->isa("BaseDB")) {
+        $basedb = $obj;
         $json = $obj->toJSON;
-
-        if (defined ($expand) and $expand) {
-           for my $key (@$expand) {
-               $json->{$key} = db_to_json($obj->getAttr(name => $key));
-           }
-        }
     }
     else {
-        my $basedb = bless { _dbix => $obj }, "BaseDB";
+        $basedb = bless { _dbix => $obj }, "BaseDB";
         $json = $basedb->toJSON;
         my %columns = $obj->get_columns;
         for my $key (keys %columns) {
@@ -113,10 +109,19 @@ sub db_to_json {
                 $json->{$key} = $columns{$key};
             }
         }
+    }
 
-        if (scalar @$expand) {
-            for my $key (@$expand) {
-                $json->{$key} = db_to_json($obj->$key, []);
+    if (defined ($expand) and $expand) {
+        for my $key (@$expand) {
+            if ($basedb->{_dbix}->result_source->relationship_info($key)->{attrs}->{accessor} eq "multi") {
+                my $children = [];
+                for my $item ($basedb->{_dbix}->$key) {
+                    push @$children, db_to_json($item);
+                }
+                $json->{$key} = $children;
+            }
+            else {
+                $json->{$key} = db_to_json($basedb->getAttr(name => $key));
             }
         }
     }
