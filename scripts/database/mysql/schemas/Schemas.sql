@@ -1627,7 +1627,7 @@ CREATE TABLE `workflow_instance_parameter` (
 --
 
 CREATE TABLE `scope` (
-  `scope_id` int(8) unsigned NOT NULL,
+  `scope_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `scope_name` char(64) NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`scope_id`),
@@ -1639,7 +1639,7 @@ CREATE TABLE `scope` (
 --
 
 CREATE TABLE `scope_parameter` (
-  `scope_parameter_id` int(8) unsigned NOT NULL,
+  `scope_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `scope_id` int(8) unsigned NOT NULL,
   `scope_parameter_name` char(64) NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
