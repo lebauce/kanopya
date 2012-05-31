@@ -154,14 +154,39 @@ sub _getAutomaticParams {
     return $automatic_params;
 }
 
+sub getAutomaticValues {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['scope_name','all_params']);
+    # Alose required : node_id XOR cluster_id
+
+    my $automatic_params = $self->_getAutomaticParams(
+        scope_name  => $args{scope_name},
+        all_params  => $args{all_params},
+    );
+    delete $args{scope_name};
+    delete $args{all_params};
+
+    # Warning node_id XOR cluster_id must remain in %args
+
+    for my $automatic_param_name (keys %$automatic_params){
+        my $param_value = $self->_getAutomaticValue(
+                              automatic_param_name => $automatic_param_name,
+                              %args
+                          );
+        $automatic_params->{$automatic_param_name} = $param_value;
+    }
+
+    return $automatic_params;
+}
+
 sub _getAutomaticValue {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['automatic_param_name']);
 
     if(defined $args{node_id}){
-        return $self->_getAutomaticNodeValues(%args);
+        return $self->_getAutomaticNodeValue(%args);
     }elsif(defined $args{cluster_id}){
-        return $self->_getAutomaticClusterValues(%args);
+        return $self->_getAutomaticClusterValue(%args);
     }else {
         throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
     }
