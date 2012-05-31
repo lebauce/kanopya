@@ -88,6 +88,7 @@ my %resources = (
     "user"                     => "Entity::User",
     "vlan"                     => "Entity::Network::Vlan",
     "workflow"                 => "Workflow",
+    "mockmonitor"              => "Entity::Connector::MockMonitor",
 );
 
 sub db_to_json {
