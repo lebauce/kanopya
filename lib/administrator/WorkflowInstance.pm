@@ -48,4 +48,34 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+
+
+sub getValues {
+
+}
+
+sub setSpecificValues {
+
+}
+
+sub getSpecificParams {
+
+}
+
+sub _getSpecificValues {
+
+}
+
+sub _getAutomaticParams {
+
+}
+
+sub _getAutomaticValues {
+
+}
+
+sub _parse{
+
+}
 1;
