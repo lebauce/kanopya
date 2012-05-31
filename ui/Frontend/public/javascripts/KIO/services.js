@@ -5,22 +5,22 @@ $.validator.addMethod("regex", function(value, element, regexp) {
  
 // Check if there is a configured directory service
 function isThereAConnector(elem_id, connector_category) {
-    var is	= false;
+    var is  = false;
     
     // Get all configured connectors on the service
     $.ajax({
-        async	: false,
-        url	    : '/api/connector?service_provider_id=' + elem_id,
-        success	: function(connectors) {
+        async   : false,
+        url     : '/api/connector?service_provider_id=' + elem_id,
+        success : function(connectors) {
             for (i in connectors) if (connectors.hasOwnProperty(i)) {
                 // Get the connector type for each
                 $.ajax({
-                    async	: false,
-                    url		: '/api/connectortype?connector_type_id=' + connectors[i].connector_type_id,
-                    success	: function(data) {
+                    async   : false,
+                    url     : '/api/connectortype?connector_type_id=' + connectors[i].connector_type_id,
+                    success : function(data) {
                         // If this is a Directory Service, then we can return true
                         if (data[0].connector_category === connector_category) {
-                            is	= true;
+                            is  = true;
                         }
                     }
                 });
@@ -132,9 +132,9 @@ function createDirectoryDialog(elem_id, firstDialog) {
             ad_opts.prependElement = elem;
         }
         if (firstDialog) {
-            ad_opts.skippable	= true;
-            ad_opts.callback	= function() { createMonitoringDialog(elem_id, firstDialog).start(); };
-            ad_opts.title	= 'Step 2 of 3 : ' + ad_opts.title;
+            ad_opts.skippable   = true;
+            ad_opts.callback    = function() { createMonitoringDialog(elem_id, firstDialog).start(); };
+            ad_opts.title       = 'Step 2 of 3 : ' + ad_opts.title;
         }
         return new ModalForm(ad_opts);
     }
@@ -173,13 +173,13 @@ function createDirectoryDialog(elem_id, firstDialog) {
 
 function createAddServiceButton(container) {
     var service_fields  = {
-	    externalcluster_name    : {
+        externalcluster_name    : {
             label   : 'Name'
-	    },
-	    externalcluster_desc    : {
+        },
+        externalcluster_desc    : {
             label   : 'Description',
             type    : 'textarea'
-	    }
+        }
     };
     var service_opts    = {
         title       : 'Step 1 of 3 : Add a Service',
@@ -190,7 +190,7 @@ function createAddServiceButton(container) {
             createDirectoryDialog(data.pk, true).start();
         }
     };
-		
+
     var button = $("<button>", {html : 'Add a service'});
     button.bind('click', function() {
         mod = new ModalForm(service_opts);
@@ -224,26 +224,26 @@ function createUpdateNodeButton(container, elem_id) {
             dialog.append($("<input>", { id : 'adpassword', name : 'adpassword' }));
             // Create the modal dialog
             $(dialog).dialog({
-                modal		: true,
-                title		: "Update service nodes",
-                resizable		: false,
-                draggable		: false,
-                closeOnEscape	: false,
-                buttons		: {
-                    'Ok'	: function() {
-                        var passwd 	= $("input#adpassword").attr('value');
-                        var ok		= false;
+                modal           : true,
+                title           : "Update service nodes",
+                resizable       : false,
+                draggable       : false,
+                closeOnEscape   : false,
+                buttons         : {
+                    'Ok'    : function() {
+                        var passwd  = $("input#adpassword").attr('value');
+                        var ok      = false;
                         // If a password was typen, then we can submit the form
                         if (passwd !== "" && passwd !== undefined) {
                             $.ajax({
-                                url	: '/kio/services/' + elem_id + '/nodes/update',
-                                type	: 'post',
-                                async	: false,
-                                data	: {
-                                    password	: passwd
+                                url     : '/kio/services/' + elem_id + '/nodes/update',
+                                type    : 'post',
+                                async   : false,
+                                data    : {
+                                    password    : passwd
                                 },
-                                success	: function(data) {
-                                    ok	= true;
+                                success : function(data) {
+                                    ok  = true;
                                 }
                             });
                             // If the form succeed, then we can close the dialog
@@ -287,17 +287,17 @@ function loadServicesOverview (container_id, elem_id) {
 }
 
 function loadServicesConfig (container_id, elem_id) {
-	var container = $('#' + container_id);
+    var container = $('#' + container_id);
     var externalclustername = '';
     
     if (isThereAConnector(elem_id, 'DirectoryService') === false) {
-        var b	= $("<button>", { text : 'Add a Directory Service' });
+        var b   = $("<button>", { text : 'Add a Directory Service' });
         b.bind('click', function() { createDirectoryDialog(elem_id).start(); });
         b.appendTo(container);
     }
     
     if (isThereAConnector(elem_id, 'MonitoringService') === false) {
-        var bu	= $("<button>", { text : 'Add a Monitoring Service' });
+        var bu  = $("<button>", { text : 'Add a Monitoring Service' });
         bu.bind('click', function() { createMonitoringDialog(elem_id).start(); });
         bu.appendTo(container);
     }
