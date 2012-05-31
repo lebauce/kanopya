@@ -106,30 +106,22 @@ sub _getAutomaticValues {
 sub _parse{
     my ($self, %args) = @_;
 
-#    General::checkParams(args => \%args, required => ['tt_file_path', 'scope_id']); 
+    General::checkParams(args => \%args, required => ['tt_file_path']); 
    
-#    my $tt_file_path = $args{tt_file_path};
-#    my $scope_id     = $args{scope_id}; 
-    my $tt_path      = '/opt/wf.tt';
-    my $scope_id     = '1';
+    my $tt_file_path = $args{tt_file_path};
     my $scope_parameter_names;
-    my @given_params;
+    my $given_params;
 
     #open workflow template file
-    open (my $FILE, "<", $tt_path);
+    open (my $FILE, "<", $tt_file_path);
     while (<$FILE>) {
         chomp;
         $_ =~ m/\[\% (.*?) \%\]/;
         #stock the parameters in a list
-        push @given_params, $1;
+        $given_params->{$1} = undef;
     }
-    print Dumper \@given_params;
-
-    #check the existence of those parameters in the table scope_parameter. If it is not present, the parameter is the specific one.
-    $scope_parameter_names = $self->getScopeParameterNames(scope_id => $scope_id); 
+    close ($FILE);
     
-    foreach my $given_param (@given_params) {
-    }
-
+    return $given_params;
 }
 1;
