@@ -26,6 +26,7 @@ use Kanopya::Exceptions;
 use General;
 use ScopeParameter;
 use Scope;
+use WorkflowInstanceParameter;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -59,10 +60,23 @@ sub getValues {
 }
 
 sub setSpecificValues {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => [ 'specific_params', 'workflow_instance_id' ]);
 
+    my $specific_params      = $args{specific_params};
+    my $workflow_instance_id = $args{workflow_instance_id};
+
+    while (my ($param, $value) = each (%$specific_params)) {
+        my $wfparams = {
+            workflow_instance_parameter_name  => $param,
+            workflow_instance_parameter_value => $value,
+            workflow_instance_id              => $workflow_instance_id,
+        };
+        WorkflowInstanceParameter->new(%$wfparams);
+    }
 }
 
-sub getScopeParameterNameList{
+sub getScopeParameterNameList {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => [ 'scope_id' ]);
 
