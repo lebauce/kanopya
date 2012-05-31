@@ -74,14 +74,14 @@ sub getScopeParameterNameList{
 sub getSpecificParams {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'scope_name' ]);
+    General::checkParams(args => \%args, required => [ 'scope_name', 'all_params' ]);
+    my $all_params = $args{all_params};
     my $scope_name = $args{scope_name};
-    my $scope_id = Scope->getIdFromName(scope_name => $scope_name);
+    my $scope_id   = Scope->getIdFromName(scope_name => $scope_name);
     my $scope_parameter_list = $self->getScopeParameterNameList(
         scope_id => $scope_id
     );
 
-    my $all_params = $self->_parse(tt_file_path => '/opt/wf.tt');
     # Remove automatic params
     for my $scope_parameter (@$scope_parameter_list){
         delete $all_params->{$scope_parameter};
@@ -105,8 +105,10 @@ sub _getAutomaticValues {
 sub _parse{
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['tt_file_path']); 
-   
+#   Template specific file may be moved if necessary
+
+    General::checkParams(args => \%args, required => ['tt_file_path']);
+
     my $tt_file_path = $args{tt_file_path};
     my $scope_parameter_names;
     my $given_params;
@@ -120,7 +122,7 @@ sub _parse{
         $given_params->{$1} = undef;
     }
     close ($FILE);
-    
+
     return $given_params;
 }
 1;
