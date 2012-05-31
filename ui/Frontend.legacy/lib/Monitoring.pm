@@ -2321,8 +2321,9 @@ sub _computeNodemetricCombination () {
     # we retrieve the nodemetric values
     eval {
         foreach my $indicator_id (@indicator_ids) {
-            my $indicator_inst = Indicator->get('id' => $indicator_id);
-            my $indicator_oid = $indicator_inst->getAttr('name'=> 'indicator_oid');
+            #my $indicator_inst = Indicator->get('id' => $indicator_id);
+            #my $indicator_oid = $indicator_inst->getAttr('name'=> 'indicator_oid');
+            my $indicator_oid = $service_provider->getIndicatorOidFromId( indicator_id => $indicator_id );
             push @indicator_oids, $indicator_oid;
         }
         $nodes_metrics = $service_provider->getNodesMetrics(
