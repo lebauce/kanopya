@@ -59,8 +59,13 @@ sub setSpecificValues {
 
 }
 
-sub getSpecificParams {
+sub getScopeParameterNameList{
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => [ 'scope_id' ]);
 
+    my @scopeParameterList = ScopeParameter->search(hash=>{scope_id => $args{scope_id}});
+    my @array = map {$_->getAttr(name => 'scope_parameter_name')} @scopeParameterList;
+    return \@array;
 }
 
 sub _getSpecificValues {
