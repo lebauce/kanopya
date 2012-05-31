@@ -44,7 +44,7 @@ sub retrieveData {
     my $res;
     
     foreach my $node (@{$args{nodes}}) {
-        my @counters_value = map { $_ => 10 } @{$args{indicators}};
+        my @counters_value = map { $_ => rand(100) } @{$args{indicators}};
         $res->{$node} = \@counters_value;
     } 
     
