@@ -334,20 +334,39 @@ function loadServicesConfig (container_id, elem_id) {
 }
 
 function loadServicesRessources (container_id, elem_id) {
-	create_grid(container_id, 'service_ressources_list',
+	var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
+	create_grid(container_id, loadServicesRessourcesGridId,
             ['id','state', 'hostname'],
             [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'externalnode_state',index:'externalnode_state', width:90, sorttype:"date"},
-             {name:'externalnode_hostname',index:'externalnode_hostname', width:200,}
+             {name:'externalnode_state',index:'externalnode_state', width:90,formatter:extNodeStateFormatter},
+             {name:'externalnode_hostname',index:'externalnode_hostname', width:200,},
            ]);
-<<<<<<< HEAD
     reload_grid('service_ressources_list', '/api/host');
 
     createUpdateNodeButton($('#' + container_id), elem_id);
-=======
-    reload_grid('service_ressources_list','/api/externalnode?outside_id=' + elem_id);
-    $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
+    reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
     
->>>>>>> [UI] [Services] list ressources for services
+    // Set the correct state icon for each element :
+	function extNodeStateFormatter(cell, options, row) {
+		if (cell == 'up') {
+			return "<img src='/images/icons/up.png' title='up' />";
+		} else {
+			return "<img src='/images/icons/broken.png' title='broken' />";
+		}
+	}
+    $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
+   
+}
+
+function loadServicesMonitoring(container_id, elem_id) {
+	var loadServicesMonitoringGridId = 'service_ressources_monitoring_' + elem_id;
+	create_grid(container_id, loadServicesMonitoringGridId,
+            ['id','name', 'indicator'],
+            [ 
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'clustermetric_label',index:'clustermetric_label', width:90,},
+             {name:'clustermetric_indicator_id',index:'clustermetric_indicator_id', width:200,},
+           ]);
+    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/clustermetrics');
 }

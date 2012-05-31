@@ -1,3 +1,5 @@
+var lastMsgId = '';
+
 $(document).ready(function () {
     var main_layout = $('body').layout(
                { 
@@ -17,8 +19,17 @@ $(document).ready(function () {
                        spacing_open : 14,
                        initClosed : true,},
                }
-    );
-    
+    );               
+               
+	$.ajax({
+		url: '/api/message?order_by=message_id%20DESC&rows=1&dataType=jqGrid',
+		success: function(data) {
+			$(data.rows).each(function(row) {
+				lastMsgId = data.rows[row].pk;
+			});
+		}
+	});
+                
     // call for the themeswitcher
     //$('#switcher').themeswitcher();
     

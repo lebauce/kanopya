@@ -23,7 +23,8 @@ var mainmenu_def = {
                 submenu     : [
                                {label : 'Overview', id : 'service_overview', onLoad : loadServicesOverview},
                                {label : 'Configuration', id : 'service_configuration', onLoad : loadServicesConfig},
-                               {label : 'Ressources', id : 'service_ressources', onLoad : loadServicesRessources}
+                               {label : 'Ressources', id : 'service_ressources', onLoad : loadServicesRessources},
+                               {label : 'Monitoring', id : 'service_monitoring', onLoad : loadServicesMonitoring},
                                ]
                 }
     },
