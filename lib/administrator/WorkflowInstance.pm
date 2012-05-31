@@ -22,6 +22,8 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use General;
+use ScopeParameter;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
@@ -80,7 +82,7 @@ sub getSpecificParams {
         scope_id => $scope_id
     );
 
-    my $all_params = $self->_parse();
+    my $all_params = $self->_parse(tt_file_path => '/opt/wf.tt');
     # Remove automatic params
     for my $scope_parameter (@$scope_parameter_list){
         delete $all_params->{$scope_parameter};
@@ -102,6 +104,32 @@ sub _getAutomaticValues {
 }
 
 sub _parse{
+    my ($self, %args) = @_;
+
+#    General::checkParams(args => \%args, required => ['tt_file_path', 'scope_id']); 
+   
+#    my $tt_file_path = $args{tt_file_path};
+#    my $scope_id     = $args{scope_id}; 
+    my $tt_path      = '/opt/wf.tt';
+    my $scope_id     = '1';
+    my $scope_parameter_names;
+    my @given_params;
+
+    #open workflow template file
+    open (my $FILE, "<", $tt_path);
+    while (<$FILE>) {
+        chomp;
+        $_ =~ m/\[\% (.*?) \%\]/;
+        #stock the parameters in a list
+        push @given_params, $1;
+    }
+    print Dumper \@given_params;
+
+    #check the existence of those parameters in the table scope_parameter. If it is not present, the parameter is the specific one.
+    $scope_parameter_names = $self->getScopeParameterNames(scope_id => $scope_id); 
+    
+    foreach my $given_param (@given_params) {
+    }
 
 }
 1;
