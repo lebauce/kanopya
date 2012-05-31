@@ -42,6 +42,7 @@
 
 #header #product-name {
     color: #7E388A;
+    cursor: pointer;
 }
 
 /* Ugly quick style to set position of themeswitcher */
