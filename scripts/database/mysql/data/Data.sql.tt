@@ -92,7 +92,11 @@ INSERT INTO `class_type` VALUES
 (76, 'Entity::Component::Puppetagent2'),
 (77, 'Entity::Component::Puppetmaster2'),
 (78, 'Entity::Component::Kanopyacollector1'),
-(79, 'ScomIndicator');
+(79, 'ScomIndicator'),
+(80, 'Scope'),
+(81, 'ScopeParameter'),
+(82, 'WorkflowInstance'),
+(83, 'WorkflowInstanceParameter');
 
 --
 -- entity comment list
@@ -385,6 +389,7 @@ INSERT INTO `operationtype` VALUES
 (43,'ScaleCpuHost'),
 (44,'ScaleMemoryHost'),
 (45,'CancelWorkflow');
+(46,'LaunchSCOWorkflow');
 
 --
 -- Workflows definition
@@ -668,6 +673,23 @@ INSERT INTO `entity` VALUES (@eid, 78, NULL);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 19, NULL, NULL);
 INSERT INTO `kanopyacollector1` VALUES(@eid, 3600, 86400);
 SET @eid := @eid +1;
+
+--
+-- Scopes
+--
+
+INSERT INTO `scope` VALUES (1,'node',80);
+INSERT INTO `scope` VALUES (2,'service_provider',80);
+
+
+--
+-- Scopes Parameters
+--
+
+INSERT INTO `scope_parameter` VALUES (1,1,'node_id',81);
+INSERT INTO `scope_parameter` VALUES (2,1,'service_provider_id',81);
+INSERT INTO `scope_parameter` VALUES (3,1,'ou_from',81);
+INSERT INTO `scope_parameter` VALUES (4,2,'service_provider_id',81);
 
 --
 -- Monitoring data

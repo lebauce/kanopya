@@ -1584,5 +1584,70 @@ CREATE TABLE `masterimage` (
   FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-SET foreign_key_checks=1;
+--
+-- Table structure for table `workflow_instance`
+--
 
+CREATE TABLE `workflow_instance` (
+  `workflow_instance_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `aggregate_rule_id` int(8) unsigned,
+  `nodemetric_rule_id` int(8) unsigned,
+  `workflow_def_id` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`workflow_instance_id`),
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`aggregate_rule_id`),
+  FOREIGN KEY (`aggregate_rule_id`) REFERENCES `aggregate_rule` (`aggregate_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`nodemetric_rule_id`),
+  FOREIGN KEY (`nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`workflow_def_id`),
+  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `workflow_instance_parameter`
+--
+
+CREATE TABLE `workflow_instance_parameter` (
+  `workflow_instance_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `workflow_instance_id` int(8) unsigned NOT NULL,
+  `workflow_instance_parameter_name` char(255) NOT NULL,
+  `workflow_instance_parameter_value` char(255),
+  `class_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`workflow_instance_parameter_id`),
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`workflow_instance_id`),
+  FOREIGN KEY (`workflow_instance_id`) REFERENCES `workflow_instance` (`workflow_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `scope`
+--
+
+CREATE TABLE `scope` (
+  `scope_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `scope_name` char(64) NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`scope_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `scope_parameter`
+--
+
+CREATE TABLE `scope_parameter` (
+  `scope_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `scope_id` int(8) unsigned NOT NULL,
+  `scope_parameter_name` char(64) NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`scope_parameter_id`),
+  UNIQUE KEY (`scope_id`,`scope_parameter_name`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`scope_id`) REFERENCES `scope` (`scope_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+SET foreign_key_checks=1;
