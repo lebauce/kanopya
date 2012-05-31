@@ -45,11 +45,11 @@ sub prepare {
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
     # Get the disk manager for disk creation
-    my $disk_manager = Entity->get(id => $self->{context}->{cluster}->getAttr(name => 'disk_manager_id'));
+    my $disk_manager = $self->{context}->{cluster}->getManager(manager_type => 'disk_manager');
     $self->{context}->{disk_manager} = EFactory::newEEntity(data => $disk_manager);
 
     # Get the export manager for disk creation
-    my $export_manager = Entity->get(id => $self->{context}->{cluster}->getAttr(name => 'export_manager_id'));
+    my $export_manager = $self->{context}->{cluster}->getManager(manager_type => 'export_manager');
     $self->{context}->{export_manager} = EFactory::newEEntity(data => $export_manager);
 
     # Get the masterimage for node systemimage creation.
@@ -59,7 +59,7 @@ sub prepare {
     # Check if a host is specified.
     if (defined $self->{context}->{host}) {
         my $host_manager_id = $self->{context}->{host}->getAttr(name => 'host_manager_id');
-        my $cluster_host_manager_id = $self->{context}->{cluster}->getAttr(name => "host_manager_id");
+        my $cluster_host_manager_id = $self->{context}->{cluster}->getManager(manager_type => 'disk_manager')->getId;
 
         # Check if the specified host is managed by the cluster host manager
         if ($host_manager_id != $cluster_host_manager_id) {

@@ -68,59 +68,27 @@ sub prepare {
     $self->SUPER::prepare();
 
     # Check if all required params group are defined
-    General::checkParams(args     => $self->{params},
-                         required => [ "cluster_params", "disk_manager_params", "host_manager_params" ]);
+    General::checkParams(args => $self->{params}, required => [ "cluster_params", "managers" ]);
 
     # Check required params within cluster params
     General::checkParams(args     => $self->{params}->{cluster_params},
-                         required => [ "cluster_name", "disk_manager_id", "host_manager_id",
-                                       "cluster_si_shared" ]);
+                         required => [ "cluster_name", "cluster_si_shared", "cluster_si_persistent",
+                                       "cluster_min_node", "cluster_max_node", "cluster_priority" ]);
+
+    # Check required params within managers
+    General::checkParams(args     => $self->{params}->{managers},
+                         required => [ "host_manager", "disk_manager" ]);
 
     if (defined $self->{params}->{cluster_params}->{kernel_id} and
         not $self->{params}->{cluster_params}->{kernel_id}) {
         delete $self->{params}->{cluster_params}->{kernel_id};
     }
-    if (defined $self->{params}->{cluster_params}->{collector_manager_id} and
-        not $self->{params}->{cluster_params}->{collector_manager_id}) {
-        delete $self->{params}->{cluster_params}->{collector_manager_id};
-    }
-
-    # Instanciate the disk manager to get the export manager according to the boot policy.
-    my $disk_manager;
-    eval {
-        $disk_manager = Entity->get(id => $self->{params}->{cluster_params}->{disk_manager_id});
-    };
-    if($@) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $@);
-    }
 
     # Check the boot policy or the export manager
-    my $export_manager;
-    if ($self->{params}->{cluster_params}->{cluster_boot_policy} and
-        $self->{params}->{cluster_params}->{export_manager_id}) {
+    if (not ($self->{params}->{cluster_params}->{cluster_boot_policy} xor
+             $self->{params}->{managers}->{export_manager}->{manager_id})) {
         throw Kanopya::Exception::Internal::WrongValue(
                   error => "Can not specify boot_policy and export_manager_id at the same time."
-              );
-    }
-    # If the boot policy is specified, deduce the export manager
-    elsif ($self->{params}->{cluster_params}->{cluster_boot_policy}) {
-        $export_manager = $disk_manager->getExportManagerFromBootPolicy(
-                              boot_policy => $self->{params}->{cluster_params}->{cluster_boot_policy}
-                          );
-
-        $self->{params}->{cluster_params}->{export_manager_id} = $export_manager->getAttr(name => 'entity_id');
-    }
-    # If the export manager is specified, deduce the boot policy
-    elsif ($self->{params}->{cluster_params}->{export_manager_id}) {
-        $export_manager = Entity->get(id => $self->{params}->{cluster_params}->{export_manager_id});
-        $self->{params}->{cluster_params}->{cluster_boot_policy}
-            = $disk_manager->getExportManagerFromBootPolicy(
-                  boot_policy => $self->{params}->{cluster_params}->{cluster_boot_policy}
-              );
-    }
-    else {
-        throw Kanopya::Exception::Internal::WrongValue(
-                  error => "You must specify a boot policy or an export manager id."
               );
     }
 
@@ -134,39 +102,15 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-
-    # Store managers paramaters for this cluster.
-    for my $manager ('host_manager', 'disk_manager', 'export_manager', 'collector_manager') {
-        my $manager_params = $self->{params}->{$manager . '_params'};
-        if ($manager_params) {
-            for my $param_name (keys %{$manager_params}) {
-                $self->{context}->{cluster}->addManagerParameter(
-                    manager_type => $manager,
-                    name         => $param_name,
-                    value        => $manager_params->{$param_name},
-                );
-            }
-        }
-    }
-
-    # Get export manager parameter related to si shared value.
-    my $readonly_param = $export_manager->getReadOnlyParameter(
-                             readonly => $self->{params}->{cluster_params}->{cluster_si_shared}
-                         );
-
-    if ($readonly_param) {
-        $self->{context}->{cluster}->_getEntity->addManagerParameter(
-            manager_type => 'export_manager',
-            name         => $readonly_param->{name},
-            value        => $readonly_param->{value}
-        );
-    }
 }
 
 sub execute {
     my $self = shift;
 
-    $self->{context}->{cluster}->create(erollback => $self->{erollback});
+    $self->{context}->{cluster}->create(managers   => $self->{params}->{managers},
+                                        components => $self->{params}->{components},
+                                        interfaces => $self->{params}->{interfaces},
+                                        erollback  => $self->{erollback});
 
     $log->info("Cluster <" . $self->{context}->{cluster}->getAttr(name => "cluster_name") . "> is now added");
 }
