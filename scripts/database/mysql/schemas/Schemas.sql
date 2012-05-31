@@ -112,10 +112,7 @@ CREATE TABLE `cluster` (
   `user_id` int(8) unsigned NOT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
   `masterimage_id` int(8) unsigned DEFAULT NULL,
-  `host_manager_id` int(8) unsigned NOT NULL,
-  `disk_manager_id` int(8) unsigned DEFAULT NULL,
-  `export_manager_id` int(8) unsigned DEFAULT NULL,
-  `collector_manager_id` int(8) unsigned DEFAULT NULL,
+  `service_template_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`cluster_id`),
   UNIQUE KEY (`cluster_name`),
   FOREIGN KEY (`cluster_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -124,25 +121,27 @@ CREATE TABLE `cluster` (
   KEY (`kernel_id`),
   FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`masterimage_id`),
-  FOREIGN KEY (`masterimage_id`) REFERENCES `masterimage` (`masterimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`masterimage_id`) REFERENCES `masterimage` (`masterimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`service_template_id`),
+  FOREIGN KEY (`service_template_id`) REFERENCES `service_template` (`service_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `manager_parameter`
+-- Table structure for table `cluster_manager`
 
-CREATE TABLE `manager_parameter` (
-  `manager_parameter_id` int(8) unsigned NOT NULL,
+CREATE TABLE `cluster_manager` (
+  `cluster_manager_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `cluster_id` int(8) unsigned NOT NULL,
+  `manager_type` char(64) NOT NULL,
   `manager_id` int(8) unsigned NOT NULL,
-  `name` char(64) NOT NULL,
-  `value` char(255) NOT NULL,
-  PRIMARY KEY (`manager_parameter_id`),
-  FOREIGN KEY (`manager_parameter_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`cluster_id`),
-  FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  `manager_params` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`cluster_manager_id`),
+  FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`manager_params`),
+  FOREIGN KEY (`manager_params`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
+
 -- Table structure for table `server`
 -- Entity::ServiceProvider::Inside::Server class
 
@@ -629,7 +628,7 @@ CREATE TABLE `workflow` (
 
 --
 -- Table structure for table `workflow_parameter`
--- 
+--
 
 CREATE TABLE `workflow_parameter` (
   `workflow_param_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1620,6 +1619,61 @@ CREATE TABLE `workflow_instance_parameter` (
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`workflow_instance_id`),
   FOREIGN KEY (`workflow_instance_id`) REFERENCES `workflow_instance` (`workflow_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `service_template`
+--
+
+CREATE TABLE `service_template` (
+  `service_template_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `service_name` char(64) NOT NULL,
+  `service_desc` char(255) DEFAULT NULL,
+  `hosting_policy_id` int(8) unsigned NOT NULL,
+  `storage_policy_id` int(8) unsigned DEFAULT NULL,
+  `network_policy_id` int(8) unsigned DEFAULT NULL,
+  `scalability_policy_id` int(8) unsigned DEFAULT NULL,
+  `system_policy_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`service_template_id`),
+  KEY (`hosting_policy_id`),
+  FOREIGN KEY (`hosting_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`storage_policy_id`),
+  FOREIGN KEY (`storage_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`network_policy_id`),
+  FOREIGN KEY (`network_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`scalability_policy_id`),
+  FOREIGN KEY (`scalability_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`system_policy_id`),
+  FOREIGN KEY (`system_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `policy`
+--
+
+CREATE TABLE `policy` (
+  `policy_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `param_preset_id` int(8) unsigned NOT NULL,
+  `policy_name` char(64) NOT NULL,
+  `policy_desc` char(255) DEFAULT NULL,
+  `policy_type` char(64) DEFAULT NULL,
+  PRIMARY KEY (`policy_id`),
+  KEY (`param_preset_id`),
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `param_preset`
+--
+
+CREATE TABLE `param_preset` (
+  `param_preset_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `name` char(128) DEFAULT NULL,
+  `value` char(128) DEFAULT NULL,
+  `relation` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`param_preset_id`),
+  KEY (`relation`),
+  FOREIGN KEY (`relation`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

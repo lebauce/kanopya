@@ -221,6 +221,26 @@ sub getExportManagerFromBootPolicy {
           );
 }
 
+sub getBootPolicyFromExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "export_manager" ]);
+
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+
+    if ($args{export_manager}->getId == $cluster->getComponent(name => "Iscsitarget", version => "1")->getId) {
+        return Entity::HostManager->BOOT_POLICIES->{pxe_iscsi};
+    }
+    elsif ($args{export_manager}->getId == $cluster->getComponent(name => "Nfsd", version => "3")->getId) {
+        return Entity::HostManager->BOOT_POLICIES->{pxe_nfs};
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported export manager:" . $args{export_manager}
+          );
+}
+
 =head2 createDisk
 
     Desc : Implement createDisk from DiskManager interface.
