@@ -60,7 +60,13 @@ function createMonitoringDialog(elem_id, firstDialog) {
         }
         if (firstDialog) {
             scom_opts.skippable = true;
-            scom_opts.title	= 'Step 3 of 3 : ' + scom_opts.title;
+            scom_opts.title     = 'Step 3 of 3 : ' + scom_opts.title;
+        } else {
+            scom_opts.callback  = function() {
+                var container = $('div#content_service_configuration_' + elem_id);
+                container.empty();
+                loadServicesConfig(container.attr('id'), elem_id);
+            };
         }
         return new ModalForm(scom_opts);
     }
@@ -124,9 +130,9 @@ function createDirectoryDialog(elem_id, firstDialog) {
             }
         };
         var ad_opts     = {
-            title       : 'Add an Directory Service',
-            name        : 'activedirectory',
-            fields      : ad_fields
+            title   : 'Add an Directory Service',
+            name    : 'activedirectory',
+            fields  : ad_fields
         };
         if (elem !== undefined) {
             ad_opts.prependElement = elem;
@@ -135,6 +141,12 @@ function createDirectoryDialog(elem_id, firstDialog) {
             ad_opts.skippable   = true;
             ad_opts.callback    = function() { createMonitoringDialog(elem_id, firstDialog).start(); };
             ad_opts.title       = 'Step 2 of 3 : ' + ad_opts.title;
+        } else {
+            ad_opts.callback    = function() {
+                var container = $('div#content_service_configuration_' + elem_id);
+                container.empty();
+                loadServicesConfig(container.attr('id'), elem_id);
+            };
         }
         return new ModalForm(ad_opts);
     }
@@ -305,13 +317,13 @@ function loadServicesConfig (container_id, elem_id) {
     var externalclustername = '';
     
     if (isThereAConnector(elem_id, 'DirectoryService') === false) {
-        var b   = $("<button>", { text : 'Add a Directory Service' });
+        var b   = $("<button>", { text : 'Add a Directory Service', id : 'adddirectory' });
         b.bind('click', function() { createDirectoryDialog(elem_id).start(); });
         b.appendTo(container);
     }
     
     if (isThereAConnector(elem_id, 'MonitoringService') === false) {
-        var bu  = $("<button>", { text : 'Add a Monitoring Service' });
+        var bu  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
         bu.bind('click', function() { createMonitoringDialog(elem_id).start(); });
         bu.appendTo(container);
     }
