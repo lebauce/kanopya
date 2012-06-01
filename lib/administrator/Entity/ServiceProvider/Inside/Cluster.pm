@@ -592,6 +592,14 @@ sub getMasterNodeIp {
     }
 }
 
+sub getMasterNodeFQDN {
+    my ($self) = @_;
+    my $domain = $self->getAttr(name => 'cluster_domainname');
+    my $master = $self->getMasterNode();
+    my $hostname = $master->getAttr(name => 'host_hostname');
+    return $hostname.'.'.$domain;
+}
+
 sub getMasterNodeId {
     my $self = shift;
     my $host = $self->getMasterNode;
