@@ -21,6 +21,7 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
+use Hash::Merge;
 use Kanopya::Exceptions;
 
 use Data::Dumper;

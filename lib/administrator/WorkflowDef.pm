@@ -21,6 +21,8 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
+use WorkflowStep;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -55,7 +57,14 @@ sub new {
 }
 
 sub addStep {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "operationtype_id" ]);
     
+    my $workflow_def_id = $self->getAttr(name => 'workflow_def_id');
+    my $operationtype_id = $args{operationtype_id};
+    
+    my $workflow_step = WorkflowStep->new(workflow_def_id => $workflow_def_id, operationtype_id => $operationtype_id); 
 }
 
 sub setParamPreset {
