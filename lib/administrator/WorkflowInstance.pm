@@ -28,6 +28,7 @@ use ScopeParameter;
 use Scope;
 use WorkflowInstanceParameter;
 use Entity::ServiceProvider::Outside;
+use Entity::ServiceProvider::Outside::Externalcluster;
 use Node;
 use Workflow;
 use WorkflowDef;
@@ -205,7 +206,7 @@ sub _getAutomaticValue {
     if(defined $args{node_id}) {
         return $self->_getAutomaticNodeValue(%args);
     }
-    elsif(defined $args{node_id}) {
+    elsif(defined $args{cluster_id}) {
         return $self->_getAutomaticClusterValue(%args);
     }
     else {
@@ -263,6 +264,9 @@ sub _getAutomaticClusterValue{
     my $cluster_id           = $args{cluster_id};
     if($automatic_param_name eq 'cluster_id'){
         return $cluster_id;
+    }
+    elsif($automatic_param_name eq 'cluster_name'){
+        return  Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id)->getAttr('name' => 'externalcluster_name'); 
     }
     else{
         throw Kanopya::Exception(error => "Unknown automatic parameter $automatic_param_name in node scope");
@@ -330,6 +334,7 @@ sub run {
 
     my $workflow_def = $self->getWorkflowDef();
     my $name = $workflow_def->getAttr(name => 'workflow_def_name');
+    
     Workflow->run(name=>$name,params => $workflow_params);
     return $params_wf;
 }
