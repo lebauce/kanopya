@@ -147,6 +147,7 @@ sub execute {
 
     # TODO: Component migration (node, exec context?)
     my $components = $self->{context}->{cluster}->getComponents(category => "all");
+    my $puppet_definitions = "";
     foreach my $i (keys %$components) {
         my $ecomponent = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is " . ref($ecomponent));
@@ -154,8 +155,14 @@ sub execute {
                              mount_point => $mountpoint,
                              cluster     => $self->{context}->{cluster},
                              erollback   => $self->{erollback});
+    
+        # retrieve puppet definition to create manifest
+        $puppet_definitions .= $ecomponent->getPuppetDefinition(
+            host    => $self->{context}->{host},
+            cluster => $self->{context}->{cluster},
+        );
     }
-
+    
     # check if this cluster must be managed by puppet and kanopya puppetmaster
     my $puppetagent = eval { 
         $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
@@ -165,16 +172,23 @@ sub execute {
     if($puppetagent) {
         my $conf = $puppetagent->getConf();
         if($conf->{puppetagent2_mode} eq 'kanopya') {
-            $log->debug('Puppent agent component configured with kanopya puppet master');
+            
+            # create, sign and push a puppet certificate on the image
+            $log->info('Puppent agent component configured with kanopya puppet master');
             my $fqdn = $self->{context}->{host}->getAttr(name => 'host_hostname');
-            $fqdn .= '.' . $self->{kanopya_domainname};
+            $fqdn .= '.' . $self->{params}->{kanopya_domainname};
             $self->{context}->{component_puppetmaster}->createHostCertificate(
                 mount_point => $mountpoint,
                 host_fqdn   => $fqdn
             );
+     
+            $self->{context}->{component_puppetmaster}->createHostManifest(
+                host_fqdn          => $fqdn,
+                puppet_definitions => $puppet_definitions
+            );
+            
         }
     }
-
 
     # Umount system image container
     $self->{context}->{container_access}->umount(mountpoint => $mountpoint,
