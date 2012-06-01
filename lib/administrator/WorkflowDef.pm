@@ -70,4 +70,9 @@ sub setParamPreset {
     $self->save();
 }
 
+sub getParamPreset{
+    my ($self,%args) = @_;
+    my $preset = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
+    return $preset->load();
+}
 1;
