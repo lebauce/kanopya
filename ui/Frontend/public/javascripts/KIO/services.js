@@ -129,7 +129,8 @@ function createMonDirDialog(elem_id, step, firstDialog) {
 function createAddServiceButton(container) {
     var service_fields  = {
         externalcluster_name    : {
-            label   : 'Name'
+            label   : 'Name',
+            help    : "Some help"
         },
         externalcluster_desc    : {
             label   : 'Description',

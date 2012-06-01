@@ -21,6 +21,8 @@
 
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
 
+<script src='/javascripts/jquery/jquery.qtip.min.js'></script>
+
 <script src='/javascripts/jquery/jquery.form.js'></script>
 <script src='/javascripts/jquery/jquery.validate.js'></script>
 <script src='/javascripts/jquery/jquery.form.wizard.js'></script>

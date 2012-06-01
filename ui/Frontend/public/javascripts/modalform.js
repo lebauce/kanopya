@@ -205,11 +205,23 @@ var ModalForm = (function() {
 
     ModalForm.prototype.createHelpElem = function(help) {
         if (help !== undefined) {
-            var helpElem        = $("<span>", { class : 'ui-icon ui-icon-info', title : help});
+            var helpElem        = $("<span>", { class : 'ui-icon ui-icon-info' });
             $(helpElem).css({
                 cursor  : 'pointer',
                 margin  : '2px 0 0 2px',
                 float   : 'right'
+            });
+            $(helpElem).qtip({
+                content : help,
+                position: {
+                    corner  : {
+                        target  : 'rightMiddle',
+                        tooltip : 'leftMiddle'
+                    }
+                },
+                style   : {
+                    tip : { corner  : 'leftMiddle' }
+                }
             });
             return helpElem;
         } else {
