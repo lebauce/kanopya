@@ -136,9 +136,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workflow_defs
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-30 14:38:26
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dWsn/HRjTZ0uFELH4Cipww
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_defs",
+  "AdministratorDB::Schema::Result::WorkflowDef",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-06-01 10:34:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:C5dvL1FIXrROXluckHSVqA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

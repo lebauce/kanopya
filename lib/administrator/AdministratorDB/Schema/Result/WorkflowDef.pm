@@ -32,6 +32,13 @@ __PACKAGE__->table("workflow_def");
   is_nullable: 1
   size: 64
 
+=head2 param_preset_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -44,11 +51,38 @@ __PACKAGE__->add_columns(
   },
   "workflow_def_name",
   { data_type => "char", is_nullable => 1, size => 64 },
+  "param_preset_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 __PACKAGE__->set_primary_key("workflow_def_id");
 __PACKAGE__->add_unique_constraint("workflow_def_name", ["workflow_def_name"]);
 
 =head1 RELATIONS
+
+=head2 param_preset
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ParamPreset>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "param_preset",
+  "AdministratorDB::Schema::Result::ParamPreset",
+  { param_preset_id => "param_preset_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
 
 =head2 workflow_instances
 
@@ -81,9 +115,9 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-05-30 14:27:01
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zmLJUFs9yUl/TrdMHAKFiw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-06-01 10:34:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OfVimN8uPVWhRGWLgPg5bg
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
