@@ -51,3 +51,15 @@
     top: 5px;
     right: 200px;
 }
+
+a.view_link {
+    text-decoration: none;
+}
+
+a:hover.view_link {
+    font-weight: bold;
+}
+
+a.selected_viewlink {
+    color: #7E388A;
+}
