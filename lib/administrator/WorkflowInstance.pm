@@ -134,7 +134,7 @@ sub getSpecificParams {
 
 sub _getSpecificValues {
     my ($self,%args) = @_;
-    
+
     my $workflow_instance_id = $self->getAttr(name => 'workflow_instance_id');
 
     my @specific_parameter = WorkflowInstanceParameter->search(
@@ -277,19 +277,61 @@ sub _parse{
     General::checkParams(args => \%args, required => ['tt_file_path']);
 
     my $tt_file_path = $args{tt_file_path};
+
     my $scope_parameter_names;
     my $given_params;
 
     #open workflow template file
     open (my $FILE, "<", $tt_file_path);
-    while (<$FILE>) {
-        chomp;
-        $_ =~ m/\[\% (.*?) \%\]/;
+
+    while (my $line = <$FILE>) {
+        #$line =~ m/\[\% (.*?) \%\]/g;
+        my @spl = split(/\[\% | \%\]/,$line);
+
         #stock the parameters in a list
-        $given_params->{$1} = undef;
+        for(my $i = 1 ; $i < (scalar @spl) ;$i+=2 ){
+            $given_params->{$spl[$i]} = undef;
+        }
     }
     close ($FILE);
 
     return $given_params;
 }
+
+sub run {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args);
+    if((! defined $args{node_id}) && (! defined $args{cluster_id})){
+        throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
+    }
+
+    my $workflow_def_params = $self->getWorkflowDef()->getParamPreset();
+
+    my $template_dir     = $workflow_def_params->{template_dir};
+    my $template_file    = $workflow_def_params->{template_file};
+    my $output_directory = $workflow_def_params->{output_dir};
+    my $scope_id         = $workflow_def_params->{scope_id};
+
+    my $all_params = $self->_parse(tt_file_path => $template_dir.'/'.$template_file);
+
+    my $params_wf     = $self->getValues(
+                             all_params => $all_params,
+                             scope_id   => $scope_id,
+                             %args
+                             );
+
+    my $workflow_params     = {
+        template_dir     => $template_dir,
+        template_file    => $template_file,
+        output_directory => $output_directory,
+        filename         => 'workflow_'.time(),
+        vars             => $params_wf,
+    };
+
+    my $workflow_def = $self->getWorkflowDef();
+    my $name = $workflow_def->getAttr(name => 'workflow_def_name');
+    Workflow->run(name=>$name,params => $workflow_params);
+    return $params_wf;
+}
+
 1;
