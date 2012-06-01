@@ -105,6 +105,7 @@ var ModalForm = (function() {
         this.skippable      = args.skippable    || false;
         this.beforeSubmit   = args.beforeSubmit || $.noop;
         this.cancelCallback = args.cancel       || $.noop;
+        this.error          = args.error        || $.noop;
     }
  
     ModalForm.prototype.exportArgs = function() {
@@ -300,7 +301,7 @@ var ModalForm = (function() {
             validationOptions   : {
                 rules           : this.validateRules,
                 messages        : this.validateMessages,
-                errorClass      : 'ui-state-error',
+                errorClass      : 'ui-state-error ui-corner-all',
                 errorPlacement  : function(error, element) {
                     error.insertBefore(element);
                 }
@@ -315,6 +316,18 @@ var ModalForm = (function() {
                     // callback, so we delay the deletion
                     setTimeout($.proxy(function() { this.closeDialog(); }, this), 10);
                     this.callback(data);
+                }, this),
+                error           : $.proxy(function(data) {
+                    var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
+                    buttonsdiv.find('button').each(function() {
+                        $(this).removeAttr('disabled', 'disabled');
+                    });
+                    $(this.content).find("div.ui-state-error").each(function() {
+                        $(this).remove();
+                    });
+                    var error = JSON.parse(data.responseText);
+                    $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all' }));
+                    this.error(data);
                 }, this)
             }
         });

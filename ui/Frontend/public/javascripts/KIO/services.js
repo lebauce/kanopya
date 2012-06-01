@@ -158,6 +158,9 @@ function createAddServiceButton(container) {
             $("div#waiting_default_insert").dialog("destroy");
             reloadServices();
             createMonDirDialog(data.pk, 2, true).start();
+        },
+        error       : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
         }
     };
 
