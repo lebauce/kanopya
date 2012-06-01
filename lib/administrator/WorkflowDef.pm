@@ -36,4 +36,12 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub addStep {
+    
+}
+
+sub setParamPreset {
+    
+}
+
 1;

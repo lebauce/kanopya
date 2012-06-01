@@ -396,8 +396,8 @@ INSERT INTO `operationtype` VALUES
 --
 
 INSERT INTO `workflow_def` VALUES 
-(1,'AddNode'),
-(2,'StopNode');
+(1,'AddNode', NULL),
+(2,'StopNode', NULL);
 
 INSERT INTO `workflow_step` VALUES 
 (1, 1, 42),
