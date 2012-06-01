@@ -75,7 +75,7 @@ sub execute {
     my $self = shift;
 
     my $host = $self->{context}->{host_manager}->createHost(%{$self->{params}}, erollback => $self->{erollback});
-
+    
     $log->info("Host <" . $host->getAttr(name => "entity_id") . "> is now created");
 
     my @group = Entity::Gp->getGroups(hash => { gp_name => 'Host' });

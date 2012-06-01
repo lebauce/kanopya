@@ -398,8 +398,8 @@ INSERT INTO `operationtype` VALUES
 --
 
 INSERT INTO `workflow_def` VALUES 
-(1,'AddNode'),
-(2,'StopNode');
+(1,'AddNode', NULL),
+(2,'StopNode', NULL);
 
 INSERT INTO `workflow_step` VALUES 
 (1, 1, 42),
@@ -485,7 +485,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@admin_cluster, 13, NULL);
 INSERT INTO `service_provider` VALUES (@admin_cluster);
 INSERT INTO `inside` VALUES (@admin_cluster);
-INSERT INTO `cluster` VALUES (@admin_cluster,'Kanopya','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'',0,0,'[% admin_domainname %]', '127.0.0.1', '127.0.0.1', 'up:[% tmstp %]', NULL,'test_', 1, @adminuserid, @kernel, NULL, @physical_hoster, NULL, NULL, NULL);
+INSERT INTO `cluster` VALUES (@admin_cluster, 'Kanopya','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'',0,0,'[% admin_domainname %]', '127.0.0.1', '127.0.0.1', 'up:[% tmstp %]', NULL, 'test_', 1, @adminuserid, @kernel, NULL, NULL);
 
 --
 -- kanopya cluster interface
@@ -573,18 +573,19 @@ INSERT INTO `component_template` VALUES (6,'nfsd','/templates/components/nfsd3',
 INSERT INTO `entity` VALUES (@eid, 20, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,1,NULL,NULL);
 INSERT INTO `lvm2` VALUES(@eid);
+SET @lvm_component := @eid;
+SET @eid := @eid +1;
 
 --
 -- main vg storage from only one pv
 --
 
-INSERT INTO `lvm2_vg` VALUES (1,@eid,'[% kanopya_vg_name %]','[% kanopya_vg_free_space %]','[% kanopya_vg_size %]');
+INSERT INTO `lvm2_vg` VALUES (1, @lvm_component,'[% kanopya_vg_name %]','[% kanopya_vg_free_space %]','[% kanopya_vg_size %]');
 SET @pvid := 1;
 [% FOREACH pv = kanopya_pvs %]
 INSERT INTO `lvm2_pv` VALUES (@pvid,1,'[% pv %]');
 SET @pvid := @pvid +1;
 [% END %]
-SET @eid := @eid +1;
 
 --
 -- iscsitarget 
@@ -593,6 +594,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 21, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,3,NULL,NULL);
 INSERT INTO `iscsitarget1` VALUES(@eid);
+SET @iscsi_component := @eid;
 SET @eid := @eid +1;
 
 --
@@ -885,5 +887,79 @@ INSERT INTO `entityright` VALUES (@id, @HostGroup_eid , @Visitor_eid, 'get');SET
 INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
 
+--
+-- Services and policies
+--
 
+-- Presets for policy: Default physical host
+INSERT INTO `param_preset` VALUES (1, "hosting_policy", NULL, NULL);
+INSERT INTO `param_preset` VALUES (2, "managers", NULL, 1);
+-- host_manager
+INSERT INTO `param_preset` VALUES (3, "host_manager", NULL, 2);
+INSERT INTO `param_preset` VALUES (4, "manager_type", "host_manager", 3);
+INSERT INTO `param_preset` VALUES (5, "manager_id", @physical_hoster, 3);
+INSERT INTO `param_preset` VALUES (6, "manager_params", NULL, 3);
+INSERT INTO `param_preset` VALUES (7, "ram", 1024, 6);
+INSERT INTO `param_preset` VALUES (8, "ram_unit", "M", 6);
+INSERT INTO `param_preset` VALUES (9, "cpu", 1, 6);
+
+-- Presets for policy: Kanopya LVM disk exported via ISCSI
+INSERT INTO `param_preset` VALUES (10, "storage_policy", NULL, NULL);
+INSERT INTO `param_preset` VALUES (11, "managers", NULL, 10);
+-- disk_manager
+INSERT INTO `param_preset` VALUES (12, "disk_manager", NULL, 11);
+INSERT INTO `param_preset` VALUES (13, "manager_type", "disk_manager", 12);
+INSERT INTO `param_preset` VALUES (14, "manager_id", @lvm_component, 12);
+-- export_manager
+INSERT INTO `param_preset` VALUES (15, "export_manager", NULL, 11);
+INSERT INTO `param_preset` VALUES (16, "manager_type", "export_manager", 15);
+INSERT INTO `param_preset` VALUES (17, "manager_id", @iscsi_component, 15);
+
+-- Presets for policy: Default network configuration
+INSERT INTO `param_preset` VALUES (18, "network_policy", NULL, NULL);
+INSERT INTO `param_preset` VALUES (19, "cluster_nameserver1", "127.0.0.1", 18);
+INSERT INTO `param_preset` VALUES (20, "cluster_nameserver2", "127.0.0.1", 18);
+INSERT INTO `param_preset` VALUES (21, "cluster_domainname", "hedera-technology.com", 18);
+INSERT INTO `param_preset` VALUES (22, "interfaces", NULL, 18);
+-- interface 'admin'
+INSERT INTO `param_preset` VALUES (23, "admin", NULL, 22);
+INSERT INTO `param_preset` VALUES (24, "interface_role", "admin", 23);
+INSERT INTO `param_preset` VALUES (25, "interface_networks", NULL, 23);
+INSERT INTO `param_preset` VALUES (26, NULL, @admin_network, 25);
+-- interface 'public'
+INSERT INTO `param_preset` VALUES (27, "public", NULL, 22);
+INSERT INTO `param_preset` VALUES (28, "interface_role", "public", 27);
+
+-- Presets for policy: Cluster manual scalability
+INSERT INTO `param_preset` VALUES (29, "scalability_policy", NULL, NULL);
+INSERT INTO `param_preset` VALUES (30, "cluster_min_node", 1, 29);
+INSERT INTO `param_preset` VALUES (31, "cluster_max_node", 10, 29);
+INSERT INTO `param_preset` VALUES (32, "cluster_priority", 1, 29);
+
+-- Presets for policy: Debian squeeze
+INSERT INTO `param_preset` VALUES (33, "system_policy", NULL, NULL);
+INSERT INTO `param_preset` VALUES (34, "cluster_si_shared", 0, 33);
+INSERT INTO `param_preset` VALUES (35, "cluster_si_persistent", 0, 33);
+INSERT INTO `param_preset` VALUES (36, "kernel_id", @kernel, 33);
+INSERT INTO `param_preset` VALUES (37, "managers", NULL, 33);
+-- disk_manager
+INSERT INTO `param_preset` VALUES (38, "disk_manager", NULL, 37);
+INSERT INTO `param_preset` VALUES (39, "manager_params", NULL, 38);
+INSERT INTO `param_preset` VALUES (40, "systemimage_size", 5368709120, 39);
+-- preinstalled component
+INSERT INTO `param_preset` VALUES (41, "components", NULL, 33);
+SET @cid = (SELECT component_type_id FROM `component_type` WHERE component_name = "Puppetagent" AND component_version = 2);
+INSERT INTO `param_preset` VALUES (42, "puppetagent", NULL, 41);
+INSERT INTO `param_preset` VALUES (43, "component_type", @cid, 42);
+SET @cid = (SELECT component_type_id FROM `component_type` WHERE component_name = "Keepalived" AND component_version = 1);
+INSERT INTO `param_preset` VALUES (44, "keepalived", NULL, 41);
+INSERT INTO `param_preset` VALUES (45, "component_type", @cid, 44);
+
+INSERT INTO `policy` VALUES (1, 1, 'Default physical host', "Hosting policy for default physical hosts.", 'hosting');
+INSERT INTO `policy` VALUES (2, 10, 'Kanopya LVM disk exported via ISCSI', "Datastore on Kanopya cluster for PXE boot via ISCSI.", 'storage');
+INSERT INTO `policy` VALUES (3, 18, 'Default network configuration', "Default network configuration, with admin and public interfaces.", 'network');
+INSERT INTO `policy` VALUES (4, 29, 'Cluster manual scalability', "Manual scalability.", 'scalability');
+INSERT INTO `policy` VALUES (5, 33, 'Debian squeeze', "Hosting policy for standard physical hosts.", 'system');
+
+INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5);
 

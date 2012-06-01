@@ -31,9 +31,12 @@ use Workflow;
 use NodemetricCombination;
 use Clustermetric;
 use AggregateCombination;
+use Policy;
 use Administrator;
 use General;
-use Entity::ManagerParameter;
+use ClusterManager;
+
+use Hash::Merge;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -64,7 +67,7 @@ use constant ATTR_DEF => {
     },
     cluster_boot_policy => {
         pattern      => '^.*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0,
         is_editable  => 0
     },
@@ -152,30 +155,6 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 0
     },
-    host_manager_id => {
-        pattern      => '^\d+$',
-        is_mandatory => 1,
-        is_extended  => 0,
-        is_editable  => 0
-    },
-    disk_manager_id => {
-        pattern      => '^\d+$',
-        is_mandatory => 1,
-        is_extended  => 0,
-        is_editable  => 0
-    },
-    export_manager_id => {
-        pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0,
-        is_editable  => 0
-    },
-    collector_manager_id => {
-        pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0,
-        is_editable  => 0
-    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -255,7 +234,72 @@ sub getCluster {
 
 =head2 create
 
+    %params => {
+        cluster_name     => 'foo',
+        cluster_desc     => 'bar',
+        cluster_min_node => 1,
+        cluster_max_node => 10,
+        masterimage_id   => 4,
+        ...
+        managers => {
+            host_manager => {
+                manager_id     => 2,
+                manager_type   => 'host_manager',
+                manager_params => {
+                    cpu => 2,
+                    ram => 1024,
+                },
+            },
+            disk_manager => { ... },
+        },
+        policies => {
+            hosting => 45,
+            storage => 54,
+            network => 32,
+            ...
+        },
+        interfaces => {
+            admin => {
+                interface_role => 'admin',
+                interfaces_networks => [ 1 ],
+            }
+        },
+        components => {
+            puppet => {
+                component_type => 42,
+            },
+        },
+    };
+
 =cut
+
+sub checkConfigurationPattern {
+    my $self = shift;
+    my $class = ref($self) || $self;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'attrs' ]);
+
+    # Firstly, check the cluster attrs
+    $class->checkAttrs(attrs => $args{attrs});
+
+    # Then check the configuration if required
+    if (defined $args{composite}) {
+
+        # For now, only check the manaher paramters only
+        for my $manager_def (values %{ $args{composite}->{managers} }) {
+            if (defined $manager_def->{manager_id}) {
+                my $manager = Entity->get(id => $manager_def->{manager_id});
+
+                $manager->checkManagerParams(manager_type   => $manager_def->{manager_type},
+                                             manager_params => $manager_def->{manager_params});
+            }
+        }
+
+        # TODO: Check cross managers dependencies. For example, the list of
+        #       disk managers depend on the host manager.
+    }
+}
 
 sub create {
     my ($class, %params) = @_;
@@ -264,25 +308,36 @@ sub create {
     my $mastergroup_eid = $class->getMasterGroupEid();
     my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
     if (not $granted) {
-       throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
     }
 
-    # we remove specific managers parameters before attributes cheking 
-    my %managers_params = ();
-    for my $key (keys %params) {
-        if($key =~ /(^host_manager_param|^disk_manager_param|^export_manager_param)/) {
-           my $realkey = $key;
-           my $manager = $key;
-           my $param   = $key;
-           $manager =~ s/_param.*//g;
-           $param =~ s/.*_param_//g;
+    # TODO: If a service_template_id is defined, check policies consistency or skip policies ids.
 
-           $managers_params{$manager . '_params'}->{$param} = $params{$key};
-           delete $params{$key};
+    # Override params with poliies param presets
+    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
+    # Firstly apply the policies presets on the cluster creation paramters.
+    for my $policy_id (@{ $params{policies} }) {
+        my $policy = Policy->get(id => $policy_id);
+
+        # Load params preset into hash
+        my $policy_presets = $policy->getParamPreset->load();
+
+        # Merge current polciy preset with others
+        %params = %{ $merge->merge(\%params, \%$policy_presets) };
+    }
+    delete $params{policies};
+
+    $log->debug("Final parameters after applying policies:\n" . Dumper(%params));
+
+    my %composite_params;
+    for my $name ('managers', 'interfaces', 'components') {
+        if ($params{$name}) {
+            $composite_params{$name} = delete $params{$name};
         }
     }
 
-    $class->checkAttrs(attrs => \%params);
+    $class->checkConfigurationPattern(attrs => \%params, composite => \%composite_params);
 
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(
@@ -290,9 +345,148 @@ sub create {
         type     => 'AddCluster',
         params   => {
             cluster_params => \%params,
-            %managers_params,
-        }
+            presets        => \%composite_params,
+        },
     );
+}
+
+sub applyPolicies {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "presets" ]);
+
+    my ($name, $value);
+    for my $name (keys %{ $args{presets} }) {
+        $value = $args{presets}->{$name};
+
+        # Handle managers cluster config
+        if ($name eq 'managers') {
+            $self->configureManagers(managers => $value);
+        }
+        # Handle components cluster config
+        elsif ($name eq 'components') {
+            for my $component (values %$value) {
+                # TODO: Check if the component is already installed
+                $self->addComponentFromType(component_type_id => $component->{component_type});
+            }
+        }
+        # Handle network interfaces cluster config
+        elsif ($name eq 'interfaces') {
+            $self->configureInterfaces(interfaces => $value);
+        }
+        else {
+            $self->setAttr(name => $name, value => $value);
+        }
+    }
+    $self->save();
+}
+
+sub configureManagers {
+    my $self = shift;
+    my %args = @_;
+
+    # Install new managers or/and new managers params if required
+    if (defined $args{managers}) {
+        for my $manager (values %{$args{managers}}) {
+            # Check if the manager is already set, add it otherwise,
+            # and set manager parameters if defined.
+            my $cluster_manager;
+            eval {
+                $cluster_manager = ClusterManager->find(hash => { manager_type => $manager->{manager_type},
+                                                                  cluster_id   => $self->getId });
+            };
+            if ($@) {
+                $cluster_manager = $self->addManager(manager      => Entity->get(id => $manager->{manager_id}),
+                                                     manager_type => $manager->{manager_type});
+            }
+            if ($manager->{manager_params}) {
+                $cluster_manager->addParams(params => $manager->{manager_params}, override => 1);
+            }
+        }
+    }
+
+    my $disk_manager   = $self->getManager(manager_type => 'disk_manager');
+    my $export_manager = eval { $self->getManager(manager_type => 'export_manager') };
+
+    # If the export manager exists, deduce the boot policy
+    if ($export_manager) {
+        my $bootpolicy = $disk_manager->getBootPolicyFromExportManager(export_manager => $export_manager);
+        $self->setAttr(name => 'cluster_boot_policy', value => $bootpolicy);
+        $self->save();
+    }
+    # Else use the boot policy to deduce the export manager to use
+    else {
+        $export_manager = $disk_manager->getExportManagerFromBootPolicy(
+                              boot_policy => $self->getAttr(name => 'cluster_boot_policy')
+                          );
+
+        $self->addManager(manager => $export_manager, manager_type => "export_manager");
+    }
+
+    # Get export manager parameter related to si shared value.
+    my $readonly_param = $export_manager->getReadOnlyParameter(
+                             readonly => $self->getAttr(name => 'cluster_si_shared')
+                         );
+    # TODO: This will be usefull for the first call to applyPolicies at the cluster creation,
+    #       but there will be export manager params consitency problem if policies are updated.
+    if ($readonly_param) {
+        $self->addManagerParameter(
+            manager_type => 'export_manager',
+            name         => $readonly_param->{name},
+            value        => $readonly_param->{value}
+        );
+    }
+}
+
+sub configureInterfaces {
+    my $self = shift;
+    my %args = @_;
+
+    if (defined $args{interfaces}) {
+        for my $interface (values %{ $args{interfaces} }) {
+            my $role = Entity::InterfaceRole->find(hash => { interface_role_name => $interface->{interface_role} });
+
+            # TODO: This mechanism do not allows to define many interfaces
+            #       with the same role within policies.
+
+            # Check if an interface with the same role already set, add it otherwise,
+            # Add networks to the interrface if not exists.
+            my $interface;
+            eval {
+                $interface = Entity::Interface->find(
+                                 hash => { service_provider_id => $self->getAttr(name => 'entity_id'),
+                                           interface_role_id   => $role->getAttr(name => 'entity_id') }
+                             );
+            };
+            if ($@) {
+                $interface = $self->addNetworkInterface(interface_role => $role);
+            }
+            if ($interface->{interface_network}) {
+                for my $network_id (@{ $interface->{interface_network} }) {
+                    $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
+                }
+            }
+        }
+    }
+}
+
+sub addManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'manager', "manager_type" ]);
+
+    my $manager = ClusterManager->new(
+                      cluster_id   => $self->getAttr(name => 'entity_id'),
+                      manager_type => $args{manager_type},
+                      manager_id   => $args{manager}->getAttr(name => 'entity_id')
+                  );
+
+    if ($args{manager_params}) {
+        $manager->addParams(params => $args{manager_params});
+    }
+    return $manager;
 }
 
 =head2 update
@@ -652,6 +846,7 @@ sub addComponentFromType {
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['component_type_id']);
+
 	my $type_id = $args{component_type_id};
 	my $adm = Administrator->new();
 	my $row = $adm->{db}->resultset('ComponentType')->find($type_id);
@@ -661,11 +856,8 @@ sub addComponentFromType {
 	my $location = General::getLocFromClass(entityclass => $comp_class);
 	eval {require $location };
 	my $component = $comp_class->new();
-	$component->setAttr(name  => 'service_provider_id',
-	                    value => $self->getAttr(name => 'cluster_id'));
-	$component->save();
 
-    return $component->{_dbix}->id;
+	return $self->addComponent(component => $component);
 }
 
 =head2 removeComponent
@@ -726,7 +918,7 @@ sub getHosts {
 sub getHostManager {
     my $self = shift;
 
-    return Entity->get(id => $self->getAttr(name => 'host_manager_id'));
+    return $self->getManager(manager_type => 'host_manager');
 }
 
 =head2 getCurrentNodesCount
@@ -960,12 +1152,10 @@ sub addManagerParameter {
 
     General::checkParams(args => \%args, required => [ 'manager_type', 'name', 'value' ]);
 
-    Entity::ManagerParameter->new(
-        cluster_id => $self->getAttr(name => 'cluster_id'),
-        manager_id => $self->getAttr(name => $args{manager_type} . '_id'),
-        name       => $args{name},
-        value      => $args{value},
-    );
+    my $cluster_manager = ClusterManager->find(hash => { manager_type => $args{manager_type},
+                                                         cluster_id   => $self->getId });
+
+    $cluster_manager->addParams(params => { $args{name} => $args{value} });
 }
 
 sub getManagerParameters {
@@ -974,19 +1164,25 @@ sub getManagerParameters {
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
-    my @parameters = Entity::ManagerParameter->search(
-        hash => {
-            cluster_id => $self->getAttr(name => 'cluster_id'),
-            manager_id => $self->getAttr(name => $args{manager_type} . '_id'),
-        }
-    );
+    my $cluster_manager = ClusterManager->find(hash => { manager_type => $args{manager_type},
+                                                         cluster_id   => $self->getId });
+    return $cluster_manager->getParams();
+}
 
-    my $params_hash = {};
-    for my $param (@parameters) {
-        $params_hash->{$param->getAttr(name => 'name')}
-            = $param->getAttr(name => 'value');
+sub getManager {
+    my $self = shift;
+    my %args = @_;
+
+    # The parent method getManager should disappeared
+    if (defined $args{id}) {
+        return $self->SUPER::getManager(%args);
     }
-    return $params_hash;
+
+    General::checkParams(args => \%args, required => [ 'manager_type' ]);
+
+    my $cluster_manager = ClusterManager->find(hash => { manager_type => $args{manager_type},
+                                                         cluster_id   => $self->getId });
+    return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
 }
 
 
@@ -1166,9 +1362,6 @@ sub generateDefaultMonitoringConfiguration {
 sub getCollectorManager {
     my $self = shift;
 
-    my $collector_manager_id = $self->getAttr ( name=>'collector_manager_id' );
-    my $collector_manager = Entity::Component->get ( id => $collector_manager_id );
-
-    return $collector_manager;
+    return $self->getManager(manager_type => 'collector_manager' );
 }
 1;

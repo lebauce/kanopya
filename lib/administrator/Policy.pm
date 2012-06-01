@@ -15,11 +15,13 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package WorkflowDef;
+package Policy;
 use base 'BaseDB';
 
 use strict;
 use warnings;
+
+use ParamPreset;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
@@ -27,47 +29,35 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger('administrator');
 
 use constant ATTR_DEF => {
-    workflow_def_name => {
+    policy_desc => {
         pattern      => '^.*$',
         is_mandatory => 1,
+        is_extended  => 0
+    },
+    policy_name => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    policy_name => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    policy_desc => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
         is_extended  => 0
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $params;
-    if (defined $args{params}) {
-        $params = delete $args{params};
-    }
-
-    my $self = $class->SUPER::new(%args);
-
-    if (defined $params) {
-        $self->setParamPreset(params => $params);
-    }
-
-    return $self;
-}
-
-sub addStep {
-    
-}
-
-sub setParamPreset {
+sub getParamPreset {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "params" ]);
-
-    my $preset = ParamPreset->new(name => 'workflow_def_params', params => $args{params});
-    $self->setAttr(name  => 'param_preset_id',
-                   value => $preset->getAttr(name => 'param_preset_id'));
-    $self->save();
+    return ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
 }
 
 1;

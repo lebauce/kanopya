@@ -17,7 +17,8 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 20 april 2012
 
-package CollectorManager;
+package Manager::CollectorManager;
+use base "Manager";
 
 use strict;
 use warnings;
@@ -27,6 +28,12 @@ use Kanopya::Exceptions;
 use General;
 
 my $log = get_logger("administrator");
+
+=head2 checkManagerParams
+
+=cut
+
+sub checkCollectorManagerParams {}
 
 sub retrieveData { }
 sub getIndicatorsIds { }

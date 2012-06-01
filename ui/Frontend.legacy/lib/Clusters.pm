@@ -6,7 +6,7 @@ use Administrator;
 use General;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider;
-use Entity::HostManager;
+use Manager::HostManager;
 use Entity::Interface;
 use Entity::Host;
 use Entity::Gp;
@@ -16,12 +16,14 @@ use Entity::InterfaceRole;
 use Entity::Network;
 use Entity::Network::Vlan;
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
 use NodemetricRule;
 use Orchestrator;
 use Workflow;
 use Action;
+use Policy;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("webui");
 
@@ -297,16 +299,30 @@ get '/clusters/add' => sub {
     # /clusters/cloudmanagers/:hostproviderid and
     # /clusters/cloudmanagers/:hostproviderid/subform/:cloudmanagerid
 
+    my $policies_by_type = {};
+    for my $policy_type ('hosting', 'storage', 'network', 'scalability', 'system') {
+        my @policy_list;
+        my @policies = Policy->search(hash => { policy_type => $policy_type });
+        for my $policy (@policies) {
+            my $data = {
+                policy_id   => $policy->getAttr(name => 'policy_id'),
+                policy_name => $policy->getAttr(name => 'policy_name'),
+            };
+            push @policy_list, $data;
+        }
+        $policies_by_type->{$policy_type} = \@policy_list;
+    }
+
     template 'form_addcluster', {
         title_page            => "Clusters - Cluster creation",
         kernels_list          => $kmodels,
         masterimages_list     => $masterimages_list,
         storageproviders_list => _storage_providers(),
-        datacollectors_list    => _collector_managers(),
+        datacollectors_list   => _collector_managers(),
         gp_list               => _users_groups(),
         hostproviders_list    => _host_providers(),
         nameserver            => $kanopya_cluster->getAttr(name => 'cluster_nameserver1'),
-        
+        policies              => $policies_by_type
     }, { layout => '' };
 };
 
@@ -395,7 +411,7 @@ post '/clusters/add' => sub {
         value => $parameters{disk_manager_param_systemimage_size}, 
         units => $parameters{systemimage_size_unit}
     );
-    
+
     delete $parameters{systemimage_size_unit};
     $parameters{disk_manager_param_systemimage_size} = $sizeinbyte;
 
@@ -405,7 +421,50 @@ post '/clusters/add' => sub {
     if ($parameters{collector_manager_id} eq 'default') {
         delete $parameters{collector_manager_id};
     }
- 
+
+    # Group policies and managers params
+    $parameters{policies} = [];
+    $parameters{managers} = {};
+    for my $key (keys %parameters) {
+        # Policy ids params
+        if ($key =~ m/.*_policy_id/) {
+            if ($parameters{$key}) {
+                push @{$parameters{policies}}, $parameters{$key};
+            }
+            delete $parameters{$key};
+        }
+        # Managers ids params
+        if ($key =~ m/.*_manager_id/) {
+            my $manager_type = $key;
+            $manager_type =~ s/_id.*//g;
+
+            $parameters{managers}->{$manager_type}->{manager_id} = $parameters{$key};
+            $parameters{managers}->{$manager_type}->{manager_type} = $manager_type;
+            delete $parameters{$key};
+        }
+        # Managers params
+        if ($key =~ m/.*_manager_param_.*/) {
+            my $manager_type = $key;
+            my $param_key    = $key;
+            $manager_type =~ s/_param_.*//g;
+            $param_key    =~ s/.*_param_//g;
+
+            $parameters{managers}->{$manager_type}->{manager_params}->{$param_key} = $parameters{$key};
+            delete $parameters{$key};
+        }
+    }
+
+    # Group managers params
+
+    for my $param (keys %parameters) {
+        if ($param =~ m/.*_policy_id/) {
+            if ($parameters{$param}) {
+                push @{$parameters{policies}}, $parameters{$param};
+            }
+            delete $parameters{$param};
+        }
+    }
+
     eval {
         Entity::ServiceProvider::Inside::Cluster->create(%parameters);
     };

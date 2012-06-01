@@ -1,0 +1,19 @@
+<% FOREACH policy IN policies_list %>
+	<table class="listing">
+	<tr><td colspan="3"><h1><% policy.policy_name %></h1></td></tr>
+	<tr>
+	<td class="toright">
+	<a class="imgManage clickable" onclick="loadLink('/architectures/<% policy.route_base %>/<% policy.policy_id %>')">details</a></td></tr>
+
+	<tr><td class="italic" colspan="3"><span class="label">Description</span> : <% policy.policy_desc %></td></tr>
+	</table>
+<% END %>
+
+<div class="actions">
+    <div>
+	    <a class="action modal" href="/architectures/policies/add">Create a policy</a>
+	    <p class="italic">Create and configure a new policy.</p>
+    </div>
+</div>
+
+

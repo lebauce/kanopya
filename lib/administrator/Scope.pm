@@ -25,4 +25,12 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getIdFromName{
+    my ($class,%args) = @_;
+    General::checkParams(args => \%args, required => [ 'scope_name' ]);
+    my $scope_name = $args{scope_name};
+    my $scope    = Scope->find(hash => {scope_name => $scope_name});
+    return $scope->getAttr(name => 'scope_id');
+}
 1;

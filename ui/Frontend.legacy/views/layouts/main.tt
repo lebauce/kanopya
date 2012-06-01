@@ -232,7 +232,8 @@
                         <li <% submenu_selection('components') %>><a href="/systems/components">Components</a></li>
                      <% ELSIF is_menu_selected('architectures') %>
                         <li <% submenu_selection('clusters') %><% submenu_selection('extclusters') %>><a href="/architectures/clusters">Clusters</a></li>
-                        <li <% submenu_selection('networks') %>><a href="/architectures/networks">Networks</a></li>
+                        <li <% submenu_selection('services') %>><a href="/architectures/services">Services</a></li>
+                        <li <% submenu_selection('policies') %>><a href="/architectures/policies">Policies</a></li>
                     <% ELSIF is_menu_selected('equipments') %>
                         <li <% submenu_selection('ucs') %>><a href="/equipments/ucs">UCS</a></li>
                         <li <% submenu_selection('netapp') %>><a href="/equipments/netapp">NetApp</a></li>

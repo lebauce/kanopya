@@ -147,7 +147,9 @@ sub generateAuthorizedKeys {
                            );
 
     my $mount_point = $container->getMountPoint;
-    $container_access->mount(mountpoint => $mount_point, econtext => $self->getExecutorEContext);
+    $container_access->mount(mountpoint => $mount_point,
+                             econtext   => $self->getExecutorEContext,
+                             erollback  => $args{erollback});
 
     my $rsapubkey_cmd = "mkdir -p $mount_point/root/.ssh ; cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";
     $self->getExecutorEContext->execute(command => $rsapubkey_cmd);
@@ -155,7 +157,9 @@ sub generateAuthorizedKeys {
     my $sync_cmd = "sync";
     $self->getExecutorEContext->execute(command => $sync_cmd);
 
-    $container_access->umount(mountpoint => $mount_point, econtext => $self->getExecutorEContext);
+    $container_access->umount(mountpoint => $mount_point,
+                              econtext   => $self->getExecutorEContext,
+                              erollback  => $args{erollback});
 
     $args{export_manager}->removeExport(
         container_access => $container_access,

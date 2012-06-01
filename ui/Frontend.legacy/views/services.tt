@@ -1,0 +1,18 @@
+<% FOREACH service IN services_list %>
+	<table class="listing">
+	<tr><td colspan="3"><h1><% service.service_name %></h1></td></tr>
+	<tr><td class="toright">
+	<a class="imgManage clickable" onclick="loadLink('/architectures/<% service.route_base %>/<% service.service_id %>')">details</a></td></tr>
+
+	<tr><td class="italic" colspan="3"><span class="label">Description</span> : <% service.service_desc %></td></tr>
+	</table>
+<% END %>
+
+<div class="actions">
+    <div>
+	    <a class="action modal" href="/architectures/services/add">Create a service</a>
+	    <p class="italic">Create and configure a new service.</p>
+    </div>
+</div>
+
+

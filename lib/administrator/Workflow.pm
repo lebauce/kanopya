@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 use WorkflowDef;
+use ParamPreset;
 use Kanopya::Exceptions;
 
 use Data::Dumper;
@@ -143,8 +144,15 @@ sub getParams {
                     }
                     else{ next; }
                 }
+                $params{$tag}->{$name} = $value;
             }
-            $params{$tag}->{$name} = $value;
+            elsif ($tag eq 'presets') {
+                my $preset = ParamPreset->get(id => $value);
+                $params{$name} = $preset->load();
+            }
+            else {
+                $params{$tag}->{$name} = $value;
+            }
         }
         else {
             $params{$name} = $value;
@@ -208,6 +216,7 @@ sub buildParams {
         if (ref($value) eq 'HASH') {
             while(my ($subkey, $subvalue) = each %{$value}) {
                 my $param_value;
+
                 # If tag is 'context', this is entities params
                 if ($key eq 'context') {
                     if (not ($subvalue->isa('Entity') or $subvalue->isa('EEntity'))) {
@@ -217,6 +226,11 @@ sub buildParams {
                               );
                     }
                     $param_value = $subvalue->getAttr(name => 'entity_id');
+                }
+                # If tag is 'preset', this is a composite param, we store it as a ParamPreset
+                elsif ($key eq 'presets') {
+                    my $preset = ParamPreset->new(name => $subkey, params => $subvalue);
+                    $param_value = $preset->getAttr(name => 'param_preset_id');
                 }
                 else {
                     $param_value = $subvalue;
