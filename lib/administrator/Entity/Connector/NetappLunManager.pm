@@ -16,24 +16,37 @@
 
 package Entity::Connector::NetappLunManager;
 use base 'Entity::Connector::NetappManager';
+use base "Manager::ExportManager";
+use base "Manager::DiskManager";
 
 use warnings;
 use strict;
 
-use Entity::HostManager;
+use Manager::HostManager;
 use Entity::Container::NetappLun;
 use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::IscsiContainerAccess;
+
 use General;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
 
-use constant ATTR_DEF => {
-};
+use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+=head2 checkDiskManagerParams
+
+=cut
+
+sub checkDiskManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "volume_id", "systemimage_size" ]);
+}
 
 sub getExportManagerFromBootPolicy {
     my $self = shift;
@@ -41,7 +54,7 @@ sub getExportManagerFromBootPolicy {
 
     General::checkParams(args => \%args, required => [ "boot_policy" ]);
 
-    if ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
+    if ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
         return $self;
     }
 
@@ -59,7 +72,7 @@ sub getBootPolicyFromExportManager {
     my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
 
     if ($args{export_manager}->getId == $self->getId) {
-        return Entity::HostManager->BOOT_POLICIES->{pxe_iscsi};
+        return Manager::HostManager->BOOT_POLICIES->{pxe_iscsi};
     }
 
     throw Kanopya::Exception::Internal::UnknownCategory(
@@ -114,32 +127,6 @@ sub createDisk {
     );
 }
 
-=head2 removeDisk
-
-    Desc : Implement removeDisk from DiskManager interface.
-           This function enqueue a ERemoveDisk operation.
-    args :
-
-=cut
-
-sub removeDisk {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    $log->debug("New Operation RemoveDisk with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveDisk',
-        params   => {
-            context => {
-                container => $args{container},
-            }
-        },
-    );
-}
-
 =head2 createExport
 
     Desc : Implement createExport from ExportManager interface.
@@ -169,32 +156,6 @@ sub createExport {
                 typeio       => $args{typeio},
                 iomode       => $args{iomode}
             },
-        },
-    );
-}
-
-=head2 removeExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ERemoveExport operation.
-    args : export_name
-
-=cut
-
-sub removeExport {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $log->debug("New Operation RemoveExport with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveExport',
-        params   => {
-            context => {
-                container_access => $args{container_access},
-            }
         },
     );
 }

@@ -15,8 +15,8 @@
 
 package EEntity::EComponent::EFileimagemanager0;
 use base "EEntity::EComponent";
-use base 'EExportManager';
-use base "EDiskManager";
+use base 'EManager::EExportManager';
+use base "EManager::EDiskManager";
 
 use strict;
 use warnings;

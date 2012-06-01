@@ -1,5 +1,4 @@
-#    Copyright © 2012 Hedera Technology SAS
-#
+#    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -13,46 +12,20 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package EExportManager;
+# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+# Created 24 april 2012
 
-=head2 createExport
+package EManager::ECollectorManager;
+use base "EManager";
 
-    desc: Create an export for a container
+use strict;
+use warnings;
 
-=cut
+use Kanopya::Exceptions;
 
-sub createExport {
-}
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 
-=head2 removeExport
-
-    desc: Remove an export
-
-=cut
-
-sub removeExport {
-}
-
-=head2 addExportClient
-
-    desc: Autorize a client to this container access.
-          By default do nothing
-
-=cut
-
-sub addExportClient {
-}
-
-=head2 removeExportClient
-
-    desc: Remove access of a client to this container access.
-          By default do nothing
-
-=cut
-
-sub removeExportClient {
-}
-
+my $log = get_logger("executor");
 
 1;
-

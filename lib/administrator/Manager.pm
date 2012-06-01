@@ -15,51 +15,43 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Entity::Component::Physicalhoster0;
-use base "Entity::Component";
-use base "Manager::HostManager";
+package Manager;
 
 use strict;
 use warnings;
 
-use Entity::Powersupplycard;
-use Manager::HostManager;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use IO::Socket;
 
 my $log = get_logger("administrator");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+=head2 checkManagerParams
 
-sub getAttrDef { return ATTR_DEF; }
+=cut
 
-sub getBootPolicies {
-    return (Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
-            Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
-}
-
-sub getHostType {
-    return "Physical host";
-}
-
-sub getConf {
+sub checkManagerParams {
     my $self = shift;
-    my $conf = {};
+    my %args = @_;
 
-    return $conf;
-}
+    General::checkParams(args => \%args, required => [ "manager_type" ]);
 
-sub setConf {
-    my $self = shift;
-    my ($conf) = @_;
-}
+    $args{manager_params} = $args{manager_params} ? $args{manager_params} : {};
 
-sub getRemoteSessionURL {
-    return "";
+    if ($args{manager_type} eq 'host_manager') {
+        return $self->checkHostManagerParams(%{ $args{manager_params} });
+    }
+    elsif ($args{manager_type} eq 'disk_manager') {
+        return $self->checkDiskManagerParams(%{ $args{manager_params} });
+    }
+    elsif ($args{manager_type} eq 'export_manager') {
+        return $self->checkExportManagerParams(%{ $args{manager_params} });
+    }
+    elsif ($args{manager_type} eq 'collector_manager') {
+        return $self->checkCollectorManagerParams(%{ $args{manager_params} });
+    }
 }
 
 1;

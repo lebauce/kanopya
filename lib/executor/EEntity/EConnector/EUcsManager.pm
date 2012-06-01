@@ -14,8 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package EEntity::EConnector::EUcsManager;
-use base "EEntity";
-use base "EEntity::EHostManager";
+use base "EEntity::EConnector";
+use base "EManager::EHostManager";
 
 use strict;
 use warnings;

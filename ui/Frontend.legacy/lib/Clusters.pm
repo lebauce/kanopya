@@ -6,7 +6,7 @@ use Administrator;
 use General;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider;
-use Entity::HostManager;
+use Manager::HostManager;
 use Entity::Interface;
 use Entity::Host;
 use Entity::Gp;
