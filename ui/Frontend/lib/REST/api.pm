@@ -48,6 +48,7 @@ my %resources = (
     "masterimage"              => "Entity::Masterimage",
     "memcached1"               => "Entity::Component::Memcached1",
     "message"                  => "Message",
+    "mockmonitor"              => "Entity::Connector::MockMonitor",
     "mounttable1"              => "Entity::Component::Mounttable1",
     "mysql5"                   => "Entity::Component::Mysql5",
     "netapp"                   => "Entity::ServiceProvider::Outside::Netapp",
@@ -88,7 +89,6 @@ my %resources = (
     "user"                     => "Entity::User",
     "vlan"                     => "Entity::Network::Vlan",
     "workflow"                 => "Workflow",
-    "mockmonitor"              => "Entity::Connector::MockMonitor",
 );
 
 sub db_to_json {
