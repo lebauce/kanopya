@@ -121,6 +121,7 @@ function createMonDirDialog(elem_id, step, firstDialog) {
         $(ADMod.content).append(ADMod.form);
         ADMod.startWizard();
     });
+    // create the default form (activedirectory for directory and scom for monitoring)
     ADMod   = createSpecServDialog(elem_id, (step == 2) ? 'activedirectory' : 'scom', firstDialog, step, select);
     return ADMod;
 }
