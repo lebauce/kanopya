@@ -36,12 +36,38 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $params;
+    if (defined $args{params}) {
+        $params = delete $args{params};
+    }
+
+    my $self = $class->SUPER::new(%args);
+
+    if (defined $params) {
+        $self->setParamPreset(params => $params);
+    }
+
+    return $self;
+}
+
 sub addStep {
     
 }
 
 sub setParamPreset {
-    
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "params" ]);
+
+    my $preset = ParamPreset->new(name => 'workflow_def_params', params => $args{params});
+    $self->setAttr(name  => 'param_preset_id',
+                   value => $preset->getAttr(name => 'param_preset_id'));
+    $self->save();
 }
 
 1;
