@@ -1,12 +1,13 @@
 package Frontend;
 
 use Dancer ':syntax';
-use Dancer::Plugin::Preprocess::Sass;
+#use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
 
 use Login;
 use KIO::Services;
 use Messager;
+use Monitoring;
 use REST::api;
 
 our $VERSION = '0.1';

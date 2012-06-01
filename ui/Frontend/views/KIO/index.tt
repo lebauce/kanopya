@@ -1,6 +1,15 @@
-<script src="/javascripts/jquery/lib/jquery.dashboard.patch.js"></script>
-<script src="/javascripts/jquery/lib/highcharts.js"></script>
-<script src="/javascripts/jquery/lib/exporting.js"></script>
+<script src="/javascripts/jquery/lib/jquery.dashboard.min.js"></script>
+<!--script src="/javascripts/jquery/jquery.dashboard.js"></script-->
+<!--script src="/javascripts/jquery/lib/highcharts.js"></script-->
+<!--script src="/javascripts/jquery/lib/exporting.js"></script-->
+
+<script src="/javascripts/jquery/jqplot/jquery.jqplot.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.barRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.canvasAxisTickRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.canvasTextRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.categoryAxisRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.dateAxisRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.highlighter.min.js"></script>
 
 <script src="/javascripts/KIO/services.js"></script>
 <script src="/javascripts/KIO/users.js"></script>
@@ -13,7 +22,8 @@
         <div>
     		<div class="headerlinks">
     			<a class="openaddwidgetdialog headerlink" href="#"><font color="black">Add Widget</font></a>&nbsp;&nbsp;
-    			<a class="editlayout headerlink" href="#"><font color="black">Edit layout</font></a>
+    			<a class="editlayout headerlink" href="#"><font color="black">Edit layout</font></a>&nbsp;&nbsp;
+    			<a class="savedashboard headerlink" href="#"><font color="black">Save Dashboard</font></a>
     		</div>
     	</div>
         <div id="dashboard" class="dashboard">

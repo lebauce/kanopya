@@ -1,0 +1,26 @@
+{
+"result" :
+  {
+  "data" : [
+    {
+      "id" : "widget_node_bargraph",
+      "title" : "Nodes overview",
+      "description" : "Nodes bar graph widget",
+      "creator" : "Hedera",
+      "url" : "widgets/widget_nodes_bargraph.html",
+      "image": "widgets/widget_chart.png",
+      "metadata" : {}
+    },
+    {
+      "id" : "widget_node_bargraph_config",
+      "title" : "Nodes overview config",
+      "description" : "Nodes bar graph widget configurable (nodemetric selection)",
+      "creator" : "Hedera",
+      "url" : "widgets/widget_nodes_bargraph_config.html",
+      "editurl" : "widgets/editwidget2.html",
+      "image": "widgets/widget_chart.png",
+      "metadata" : {}
+    }  
+  ]
+  }
+}

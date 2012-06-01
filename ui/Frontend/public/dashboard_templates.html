@@ -1,3 +1,6 @@
+
+<script src='/javascripts/widgets/widget_nodes_bargraph_config.js'></script>
+
 <script type="text/html" id="categorytemplate">
 	<li id="<%= id %>" class="selectcategory"><button><%= title %> (<%= amount %>)</button></li>
 </script>
@@ -25,9 +28,12 @@
 						</li>		
 						<li class="widgetSetTitle">
 							<span class="ui-icon ui-icon-tag"></span>
-							<a class="setTitle" href="#">Edit</a>
+							<a class="setTitle" href="#">SetTitle</a>
 						</li>
-					
+                        <li class="widgetEdit">
+                            <span class="ui-icon ui-icon-tag"></span>
+                            <a class="no_target" href="#">Edit</a>
+                        </li>
 						<li class="widgetRefresh">
 							<span class="ui-icon ui-icon-arrowrefresh-1-w"></span>
 							<a class="no_target" href="#">Refresh</a>
