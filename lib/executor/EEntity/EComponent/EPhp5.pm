@@ -12,20 +12,21 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EPhp5;
+use base 'EEntity::EComponent';
 
 use strict;
-use Template;
-use String::Random;
-use base "EEntity::EComponent";
+use warnings;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 my $errmsg;
 
 # generate configuration files on node
-sub configureNode {
-    my $self = shift;
-    my %args = @_;
+sub addNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['cluster','host','mount_point']);
 
     my $conf = $self->_getEntity()->getConf();
 
@@ -42,21 +43,21 @@ sub configureNode {
         my $port = '11211';
         $data->{session_path} = "tcp://$masternodeip:$port";
     }
-    $self->generateFile(template_dir => "/templates/components/php5",
-                        input_file   => "php.ini.tt",
-                        output       => "/php5/apache2/php.ini",
-                        data         => $data);
-}
+    
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/php5/apache2/php.ini',
+        template_dir  => '/templates/components/php5',
+        template_file => 'php.ini.tt',
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/php5/apache2',
+    );
 
-sub addNode {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
-
-    $args{mount_point} .= '/etc';
-
-    $self->configureNode(%args);
 }
 
 

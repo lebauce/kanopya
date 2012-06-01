@@ -194,6 +194,22 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 mock_monitor
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::MockMonitor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "mock_monitor",
+  "AdministratorDB::Schema::Result::MockMonitor",
+  { "foreign.mock_monitor_id" => "self.connector_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-20 16:41:59
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HvyVFwqWOFlj4OsHXKpeXQ
 

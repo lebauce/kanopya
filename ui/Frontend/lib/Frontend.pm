@@ -5,6 +5,7 @@ use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
 
 use Login;
+use KIO::Services;
 use Messager;
 use REST::api;
 
@@ -50,6 +51,8 @@ get '/dashboard' => sub {
 sub exception_to_status {
     my $exception = shift;
     my $status;
+
+    return $status if not defined $exception; 
 
     if ($exception->isa("Kanopya::Exception::Permission::Denied")) {
         $status = 'forbidden';

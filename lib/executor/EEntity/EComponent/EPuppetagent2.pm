@@ -15,6 +15,7 @@ package EEntity::EComponent::EPuppetagent2;
 
 use strict;
 use Template;
+use General;
 use base "EEntity::EComponent";
 use Log::Log4perl "get_logger";
 
@@ -24,22 +25,29 @@ my $errmsg;
 # generate configuration files on node
 sub configureNode {
     my ($self, %args) = @_;
-    my $data;
-
+    General::checkParams(args     => \%args,
+                         required => ['cluster','host','mount_point']);
+    
     my $conf = $self->_getEntity()->getConf();
 
     # Generation of /etc/default/puppet
-    $data = { 
+    my $data = { 
         puppetagent2_bootstart => 'yes',
         puppetagent2_options   => $conf->{puppetagent2_options},
     };
     
-    $self->generateFile(
-        mount_point  => $args{mount_point},
-        template_dir => "/templates/components/puppetagent",
-        input_file   => "default_puppet.tt", 
-        output       => "/default/puppet", 
-        data         => $data
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/default/puppet',
+        template_dir  => '/templates/components/puppetagent',
+        template_file => 'default_puppet.tt',
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/default'
     );
     
     # Generation of puppet.conf
@@ -48,12 +56,18 @@ sub configureNode {
     };
     
      
-    $self->generateFile( 
-        mount_point  => $args{mount_point},
-        template_dir => "/templates/components/puppetagent",
-        input_file   => "puppet.conf.tt", 
-        output       => "/puppet/puppet.conf", 
+    $file = $self->generateNodeFile( 
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/puppet/puppet.conf',
+        template_dir  => '/templates/components/puppetagent',
+        template_file => 'puppet.conf.tt', 
         data         => $data
+    );
+
+     $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/puppet'
     );
 
 }

@@ -88,7 +88,120 @@ my %resources = (
     "user"                     => "Entity::User",
     "vlan"                     => "Entity::Network::Vlan",
     "workflow"                 => "Workflow",
+    "mockmonitor"              => "Entity::Connector::MockMonitor",
 );
+
+sub db_to_json {
+    my $obj = shift;
+    my $expand = shift || [];
+
+    my $basedb;
+    my $json;
+    if ($obj->isa("BaseDB")) {
+        $basedb = $obj;
+        $json = $obj->toJSON;
+    }
+    else {
+        $basedb = bless { _dbix => $obj }, "BaseDB";
+        $json = $basedb->toJSON;
+        my %columns = $obj->get_columns;
+        for my $key (keys %columns) {
+            if (defined $columns{$key}) {
+                $json->{$key} = $columns{$key};
+            }
+        }
+    }
+
+    if (defined ($expand) and $expand) {
+        for my $key (@$expand) {
+            if ($basedb->{_dbix}->result_source->relationship_info($key)->{attrs}->{accessor} eq "multi") {
+                my $children = [];
+                for my $item ($basedb->{_dbix}->$key) {
+                    push @$children, db_to_json($item);
+                }
+                $json->{$key} = $children;
+            }
+            else {
+                $json->{$key} = db_to_json($basedb->getAttr(name => $key));
+            }
+        }
+    }
+
+    return $json;
+}
+
+sub format_results {
+    my %args = @_;
+
+    my $objs = [];
+    my $class = $args{class};
+    my $dataType = $args{dataType} || "";
+    my $expand = $args{expand} || [];
+    my $table;
+    my $result;
+    my %params = ();
+
+    delete $args{class};
+    delete $args{dataType};
+    delete $args{expand};
+
+    $params{page} = $args{page} || 1;
+    delete $args{page};
+
+    if (defined $args{rows}) {
+        $params{rows} = $args{rows};
+        delete $args{rows};
+    }
+
+    if (defined $args{order_by}) {
+        $params{order_by} = $args{order_by};
+        delete $args{order_by};
+    }
+
+    foreach my $attr (keys %args) {
+        my @filter = split(',', $args{$attr});
+        if (scalar (@filter) > 1) {
+            my %filter = @filter;
+            $args{$attr} = \%filter;
+        }
+    }
+
+    if ($class->isa("DBIx::Class::ResultSet")) {
+        my $results = $class->search_rs(\%args, \%params);
+        while (my $obj = $results->next) {
+            push @$objs, db_to_json($obj, $expand);
+        }
+
+        $result = {
+            rows    => $objs,
+            page    => $params{page} || 1,
+            total   => (defined ($params{page}) or defined ($params{rows})) ?
+                            $results->pager->total_entries : $results->count,
+            records => scalar @$objs
+        };
+    }
+    else {
+        eval {
+            require (General::getLocFromClass(entityclass => $class));
+        };
+
+        $result = $class->search(hash     => \%args,
+                                 dataType => "hash",
+                                 %params);
+
+        for my $obj (@{$result->{rows}}) {
+            push @$objs, $obj->toJSON();
+        }
+
+        $result->{rows} = $objs;
+    }
+
+    if ($dataType ne "jqGrid") {
+        return $result->{rows};
+    } else {
+        return $result;
+    }
+}
 
 sub setupREST {
 
@@ -99,7 +212,9 @@ sub setupREST {
             get    => sub {
                 content_type 'application/json';
 
-                return to_json( Entity->get(id => params->{id})->toJSON );
+                my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
+                return to_json( db_to_json(Entity->get(id => params->{id}),
+                                           \@expand) );
             },
 
             create => sub {
@@ -171,6 +286,9 @@ sub setupREST {
             my @objs;
             my $result;
 
+            my %query = params('query');
+            my $hash = \%query;
+
             for my $filter (@filters) {
                 my $parent = $obj->{_dbix};
 
@@ -181,19 +299,25 @@ sub setupREST {
                         # $obj = bless { _dbix => $parent->$filter }, "Entity";
 
                         if ($parent->result_source->relationship_info($filter)->{attrs}->{accessor} eq "multi") {
-                            my @dbix = $parent->$filter;
-                            foreach my $item (@dbix) {
-                                my $class = BaseDB::classFromDbix($item);
-                                require (General::getLocFromClass(entityclass => $class));
-                                $obj = bless { _dbix => $item }, $class;
-                                push @objs, $obj->toJSON;
-                            }
+                            my @rs = $parent->$filter->search_rs( { } );
 
-                            return to_json( \@objs );
+                            my $json = format_results(class     => $parent->$filter->search_rs(),
+                                                      dataType  => params->{dataType},
+                                                      %$hash);
+
+                            return to_json($json);
                         }
                         else {
                             my $dbix = $parent->$filter;
-                            $obj = Entity->get(id => $dbix->get_column(($dbix->result_source->primary_columns)[0]));
+
+                            $obj = $dbix->has_relationship("class_type") ?
+                                       Entity->get(
+                                           id => $dbix->get_column(($dbix->result_source->primary_columns)[0])
+                                       ) :
+                                       $dbix; 
+
+                            my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
+                            return to_json(db_to_json($obj, \@expand));
                         }
 
                         last RELATION;
@@ -207,7 +331,7 @@ sub setupREST {
             return to_json($obj->toJSON);
         };
 
-        get '/api/' . $resource => sub {
+        get '/api/' . $resource . '/?' => sub {
             content_type 'application/json';
 
             require (General::getLocFromClass(entityclass => $class));
@@ -219,50 +343,11 @@ sub setupREST {
                 hash => \%query,
             );
 
-            $params{page} = params->{page} || undef;
-            delete $params{hash}->{page};
-            
-            if (defined params->{rows}) {
-                $params{rows} = params->{rows};
-                delete $params{hash}->{rows};
-            }
-            if (defined params->{order_by}) {
-                $params{order_by} = params->{order_by};
-                delete $params{hash}->{order_by};
-            }
-            if (defined params->{dataType}) {
-                $params{dataType} = params->{dataType};
-                delete $params{hash}->{dataType};
-            }
+            my $json = format_results(class     => $class,
+                                      dataType  => params->{dataType},
+                                      %query);
 
-            foreach my $attr (keys %{$params{hash}}) {
-                my @filter = split(',', $params{hash}->{$attr});
-                if (scalar (@filter) > 1) {
-                    my %filter = @filter;
-                    $params{hash}->{$attr} = \%filter;
-                }
-            }
-
-            if (defined (params->{dataType}) and params->{dataType} eq "jqGrid") {
-                my $result = $class->search(%params);
-                for my $obj (@{$result->{rows}}) {
-                    push @$objs, $obj->toJSON();
-                }
-
-                return to_json( {
-                    rows    => $objs,
-                    page    => $result->{page} || 1,
-                    total   => $result->{total},
-                    records => scalar @$objs
-                } );
-            }
-            else {
-                for my $obj ($class->search(%params)) {
-                    push @$objs, $obj->toJSON();
-                }
-
-                return to_json($objs);
-            }
+            return to_json($json);
         }
     }
 }

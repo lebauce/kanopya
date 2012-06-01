@@ -106,6 +106,19 @@ var ModalForm = (function() {
         this.beforeSubmit   = args.beforeSubmit || $.noop;
         this.cancelCallback = args.cancel       || $.noop;
     }
+ 
+    ModalForm.prototype.exportArgs = function() {
+        return {
+            name            : this.name,
+            id              : this.id,
+            callback        : this.callback,
+            fields          : this.fields,
+            title           : this.title,
+            skippable       : this.skippable,
+            beforeSubmit    : this.beforeSubmit,
+            cancelCallback  : this.cancelCallback
+        };
+    }
     
     ModalForm.prototype.newFormElement = function(elementName, element, value) {
         // Create input and label DOM elements
@@ -244,7 +257,14 @@ var ModalForm = (function() {
     }
     
     ModalForm.prototype.handleBeforeSubmit = function(arr, $form, opts) {
-        return this.beforeSubmit(arr, $form, opts, this);
+        var b   = this.beforeSubmit(arr, $form, opts, this) || true;
+        if (b) {
+            var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
+            buttonsdiv.find('button').each(function() {
+                $(this).attr('disabled', 'disabled');
+            });
+        }
+        return b;
     }
     
     ModalForm.prototype.startWizard = function() {

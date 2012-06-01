@@ -42,4 +42,12 @@
 
 #header #product-name {
     color: #7E388A;
+    cursor: pointer;
+}
+
+/* Ugly quick style to set position of themeswitcher */
+#header .jquery-ui-themeswitcher-trigger {
+    position: absolute;
+    top: 5px;
+    right: 200px;
 }

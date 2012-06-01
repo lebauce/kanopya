@@ -1,10 +1,9 @@
 package EEntity::EComponent::EApache2;
+use base 'EEntity::EComponent';
 
 use strict;
-use Template;
-use String::Random;
+use warnings;
 use Data::Dumper;
-use base "EEntity::EComponent";
 use Log::Log4perl "get_logger";
 use General;
 
@@ -12,35 +11,48 @@ my $log = get_logger("executor");
 my $errmsg;
 
 sub addNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
+    General::checkParams(args => \%args, required => ['host', 'mount_point' ]);
 
+    my $cluster = $self->_getEntity->getServiceProvider;
     my $apache2_conf = $self->_getEntity()->getGeneralConf();    
     my $data = {};
     
     # generation of /etc/apache2/apache2.conf 
     $data->{serverroot} = $apache2_conf->{'apache2_serverroot'};
-    $self->generateFile( 
-         mount_point => $args{mount_point}.'/etc',
-        template_dir => "/templates/components/apache2",
-          input_file => "apache2.conf.tt",
-              output => "/apache2/apache2.conf",
-                data => $data
+    
+     my $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/apache2/apache2.conf',
+        template_dir  => '/templates/components/apache2',
+        template_file => 'apache2.conf.tt',
+        data          => $data 
     );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/apache2'
+    ); 
 
     # generation of /etc/apache2/ports.conf
     $data = {};
     $data->{ports} = $apache2_conf->{apache2_ports};
     $data->{sslports} = $apache2_conf->{apache2_sslports};
 
-    $self->generateFile(
-         mount_point => $args{mount_point}.'/etc',
-        template_dir => "/templates/components/apache2",
-          input_file => "ports.conf.tt",
-              output => '/apache2/ports.conf',
-                data => $data
+    $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/apache2/ports.conf',
+        template_file => "ports.conf.tt",
+        template_dir  => "/templates/components/apache2",
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/apache2'
     );
 
     # generation of /etc/apache2/sites-available/default
@@ -49,38 +61,48 @@ sub addNode {
     $data->{ports} =  $apache2_conf->{apache2_ports};
     $data->{sslports} = $apache2_conf->{apache2_sslports};
     
-    $self->generateFile(
-         mount_point => $args{mount_point}.'/etc',
-        template_dir => "/templates/components/apache2",
-          input_file => "virtualhost.tt", 
-              output => '/apache2/sites-available/default', 
-                data => $data
+    $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/apache2/sites-available/default', 
+        template_dir  => '/templates/components/apache2',
+        input_file    => 'virtualhost.tt', 
+        data          => $data
+    );
+
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/apache2/sites-available'
     );
 
     # generation of /etc/apache2/mods-available/status.conf
     $data = {};
     $data->{monitor_server_ip} = 'all';
     
-    $self->generateFile(
-         mount_point => $args{mount_point}.'/etc',
-        template_dir => "/templates/components/apache2",
-          input_file => "status.conf.tt", 
-              output => '/apache2/mods-enabled/status.conf', 
-                data => $data
+    $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/apache2/mods-enabled/status.conf', 
+        template_dir  => "/templates/components/apache2",
+        template_file => 'status.conf.tt', 
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/apache2/mods-enabled'
     );
 
     $self->addInitScripts(
+        mountpoint => $args{mount_point},
         scriptname => 'apache2', 
     );
-
 }
 
 sub removeNode {}
 
 sub reload {
-    my $self = shift;
-    my %args = @_;
-
+    my ($self, %args) = @_;
     my $command = "invoke-rc.d apache2 restart";
     my $result = $self->getEContext->execute(command => $command);
     return undef;

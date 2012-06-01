@@ -56,17 +56,6 @@ sub enqueue {
     
     General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
 
-    # check for an identical operation in the queue
-    my $params = $args{params};
-    my @hash_keys = keys %$params;
-    my $adm = Administrator->new();
-    my $nbparams = scalar(@hash_keys);
-    my $op_params = [];
-
-    if (defined $args{params}) {
-        $op_params = Workflow->buildParams(hash => $args{params});
-    }
-
 #    my $op_rs = $adm->{db}->resultset('Operation')->search(
 #                    { type => $args{type}, 
 #                      -or  => $op_params, },
@@ -82,7 +71,6 @@ sub enqueue {
 #        throw Kanopya::Exception::OperationAlreadyEnqueued(error => $errmsg);
 #    }
 
-    $args{params} = $op_params;
     return Operation->new(%args);
 }
 
@@ -96,39 +84,56 @@ sub new {
     my $adm = Administrator->new();
 
     # If workflow not defined, initiate a new one with parameters
+    my $workflow;
     if (not defined $args{workflow_id}) {
-        my $workflow = Workflow->new();
-        if (defined $args{params}) {
-            $workflow->setParams(params => $args{params});
-        }
-
+        $workflow = Workflow->new();
         $args{workflow_id} = $workflow->getAttr(name => 'workflow_id');
     }
+    else {
+        $workflow = Workflow->get(id => $args{workflow_id})
+    }
 
+    if (defined $args{params}) {
+        $workflow->setParams(params => $args{params});
+    }
+
+    # Compute the execution time if required
     my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef;
-    my $execution_rank = $class->getNextRank(workflow_id => $args{workflow_id});
-    my $user_id = $adm->{_rightchecker}->{user_id};
 
-    $log->info("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>, " .
-                 "with params:\n" . Dumper(\$args{params}));
+    # Get the next execution rank within the creation transation.
+    $adm->{db}->txn_begin;
 
-    my $row = {
-        type                 => $args{type},
-        execution_rank       => $execution_rank,
-        workflow_id          => $args{workflow_id},
-        user_id              => $user_id,
-        priority             => $args{priority},
-        creation_date        => \"CURRENT_DATE()",
-        creation_time        => \"CURRENT_TIME()",
-        hoped_execution_time => $hoped_execution_time,
+    eval {
+        my $execution_rank = $class->getNextRank(workflow_id => $args{workflow_id});
+        my $initial_state  = $execution_rank ? "pending" : "ready";
+        my $user_id        = $adm->{_rightchecker}->{user_id};
+
+        $log->info("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
+
+        my $row = {
+            type                 => $args{type},
+            state                => $initial_state,
+            execution_rank       => $execution_rank,
+            workflow_id          => $args{workflow_id},
+            user_id              => $user_id,
+            priority             => $args{priority},
+            creation_date        => \"CURRENT_DATE()",
+            creation_time        => \"CURRENT_TIME()",
+            hoped_execution_time => $hoped_execution_time,
+        };
+
+        $self->{_dbix} = $adm->{db}->resultset('Operation')->create($row);
     };
+    if ($@) {
+        $log->error($@);
+        $adm->{db}->txn_rollback;
+    }
+    $adm->{db}->txn_commit;
 
-    $self->{_dbix} = $adm->{db}->resultset('Operation')->create($row);
     $log->info(ref($self)." saved to database (added in execution list)");
 
     bless $self, $class;
-
-    return $args{workflow_id};
+    return $self;
 }
 
 =head2 getNextOp
@@ -142,25 +147,34 @@ sub new {
 =cut
 
 sub getNextOp {
+    my $class = shift;
+    my %args = @_;
+
+    my $states = [ "ready", "processing", "prereported", "postreported" ];
+    if ($args{include_blocked}) {
+        push @$states, "blocked";
+    }
+
     my $adm = Administrator->new();
     # Get all operation
-    my $all_ops = $adm->_getDbixFromHash( table => 'Operation', hash => {});
+    my $all_ops = $adm->_getDbixFromHash(table => 'Operation', hash => {});
     #$log->debug("Get Operation $all_ops");
-    
+
     # Choose the next operation to be treated :
     # if hoped_execution_time is definied, value returned by time function must be superior to hoped_execution_time
     # unless operation is not execute at this moment
-    #$log->error("Time is : ", time);
-    my $opdata = $all_ops->search( 
-        { -or => [ hoped_execution_time => undef, hoped_execution_time => {'<',time}] }, 
-#        { order_by => { -asc => 'execution_rank' }}
-        { order_by => { -asc => 'operation_id' }}
+
+    my $opdata = $all_ops->search(
+        { state => { -in => $states },
+          -or   => [ hoped_execution_time => undef, hoped_execution_time => { '<', time } ] },
+        { order_by => [ { -asc => 'priority' }, { -asc => 'operation_id' } ]}
     )->next();
     if (! defined $opdata){
         #$log->info("No operation in queue");
         return;
     }
     my $op = Operation->get(id => $opdata->get_column("operation_id"));
+
     $log->info("Operation execution: ".$op->getAttr(name => 'type'));
     return $op;
 }
@@ -178,11 +192,6 @@ sub delete {
 
     my $adm = Administrator->new();
 
-    my $op_status = "Done";
-    if ($self->{cancelled}){
-        $op_status = "Cancelled";
-    }
-
     my $new_old_op = $adm->_newDbix(
         table => 'OldOperation',
         row => {
@@ -194,7 +203,7 @@ sub delete {
             creation_time    => $self->getAttr(name => "creation_time"),
             execution_date   => \"CURRENT_DATE()",
             execution_time   => \"CURRENT_TIME()",
-            execution_status => $op_status,
+            execution_status => $self->getAttr(name => "state"),
         }
     );
     $new_old_op->insert;
@@ -265,6 +274,16 @@ sub getNextRank {
         $log->debug("Previous operation in queue is $last_in_db");
         return $last_in_db + 1;
     }
+}
+
+sub setState {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'state' ]);
+
+    $self->setAttr(name => 'state', value => $args{state});
+    $self->save();
 }
 
 1;

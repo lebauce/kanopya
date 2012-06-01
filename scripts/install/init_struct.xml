@@ -12,7 +12,7 @@
     schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"/>
   <genfiles>
     <executor.conf template="executor.conf.tt">
-      <datas logdir="log_directory" masterimages_dir="masterimages_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>
+      <datas logdir="log_directory" masterimages_dir="masterimages_directory" tftp_dir="tftp_directory" clusters_dir="clusters_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>
     </executor.conf>
     <executor-log.conf template="executor-log.conf.tt">
         <datas logdir="log_directory"/>
@@ -130,7 +130,19 @@
     <!-- Penser a checker avec plusieurs vg -->
     <masterimages_directory
 		question="Where will be stored master images"
-		default="/masterimages/"
+		default="/var/lib/kanopya/masterimages"
+		is_searchable="0"
+		search_command=""
+		pattern="^.*\/$"/>
+    <clusters_directory
+		question="Where will be stored clusters and nodes files"
+		default="/var/lib/kanopya/clusters"
+		is_searchable="0"
+		search_command=""
+		pattern="^.*\/$"/>
+    <tftp_directory
+		question="Where will be stored pxe boot files"
+		default="/var/lib/kanopya/tftp"
 		is_searchable="0"
 		search_command=""
 		pattern="^.*\/$"/>

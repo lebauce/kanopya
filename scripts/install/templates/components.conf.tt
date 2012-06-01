@@ -6,7 +6,7 @@ atftpd0
 dhcpd3
 snmpd5
 nfsd3
-mounttable1
+linux0
 syslogng3
 mysql5
 iptables1
@@ -21,3 +21,4 @@ fileimagemanager0
 puppetagent2
 puppetmaster2
 kanopyacollector1
+scom_indicator

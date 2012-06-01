@@ -1,18 +1,5 @@
 $(document).ready(function () {
 
-
-var main_layout = $('body').layout(
-{
-                   south : {
-                       togglerContent_closed : 'Messages',
-                       togglerLength_closed : 100,
-                       spacing_closed : 14,
-                       togglerContent_open : 'Messages',
-                       togglerLength_open : 100,
-                       spacing_open : 14,
-                       initClosed : true,},
-      });
-
 $("#grid-message").jqGrid({
     	url:'/messager/messages', 
         datatype: "json",
@@ -68,5 +55,8 @@ $("#grid-message").jqGrid({
         
     $("#grid-message").jqGrid('navGrid','#msgGridPager',{edit:false,add:false,del:false});
     
-    main_layout.resizeAll();
+    // Needed to fix bad panels resizing when opening Messages pane (south) for the first time
+    // Layout will take in account the message grid size fill with data 
+    $('body').layout().resizeAll();
+    
     });

@@ -2307,7 +2307,7 @@ sub _computeNodemetricCombination () {
     my %args = @_;
     my $cluster_id = $args{cluster_id};
     my $nodemetric_combination_id = $args{combination_id};
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
+    my $service_provider = Entity::ServiceProvider->get(id=>$cluster_id);
     my $nodemetric_combination = NodemetricCombination->get('id' => $nodemetric_combination_id);
     my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
     my @indicator_oids;
@@ -2321,13 +2321,14 @@ sub _computeNodemetricCombination () {
     # we retrieve the nodemetric values
     eval {
         foreach my $indicator_id (@indicator_ids) {
-            my $indicator_inst = Indicator->get('id' => $indicator_id);
-            my $indicator_oid = $indicator_inst->getAttr('name'=> 'indicator_oid');
+            #my $indicator_inst = Indicator->get('id' => $indicator_id);
+            #my $indicator_oid = $indicator_inst->getAttr('name'=> 'indicator_oid');
+            my $indicator_oid = $service_provider->getIndicatorOidFromId( indicator_id => $indicator_id );
             push @indicator_oids, $indicator_oid;
         }
-        $nodes_metrics = $extcluster->getNodesMetrics(
+        $nodes_metrics = $service_provider->getNodesMetrics(
             indicators => \@indicator_oids,
-            time_span => 3600,
+            time_span => 1200,
             shortname => 1
         );
 

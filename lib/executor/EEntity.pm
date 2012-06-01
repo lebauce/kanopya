@@ -39,9 +39,9 @@ use warnings;
 
 use Entity;
 use Kanopya::Exceptions;
-
-use XML::Simple;
-
+use Kanopya::Config;
+use File::Basename;
+use Template;
 use vars qw ( $AUTOLOAD );
 
 use Log::Log4perl "get_logger";
@@ -69,7 +69,7 @@ sub new {
     # $log->debug("Class is : $class");
 
     # TODO: Use Config module
-    my $config = XMLin("/opt/kanopya/conf/executor.conf");
+    my $config = Kanopya::Config::get('executor');
 
     my $self = {
         _entity   => $args{data},
@@ -96,6 +96,42 @@ sub getExecutorEContext {
 
     return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
                                  ip_destination => $self->{_executor}->getMasterNodeIp());
+}
+
+sub generateNodeFile {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args,
+        required => ['cluster','host','file','template_dir','template_file','data']
+    );
+    
+    my $config = Kanopya::Config::get('executor');
+    my $econtext = $self->getExecutorEContext();
+    my $path = $config->{clusters}->{directory};
+    $path .= '/' . $args{cluster}->getAttr(name => 'cluster_name');
+    $path .= '/' . $args{host}->getAttr(name => 'host_hostname');
+    $path .= '/' . $args{file};
+    my ($filename, $directories, $prefix) = fileparse($path);
+    $econtext->execute(command => "mkdir -p $directories");
+    
+    my $template_conf = {
+        INCLUDE_PATH => $args{template_dir},
+        INTERPOLATE  => 0,               # expand "$var" in plain text
+        POST_CHOMP   => 0,               # cleanup whitespace
+        EVAL_PERL    => 1,               # evaluate Perl code blocks
+        RELATIVE => 1,                   # desactive par defaut
+    };
+    
+    my $template = Template->new($template_conf);
+    eval {
+        $template->process($args{template_file}, $args{data}, $path);
+    };
+    if($@) {
+        $errmsg = "error during generation from '$args{template}':" .  $template->error;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    return $path;
 }
 
 sub AUTOLOAD {

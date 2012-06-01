@@ -104,15 +104,6 @@ sub execute {
     $self->{context}->{host}->setNodeState(state => "pregoingout");
 }
 
-sub finish {
-    my $self = shift;
-
-    $self->getWorkflow->enqueue(
-        priority => 200,
-        type     => 'StopNode',
-    );
-}
-
 1;
 __END__
 

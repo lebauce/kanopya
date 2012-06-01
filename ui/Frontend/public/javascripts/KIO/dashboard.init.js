@@ -50,9 +50,6 @@ var chart;
         $("#templates").hide();
         $("#templates").load("templates.html", initDashboard);
 
-        // call for the themeswitcher
-        $('#switcher').themeswitcher();
-
         function initDashboard() {
 
           // to make it possible to add widgets more than once, we create clientside unique id's

@@ -77,7 +77,9 @@ sub execute {
     $self->SUPER::execute();
 
     # Remove cluster directory
-    my $command = "rm -rf /clusters/" . $self->{context}->{cluster}->getAttr(name => "cluster_name");
+    my $dir = $self->{config}->{clusters}->{directory} . '/' .
+        $self->{context}->{cluster}->getAttr(name => 'cluster_name');
+    my $command = "rm -r $dir";
     $self->getEContext->execute(command => $command);
 
     $self->{context}->{cluster}->delete();

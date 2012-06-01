@@ -20,24 +20,57 @@ my $errmsg;
 sub getAttrDefs {
     my $class = shift;
     my $result = {};
-    my @classes = split(/::/, $class);
+    my @classes = split(/::/, (split("=", "$class"))[0]);
+
     while(@classes) {
+        my $attr_def = {};
         my $currentclass = join('::', @classes);
-        my $location = $currentclass;
-        $location =~ s/\:\:/\//g;
-        $location .= '.pm';
-        eval { require $location; };
-        if ($@) {
-            throw Kanopya::Exception::Internal::UnknownClass(
-                      error => "Could not find $location :\n$@"
-                  );
+        if ($currentclass ne "BaseDB") {
+            my $location = $currentclass;
+            $location =~ s/\:\:/\//g;
+            $location .= '.pm';
+            eval { require $location; };
+            if ($@) {
+                throw Kanopya::Exception::Internal::UnknownClass(
+                    error => "Could not find $location :\n$@"
+                );
+            }
+
+            eval {
+                $attr_def = $currentclass->getAttrDef();
+            };
         }
-        my $attr_def = eval { $currentclass->getAttrDef() };
-        if($attr_def) {
+
+        my $schema;
+        eval {
+            $schema = $class->{_dbix}->result_source();
+        };
+        if ($@) {
+            my $adm = Administrator->new();
+            $schema = $adm->{db}->source(_buildClassNameFromString($currentclass));
+        }
+
+        my @relnames = $schema->relationships();
+        for my $relname (@relnames) {
+            my $relinfo = $schema->relationship_info($relname);
+            if (($relname ne "parent") &&
+                ($relinfo->{attrs}->{is_foreign_key_constraint}) &&
+                ($schema->has_column($relname . "_id"))) {
+                $attr_def->{$relname . "_id"} = {
+                    pattern      => '^\d*$',
+                    is_mandatory => 0,
+                    is_extended  => 0
+                };
+            }
+        }
+
+        if ($attr_def) {
             $result->{$currentclass} = $attr_def;
         }
+
         pop @classes;
     }
+
     return $result;
 }
 
@@ -60,13 +93,15 @@ sub _rootTable {
 }
 
 sub classFromDbix {
-    my $dbix = shift;
-    my $name = ucfirst($dbix->result_source->from);
+    my $source = shift;
+    my $args = @_;
+
+    my $name = ucfirst($source->from);
 
     while (1) {
-        last if not $dbix->can("parent");
-        $dbix = $dbix->parent;
-        $name = ucfirst($dbix->result_source->from) . "::" . $name;
+        last if not $source->has_relationship("parent");
+        $source = $source->parent;
+        $name = ucfirst($source->from) . "::" . $name;
     }
 
     my $i = 0;
@@ -224,30 +259,37 @@ sub getAttr {
     my %args = @_;
     my $dbix = $self->{_dbix};
     my $value = undef;
-    my $found = 0;
+    my $found = 1;
     
     General::checkParams(args => \%args, required => ['name']);
 
-    while(1) {
-        # Search for attr in this dbix
-        if ( $dbix->has_column($args{name}) ) {
+    # Recursively search in the dbix objets, following
+    # the 'parent' relation
+    while ($found) {
+        if ($dbix->has_column($args{name})) {
             $value = $dbix->get_column($args{name});
-            $found = 1;
             last;
-        } elsif($dbix->can('parent')) {
-            # go to parent dbix
+        }
+        elsif ($dbix->has_relationship($args{name})) {
+            my $name = $args{name};
+            $value = $dbix->$name;
+            last;
+        }
+        elsif ($dbix->can('parent')) {
             $dbix = $dbix->parent;
             next;
         } else {
+            $found = 0;
             last;
         }
     }
 
-    if(not $found) {
+    if (not $found) {
         $errmsg = ref($self) . " getAttr no attr name $args{name}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     } 
+
     return $value;
 }
 
@@ -375,9 +417,11 @@ sub search {
     my $depth = scalar @hierarchy;
     my $n = $depth;
     while ($n > 0) {
+        last if $hierarchy[$n - 1] eq "BaseDB";
         $join = $adm->{db}->source($hierarchy[$n - 1])->has_relationship("parent") ?
                     ($join ? { parent => $join } : "parent") :
                     $join;
+
         $n -= 1;
     }
 
@@ -428,7 +472,7 @@ sub search {
         }
     }
 
-    if (defined ($args{dataType}) and $args{dataType} eq "jqGrid") {
+    if (defined ($args{dataType}) and $args{dataType} eq "hash") {
         return {
             rows    => \@objs,
             page    => $args{page} || undef,
@@ -548,7 +592,14 @@ sub toJSON {
     my $pk;
     my $hash = {};
     my $class = ref ($self) || $self;
-    my $attributes = $class->getAttrDefs();
+    my $attributes;
+
+    eval {
+        $attributes = $class->getAttrDefs();
+    };
+    if ($@) {
+        $attributes = $self->getAttrDefs();
+    }
 
     foreach my $class (keys %$attributes) {
         foreach my $attr (keys %{$attributes->{$class}}) {

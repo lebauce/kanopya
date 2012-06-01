@@ -20,7 +20,7 @@ use warnings;
 use Entity;
 use EFactory;
 use General;
-
+use CapacityManagement;
 use XML::Simple;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -31,10 +31,9 @@ my $errmsg;
 
 # generate configuration files on node
 sub configureNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+    General::checkParams(args => \%args, required => ['cluster', 'host', 'mount_point']);
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
      
@@ -43,9 +42,7 @@ sub configureNode {
         $log->info('opennebula frontend configuration');
         $log->debug('generate /etc/one/oned.conf');    
        
-        $self->generateOnedConf(
-            mount_point => $args{mount_point}.'/etc'
-        );
+        $self->generateOnedConf(%args);
               
         $self->addInitScripts(
                 mountpoint => $args{mount_point}, 
@@ -74,24 +71,15 @@ sub configureNode {
 
     $log->info("Opennebula cluster's node configuration");
     $log->debug('generate /etc/default/libvirt-bin');
-    $self->generateLibvirtbin(mount_point => $args{mount_point}.'/etc');
+    $self->generateLibvirtbin(%args);
 
     $log->debug('generate /etc/libvirt/libvirtd.conf');
-    $self->generateLibvirtdconf(
-        mount_point => $args{mount_point}.'/etc',
-        host => $args{host}
-    );
+    $self->generateLibvirtdconf(%args);
 
     $log->debug('generate /etc/libvirt/qemu.conf');
-    $self->generateQemuconf(
-        mount_point => $args{mount_point}.'/etc',
-               host => $args{host}
-    );
+    $self->generateQemuconf(%args);
 
-    $self->generateXenconf(
-        mount_point => $args{mount_point}.'/etc',
-               host => $args{host}
-    );
+    $self->generateXenconf(%args);
 
     $self->addInitScripts(
           mountpoint => $args{mount_point},
@@ -153,7 +141,7 @@ sub _checkMigration{
     my $masternode_econtext = $args{masternode_econtext};
     
     my $start_time   = time();
-    my $time_out     = 60; # 1 min timeout
+    my $time_out     = 3*60; # 3 min migration timeout
     
     TIMELOOP:
     while(1){
@@ -224,79 +212,99 @@ sub scale_cpu {
 
 # generate $ONE_LOCATION/etc/oned.conf configuration file
 sub generateOnedConf {
-     my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'mount_point' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point']);
     
+    my $cluster = $self->_getEntity->getServiceProvider;
     my $data = $self->_getEntity()->getTemplateDataOned();
-    $self->generateFile(
-         mount_point => $args{mount_point},
-        template_dir => "/templates/components/opennebula",
-          input_file => "oned.conf.tt",
-              output => "/one/oned.conf", 
-                data => $data
-    );          
+    my $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/one/oned.conf', 
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'oned.conf.tt',
+        data          => $data
+    ); 
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/one'
+    );         
 }
 
 # generate /etc/default/libvirt-bin configuration file
 sub generateLibvirtbin {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'mount_point' ]);
-    
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+    my $cluster = $self->_getEntity->getServiceProvider;
     my $data = $self->_getEntity()->getTemplateDataLibvirtbin();
-    $self->generateFile(
-         mount_point => $args{mount_point},
-        template_dir => "/templates/components/opennebula",
-          input_file => "libvirt-bin.tt", 
-              output => "/default/libvirt-bin", 
-                data => $data
-    );            
+    my $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/default/libvirt-bin',
+        template_dir  => "/templates/components/opennebula",
+        template_file => 'libvirt-bin.tt', 
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/default'
+    );               
 }
 
 # generate /etc/libvirt/libvirtd.conf configuration file
 sub generateLibvirtdconf {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
     
     my $data = $self->_getEntity()->getTemplateDataLibvirtd();
     $data->{listen_ip_address} = $args{host}->getAdminIp;
-    $self->generateFile(
-         mount_point => $args{mount_point},
-        template_dir => "/templates/components/opennebula",
-          input_file => "libvirtd.conf.tt", 
-              output => "/libvirt/libvirtd.conf",
-                data => $data
-    );            
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/libvirt/libvirtd.conf',  
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'libvirtd.conf.tt', 
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/libvirt'
+    );             
 }
 
 # generate /etc/libvirt/qemu.conf configuration file
 sub generateQemuconf {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
     
     my $data = {};
-    $self->generateFile(
-         mount_point => $args{mount_point},
-        template_dir => "/templates/components/opennebula",
-          input_file => "qemu.conf.tt", 
-              output => "/libvirt/qemu.conf", 
-                data => $data
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host}, 
+        file          => '/etc/libvirt/qemu.conf', 
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'qemu.conf.tt', 
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/libvirt'
     ); 
 }
 
 # generate /etc/xen/xend-config.sxp configuration file
 sub generateXenconf {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
     
     # TODO recup de l'interface pour les vms
     my $data = {
@@ -304,45 +312,61 @@ sub generateXenconf {
         min_mem_dom0 => '1024'
     };
     
-    $self->generateFile( 
-         mount_point => $args{mount_point},
-        template_dir => "/templates/components/opennebula",
-          input_file => "xend-config.sxp.tt",
-              output => "/xen/xend-config.sxp",
-                data => $data
+    my $file = $self->generateNodeFile( 
+        cluster       => $args{cluster},
+        host          => $args{host}, 
+        file          => '/etc/xen/xend-config.sxp', 
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'xend-config.sxp.tt',
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/xen'
     ); 
 }
 
 sub generatemultivlanconf {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
     
     my $data = {};
-    $self->generateFile( 
-         mount_point => $args{mount_point},
-        template_dir => "/templates/components/opennebula",
-          input_file => "network-multi-vlan.tt", 
-              output => "/etc/xen/scripts/network-multi-vlan", 
-                data => $data
-    ); 
+    my $file = $self->generateNodeFile( 
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/xen/scripts/network-multi-vlan',  
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'network-multi-vlan.tt', 
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/xen/scripts'
+    );
 }
 
 sub generatevlanconf {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
     
     my $data = {};
-    $self->generateFile(
-         mount_point => $args{mount_point},
-        template_dir => "/templates/components/opennebula",
-          input_file => "network-bridge-vlan.tt", 
-              output => "/etc/xen/scripts/network-bridge-vlan", 
-                data => $data
-    ); 
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/xen/scripts/network-bridge-vlan',  
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'network-bridge-vlan.tt', 
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/xen/scripts'
+    );
 }
 
 sub addNode {
@@ -432,9 +456,23 @@ sub startHost {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
+    my $cm = CapacityManagement->new(cluster_id => $args{host}->getClusterId());
+
+    my $hypervisor_id = $cm->getHypervisorIdForVM(
+        wanted_values => {
+            ram => $args{host}->getAttr(name => 'host_ram'),
+            cpu => $args{host}->getAttr(name => 'host_core'),
+        }
+    );
+
+    if( !defined $hypervisor_id){
+        my $errmsg = "Cannot add node in cluster ".$args{host}->getClusterId().", not enough resources\n";
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
     # Pick up an hypervisor
-    my @hypervisors = values %{$self->_getEntity->getServiceProvider->getHosts()};
-    my $hypervisor = $hypervisors[int(rand(scalar @hypervisors))];
+
+    my $hypervisor = Entity::Host->get(id => $hypervisor_id);
     $log->info("Picked up hypervisor " . $hypervisor->getId());
 
     # generate template in opennebula master node
@@ -544,10 +582,9 @@ sub getFreeHost {
 
 # generate vm template and push it on opennebula master node
 sub _generateVmTemplate {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'hypervisor','host']);
 
     # host_ram is stored in octect, so we convert it to megaoctect
     my $ram = General::convertFromBytes(
@@ -597,14 +634,21 @@ sub _generateVmTemplate {
         interfaces      => $interfaces
     };
 
-    $self->generateFile(mount_point  => '',
-                        template_dir => "/templates/components/opennebula",
-                        input_file   => "vm.tt",
-                        output       => "/tmp/vm.template",
-                        data         => $data
+    my $file = $self->generateNodeFile(
+        cluster       => $self->_getEntity->getServiceProvider,
+        host          => $args{hypervisor},
+        file          => '/tmp/vm.template',
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'vm.tt',
+        data         => $data,
     );
+    
+    $self->getEContext->send(
+        src  => $file,
+        dest => '/tmp'
+    ); 
 
-    return "/tmp/vm.template";
+    return '/tmp/vm.template';
 }
 
 # prefix commands to use oneadmin account with its environment variables

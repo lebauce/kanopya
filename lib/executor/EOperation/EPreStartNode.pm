@@ -108,30 +108,26 @@ sub execute {
         master_node    => 0,
         systemimage_id => $self->{context}->{systemimage}->getAttr(name => "entity_id"),
         node_number    => $self->{params}->{node_number},
-    );
+    );   
 
-    # Set Hostname
-    my $hostname = $self->{context}->{host}->getAttr(name => "host_hostname");
-    if (not $hostname) {
-        $hostname = $self->{context}->{cluster}->getAttr(name => 'cluster_basehostname');
-        if ($self->{context}->{cluster}->getAttr(name => 'cluster_max_node') > 1) {
-            $hostname .=  $self->{context}->{host}->getNodeNumber();
-        }
-        $self->{context}->{host}->setAttr(name  => "host_hostname",
-                                          value => $hostname);
-        $self->{context}->{host}->save();
-    }    
+    # define a hostname
+    my $hostname = $self->{context}->{cluster}->getAttr(name => 'cluster_basehostname');
+    if ($self->{context}->{cluster}->getAttr(name => 'cluster_max_node') > 1) {
+        $hostname .=  $self->{context}->{host}->getNodeNumber();
+    }
+    $self->{context}->{host}->setAttr(name  => "host_hostname",
+                                      value => $hostname);
+    $self->{context}->{host}->save();
+    
+    # create the node working directory where generated files will be
+    # stored.
+    my $dir = $self->{config}->{clusters}->{directory};
+    $dir .= '/' . $self->{context}->{cluster}->getAttr(name => 'cluster_name');
+    $dir .= '/' . $hostname;
+    my $econtext = $self->getEContext();
+    $econtext->execute(command => "mkdir -p $dir");
 
     $self->{context}->{host}->setNodeState(state => "pregoingin");
-}
-
-sub finish {
-    my $self = shift;
-
-    $self->getWorkflow->enqueue(
-        priority => 200,
-        type     => 'StartNode',
-    );
 }
 
 sub _cancel {
@@ -143,9 +139,11 @@ sub _cancel {
             $self->{context}->{cluster}->setState(state => 'down');
         }
     }
-    
+
     if ($self->{context}->{host}) {
-        $self->{context}->{host}->setState(state => "down");   
+        $self->{context}->{host}->setAttr(name  => 'host_hostname',
+                                          value => undef);
+        $self->{context}->{host}->setState(state => 'down');   
     }
 }
 

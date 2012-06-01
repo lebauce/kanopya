@@ -128,27 +128,18 @@ sub execute {
     $self->{context}->{container_access}->mount(mountpoint => $mountpoint,
                                                 econtext   => $self->getEContext);
 
-    # generate resolv.conf
-    $self->{context}->{cluster}->generateResolvConf(etc_path => $mountpoint . '/etc');
-
-    # generate node hostname
-    $self->{context}->{host}->generateHostname(etc_path => $mountpoint . '/etc');
-
-    # generate node udev persistent net rules
-    $self->{context}->{host}->generateUdevPersistentNetRules(etc_path => $mountpoint . '/etc');
-
     $log->info("Generate Network Conf");
-    $self->_generateNetConf(etc_path => $mountpoint . '/etc');
+    $self->_generateNetConf(mount_point => $mountpoint);
 
     $log->info("Generate ntpdate Conf");
-    $self->_generateNtpdateConf(etc_path => $mountpoint . '/etc');
+    $self->_generateNtpdateConf(mount_point => $mountpoint);
 
     $log->info("Generate Boot Conf");
     my ($access_mode, $mount_options) = $self->{context}->{cluster}->getAttr(name => 'cluster_si_shared')
                       ? ("ro", "ro,noatime,nodiratime") : ("rw", "defaults");
 
     # Apply node boot configuration
-    $self->_generateBootConf(mountpoint => $mountpoint,
+    $self->_generateBootConf(mount_point => $mountpoint,
                              filesystem => $self->{context}->{container}->getAttr(
                                                name => 'container_filesystem'
                                            ),
@@ -164,12 +155,6 @@ sub execute {
                              cluster     => $self->{context}->{cluster},
                              erollback   => $self->{erollback});
     }
-
-    # generate Hosts conf
-    $self->{context}->{cluster}->generateHostsConf(
-        etc_path           => $mountpoint . '/etc',
-        kanopya_domainname => $self->{params}->{kanopya_domainname}
-    );
 
     # check if this cluster must be managed by puppet and kanopya puppetmaster
     my $puppetagent = eval { 
@@ -239,25 +224,13 @@ sub finish {
     delete $self->{context}->{bootserver};
     delete $self->{context}->{dhcpd_component};
     delete $self->{context}->{component_puppetmaster};
-
-    $self->getWorkflow->enqueue(
-        priority => 200,
-        type     => 'PostStartNode',
-    );
 }
 
 sub _generateNetConf {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'etc_path' ]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    # Create Template object
-    my $template = Template->new($config);
-    my $input = "network_interfaces.tt";
+    General::checkParams(args => \%args, required => [ 'mount_point' ]);
 
     # Pop an IP adress for all host iface,
     my @net_ifaces;
@@ -309,20 +282,22 @@ sub _generateNetConf {
         @net_ifaces = (@net_ifaces, @{$self->{context}->{cluster}->getPublicIps()});
     }
 
-    #$log->debug(Dumper(@interfaces));
-    $template->process($input, { interfaces => \@net_ifaces }, "/tmp/$tmpfile")
-        or throw Kanopya::Exception::Internal::IncorrectParam(
-                     error => "Error when generate net conf ". $template->error() . "\n"
-                 );
-
-    $self->getEContext->send(
-        src => "/tmp/$tmpfile",
-        dest => "$args{etc_path}/network/interfaces"
+     my $file = $self->{context}->{cluster}->generateNodeFile(
+        cluster       => $self->{context}->{cluster},
+        host          => $self->{context}->{host},
+        file          => '/etc/network/interfaces',
+        template_dir  => '/templates/internal',
+        template_file => 'network_interfaces.tt',
+        data          => { interfaces => \@net_ifaces }
     );
-    unlink "/tmp/$tmpfile";
-
+    
+    $self->getEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/network'
+    );
+    
     # Disable network deconfiguration during halt
-    unlink "$args{etc_path}/rc0.d/S35networking";
+    unlink "$args{mount_point}/etc/rc0.d/S35networking";
 }
 
 sub _generateBootConf {
@@ -330,17 +305,15 @@ sub _generateBootConf {
     my %args = @_;
 
     General::checkParams(args     =>\%args,
-                         required => [ "mountpoint", "filesystem", "options" ]);
-
-    my $etc_path = $args{mountpoint} . '/etc';
+                         required => [ 'mount_point', 'filesystem', 'options' ]);
 
     # Firstly create pxe config file if needed
     my $boot_policy = $self->{context}->{cluster}->getAttr(name => 'cluster_boot_policy');
 
     if ($boot_policy =~ m/PXE/) {
-        $self->_generatePXEConf(cluster    => $self->{context}->{cluster},
-                                host       => $self->{context}->{host},
-                                mountpoint => $args{mountpoint});
+        $self->_generatePXEConf(cluster     => $self->{context}->{cluster},
+                                host        => $self->{context}->{host},
+                                mount_point => $args{mount_point});
 
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{context}->{container_access}->getAttr(name => 'container_access_export');
@@ -351,7 +324,7 @@ sub _generateBootConf {
             #                            targetname => $targetname);
 
             $self->getEContext->execute(
-                command => "touch $etc_path/iscsi.initramfs"
+                command => "touch $args{mount_point}/etc/iscsi.initramfs"
             );
 
             $log->info("Generate Initiator Conf");
@@ -377,7 +350,7 @@ sub _generateBootConf {
 
             $self->getEContext->execute(
                 command => "echo \"InitiatorName=$initiatorname\" > " .
-                           "$etc_path/initiatorname.iscsi"
+                           "$args{mount_point}/etc/initiatorname.iscsi"
             );
 
             my $rand = new String::Random;
@@ -418,27 +391,27 @@ sub _generateBootConf {
                              error => "Error when processing template $input."
                          );
 
-            my $tftp_conf = $self->{context}->{bootserver}->getComponent(name => "Atftpd", version => "0")->getConf();
-            my $dest = $tftp_conf->{'repository'} . '/' . $self->{context}->{host}->getAttr(name => "host_hostname") . ".conf";
+            my $tftp_conf = $self->{config}->{tftp}->{directory};
+            my $dest = $tftp_conf . '/' . $self->{context}->{host}->getAttr(name => "host_hostname") . ".conf";
 
             $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
             unlink "/tmp/$tmpfile";
         }
 
         my $grep_result = $self->getEContext->execute(
-                              command => "grep \"NETDOWN=no\" $etc_path/default/halt"
+                              command => "grep \"NETDOWN=no\" $args{mount_point}/etc/default/halt"
                           );
 
         if (not $grep_result->{stdout}) {
             $self->getEContext->execute(
-                command => "echo \"NETDOWN=no\" >> $etc_path/default/halt"
+                command => "echo \"NETDOWN=no\" >> $args{mount_point}/etc/default/halt"
             );
         }
     }
  
     # Set up fastboot
     $self->getEContext->execute(
-        command => "touch $args{mountpoint}/fastboot"
+        command => "touch $args{mount_point}/fastboot"
     );
 }
 
@@ -447,7 +420,7 @@ sub _generatePXEConf {
     my %args = @_;
 
     General::checkParams(args     =>\%args,
-                         required => ['cluster', 'host', 'mountpoint']);
+                         required => ['cluster', 'host', 'mount_point']);
 
     my $cluster_kernel_id = $args{cluster}->getAttr(name => "kernel_id");
     my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->getAttr(name => "kernel_id");
@@ -458,7 +431,7 @@ sub _generatePXEConf {
     my $kernel_version = Entity::Kernel->get(id => $kernel_id)->getAttr(name => 'kernel_version');
     my $boot_policy    = $args{cluster}->getAttr(name => 'cluster_boot_policy');
     
-    my $tftp_conf = $self->{context}->{bootserver}->getComponent(name => "Atftpd", version => "0")->getConf();
+    my $tftpdir = $self->{config}->{tftp}->{directory};
 
     my $nfsexport = "";
     if ($boot_policy =~ m/NFS/) {
@@ -467,13 +440,14 @@ sub _generatePXEConf {
 
     ## Here we create a dedicated initramfs for the node
     # we create a temporary working directory for the initrd
+    
     $log->info('Dedicated initramfs build');
     my $initrddir = "/tmp/$clustername-$hostname";
     my $cmd = "mkdir -p $initrddir";
     $self->getEContext->execute(command => $cmd);
     
     # check and retrieve compression type  
-    my $initrd = $tftp_conf->{'repository'}."/initrd_$kernel_version";
+    my $initrd = "$tftpdir/initrd_$kernel_version";
     $cmd = "file $initrd | grep -o -E '(gzip|bzip2)'";
     my $result = $self->getEContext->execute(command => $cmd);
     my $decompress;
@@ -493,12 +467,12 @@ sub _generatePXEConf {
     $self->getEContext->execute(command => $cmd);
     
     # append files to the archive directory
-    my $sourcefile = $args{mountpoint}.'/etc/udev/rules.d/70-persistent-net.rules'; 
+    my $sourcefile = $args{mount_point}.'/etc/udev/rules.d/70-persistent-net.rules'; 
     $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
     $self->getEContext->execute(command => $cmd);
     
     # create the final storing directory
-    my $path = $tftp_conf->{'repository'}."/$clustername/$hostname";
+    my $path = "$tftpdir/$clustername/$hostname";
     $cmd = "mkdir -p $path";
     $self->getEContext->execute(command => $cmd);
     
@@ -572,7 +546,7 @@ sub _generatePXEConf {
 
     my $node_mac_addr = $pxeiface->getAttr(name => 'iface_mac_addr');
     $node_mac_addr =~ s/:/-/g;
-    my $dest = $tftp_conf->{'repository'} . '/pxelinux.cfg/01-' . lc $node_mac_addr ;
+    my $dest = $tftpdir . '/pxelinux.cfg/01-' . lc $node_mac_addr ;
 
     $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
     unlink "/tmp/$tmpfile";
@@ -654,7 +628,7 @@ sub _generateNtpdateConf {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "etc_path" ]);
+                         required => [ 'mount_point' ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -671,7 +645,7 @@ sub _generateNtpdateConf {
 
     $self->getEContext->send(
         src  => "/tmp/$tmpfile",
-        dest => "$args{etc_path}/default/ntpdate"
+        dest => "$args{mount_point}/etc/default/ntpdate"
     );
 
     unlink "/tmp/$tmpfile";
@@ -688,11 +662,11 @@ sub _generateNtpdateConf {
 
     $self->getEContext->send(
         src  => "/tmp/$tmpfile",
-        dest => "$args{etc_path}/init.d/ntpdate"
+        dest => "$args{mount_point}/etc/init.d/ntpdate"
     );
     
-    $self->getEContext->execute(command => "chmod +x $args{etc_path}/init.d/ntpdate");
-    $self->getEContext->execute(command => "chroot $args{etc_path}/.. /sbin/insserv -d ntpdate");
+    $self->getEContext->execute(command => "chmod +x $args{mount_point}/etc/init.d/ntpdate");
+    $self->getEContext->execute(command => "chroot $args{mount_point} /sbin/insserv -d ntpdate");
 }
 
 1;

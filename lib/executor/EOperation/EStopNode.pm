@@ -106,15 +106,6 @@ sub execute {
 
 }
 
-sub finish {
-    my $self = shift;
-
-    $self->getWorkflow->enqueue(
-        priority => 200,
-        type     => 'PostStopNode',
-    );
-}
-
 1;
 
 __END__

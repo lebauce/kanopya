@@ -12,10 +12,10 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EMemcached1;
+use base 'EEntity::EComponent';
 
 use strict;
-use Template;
-use base "EEntity::EComponent";
+use warnings;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
@@ -23,28 +23,35 @@ my $errmsg;
 
 # generate configuration files on node
 sub configureNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $conf = $self->_getEntity()->getConf();
+    my $cluster = $self->_getEntity->getServiceProvider;
 
     # Generation of memcached.conf
     my $data = { connection_port => $conf->{memcached1_port},
                  listening_address => $args{host}->getAdminIp };
 
-    $self->generateFile(mount_point  => $args{mount_point},
-                        template_dir => "/templates/components/memcached",
-                        input_file   => "memcached.conf.tt",
-                        output       => "/memcached.conf",
-                        data         => $data);
-
+    my $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/memcached.conf',
+        template_dir  => '/templates/components/memcached',
+        template_file => 'memcached.conf.tt',
+        data          => $data 
+    );
+    
+     $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc'
+    );
+    
 }
 
 sub addNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['mount_point', 'host']);
+    General::checkParams(args => \%args, required => ['cluster','mount_point', 'host']);
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     
@@ -52,17 +59,13 @@ sub addNode {
     if(not defined $masternodeip) {
         # no masternode defined, this host becomes the masternode
             
-        $self->configureNode(
-            mount_point => $args{mount_point}.'/etc',
-            host        => $args{host}
-        );
+        $self->configureNode(%args);
         
         $self->addInitScripts(    
             mountpoint => $args{mount_point},
             scriptname => 'memcached', 
         );
     }
-
 }
 
 

@@ -20,6 +20,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NodemetricRule;
 use Orchestrator;
+use Workflow;
 use Action;
 
 my $log = get_logger("webui");
@@ -142,7 +143,7 @@ sub _managers {
 
 # retrieve collector managers
 sub _collector_managers {
-    my @collectors_full = _managers(category => 'DataCollector');
+    my @collectors_full = _managers(category => 'Collectormanager');
     my @collectors;
     my %temp;
     foreach my $c (@collectors_full) {
@@ -448,7 +449,6 @@ post '/extclusters/add' => sub {
         my $new_extcluster = Entity::ServiceProvider::Outside::Externalcluster->new(%$params);
         $new_cluster_id = $new_extcluster->getAttr(name => 'externalcluster_id');
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'external cluster created. Inserting initial data...');
-        $new_extcluster->monitoringDefaultInit();
     };
     if($@) {
         my $exception = $@;
@@ -636,7 +636,29 @@ get '/clusters/:clusterid' => sub {
         }
     }
 
+    # Workflow list
+    my @workflow_list = ();
+    my @workflows = $ecluster->getWorkflows();
+
+    for my $workflow (@workflows) {
+        my $operation_type = 'None';
+        my $operation_state;
+        eval {
+            my $current = $workflow->getCurrentOperation;
+            $operation_type = $current->getAttr(name => 'type');
+            $operation_state = $current->getAttr(name => 'state');
+        };
+        push @workflow_list, {
+            workflow_id      => $workflow->getAttr(name => 'workflow_id'),
+            current_op       => $operation_type,
+            current_op_state => "($operation_state)",
+            workflow_name    => "Workflow <" . $workflow->getAttr(name => 'workflow_id') . "> ",
+        }
+    }
+
     my $link_stop = ! $link_start;
+
+    my $isVirtual = ($ecluster->getHostManager()->getHostType() eq 'Virtual Machine' ) ? 1 : 0 ;
 
     template 'clusters_details', {
         title_page           => "Clusters - Cluster's overview",
@@ -673,7 +695,9 @@ get '/clusters/:clusterid' => sub {
         link_edit          => $methods->{'update'}->{'granted'}, 
         link_addnode       => $methods->{'addNode'}->{'granted'} ? $link_addnode : 0,
         link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
-        can_setperm        => $methods->{'setperm'}->{'granted'},        
+        can_setperm        => $methods->{'setperm'}->{'granted'},
+        workflow_list      => \@workflow_list,
+        isVirtual          => $isVirtual,
      }, { layout => 'main' };
 };
 
@@ -1156,6 +1180,27 @@ get '/clusters/:clusterid/network/:interfaceid/remove' => sub {
     }
 };
 
+# cluster workflow cancelling
+
+get '/clusters/:clusterid/workflow/:workflowid/cancel' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $workflow = Workflow->get(id => param('workflowid'));
+        $workflow->cancel();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
 # cluster node addition form display
 
 get '/clusters/:clusterid/nodes/add' => sub {
@@ -1233,7 +1278,7 @@ get '/clusters/:clusterid/optimiaas' => sub{
     my $cm = CapacityManagement->new(cluster_id => param('clusterid'));
     
     $log->info("*** OPTIMIAAS***");
-    #$cm->optimiaas();
+    $cm->optimIaas();
     
     redirect('/architectures/clusters/'.param('clusterid'));
 };

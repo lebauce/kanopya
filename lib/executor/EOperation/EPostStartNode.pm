@@ -61,7 +61,6 @@ sub check {
     General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
 }
 
-
 =head2 prepare
 
 =cut
@@ -74,14 +73,14 @@ sub prerequisites {
     my $delay = 10;
 
     # Duration to wait for setting host broken
-    my $broken_time = 480;
+    my $broken_time = 240;
 
     my $cluster_id = $self->{context}->{cluster}->getAttr(name => 'entity_id');
     my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
 
     # Check how long the host is 'starting'
     my @state = $self->{context}->{host}->getState;
-    my $starting_time = time() - time(); #$self->getAttr(name => 'beguin_time');
+    my $starting_time = time() - $state[1];
 
     if($starting_time > $broken_time) {
         $self->{context}->{host}->setState(state => 'broken');
@@ -150,7 +149,8 @@ sub execute {
     }
 
     $self->{context}->{cluster}->updateHostsFile(
-        kanopya_domainname => $self->{params}->{kanopya_domainname}
+        kanopya_domainname => $self->{params}->{kanopya_domainname},
+        host               => $self->{context}->{host}
     );
 
     $self->{context}->{host}->postStart();
@@ -180,6 +180,25 @@ sub finish {
         else {
             # Another node that the current one is broken
         }
+    }
+}
+
+sub _cancel {
+    my $self = shift;
+
+    $log->info("Cancel post start node, we will try to remove node link for <" .
+               $self->{context}->{host}->getAttr(name => "entity_id") . ">");
+
+    eval {
+        $self->{context}->{host}->stopToBeNode();
+    };
+    if ($@) {
+        $log->debug($@);
+    }
+
+    my $hosts = $self->{context}->{cluster}->getHosts();
+    if (! scalar keys %$hosts) {
+        $self->{context}->{cluster}->setState(state => "down");
     }
 }
 
