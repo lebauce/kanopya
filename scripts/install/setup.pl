@@ -357,6 +357,27 @@ useTemplate(
     include  => $conf_vars->{install_template_dir}
 );
 
+# Puppetmaster configuration
+useTemplate(
+    include  => '/opt/kanopya/templates/components/puppetmaster',
+    template => 'puppet.conf.tt',
+    conf     => '/etc/puppet/puppet.conf',
+    datas    => {kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules'}
+);
+
+useTemplate(
+    include  => '/opt/kanopya/templates/components/puppetmaster',
+    template => 'fileserver.conf.tt',
+    conf     => '/etc/puppet/fileserver.conf',
+    datas    => {
+        domainname         => $answers->{kanopya_server_domain_name},
+        clusters_directory => $answers->{clusters_directory},
+    }
+);
+
+system('invoke-rc.d puppetmaster restart');
+
+
 # Configure log rotate
 copy("$conf_vars->{install_template_dir}/logrotate-kanopya", '/etc/logrotate.d') || die "Copy failed $!";
 
@@ -630,6 +651,8 @@ sub tftpPopulation {
     system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* '.$answers->{tftp_directory});
 }
 
+
+
 ###################################################### Following functions generates conf files for Kanopya
 
 sub genConf {
@@ -656,7 +679,7 @@ sub createUser {
     chmod 0775, '/opt/kanopya';
 }
 
-sub useTemplate{
+sub useTemplate {
     my %args = @_;
 
     my $input   = $args{template};
