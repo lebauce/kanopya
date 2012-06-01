@@ -126,7 +126,8 @@ sub execute {
 
     $log->info('Mounting the container <' . $mountpoint . '>');
     $self->{context}->{container_access}->mount(mountpoint => $mountpoint,
-                                                econtext   => $self->getEContext);
+                                                econtext   => $self->getEContext,
+                                                erollback  => $self->{erollback});
 
     $log->info("Generate Network Conf");
     $self->_generateNetConf(mount_point => $mountpoint);
@@ -175,10 +176,10 @@ sub execute {
         }
     }
 
-
     # Umount system image container
     $self->{context}->{container_access}->umount(mountpoint => $mountpoint,
-                                                 econtext   => $self->getEContext);
+                                                 econtext   => $self->getEContext,
+                                                 erollback  => $self->{erollback});
 
     # Give access to the system image to the node
     $log->info('Giving access to the system image to the node');
