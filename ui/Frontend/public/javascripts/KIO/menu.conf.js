@@ -8,7 +8,10 @@ var mainmenu_def = {
     },
     'Administration'    : {
         'Kanopya'          : [],
-        'Right Management' : [],
+        'Right Management' :  [
+                               {label : 'Users', id : 'users', onLoad : loadUsers},
+                               {label : 'Rights', id : 'rights'}
+                               ],
         'Monitoring'       : [],
     },
     'Services'   : {
