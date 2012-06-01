@@ -34,101 +34,9 @@ function isThereAConnector(elem_id, connector_category) {
     return is;
 }
 
-function createMonitoringDialog(elem_id, firstDialog) {
-    function createScomDialog(elem) {
-        var scom_fields = {
-            scom_ms_name        : {
-                label   : 'Root Management Server FQDN'
-            },
-            scom_usessl         : {
-                label   : 'Use SSL ?',
-                type    : 'checkbox'
-            },
-            service_provider_id : {
-                label   : '',
-                type    : 'hidden',
-                value   : elem_id
-            }
-        };
-        var scom_opts   = {
-            title       : 'Add a Monitoring Service',
-            name        : 'scom',
-            fields      : scom_fields,
-        }
-        if (elem !== undefined) {
-            scom_opts.prependElement = elem;
-        }
-        if (firstDialog) {
-            scom_opts.skippable = true;
-            scom_opts.title     = 'Step 3 of 3 : ' + scom_opts.title;
-        } else {
-            scom_opts.callback  = function() {
-                var container = $('div#content_service_configuration_' + elem_id);
-                container.empty();
-                loadServicesConfig(container.attr('id'), elem_id);
-            };
-        }
-        return new ModalForm(scom_opts);
-    }
-  
-    function createMockMonitorDialog(elem) {
-        var mock_opts   = {
-                title       : 'Add a Monitoring Service',
-                name        : 'mockmonitor',
-                fields      : {
-                    service_provider_id : {
-                        label   : '',
-                        type    : 'hidden',
-                        value   : elem_id
-                    }
-                }
-            }
-            
-        if (firstDialog) {
-            mock_opts.skippable = true;
-            mock_opts.title = 'Step 3 of 3 : ' + mock_opts.title;
-        }
-        return new ModalForm(mock_opts);
-    }
-    
-    var SCOMMod;
-    var select  = $("<select>");
-    var options;
-    $.ajax({
-        async   : false,
-        type    : 'get',
-        url     : '/api/connectortype?connector_category=MonitoringService',
-        success : function(data) {
-            options = data;
-        }
-    });
-    for (option in options) {
-        option = options[option];
-        $(select).append($("<option>", { value : option.pk, text : option.connector_name }));
-    }
-    $(select).bind('change', function(event) {
-        var newMod;
-        switch(event.currentTarget.value) {
-            case '2':
-                newMod = createScomDialog();
-                break;
-            case '8':
-                newMod = createMockMonitorDialog();
-                break;
-        }
-        $(SCOMMod.form).remove();
-        SCOMMod.form = newMod.form;
-        SCOMMod.handleArgs(newMod.exportArgs());
-        $(SCOMMod.content).append(SCOMMod.form);
-        SCOMMod.startWizard();
-    });
-    SCOMMod   = createScomDialog(select);
-    return SCOMMod;
-}
-
-function createDirectoryDialog(elem_id, firstDialog) {
-    function createADDialog(elem) {
-        var ad_fields   = {
+function createSpecServDialog(provider_id, name, first, step, elem, editid) {
+    var allFields   = {
+        'activedirectory'   : {
             ad_host             : {
                 label   : 'Domain controller name'
             },
@@ -145,42 +53,57 @@ function createDirectoryDialog(elem_id, firstDialog) {
             ad_usessl           : {
                 label   : 'Use SSL ?',
                 type    : 'checkbox'
-            },
-            service_provider_id : {
-                label   : '',
-                type    : 'hidden',
-                value   : elem_id
             }
-        };
-        var ad_opts     = {
-            title   : 'Add an Directory Service',
-            name    : 'activedirectory',
-            fields  : ad_fields
-        };
-        if (elem !== undefined) {
-            ad_opts.prependElement = elem;
+        },
+        'scom'              : {
+            scom_ms_name        : {
+                label   : 'Root Management Server FQDN'
+            },
+            scom_usessl         : {
+                label   : 'Use SSL ?',
+                type    : 'checkbox'
+            },
         }
-        if (firstDialog) {
-            ad_opts.skippable   = true;
-            ad_opts.callback    = function() { createMonitoringDialog(elem_id, firstDialog).start(); };
-            ad_opts.title       = 'Step 2 of 3 : ' + ad_opts.title;
-        } else {
+    };
+    var ad_opts     = {
+        title           : ((editid === undefined) ? 'Add' : 'Edit') + ' a ' + ((step == 2) ? 'Directory' : 'Monitoring') + ' Service',
+        name            : name,
+        fields          : allFields[name],
+        prependElement  : elem,
+        id              : editid
+    };
+    ad_opts.fields.service_provider_id = {
+        label   : '',
+        type    : 'hidden',
+        value   : provider_id
+    };
+    if (first) {
+        ad_opts.skippable   = true;
+        if (step == 2) {
             ad_opts.callback    = function() {
-                var container = $('div#content_service_configuration_' + elem_id);
-                container.empty();
-                loadServicesConfig(container.attr('id'), elem_id);
+                createMonDirDialog(provider_id, first, 3).start();
             };
         }
-        return new ModalForm(ad_opts);
+        ad_opts.title       = 'Step ' + step + ' of 3 : ' + ad_opts.title;
+    } else {
+        ad_opts.callback    = function() {
+            var container = $('div#content_service_configuration_' + provider_id);
+            container.empty();
+            loadServicesConfig(container.attr('id'), provider_id);
+        };
     }
- 
+    return new ModalForm(ad_opts);
+}
+
+function createMonDirDialog(elem_id, step, firstDialog) {
     var ADMod;
-    select  = $("<select>");
+    select          = $("<select>");
     var options;
+    var category    = (step == 2) ? 'DirectoryService' : 'MonitoringService';
     $.ajax({
         async   : false,
         type    : 'get',
-        url     : '/api/connectortype?connector_category=DirectoryService',
+        url     : '/api/connectortype?connector_category=' + category,
         success : function(data) {
             options = data;
         }
@@ -190,19 +113,15 @@ function createDirectoryDialog(elem_id, firstDialog) {
         $(select).append($("<option>", { value : option.pk, text : option.connector_name }));
     }
     $(select).bind('change', function(event) {
-        var newMod;
-        switch(event.currentTarget.value) {
-            case '1':
-                newMod = createADDialog();
-                break;
-        }
+        var name    = $(event.currentTarget).text().toLowerCase();
+        var newMod  = createSpecServDialog(elem_id, name, firstDialog, step);
         $(ADMod.form).remove();
-        ADMod.form = newMod.form;
+        ADMod.form  = newMod.form;
         ADMod.handleArgs(newMod.exportArgs());
         $(ADMod.content).append(ADMod.form);
         ADMod.startWizard();
     });
-    ADMod   = createADDialog(select);
+    ADMod   = createSpecServDialog(elem_id, (step == 2) ? 'activedirectory' : 'scom', firstDialog, step, select);
     return ADMod;
 }
 
@@ -236,7 +155,7 @@ function createAddServiceButton(container) {
         callback    : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
             reloadServices();
-            createDirectoryDialog(data.pk, true).start();
+            createMonDirDialog(data.pk, 2, true).start();
         }
     };
 
@@ -341,13 +260,13 @@ function loadServicesConfig (container_id, elem_id) {
     
     if (isThereAConnector(elem_id, 'DirectoryService') === false) {
         var b   = $("<button>", { text : 'Add a Directory Service', id : 'adddirectory' });
-        b.bind('click', function() { createDirectoryDialog(elem_id).start(); });
+        b.bind('click', function() { createMonDirDialog(elem_id, 2).start(); });
         b.appendTo(container);
     }
     
     if (isThereAConnector(elem_id, 'MonitoringService') === false) {
         var bu  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
-        bu.bind('click', function() { createMonitoringDialog(elem_id).start(); });
+        bu.bind('click', function() { createMonDirDialog(elem_id, 3).start(); });
         bu.appendTo(container);
     }
     
