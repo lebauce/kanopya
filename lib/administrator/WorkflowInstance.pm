@@ -33,6 +33,7 @@ use Workflow;
 use WorkflowDef;
 use Entity::Host;
 use Data::Dumper;
+use Hash::Merge;
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger('administrator');
@@ -66,10 +67,24 @@ sub getWorkflowDef(){
 
 sub getValues {
     my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['scope_id','all_params']);
+    #required also node_id and cluster_id
+
+    if((! defined $args{node_id}) && (! defined $args{cluster_id})){
+        throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
+    }
 
     my $specific_parameter_values = $self->_getSpecificValues();
+    my $automatic_values          = $self->getAutomaticValues(
+                                               scope_id => $args{scope_id},
+                                               all_params => $args{all_params},
+                                               %args,
+                                     );
 
-    return $specific_parameter_values;
+    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+    my $fusion = $merge->merge($specific_parameter_values, $automatic_values);
+
+    return $fusion;
 }
 
 sub setSpecificValues {
@@ -132,19 +147,18 @@ sub _getSpecificValues {
 
     foreach my $specific_parameter (@specific_parameter) {
         $specific_parameter_name  = $specific_parameter->getAttr (name => 'workflow_instance_parameter_name');
-        $specific_parameter_value = $specific_parameter->getAttr (name => 'workflow_instance_parameter_value'); 
+        $specific_parameter_value = $specific_parameter->getAttr (name => 'workflow_instance_parameter_value');
         $specific_parameter_values->{$specific_parameter_name} = $specific_parameter_value;
-    }  
+    }
 
     return $specific_parameter_values;
 }
 
 sub _getAutomaticParams {
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => [ 'scope_name', 'all_params' ]);
+    General::checkParams(args => \%args, required => [ 'scope_id', 'all_params' ]);
     my $all_params = $args{all_params};
-    my $scope_name = $args{scope_name};
-    my $scope_id   = Scope->getIdFromName(scope_name => $scope_name);
+    my $scope_id   = $args{scope_id};
     my $scope_parameter_list = $self->getScopeParameterNameList(
         scope_id => $scope_id
     );
@@ -162,22 +176,21 @@ sub _getAutomaticParams {
 
 sub getAutomaticValues {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['scope_name','all_params']);
-    # Alose required : node_id XOR cluster_id
+    General::checkParams(args => \%args, required => ['scope_id','all_params']);
+    # need also node_id XOR cluster_id
 
     my $automatic_params = $self->_getAutomaticParams(
-        scope_name  => $args{scope_name},
+        scope_id    => $args{scope_id},
         all_params  => $args{all_params},
     );
-    delete $args{scope_name};
-    delete $args{all_params};
 
-    # Warning node_id XOR cluster_id must remain in %args
+    delete $args{scope_id};
+    delete $args{all_params};
 
     for my $automatic_param_name (keys %$automatic_params){
         my $param_value = $self->_getAutomaticValue(
                               automatic_param_name => $automatic_param_name,
-                              %args
+                              %args,
                           );
         $automatic_params->{$automatic_param_name} = $param_value;
     }
@@ -189,11 +202,13 @@ sub _getAutomaticValue {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['automatic_param_name']);
 
-    if(defined $args{node_id}){
+    if(defined $args{node_id}) {
         return $self->_getAutomaticNodeValue(%args);
-    }elsif(defined $args{cluster_id}){
+    }
+    elsif(defined $args{node_id}) {
         return $self->_getAutomaticClusterValue(%args);
-    }else {
+    }
+    else {
         throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
     }
 }
