@@ -339,4 +339,31 @@ sub run {
     return $params_wf;
 }
 
+sub runInstanceFromNodeRuleId {
+    my ($class, %args) = @_;
+    General::checkParams(args => \%args, required => ['nodemetric_rule_id','node_id']);
+
+    my @workflow_instance_list = WorkflowInstance->search(
+                                 hash => {
+                                     nodemetric_rule_id => $args{nodemetric_rule_id},
+                                 });
+
+    for my $workflow_instance (@workflow_instance_list){
+        $workflow_instance->run('node_id' => $args{node_id});
+    }
+};
+
+sub runInstanceFromClusterRuleId {
+    my ($class, %args) = @_;
+    General::checkParams(args => \%args, required => ['aggregate_rule_id','cluster_id']);
+
+    my @workflow_instance_list = WorkflowInstance->search(
+                                 hash => {
+                                     aggregate_rule_id => $args{aggregate_rule_id},
+                                 });
+
+    for my $workflow_instance (@workflow_instance_list){
+        $workflow_instance->run('cluster_id' => $args{cluster_id});
+    }
+};
 1;
