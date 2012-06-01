@@ -29,6 +29,8 @@ use Scope;
 use WorkflowInstanceParameter;
 use Entity::ServiceProvider::Outside;
 use Node;
+use Workflow;
+use WorkflowDef;
 use Entity::Host;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
@@ -56,7 +58,11 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-
+sub getWorkflowDef(){
+    my ($self,%args) = @_;
+    my $workflow_def_id = $self->getAttr(name => 'workflow_def_id');
+    return WorkflowDef->get(id => $workflow_def_id);
+}
 
 sub getValues {
     my ($self,%args) = @_;
