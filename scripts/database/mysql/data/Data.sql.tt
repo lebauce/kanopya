@@ -96,7 +96,8 @@ INSERT INTO `class_type` VALUES
 (80, 'Scope'),
 (81, 'ScopeParameter'),
 (82, 'WorkflowInstance'),
-(83, 'WorkflowInstanceParameter');
+(83, 'WorkflowInstanceParameter'),
+(84, 'Entity::Billinglimit');
 
 --
 -- entity comment list
