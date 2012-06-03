@@ -235,11 +235,12 @@ sub setupREST {
                     my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
                     $location =~ s/\:\:/\//g;
                     require $location;
-                    Operation->enqueue(
+                    $obj = Operation->enqueue(
                         priority => 200,
                         type     => 'Add' . ucfirst($resource),
                         params   => $hash
                     );
+                    $obj = Operation->get(id => $obj->getId)->toJSON;
                 };
                 if ($@) {
                     eval {
