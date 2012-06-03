@@ -8,6 +8,8 @@ prefix undef;
 use General;
 use Entity;
 
+my $API_VERSION = "0.1";
+
 prepare_serializer_for_format;
 
 my %resources = (
@@ -369,6 +371,17 @@ get '/api/attributes/:resource' => sub {
     require (General::getLocFromClass(entityclass => $class));
 
     return to_json($class->toJSON(model => 1));
+};
+
+get '/api' => sub {
+    content_type 'application/json';
+
+    my @resources = keys %resources;
+
+    return to_json({
+        version   => $API_VERSION,
+        resources => \@resources
+    });
 };
 
 setupREST;
