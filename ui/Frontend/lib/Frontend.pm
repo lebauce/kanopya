@@ -74,7 +74,7 @@ sub exception_to_status {
 
 hook 'before_error_init' => sub {
     my $exception = shift;
-    my $status = exception_to_status($exception->{exception});
+    my $status = exception_to_status($exception);
 
     if (defined $status && request->is_ajax) {
         content_type "application/json";
