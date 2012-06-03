@@ -64,6 +64,16 @@ sub getAttrDefs {
             }
         }
 
+        for my $column ($schema->columns) {
+            if (not defined ($attr_def->{$column})) {
+                $attr_def->{$column} = {
+                    pattern      => '^.*$',
+                    is_mandatory => 0,
+                    is_extended  => 0
+                };
+            }
+        }
+
         if ($attr_def) {
             $result->{$currentclass} = $attr_def;
         }
