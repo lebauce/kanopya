@@ -1,0 +1,269 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+#    kanopyactl - Kanopya command line administration tool
+#
+#    Copyright © 2012 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import requests
+import json
+from optparse import OptionParser
+
+ajax_headers = { "ACCEPT" : "*/*",
+                 "X_REQUESTED_WITH" : "XMLHttpRequest" }
+
+parser = OptionParser()
+
+parser.add_option("-u", "--user", dest="user", default="admin",
+                  help="Username to use for login", metavar="LOGIN")
+parser.add_option("-p", "--password", dest="password", default="K4n0pY4",
+                  help="Password to use for login", metavar="PASSWORD")
+parser.add_option("--url", dest="server", default="http://localhost:5000",
+                  help="Kanopya API server", metavar="URL")
+parser.add_option("-s", "--shell", dest="shell", default=False,
+                  action="store_true", help="Kanopya API server", metavar="URL")
+parser.add_option("-v", "--verbose",
+                  action="store_true", dest="verbose", default=False,
+                  help="Verbose mode")
+
+(options, args) = parser.parse_args()
+server_url = options.server
+actions = {}
+cookies = {}
+resources = []
+
+def print_object(obj):
+    print "ID :", obj["pk"]
+    for k, v in obj.items():
+        if k != "pk":
+            print "\t%s : %s" % (k.ljust(32), v)
+    print
+
+def process_result(result):
+    status = result.get("status", "error")
+    if status == "error":
+        print "An error has occurred:"
+        print result["reason"]
+
+def parse_params(args):
+    params = { }
+    for param in args:
+        key, value = param.split('=')
+        params[key] = value
+
+    return params
+
+# Keep track of all the declared actions
+def action(func):
+    actions[func.func_name] = func
+    return func
+
+def parse_response(response):
+    if options.verbose:
+        print response, response.text
+
+    try:
+        data = json.loads(response.text)
+    except:
+        raise Exception("Invalid response from server")
+
+    if response.status_code >= 400 or (isinstance(data, dict) and data.get("status") == "error"):
+        raise Exception(data.get("reason", "Unknown error"))
+
+    return json.loads(response.text)
+
+@action
+def add(resource, *args):
+    """ Create a new resource """
+
+    attributes = parse_params(args)
+
+    response = requests.post("%s/api/%s" % (server_url, resource),
+                             params=attributes, cookies=cookies, headers=ajax_headers)
+
+    print_object(parse_response(response))
+
+@action
+def search(resource, *args):
+    """ Search for resources """
+
+    try:
+        filters = parse_params(args)
+    except:
+        print "Invalid search criterias"
+        return 1
+
+    response = requests.get("%s/api/%s" % (server_url, resource),
+                            params=filters, cookies=cookies, headers=ajax_headers)
+
+    results = parse_response(response)
+
+    if results:
+        print "Found %d element%s:" % (len(results), "s" * min(0, len(results)))
+        for result in results:
+            print_object(result)
+
+    else:
+        print "No element were found."
+
+@action
+def get(resource, id = None):
+    """ Get a resource """
+
+    if id == None:
+        print "You need to specify to specify an ID"
+        return 1
+
+    response = requests.get("%s/api/%s/%s" % (server_url, resource, id),
+                            cookies=cookies, headers=ajax_headers)
+
+    print_object(parse_response(response))
+
+@action
+def update(resource, id, *args):
+    """ Update a resource """
+
+    attributes = parse_params(args)
+
+    response = requests.put("%s/api/%s/%s" % (server_url, resource, id),
+                            params=attributes, cookies=cookies, headers=ajax_headers)
+    process_result(parse_response(response))
+
+@action
+def delete(resource, id = None):
+    """ Delete a resource """
+
+    if id == None:
+        print "You need to specify to specify an ID"
+        return 1
+
+    response = requests.delete("%s/api/%s/%s" % (server_url, resource, id),
+                               cookies=cookies, headers=ajax_headers)
+    process_result(parse_response(response))
+
+@action
+def attributes(resource, id = None):
+    """ Get all the attributes and relations of a resource """
+
+    response = requests.get("%s/api/attributes/%s" % (server_url, resource),
+                            cookies=cookies, headers=ajax_headers)
+
+    result = parse_response(response)
+
+    print json.dumps(result, sort_keys=True, indent=4)
+
+def shell():
+    """ Start a shell """
+
+    print "Kanopya shell v0.1"
+    print
+    while True:
+        print ">",
+        command = raw_input()
+        splitted = command.strip().split()
+
+        resource = splitted[0]
+
+        if not splitted[0]:
+            continue
+
+        if resource in [ "q", "quit" ]:
+            break
+
+        if resource in [ "h", "help", "?" ]:
+            print parser.usage
+            continue
+
+        try:
+            run_command(splitted)
+        except:
+            print "The command has failed"
+
+def login():
+    r = requests.post("%s/login" % server_url,
+                      params = { "login" : options.user,
+                                 "password" : options.password })
+
+    if options.verbose:
+        print "Cookies", r.cookies
+        print "Response", r
+
+    global cookies
+    cookies = r.cookies
+
+    response = requests.get("%s/api" % (server_url, ),
+                            cookies=cookies, headers=ajax_headers)
+
+    results = parse_response(response)
+    global resources
+    resources = results.get("resources")
+    resources.sort()
+
+def print_available_actions(resource):
+    print "The following commands are available;\nfor more information " \
+          "type 'kanopya %s help <command>' :\n\n" \
+          "%s" % (resource, '\n'.join([ k.ljust(32) + ":" + v.__doc__ for k, v in actions.items() ] ))
+
+def print_available_resources():
+    print "Available resources:"
+    for i, resource in enumerate(resources):
+        print resource.ljust(32),
+        if i % 5 == 0:
+            print
+    print
+
+def run_command(command):
+    if len(command) < 1:
+        print "You need to provide a resource name."
+        return 1
+
+    resource = command[0]
+
+    if resource not in resources:
+        print "Invalid resource name '%s'" % resource
+        print_available_resources()
+        return 1
+
+    if len(command) < 2:
+        print "You must provide a resource and an action."
+        print_available_actions(resource)
+        return 1
+
+    action = command[1]
+
+    if action == "help":
+        print_available_actions(resource)
+        return 1
+
+    if not actions.has_key(action):
+        print "Invalid action %s on resource %s" % (action, resource)
+        print_available_actions(resource)
+        return 1
+
+    else:
+        return actions[action](resource, *command[2:])
+
+def main():
+    login()
+
+    if options.shell:
+        sys.exit(shell())
+    else:
+        sys.exit(run_command(args))
+
+if __name__ == "__main__":
+    main()
+
