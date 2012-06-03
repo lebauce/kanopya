@@ -80,6 +80,9 @@ hook 'before_error_init' => sub {
         content_type "application/json";
         set error_template => '/json_error.tt';
     }
+    else {
+        set error_template => '';
+    }
 };
 
 hook 'after_error_render' => sub {
