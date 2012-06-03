@@ -212,8 +212,10 @@ sub setupREST {
             get    => sub {
                 content_type 'application/json';
 
+                require (General::getLocFromClass(entityclass => $class));
+
                 my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-                return to_json( db_to_json(Entity->get(id => params->{id}),
+                return to_json( db_to_json($class->get(id => params->{id}),
                                            \@expand) );
             },
 
@@ -257,15 +259,19 @@ sub setupREST {
 
             delete => sub {
                 content_type 'application/json';
+                require (General::getLocFromClass(entityclass => $class));
 
-                Entity->get(id => params->{id})->delete();
-                return to_json( { response => "ok" } );
+                my $obj = $class->get(id => params->{id});
+                $obj->can("remove") ? $obj->remove() : $obj->delete();
+
+                return to_json( { status => "success" } );
             },
 
             update => sub {
                 content_type 'application/json';
+                require (General::getLocFromClass(entityclass => $class));
 
-                my $obj = Entity->get(id => params->{id});
+                my $obj = $class->get(id => params->{id});
                 my $params = params;
                 for my $attr (keys %$params) {
                     if ($attr ne "id") {
@@ -274,13 +280,16 @@ sub setupREST {
                     }
                 }
                 $obj->save();
+
+                return to_json( { status => "success" } );
             };
 
         get qr{ /api/$resource/([^/]+)/?(.*) }x => sub {
             content_type 'application/json';
+            require (General::getLocFromClass(entityclass => $class));
 
             my ($id, $filters) = splat;
-            my $obj = Entity->get(id => $id);
+            my $obj = $class->get(id => $id);
 
             my @filters = split("/", $filters);
             my @objs;
