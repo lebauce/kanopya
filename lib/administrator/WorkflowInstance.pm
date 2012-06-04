@@ -86,9 +86,9 @@ sub getValues {
     General::checkParams(args => \%args, required => ['scope_id','all_params']);
     #required also node_id and cluster_id
 
-    if((! defined $args{node_id}) && (! defined $args{cluster_id})){
-        throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
-    }
+#    if((! defined $args{node_id}) && (! defined $args{cluster_id})){
+#        throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
+#    }
 
     my $specific_parameter_values = $self->_getSpecificValues();
     my $automatic_values          = $self->getAutomaticValues(
@@ -214,7 +214,7 @@ sub _getAutomaticParams {
 sub getAutomaticValues {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['scope_id','all_params']);
-    # need also node_id XOR cluster_id
+    # need also node_id cluster_id
 
     my $automatic_params = $self->_getAutomaticParams(
         scope_id    => $args{scope_id},
@@ -268,35 +268,17 @@ sub _getAutomaticValue {
         node_id : the related node id
 =cut
 
-sub _getAutomaticNodeValue{
+sub _getAutomaticNodeValue {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['automatic_param_name','node_id']);
+    General::checkParams(args => \%args, required => ['automatic_param_name','extnode_hostname','service_provider_id']);
     my $automatic_param_name = $args{automatic_param_name};
-    my $node_id              = $args{node_id};
+    my $extnode_hostname        = $args{node_id};
+    my $service_provider_id  = $args{service_provider_id};
 
-    if($automatic_param_name eq 'node_id'){
-        return $node_id;
+    if($automatic_param_name eq 'node_hostname') {
+        return $extnode_hostname;
     }
-    elsif($automatic_param_name eq 'node_ip'){
-
-        my $node                = Node->get(id => $node_id);
-        my $host_id             = $node->getAttr(name => 'host_id');
-        my $host                = Entity::Host->get(id=>$host_id);
-        return $host->getAdminIp();
-
-    }
-    elsif($automatic_param_name eq 'node_name'){
-
-        my $node                = Node->get(id => $node_id);
-        my $host_id             = $node->getAttr(name => 'host_id');
-        my $host                = Entity::Host->get(id=>$host_id);
-        return $host->getAttr(name => 'host_hostname');
-
-    }
-    elsif($automatic_param_name eq 'ou_from'){
-
-        my $node                = Node->get(id => $node_id);
-        my $service_provider_id = $node->getAttr(name => 'inside_id');
+    elsif($automatic_param_name eq 'ou_from') {
         my $outside    = Entity::ServiceProvider::Outside
                               ->get('id' => $service_provider_id);
         my $directoryServiceConnector = $outside->getConnector(
@@ -371,9 +353,9 @@ sub _parse{
 sub _run {
     my ($self, %args) = @_;
     General::checkParams(args => \%args);
-    if((! defined $args{node_id}) && (! defined $args{cluster_id})){
-        throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
-    }
+#    if((! defined $args{node_id}) && (! defined $args{cluster_id})){
+#        throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
+#    }
 
     my $workflow_def_params = $self->getWorkflowDef()->getParamPreset();
 
