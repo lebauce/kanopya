@@ -280,6 +280,8 @@ function loadServicesConfig (container_id, elem_id) {
     
     var table = $("<table>").appendTo(container);
 
+    var that = this;
+
     $.ajax({
         url: '/api/connectortype?dataType=jqGrid',
         success: function(connTypeData) {
@@ -308,7 +310,8 @@ function loadServicesConfig (container_id, elem_id) {
                     var button  = $(event.data.button);
                     var id      = $(button).attr('rel');
                     var name    = $(button).parent('tr').attr('rel');
-                }, this));
+                    this.createSpecServDialog(elem_id, name, false, 2, undefined, id).start();
+                }, that));
 
             });
         }
