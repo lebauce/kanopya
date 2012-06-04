@@ -284,8 +284,9 @@ function loadServicesConfig (container_id, elem_id) {
 
     $.ajax({
         url: '/api/connectortype?dataType=jqGrid',
+        async   : false,
         success: function(connTypeData) {
-                    $(connTypeData).each(function(row) {
+                    $(connTypeData.rows).each(function(row) {
                     //connectorsTypeHash = { 'pk' : connTypeData.rows[row].pk, 'connectorName' : connTypeData.rows[row].connector_name };
                     var pk = connTypeData.rows[row].pk;
                     connectorsTypeArray[pk] = connTypeData.rows[row].connector_name;
