@@ -2,6 +2,15 @@ $.validator.addMethod("regex", function(value, element, regexp) {
     var re = new RegExp(regexp);
     return this.optional(element) || re.test(value);
 }, "Please check your input");
+
+// Set the correct state icon for each element :
+function StateFormatter(cell, options, row) {
+	if (cell == 'up') {
+		return "<img src='/images/icons/up.png' title='up' />";
+	} else {
+		return "<img src='/images/icons/broken.png' title='broken' />";
+	}
+}
  
 // Check if there is a configured directory service
 function isThereAConnector(elem_id, connector_category) {
@@ -180,7 +189,7 @@ function servicesList (container_id, elem_id) {
                 [ 
                  {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
                  {name:'externalcluster_name',index:'service_name', width:200},
-                 {name:'externalcluster_state',index:'service_state', width:90,},
+                 {name:'externalcluster_state',index:'service_state', width:90,formatter:StateFormatter},
                  ]);
     reload_grid('services_list', '/api/externalcluster');
     
@@ -335,22 +344,13 @@ function loadServicesRessources (container_id, elem_id) {
             ['id','state', 'hostname'],
             [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'externalnode_state',index:'externalnode_state', width:90,formatter:extNodeStateFormatter},
+             {name:'externalnode_state',index:'externalnode_state', width:90,formatter:StateFormatter},
              {name:'externalnode_hostname',index:'externalnode_hostname', width:200,},
            ]);
     reload_grid('service_ressources_list', '/api/host');
 
     createUpdateNodeButton($('#' + container_id), elem_id);
     reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
-    
-    // Set the correct state icon for each element :
-	function extNodeStateFormatter(cell, options, row) {
-		if (cell == 'up') {
-			return "<img src='/images/icons/up.png' title='up' />";
-		} else {
-			return "<img src='/images/icons/broken.png' title='broken' />";
-		}
-	}
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
    
 }
@@ -382,20 +382,12 @@ function loadServicesMonitoring(container_id, elem_id) {
             [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_condition_label',index:'aggregate_condition_label', width:90,},
-             {name:'state',index:'state', width:200,formatter:aggregateConditionsStateFormatter},
-             {name:'threshold',index:'threshold', width:200,},
-             {name:'last_eval',index:'last_eval', width:200,},
-             {name:'time_limit',index:'time_limit', width:200,},
+             {name:'state',index:'state', width:90,formatter:StateFormatter},
+             {name:'threshold',index:'threshold', width:90,},
+             {name:'last_eval',index:'last_eval', width:90,},
+             {name:'time_limit',index:'time_limit', width:90,},
            ]);
     reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/aggregate_conditions');
-    // Set the correct state icon for each element :
-	function aggregateConditionsStateFormatter(cell, options, row) {
-		if (cell == 'up') {
-			return "<img src='/images/icons/up.png' title='up' />";
-		} else {
-			return "<img src='/images/icons/broken.png' title='broken' />";
-		}
-	}
 	
 	var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
 	create_grid(container_id, loadServicesMonitoringGridId,
@@ -403,18 +395,45 @@ function loadServicesMonitoring(container_id, elem_id) {
             [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
-             {name:'aggregate_rule_state',index:'aggregate_rule_state', width:200,formatter:aggregateRulesStateFormatter},
-             {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:200,},
+             {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,formatter:StateFormatter},
+             {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
              {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
-             {name:'aggregate_rule_timestamp',index:'aggregate_rule_timestamp', width:200,},
+             {name:'aggregate_rule_timestamp',index:'aggregate_rule_timestamp', width:90,},
            ]);
     reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/aggregate_rules');
-    // Set the correct state icon for each element :
-	function aggregateRulesStateFormatter(cell, options, row) {
-		if (cell == 'up') {
-			return "<img src='/images/icons/up.png' title='up' />";
-		} else {
-			return "<img src='/images/icons/broken.png' title='broken' />";
-		}
-	}
+	
+	var loadServicesMonitoringGridId = 'service_ressources_nodemetric_combination_' + elem_id;
+	create_grid(container_id, loadServicesMonitoringGridId,
+            ['id','name', 'formula'],
+            [ 
+             {name:'pk',index:'pk', width:90, sorttype:"int", hidden:true, key:true},
+             {name:'nodemetric_combination_label',index:'nodemetric_combination_label', width:120,},
+             {name:'nodemetric_combination_formula',index:'nodemetric_combination_formula', width:90,},
+           ]);
+    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/nodemetric_combinations');
+    
+    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_condition_' + elem_id;
+	create_grid(container_id, loadServicesMonitoringGridId,
+            ['id','name', 'separator', 'threshold'],
+            [ 
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'nodemetric_condition_label',index:'nodemetric_condition_label', width:120,},
+             {name:'nodemetric_condition_comparator',index:'nodemetric_condition_comparator', width:90,},
+             {name:'nodemetric_condition_threshold',index:'nodemetric_condition_threshold',width:90},
+           ]);
+    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/nodemetric_conditions');
+    
+    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_rules_' + elem_id;
+	create_grid(container_id, loadServicesMonitoringGridId,
+            ['id','name', 'state', 'eval', 'description', 'timestamp', 'formula'],
+            [ 
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'nodemetric_rule_label',index:'nodemetric_rule_label', width:90,},
+             {name:'nodemetric_rule_state',index:'nodemetric_rule_state', width:90,formatter:StateFormatter},
+             {name:'nodemetric_rule_last_eval',index:'nodemetric_rule_last_eval', width:90,},
+             {name:'nodemetric_rule_description',index:'nodemetric_rule_description', width:200,},
+             {name:'nodemetric_rule_timestamp',index:'nodemetric_rule_timestamp', width:90,},
+             {name:'nodemetric_rule_formula',index:'nodemetric_rule_formula', width:100,},
+           ]);
+    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/nodemetric_rules');
 }
