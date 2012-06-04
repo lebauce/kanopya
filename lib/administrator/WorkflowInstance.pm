@@ -84,7 +84,6 @@ sub getWorkflowDef(){
 sub getValues {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['scope_id','all_params']);
-    #required also node_id and cluster_id
 
 #    if((! defined $args{node_id}) && (! defined $args{cluster_id})){
 #        throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
@@ -198,7 +197,6 @@ sub _getAutomaticParams {
             $automatic_params->{$param} = undef;
         }
     }
-
     return $automatic_params;
 }
 
@@ -214,7 +212,6 @@ sub _getAutomaticParams {
 sub getAutomaticValues {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['scope_id','all_params']);
-    # need also node_id cluster_id
 
     my $automatic_params = $self->_getAutomaticParams(
         scope_id    => $args{scope_id},
@@ -248,15 +245,43 @@ sub getAutomaticValues {
 sub _getAutomaticValue {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['automatic_param_name']);
-    #Required also node_id XOR cluster_id
+    #Required also other parameters managed below :
     if(defined $args{node_id}) {
         return $self->_getAutomaticNodeValue(%args);
+    }
+    elsif(defined $args{extnode_hostname} && $args{service_provider_id}){
+        return $self->_getAutomaticExtNodeValue(%args);
     }
     elsif(defined $args{cluster_id}) {
         return $self->_getAutomaticClusterValue(%args);
     }
     else {
-        throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
+        throw Kanopya::Exception(error => "Parameters input error ");
+    }
+}
+
+sub _getAutomaticExtNodeValue{
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['automatic_param_name','node_hostname','service_provider_id']);
+    my $automatic_param_name = $args{automatic_param_name};
+    my $node_hostname        = $args{node_hostname};
+    my $service_provider_id  = $args{service_provider_id};
+
+    if($automatic_param_name eq 'node_hostname'){
+        return $node_hostname;
+    }
+    elsif($automatic_param_name eq 'ou_from'){
+        my $outside    = Entity::ServiceProvider::Outside
+                              ->get('id' => $service_provider_id);
+        my $directoryServiceConnector = $outside->getConnector(
+                                                      'category' => 'DirectoryService'
+                                                  );
+        my $ou_from    = $directoryServiceConnector->getAttr(
+                                                         'name' => 'ad_nodes_base_dn'
+                                                 );
+    }
+    else{
+        throw Kanopya::Exception(error => "Unknown automatic parameter $automatic_param_name in node scope");
     }
 }
 
@@ -268,25 +293,26 @@ sub _getAutomaticValue {
         node_id : the related node id
 =cut
 
-sub _getAutomaticNodeValue {
+sub _getAutomaticNodeValue{
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['automatic_param_name','extnode_hostname','service_provider_id']);
+    General::checkParams(args => \%args, required => ['automatic_param_name','node_id']);
     my $automatic_param_name = $args{automatic_param_name};
-    my $extnode_hostname        = $args{node_id};
-    my $service_provider_id  = $args{service_provider_id};
+    my $node_id        = $args{node_id};
 
-    if($automatic_param_name eq 'node_hostname') {
-        return $extnode_hostname;
+    if($automatic_param_name eq 'node_id'){
+        return $node_id;
     }
-    elsif($automatic_param_name eq 'ou_from') {
-        my $outside    = Entity::ServiceProvider::Outside
-                              ->get('id' => $service_provider_id);
-        my $directoryServiceConnector = $outside->getConnector(
-                                                      'category' => 'DirectoryService'
-                                                  );
-        my $ou_from    = $directoryServiceConnector->getAttr(
-                                                         'name' => 'ad_nodes_base_dn'
-                                                 );
+    elsif($automatic_param_name eq 'node_ip'){
+        my $node                = Node->get(id => $node_id);
+        my $host_id             = $node->getAttr(name => 'host_id');
+        my $host                = Entity::Host->get(id=>$host_id);
+        return $host->getAdminIp();
+    }
+    elsif($automatic_param_name eq 'node_name'){
+        my $node                = Node->get(id => $node_id);
+        my $host_id             = $node->getAttr(name => 'host_id');
+        my $host                = Entity::Host->get(id=>$host_id);
+        return $host->getAttr(name => 'host_hostname');
     }
     else{
         throw Kanopya::Exception(error => "Unknown automatic parameter $automatic_param_name in node scope");
@@ -397,15 +423,19 @@ sub _run {
 
 sub runInstanceFromNodeRuleId {
     my ($class, %args) = @_;
-    General::checkParams(args => \%args, required => ['nodemetric_rule_id','node_id']);
-
+    General::checkParams(args => \%args, required => ['nodemetric_rule_id']);
+    # NEED ALSO node_hostname and service_provider_id for externalnodes
+    # OR        node_id for nodes
+    
     my @workflow_instance_list = WorkflowInstance->search(
                                  hash => {
                                      nodemetric_rule_id => $args{nodemetric_rule_id},
                                  });
 
+    delete $args{nodemetric_rule_id};
+
     for my $workflow_instance (@workflow_instance_list){
-        $workflow_instance->_run('node_id' => $args{node_id});
+        $workflow_instance->_run(%args);
     }
 };
 
@@ -426,8 +456,11 @@ sub runInstanceFromClusterRuleId {
                                      aggregate_rule_id => $args{aggregate_rule_id},
                                  });
 
+    delete $args{aggregate_rule_id};
+
+
     for my $workflow_instance (@workflow_instance_list){
-        $workflow_instance->_run('cluster_id' => $args{cluster_id});
+        $workflow_instance->_run(%args);
     }
 };
 1;
