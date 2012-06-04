@@ -38,8 +38,11 @@ use base "EContext";
 use strict;
 use warnings;
 use Net::Ping;
-use Net::OpenSSH;
-
+if ($^O eq 'linux') {
+    require Net::OpenSSH;
+} elsif ( $^O eq 'MSWin32') {
+    require Net::SSH::Perl;
+}
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
