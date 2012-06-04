@@ -316,23 +316,23 @@ function loadServicesConfig (container_id, elem_id) {
                 $(tr).appendTo(table);
 
                 // Bind configure and delete actions on buttons
-                $(confButton).bind('click', { button : confButton }, $.proxy(function(event) {
+                $(confButton).bind('click', { button : confButton }, function(event) {
                     var button  = $(event.data.button);
                     var id      = $(button).attr('rel');
                     var name    = $(button).parent('tr').attr('rel');
-                    this.createSpecServDialog(elem_id, name, false, 2, undefined, id).start();
-                }, that));
-                $(delButton).bind('click', { button : delButton }, $.proxy(function(event) {
+                    that.createSpecServDialog(elem_id, name, false, 2, undefined, id).start();
+                });
+                $(delButton).bind('click', { button : delButton }, function(event) {
                     var button  = $(event.data.button);
                     $.ajax({
                         type    : 'delete',
                         url     : '/api/' + button.parent('tr').attr('rel') + '/' + button.attr('rel'),
-                        success : $.proxy(function() {
+                        success : function() {
                             $(container).empty();
-                            this.loadServicesConfig($(container).attr('id'), elem_id);
-                        }, this)
+                            that.loadServicesConfig(container_id, elem_id);
+                        }
                     });
-                }, that));
+                });
             });
         }
     });

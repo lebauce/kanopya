@@ -148,7 +148,7 @@ var ModalForm = (function() {
         
         // Insert value if any
         if (value !== undefined) {
-            if (type == 'text') {
+            if (type === 'text') {
                 $(input).attr('value', value);
             } else if (type === 'checkbox' && value == true) {
                 $(input).attr('checked', 'checked');
@@ -248,14 +248,13 @@ var ModalForm = (function() {
     }
     
     ModalForm.prototype.beforeSerialize = function(form, options) {
-        // Must transform all 'on' of 'off' values from checkboxes to '1' or '0'
+        // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
         for (field in this.fields) {
             if (this.fields[field].type === 'checkbox') {
                 var checkbox = $(form).find('input[name="' + field + '"]');
-                if (checkbox.attr('value') === 'on' ||
-                    checkbox.attr('checked') === 'checked') {
+                if (checkbox.attr('value') === 'on') {
                     checkbox.attr('value', '1');
-                } else {
+                } else if (checkbox.attr('value') === 'off') {
                     checkbox.attr('value', '0');
                 }
             }
