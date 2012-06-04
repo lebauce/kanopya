@@ -58,6 +58,7 @@ use constant ATTR_DEF => {
     },
 };
 
+#TODO : XOR Mandatory aggregate_rule_id xor nodemetric_rule_id in new() method
 sub getAttrDef { return ATTR_DEF; }
 
 =head2 getWorkflowDef
@@ -105,10 +106,10 @@ sub getValues {
 
 sub setSpecificValues {
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => [ 'specific_params', 'workflow_instance_id' ]);
+    General::checkParams(args => \%args, required => [ 'specific_params']);
 
     my $specific_params      = $args{specific_params};
-    my $workflow_instance_id = $args{workflow_instance_id};
+    my $workflow_instance_id = $self->getAttr(name => 'workflow_instance_id');
 
     while (my ($param, $value) = each (%$specific_params)) {
         my $wfparams = {
@@ -132,10 +133,9 @@ sub getScopeParameterNameList {
 sub getSpecificParams {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'scope_name', 'all_params' ]);
+    General::checkParams(args => \%args, required => [ 'scope_id', 'all_params' ]);
     my $all_params = $args{all_params};
-    my $scope_name = $args{scope_name};
-    my $scope_id   = Scope->getIdFromName(scope_name => $scope_name);
+    my $scope_id   = $args{scope_id};
     my $scope_parameter_list = $self->getScopeParameterNameList(
         scope_id => $scope_id
     );
