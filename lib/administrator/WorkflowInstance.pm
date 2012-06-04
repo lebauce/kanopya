@@ -60,11 +60,25 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+=head2 getWorkflowDef
+    Return WorkflowDef object of a WorkflowInstance
+=cut
+
 sub getWorkflowDef(){
     my ($self,%args) = @_;
     my $workflow_def_id = $self->getAttr(name => 'workflow_def_id');
     return WorkflowDef->get(id => $workflow_def_id);
 }
+
+=head2 getNodesMetrics
+
+    Return automatic and specific values of the workflow instance parameters
+    Params:
+        scope_id   : scope_id of the workflow instance
+        all_params : list of the wanted params
+        node_id OR cluster_id : the node id or the cluster id which has launch
+        the workflow
+=cut
 
 sub getValues {
     my ($self,%args) = @_;
@@ -81,12 +95,13 @@ sub getValues {
                                                all_params => $args{all_params},
                                                %args,
                                      );
-
+    #Merge the two hash tables
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
     my $fusion = $merge->merge($specific_parameter_values, $automatic_values);
 
     return $fusion;
 }
+
 
 sub setSpecificValues {
     my ($self,%args) = @_;
@@ -155,6 +170,16 @@ sub _getSpecificValues {
     return $specific_parameter_values;
 }
 
+=head2 _getAutomaticParams
+
+    Return a list (keys of a hash table) of the params whose values are computed by kanopya (i.e. not
+    specified by the user).
+    Output : {param1 => undef, param2 => undef};
+    Params:
+        scope_id   : scope_id of the workflow instance
+        all_params : list of the wanted params
+=cut
+
 sub _getAutomaticParams {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => [ 'scope_id', 'all_params' ]);
@@ -165,7 +190,7 @@ sub _getAutomaticParams {
     );
 
     my $automatic_params = {};
-
+    #Hash table creation
     for my $param (@$scope_parameter_list) {
         if (exists $all_params->{$param}){
             $automatic_params->{$param} = undef;
@@ -174,6 +199,15 @@ sub _getAutomaticParams {
 
     return $automatic_params;
 }
+
+=head2 getAutomaticValues
+
+    Return the list of the values whose values are computed by kanopya (i.e. not
+    specified by the user)
+    Params:
+        scope_id   : scope_id of the workflow instance
+        all_params : list of the wanted params
+=cut
 
 sub getAutomaticValues {
     my ($self, %args) = @_;
@@ -199,10 +233,18 @@ sub getAutomaticValues {
     return $automatic_params;
 }
 
+=head2 _getAutomaticValue
+
+    Return the value of a automatic param
+    Params:
+        automatic_param_name   : the param name
+        node_id XOR cluster_id : the related node or cluster id
+=cut
+
 sub _getAutomaticValue {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['automatic_param_name']);
-
+    #Required also node_id XOR cluster_id
     if(defined $args{node_id}) {
         return $self->_getAutomaticNodeValue(%args);
     }
@@ -213,6 +255,14 @@ sub _getAutomaticValue {
         throw Kanopya::Exception(error => "node_id OR cluster_id is missing");
     }
 }
+
+=head2 _getAutomaticNodeValue
+
+    Return the value of one of these param : node_id, node_ip, node_name, ou_from
+    Params:
+        automatic_param_name   : the param name ( node_id, node_ip, node_name, ou_from )
+        node_id : the related node id
+=cut
 
 sub _getAutomaticNodeValue{
     my ($self, %args) = @_;
@@ -257,6 +307,14 @@ sub _getAutomaticNodeValue{
     }
 }
 
+=head2 _getAutomaticClusterValue
+
+    Return the value of one of these param : cluster_id, cluster_name
+    Params:
+        automatic_param_name   : the param name ( cluster_id, cluster_name )
+        cluster_id : the related cluster id
+=cut
+
 sub _getAutomaticClusterValue{
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['automatic_param_name','cluster_id']);
@@ -266,7 +324,7 @@ sub _getAutomaticClusterValue{
         return $cluster_id;
     }
     elsif($automatic_param_name eq 'cluster_name'){
-        return  Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id)->getAttr('name' => 'externalcluster_name'); 
+        return  Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id)->getAttr('name' => 'externalcluster_name');
     }
     else{
         throw Kanopya::Exception(error => "Unknown automatic parameter $automatic_param_name in node scope");
@@ -302,7 +360,14 @@ sub _parse{
     return $given_params;
 }
 
-sub run {
+=head2 _run
+
+    Run the workflow
+    Params:
+        node_id XOR cluster_id :
+=cut
+
+sub _run {
     my ($self, %args) = @_;
     General::checkParams(args => \%args);
     if((! defined $args{node_id}) && (! defined $args{cluster_id})){
@@ -334,10 +399,18 @@ sub run {
 
     my $workflow_def = $self->getWorkflowDef();
     my $name = $workflow_def->getAttr(name => 'workflow_def_name');
-    
+
     Workflow->run(name=>$name,params => $workflow_params);
     return $params_wf;
 }
+
+=head2 runInstanceFromNodeRuleId
+
+    Run a NodeRule workflow
+    Params:
+        nodemetric_rule_id
+        node_id
+=cut
 
 sub runInstanceFromNodeRuleId {
     my ($class, %args) = @_;
@@ -349,9 +422,17 @@ sub runInstanceFromNodeRuleId {
                                  });
 
     for my $workflow_instance (@workflow_instance_list){
-        $workflow_instance->run('node_id' => $args{node_id});
+        $workflow_instance->_run('node_id' => $args{node_id});
     }
 };
+
+=head2 runInstanceFromClusterRuleId
+
+    Run a ClusterRule workflow
+    Params:
+        aggregate_rule_id
+        cluster_id
+=cut
 
 sub runInstanceFromClusterRuleId {
     my ($class, %args) = @_;
@@ -363,7 +444,7 @@ sub runInstanceFromClusterRuleId {
                                  });
 
     for my $workflow_instance (@workflow_instance_list){
-        $workflow_instance->run('cluster_id' => $args{cluster_id});
+        $workflow_instance->_run('cluster_id' => $args{cluster_id});
     }
 };
 1;
