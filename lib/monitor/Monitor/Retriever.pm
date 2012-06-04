@@ -71,7 +71,15 @@ sub getData {
     my $rrd = $self->getRRD(file => "$rrd_name.rrd" );
 
     # Start fetching values
-    $rrd->fetch_start( start => time() - $args{time_laps} );
+    my $start = defined $args{start} ? $args{start} : time() - $args{time_laps};
+    my $end;
+       
+    if ((not defined $args{end}) && $args{time_laps}) {
+        $end = $start + $args{time_laps};
+    }
+
+    $rrd->fetch_start(start => $start,
+                      end   => $end || $args{end});
     $rrd->fetch_skip_undef();
 
     # retrieve array of ds name ordered like in rrd (db column)
@@ -111,7 +119,6 @@ sub getData {
     ################################################
     # Build res data : ( ds_name => [v1, v2, ..] ) #
     ################################################
-    
     while(my($time, @values) = $rrd->fetch_next()) {
         # compute max value for this row
         if (defined $values[0]) {
@@ -144,7 +151,7 @@ sub getData {
                 $res{ $ds_name } = defined $max ? $sum * 100 / $max : undef;
             }
             else { # mean
-                $res{ $ds_name } = $sum / scalar @$values;
+                $res{ $ds_name } = $values; # $sum / scalar @$values;
             }
         };
         if ($@) {
@@ -190,7 +197,6 @@ sub getClusterData {
     my %args = @_;
     
     #Monitor::logArgs( "getClusterData", %args );
-    
     my $rrd_name = $self->rrdName( set_name => $args{set}, host_name => $args{cluster} );
     
     # Unable the monitoring of _total based and stay compatible with existant code 
@@ -202,11 +208,11 @@ sub getClusterData {
             $rrd_name .= "_avg";
         }
         else{
-            $rrd_name .= "_avg";
+            $rrd_name .= "_" . $args{aggregation};
         }
     }
     else{
-        $rrd_name .= "_avg";
+        $rrd_name .= "_raw";
     }
     
 # TODO : A TESTER    
@@ -222,10 +228,12 @@ sub getClusterData {
         $log->warn("No max definition to compute percent for '$args{set}'");
     }
     
-    my %cluster_data = $self->getData( rrd_name => $rrd_name,
-                                    time_laps => $args{time_laps},
-                                    max_def => (scalar @max_def) ? \@max_def : undef,
-                                    percent => $args{percent} );
+    my %cluster_data = $self->getData(rrd_name  => $rrd_name,
+                                      start     => $args{start},
+                                      end       => $args{end},
+                                      time_laps => $args{time_laps},
+                                      max_def   => (scalar @max_def) ? \@max_def : undef,
+                                      percent   => $args{percent} );
     
     return \%cluster_data;
 }

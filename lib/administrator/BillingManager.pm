@@ -39,6 +39,9 @@ my $log = get_logger("administrator");
 
 my $retriever = Monitor::Retriever->new;
 
+my $EVERY_DAY = 1;
+my $EVERY_MONTH = 2;
+
 sub userBilling {
     my ($user, $from, $to) = @_;
 
@@ -57,6 +60,7 @@ sub clusterBilling {
     my %metrics;
     my %data;
     my $interval = 5 * 60;
+    my $duration = 60 * 60;
     my $cluster_name = $cluster->getAttr(name => "cluster_name");
     my $adm = Administrator->new();
     my $timestamp = $from->epoch();
@@ -74,7 +78,8 @@ sub clusterBilling {
         my $data = $retriever->getClusterData(
                        cluster     => $cluster_name,
                        set         => $metric,
-                       time_laps   => [ $from, $to ],
+                       start       => $from->epoch(),
+                       end         => $to->epoch(),
                        aggregation => "raw",
                        required_ds => [ $metric ],
                    )->{'Nice'};
@@ -94,14 +99,40 @@ sub clusterBilling {
                          });
 
     for my $limit (@cluster_limits) {
+        my $start = $limit->getAttr(name => "start");
+        my $end = $limit->getAttr(name => "end");
         my $type = $limit->getAttr(name => "type");
         my $tree = $metrics{$type}->{tree};
+        my $repeat = $limit->getAttr(name => "repeat");
 
-        $tree->insert($limit->getId,
-                      $limit->getAttr(name => "start"),
-                      $limit->getAttr(name => "end"));
+        if ($repeat eq $EVERY_DAY) {
+            my $repeat_start_time = $limit->getAttr(name => "repeat_start_time");
+            my $repeat_end_time = $limit->getAttr(name => "repeat_end_time");
+            my $day = int($from->epoch / (24 * 60 * 60)) * (24 * 60 * 60);
 
-        $metrics{$type}->{limits}->{$limit->getId} = $limit;
+            my @repeat_start_time = split(':', "$repeat_start_time");
+            my ($start_hour, $start_minute, $start_second) = @repeat_start_time;
+
+            my @repeat_end_time = split(':', "$repeat_end_time");
+            my ($end_hour, $end_minute, $end_second) = @repeat_end_time;
+
+            while (($day < $to->epoch) && ($day < $end)) {
+                my $start_offset = min($end, $day + ($start_hour * 3600) + ($start_minute * 60) + $start_second);
+                my $end_offset = min($end, $day + ($end_hour * 3600) + ($end_minute * 60) + $end_second);
+
+                $tree->insert($limit->getId,
+                              $start_offset,
+                              $end_offset);
+
+                $day += 24 * 60 * 60;
+            }
+        }
+        else {
+            $tree->insert($limit->getId,
+                          $start, $end);
+        }
+
+        $metrics{$type}->{limits}->{$limit->getId} = $limit->toJSON();
     }
 
     my $csv = Text::CSV->new ( { binary => 0, eol => "\n", sep_char => ";" } );
@@ -135,16 +166,17 @@ sub clusterBilling {
 
             # We get the limit with the lowest value
             my @results = @$results;
-            my $min = $limits->{shift @$results};
+            my $max = $limits->{shift @$results};
             for my $id (@$results) {
-                my $limit = $limits{$id};
-                if ($limit->getAttr(name => "value") < $min->getAttr(name => "value")) {
-                    $min = $limit;
+                my $limit = $limits->{$id};
+                if ($limit->{value} > $max->{value}) {
+                    $max = $limit;
                 }
+                push @$row, $limit->{value};
             }
 
             # Get the limit value
-            my $contract = $min->getAttr(name => "value");
+            my $contract = $max->{value};
             push @$row, $contract;
 
             # Compute the overcommit
