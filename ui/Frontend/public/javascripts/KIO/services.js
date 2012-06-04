@@ -5,22 +5,22 @@ $.validator.addMethod("regex", function(value, element, regexp) {
  
 // Check if there is a configured directory service
 function isThereAConnector(elem_id, connector_category) {
-    var is	= false;
+    var is  = false;
     
     // Get all configured connectors on the service
     $.ajax({
-        async	: false,
-        url	    : '/api/connector?service_provider_id=' + elem_id,
-        success	: function(connectors) {
+        async   : false,
+        url     : '/api/connector?service_provider_id=' + elem_id,
+        success : function(connectors) {
             for (i in connectors) if (connectors.hasOwnProperty(i)) {
                 // Get the connector type for each
                 $.ajax({
-                    async	: false,
-                    url		: '/api/connectortype?connector_type_id=' + connectors[i].connector_type_id,
-                    success	: function(data) {
+                    async   : false,
+                    url     : '/api/connectortype?connector_type_id=' + connectors[i].connector_type_id,
+                    success : function(data) {
                         // If this is a Directory Service, then we can return true
                         if (data[0].connector_category === connector_category) {
-                            is	= true;
+                            is  = true;
                         }
                     }
                 });
@@ -34,72 +34,9 @@ function isThereAConnector(elem_id, connector_category) {
     return is;
 }
 
-function createMonitoringDialog(elem_id, firstDialog) {
-    function createScomDialog(elem) {
-        var scom_fields = {
-            scom_ms_name        : {
-                label   : 'Root Management Server FQDN'
-            },
-            scom_usessl         : {
-                label   : 'Use SSL ?',
-                type    : 'checkbox'
-            },
-            service_provider_id : {
-                label   : '',
-                type    : 'hidden',
-                value   : elem_id
-            }
-        };
-        var scom_opts   = {
-            title       : 'Add a Monitoring Service',
-            name        : 'scom',
-            fields      : scom_fields,
-        }
-        if (elem !== undefined) {
-            scom_opts.prependElement = elem;
-        }
-        if (firstDialog) {
-            scom_opts.skippable = true;
-            scom_opts.title	= 'Step 3 of 3 : ' + scom_opts.title;
-        }
-        return new ModalForm(scom_opts);
-    }
-  
-    var SCOMMod;
-    var select  = $("<select>");
-    var options;
-    $.ajax({
-        async   : false,
-        type    : 'get',
-        url     : '/api/connectortype?connector_category=MonitoringService',
-        success : function(data) {
-            options = data;
-        }
-    });
-    for (option in options) {
-        option = options[option];
-        $(select).append($("<option>", { value : option.pk, text : option.connector_name }));
-    }
-    $(select).bind('change', function(event) {
-        var newMod;
-        switch(event.currentTarget.value) {
-            case '2':
-                newMod = createScomDialog();
-                break;
-        }
-        $(SCOMMod.form).remove();
-        SCOMMod.form = newMod.form;
-        SCOMMod.handleArgs(newMod.exportArgs());
-        $(SCOMMod.content).append(ADMod.form);
-        SCOMMod.startWizard();
-    });
-    SCOMMod   = createScomDialog(select);
-    return SCOMMod;
-}
-
-function createDirectoryDialog(elem_id, firstDialog) {
-    function createADDialog(elem) {
-        var ad_fields   = {
+function createSpecServDialog(provider_id, name, first, step, elem, editid) {
+    var allFields   = {
+        'activedirectory'   : {
             ad_host             : {
                 label   : 'Domain controller name'
             },
@@ -116,36 +53,57 @@ function createDirectoryDialog(elem_id, firstDialog) {
             ad_usessl           : {
                 label   : 'Use SSL ?',
                 type    : 'checkbox'
-            },
-            service_provider_id : {
-                label   : '',
-                type    : 'hidden',
-                value   : elem_id
             }
-        };
-        var ad_opts     = {
-            title       : 'Add an Directory Service',
-            name        : 'activedirectory',
-            fields      : ad_fields
-        };
-        if (elem !== undefined) {
-            ad_opts.prependElement = elem;
+        },
+        'scom'              : {
+            scom_ms_name        : {
+                label   : 'Root Management Server FQDN'
+            },
+            scom_usessl         : {
+                label   : 'Use SSL ?',
+                type    : 'checkbox'
+            },
         }
-        if (firstDialog) {
-            ad_opts.skippable	= true;
-            ad_opts.callback	= function() { createMonitoringDialog(elem_id, firstDialog).start(); };
-            ad_opts.title	= 'Step 2 of 3 : ' + ad_opts.title;
+    };
+    var ad_opts     = {
+        title           : ((editid === undefined) ? 'Add' : 'Edit') + ' a ' + ((step == 2) ? 'Directory' : 'Monitoring') + ' Service',
+        name            : name,
+        fields          : allFields[name],
+        prependElement  : elem,
+        id              : editid
+    };
+    ad_opts.fields.service_provider_id = {
+        label   : '',
+        type    : 'hidden',
+        value   : provider_id
+    };
+    if (first) {
+        ad_opts.skippable   = true;
+        if (step == 2) {
+            ad_opts.callback    = function() {
+                createMonDirDialog(provider_id, first, 3).start();
+            };
         }
-        return new ModalForm(ad_opts);
+        ad_opts.title       = 'Step ' + step + ' of 3 : ' + ad_opts.title;
+    } else {
+        ad_opts.callback    = function() {
+            var container = $('div#content_service_configuration_' + provider_id);
+            container.empty();
+            loadServicesConfig(container.attr('id'), provider_id);
+        };
     }
- 
+    return new ModalForm(ad_opts);
+}
+
+function createMonDirDialog(elem_id, step, firstDialog) {
     var ADMod;
-    select  = $("<select>");
+    select          = $("<select>");
     var options;
+    var category    = (step == 2) ? 'DirectoryService' : 'MonitoringService';
     $.ajax({
         async   : false,
         type    : 'get',
-        url     : '/api/connectortype?connector_category=DirectoryService',
+        url     : '/api/connectortype?connector_category=' + category,
         success : function(data) {
             options = data;
         }
@@ -155,19 +113,16 @@ function createDirectoryDialog(elem_id, firstDialog) {
         $(select).append($("<option>", { value : option.pk, text : option.connector_name }));
     }
     $(select).bind('change', function(event) {
-        var newMod;
-        switch(event.currentTarget.value) {
-            case '1':
-                newMod = createADDialog();
-                break;
-        }
+        var name    = $(event.currentTarget).text().toLowerCase();
+        var newMod  = createSpecServDialog(elem_id, name, firstDialog, step);
         $(ADMod.form).remove();
-        ADMod.form = newMod.form;
+        ADMod.form  = newMod.form;
         ADMod.handleArgs(newMod.exportArgs());
         $(ADMod.content).append(ADMod.form);
         ADMod.startWizard();
     });
-    ADMod   = createADDialog(select);
+    // create the default form (activedirectory for directory and scom for monitoring)
+    ADMod   = createSpecServDialog(elem_id, (step == 2) ? 'activedirectory' : 'scom', firstDialog, step, select);
     return ADMod;
 }
 
@@ -180,22 +135,35 @@ function createAddServiceButton(container) {
         externalcluster_desc    : {
             label   : 'Description',
             type    : 'textarea'
-	    }
+        }
     };
     var service_opts    = {
         title       : 'Step 1 of 3 : Add a Service',
         name        : 'externalcluster',
         fields      : service_fields,
+        beforeSubmit: function() {
+            setTimeout(function() {
+                var dialog = $("<div>", { id : "waiting_default_insert", text : "Initializing configuration" });
+                dialog.css('text-align', 'center');
+                dialog.appendTo("body").dialog({
+                    draggable   : false,
+                    resizable   : false,
+                    title       : ""
+                });
+                $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
+            }, 10);
+            return true;
+        },
         callback    : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
             reloadServices();
             createMonDirDialog(data.pk, 2, true).start();
         },
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
-
         }
     };
-		
+
     var button = $("<button>", {html : 'Add a service'});
     button.bind('click', function() {
         mod = new ModalForm(service_opts);
@@ -229,26 +197,26 @@ function createUpdateNodeButton(container, elem_id) {
             dialog.append($("<input>", { id : 'adpassword', name : 'adpassword' }));
             // Create the modal dialog
             $(dialog).dialog({
-                modal		: true,
-                title		: "Update service nodes",
-                resizable		: false,
-                draggable		: false,
-                closeOnEscape	: false,
-                buttons		: {
-                    'Ok'	: function() {
-                        var passwd 	= $("input#adpassword").attr('value');
-                        var ok		= false;
+                modal           : true,
+                title           : "Update service nodes",
+                resizable       : false,
+                draggable       : false,
+                closeOnEscape   : false,
+                buttons         : {
+                    'Ok'    : function() {
+                        var passwd  = $("input#adpassword").attr('value');
+                        var ok      = false;
                         // If a password was typen, then we can submit the form
                         if (passwd !== "" && passwd !== undefined) {
                             $.ajax({
-                                url	: '/kio/services/' + elem_id + '/nodes/update',
-                                type	: 'post',
-                                async	: false,
-                                data	: {
-                                    password	: passwd
+                                url     : '/kio/services/' + elem_id + '/nodes/update',
+                                type    : 'post',
+                                async   : false,
+                                data    : {
+                                    password    : passwd
                                 },
-                                success	: function(data) {
-                                    ok	= true;
+                                success : function(data) {
+                                    ok  = true;
                                 }
                             });
                             // If the form succeed, then we can close the dialog
@@ -292,51 +260,59 @@ function loadServicesOverview (container_id, elem_id) {
 }
 
 function loadServicesConfig (container_id, elem_id) {
-	var container = $('#' + container_id);
+    var container = $('#' + container_id);
     var externalclustername = '';
     
     if (isThereAConnector(elem_id, 'DirectoryService') === false) {
-        var b	= $("<button>", { text : 'Add a Directory Service' });
-        b.bind('click', function() { createDirectoryDialog(elem_id).start(); });
+        var b   = $("<button>", { text : 'Add a Directory Service', id : 'adddirectory' });
+        b.bind('click', function() { createMonDirDialog(elem_id, 2).start(); });
         b.appendTo(container);
     }
     
     if (isThereAConnector(elem_id, 'MonitoringService') === false) {
-        var bu	= $("<button>", { text : 'Add a Monitoring Service' });
-        bu.bind('click', function() { createMonitoringDialog(elem_id).start(); });
+        var bu  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
+        bu.bind('click', function() { createMonDirDialog(elem_id, 3).start(); });
         bu.appendTo(container);
     }
     
-    var connector_type_id = new Array;
-    var connector_name = '';
-    $('<h2>Connectors :</h2>').appendTo(container);
-    
     var connectorsTypeHash = {};
     var connectorsTypeArray = new Array;
-    		
-	$.ajax({
-		url: '/api/connectortype?dataType=jqGrid',
-		success: function(connTypeData) {
-				$(connTypeData).each(function(row) {
-					//connectorsTypeHash = { 'pk' : connTypeData.rows[row].pk, 'connectorName' : connTypeData.rows[row].connector_name };
-					var pk = connTypeData.rows[row].pk;
-					connectorsTypeArray[pk] = connTypeData.rows[row].connector_name;
-				});
-			}
-	});
-	
-	$.ajax({
-		url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
- 		success: function(data) {
- 			$(data.rows).each(function(row) {
- 				var connectorTypePk = data.rows[row].connector_type_id;
- 				var connectorName = connectorsTypeArray[connectorTypePk];
-				$('<div><table><tr>' + connectorName + '&nbsp;Configure&nbsp;&nbsp;Delete</tr></table></div>').appendTo(container);
- 			});
- 		}
-	});
-	
-	
+    
+    var table = $("<table>").appendTo(container);
+
+    $.ajax({
+        url: '/api/connectortype?dataType=jqGrid',
+        success: function(connTypeData) {
+                    $(connTypeData).each(function(row) {
+                    //connectorsTypeHash = { 'pk' : connTypeData.rows[row].pk, 'connectorName' : connTypeData.rows[row].connector_name };
+                    var pk = connTypeData.rows[row].pk;
+                    connectorsTypeArray[pk] = connTypeData.rows[row].connector_name;
+                });
+            }
+    });
+
+    $.ajax({
+        url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
+        success: function(data) {
+            $(data.rows).each(function(row) {
+                var connectorTypePk = data.rows[row].connector_type_id;
+                var connectorName = connectorsTypeArray[connectorTypePk] || 'UnknownConnector';
+                var tr  = $("<tr>", { rel : connectorName.toLowerCase() }).append($("<td>", { text : connectorName }));
+                var confButton  = $("<button>", { text : 'Configure', rel : data.rows[row].pk });
+                var delButton   = $("<button>", { text : 'Delete', rel : data.rows[row].pk });
+                $(tr).append($(confButton)).append($(delButton));
+                $(tr).appendTo(table);
+
+                // Bind configure and delete actions on buttons
+                $(confButton).bind('click', { button : confButton } , $.proxy(function(event) {
+                    var button  = $(event.data.button);
+                    var id      = $(button).attr('rel');
+                    var name    = $(button).parent('tr').attr('rel');
+                }, this));
+
+            });
+        }
+    });
 }
 
 function loadServicesRessources (container_id, elem_id) {

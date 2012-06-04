@@ -301,7 +301,7 @@ var ModalForm = (function() {
             validationOptions   : {
                 rules           : this.validateRules,
                 messages        : this.validateMessages,
-                errorClass      : 'ui-state-error ui-corner-all',
+                errorClass      : 'ui-state-error',
                 errorPlacement  : function(error, element) {
                     error.insertBefore(element);
                 }
