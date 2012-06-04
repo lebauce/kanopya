@@ -47,10 +47,12 @@ function createSpecServDialog(provider_id, name, first, step, elem, editid) {
     var allFields   = {
         'activedirectory'   : {
             ad_host             : {
-                label   : 'Domain controller name'
+                label   : 'Domain controller',
+                help    : 'May be the Domain Controller name or the Domain Name'
             },
             ad_nodes_base_dn    : {
-                label   : 'Nodes container domain name'
+                label   : 'Nodes container DN',
+                help    : 'The Distinguished Name of either:<br/> - OU<br/>- Group<br/>- Container'
             },
             ad_user             : {
                 label   : 'User@domain'
@@ -139,7 +141,7 @@ function createAddServiceButton(container) {
     var service_fields  = {
         externalcluster_name    : {
             label   : 'Name',
-            help    : "Some help"
+            help    : "Name which identify your service"
         },
         externalcluster_desc    : {
             label   : 'Description',
@@ -152,7 +154,7 @@ function createAddServiceButton(container) {
         fields      : service_fields,
         beforeSubmit: function() {
             setTimeout(function() {
-                var dialog = $("<div>", { id : "waiting_default_insert", text : "Initializing configuration" });
+                var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
                 dialog.css('text-align', 'center');
                 dialog.appendTo("body").dialog({
                     draggable   : false,
