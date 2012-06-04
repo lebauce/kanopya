@@ -262,13 +262,13 @@ sub _getAutomaticValue {
 
 sub _getAutomaticExtNodeValue{
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['automatic_param_name','node_hostname','service_provider_id']);
+    General::checkParams(args => \%args, required => ['automatic_param_name','extnode_hostname','service_provider_id']);
     my $automatic_param_name = $args{automatic_param_name};
-    my $node_hostname        = $args{node_hostname};
+    my $extnode_hostname     = $args{extnode_hostname};
     my $service_provider_id  = $args{service_provider_id};
 
     if($automatic_param_name eq 'node_hostname'){
-        return $node_hostname;
+        return $extnode_hostname;
     }
     elsif($automatic_param_name eq 'ou_from'){
         my $outside    = Entity::ServiceProvider::Outside
