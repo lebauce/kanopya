@@ -4,13 +4,13 @@
   "category": [
     {
       "id":1,
-      "title" : "My category",
+      "title" : "General",
       "amount" : 2,
       "url" : "jsonfeed/category1_widgets.json"
     },
     {
       "id":2,
-      "title" : "Another category",
+      "title" : "Listing",
       "amount": 1,
       "url" : "jsonfeed/category2_widgets.json"
     },
