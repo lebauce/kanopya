@@ -651,6 +651,10 @@ sub toJSON {
             pattern      => '^\d*$',
             is_mandatory => 1,
             is_extended  => 0
+        };
+
+        if ($class->can("methods")) {
+            $hash->{methods} = $class->methods();
         }
     }
     else {
