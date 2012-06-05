@@ -7,6 +7,8 @@ prefix undef;
 
 use General;
 use Entity;
+use Operation;
+use Workflow;
 
 my $API_VERSION = "0.1";
 
@@ -341,6 +343,36 @@ sub setupREST {
             }
  
             return to_json($obj->toJSON);
+        };
+
+        post qr{ /api/$resource/(\d*)/(.*) }x => sub {
+            content_type 'application/json';
+            require (General::getLocFromClass(entityclass => $class));
+
+            my ($id, $method) = splat;
+
+            my $methods = $class->methods();
+
+            if (not defined $methods->{$method}) {
+                throw Kanopya::Exception::NotImplemented(error => "Method not implemented");
+            }
+
+            my $obj = $class->get(id => $id);
+            my $params = params;
+            my $ret = $obj->$method(%$params);
+
+            eval {
+                if ($ret->can("toJSON")) {
+                    if ($ret->isa("Operation")) {
+                        $ret = Operation->get(id => $ret->getId)->toJSON;
+                    }
+                    elsif ($ret->isa("Workflow")) {
+                        $ret = Workflow->get(id => $ret->getId)->toJSON;
+                    }
+                }
+            };
+
+            return to_json($ret, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
         };
 
         get '/api/' . $resource . '/?' => sub {
