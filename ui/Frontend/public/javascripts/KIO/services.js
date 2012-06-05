@@ -74,7 +74,8 @@ function createSpecServDialog(provider_id, name, first, step, elem, editid) {
                 label   : 'Use SSL ?',
                 type    : 'checkbox'
             },
-        }
+        },
+        'mockmonitor'       : {}
     };
     var ad_opts     = {
         title           : ((editid === undefined) ? 'Add' : 'Edit') + ' a ' + ((step == 2) ? 'Directory' : 'Monitoring') + ' Service',
@@ -121,10 +122,10 @@ function createMonDirDialog(elem_id, step, firstDialog) {
     });
     for (option in options) {
         option = options[option];
-        $(select).append($("<option>", { value : option.pk, text : option.connector_name }));
+        $(select).append($("<option>", { value : option.connector_name, text : option.connector_name }));
     }
     $(select).bind('change', function(event) {
-        var name    = $(event.currentTarget).text().toLowerCase();
+        var name    = event.currentTarget.value.toLowerCase();
         var newMod  = createSpecServDialog(elem_id, name, firstDialog, step);
         $(ADMod.form).remove();
         ADMod.form  = newMod.form;
