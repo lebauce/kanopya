@@ -994,14 +994,14 @@ sub addNode {
               );
     }
 
-    Workflow->run(
+    return Workflow->run(
         name => 'AddNode',
         params   => {
             context => {
                 cluster => $self,
             }
         }
-     );
+    );
 }
 
 sub getHostConstraints {
@@ -1065,7 +1065,7 @@ sub start {
     $self->setState(state => 'starting');
 
     # Enqueue operation AddNode.
-    $self->addNode();
+    return $self->addNode();
 }
 
 =head2 stop
@@ -1083,7 +1083,7 @@ sub stop {
     }
 
     $log->debug("New Operation StopCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
-    Operation->enqueue(
+    return Operation->enqueue(
         priority => 200,
         type     => 'StopCluster',
         params   => {

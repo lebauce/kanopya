@@ -57,7 +57,7 @@ sub run {
     delete $args{name};
 
     my $steps = $def->{_dbix}->workflow_steps;
-    while(my $step = $steps->next) {
+    while (my $step = $steps->next) {
         $workflow->enqueue(
             priority => 200,
             type     => $step->operationtype->get_column('operationtype_name'),
@@ -67,6 +67,8 @@ sub run {
             delete $args{params};
         }
     }
+
+    return $workflow;
 }
 
 sub enqueue {
