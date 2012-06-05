@@ -30,6 +30,7 @@ var mainmenu_def = {
                                {label : 'Configuration', id : 'service_configuration', onLoad : loadServicesConfig},
                                {label : 'Ressources', id : 'service_ressources', onLoad : loadServicesRessources},
                                {label : 'Monitoring', id : 'service_monitoring', onLoad : loadServicesMonitoring},
+                               {label : 'Rules', id : 'service_rules', onLoad : loadServicesRules},
                                ]
                 }
     },
