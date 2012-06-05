@@ -178,9 +178,28 @@ sub insertDefaultConfiguration {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+    my $conf = $self->getConf();
+    
+    # /etc/hosts
     my $path = $args{cluster}->getAttr(name => 'cluster_name');
     $path .= '/'.$args{host}->getAttr(name => 'host_hostname');
     my $str = "class {'linux': sourcepath => \"$path\",}\n";  
+    
+    # /etc/fstab et mounts
+    foreach my $mount (@{$conf->{mountdefs}}) {
+        $str .= "file {'$mount->{linux0_mount_point}': ensure => directory }\n";
+        $str .= "mount {'$mount->{linux0_mount_point}':\n";
+        $str .= "\tdevice => '$mount->{linux0_mount_device}',\n";
+        $str .= "\tensure => mounted,\n";
+        $str .= "\tfstype => '$mount->{linux0_mount_filesystem}',\n";
+        $str .= "\tname   => '$mount->{linux0_mount_point}',\n";
+        $str .= "\toptions => '$mount->{linux0_mount_options}',\n";
+        $str .= "\tdump   => '$mount->{linux0_mount_dumpfreq}',\n";
+        $str .= "\tpass   => '$mount->{linux0_mount_passnum}',\n";
+        $str .= "\trequire => File['$mount->{linux0_mount_point}']\n";
+        $str .= "}\n";
+    }
+    
     return $str;
 }
 
