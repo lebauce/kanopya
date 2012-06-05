@@ -116,7 +116,7 @@ sub createHostManifest {
     
     my $input = 'host_manifest.pp.tt';
     my $output = '/etc/puppet/manifests/nodes/';
-    $output .= $args{host_fqdn}.'pp';
+    $output .= $args{host_fqdn}.'.pp';
     
     my $data = {
         host_fqdn          => $args{host_fqdn},
@@ -129,6 +129,9 @@ sub createHostManifest {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     };
+    
+    my $command = 'touch /etc/puppet/manifests/site.pp';
+    $self->getExecutorEContext->execute(command => $command);
 }
 
 
