@@ -15,10 +15,10 @@
 
 package Entity::Connector::UcsManager;
 use base "Entity::Connector";
-use base "Entity::HostManager";
+use base "Manager::HostManager";
 
 use Administrator;
-use Entity::HostManager;
+use Manager::HostManager;
 use Entity::Processormodel;
 use Entity::Hostmodel;
 use Entity::Network;
@@ -39,9 +39,9 @@ my $log = get_logger("administrator");
 sub getAttrDef { return ATTR_DEF; }
 
 sub getBootPolicies {
-    return (Entity::HostManager->BOOT_POLICIES->{pxe_iscsi},
-            Entity::HostManager->BOOT_POLICIES->{pxe_nfs},
-            Entity::HostManager->BOOT_POLICIES->{boot_on_san});
+    return (Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
+            Manager::HostManager->BOOT_POLICIES->{pxe_nfs},
+            Manager::HostManager->BOOT_POLICIES->{boot_on_san});
 }
 
 sub getHostType {
@@ -97,6 +97,14 @@ sub DESTROY {
         $self->{api} = undef;
     }
 }
+
+sub checkHostManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ "service_profile_template_id" ]);
+}
+
 
 =head2 synchronize
 

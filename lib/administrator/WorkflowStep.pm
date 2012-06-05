@@ -1,5 +1,4 @@
 #    Copyright © 2012 Hedera Technology SAS
-#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,47 +11,22 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+package WorkflowStep;
 
-package EExportManager;
+use strict;
+use warnings;
+use base 'BaseDB';
 
-=head2 createExport
+use constant ATTR_DEF => {
+    workflow_def_id              =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
+    operationtype_id                          =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
+};
 
-    desc: Create an export for a container
-
-=cut
-
-sub createExport {
-}
-
-=head2 removeExport
-
-    desc: Remove an export
-
-=cut
-
-sub removeExport {
-}
-
-=head2 addExportClient
-
-    desc: Autorize a client to this container access.
-          By default do nothing
-
-=cut
-
-sub addExportClient {
-}
-
-=head2 removeExportClient
-
-    desc: Remove access of a client to this container access.
-          By default do nothing
-
-=cut
-
-sub removeExportClient {
-}
-
-
+sub getAttrDef { return ATTR_DEF; }
 1;
-

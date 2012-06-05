@@ -58,8 +58,14 @@ my $errmsg;
 sub create {
     my $self = shift;
     my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'managers' ]);
+
+    $args{interfaces} = General::checkParam(args => \%args, name => 'interfaces', default => {});
+    $args{components} = General::checkParam(args => \%args, name => 'components', default => {});
+
     my $config = Kanopya::Config::get('executor');
-    
+
     # Create cluster directory
     my $dir = "$config->{clusters}->{directory}/" . $self->getAttr(name => "cluster_name");
     my $command = "mkdir -p $dir";
@@ -68,7 +74,7 @@ sub create {
 
     # set initial state to down
     $self->setAttr(name => 'cluster_state', value => 'down:'.time);
-    
+
     # Save the new cluster in db
     $log->debug("trying to update the new cluster previouly created");
     $self->save();
@@ -86,25 +92,40 @@ sub create {
         $log->info("$compclass automatically added");
     }
 
-    # Automatically add the admin interface
-    my $adminrole = Entity::InterfaceRole->find(hash => { interface_role_name => 'admin' });
-    my $kanopya   = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
-    my $interface = Entity::Interface->find(
-                         hash => { service_provider_id => $kanopya->getAttr(name => 'entity_id'),
-                                   interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
-                     );
+    # Use the method for policy applying to configure manager, components, and interfaces.
+    $self->applyPolicies(presets => { components => $args{components},
+                                      interfaces => $args{interfaces},
+                                      managers   => $args{managers} });
 
-    $self->addNetworkInterface(
-        interface_role => $adminrole,
-        networks       => $interface->getNetworks
-    );
+    # Automatically add the admin interface if not exists
+    my $adminrole = Entity::InterfaceRole->find(hash => { interface_role_name => 'admin' });
+    eval {
+        Entity::Interface->find(
+            hash => { service_provider_id => $self->getAttr(name => 'entity_id'),
+                      interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
+        );
+    };
+    if ($@) {
+        $log->debug("Automatically add the admin interface as it is not defined.");
+
+        my $kanopya   = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
+        my $interface = Entity::Interface->find(
+                             hash => { service_provider_id => $kanopya->getAttr(name => 'entity_id'),
+                                       interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
+                         );
+
+        $self->addNetworkInterface(
+            interface_role => $adminrole,
+            networks       => $interface->getNetworks
+        );
+    }
 }
 
 sub addNode {
     my $self = shift;
     my %args = @_;
 
-    my $host_manager = Entity->get(id => $self->getAttr(name => 'host_manager_id'));
+    my $host_manager = $self->getManager(manager_type => 'host_manager');
     my $host_manager_params = $self->getManagerParameters(manager_type => 'host_manager');
 
     # Add the number of required ifaces to paramaters.
@@ -114,10 +135,93 @@ sub addNode {
     my $ehost_manager = EFactory::newEEntity(data => $host_manager);
     my $host = $ehost_manager->getFreeHost(%$host_manager_params);
 
-    $log->debug("Host manager <" . $self->getAttr(name => 'host_manager_id') .
+    $log->debug("Host manager <" . $self->getManager(manager_type => 'disk_manager')->getId .
                 "> returned free host " . $host->getAttr(name => 'host_id'));
 
     return $host;
+}
+
+sub generateResolvConf {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['host', 'mount_point' ]);
+
+    my $rand = new String::Random;
+    my $tmpfile = $rand->randpattern("cccccccc");
+
+    my @nameservers = ();
+
+    for my $attr ('cluster_nameserver1','cluster_nameserver2') {
+        push @nameservers, {
+            ipaddress => $self->getAttr(name => $attr)
+        };
+    }
+
+    my $data = {
+        domainname => $self->getAttr(name => 'cluster_domainname'),
+        nameservers => \@nameservers,
+    };
+
+    my $file = $self->generateNodeFile(
+        cluster       => $self->_getEntity,
+        host          => $args{host},
+        file          => '/etc/resolv.conf',
+        template_dir  => '/templates/internal',
+        template_file => 'resolv.conf.tt',
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/resolv.conf'
+    );
+}
+
+sub generateHostsConf {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host','mount_point', 'kanopya_domainname' ]);
+
+    $log->info('Generate /etc/hosts file');
+
+    my $nodes = $self->getHosts();
+    my @hosts_entries = ();
+
+    # we add each nodes 
+    foreach my $node (values %$nodes) {
+        my $tmp = { 
+            hostname   => $node->getAttr(name => 'host_hostname'),
+            domainname => $args{kanopya_domainname},
+            ip         => $node->getAdminIp 
+        };
+
+        push @hosts_entries, $tmp;
+    }
+
+    # we ask components for additional hosts entries
+    my $components = $self->getComponents(category => 'all');
+    foreach my $component (values %$components) {
+        my $entries = $component->getHostsEntries();
+        if(defined $entries) {
+            foreach my $entry (@$entries) {
+                push @hosts_entries, $entry;
+            }
+        }
+    }
+
+    my $file = $self->generateNodeFile(
+        cluster       => $self->_getEntity,
+        host          => $args{host},
+        file          => '/etc/hosts',
+        template_dir  => '/templates/internal',
+        template_file => 'hosts.tt',
+        data          => { hosts => \@hosts_entries }
+    );
+    
+    $self->getExecutorEContext->send(
+        src => $file,
+        dest => $args{mount_point}.'/etc/hosts'
+    );
 }
 
 =head

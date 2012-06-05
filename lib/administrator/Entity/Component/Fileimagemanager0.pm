@@ -17,6 +17,8 @@
 
 package Entity::Component::Fileimagemanager0;
 use base "Entity::Component";
+use base "Manager::ExportManager";
+use base "Manager::DiskManager";
 
 use strict;
 use warnings;
@@ -25,7 +27,8 @@ use Entity::Container::FileContainer;
 use Entity::ContainerAccess::FileContainerAccess;
 use Entity::ContainerAccess;
 use Entity::ServiceProvider;
-use Entity::HostManager;
+
+use Manager::HostManager;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -37,7 +40,18 @@ my $errmsg;
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+=head2 checkDiskManagerParams
+
+=cut
+
+sub checkDiskManagerParams {
+    my $self = shift;
+    my %args = @_;
     
+    General::checkParams(args => \%args, required => [ "container_access_id", "systemimage_size" ]);
+}
+
 sub getConf {
     my $self = shift;
     my $conf = {};
@@ -72,12 +86,29 @@ sub getExportManagerFromBootPolicy {
 
     General::checkParams(args => \%args, required => [ "boot_policy" ]);
 
-    if ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{virtual_disk}) {
+    if ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{virtual_disk}) {
         return $self;
     }
 
     throw Kanopya::Exception::Internal::UnknownCategory(
               error => "Unsupported boot policy: $args{boot_policy}"
+          );
+}
+
+sub getBootPolicyFromExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "export_manager" ]);
+
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+
+    if ($args{export_manager}->getId == $self->getId) {
+        return Manager::HostManager->BOOT_POLICIES->{virtual_disk};
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported export manager:" . $args{export_manager}
           );
 }
 
@@ -119,32 +150,6 @@ sub createDisk {
                                    ),
             context             => {
                 disk_manager => $self,
-            }
-        },
-    );
-}
-
-=head2 removeDisk
-
-    Desc : Implement removeDisk from DiskManager interface.
-           This function enqueue a ERemoveDisk operation.
-    args :
-
-=cut
-
-sub removeDisk {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    $log->debug("New Operation RemoveDisk with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveDisk',
-        params   => {
-            context => {
-                container => $args{container},
             }
         },
     );
@@ -198,32 +203,6 @@ sub createExport {
             manager_params => {
                 export_name    => $args{export_name},
             },
-        },
-    );
-}
-
-=head2 removeExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ERemoveExport operation.
-    args : export_name
-
-=cut
-
-sub removeExport {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $log->debug("New Operation RemoveExport with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveExport',
-        params   => {
-            context => {
-                container_access => $args{container_access},
-            }
         },
     );
 }

@@ -17,13 +17,13 @@
 
 package Entity::Component::Physicalhoster0;
 use base "Entity::Component";
-use base "Entity::HostManager";
+use base "Manager::HostManager";
 
 use strict;
 use warnings;
 
 use Entity::Powersupplycard;
-use Entity::HostManager;
+use Manager::HostManager;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -38,8 +38,8 @@ use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
 sub getBootPolicies {
-    return (Entity::HostManager->BOOT_POLICIES->{pxe_iscsi},
-            Entity::HostManager->BOOT_POLICIES->{pxe_nfs});
+    return (Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
+            Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
 }
 
 sub getHostType {

@@ -13,7 +13,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package EEntity::EComponent::ENfsd3;
-use base "EExportManager";
+use base "EManager::EExportManager";
 use base "EEntity::EComponent";
 
 use strict;

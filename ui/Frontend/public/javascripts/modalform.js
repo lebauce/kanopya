@@ -105,6 +105,7 @@ var ModalForm = (function() {
         this.skippable      = args.skippable    || false;
         this.beforeSubmit   = args.beforeSubmit || $.noop;
         this.cancelCallback = args.cancel       || $.noop;
+        this.error          = args.error        || $.noop;
     }
  
     ModalForm.prototype.exportArgs = function() {
@@ -147,7 +148,7 @@ var ModalForm = (function() {
         
         // Insert value if any
         if (value !== undefined) {
-            if (type == 'text') {
+            if (type === 'text') {
                 $(input).attr('value', value);
             } else if (type === 'checkbox' && value == true) {
                 $(input).attr('checked', 'checked');
@@ -159,9 +160,9 @@ var ModalForm = (function() {
         // Finally, insert DOM elements in the form
         var container = this.findContainer(this.fields[elementName].step);
         if (input.is("textarea")) {
-            this.insertTextarea(input, label, container);
+            this.insertTextarea(input, label, container, this.fields[elementName].help);
         } else {
-            this.insertTextInput(input, label, container);
+            this.insertTextInput(input, label, container, this.fields[elementName].help);
         }
     }
     
@@ -202,33 +203,58 @@ var ModalForm = (function() {
             return this.table;
         }
     }
-    
-    ModalForm.prototype.insertTextInput = function(input, label, container) {
-        var linecontainer = $("<tr>").css('position', 'relative').appendTo(container);
+
+    ModalForm.prototype.createHelpElem = function(help) {
+        if (help !== undefined) {
+            var helpElem        = $("<span>", { class : 'ui-icon ui-icon-info' });
+            $(helpElem).css({
+                cursor  : 'pointer',
+                margin  : '2px 0 0 2px',
+                float   : 'right'
+            });
+            $(helpElem).qtip({
+                content : help,
+                position: {
+                    corner  : {
+                        target  : 'rightMiddle',
+                        tooltip : 'leftMiddle'
+                    }
+                },
+                style   : {
+                    tip : { corner  : 'leftMiddle' }
+                }
+            });
+            return helpElem;
+        } else {
+            return undefined;
+        }
+    }
+
+    ModalForm.prototype.insertTextInput = function(input, label, container, help) {
+        var linecontainer   = $("<tr>").css('position', 'relative').appendTo(container);
         $("<td>", { align : 'left' }).append(label).appendTo(linecontainer);
-        $("<td>", { align : 'right' }).append(input).appendTo(linecontainer);
+        $("<td>", { align : 'right' }).append(input).append(this.createHelpElem(help)).appendTo(linecontainer);
         if (this.fields[$(input).attr('name')].type === 'hidden') {
             $(linecontainer).css('display', 'none');
         }
     }
     
-    ModalForm.prototype.insertTextarea = function(input, label, container) {
+    ModalForm.prototype.insertTextarea = function(input, label, container, help) {
         var labelcontainer = $("<td>", { align : 'left', colspan : '2' }).append(label);
         var inputcontainer = $("<td>", { align : 'left', colspan : '2' }).append(input);
-        $("<tr>").append(labelcontainer).appendTo(container);
+        $("<tr>").append($(labelcontainer).append(this.createHelpElem(help))).appendTo(container);
         $("<tr>").append(inputcontainer).appendTo(container);
         $(input).css('width', '100%');
     }
     
     ModalForm.prototype.beforeSerialize = function(form, options) {
-        // Must transform all 'on' of 'off' values from checkboxes to '1' or '0'
+        // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
         for (field in this.fields) {
             if (this.fields[field].type === 'checkbox') {
                 var checkbox = $(form).find('input[name="' + field + '"]');
-                if (checkbox.attr('value') === 'on' ||
-                    checkbox.attr('checked') === 'checked') {
+                if (checkbox.attr('value') === 'on') {
                     checkbox.attr('value', '1');
-                } else {
+                } else if (checkbox.attr('value') === 'off') {
                     checkbox.attr('value', '0');
                 }
             }
@@ -289,6 +315,18 @@ var ModalForm = (function() {
                     // callback, so we delay the deletion
                     setTimeout($.proxy(function() { this.closeDialog(); }, this), 10);
                     this.callback(data);
+                }, this),
+                error           : $.proxy(function(data) {
+                    var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
+                    buttonsdiv.find('button').each(function() {
+                        $(this).removeAttr('disabled', 'disabled');
+                    });
+                    $(this.content).find("div.ui-state-error").each(function() {
+                        $(this).remove();
+                    });
+                    var error = JSON.parse(data.responseText);
+                    $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all' }));
+                    this.error(data);
                 }, this)
             }
         });

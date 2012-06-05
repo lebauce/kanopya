@@ -15,7 +15,7 @@
 
 package EEntity::EComponent::EPhysicalhoster0;
 use base "EEntity::EComponent";
-use base "EEntity::EHostManager";
+use base "EManager::EHostManager";
 
 use strict;
 use warnings;

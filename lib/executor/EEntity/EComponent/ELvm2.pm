@@ -13,7 +13,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package EEntity::EComponent::ELvm2;
-use base "EDiskManager";
+use base "EManager::EDiskManager";
 use base "EEntity::EComponent";
 
 use strict;
@@ -44,13 +44,9 @@ sub createDisk {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'name', 'size', 'filesystem' ]);
+    General::checkParams(args => \%args, required => [ 'name', 'size', 'filesystem', 'vg_id' ]);
 
-    my $vg_id = General::checkParam(args    => \%args,
-                                    name    => 'vg_id',
-                                    default => $self->_getEntity->getMainVg->{vgid});
-
-    my $entity = $self->lvCreate(lvm2_vg_id         => $vg_id,
+    my $entity = $self->lvCreate(lvm2_vg_id         => $args{vg_id},
                                  lvm2_lv_name       => $args{name},
                                  lvm2_lv_filesystem => $args{filesystem},
                                  lvm2_lv_size       => $args{size});

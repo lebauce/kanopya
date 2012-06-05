@@ -53,13 +53,13 @@ This Entity is empty but present methods to set configuration.
 
 package Entity::Component::Opennebula3;
 use base "Entity::Component";
-use base "Entity::HostManager";
+use base "Manager::HostManager";
 
 use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Entity::HostManager;
+use Manager::HostManager;
 use Entity::ContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
 
@@ -82,6 +82,17 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+=head2 checkHostManagerParams
+
+=cut
+
+sub checkHostManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'ram', 'core', 'ifaces' ]);
+}
+
 =head2 getBootPolicies
 
     Desc: return a list containing boot policies available
@@ -89,9 +100,9 @@ sub getAttrDef { return ATTR_DEF; }
 =cut
 
 sub getBootPolicies {
-    return (Entity::HostManager->BOOT_POLICIES->{pxe_iscsi},
-            Entity::HostManager->BOOT_POLICIES->{pxe_nfs},
-            Entity::HostManager->BOOT_POLICIES->{virtual_disk});
+    return (Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
+            Manager::HostManager->BOOT_POLICIES->{pxe_nfs},
+            Manager::HostManager->BOOT_POLICIES->{virtual_disk});
 }
 
 sub getHostType {

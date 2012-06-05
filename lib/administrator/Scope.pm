@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -11,20 +11,26 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 24 april 2012
-
-package ECollectorManager;
+package Scope;
 
 use strict;
 use warnings;
+use base 'BaseDB';
 
-use Kanopya::Exceptions;
+use constant ATTR_DEF => {
+    scope_name              =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
+};
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
+sub getAttrDef { return ATTR_DEF; }
 
-my $log = get_logger("executor");
-
+sub getIdFromName{
+    my ($class,%args) = @_;
+    General::checkParams(args => \%args, required => [ 'scope_name' ]);
+    my $scope_name = $args{scope_name};
+    my $scope    = Scope->find(hash => {scope_name => $scope_name});
+    return $scope->getAttr(name => 'scope_id');
+}
 1;

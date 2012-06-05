@@ -7,6 +7,10 @@ prefix undef;
 
 use General;
 use Entity;
+use Operation;
+use Workflow;
+
+my $API_VERSION = "0.1";
 
 prepare_serializer_for_format;
 
@@ -212,8 +216,10 @@ sub setupREST {
             get    => sub {
                 content_type 'application/json';
 
+                require (General::getLocFromClass(entityclass => $class));
+
                 my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-                return to_json( db_to_json(Entity->get(id => params->{id}),
+                return to_json( db_to_json($class->get(id => params->{id}),
                                            \@expand) );
             },
 
@@ -231,11 +237,12 @@ sub setupREST {
                     my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
                     $location =~ s/\:\:/\//g;
                     require $location;
-                    Operation->enqueue(
+                    $obj = Operation->enqueue(
                         priority => 200,
                         type     => 'Add' . ucfirst($resource),
                         params   => $hash
                     );
+                    $obj = Operation->get(id => $obj->getId)->toJSON;
                 };
                 if ($@) {
                     eval {
@@ -257,15 +264,19 @@ sub setupREST {
 
             delete => sub {
                 content_type 'application/json';
+                require (General::getLocFromClass(entityclass => $class));
 
-                Entity->get(id => params->{id})->delete();
-                return to_json( { response => "ok" } );
+                my $obj = $class->get(id => params->{id});
+                $obj->can("remove") ? $obj->remove() : $obj->delete();
+
+                return to_json( { status => "success" } );
             },
 
             update => sub {
                 content_type 'application/json';
+                require (General::getLocFromClass(entityclass => $class));
 
-                my $obj = Entity->get(id => params->{id});
+                my $obj = $class->get(id => params->{id});
                 my $params = params;
                 for my $attr (keys %$params) {
                     if ($attr ne "id") {
@@ -274,13 +285,16 @@ sub setupREST {
                     }
                 }
                 $obj->save();
+
+                return to_json( { status => "success" } );
             };
 
         get qr{ /api/$resource/([^/]+)/?(.*) }x => sub {
             content_type 'application/json';
+            require (General::getLocFromClass(entityclass => $class));
 
             my ($id, $filters) = splat;
-            my $obj = Entity->get(id => $id);
+            my $obj = $class->get(id => $id);
 
             my @filters = split("/", $filters);
             my @objs;
@@ -331,6 +345,36 @@ sub setupREST {
             return to_json($obj->toJSON);
         };
 
+        post qr{ /api/$resource/(\d*)/(.*) }x => sub {
+            content_type 'application/json';
+            require (General::getLocFromClass(entityclass => $class));
+
+            my ($id, $method) = splat;
+
+            my $methods = $class->methods();
+
+            if (not defined $methods->{$method}) {
+                throw Kanopya::Exception::NotImplemented(error => "Method not implemented");
+            }
+
+            my $obj = $class->get(id => $id);
+            my $params = params;
+            my $ret = $obj->$method(%$params);
+
+            eval {
+                if ($ret->can("toJSON")) {
+                    if ($ret->isa("Operation")) {
+                        $ret = Operation->get(id => $ret->getId)->toJSON;
+                    }
+                    elsif ($ret->isa("Workflow")) {
+                        $ret = Workflow->get(id => $ret->getId)->toJSON;
+                    }
+                }
+            };
+
+            return to_json($ret, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
+        };
+
         get '/api/' . $resource . '/?' => sub {
             content_type 'application/json';
 
@@ -360,6 +404,17 @@ get '/api/attributes/:resource' => sub {
     require (General::getLocFromClass(entityclass => $class));
 
     return to_json($class->toJSON(model => 1));
+};
+
+get '/api' => sub {
+    content_type 'application/json';
+
+    my @resources = keys %resources;
+
+    return to_json({
+        version   => $API_VERSION,
+        resources => \@resources
+    });
 };
 
 setupREST;

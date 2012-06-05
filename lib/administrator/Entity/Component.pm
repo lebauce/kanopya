@@ -290,6 +290,7 @@ sub getNetConf {}
 sub needBridge { return 0; }
 sub getHostConstraints { return; }
 sub getHostsEntries { return; }
+sub getPuppetDefinition { return ""; }
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

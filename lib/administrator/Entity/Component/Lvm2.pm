@@ -52,15 +52,17 @@ This Entity is empty but present methods to set configuration.
 
 package Entity::Component::Lvm2;
 use base "Entity::Component";
+use base "Manager::DiskManager";
 
 use strict;
 use warnings;
 
 use General;
-use Kanopya::Exceptions;
-use Entity::HostManager;
+use Manager::HostManager;
 use Entity::ServiceProvider;
 use Entity::Container::LvmContainer;
+
+use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -70,6 +72,17 @@ my $errmsg;
 
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
+
+=head2 checkDiskManagerParams
+
+=cut
+
+sub checkDiskManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "vg_id", "systemimage_size" ]);
+}
 
 sub getMainVg {
     my $self = shift;
@@ -209,15 +222,35 @@ sub getExportManagerFromBootPolicy {
 
     my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
 
-    if ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
+    if ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
         return $cluster->getComponent(name => "Iscsitarget", version => "1");
     }
-    elsif ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_nfs}) {
+    elsif ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{pxe_nfs}) {
         return $cluster->getComponent(name => "Nfsd", version => "3");
     }
     
     throw Kanopya::Exception::Internal::UnknownCategory(
               error => "Unsupported boot policy: $args{boot_policy}"
+          );
+}
+
+sub getBootPolicyFromExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "export_manager" ]);
+
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+
+    if ($args{export_manager}->getId == $cluster->getComponent(name => "Iscsitarget", version => "1")->getId) {
+        return Manager::HostManager->BOOT_POLICIES->{pxe_iscsi};
+    }
+    elsif ($args{export_manager}->getId == $cluster->getComponent(name => "Nfsd", version => "3")->getId) {
+        return Manager::HostManager->BOOT_POLICIES->{pxe_nfs};
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported export manager:" . $args{export_manager}
           );
 }
 
@@ -247,32 +280,6 @@ sub createDisk {
             vg_id      => $args{vg_id},
             context    => {
                 disk_manager => $self,
-            }
-        },
-    );
-}
-
-=head2 removeDisk
-
-    Desc : Implement removeDisk from DiskManager interface.
-           This function enqueue a ERemoveDisk operation.
-    args :
-
-=cut
-
-sub removeDisk {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    $log->debug("New Operation RemoveDisk with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveDisk',
-        params   => {
-            context => {
-                container => $args{container},
             }
         },
     );

@@ -6,7 +6,7 @@
 <title>Kanopya</title>
 
 <link rel="stylesheet" href="<% request.uri_base %>/css/theme/jquery-ui-1.8.19.custom.css" />
-<link rel="stylesheet" href="<% request.uri_base %>/css/layout.css">
+<link rel="stylesheet" href="<% request.uri_base %>/css/layout.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/ui.jqgrid.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/jquery.gritter.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/theme/default/dashboardui.css" />
@@ -20,6 +20,8 @@
 <script src='/javascripts/jquery/jquery.jqGrid.min.js'></script>
 
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
+
+<script src='/javascripts/jquery/jquery.qtip.min.js'></script>
 
 <script src='/javascripts/jquery/jquery.form.js'></script>
 <script src='/javascripts/jquery/jquery.validate.js'></script>

@@ -1,12 +1,13 @@
 package Frontend;
 
 use Dancer ':syntax';
-use Dancer::Plugin::Preprocess::Sass;
+#use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
 
 use Login;
 use KIO::Services;
 use Messager;
+use Monitoring;
 use REST::api;
 
 our $VERSION = '0.1';
@@ -60,6 +61,9 @@ sub exception_to_status {
     elsif ($exception->isa("Kanopya::Exception::Internal::NotFound")) {
         $status = 'not_found';
     }
+    elsif ($exception->isa("Kanopya::Exception::NotImplemented")) {
+        $status = "method_not_allowed";
+    }
     else {
         $status = 'error';
     }
@@ -73,11 +77,14 @@ sub exception_to_status {
 
 hook 'before_error_init' => sub {
     my $exception = shift;
-    my $status = exception_to_status($exception->{exception});
+    my $status = exception_to_status($exception);
 
     if (defined $status && request->is_ajax) {
         content_type "application/json";
         set error_template => '/json_error.tt';
+    }
+    else {
+        set error_template => '';
     }
 };
 

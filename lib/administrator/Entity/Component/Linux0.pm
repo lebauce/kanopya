@@ -176,6 +176,14 @@ sub insertDefaultConfiguration {
     }
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+    my $path = $args{cluster}->getAttr(name => 'cluster_name');
+    $path .= '/'.$args{host}->getAttr(name => 'host_hostname');
+    my $str = "class {'linux': sourcepath => \"$path\",}\n";  
+    return $str;
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

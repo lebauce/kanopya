@@ -42,8 +42,8 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Kanopya::Config;
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -70,9 +70,15 @@ sub getConf {
 
 sub setConf {
     my ($self, $conf) = @_;
-    # TODO if mode is kanopya, update master ip and fqdn with kanopya config
+    if($conf->{puppetagent2_mode}) {        
+        my $config = Kanopya::Config::get('executor');
+        my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
+        $conf->{puppetagent2_masterip} = $kanopya_cluster->getMasterNodeIp();
+        $conf->{puppetagent2_masterfqdn} = $kanopya_cluster->getMasterNodeFQDN();
+    }
+    
     if(not $conf->{puppetagent2_id}) {
-        # new configuration -> create
+        # new configuration -> creat
         $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
@@ -91,6 +97,8 @@ sub getHostsEntries {
     
     return [ $entry ];
 }
+
+
 
 =head1 DIAGNOSTICS
 

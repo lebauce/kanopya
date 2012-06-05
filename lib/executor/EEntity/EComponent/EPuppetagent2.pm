@@ -73,13 +73,13 @@ sub configureNode {
 }
 
 sub addNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'cluster','mount_point', 'host' ]);
   
     $self->configureNode(
-        mount_point => $args{mount_point}.'/etc',
+        cluster     => $args{cluster},
+        mount_point => $args{mount_point},
         host        => $args{host}
     );
     
@@ -88,6 +88,13 @@ sub addNode {
         scriptname => 'puppet', 
     );
     
+}
+
+sub applyManifest {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['host']);
+    my $econtext = $args{host}->getEContext;
+    $econtext->execute(command => 'puppet agent --test');
 }
 
 1;

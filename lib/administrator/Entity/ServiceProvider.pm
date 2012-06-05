@@ -118,6 +118,7 @@ sub addNetworkInterface {
             $interface->associateNetwork(network => $network);
         }
     }
+    return $interface;
 }
 
 =head2 getNetworkInterfaces 

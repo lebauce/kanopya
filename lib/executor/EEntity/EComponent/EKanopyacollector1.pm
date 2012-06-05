@@ -1,4 +1,5 @@
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,13 +15,15 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 23 april 2012
+
 package EEntity::EComponent::EKanopyacollector1;
+use base "EEntity::EComponent";
+use base "EManager::ECollectorManager";
 
 use strict;
 use Template;
 use String::Random;
-use base "EEntity::EComponent";
-use base "ECollectorManager";
+
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");

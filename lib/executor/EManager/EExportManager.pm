@@ -1,6 +1,5 @@
-# CollectorManager.pm - Object class of Collector Manager included in Administrator
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,26 +13,47 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 20 april 2012
+package EManager::EExportManager;
+use base "EManager";
 
-package CollectorManager;
+=head2 createExport
 
-use strict;
-use warnings;
-use Log::Log4perl "get_logger";
-use Data::Dumper;
-use Kanopya::Exceptions;
-use General;
+    desc: Create an export for a container
 
-my $log = get_logger("administrator");
+=cut
 
-sub retrieveData { }
-sub getIndicatorsIds { }
-sub getIndicatorOidFromId { }
-sub getIndicatorNameFromId { }
-sub getIndicatorUnitFromId { }
-sub getIndicatorInst { }
-sub getCollectorType { }
+sub createExport {
+}
+
+=head2 removeExport
+
+    desc: Remove an export
+
+=cut
+
+sub removeExport {
+}
+
+=head2 addExportClient
+
+    desc: Autorize a client to this container access.
+          By default do nothing
+
+=cut
+
+sub addExportClient {
+}
+
+=head2 removeExportClient
+
+    desc: Remove access of a client to this container access.
+          By default do nothing
+
+=cut
+
+sub removeExportClient {
+}
+
 
 1;
+

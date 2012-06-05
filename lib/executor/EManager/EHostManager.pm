@@ -15,7 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package EEntity::EHostManager;
+package EManager::EHostManager;
+use base "EManager";
 
 use strict;
 use warnings;

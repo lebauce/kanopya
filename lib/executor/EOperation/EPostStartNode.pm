@@ -122,21 +122,62 @@ sub prerequisites {
     return 0;
 }
 
-sub prepare {
+sub prepare { 
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
     my $exec_cluster = Entity::ServiceProvider->get(id => $self->{config}->{cluster}->{executor});
     $self->{params}->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
+
+    # retrieve linux component if exists
+    my $linux = eval { 
+        $self->{context}->{cluster}->getComponent(name    => 'Linux',
+                                                  version => 0
+        );
+    };
+    if($linux) {
+        $self->{context}->{linux} = EFactory::newEEntity(
+                data => $linux
+        );
+    } else {
+        $self->{context}->{linux} = undef;
+    }
+    
+    # retrieve puppet component if exists
+    my $puppetagent = eval { 
+        $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
+                                                  version => 2
+        );
+    };
+    if($puppetagent) {
+        $self->{context}->{puppetagent} = EFactory::newEEntity(
+                data => $puppetagent
+        );
+    } else {
+        $self->{context}->{puppetagent} = undef;
+    }
+    
+    
+    
 }
 
 sub execute {
-    my $self = shift;
+    my ($self, %args) = @_;
     $self->SUPER::execute();
     
     if (not $self->{context}->{cluster}->getMasterNodeId()) {
         $self->{context}->{host}->becomeMasterNode();
+    }
+
+    # regenerate linux component files
+    my $hosts = $args{cluster}->getHosts();
+    my @ehosts = map { EFactory::newEEntity(data => $_) } values %$hosts;
+    for my $ehost (@ehosts) {
+        $self->{context}->{linux}->generateConfiguration(
+            cluster => $self->{context}->{cluster},
+            host    => $ehost
+        );
     }
 
     my $components = $self->{context}->{cluster}->getComponents(category => "all");
@@ -148,10 +189,11 @@ sub execute {
                              cluster => $self->{context}->{cluster});
     }
 
-    $self->{context}->{cluster}->updateHostsFile(
-        kanopya_domainname => $self->{params}->{kanopya_domainname},
-        host               => $self->{context}->{host}
-    );
+    if(defined $self->{context}->{puppetagent}) {
+        for my $ehost (@ehosts) {
+            $self->{context}->{puppetagent}->applyManifest(host => $ehost);
+        }
+    }
 
     $self->{context}->{host}->postStart();
 }

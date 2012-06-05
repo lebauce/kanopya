@@ -2,6 +2,15 @@ $.validator.addMethod("regex", function(value, element, regexp) {
     var re = new RegExp(regexp);
     return this.optional(element) || re.test(value);
 }, "Please check your input");
+
+// Set the correct state icon for each element :
+function StateFormatter(cell, options, row) {
+	if (cell == 'up') {
+		return "<img src='/images/icons/up.png' title='up' />";
+	} else {
+		return "<img src='/images/icons/broken.png' title='broken' />";
+	}
+}
  
 // Check if there is a configured directory service
 function isThereAConnector(elem_id, connector_category) {
@@ -38,10 +47,12 @@ function createSpecServDialog(provider_id, name, first, step, elem, editid) {
     var allFields   = {
         'activedirectory'   : {
             ad_host             : {
-                label   : 'Domain controller name'
+                label   : 'Domain controller',
+                help    : 'May be the Domain Controller name or the Domain Name'
             },
             ad_nodes_base_dn    : {
-                label   : 'Nodes container domain name'
+                label   : 'Nodes container DN',
+                help    : 'The Distinguished Name of either:<br/> - OU<br/>- Group<br/>- Container'
             },
             ad_user             : {
                 label   : 'User@domain'
@@ -121,6 +132,7 @@ function createMonDirDialog(elem_id, step, firstDialog) {
         $(ADMod.content).append(ADMod.form);
         ADMod.startWizard();
     });
+    // create the default form (activedirectory for directory and scom for monitoring)
     ADMod   = createSpecServDialog(elem_id, (step == 2) ? 'activedirectory' : 'scom', firstDialog, step, select);
     return ADMod;
 }
@@ -128,7 +140,8 @@ function createMonDirDialog(elem_id, step, firstDialog) {
 function createAddServiceButton(container) {
     var service_fields  = {
         externalcluster_name    : {
-            label   : 'Name'
+            label   : 'Name',
+            help    : "Name which identify your service"
         },
         externalcluster_desc    : {
             label   : 'Description',
@@ -141,7 +154,7 @@ function createAddServiceButton(container) {
         fields      : service_fields,
         beforeSubmit: function() {
             setTimeout(function() {
-                var dialog = $("<div>", { id : "waiting_default_insert", text : "Initializing configuration" });
+                var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
                 dialog.css('text-align', 'center');
                 dialog.appendTo("body").dialog({
                     draggable   : false,
@@ -156,6 +169,9 @@ function createAddServiceButton(container) {
             $("div#waiting_default_insert").dialog("destroy");
             reloadServices();
             createMonDirDialog(data.pk, 2, true).start();
+        },
+        error       : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
         }
     };
 
@@ -175,7 +191,7 @@ function servicesList (container_id, elem_id) {
                 [ 
                  {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
                  {name:'externalcluster_name',index:'service_name', width:200},
-                 {name:'externalcluster_state',index:'service_state', width:90,},
+                 {name:'externalcluster_state',index:'service_state', width:90,formatter:StateFormatter},
                  ]);
     reload_grid('services_list', '/api/externalcluster');
     
@@ -270,35 +286,58 @@ function loadServicesConfig (container_id, elem_id) {
         bu.appendTo(container);
     }
     
-    var connector_type_id = '';
-    var connector_name = '';
-    $('<h2>Connectors :</h2>').appendTo(container);
- 
+    var connectorsTypeHash = {};
+    var connectorsTypeArray = new Array;
+    
+    var table = $("<table>").appendTo(container);
+
+    var that = this;
+
     $.ajax({
- 		url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
- 		success: function(data) {
-			$(data.rows).each(function(row) {
-				if ( data.rows[row].service_provider_id == elem_id ) {
-    				ad_nodes_base_dn = data.rows[row].class_type_id;
-    				connector_type_id = data.rows[row].connector_type_id;
-    				
-    			}
-    		});
-    	}
-	});
-	
-	// Get the connectors types :
-	$.ajax({
-	url: '/api/connectortype?dataType=jqGrid',
-	success: function(data) {
-			$(data.rows).each(function(row) {
-				if ( data.rows[row].pk == connector_type_id ) {
-					connector_name = data.rows[row].connector_name;
-					$('<div><table><tr>' + connector_name + '&nbsp;Configure&nbsp;&nbsp;Delete</tr></table></div>').appendTo(container);
-				}
-			});
-		}
-	});
+        url: '/api/connectortype?dataType=jqGrid',
+        async   : false,
+        success: function(connTypeData) {
+                    $(connTypeData.rows).each(function(row) {
+                    //connectorsTypeHash = { 'pk' : connTypeData.rows[row].pk, 'connectorName' : connTypeData.rows[row].connector_name };
+                    var pk = connTypeData.rows[row].pk;
+                    connectorsTypeArray[pk] = connTypeData.rows[row].connector_name;
+                });
+            }
+    });
+
+    $.ajax({
+        url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
+        success: function(data) {
+            $(data.rows).each(function(row) {
+                var connectorTypePk = data.rows[row].connector_type_id;
+                var connectorName = connectorsTypeArray[connectorTypePk] || 'UnknownConnector';
+                var tr  = $("<tr>", { rel : connectorName.toLowerCase() }).append($("<td>", { text : connectorName }));
+                var confButton  = $("<button>", { text : 'Configure', rel : data.rows[row].pk });
+                var delButton   = $("<button>", { text : 'Delete', rel : data.rows[row].pk });
+                $(tr).append($(confButton)).append($(delButton));
+                $(tr).appendTo(table);
+
+                // Bind configure and delete actions on buttons
+                $(confButton).bind('click', { button : confButton }, function(event) {
+                    var button  = $(event.data.button);
+                    var id      = $(button).attr('rel');
+                    var name    = $(button).parent('tr').attr('rel');
+                    that.createSpecServDialog(elem_id, name, false, 2, undefined, id).start();
+                });
+                $(delButton).bind('click', { button : delButton }, function(event) {
+                    var button  = $(event.data.button);
+                    $.ajax({
+                        type    : 'delete',
+                        url     : '/api/' + button.parent('tr').attr('rel') + '/' + button.attr('rel'),
+                        success : function() {
+                            $(container).empty();
+                            that.loadServicesConfig(container_id, elem_id);
+                        }
+                    });
+                });
+            });
+        }
+    });
 }
 
 function loadServicesRessources (container_id, elem_id) {
@@ -307,28 +346,19 @@ function loadServicesRessources (container_id, elem_id) {
             ['id','state', 'hostname'],
             [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'externalnode_state',index:'externalnode_state', width:90,formatter:extNodeStateFormatter},
+             {name:'externalnode_state',index:'externalnode_state', width:90,formatter:StateFormatter},
              {name:'externalnode_hostname',index:'externalnode_hostname', width:200,},
            ]);
     reload_grid('service_ressources_list', '/api/host');
 
     createUpdateNodeButton($('#' + container_id), elem_id);
     reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
-    
-    // Set the correct state icon for each element :
-	function extNodeStateFormatter(cell, options, row) {
-		if (cell == 'up') {
-			return "<img src='/images/icons/up.png' title='up' />";
-		} else {
-			return "<img src='/images/icons/broken.png' title='broken' />";
-		}
-	}
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
    
 }
 
 function loadServicesMonitoring(container_id, elem_id) {
-	var loadServicesMonitoringGridId = 'service_ressources_monitoring_' + elem_id;
+	var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
 	create_grid(container_id, loadServicesMonitoringGridId,
             ['id','name', 'indicator'],
             [ 
@@ -337,4 +367,75 @@ function loadServicesMonitoring(container_id, elem_id) {
              {name:'clustermetric_indicator_id',index:'clustermetric_indicator_id', width:200,},
            ]);
     reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/clustermetrics');
+    
+    var loadServicesMonitoringGridId = 'service_ressources_aggregate_combinations_' + elem_id;
+	create_grid(container_id, loadServicesMonitoringGridId,
+            ['id','name', 'formula'],
+            [ 
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'aggregate_combination_label',index:'aggregate_combination_label', width:90,},
+             {name:'aggregate_combination_formula',index:'aggregate_combination_formula', width:200,},
+           ]);
+    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/aggregate_combinations');
+    
+    var loadServicesMonitoringGridId = 'service_ressources_aggregate_conditions_' + elem_id;
+	create_grid(container_id, loadServicesMonitoringGridId,
+            ['id','name', 'state', 'threshold', 'last eval', 'time limit'],
+            [ 
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'aggregate_condition_label',index:'aggregate_condition_label', width:90,},
+             {name:'state',index:'state', width:90,formatter:StateFormatter},
+             {name:'threshold',index:'threshold', width:90,},
+             {name:'last_eval',index:'last_eval', width:90,},
+             {name:'time_limit',index:'time_limit', width:90,},
+           ]);
+    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/aggregate_conditions');
+	
+	var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
+	create_grid(container_id, loadServicesMonitoringGridId,
+            ['id','name', 'state', 'formula', 'description', 'timestamp'],
+            [ 
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
+             {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,formatter:StateFormatter},
+             {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
+             {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
+             {name:'aggregate_rule_timestamp',index:'aggregate_rule_timestamp', width:90,},
+           ]);
+    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/aggregate_rules');
+	
+	var loadServicesMonitoringGridId = 'service_ressources_nodemetric_combination_' + elem_id;
+	create_grid(container_id, loadServicesMonitoringGridId,
+            ['id','name', 'formula'],
+            [ 
+             {name:'pk',index:'pk', width:90, sorttype:"int", hidden:true, key:true},
+             {name:'nodemetric_combination_label',index:'nodemetric_combination_label', width:120,},
+             {name:'nodemetric_combination_formula',index:'nodemetric_combination_formula', width:90,},
+           ]);
+    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/nodemetric_combinations');
+    
+    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_condition_' + elem_id;
+	create_grid(container_id, loadServicesMonitoringGridId,
+            ['id','name', 'separator', 'threshold'],
+            [ 
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'nodemetric_condition_label',index:'nodemetric_condition_label', width:120,},
+             {name:'nodemetric_condition_comparator',index:'nodemetric_condition_comparator', width:90,},
+             {name:'nodemetric_condition_threshold',index:'nodemetric_condition_threshold',width:90},
+           ]);
+    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/nodemetric_conditions');
+    
+    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_rules_' + elem_id;
+	create_grid(container_id, loadServicesMonitoringGridId,
+            ['id','name', 'state', 'eval', 'description', 'timestamp', 'formula'],
+            [ 
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'nodemetric_rule_label',index:'nodemetric_rule_label', width:90,},
+             {name:'nodemetric_rule_state',index:'nodemetric_rule_state', width:90,formatter:StateFormatter},
+             {name:'nodemetric_rule_last_eval',index:'nodemetric_rule_last_eval', width:90,},
+             {name:'nodemetric_rule_description',index:'nodemetric_rule_description', width:200,},
+             {name:'nodemetric_rule_timestamp',index:'nodemetric_rule_timestamp', width:90,},
+             {name:'nodemetric_rule_formula',index:'nodemetric_rule_formula', width:100,},
+           ]);
+    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/nodemetric_rules');
 }
