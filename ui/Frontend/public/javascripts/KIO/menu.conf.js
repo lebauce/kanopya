@@ -9,8 +9,9 @@ var mainmenu_def = {
     'Administration'    : {
         'Kanopya'          : [],
         'Right Management' :  [
-                               {label : 'Users', id : 'users', onLoad : loadUsers},
-                               {label : 'Rights', id : 'rights'}
+                               {label : 'Users', id : 'users', onLoad : usersList},
+                               {label : 'Groups', id : 'groups',onLoad : groupsList},
+                               {label : 'Permissions', id : 'permissions'}
                                ],
         'Monitoring'       : [],
     },
@@ -223,4 +224,3 @@ function servicesList (container_id, elem_id) {
     
     createAddServiceButton(container_id);
 }
-
