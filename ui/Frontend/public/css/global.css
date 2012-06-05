@@ -63,3 +63,14 @@ a:hover.view_link {
 a.selected_viewlink {
     color: #7E388A;
 }
+
+td {
+  vertical-align: top;
+}
+
+td.helpCell {
+  text-align      : justify;
+  color           : #828282;
+  font-size       : 11px;
+  padding-bottom  : 10px;
+}

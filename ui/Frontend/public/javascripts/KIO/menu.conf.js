@@ -14,6 +14,7 @@ var mainmenu_def = {
                                {label : 'Permissions', id : 'permissions'}
                                ],
         'Monitoring'       : [],
+        'Workflows'        : [{ label : 'SCO' , id : 'workflow_sco', onLoad : sco_workflow }]
     },
     'Services'   : {
         //onLoad : load_services,

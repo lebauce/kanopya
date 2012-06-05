@@ -82,6 +82,8 @@ my %resources = (
     "operation"                => "Operation",
     "outside"                  => "Entity::ServiceProvider::Outside",
     "scom"                     => "Entity::Connector::Scom",
+    "scope"                    => "Scope",
+    "scopeparameter"           => "ScopeParameter",
     "snmpd5"                   => "Entity::Component::Snmpd5",
     "serviceprovider"          => "Entity::ServiceProvider",
     "syslogng3"                => "Entity::Component::Syslogng3",
@@ -92,6 +94,7 @@ my %resources = (
     "user"                     => "Entity::User",
     "vlan"                     => "Entity::Network::Vlan",
     "workflow"                 => "Workflow",
+    "workflowdef"              => "WorkflowDef",
     "mockmonitor"              => "Entity::Connector::MockMonitor",
 );
 
