@@ -165,6 +165,18 @@ def attributes(resource, id = None):
 
     print json.dumps(result, sort_keys=True, indent=4)
 
+def json_call(resource, actions, id=None, *args):
+    if id == None:
+        print "You need to specify to specify an ID"
+        return 1
+
+    response = requests.post("%s/api/%s/%s/%s" % (server_url, resource, id, actions),
+                             params=parse_params(args), cookies=cookies, headers=ajax_headers)
+
+    result = parse_response(response)
+
+    print json.dumps(result, sort_keys=True, indent=4)
+
 def shell():
     """ Start a shell """
 
@@ -212,10 +224,25 @@ def login():
     resources = results.get("resources")
     resources.sort()
 
+def fetch_available_actions(resource):
+    response = requests.get("%s/api/attributes/%s" % (server_url, resource),
+                            cookies=cookies, headers=ajax_headers)
+
+    results = parse_response(response)
+    
+    global actions
+    for name, infos in results.get("methods", {}).items():
+        class action: pass
+        obj = action();
+        obj.__doc__ = infos.get("description", "")
+        actions[name] = obj
+
 def print_available_actions(resource):
+    fetch_available_actions(resource)
+
     print "The following commands are available;\nfor more information " \
           "type 'kanopya %s help <command>' :\n\n" \
-          "%s" % (resource, '\n'.join([ k.ljust(32) + ":" + v.__doc__ for k, v in actions.items() ] ))
+          "%s" % (resource, '\n'.join([ k.ljust(32) + ": " + v.__doc__.strip().title() for k, v in actions.items() ] ))
 
 def print_available_resources():
     print "Available resources:"
@@ -249,9 +276,7 @@ def run_command(command):
         return 1
 
     if not actions.has_key(action):
-        print "Invalid action %s on resource %s" % (action, resource)
-        print_available_actions(resource)
-        return 1
+        return json_call(resource, action, *command[2:])
 
     else:
         return actions[action](resource, *command[2:])
