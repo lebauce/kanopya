@@ -61,6 +61,9 @@ sub exception_to_status {
     elsif ($exception->isa("Kanopya::Exception::Internal::NotFound")) {
         $status = 'not_found';
     }
+    elsif ($exception->isa("Kanopya::Exception::NotImplemented")) {
+        $status = "method_not_allowed";
+    }
     else {
         $status = 'error';
     }
