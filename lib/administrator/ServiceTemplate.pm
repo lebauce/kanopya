@@ -1,4 +1,5 @@
-# Copyright © 2011 Hedera Technology SAS
+# Copyright © 2011-2012 Hedera Technology SAS
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
@@ -14,46 +15,52 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Entity::ManagerParameter;
-use base 'Entity';
+package ServiceTemplate;
+use base 'BaseDB';
 
 use strict;
 use warnings;
 
-use General;
-use Kanopya::Exceptions;
-use DateTime;
-
 use Data::Dumper;
-use Log::Log4perl "get_logger";
+use Log::Log4perl 'get_logger';
 
-my $log = get_logger("administrator");
-my $errmsg;
+my $log = get_logger('administrator');
 
 use constant ATTR_DEF => {
-    cluster_id => {
-        pattern      => '^\d*$',
-        is_mandatory => 1,
-        is_extended  => 0,
-        is_editable  => 0
-    },
-    manager_id => {
-        pattern      => '^\d*$',
-        is_mandatory => 1,
-        is_extended  => 0,
-        is_editable  => 0
-    },
-    name => {
+    service_name => {
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0,
-        is_editable  => 0
+        is_extended  => 0
     },
-    value => {
+    service_desc => {
         pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    hosting_policy_id => {
+        pattern      => '^\d+$',
         is_mandatory => 1,
-        is_extended  => 0,
-        is_editable  => 0
+        is_extended  => 0
+    },
+    storage_policy_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    network_policy_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    scalability_policy_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    system_policy_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
     },
 };
 

@@ -15,7 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Entity::HostManager;
+package Manager::HostManager;
+use base "Manager";
 
 use strict;
 use warnings;
@@ -38,6 +39,17 @@ use constant BOOT_POLICIES => {
     virtual_disk => 'BootOnVirtualDisk',
     boot_on_san  => 'BootOnSan',
 };
+
+=head2 checkHostManagerParams
+
+=cut
+
+sub checkHostManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ "cpu", "ram" ]);
+}
 
 =head2 addHost
 

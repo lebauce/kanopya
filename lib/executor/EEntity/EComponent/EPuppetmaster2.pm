@@ -82,44 +82,57 @@ sub createHostCertificate {
     
     # copy master certificate to the image
     $self->getExecutorEContext->send(
-        src  => '/etc/puppet/ssl/certs/ca.pem',
+        src  => '/var/lib/puppet/ssl/certs/ca.pem',
         dest => $args{mount_point} .'/var/lib/puppet/ssl/certs/ca.pem'
     );
     
     # copy host certificate to the image
     $self->getExecutorEContext->send(
-        src  => '/etc/puppet/ssl/certs/'.$certificate,
+        src  => '/var/lib/puppet/ssl/certs/'.$certificate,
         dest => $args{mount_point} .'/var/lib/puppet/ssl/certs/'.$certificate
     );
     
     # copy host private key to the image
     $self->getExecutorEContext->send(
-        src  => '/etc/puppet/ssl/private_keys/'.$certificate,
+        src  => '/var/lib/puppet/ssl/private_keys/'.$certificate,
         dest => $args{mount_point} .'/var/lib/puppet/ssl/private_keys/'.$certificate
     );
     
-    $command = 'touch /etc/puppet/manifest/site.pp';
+    $command = 'touch /etc/puppet/manifests/site.pp';
     $self->getExecutorEContext->execute(command => $command);
 }    
 
-sub postStartNode {
+sub createHostManifest {
     my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host' ]);
-
-    my $config = $self->_getEntity->getConf();
-    if($config->{puppetagent2_mode} eq 'kanopya') {
-        $self->applyCatalog(host => $args{host});
-    }
+    General::checkParams(args => \%args, required => [ 'puppet_definitions', 'host_fqdn' ]);
+    
+    my $config = {
+        INCLUDE_PATH => '/templates/components/puppetmaster',
+        INTERPOLATE  => 0,               # expand "$var" in plain text
+        POST_CHOMP   => 0,               # cleanup whitespace
+        EVAL_PERL    => 1,               # evaluate Perl code blocks
+        RELATIVE => 1,                   # desactive par defaut
+    };
+    
+    my $input = 'host_manifest.pp.tt';
+    my $output = '/etc/puppet/manifests/nodes/';
+    $output .= $args{host_fqdn}.'pp';
+    
+    my $data = {
+        host_fqdn          => $args{host_fqdn},
+        puppet_definitions => $args{puppet_definitions} 
+    };
+    
+    my $template = Template->new($config);
+    $template->process($input, $data, $output) || do {
+        $errmsg = "error during generation from '$input':" .  $template->error;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    };
 }
 
-sub applyCatalog {
-    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $command = 'puppet agent --test';
-    my $result = $args{host}->getEContext->execute(command => $command);
-}
+
 
 1;

@@ -53,7 +53,7 @@ This Entity is empty but present methods to set configuration.
 
 package Entity::Component::Kanopyacollector1;
 use base "Entity::Component";
-use base "CollectorManager";
+use base "Manager::CollectorManager";
 
 use strict;
 use warnings;

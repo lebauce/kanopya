@@ -28,7 +28,7 @@ None for the moment
 =cut
 
 package EEntity::EComponent::EIscsitarget1;
-use base "EExportManager";
+use base "EManager::EExportManager";
 use base "EEntity::EComponent";
 
 use warnings;

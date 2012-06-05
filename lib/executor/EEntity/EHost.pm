@@ -60,7 +60,6 @@ sub new {
 
     $self->{host_manager} = EFactory::newEEntity(data => $self->getHostManager);
 
-    $log->debug("Created a EHost");
     return $self;
 }
 

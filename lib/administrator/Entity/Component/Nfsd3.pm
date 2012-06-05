@@ -17,7 +17,8 @@
 
 package Entity::Component::Nfsd3;
 use base "Entity::Component";
- 
+use base "Manager::ExportManager";
+
 use strict;
 use warnings;
 
@@ -283,32 +284,6 @@ sub createExport {
                 client_name    => $args{client_name},
                 client_options => $args{client_options},
             },
-        },
-    );
-}
-
-=head2 removeExport
-
-    Desc : Implement removeExport from ExportManager interface.
-           This function enqueue a ERemoveExport operation.
-    args : export_name
-
-=cut
-
-sub removeExport {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $log->debug("New Operation RemoveExport with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveExport',
-        params   => {
-            context => {
-                container_access => $args{container_access},
-            }
         },
     );
 }

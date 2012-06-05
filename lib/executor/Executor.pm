@@ -247,7 +247,7 @@ sub oneRun {
 
                 $errors .= $err_rollback;
             }
-            if (!($err_exec =~ /HASH/) or !$err_exec->{hidden}){
+            if (!(ref($err_exec) eq "HASH") or !$err_exec->{hidden}){
                 Message->send(
                     from    => 'Executor',
                     level   => 'error',

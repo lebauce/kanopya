@@ -91,19 +91,19 @@ sub newEEntity {
     my %params = (data => $args{data});
 
     my $class = General::getClassEEntityFromEntity(entity => $data);
-    $log->debug("GetClassEEntityFromEntity return $class");
+    #$log->debug("GetClassEEntityFromEntity return $class");
 
     my $location = General::getLocFromClass(entityclass => $class);
 
     eval { require $location; };
     if ($@){
-        $errmsg = "EFactory->newEEntity : require locaction failed (location is $location) : $@";
-        $log->debug($errmsg);
-        #throw Kanopya::Exception::Internal(error => $errmsg);
+        $errmsg = "EFactory->newEEntity : require location failed (location is $location) : $@";
+        $log->warn($errmsg);
+        # if $data does not match a EEntity::Something class, we
+        # use EENtity base class to be able to manipulate it 
         $class = 'EEntity';
     }
-
-#    $log->info("$class instanciated");
+    
     return $class->new(%params);
 }
 

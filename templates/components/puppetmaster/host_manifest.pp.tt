@@ -1,0 +1,3 @@
+node '[% host_fqdn %]' {
+[% puppet_definitions %]
+}

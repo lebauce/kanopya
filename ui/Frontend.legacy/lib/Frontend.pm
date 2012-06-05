@@ -26,6 +26,8 @@ use Poolip;
 use UnifiedComputingSystem;
 use Connectors;
 use Netapp;
+use Services;
+use Policies;
 
 # Entity is used for setComment method usage : 
 use Entity;

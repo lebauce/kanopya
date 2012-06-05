@@ -29,43 +29,99 @@ sub addNode {
     General::checkParams(args     => \%args,
                          required => ['cluster','host','mount_point']);
 
-    $self->generateHostname(%args);
-    $self->generateFstab(%args);
-    $self->generateResolvconf(%args);
-    $self->generateUdevPersistentNetRules(%args);
+    $log->info("Configuration files generation");
+    my $files = $self->generateConfiguration(%args); 
+    $log->info("System image preconfiguration");
+    $self->preconfigureSystemimage(%args, files => $files);
+}
+
+# generate all component files for a host
+
+sub generateConfiguration {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['cluster','host']);
+     
+    my $generated_files = [];                     
+                         
+    push @$generated_files, $self->_generateHostname(%args);
+    push @$generated_files, $self->_generateFstab(%args);
+    push @$generated_files, $self->_generateResolvconf(%args);
+    push @$generated_files, $self->_generateUdevPersistentNetRules(%args);
     
     # TODO recupérer le kanopya domainname
     # depuis la conf ? le cluster kanopya ?
-    $self->generateHosts(%args, kanopya_domainname => 'kanopya.localdomain');
-    
-
+    push @$generated_files, $self->_generateHosts(%args, kanopya_domainname => 'kanopya.localdomain');
+    return $generated_files;
 }
 
-sub generateHostname {
+# provision/tweak Systemimage with config files 
+
+sub preconfigureSystemimage {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => ['files','cluster','host','mount_point']);
+
+    my $econtext = $self->getExecutorEContext;
+    
+    # send generated files to the image mount directory                    
+    for my $file (@{$args{files}}) {
+        $econtext->send(
+            src  => $file->{src},
+            dest => $args{mount_point}.$file->{dest}
+        );
+    }
+     
+    # adjust some requirements on the image
+    my $data = $self->_getEntity()->getConf();
+    my $automountnfs = 0;
+    for my $mountdef (@{$data->{mountdefs}}) {
+        my $mountpoint = $mountdef->{linux0_mount_point};
+        $econtext->execute(command => "mkdir -p $args{mount_point}/$mountpoint");
+        
+        if ($mountdef->{linux0_mount_filesystem} eq 'nfs') {
+            $automountnfs = 1;
+        }
+    }
+    
+    if ($automountnfs) {
+        my $grep_result = $econtext->execute(
+                              command => "grep \"ASYNCMOUNTNFS=no\" $args{mount_point}/etc/default/rcS"
+                          );
+
+        if (not $grep_result->{stdout}) {
+            $econtext->execute(
+                command => "echo \"ASYNCMOUNTNFS=no\" >> $args{mount_point}/etc/default/rcS"
+            );
+        }
+    }
+}
+
+# individual file generation
+
+sub _generateHostname {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host','mount_point', 'cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host','cluster' ]);
 
     my $hostname = $args{host}->getAttr(name => 'host_hostname');
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/hostname',
-        template_dir  => '/templates/internal',
+        template_dir  => '/templates/components/linux',
         template_file => 'hostname.tt',
         data          => { hostname => $hostname }
     );
     
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc'
-    );
+    return { src  => $file, dest => '/etc/hostname' };
 }
 
-sub generateFstab {
+sub _generateFstab {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
-                         required => ['cluster','host','mount_point']);
+                         required => ['cluster','host']);
     
     my $data = $self->_getEntity()->getConf();
 
@@ -81,39 +137,15 @@ sub generateFstab {
         template_file => 'fstab.tt',
         data          => $data 
     );
-          
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc'
-    );
-
-    my $automountnfs = 0;
-    for my $mountdef (@{$data->{mountdefs}}) {
-        my $mountpoint = $mountdef->{linux0_mount_point};
-        $self->getExecutorEContext->execute(command => "mkdir -p $args{mount_point}/$mountpoint");
-        
-        if ($mountdef->{linux0_mount_filesystem} eq 'nfs') {
-            $automountnfs = 1;
-        }
-    }
     
-    if ($automountnfs) {
-        my $grep_result = $self->getExecutorEContext->execute(
-                              command => "grep \"ASYNCMOUNTNFS=no\" $args{mount_point}/etc/default/rcS"
-                          );
-
-        if (not $grep_result->{stdout}) {
-            $self->getExecutorEContext->execute(
-                command => "echo \"ASYNCMOUNTNFS=no\" >> $args{mount_point}/etc/default/rcS"
-            );
-        }
-    }                     
+    return { src  => $file, dest => '/etc/fstab' };
+                     
 }
 
-sub generateHosts {
+sub _generateHosts {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster','host','mount_point', 'kanopya_domainname' ]);
+    General::checkParams(args => \%args, required => [ 'cluster','host', 'kanopya_domainname' ]);
 
     $log->info('Generate /etc/hosts file');
 
@@ -146,20 +178,17 @@ sub generateHosts {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/hosts',
-        template_dir  => '/templates/internal',
+        template_dir  => '/templates/components/linux',
         template_file => 'hosts.tt',
         data          => { hosts => \@hosts_entries }
     );
     
-    $self->getExecutorEContext->send(
-        src => $file,
-        dest => $args{mount_point}.'/etc/hosts'
-    );
+    return { src  => $file, dest => '/etc/hosts' };
 }
 
-sub generateResolvconf {
+sub _generateResolvconf {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['cluster','host', 'mount_point' ]);
+    General::checkParams(args => \%args, required => ['cluster','host' ]);
 
     my @nameservers = ();
 
@@ -178,21 +207,18 @@ sub generateResolvconf {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/resolv.conf',
-        template_dir  => '/templates/internal',
+        template_dir  => '/templates/components/linux',
         template_file => 'resolv.conf.tt',
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/resolv.conf'
-    );
+    return { src  => $file, dest => '/etc/resolv.conf' };
 }
 
-sub generateUdevPersistentNetRules {
+sub _generateUdevPersistentNetRules {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host','cluster','mount_point' ]);
+    General::checkParams(args => \%args, required => [ 'host','cluster' ]);
 
     my @interfaces = ();
     
@@ -208,15 +234,12 @@ sub generateUdevPersistentNetRules {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/udev/rules.d/70-persistent-net.rules',
-        template_dir  => '/templates/internal',
+        template_dir  => '/templates/components/linux',
         template_file => 'udev_70-persistent-net.rules.tt',
         data          => { interfaces => \@interfaces }
     );
     
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/udev/rules.d'
-    );
+    return { src  => $file, dest => '/etc/udev/rules.d/70-persistent-net.rules' };
 }
 
 1;

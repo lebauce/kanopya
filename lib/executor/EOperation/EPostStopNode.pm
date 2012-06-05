@@ -147,6 +147,34 @@ sub prepare {
 
     my $exec_cluster = Entity::ServiceProvider->get(id => $self->{config}->{cluster}->{executor});
     $self->{params}->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
+    
+    # retrieve linux component if exists
+    my $linux = eval { 
+        $self->{context}->{cluster}->getComponent(name    => 'Linux',
+                                                  version => 0
+        );
+    };
+    if($linux) {
+        $self->{context}->{linux} = EFactory::newEEntity(
+                data => $linux
+        );
+    } else {
+        $self->{context}->{linux} = undef;
+    }
+    
+    # retrieve puppet component if exists
+    my $puppetagent = eval { 
+        $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
+                                                  version => 2
+        );
+    };
+    if($puppetagent) {
+        $self->{context}->{puppetagent} = EFactory::newEEntity(
+                data => $puppetagent
+        );
+    } else {
+        $self->{context}->{puppetagent} = undef;
+    }
 }
 
 sub execute {
@@ -228,10 +256,22 @@ sub execute {
         $log->info("cluster image persistence is set, keeping $systemimage_name image");
     }
 
-    $self->{context}->{cluster}->updateHostsFile(
-        kanopya_domainname => $self->{params}->{kanopya_domainname},
-        host               => $self->{context}->{host}
-    );
+    # regenerate linux component files
+    my $hosts = $self->{context}->{cluster}->getHosts();
+    my @ehosts = map { EFactory::newEEntity(data => $_) } values %$hosts;
+    for my $ehost (@ehosts) {
+        $self->{context}->{linux}->generateConfiguration(
+            cluster => $self->{context}->{cluster},
+            host    => $ehost
+        );
+    }
+    
+    if(defined $self->{context}->{puppetagent}) {
+        for my $ehost (@ehosts) {
+            $self->{context}->{puppetagent}->applyManifest(host => $ehost);
+        }
+    }
+    
 }
 
 sub finish {
