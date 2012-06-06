@@ -131,12 +131,27 @@ var ModalForm = (function() {
             $(label).text(this.fields[elementName].label);
         }
         if (this.fields[elementName].type === undefined ||
-            this.fields[elementName].type !== 'textarea') {
-            var type = this.fields[elementName].type || 'text'
-            var input = $("<input>", { type : type, name : elementName, id : 'input_' + elementName });
-        } else {
-            var input = $("<textarea>", { name : elementName, id : 'input_' + elementName });
+            (this.fields[elementName].type !== 'textarea' && this.fields[elementName].type !== 'select')) {
+            var type    = this.fields[elementName].type || 'text'
+            var input   = $("<input>", { type : type });
+        } else if (this.fields[elementName].type === 'textarea') {
+            var input   = $("<textarea>");
+        } else if (this.fields[elementName].type === 'select') {
+            var input   = $("<select>");
+            var isArray = this.fields[elementName].options instanceof Array;
+            for (i in this.fields[elementName].options) if (this.fields[elementName].options.hasOwnProperty(i)) {
+                var optionvalue = this.fields[elementName].options[i];
+                var optiontext  = this.fields[elementName].options[i];
+                if (isArray != true) {
+                    optiontext  = i;
+                }
+                var option  = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
+                if (optionvalue === value) {
+                    $(option).attr('selected', 'selected');
+                }
+            }
         }
+        $(input).attr({ name : elementName, id : 'input_' + elementName });
         
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
