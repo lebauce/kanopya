@@ -76,13 +76,12 @@ var ModalForm = (function() {
             if (data.relations[relation].cond.hasOwnProperty(prop)) {
                 if (data.relations[relation].cond[prop] === 'self.' + elem) {
                     var cond = this.fields[elem].cond || "";
-                    // Temporary remove '_' from relations names
-                    relation = relation.replace(/_/g, "");
+                    relation    = data.relations[relation].resource;
                     $.ajax({
                         type        : 'GET',
                         async       : false,
                         url         : '/api/' + relation + cond,
-                        dataTYpe    : 'json',
+                        dataType    : 'json',
                         success     : $.proxy(function(d) {
                             datavalues = d;
                         }, this)
