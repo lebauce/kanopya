@@ -6,12 +6,12 @@ window.setInterval(function(){
 
 	// Get Messages
 	$.ajax({
- 		url: '/messager/messages',
- 		success: function(data) {
-		$(data.rows).each(function(row) {
+ 		url: '/api/message',
+ 		success: function(rows) {
+		$(rows).each(function(row) {
     		// Get the ID of last emmited message :
-    		if ( data.rows[row].pk > lastMsgId ) {
-    			var content = data.rows[row].content;
+    		if ( rows[row].pk > lastMsgId ) {
+    			var content = rows[row].message_content;
     			// Display the notification :
     				$.gritter.add({
 						title: 'Message',
