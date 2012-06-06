@@ -1,5 +1,6 @@
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
 <script src="/javascripts/KIM/iaas.js"></script>
+<script src="/javascripts/KIM/customers.js"></script>
 <script src="/javascripts/KIM/menu.conf.js"></script>
 <script src='/javascripts/gritter.js'></script>
 

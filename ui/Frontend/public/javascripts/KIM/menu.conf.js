@@ -11,8 +11,11 @@ var mainmenu_def = {
         'System'  : [],
     },
     'Business'          : {
-        'Profiles'   : [],
-        'Accounting' : []
+        'Policies'   : [],
+        'Services Templates' : [],
+        'Customers'  : [{label: 'Overview', id: 'customers_overview'},
+                        {label: 'Customers', id: 'customers', onLoad: customersList},
+                        {label: 'Cost Model', id: 'cost_model'}    ]
     },
     'Services'           : {
     
