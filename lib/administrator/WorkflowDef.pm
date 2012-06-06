@@ -36,6 +36,15 @@ use constant ATTR_DEF => {
     },
 };
 
+sub methods {
+  return {
+    'setParamPreset'    => {
+      'description' => 'setParamPreset',
+      'perm_holder' => 'entity'
+    }
+  }
+}
+
 sub getAttrDef { return ATTR_DEF; }
 
 sub new {
