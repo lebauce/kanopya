@@ -2,6 +2,7 @@ package REST::api;
 
 use Dancer ':syntax';
 use Dancer::Plugin::REST;
+use POSIX qw(ceil);
 
 prefix undef;
 
@@ -179,12 +180,15 @@ sub format_results {
             push @$objs, db_to_json($obj, $expand);
         }
 
+        my $total = (defined ($params{page}) or defined ($params{rows})) ?
+                        $results->pager->total_entries : $results->count;
+
         $result = {
-            rows    => $objs,
             page    => $params{page} || 1,
-            total   => (defined ($params{page}) or defined ($params{rows})) ?
-                            $results->pager->total_entries : $results->count,
-            records => scalar @$objs
+            pages   => $params{rows} ? ceil($total / $params{rows}) : 1,
+            records => scalar @$objs,
+            rows    => $objs,
+            total   => $total,
         };
     }
     else {

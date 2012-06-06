@@ -5,6 +5,7 @@ package BaseDB;
 use Data::Dumper;
 use Administrator;
 use General;
+use POSIX qw(ceil);
 
 use strict;
 use warnings;
@@ -482,13 +483,16 @@ sub search {
         }
     }
 
+    my $total = (defined ($args{page}) or defined ($args{rows})) ?
+                    $rs->pager->total_entries : $rs->count;
+
     if (defined ($args{dataType}) and $args{dataType} eq "hash") {
         return {
-            rows    => \@objs,
             page    => $args{page} || undef,
-            total   => (defined ($args{page}) or defined ($args{rows})) ?
-                           $rs->pager->total_entries : $rs->count,
-            records => scalar @objs
+            pages   => $args{rows} ? ceil($total / $args{rows}) : 1,
+            records => scalar @objs,
+            rows    => \@objs,
+            total   => $total,
         }
     }
 
