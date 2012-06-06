@@ -101,7 +101,7 @@ sub new {
     
 =cut
 
-sub manage_aggregates {
+sub manage_aggregates_old {
     my $self = shift;
     
     print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
@@ -142,6 +142,71 @@ sub manage_aggregates {
     }
 }
 
+=head2 manage_aggregate
+    
+    Class : Public
+    
+    Desc :     New manager for aggregates
+    
+=cut
+
+sub manage_aggregates {
+    my $self = shift;
+    
+    $log->info("## UPDATE ALL $self->{_time_step} SECONDS##");
+
+    my @service_providers = Entity::ServiceProvider->search(hash => {});
+
+    CLUSTER:
+    for my $service_provider (@service_providers){
+        eval{
+            my $service_provider_id = $service_provider->getAttr(name => 'service_provider_id');
+
+            #FILTER CLUSTERS WITH MONITORING PROVIDER
+            eval{
+                if ($^O eq 'MSWin32') {
+                    $service_provider->getConnector(category => 'MonitoringService');
+                } elsif ($^O eq 'linux') {
+                    $service_provider->getCollectorManager();
+                }
+            };
+            if($@){
+                
+                
+                $log->info('*** Orchestrator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***');
+            }
+            else{
+                $log->info('*** Orchestrator running for service provider '.$service_provider_id.' ***');
+                eval{
+                    $log->info( '<CM '.$service_provider_id.'>');
+                    $self->clustermetricManagement(service_provider => $service_provider);
+                    $log->info( '</CM '.$service_provider_id.'>');
+                    1;
+                }or do {
+                    print "Error in clustermetricManagement of cluster $service_provider : $@\n";
+                    $log->error($@);
+                };
+                
+                eval{
+                    $log->info( '<CN '.$service_provider.'>');
+                    $self->nodemetricManagement(service_provider => $service_provider);
+                    $log->info( '</CN '.$service_provider.'>');
+                    1;
+                }or do{
+                    print "Error in nodemetricManagement of cluster $service_provider  $@\n";
+                    $log->error($@);
+                };
+                
+                #my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id, extcluster => $externalCluster);#
+            }
+        1;
+        }or do {
+            print "Skip all orchestration service due to error $@\n";
+            $log->error($@);
+        }
+    }
+
+}
 
 sub evalExtCluster{
     my %args = @_;
@@ -353,42 +418,34 @@ sub evalExtClusterClusterRuleState {
 }
 sub nodemetricManagement{
     my ($self, %args) = @_;
-    my $externalCluster = $args{externalCluster};
-    
-    
+    my $service_provider = $args{service_provider};
+
     # Merge all needed indicators to consctruc only one SCOM request
-    
-    my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-    
-    eval{
-        $externalCluster->getConnector(category => 'MonitoringService');
-    };
-    if($@){
-        print '*** Orchestrator skip cluster '.$cluster_id.' for NM Management because it has no MonitoringService Connector ***'."\n";
-    }else{
-    
-        print 'Cluster NM management'.$cluster_id."\n";
+
+    my $service_provider_id = $service_provider->getId();
+
+    $log->info('Cluster NM management'.$service_provider_id);
         
-        my @rules = NodemetricRule->search(
-                hash => {
-                    nodemetric_rule_service_provider_id => $cluster_id,
-                    nodemetric_rule_state               => 'enabled',
-                }
-        );
+    my @rules = NodemetricRule->search(
+                    hash => {
+                        nodemetric_rule_service_provider_id => $service_provider_id,
+                        nodemetric_rule_state               => 'enabled',
+                    }
+                );
         
-        my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules );
-        
-        
+    my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules );
+
+
         # Call the retriever to get SCOM data
         my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
         $log->info(Dumper $monitored_values);
         
-        # Eval the rules
-        my $rep = $self->_evalAllRules(
-            'monitored_values'  => $monitored_values,
-            'rules'             => \@rules,
-            'cluster'           => $externalCluster,
-        );
+    # Eval the rules
+    my $rep = $self->_evalAllRules(
+        'monitored_values'  => $monitored_values,
+        'rules'             => \@rules,
+        'service_provider'  => $service_provider,
+    );
         
 #            if(0 < $rep){
 #                
@@ -403,25 +460,24 @@ sub nodemetricManagement{
 #                );
 #            }
 #            $externalCluster->save();
-    }
 }
 
 sub _evalAllRules {
-   my $self = shift;
-   my %args = @_;
+   my ($self,%args) = @_;
    
    my $monitored_values = $args{monitored_values};
    my $rules            = $args{rules};
-   my $cluster          = $args{cluster};
+   my $service_provider = $args{service_provider};
    my $rep = 0;
    
-   RULE:   
+   RULE:
    foreach my $rule (@$rules){
+       $log->info('Eval NM rule '.$rule->getAttr(name=>'nodemetric_rule_id'));
        eval{
            $rep += $self->_evalRule(
                'rule'             =>$rule,
                'monitored_values' => $monitored_values,
-               'cluster'          => $cluster,
+               'service_provider' => $service_provider,
            );
            1;
        } or do {
@@ -433,36 +489,38 @@ sub _evalAllRules {
 }
 
 sub _evalRule {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     my $monitored_values = $args{monitored_values};
     my $rule             = $args{rule};
-    my $cluster          = $args{cluster};
+    my $service_provider = $args{service_provider};
 
-    my $cluster_id = $cluster->getAttr(name => 'externalcluster_id');
+    my $service_provider_id = $service_provider->getId();
     my $rep = 0;
     #Eval the rule for each node
+
     NODE:
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
         # Warning, not all the monitored values are required but we transmit 
         # all of them
         
-#        if (0 ==  keys %$monitored_values_for_one_node) {
-#            $cluster->updateNodeState( hostname => $host_name, state => 'down' );
-#            next NODE;
-#        }
-#        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
-        my $node_state = $cluster->getNodeState(hostname => $host_name);
+        #        if (0 ==  keys %$monitored_values_for_one_node) {
+        #            $cluster->updateNodeState( hostname => $host_name, state => 'down' );
+        #            next NODE;
+        #        }
+        #        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
+
+        my $node_state = $service_provider->getNodeState(hostname=> $host_name);
+
         my $nodeEval;
         if($node_state eq 'disabled'){
             print "Node $host_name has just been disabled, rule not evaluated\n"; 
             next NODE;
-        } else {
+        }
+        else {
             $nodeEval = $rule->evalOnOneNode(
                 monitored_values_for_one_node => $monitored_values_for_one_node
             );
-            
         }
         
         if(defined $nodeEval){
@@ -499,16 +557,12 @@ sub _evalRule {
 # Inspired by eponyme aggregator method 
 
 sub _contructRetrieverOutput {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
     
-    #my $cluster_id                 = $args{cluster_id};
     my $rules = $args{rules};
     my $indicators_name = undef;
     
     #Get all the rules relative to the cluster_id 
-
-
     
     for my $rule (@$rules){
         my @conditions = $rule->getDependantConditionIds();
@@ -542,41 +596,31 @@ sub _contructRetrieverOutput {
 
 sub clustermetricManagement{
     my ($self, %args) = @_;
-    my $externalCluster = $args{externalCluster};
-    
-    my $cluster_evaluation = {};
-    my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
+    my $service_provider = $args{service_provider};
 
-    #FILTER CLUSTERS WITH MONITORING PROVIDER
-    eval{
-        $externalCluster->getConnector(category => 'MonitoringService');
-    };
-    if($@){
-        print '*** Orchestrator skip cluster '.$cluster_id.' for CM Management because it has no MonitoringService Connector ***'."\n";
-        $cluster_evaluation->{state} = 'no_data';
-    }else{
-        #GET RULES RELATIVE TO A CLUSTER
-        my @rules = AggregateRule->search(hash=>{
-            aggregate_rule_service_provider_id => $externalCluster->getAttr(name => 'externalcluster_id'),
-            aggregate_rule_state               => 'enabled'
-        });
-        for my $aggregate_rule (@rules){
-            
-            print '<CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').">\n"; 
-            #print $aggregate_rule->toString().' ';
-            
+    my $cluster_evaluation = {};
+    my $service_provider_id = $service_provider->getId();
+
+    #GET RULES RELATIVE TO A CLUSTER
+    my @rules = AggregateRule->search(hash=>{
+        aggregate_rule_service_provider_id => $service_provider_id,
+        aggregate_rule_state               => 'enabled'
+    });
+
+    for my $aggregate_rule (@rules){
+        $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
+
             $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
             
             my $result = $aggregate_rule->eval();
             
              # LOOP USED TO TRIGGER ACTIONS
-             
+
             if(defined $result){
                 if($result == 1){
                 }
             }
         } # for my $aggregate_rule 
-    } #end eval
 
 #return $clusters_state_cm;
 }

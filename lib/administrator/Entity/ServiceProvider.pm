@@ -57,6 +57,11 @@ sub getState {
     throw Kanopya::Exception::NotImplemented();
 }
 
+sub getNodeState {
+    my ($self, %args) = @_;
+    $log->info("Service provider must be specified as a cluster or an externacluster");
+}
+
 sub findManager {
     my $key;
     my ($class, %args) = @_;

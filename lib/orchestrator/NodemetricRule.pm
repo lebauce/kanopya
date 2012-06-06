@@ -156,7 +156,7 @@ sub evalOnOneNode{
     my $res = undef;
     my $arrayString = '$res = '."@array"; 
     
-
+    $log->info("NM rule evaluation: $arrayString");
     #Evaluate the logic formula
     eval $arrayString;
     my $store = ($res)?1:0;

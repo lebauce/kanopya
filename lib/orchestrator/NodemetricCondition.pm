@@ -100,7 +100,7 @@ sub evalOnOneNode{
     } else {
         my $evalString = $value.$comparator.$threshold;
         
-        #print $evalString."\n";
+        $log->info("NM Condition formula: $evalString");
         
         if(eval $evalString){
             return 1;
