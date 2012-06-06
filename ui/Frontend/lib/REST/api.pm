@@ -80,6 +80,7 @@ my %resources = (
     "nodemetriccondition"      => "NodemetricCondition",
     "nodemetricrule"           => "NodemetricRule",
     "node"                     => "Node",
+    "nodemetriccombination"    => "NodemetricCombination",
     "openiscsi2"               => "Entity::Component::Openiscsi2",
     "opennebula3"              => "Entity::Component::Opennebula3",
     "permission"               => "Permissions",
@@ -380,9 +381,13 @@ sub setupREST {
             }
 
             my $obj = $class->get(id => $id);
-            my $params = params;
-            my $ret = $obj->$method(%$params);
-
+            my %params;
+            if ((split(/;/, request->content_type))[0] eq "application/json") {
+                %params = %{from_json(request->body)};
+            } else {
+                %params = params;
+            }
+            my $ret = $obj->$method(%params);
             eval {
                 if ($ret->can("toJSON")) {
                     if ($ret->isa("Operation")) {
