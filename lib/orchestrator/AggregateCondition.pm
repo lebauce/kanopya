@@ -102,6 +102,8 @@ sub eval{
     my $value = $agg_combination->computeLastValue(); 
     if(defined $value){
         my $evalString = $value.$comparator.$threshold;
+        $log->info("CM Combination formula: $evalString");
+
         if(eval $evalString){        
             #print $evalString."=> true\n";
             $log->info($evalString."=> true");        
