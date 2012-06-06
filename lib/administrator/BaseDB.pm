@@ -644,8 +644,11 @@ sub toJSON {
                 if ((scalar (grep { $_ eq (split('::', $relinfo->{source}))[-1] } @hierarchy) == 0) and
                     ($relinfo->{attrs}->{is_foreign_key_constraint}) or
                     ($relinfo->{attrs}->{accessor} eq "multi")) {
+                    my $resource = lc((split("::", $relinfo->{class}))[-1]);
+                    $resource =~ s/_//g;
                     $hash->{relations}->{$relname} = $relinfo;
                     $hash->{relations}->{$relname}->{from} = $hierarchy[$n];
+                    $hash->{relations}->{$relname}->{resource} = $resource;
                     delete $hash->{attributes}->{$relname . "_id"};
                 }
             }
