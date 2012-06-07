@@ -98,7 +98,8 @@ function    createSCOWorkflowDefButton(container) {
                     var params  = {
                         params  : {
                             scope_id    : $('select#param_preset_id').attr('value'),
-                            output_dir  : $('input#directoryinput').attr('value')
+                            output_dir  : $('input#directoryinput').attr('value'),
+                            tt_content  : $('textarea#workflow_def_filecontent').attr('value')
                         }
                     };
                     $.ajax({
@@ -110,6 +111,19 @@ function    createSCOWorkflowDefButton(container) {
                             if (status === 'error') {
                                 deleteWorkflowDef(pk);
                             } else {
+                                $.ajax({
+                                    url         : '/api/workflowdef/' + pk + "/addStep",
+                                    type        : 'post',
+                                    contentType : 'application/json',
+                                    data        : JSON.stringify({ 'operationtype_id' : '46' }),
+                                    complete    : function(a, status, c) {
+                                        if (status === 'error') {
+                                            deleteWorkflowDef(pk);
+                                        } else {
+                                            $(form).dialog("destroy");
+                                        }
+                                    }
+                                });
                             }
                         }
                     });
