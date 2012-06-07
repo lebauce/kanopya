@@ -3,8 +3,6 @@
 <!--script src="/javascripts/jquery/lib/highcharts.js"></script-->
 <!--script src="/javascripts/jquery/lib/exporting.js"></script-->
 
-<script src='/javascripts/widgets/widget_nodes_bargraph_config.js'></script>
-
 <script src="/javascripts/jquery/jqplot/jquery.jqplot.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.barRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.canvasAxisTickRenderer.min.js"></script>
