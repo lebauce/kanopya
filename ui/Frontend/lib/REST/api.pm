@@ -118,6 +118,7 @@ my %resources = (
     "workflowdef"              => "WorkflowDef",
     "mockmonitor"              => "Entity::Connector::MockMonitor",
     "nodemetriccombination"    => "NodemetricCombination",
+    "profile"                  => "Profile",
 );
 
 sub db_to_json {
