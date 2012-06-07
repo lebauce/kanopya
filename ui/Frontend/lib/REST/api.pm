@@ -35,6 +35,7 @@ my %resources = (
     "connectortype"            => "ConnectorType",
     "container"                => "Entity::Container",
     "containeraccess"          => "Entity::ContainerAccess",
+    "dashboard"                => "Dashboard",
     "entity"                   => "Entity",
     "entitycomment"            => "EntityComment",
     "externalcluster"          => "Entity::ServiceProvider::Outside::Externalcluster",
