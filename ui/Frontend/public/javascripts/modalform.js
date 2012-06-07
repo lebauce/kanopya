@@ -124,27 +124,35 @@ var ModalForm = (function() {
         };
     }
     
+    ModalForm.prototype.mustDisableField = function(elementName, element) {
+        if (this.fields[elementName].disabled == true) {
+            return true;
+        }
+        if ($(this.form).attr('method').toUpperCase() === 'PUT' && element.is_editable == false) {
+            return true;
+        }
+        return false;
+    }
+
     ModalForm.prototype.newFormElement = function(elementName, element, value) {
+        var field = this.fields[elementName];
         // Create input and label DOM elements
         var label = $("<label>", { for : 'input_' + elementName, text : elementName });
-        if (this.fields[elementName].label !== undefined) {
-            $(label).text(this.fields[elementName].label);
+        if (field.label !== undefined) {
+            $(label).text(field.label);
         }
-        if (this.fields[elementName].type === undefined ||
-            (this.fields[elementName].type !== 'textarea' && this.fields[elementName].type !== 'select')) {
-            var type    = this.fields[elementName].type || 'text'
+        if (field.type === undefined ||
+            (field.type !== 'textarea' && field.type !== 'select')) {
+            var type    = (field.type) || 'text'
             var input   = $("<input>", { type : type });
-        } else if (this.fields[elementName].type === 'textarea') {
+        } else if (field.type === 'textarea') {
             var input   = $("<textarea>");
-        } else if (this.fields[elementName].type === 'select') {
+        } else if (field.type === 'select') {
             var input   = $("<select>");
-            var isArray = this.fields[elementName].options instanceof Array;
-            for (i in this.fields[elementName].options) if (this.fields[elementName].options.hasOwnProperty(i)) {
-                var optionvalue = this.fields[elementName].options[i];
-                var optiontext  = this.fields[elementName].options[i];
-                if (isArray != true) {
-                    optiontext  = i;
-                }
+            var isArray = field.options instanceof Array;
+            for (var i in field.options) if (field.options.hasOwnProperty(i)) {
+                var optionvalue = field.options[i];
+                var optiontext  = (isArray != true) ? i : field.options[i];
                 var option  = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
                 if (optionvalue === value) {
                     $(option).attr('selected', 'selected');
@@ -160,7 +168,7 @@ var ModalForm = (function() {
             this.validateRules[elementName].required = true;
         }
         // Check if the field must be validated by a regular expression
-        if ($(input).attr('type') === 'text' && element.pattern !== undefined) {
+        if ($(input).attr('type') !== 'checkbox' && element.pattern !== undefined) {
             this.validateRules[elementName].regex = element.pattern;
         }
         
@@ -176,11 +184,18 @@ var ModalForm = (function() {
         $(label).text($(label).text() + " : ");
         
         // Finally, insert DOM elements in the form
-        var container = this.findContainer(this.fields[elementName].step);
+        var container = this.findContainer(field.step);
         if (input.is("textarea")) {
-            this.insertTextarea(input, label, container, this.fields[elementName].help);
+            this.insertTextarea(input, label, container, field.help || element.description);
         } else {
-            this.insertTextInput(input, label, container, this.fields[elementName].help);
+            this.insertTextInput(input, label, container, field.help || element.description);
+        }
+        if (this.mustDisableField(elementName, element) === true) {
+            $(input).attr('disabled', 'disabled');
+        }
+
+        if ($(input).attr('type') === 'date') {
+            $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
         }
     }
     
