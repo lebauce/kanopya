@@ -116,6 +116,12 @@ my %resources = (
     "vlan"                     => "Entity::Network::Vlan",
     "workflow"                 => "Workflow",
     "workflowdef"              => "WorkflowDef",
+<<<<<<< HEAD
+=======
+    "mockmonitor"              => "Entity::Connector::MockMonitor",
+    "nodemetriccombination"    => "NodemetricCombination",
+    "profile"                  => "Profile",
+>>>>>>> [REST] profile ressource declared
 );
 
 sub db_to_json {
