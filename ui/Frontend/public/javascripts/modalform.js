@@ -244,7 +244,7 @@ var ModalForm = (function() {
             });
             return helpElem;
         } else {
-            return undefined;
+            return $("<span>").css({ display : 'block', width : '16px', 'margin-left' : '2px', height : '1px', float : 'right' });
         }
     }
 
