@@ -20,8 +20,6 @@ use Data::Dumper;
 use NodemetricCondition;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use List::MoreUtils qw {any} ;
-use Action;
-use ActionTriggered;
 use Switch;
 # logger
 use Log::Log4perl "get_logger";
@@ -50,10 +48,6 @@ use constant ATTR_DEF => {
                                  is_editable    => 1},
     nodemetric_rule_state     =>  {pattern       => '(enabled|disabled|disabled_temp)$',
                                  is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_rule_action_id =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
     nodemetric_rule_service_provider_id =>  {pattern       => '^.*$',
@@ -100,41 +94,6 @@ sub setUndefForEachNode{
             verified_noderule_externalnode_id    =>  $extnode->{'id'},
             verified_noderule_state              => 'undef',
         });
-    }
-}
-
-sub triggerAction{
-    my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => ['node_hostname']);
-    
-    my $node_hostname = $args{node_hostname};
-    
-    my $action_id = $self->getAttr(name => 'nodemetric_rule_action_id');
-    #IF the rule has a configured action to trigger
-    if($action_id){
-        eval{
-            #get the action
-            my $action = Action->get('id' => $action_id);
-            #trigger it
-            my $action_triggered = ActionTriggered->new(
-                action_triggered_action_id => $action_id,
-                action_triggered_hostname  => $node_hostname, 
-            );
-            my $path = $action_triggered->trigger();
-            
-            my $cluster_id = $self->getAttr('name' => 'nodemetric_rule_service_provider_id');
-            my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
-            #disable corresponding node
-            #TODO : add the disabling in trigger() function
-            $extcluster->updateNodeState(hostname => $node_hostname, state => 'disabled');
-            
-            print 'Action '.$action_id.' triggered on node '.$node_hostname
-            ."\n file $path created"
-            ."\n node ".$node_hostname." disabled";
-        1;
-        } or do {
-            print 'Error triggering action '.$action_id.' on node '.$node_hostname."\n $@";
-        }
     }
 }
 

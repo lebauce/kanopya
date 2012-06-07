@@ -482,10 +482,7 @@ sub _evalRule {
                     cluster_id => $cluster_id,
                     state      => 'verified'
                 );
-                $rule->triggerAction(
-                    node_hostname => $host_name
-                );
-                
+
             }
         }else{
             #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
@@ -576,21 +573,8 @@ sub clustermetricManagement{
              
             if(defined $result){
                 if($result == 1){
-                    $aggregate_rule->triggerAction(
-                        trigger_rule_id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
-                    );
                 }
             }
-#                   print 'Rule false => take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
-#                   $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
-#                   $aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
-#                }else{
-#                    print "Rule false => no action \n";
-#                    #$log->info("Rule false, no action");
-#                }                        
-#            } else{
-#                print "Rule undef\n";
-#            }
         } # for my $aggregate_rule 
     } #end eval
 
