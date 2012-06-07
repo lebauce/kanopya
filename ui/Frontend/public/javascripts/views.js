@@ -7,9 +7,14 @@ function reload_content(container_id, elem_id) {
     if (_content_handlers[container_id]) {
         if (_content_handlers[container_id]['onLoad']) {
            
-            // Clean container content
-            $('#' + container_id).html('');
-           
+            // Clean prev container content
+            var current_content = $('.current_content')
+            current_content.removeClass('current_content');
+            current_content.children().remove();
+
+            // Tag this container as current
+            $('#' + container_id).addClass('current_content');
+
             // Fill container using related handler
             var handler = _content_handlers[container_id]['onLoad'];
             handler(container_id, elem_id);
