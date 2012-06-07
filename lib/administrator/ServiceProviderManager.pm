@@ -36,12 +36,12 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
-    manager_type => {
+    service_provider_manager_type => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0
     },
-    manager_id => {
+    service_provider_manager_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_extended  => 0
