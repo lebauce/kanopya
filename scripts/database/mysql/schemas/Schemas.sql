@@ -127,18 +127,18 @@ CREATE TABLE `cluster` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `cluster_manager`
+-- Table structure for table `service_provider_manager`
 
-CREATE TABLE `cluster_manager` (
-  `cluster_manager_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `cluster_id` int(8) unsigned NOT NULL,
-  `manager_type` char(64) NOT NULL,
-  `manager_id` int(8) unsigned NOT NULL,
-  `manager_params` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`cluster_manager_id`),
-  FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`manager_params`),
-  FOREIGN KEY (`manager_params`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+CREATE TABLE `service_provider_manager` (
+  `service_provider_manager_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `service_provider_id` int(8) unsigned NOT NULL,
+  `service_provider_manager_type` char(64) NOT NULL,
+  `service_provider_manager_id` int(8) unsigned NOT NULL,
+  `service_provider_manager_params` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`service_provider_manager_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`service_provider_manager_params`),
+  FOREIGN KEY (`service_provider_manager_params`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1198,9 +1198,6 @@ CREATE TABLE `indicator` (
   `indicator_color` char(8),
   `indicatorset_id` int(8) unsigned DEFAULT NULL,
   `indicator_unit` char(32) DEFAULT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`indicator_id`),
   KEY (`indicatorset_id`),
   FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -1251,9 +1248,6 @@ CREATE TABLE `clustermetric` (
   `clustermetric_indicator_id` int(8) unsigned NOT NULL,
   `clustermetric_statistics_function_name` char(32) NOT NULL,
   `clustermetric_window_time` int(8) unsigned NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`clustermetric_id`),
   KEY (`clustermetric_service_provider_id`),
   FOREIGN KEY (`clustermetric_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -1268,11 +1262,8 @@ CREATE TABLE `aggregate_combination` (
   `aggregate_combination_label` char(255),
   `aggregate_combination_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_combination_formula` char(32) NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
   KEY (`aggregate_combination_service_provider_id`),
-  FOREIGN KEY (`aggregate_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`aggregate_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1290,11 +1281,8 @@ CREATE TABLE `aggregate_rule` (
   `aggregate_rule_state` char(32) NOT NULL ,
   `aggregate_rule_action_id` int(8) unsigned,
   `aggregate_rule_description` TEXT,
-  `class_type_id` int(8) unsigned NOT NULL,
   KEY (`aggregate_rule_service_provider_id`),
-  FOREIGN KEY (`aggregate_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`aggregate_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
@@ -1312,11 +1300,8 @@ CREATE TABLE `aggregate_condition` (
   `state` char(32) NOT NULL,
   `time_limit` char(32),
   `last_eval` BOOLEAN DEFAULT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
   KEY (`aggregate_condition_service_provider_id`),
   FOREIGN KEY (`aggregate_condition_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`aggregate_condition_id`),
   KEY (`aggregate_combination_id`),
   FOREIGN KEY (`aggregate_combination_id`) REFERENCES `aggregate_combination` (`aggregate_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
@@ -1332,9 +1317,6 @@ CREATE TABLE `nodemetric_combination` (
   `nodemetric_combination_label` char(255),
   `nodemetric_combination_service_provider_id`  int(8) unsigned NOT NULL,
   `nodemetric_combination_formula` char(32) NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`nodemetric_combination_service_provider_id`),
   FOREIGN KEY (`nodemetric_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
@@ -1351,9 +1333,6 @@ CREATE TABLE `nodemetric_condition` (
   `nodemetric_condition_combination_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_comparator` char(32) NOT NULL,
   `nodemetric_condition_threshold` double NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`nodemetric_condition_id`),
   KEY (`nodemetric_condition_combination_id`),
   FOREIGN KEY (`nodemetric_condition_combination_id`) REFERENCES `nodemetric_combination` (`nodemetric_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
@@ -1374,96 +1353,9 @@ CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_state` char(32) NOT NULL ,
   `nodemetric_rule_action_id` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_description` TEXT,
-  `class_type_id` int(8) unsigned NOT NULL,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`nodemetric_rule_service_provider_id`),
   FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
-
-
---
--- Table structure for table `action_type`
--- 
-
-CREATE TABLE `action_type` (
-  `action_type_id`    int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `action_type_name` char(64) NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`action_type_id`),
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `action`
--- 
-
-CREATE TABLE `action` (
-  `action_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `action_service_provider_id` int(8) unsigned NOT NULL,
-  `action_name` char(64) NOT NULL,
-  `action_action_type_id` int(8) unsigned NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  PRIMARY KEY (`action_id`),
-  KEY (`action_service_provider_id`),
-  FOREIGN KEY (`action_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`action_action_type_id`),
-  FOREIGN KEY (`action_action_type_id`) REFERENCES `action_type` (`action_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
---
--- Table structure for table `action_type_parameter`
--- 
-
-CREATE TABLE `action_type_parameter` (
-  `action_type_parameter_id`    int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `action_type_parameter_action_type_id`  int(8) unsigned NOT NULL,
-  `action_type_parameter_name`  char(64) NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  PRIMARY KEY (`action_type_parameter_id`),
-  KEY (`action_type_parameter_action_type_id`),
-  FOREIGN KEY (`action_type_parameter_action_type_id`) REFERENCES `action_type` (`action_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `action_parameter`
--- 
-
-CREATE TABLE `action_parameter` (
-  `action_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `action_parameter_name` char(64) NOT NULL,
-  `action_parameter_value` char(255),
-  `action_parameter_action_id` int(8) unsigned NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  PRIMARY KEY (`action_parameter_id`),
-  KEY (`action_parameter_action_id`),
-  FOREIGN KEY (`action_parameter_action_id`) REFERENCES `action` (`action_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `action_triggered`
--- 
-
-CREATE TABLE `action_triggered` (
-  `action_triggered_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `action_triggered_hostname` char(255),
-  `action_triggered_timestamp` char(255) NOT NULL,
-  `action_triggered_action_id` int(8) unsigned NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  PRIMARY KEY (`action_triggered_id`),
-  KEY (`action_triggered_action_id`),
-  FOREIGN KEY (`action_triggered_action_id`) REFERENCES `action` (`action_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `verified_noderule`
@@ -1587,44 +1479,6 @@ CREATE TABLE `masterimage` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `workflow_instance`
---
-
-CREATE TABLE `workflow_instance` (
-  `workflow_instance_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `aggregate_rule_id` int(8) unsigned,
-  `nodemetric_rule_id` int(8) unsigned,
-  `workflow_def_id` int(8) unsigned NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`workflow_instance_id`),
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`aggregate_rule_id`),
-  FOREIGN KEY (`aggregate_rule_id`) REFERENCES `aggregate_rule` (`aggregate_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`nodemetric_rule_id`),
-  FOREIGN KEY (`nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`workflow_def_id`),
-  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `workflow_instance_parameter`
---
-
-CREATE TABLE `workflow_instance_parameter` (
-  `workflow_instance_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `workflow_instance_id` int(8) unsigned NOT NULL,
-  `workflow_instance_parameter_name` char(255) NOT NULL,
-  `workflow_instance_parameter_value` char(255),
-  `class_type_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`workflow_instance_parameter_id`),
-  KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`workflow_instance_id`),
-  FOREIGN KEY (`workflow_instance_id`) REFERENCES `workflow_instance` (`workflow_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
 -- Table structure for table `service_template`
 --
 
@@ -1686,9 +1540,7 @@ CREATE TABLE `param_preset` (
 CREATE TABLE `scope` (
   `scope_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `scope_name` char(64) NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`scope_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  PRIMARY KEY (`scope_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1699,10 +1551,8 @@ CREATE TABLE `scope_parameter` (
   `scope_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `scope_id` int(8) unsigned NOT NULL,
   `scope_parameter_name` char(64) NOT NULL,
-  `class_type_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`scope_parameter_id`),
   UNIQUE KEY (`scope_id`,`scope_parameter_name`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`scope_id`) REFERENCES `scope` (`scope_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
