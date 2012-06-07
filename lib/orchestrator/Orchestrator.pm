@@ -530,14 +530,14 @@ sub _evalRule {
                 #print ' WARNING'."\n";
                 $rule->deleteVerifiedRule(
                     hostname   => $host_name,
-                    cluster_id => $service_provider,
+                    cluster_id => $service_provider_id,
                 );
             }else {
                 #print ' OK'."\n";
                 $rep++;
                 $rule->setVerifiedRule(
                     hostname => $host_name,
-                    cluster_id => $service_provider,
+                    cluster_id => $service_provider_id,
                     state      => 'verified'
                 );
 
@@ -546,7 +546,7 @@ sub _evalRule {
             #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
             $rule->setVerifiedRule(
                 hostname => $host_name,
-                cluster_id => $service_provider,
+                cluster_id => $service_provider_id,
                 state      => 'undef'
             );
         }
