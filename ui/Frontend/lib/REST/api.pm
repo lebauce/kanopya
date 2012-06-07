@@ -83,6 +83,7 @@ my %resources = (
     "nodemetriccombination"    => "NodemetricCombination",
     "openiscsi2"               => "Entity::Component::Openiscsi2",
     "opennebula3"              => "Entity::Component::Opennebula3",
+    "parampreset"              => "ParamPreset",
     "permission"               => "Permissions",
     "php5"                     => "Entity::Component::Php5",
     "physicalhoster0"          => "Entity::Component::Physicalhoster0",

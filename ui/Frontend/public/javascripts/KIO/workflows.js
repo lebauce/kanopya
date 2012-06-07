@@ -139,7 +139,30 @@ function    createSCOWorkflowDefButton(container) {
 function    deleteWorkflowDef(workflowdef_id) {
     $.ajax({
         url     : '/api/workflowdef/' + workflowdef_id,
-        type    : 'delete'
+        type    : 'get',
+        success : function(data) {
+            var parampresetid   = data.param_preset_id;
+            $.ajax({
+                url     : '/api/workflowdef/' + workflowdef_id,
+                type    : 'delete'
+            });
+            $.ajax({
+                url     : '/api/parampreset/' + parampresetid,
+                type    : 'delete'
+            });
+            $.ajax({
+                url     : '/api/parampreset?relation=' + parampresetid,
+                type    : 'get',
+                success : function(data) {
+                    $(data).each(function() {
+                        $.ajax({
+                            url     : '/api/parampreset/' + $(this).pk,
+                            type    : 'delete'
+                        });
+                    });
+                }
+            });
+        }
     });
 }
 
