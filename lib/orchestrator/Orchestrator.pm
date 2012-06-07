@@ -433,11 +433,11 @@ sub nodemetricManagement{
                     }
                 );
         
-    my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules );
+    my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules, service_provider_id => $service_provider_id);
 
 
         # Call the retriever to get SCOM data
-        my $monitored_values = $service_provider->getNodesMetrics(%$host_indicator_for_retriever);
+        my $monitored_values = $service_provider->getNodesMetrics(indicators => $host_indicator_for_retriever->{indicators}, time_span => $host_indicator_for_retriever->{time_span});
         $log->info(Dumper $monitored_values);
         
     # Eval the rules
@@ -561,29 +561,32 @@ sub _evalRule {
 
 sub _contructRetrieverOutput {
     my ($self,%args) = @_;
-    
-    my $rules = $args{rules};
-    my $indicators_name = undef;
-    
+
+    my $service_provider_id = $args{service_provider_id};
+    my $rules               = $args{rules};
+
+    my $service_provider    = Entity::ServiceProvider->find( hash => { service_provider_id => $service_provider_id});
+    my $indicators_name     = undef;
+
     #Get all the rules relative to the cluster_id 
     
     for my $rule (@$rules){
         my @conditions = $rule->getDependantConditionIds();
         #Check each conditions (i.e. each Combination
         for my $condition_id (@conditions) {
-            
+
             my $condition = NodemetricCondition->get('id' => $condition_id);
-             
+
             # Get the related combination id (in order to parse its formula)            
             my $combination_id = $condition->getAttr(name => 'nodemetric_condition_combination_id');
-            
+
             my $combination = NodemetricCombination->get('id' => $combination_id);
             # get the indicator ids used in combination formula
             my @indicator_ids = $combination->getDependantIndicatorIds();
-            
+
             for my $indicator_id (@indicator_ids){
-                my $indicator = Indicator->get('id' => $indicator_id);
-                $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
+                my $indicator_oid = $service_provider->getIndicatorOidFromId (indicator_id => $indicator_id);
+                $indicators_name->{$indicator_oid} = undef;
             }
         }
     }
