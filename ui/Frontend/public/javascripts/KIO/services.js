@@ -53,10 +53,6 @@ function createSpecServDialog(provider_id, name, first, step, elem, editid) {
             ad_user             : {
                 label   : 'User@domain'
             },
-            ad_pwd              : {
-                label   : 'Password',
-                type    : 'password'
-            },
             ad_usessl           : {
                 label   : 'Use SSL ?',
                 type    : 'checkbox'

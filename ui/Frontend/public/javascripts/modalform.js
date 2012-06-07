@@ -99,11 +99,17 @@ var ModalForm = (function() {
         if ('name' in args) {
             this.baseName   = args.name;
             this.name       = 'form_' + args.name;
+        } else {
+            throw new Error("ModalForm : Must provide a name");
         }
         
-        this.id             = args.id;  
+        this.id             = args.id;
         this.callback       = args.callback     || $.noop;
-        this.fields         = args.fields       || {};
+        if (args.fields) {
+            this.fields         = args.fields;
+        } else {
+            throw new Error("ModalForm : Must provide at least one field");
+        }
         this.title          = args.title        || this.name;
         this.skippable      = args.skippable    || false;
         this.beforeSubmit   = args.beforeSubmit || $.noop;
@@ -143,7 +149,7 @@ var ModalForm = (function() {
         }
         if (field.type === undefined ||
             (field.type !== 'textarea' && field.type !== 'select')) {
-            var type    = (field.type) || 'text'
+            var type    = field.type || 'text';
             var input   = $("<input>", { type : type });
         } else if (field.type === 'textarea') {
             var input   = $("<textarea>");
@@ -190,6 +196,7 @@ var ModalForm = (function() {
         } else {
             this.insertTextInput(input, label, container, field.help || element.description);
         }
+
         if (this.mustDisableField(elementName, element) === true) {
             $(input).attr('disabled', 'disabled');
         }
