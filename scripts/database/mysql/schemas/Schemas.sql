@@ -1127,7 +1127,6 @@ CREATE TABLE `rulecondition` (
 CREATE TABLE `rule` (
   `rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `rule_condition` char(128) NOT NULL,
-  `rule_action` char(32) NOT NULL,
   `cluster_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`rule_id`),
   KEY (`cluster_id`),
@@ -1279,7 +1278,6 @@ CREATE TABLE `aggregate_rule` (
   `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
   `aggregate_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
   `aggregate_rule_state` char(32) NOT NULL ,
-  `aggregate_rule_action_id` int(8) unsigned,
   `aggregate_rule_description` TEXT,
   KEY (`aggregate_rule_service_provider_id`),
   FOREIGN KEY (`aggregate_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -1351,7 +1349,6 @@ CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
   `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
   `nodemetric_rule_state` char(32) NOT NULL ,
-  `nodemetric_rule_action_id` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_description` TEXT,
   KEY (`nodemetric_rule_service_provider_id`),
   FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
