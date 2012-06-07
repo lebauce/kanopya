@@ -1,5 +1,5 @@
 /*
- * dashboard 1.0
+ * dashboard 1.0 - kanopya patch
  * http://connect.gxsoftware.com/dashboardplugin/demo/dashboard.html
  *
  * Copyright (c) 2010 Mark Machielsen
@@ -7,6 +7,10 @@
  * Dual licensed under the MIT and GPL licenses (same as jQuery):
  *   http://www.opensource.org/licenses/mit-license.php
  *   http://www.gnu.org/licenses/gpl.html
+ *
+ * Modified by Hedera
+ *  - allow params settings when init()
+ *  - fix loadLayout() from data first call bug (unknown 'json')
  *
  */
 
@@ -165,7 +169,8 @@
         });
       } else {
         // set the layout
-        var currentLayout = (typeof dashboard.layout != 'undefined') ? dashboard.layout : getLayout(json.layout);
+        //var currentLayout = (typeof dashboard.layout != 'undefined') ? dashboard.layout : getLayout(json.layout);
+        var currentLayout =  getLayout(opts.json_data.layout);
         dashboard.setLayout(currentLayout);
         dashboard.loadWidgets(opts.json_data.data);
       }
