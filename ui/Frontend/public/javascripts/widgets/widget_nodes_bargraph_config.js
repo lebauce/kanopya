@@ -1,58 +1,58 @@
-var sp_id = 67;
-var nodes_view_bargraph = '/monitoring/serviceprovider/' + sp_id +'/nodesview/bargraph';
 
-$(document).ready(function() {
-
-    //initNodesBargraph(widget_id);
-
-    //fillNodeMetricList();
-
-});
-
-
-    
-                        
 $('.widget').live('widgetLoadContent',function(e, obj){
-   // alert('AAAAAAAAAAAAAAAAAAAAAAA');
-            //if ($('.new-widget')) {
-            //     $('.new-widget').remove();
-                 console.log('Load content ' + obj.widget.id);
-                 //alert('LOad content ' + obj.widget.id);
-                 fillNodeMetricList(obj.widget.id);
-            //}
+     console.log('Load content of ' + obj.widget.id);
+
+     var sp_id = obj.widget.metadata.service_id;
+     fillNodeMetricList(
+             obj.widget,
+             sp_id
+     );
 });
-          
+
 function initNodesBargraph (widget_id) {
     alert(widget_id);
 }
 
-function fillNodeMetricList (widget_id) {
-    var indic_list = $('#nmBargraph_list' + widget_id);
+function fillNodeMetricList (widget, sp_id) {
+    var indic_list = widget.element.find('.nmBargraph_list');
+    
+    indic_list.change(function () {
+        showNodemetricCombinationBarGraph(this, this.options[this.selectedIndex].id, this.options[this.selectedIndex].value, sp_id);
+        widget.addMetadataValue('nodemetric_id', this.options[this.selectedIndex].id);
+    });
+
     $.get('/api/serviceprovider/' + sp_id + '/nodemetric_combinations', function (data) {
         $(data).each( function () {
             indic_list.append('<option id ="' + this.nodemetric_combination_id + '" value="' + this.nodemetric_combination_label 
             + '">' + this.nodemetric_combination_label + '</option>');
         });
+
+        // Load widget content if configured
+        if (widget.metadata.nodemetric_id) {
+            indic_list.find('option#' + widget.metadata.nodemetric_id).attr('selected', 'selected');
+            indic_list.change();
+        }
     });
 }
 
 //functions triggered on nodemetrics combination selection
-function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nodemetric_combination_label) {
-    
+function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nodemetric_combination_label, sp_id) {
+
+    var nodes_view_bargraph = '/monitoring/serviceprovider/' + sp_id +'/nodesview/bargraph';
+
     var widget_id = $(curobj).closest('.widget').attr("id");
-    
-    //alert('######## ' + widget_id);
-    
-    var graph_div_id = 'nodes_bargraph' + widget_id;
+
+    var graph_container_div = $(curobj).closest('.widget').find('.nodes_bargraph');
+    var graph_div_id_prefix = 'nodes_bargraph' + widget_id;
     
     if (nodemetric_combination_id == 'default') { return }
     //loading_start();
     var params = {id:nodemetric_combination_id};
-    document.getElementById(graph_div_id).innerHTML='';
+    graph_container_div.html('');
     $.getJSON(nodes_view_bargraph, params, function(data) {
         if (data.error){ alert (data.error); }
         else {
-            document.getElementById(graph_div_id).style.display='block';
+            graph_container_div.css('display', 'block');
             var min = data.values[0];
             var max = data.values[(data.values.length-1)];
             // alert('min: '+min+ ' max: '+max); 
@@ -60,10 +60,10 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
             var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
             var nodes_per_graph = data.nodelist.length/graph_number;
             for (var i = 0; i<graph_number; i++) {
-                var div_id = graph_div_id + '_'+i;
+                var div_id = graph_div_id_prefix + '_'+i;
                 var div = '<div id=\"'+div_id+'\"></div>';
                 //create the graph div container
-                $("#" + graph_div_id).append(div);
+                graph_container_div.append(div);
                 //slice the array
                 var indexOffset = nodes_per_graph*i;
                 var toElementNumber = nodes_per_graph*(i+1);
@@ -72,8 +72,8 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
                 //we generate the graph
                 nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, div_id, max, nodemetric_combination_label);
             }
-            var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
-            $("#"+graph_div_id).append(button);
+            //var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
+            //graph_container_div.append(button);
         }
         //loading_stop();
     });
@@ -115,10 +115,4 @@ function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title) {
             showMarker:false,
         }
     });
-}
-
-//replot  nodemetric combination bar graph
-function nc_replot() {
-    var nmcombination_dropdown_list = document.getElementById('nmBargraph_list');
-    showNodemetricCombinationBarGraph(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)  
 }

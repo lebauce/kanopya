@@ -1,19 +1,13 @@
-<div class="nodes_bargraph_container_config" />
 
 <div class="nodes_overview">
     <div class="nmBarGraph">
         <div class="indicator_dropdown">
-            <select class='do_unique_id' id="nmBargraph_list" onchange="showNodemetricCombinationBarGraph(this, this.options[this.selectedIndex].id, this.options[this.selectedIndex].value);" >
+            <select class='nmBargraph_list'>
                 <option selected="selected" id="default">Select an indicator</option>
             </select>
         </div>
-        <!--div class="service_dropdown">
-            <select class='do_unique_id' id="serviceBargraph_list" onchange="showNodemetricCombinationBarGraph(this, this.options[this.selectedIndex].id, this.options[this.selectedIndex].value);" >
-                <option selected="selected" id="default">Select a service</option>
-            </select>
-        </div-->
         <br />
-        <div class='do_unique_id' id="nodes_bargraph"></div><br />
+        <div class='nodes_bargraph'></div><br />
     </div>
     <br />
 </div>
