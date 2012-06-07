@@ -65,13 +65,21 @@ function groupsList (container_id, elem_id) {
                      type    : 'text'
                 },
                 gp_type    : {
-                    label   : 'Group type'
+					//label   : 'group type',
+                    type    : 'select',
+                    options :  ['User','Cluster','System image','Host','Processor model','Host model','Powersupply card model','Distribution','Kernel'] 
+                },
+                gp_system    : {
+					// label   : 'Group System',
+                     type    : 'hidden',
+                     value   :  '0'
                 },
                 
                 gp_desc    : {
                     label   : 'Description',
                     type    : 'textarea'
                 },
+                
         };
         var group_opts    = {
             title       : 'Add a Group',

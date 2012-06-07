@@ -166,7 +166,7 @@ var ModalForm = (function() {
         
         // Insert value if any
         if (value !== undefined) {
-            if (type === 'text') {
+            if (type === 'text' || type === 'hidden') {//patched for hidden fields
                 $(input).attr('value', value);
             } else if (type === 'checkbox' && value == true) {
                 $(input).attr('checked', 'checked');
