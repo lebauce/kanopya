@@ -41,6 +41,10 @@ sub methods {
     'setParamPreset'    => {
       'description' => 'setParamPreset',
       'perm_holder' => 'entity'
+    },
+    'addStep'           => {
+      'description' => 'addStep',
+      'perm_holder' => 'entity'
     }
   }
 }
