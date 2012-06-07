@@ -15,7 +15,7 @@
 <script src="/javascripts/KIO/workflows.js"></script>
 <script src="/javascripts/KIO/users.js"></script>
 <script src="/javascripts/KIO/menu.conf.js"></script>
-<script src="/javascripts/KIO/dashboard.init.js"></script>
+<!--script src="/javascripts/KIO/dashboard.init.js"></script-->
 <script src='/javascripts/messages.js'></script>
 
 <div id='view-container' class="ui-layout-center">
