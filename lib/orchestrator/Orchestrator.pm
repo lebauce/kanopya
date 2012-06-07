@@ -437,7 +437,7 @@ sub nodemetricManagement{
 
 
         # Call the retriever to get SCOM data
-        my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+        my $monitored_values = $service_provider->getNodesMetrics(%$host_indicator_for_retriever);
         $log->info(Dumper $monitored_values);
         
     # Eval the rules
@@ -530,14 +530,14 @@ sub _evalRule {
                 #print ' WARNING'."\n";
                 $rule->deleteVerifiedRule(
                     hostname   => $host_name,
-                    cluster_id => $cluster_id,
+                    cluster_id => $service_provider,
                 );
             }else {
                 #print ' OK'."\n";
                 $rep++;
                 $rule->setVerifiedRule(
                     hostname => $host_name,
-                    cluster_id => $cluster_id,
+                    cluster_id => $service_provider,
                     state      => 'verified'
                 );
 
@@ -546,7 +546,7 @@ sub _evalRule {
             #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
             $rule->setVerifiedRule(
                 hostname => $host_name,
-                cluster_id => $cluster_id,
+                cluster_id => $service_provider,
                 state      => 'undef'
             );
         }
