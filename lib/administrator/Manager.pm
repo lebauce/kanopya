@@ -52,6 +52,9 @@ sub checkManagerParams {
     elsif ($args{manager_type} eq 'collector_manager') {
         return $self->checkCollectorManagerParams(%{ $args{manager_params} });
     }
+    elsif ($args{manager_type} eq 'workflow_manager') {
+        return $self->checkWorkflowManagerParams(%{ $args{manager_params} });
+    }
 }
 
 1;
