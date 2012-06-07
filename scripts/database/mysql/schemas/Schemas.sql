@@ -1715,5 +1715,17 @@ CREATE TABLE `scope_parameter` (
   FOREIGN KEY (`scope_id`) REFERENCES `scope` (`scope_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `dashboard`
+--
+
+CREATE TABLE `dashboard` (
+  `dashboard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `dashboard_config` longtext NOT NULL,
+  `dashboard_service_provider_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`dashboard_id`),
+  UNIQUE KEY (`dashboard_service_provider_id`),
+  FOREIGN KEY (`dashboard_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;
