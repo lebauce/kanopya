@@ -15,11 +15,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-<<<<<<< HEAD
 package ServiceProviderManager;
-=======
-package ClusterManager;
->>>>>>> [workflows] add SCOWorkflow to component.conf.tt list for setup DB initialization
 use base 'BaseDB';
 
 use strict;
