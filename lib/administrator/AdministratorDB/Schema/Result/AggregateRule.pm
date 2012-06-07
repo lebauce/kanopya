@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::AggregateRule;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::AggregateRule
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::AggregateRule
+=head1 TABLE: C<aggregate_rule>
 
 =cut
 
@@ -63,23 +67,10 @@ __PACKAGE__->table("aggregate_rule");
   is_nullable: 0
   size: 32
 
-=head2 aggregate_rule_action_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
-
 =head2 aggregate_rule_description
 
   data_type: 'text'
   is_nullable: 1
-
-=head2 class_type_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
 
 =cut
 
@@ -108,18 +99,20 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "aggregate_rule_state",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "aggregate_rule_action_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "aggregate_rule_description",
   { data_type => "text", is_nullable => 1 },
-  "class_type_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</aggregate_rule_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("aggregate_rule_id");
 
 =head1 RELATIONS
@@ -136,43 +129,13 @@ __PACKAGE__->belongs_to(
   "aggregate_rule_service_provider",
   "AdministratorDB::Schema::Result::ServiceProvider",
   { service_provider_id => "aggregate_rule_service_provider_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 class_type
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ClassType>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "class_type",
-  "AdministratorDB::Schema::Result::ClassType",
-  { class_type_id => "class_type_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 workflow_instances
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::WorkflowInstance>
-
-=cut
-
-__PACKAGE__->has_many(
-  "workflow_instances",
-  "AdministratorDB::Schema::Result::WorkflowInstance",
-  { "foreign.aggregate_rule_id" => "self.aggregate_rule_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-05-30 14:27:01
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:r37ZE08UnOnPcpTXqHCDFA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 19:20:35
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:twLkqf5am5kbC8qV9TWrxQ
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

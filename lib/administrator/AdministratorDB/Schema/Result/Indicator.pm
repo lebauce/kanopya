@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::Indicator;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Indicator
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Indicator
+=head1 TABLE: C<indicator>
 
 =cut
 
@@ -30,7 +34,7 @@ __PACKAGE__->table("indicator");
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 64
 
 =head2 indicator_oid
 
@@ -63,6 +67,12 @@ __PACKAGE__->table("indicator");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 indicator_unit
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 32
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -91,15 +101,19 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "indicator_unit",
-  { data_type => "char", is_nullable => 0, size => 32 },
-    "class_type_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
+  { data_type => "char", is_nullable => 1, size => 32 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</indicator_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("indicator_id");
 
 =head1 RELATIONS
@@ -125,16 +139,9 @@ __PACKAGE__->belongs_to(
 );
 
 
-__PACKAGE__->belongs_to(
-  "class_type",
-  "AdministratorDB::Schema::Result::ClassType",
-  { class_type_id => "class_type_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BfEQXqwQ+FEZ+0W7M93PZw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 17:07:22
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7YfjHg4nM1lx3wdOlWTa+Q
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
