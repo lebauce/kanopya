@@ -250,7 +250,7 @@ __PACKAGE__->belongs_to(
   "cluster",
   "AdministratorDB::Schema::Result::Inside",
   { inside_id => "cluster_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 user
@@ -265,7 +265,7 @@ __PACKAGE__->belongs_to(
   "user",
   "AdministratorDB::Schema::Result::User",
   { user_id => "user_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 kernel
@@ -280,12 +280,7 @@ __PACKAGE__->belongs_to(
   "kernel",
   "AdministratorDB::Schema::Result::Kernel",
   { kernel_id => "kernel_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 masterimage
@@ -300,12 +295,7 @@ __PACKAGE__->belongs_to(
   "masterimage",
   "AdministratorDB::Schema::Result::Masterimage",
   { masterimage_id => "masterimage_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 service_template
@@ -320,12 +310,7 @@ __PACKAGE__->belongs_to(
   "service_template",
   "AdministratorDB::Schema::Result::ServiceTemplate",
   { service_template_id => "service_template_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 cluster_ipv4_routes
@@ -339,21 +324,6 @@ Related object: L<AdministratorDB::Schema::Result::ClusterIpv4Route>
 __PACKAGE__->has_many(
   "cluster_ipv4_routes",
   "AdministratorDB::Schema::Result::ClusterIpv4Route",
-  { "foreign.cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 cluster_manager
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::ClusterManager>
-
-=cut
-
-__PACKAGE__->might_have(
-  "cluster_manager",
-  "AdministratorDB::Schema::Result::ClusterManager",
   { "foreign.cluster_id" => "self.cluster_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -464,13 +434,17 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-30 11:46:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9jfjDU/cNJGN6WIRMI44oA
-__PACKAGE__->belongs_to(
-  "parent",
-  "AdministratorDB::Schema::Result::Inside",
-    { "foreign.inside_id" => "self.cluster_id" },
-    { cascade_copy => 0, cascade_delete => 1 }
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-08 15:21:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bMrhGySLwKteGvD0IO6Lag
+
+
+# You can replace this text with custom content, and it will be preserved on regeneration
+
+ __PACKAGE__->belongs_to(
+    "parent",
+    "AdministratorDB::Schema::Result::Inside",
+        { "foreign.inside_id" => "self.cluster_id" },
+        { cascade_copy => 0, cascade_delete => 1 }
 );
 
 1;
