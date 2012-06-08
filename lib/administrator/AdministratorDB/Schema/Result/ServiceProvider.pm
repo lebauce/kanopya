@@ -254,4 +254,11 @@ __PACKAGE__->has_many(
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  "parent",
+    "AdministratorDB::Schema::Result::Entity",
+        { "foreign.entity_id" => "self.service_provider_id" },
+            { cascade_copy => 0, cascade_delete => 1 }
+);
+
 1;
