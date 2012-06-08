@@ -478,7 +478,7 @@ sub addManager {
     General::checkParams(args => \%args, required => [ 'manager', "manager_type" ]);
 
     my $manager = ServiceProviderManager->new(
-                      cluster_id   => $self->getAttr(name => 'entity_id'),
+                      service_provider_id   => $self->getAttr(name => 'entity_id'),
                       manager_type => $args{manager_type},
                       manager_id   => $args{manager}->getAttr(name => 'entity_id')
                   );
