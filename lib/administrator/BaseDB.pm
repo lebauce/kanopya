@@ -6,6 +6,7 @@ use Data::Dumper;
 use Administrator;
 use General;
 use POSIX qw(ceil);
+use Hash::Merge;
 
 use strict;
 use warnings;
@@ -427,7 +428,7 @@ sub getJoin {
     while ($n > 0) {
         last if $hierarchy[$n - 1] eq "BaseDB";
         $parent_join = $adm->{db}->source($hierarchy[$n - 1])->has_relationship("parent") ?
-                           ($parent_join ? { parent => $parent_join } : "parent") :
+                           ($parent_join ? { parent => $parent_join } : { "parent" => undef }) :
                            $parent_join;
 
         $n -= 1;
@@ -475,7 +476,7 @@ sub search {
 
     my $table = _buildClassNameFromString($class);
     my $adm = Administrator->new();
-    my $joins = $class->getJoin();
+    my $join = $class->getJoin();
 
     for my $filter (keys %{$args{hash}}) {
         my @comps = split('\.', $filter);
@@ -487,8 +488,9 @@ sub search {
 
             delete $args{hash}->{$filter};
 
-            push @$joins, $class->getJoinQuery(@comps);
-
+            my $merge = Hash::Merge->new('RETAINMENT_PRECEDENT');
+            $join = $merge->merge($join, $class->getJoinQuery(@comps));
+            
             $args{hash}->{$comps[-1] . '.' . $attr} = $value;
         }
     }
@@ -496,7 +498,7 @@ sub search {
     my $rs = $adm->_getDbixFromHash('table'    => $table,
                                     'hash'     => $args{hash},
                                     'page'     => $args{page},
-                                    'join'     => $joins,
+                                    'join'     => $join,
                                     'rows'     => $args{rows},
                                     'order_by' => $args{order_by});
 
