@@ -6,7 +6,7 @@ require('modalform.js');
 // Current service instance
 var service_id;
 
-// Dashboard instance used to all services dashboard
+// Dashboard instance used for all services dashboard
 var service_dashboard;
 
 // DOM element used by dashboard
@@ -47,9 +47,8 @@ function initServiceDashboard() {
     function initDashboard() {
 
         // to make it possible to add widgets more than once, we create clientside unique id's
-        // this is temporary and not working (i.e give the same id to a newly added widget that loaded widget from saved dash
-        // TODO better id management
-        var startId = 100;
+        // this id is update when loading existing widgets to always be the greater id
+        var startId = 1;
 
         var s_dashboard = $('#service_dashboard').dashboard({
 
@@ -131,6 +130,12 @@ function initServiceDashboard() {
         s_dashboard.element.live('widgetLoaded',function(e, obj){
 
             var widgetEl = obj.widget.element;
+
+            // Update the next id for future added widget
+            var widget_id = parseInt(obj.widget.id);
+            if (startId <= widget_id) {
+                startId = widget_id + 1;
+            }
 
             obj.widget.addMetadataValue("service_id", service_id);
 
