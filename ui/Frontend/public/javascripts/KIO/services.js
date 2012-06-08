@@ -179,7 +179,7 @@ function isThereAConnector(elem_id, connector_category) {
     return is;
 }
 
-function createSpecServDialog(provider_id, name, first, step, elem, editid) {
+function createSpecServDialog(provider_id, name, first, category, elem, editid) {
     var allFields   = {
         'activedirectory'   : {
             ad_host             : {
@@ -210,7 +210,7 @@ function createSpecServDialog(provider_id, name, first, step, elem, editid) {
         'mockmonitor'       : {}
     };
     var ad_opts     = {
-        title           : ((editid === undefined) ? 'Add' : 'Edit') + ' a ' + ((step == 2) ? 'Directory' : 'Monitoring') + ' Service',
+        title           : ((editid === undefined) ? 'Add' : 'Edit') + ' a ' + category,
         name            : name,
         fields          : allFields[name],
         prependElement  : elem,
@@ -223,10 +223,12 @@ function createSpecServDialog(provider_id, name, first, step, elem, editid) {
     };
     if (first) {
         ad_opts.skippable   = true;
-        if (step == 2) {
+        var step            = 3;
+        if (category === 'DirectoryService') {
             ad_opts.callback    = function() {
-                createMonDirDialog(provider_id, first, 3).start();
+                createMonDirDialog(provider_id, 'MonitoringService', first).start();
             };
+            step    = 2;
         }
         ad_opts.title       = 'Step ' + step + ' of 3 : ' + ad_opts.title;
     } else {
@@ -239,11 +241,10 @@ function createSpecServDialog(provider_id, name, first, step, elem, editid) {
     return new ModalForm(ad_opts);
 }
 
-function createMonDirDialog(elem_id, step, firstDialog) {
+function createMonDirDialog(elem_id, category, firstDialog) {
     var ADMod;
     select          = $("<select>");
     var options;
-    var category    = (step == 2) ? 'DirectoryService' : 'MonitoringService';
     $.ajax({
         async   : false,
         type    : 'get',
@@ -254,11 +255,11 @@ function createMonDirDialog(elem_id, step, firstDialog) {
     });
     for (option in options) {
         option = options[option];
-        $(select).append($("<option>", { value : option.connector_name, text : option.connector_name }));
+        $(select).append($("<option>", { value : option.connector_name.toLowerCase(), text : option.connector_name }));
     }
     $(select).bind('change', function(event) {
-        var name    = event.currentTarget.value.toLowerCase();
-        var newMod  = createSpecServDialog(elem_id, name, firstDialog, step);
+        var name    = event.currentTarget.value;
+        var newMod  = createSpecServDialog(elem_id, name, firstDialog, category);
         $(ADMod.form).remove();
         ADMod.form  = newMod.form;
         ADMod.handleArgs(newMod.exportArgs());
@@ -266,7 +267,7 @@ function createMonDirDialog(elem_id, step, firstDialog) {
         ADMod.startWizard();
     });
     // create the default form (activedirectory for directory and scom for monitoring)
-    ADMod   = createSpecServDialog(elem_id, (step == 2) ? 'activedirectory' : 'scom', firstDialog, step, select);
+    ADMod   = createSpecServDialog(elem_id, $(select).attr('value'), firstDialog, category, select);
     return ADMod;
 }
 
@@ -301,7 +302,7 @@ function createAddServiceButton(container) {
         callback    : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
             reloadServices();
-            createMonDirDialog(data.pk, 2, true).start();
+            createMonDirDialog(data.pk, 'DirectoryService', true).start();
         },
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
@@ -463,13 +464,13 @@ function loadServicesConfig (container_id, elem_id) {
     
     if (isThereAConnector(elem_id, 'DirectoryService') === false) {
         var b   = $("<button>", { text : 'Add a Directory Service', id : 'adddirectory' });
-        b.bind('click', function() { createMonDirDialog(elem_id, 2).start(); });
+        b.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
         b.appendTo(container);
     }
     
     if (isThereAConnector(elem_id, 'MonitoringService') === false) {
         var bu  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
-        bu.bind('click', function() { createMonDirDialog(elem_id, 3).start(); });
+        bu.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
         bu.appendTo(container);
     }
     
