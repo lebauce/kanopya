@@ -19,7 +19,6 @@ use Entity::Network::Vlan;
 use NodemetricRule;
 use Orchestrator;
 use Workflow;
-use Action;
 use Policy;
 
 use Log::Log4perl "get_logger";
@@ -776,33 +775,13 @@ get '/extclusters/:clusterid' => sub {
             'link_remove'               => 1,
             %{$_->getConnectorType()},
         }
-    } $extcluster->getConnectors();
-    
-    my @action_insts = Action->search(
-        hash => {
-            'action_service_provider_id' => $cluster_id
-        }
-    );
-    
+    }
+    $extcluster->getConnectors();
+
     my @actions;
     my @node_actions;
     my @cluster_actions;
-    
-    foreach my $action_inst (@action_insts) {
-        my $hash = {
-            'id'   => $action_inst->getAttr('name' => 'action_id'),
-            'name' => $action_inst->getAttr('name' => 'action_name'),
-            'type' => $action_inst->getParams()->{trigger_rule_type},
-        };
-        push @actions, $hash;
-        
-        if ($action_inst->getParams()->{trigger_rule_type} eq 'noderule') {
-            push @node_actions, $hash;
-        } elsif($action_inst->getParams()->{trigger_rule_type} eq 'clusterrule') {
-            push @cluster_actions, $hash;
-        }
-    }
-    
+
     my $order = {
         'up'        => 0,
         'warning'   => 1,
@@ -810,7 +789,7 @@ get '/extclusters/:clusterid' => sub {
         'down'      => 3,
         'disabled'  => 4,
     };
-    
+
     my $disabled_nodes = $extcluster->getDisabledNodes();
     my $num_nodes_disabled = scalar @$disabled_nodes;
     

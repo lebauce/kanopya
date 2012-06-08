@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::NodemetricRule;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::NodemetricRule
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::NodemetricRule
+=head1 TABLE: C<nodemetric_rule>
 
 =cut
 
@@ -63,23 +67,10 @@ __PACKAGE__->table("nodemetric_rule");
   is_nullable: 0
   size: 32
 
-=head2 nodemetric_rule_action_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
-
 =head2 nodemetric_rule_description
 
   data_type: 'text'
   is_nullable: 1
-
-=head2 class_type_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
 
 =cut
 
@@ -108,36 +99,23 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "nodemetric_rule_state",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "nodemetric_rule_action_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "nodemetric_rule_description",
   { data_type => "text", is_nullable => 1 },
-  "class_type_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
 );
-__PACKAGE__->set_primary_key("nodemetric_rule_id");
 
-=head1 RELATIONS
+=head1 PRIMARY KEY
 
-=head2 class_type
+=over 4
 
-Type: belongs_to
+=item * L</nodemetric_rule_id>
 
-Related object: L<AdministratorDB::Schema::Result::ClassType>
+=back
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "class_type",
-  "AdministratorDB::Schema::Result::ClassType",
-  { class_type_id => "class_type_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
+__PACKAGE__->set_primary_key("nodemetric_rule_id");
+
+=head1 RELATIONS
 
 =head2 nodemetric_rule_service_provider
 
@@ -151,7 +129,7 @@ __PACKAGE__->belongs_to(
   "nodemetric_rule_service_provider",
   "AdministratorDB::Schema::Result::ServiceProvider",
   { service_provider_id => "nodemetric_rule_service_provider_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 verified_noderules
@@ -171,25 +149,10 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 workflow_instances
 
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::WorkflowInstance>
-
-=cut
-
-__PACKAGE__->has_many(
-  "workflow_instances",
-  "AdministratorDB::Schema::Result::WorkflowInstance",
-  { "foreign.nodemetric_rule_id" => "self.nodemetric_rule_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 19:20:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:VCeYilM3EMWmAbg7o6VEZg
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-05-30 14:27:01
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ABcVgXpvkElZwA0l+rcMNg
-
-
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

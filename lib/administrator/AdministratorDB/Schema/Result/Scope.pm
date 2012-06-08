@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::Scope;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Scope
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Scope
+=head1 TABLE: C<scope>
 
 =cut
 
@@ -23,6 +27,7 @@ __PACKAGE__->table("scope");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_auto_increment: 1
   is_nullable: 0
 
 =head2 scope_name
@@ -31,46 +36,33 @@ __PACKAGE__->table("scope");
   is_nullable: 0
   size: 64
 
-=head2 class_type_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
   "scope_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "scope_name",
-  { data_type => "char", is_nullable => 0, size => 64 },
-  "class_type_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_foreign_key => 1,
+    is_auto_increment => 1,
     is_nullable => 0,
   },
+  "scope_name",
+  { data_type => "char", is_nullable => 0, size => 64 },
 );
-__PACKAGE__->set_primary_key("scope_id");
 
-=head1 RELATIONS
+=head1 PRIMARY KEY
 
-=head2 class_type
+=over 4
 
-Type: belongs_to
+=item * L</scope_id>
 
-Related object: L<AdministratorDB::Schema::Result::ClassType>
+=back
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "class_type",
-  "AdministratorDB::Schema::Result::ClassType",
-  { class_type_id => "class_type_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
+__PACKAGE__->set_primary_key("scope_id");
+
+=head1 RELATIONS
 
 =head2 scope_parameters
 
@@ -88,9 +80,9 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-05-30 14:27:01
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:kPSs09iTCgD8AKjwW+SsEQ
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 17:07:22
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Y0SKkIwyPPa8/9clDJfEYQ
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

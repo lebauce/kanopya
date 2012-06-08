@@ -27,6 +27,7 @@ __PACKAGE__->table("scom_indicator");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_auto_increment: 1
   is_nullable: 0
 
 =head2 scom_indicator_name
@@ -57,14 +58,7 @@ __PACKAGE__->table("scom_indicator");
 
   data_type: 'char'
   is_nullable: 1
-  size: 8
-
-=head2 class_type_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
+  size: 15
 
 =head2 service_provider_id
 
@@ -77,7 +71,12 @@ __PACKAGE__->table("scom_indicator");
 
 __PACKAGE__->add_columns(
   "scom_indicator_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_auto_increment => 1,
+    is_nullable => 0,
+  },
   "scom_indicator_name",
   { data_type => "char", is_nullable => 0, size => 32 },
   "scom_indicator_oid",
@@ -87,14 +86,7 @@ __PACKAGE__->add_columns(
   "scom_indicator_max",
   { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 1 },
   "scom_indicator_unit",
-  { data_type => "char", is_nullable => 1, size => 8 },
-  "class_type_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
+  { data_type => "char", is_nullable => 1, size => 15 },
   "service_provider_id",
   {
     data_type => "integer",
@@ -118,21 +110,6 @@ __PACKAGE__->set_primary_key("scom_indicator_id");
 
 =head1 RELATIONS
 
-=head2 class_type
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ClassType>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "class_type",
-  "AdministratorDB::Schema::Result::ClassType",
-  { class_type_id => "class_type_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
 =head2 service_provider
 
 Type: belongs_to
@@ -149,8 +126,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-05-10 14:35:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:grv+EotlqQUU6bMOQUX+cg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 18:42:05
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ARuX/IL0uFQLna7G7ehRDg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

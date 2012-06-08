@@ -34,7 +34,7 @@ use AggregateCombination;
 use Policy;
 use Administrator;
 use General;
-use ClusterManager;
+use ServiceProviderManager;
 
 use Hash::Merge;
 
@@ -393,7 +393,7 @@ sub configureManagers {
             # and set manager parameters if defined.
             my $cluster_manager;
             eval {
-                $cluster_manager = ClusterManager->find(hash => { manager_type => $manager->{manager_type},
+                $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $manager->{manager_type},
                                                                   cluster_id   => $self->getId });
             };
             if ($@) {
@@ -477,7 +477,7 @@ sub addManager {
 
     General::checkParams(args => \%args, required => [ 'manager', "manager_type" ]);
 
-    my $manager = ClusterManager->new(
+    my $manager = ServiceProviderManager->new(
                       cluster_id   => $self->getAttr(name => 'entity_id'),
                       manager_type => $args{manager_type},
                       manager_id   => $args{manager}->getAttr(name => 'entity_id')
@@ -1152,7 +1152,7 @@ sub addManagerParameter {
 
     General::checkParams(args => \%args, required => [ 'manager_type', 'name', 'value' ]);
 
-    my $cluster_manager = ClusterManager->find(hash => { manager_type => $args{manager_type},
+    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
                                                          cluster_id   => $self->getId });
 
     $cluster_manager->addParams(params => { $args{name} => $args{value} });
@@ -1164,7 +1164,7 @@ sub getManagerParameters {
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
-    my $cluster_manager = ClusterManager->find(hash => { manager_type => $args{manager_type},
+    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
                                                          cluster_id   => $self->getId });
     return $cluster_manager->getParams();
 }
@@ -1180,7 +1180,7 @@ sub getManager {
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
-    my $cluster_manager = ClusterManager->find(hash => { manager_type => $args{manager_type},
+    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
                                                          cluster_id   => $self->getId });
     return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
 }

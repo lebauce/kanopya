@@ -31,22 +31,22 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger('administrator');
 
 use constant ATTR_DEF => {
-    cluster_id => {
+    service_provider_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_extended  => 0
     },
-    manager_type => {
+    service_provider_manager_type => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0
     },
-    manager_id => {
+    service_provider_manager_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_extended  => 0
     },
-    manager_params => {
+    service_provider_manager_params => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_extended  => 0
