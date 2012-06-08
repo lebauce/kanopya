@@ -230,7 +230,7 @@ sub _cancel {
         my $mountpoint = $self->{context}->{container}->getMountPoint;
         $self->{context}->{container_access}->umount(mountpoint => $mountpoint,
                                                      econtext   => $self->getEContext);
-    }
+    };
 }
 
 sub finish {

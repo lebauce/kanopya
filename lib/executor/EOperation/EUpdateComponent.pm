@@ -34,22 +34,32 @@ my $errmsg;
 sub prepare {
     my ($self, %args) = @_;
     # check if this cluster has a puppet agent component
-    my $puppetagent = eval { 
-        $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
-                                                  version => 2
-        );
-    };
+    my $puppetagent = $self->{context}->{cluster}->getComponent(
+            name    => 'Puppetagent',
+            version => 2
+    );
+    $log->debug(ref($puppetagent));
+    
     if(not $puppetagent) {
-        my $errmsg = "UpdatePuppetCluster Operation cannot be used without a puppet agent component configured on the cluster";
+        my $errmsg = "UpdateComponent Operation cannot be used without a puppet agent component configured on the cluster";
         $log->error($errmsg);
-        thow Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     } else {
         $self->{context}->{puppetagent} = EFactory::newEEntity(
                 data => $puppetagent
         );
     }
     
+     # Instanciate the bootserver Cluster
+    $self->{context}->{bootserver}
+        = EFactory::newEEntity(
+              data => Entity->get(id => $self->{config}->{cluster}->{bootserver})
+          );
+          
+     my $puppetmaster = $self->{context}->{bootserver}->getComponent(name => 'Puppetmaster', version => 2);
+    $self->{context}->{component_puppetmaster} = EFactory::newEEntity(data => $puppetmaster);
     
+    $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->getAttr(name => 'cluster_domainname');
     
 }
 
@@ -58,10 +68,22 @@ sub execute {
     my $hosts = $self->{context}->{cluster}->getHosts();
     for my $host (values %$hosts) {
         my $ehost = EFactory::newEEntity(data => $host);
-        
+        my $puppet_definitions = "";
         $self->{context}->{component}->generateConfiguration(
             cluster => $self->{context}->{cluster},
             host    => $ehost
+        );
+        $puppet_definitions .= $self->{context}->{component}->getPuppetDefinition(
+            host    => $host,
+            cluster => $self->{context}->{cluster},
+        );
+        
+        my $fqdn = $host->getAttr(name => 'host_hostname');
+        $fqdn .= '.' . $self->{params}->{kanopya_domainname};
+        
+        $self->{context}->{component_puppetmaster}->createHostManifest(
+                host_fqdn          => $fqdn,
+                puppet_definitions => $puppet_definitions
         );
         
         $self->{context}->{puppetagent}->applyManifest(host => $ehost);

@@ -171,7 +171,7 @@ sub execute {
     }
 
     # regenerate linux component files
-    my $hosts = $args{cluster}->getHosts();
+    my $hosts = $self->{context}->{cluster}->getHosts();
     my @ehosts = map { EFactory::newEEntity(data => $_) } values %$hosts;
     for my $ehost (@ehosts) {
         $self->{context}->{linux}->generateConfiguration(

@@ -132,12 +132,6 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    if($self->{context}->{host}->getAttr(name => 'host_state') =~ /^stopping:/) {
-        my $msg = "Node is still in stopping state.";
-        $log->error($msg);
-        throw Kanopya::Exception::Execution::OperationReported(error => $msg);
-    }
-
     # Instanciate bootserver Cluster
     my $bootserver = Entity::ServiceProvider->get(id => $self->{config}->{cluster}->{bootserver});
 

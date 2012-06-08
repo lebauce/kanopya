@@ -150,7 +150,7 @@ sub computeValueFromMonitoredValues {
     #Evaluate the logic formula
     eval $arrayString;
 
-    $log->info("$arrayString");
+    $log->info("NM Combination value = $arrayString");
     return $res;
 }
 

@@ -1281,6 +1281,25 @@ sub getIndicatorInst {
     return $indicator_inst;
 }
 
+=head2 getNodeState
+
+
+=cut
+
+sub getNodeState {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['hostname']);
+
+    my $host       = Entity::Host->find(hash => {host_hostname => $args{hostname}});
+    my $host_id    = $host->getId();
+    my $node       = Node->find(hash => {host_id => $host_id});
+    my $node_state = $node->getAttr(name => 'node_state'); 
+
+    return $node_state;
+}
+
+
 =head2 getNodesMetrics
 
     Desc: call collector manager to retrieve nodes metrics values.
