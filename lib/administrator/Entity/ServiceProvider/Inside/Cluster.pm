@@ -394,7 +394,7 @@ sub configureManagers {
             my $cluster_manager;
             eval {
                 $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $manager->{manager_type},
-                                                                  cluster_id   => $self->getId });
+                                                                  service_provider_id   => $self->getId });
             };
             if ($@) {
                 $cluster_manager = $self->addManager(manager      => Entity->get(id => $manager->{manager_id}),
@@ -1153,7 +1153,7 @@ sub addManagerParameter {
     General::checkParams(args => \%args, required => [ 'manager_type', 'name', 'value' ]);
 
     my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
-                                                         cluster_id   => $self->getId });
+                                                         service_provider_id   => $self->getId });
 
     $cluster_manager->addParams(params => { $args{name} => $args{value} });
 }
@@ -1165,7 +1165,7 @@ sub getManagerParameters {
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
     my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
-                                                         cluster_id   => $self->getId });
+                                                         service_provider_id   => $self->getId });
     return $cluster_manager->getParams();
 }
 
@@ -1181,7 +1181,7 @@ sub getManager {
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
     my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
-                                                         cluster_id   => $self->getId });
+                                                         service_provider_id   => $self->getId });
     return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
 }
 
