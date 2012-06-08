@@ -213,18 +213,19 @@ sub new {
         throw Kanopya::Exception::AuthenticationRequired(error => $errmsg);
     }
 
-    my $checker = buildEntityRights(schema => $schema);
+    if (defined $oneinstance) {
+        if ($oneinstance->{EID} != $ENV{EID}) {
+            $oneinstance->{_rightchecker} = buildEntityRights(schema => $schema);
+            $oneinstance->{EID} = $ENV{EID};
+        }
 
-    if(defined $oneinstance) {
-        $oneinstance->{_rightchecker} = $checker;
-        #$log->debug("Administrator instance retrieved with new rightchecker");
         return $oneinstance;
     }
 
     $log->debug("Administrator instance created");
 
     my $self = {
-        _rightchecker => $checker,
+        _rightchecker => buildEntityRights(schema => $schema),
         db => $schema,
         manager => {}
     };
@@ -242,6 +243,7 @@ sub new {
 
     bless $self, $class;
     $oneinstance = $self;
+    $oneinstance->{EID} = $ENV{EID};
     return $self;
 }
 
