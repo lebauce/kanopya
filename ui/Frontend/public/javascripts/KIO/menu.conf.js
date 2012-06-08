@@ -1,39 +1,40 @@
 // each link will show the div with id "view_<link_name>" and hide all div in "#view-container"
 
-require('KIO/services.js');
-require('KIO/workflows.js');
-require('KIO/users.js');
-
 var mainmenu_def = {
     'Administration'    : {
         'Kanopya'          : [],
         'Right Management' :  [
-                               {label : 'Users', id : 'users', onLoad : usersList},
-                               {label : 'Groups', id : 'groups',onLoad : groupsList},
+                               {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('users.js'); usersList(cid, eid); }},
+                               {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('users.js'); groupsList(cid, eid); }},
                                {label : 'Permissions', id : 'permissions'}
                                ],
         'Monitoring'       : [],
-        'Workflows'        : [{ label : 'SCO' , id : 'workflow_sco', onLoad : sco_workflow }]
+        'Workflows'        : [{ label : 'SCO' , id : 'workflow_sco', onLoad : _sco_workflow }]
     },
     'Services'   : {
         //onLoad : load_services,
         masterView : [
                       {label : 'Overview', id : 'services_overview'},
-                      {label : 'Services', id : 'services_list', onLoad : servicesList}
+                      {label : 'Services', id : 'services_list', onLoad : function(cid) { require('KIO/services.js'); servicesList(cid); }}
                       ],
         json : {url         : '/api/externalcluster',
                 label_key   : 'externalcluster_name',
                 id_key      : 'pk',
                 submenu     : [
-                               {label : 'Overview', id : 'service_overview', onLoad : loadServicesOverview},
-                               {label : 'Configuration', id : 'service_configuration', onLoad : loadServicesConfig},
-                               {label : 'Ressources', id : 'service_ressources', onLoad : loadServicesRessources},
-                               {label : 'Monitoring', id : 'service_monitoring', onLoad : loadServicesMonitoring},
-                               {label : 'Rules', id : 'service_rules', onLoad : loadServicesRules},
+                               {label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesOverview(cid, eid);}},
+                               {label : 'Configuration', id : 'service_configuration', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesConfig(cid, eid);}},
+                               {label : 'Ressources', id : 'service_ressources', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRessources(cid, eid);}},
+                               {label : 'Monitoring', id : 'service_monitoring', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesMonitoring(cid, eid);}},
+                               {label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRules(cid, eid);}},
                                ]
                 }
     },
 };
+
+function _sco_workflow(cid, eid) {
+    require('KIO/workflows.js');
+    sco_workflow(cid, eid);
+}
 
 var details_def = {
         'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'}
