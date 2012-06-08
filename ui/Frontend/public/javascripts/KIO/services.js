@@ -34,8 +34,8 @@ function initServiceDashboard() {
     dash_header.append('<a class="editlayout headerlink" href="#"><font color="black">Edit layout</font></a>&nbsp;&nbsp;');
     dash_header.append('<a class="savedashboard headerlink" href="#"><font color="black">Save Dashboard</font></a>');
 
-    $('body').append(dash_header);
-    $('body').append(dash_div);
+    //$('#view-container').append(dash_header);
+    $('#view-container').append(dash_div);
 
     // Dashboard template
     var template_id = "template";
