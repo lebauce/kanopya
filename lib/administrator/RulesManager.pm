@@ -81,7 +81,7 @@ sub addClusterRule {
 
     # try to create rule
     eval {
-        my $row = { cluster_id => $args{cluster_id}, rule_action => $args{action} };
+        my $row = { cluster_id => $args{cluster_id}};
         my $new_rule = $self->{db}->resultset('Rule')->create($row);
         
         # Parse condition tree: add conditions in db and create rule condition string
@@ -134,13 +134,12 @@ sub addClusterRule {
 sub deleteClusterRules {
     my $self = shift;
     my %args = @_;
-    
+
     my %search = ( cluster_id => $args{cluster_id} );
-    $search{rule_action} = ( defined $args{action} ) ? $args{action} : { 'not in' => "optim" };
-    
+
     my $rules = $self->{db}->resultset('Rule')->search( \%search );
     $rules->delete;
-    
+
     $log->debug("Rules deleted for cluster " . $args{cluster_id} );    
 }
 
@@ -156,17 +155,16 @@ sub deleteClusterRules {
 sub getClusterRules {
     my $self = shift;
     my %args = @_;
-    
+
     my %search = ( cluster_id => $args{cluster_id} );
-    $search{rule_action} = ( defined $args{action} ) ? $args{action} : { 'not in' => "optim" };
-    
+
     my $rules = $self->{db}->resultset('Rule')->search( \%search );
     my $condition_rs = $self->{db}->resultset('Rulecondition');
-    
+
     my $rules_array = [];
     while(my $r = $rules->next) {
-        my ($condition_str, $action) = ($r->get_column('rule_condition'), $r->get_column('rule_action'));
-        
+        my ($condition_str) = ($r->get_column('rule_condition'));
+
         my $tree = $self->{parser}->as_array( $condition_str,
              operand_cb => sub {
                 my $cond_id = shift;
@@ -180,19 +178,19 @@ sub getClusterRules {
                 return \%cond;
             },
         );
-        
-        push @$rules_array, { condition_tree => $tree, action => $action };
+
+        push @$rules_array, { condition_tree => $tree};
     }
-    
+
     return $rules_array;
 }
 
 sub getClusterOptimConditions {
     my $self = shift;
     my %args = @_;
-    
-    my $optim_rule = $self->getClusterRules( cluster_id => $args{cluster_id}, action => "optim" );
-    
+
+    my $optim_rule = $self->getClusterRules( cluster_id => $args{cluster_id});
+
     if ( $optim_rule->[0] ) {
         return $optim_rule->[0]{condition_tree};
     }
@@ -202,15 +200,15 @@ sub getClusterOptimConditions {
 sub addClusterOptimConditions {
     my $self = shift;
     my %args = @_;
-    
-    $self->addClusterRule( cluster_id => $args{cluster_id}, condition_tree => $args{condition_tree}, action => "optim" );    
+
+    $self->addClusterRule( cluster_id => $args{cluster_id}, condition_tree => $args{condition_tree});
 }
 
 sub deleteClusterOptimConditions {
     my $self = shift;
     my %args = @_;
-    
-    $self->deleteClusterRules( cluster_id => $args{cluster_id}, action => "optim" );
+
+    $self->deleteClusterRules( cluster_id => $args{cluster_id});
 }
 
 =head2 getClusterModelParameters

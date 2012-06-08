@@ -32,12 +32,6 @@ __PACKAGE__->table("rule");
   is_nullable: 0
   size: 128
 
-=head2 rule_action
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 32
-
 =head2 cluster_id
 
   data_type: 'integer'
@@ -57,8 +51,6 @@ __PACKAGE__->add_columns(
   },
   "rule_condition",
   { data_type => "char", is_nullable => 0, size => 128 },
-  "rule_action",
-  { data_type => "char", is_nullable => 0, size => 32 },
   "cluster_id",
   {
     data_type => "integer",

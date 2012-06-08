@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::NodemetricCondition;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::NodemetricCondition
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::NodemetricCondition
+=head1 TABLE: C<nodemetric_condition>
 
 =cut
 
@@ -24,6 +28,18 @@ __PACKAGE__->table("nodemetric_condition");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_auto_increment: 1
+  is_nullable: 0
+
+=head2 nodemetric_condition_label
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 255
+
+=head2 nodemetric_condition_service_provider_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
   is_nullable: 0
 
 =head2 nodemetric_condition_combination_id
@@ -44,18 +60,6 @@ __PACKAGE__->table("nodemetric_condition");
   data_type: 'double precision'
   is_nullable: 0
 
-=head2 nodemetric_condition_last_eval
-
-  data_type: 'tinyint'
-  is_nullable: 1
-
-=head2 class_type_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -69,12 +73,7 @@ __PACKAGE__->add_columns(
   "nodemetric_condition_label",
   { data_type => "char", is_nullable => 1, size => 255 },
   "nodemetric_condition_service_provider_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "nodemetric_condition_combination_id",
   {
     data_type => "integer",
@@ -86,32 +85,21 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "nodemetric_condition_threshold",
   { data_type => "double precision", is_nullable => 0 },
-  "class_type_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
 );
-__PACKAGE__->set_primary_key("nodemetric_condition_id");
 
-=head1 RELATIONS
+=head1 PRIMARY KEY
 
-=head2 class_type
+=over 4
 
-Type: belongs_to
+=item * L</nodemetric_condition_id>
 
-Related object: L<AdministratorDB::Schema::Result::ClassType>
+=back
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "class_type",
-  "AdministratorDB::Schema::Result::ClassType",
-  { class_type_id => "class_type_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
+__PACKAGE__->set_primary_key("nodemetric_condition_id");
+
+=head1 RELATIONS
 
 =head2 nodemetric_condition_combination
 
@@ -131,17 +119,9 @@ __PACKAGE__->belongs_to(
 );
 
 
-__PACKAGE__->belongs_to(
-  "nodemetric_condition_service_provider",
-  "AdministratorDB::Schema::Result::ServiceProvider",
-  { service_provider_id => "nodemetric_condition_service_provider_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 17:15:17
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dMXtWoAQOZdMkgiAryhKQw
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-03-05 14:43:50
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:akfRRrephl2/o5A0KU2M9A
-
-
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

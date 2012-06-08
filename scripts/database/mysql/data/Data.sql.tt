@@ -56,20 +56,12 @@ INSERT INTO `class_type` VALUES
 (40, 'Entity::Connector::ActiveDirectory'),
 (41, 'Entity::Connector::Scom'),
 (42, 'Entity::ServiceProvider::Outside::Externalcluster'),
-(43, 'Indicator'),
-(44, 'Clustermetric'),
-(45, 'AggregateCombination'),
-(46, 'AggregateCondition'),
-(47, 'AggregateRule'),
 (48, 'Entity::Component::Physicalhoster0'),
 (49, 'Entity::Poolip'),
 (50, 'Entity::Network::Vlan'),
 (51, 'Entity::Masterimage'),
 (52, 'Entity::Connector::UcsManager'),
 (53, 'Entity::Component::Fileimagemanager0'),
-(54, 'NodemetricCombination'),
-(55, 'NodemetricCondition'),
-(56, 'NodemetricRule'),
 (57, 'Entity::Connector::NetappManager'),
 (58, 'Entity::Connector::NetappLunManager'),
 (59, 'Entity::Connector::NetappVolumeManager'),
@@ -79,11 +71,6 @@ INSERT INTO `class_type` VALUES
 (63, 'Entity::ContainerAccess::FileContainerAccess'),
 (64, 'Entity::ManagerParameter'),
 (65, 'Entity::NfsContainerAccessClient'),
-(66, 'Action'),
-(67, 'ActionTriggered'),
-(68, 'ActionParameter'),
-(69, 'ActionType'),
-(70, 'ActionTypeParameter'),
 (71, 'Entity::Network'),
 (72, 'Entity::InterfaceRole'),
 (73, 'Entity::Interface'),
@@ -92,11 +79,7 @@ INSERT INTO `class_type` VALUES
 (76, 'Entity::Component::Puppetagent2'),
 (77, 'Entity::Component::Puppetmaster2'),
 (78, 'Entity::Component::Kanopyacollector1'),
-(79, 'ScomIndicator'),
-(80, 'Scope'),
-(81, 'ScopeParameter'),
-(82, 'WorkflowInstance'),
-(83, 'WorkflowInstanceParameter');
+(79, 'Entity::Connector::SCO');
 
 --
 -- entity comment list
@@ -447,7 +430,8 @@ INSERT INTO `connector_type` VALUES
 (4,'NetappLunManager','1','Storage'),
 (5,'NetappVolumeManager','1','Storage'),
 (6,'NetappLunManager','1','Export'),
-(7,'NetappVolumeManager','1','Export');
+(7,'NetappVolumeManager','1','Export'),
+(8,'SCO',1,'WorkflowManager');
 
 --
 -- interace role list
@@ -682,17 +666,17 @@ SET @eid := @eid +1;
 -- Scopes
 --
 
-INSERT INTO `scope` VALUES (1,'node',80);
-INSERT INTO `scope` VALUES (2,'service_provider',80);
+INSERT INTO `scope` VALUES (1,'node');
+INSERT INTO `scope` VALUES (2,'service_provider');
 
 
 --
 -- Scopes Parameters
 --
 
-INSERT INTO `scope_parameter` VALUES (1,1,'ou_from',81);
-INSERT INTO `scope_parameter` VALUES (2,1,'node_hostname',81);
-INSERT INTO `scope_parameter` VALUES (3,2,'cluster_name',81);
+INSERT INTO `scope_parameter` VALUES (1,1,'ou_from');
+INSERT INTO `scope_parameter` VALUES (2,1,'node_hostname');
+INSERT INTO `scope_parameter` VALUES (3,2,'cluster_name');
 
 --
 -- Monitoring data
@@ -705,52 +689,31 @@ INSERT INTO `indicatorset` VALUES
 (4,'apache_workers','ApacheProvider','GAUGE', 'Apache', null, null),
 (5,'scom','External','GAUGE',null,null,null);
 
-SET @cid = (SELECT class_type_id FROM `class_type` WHERE class_type = "Indicator"); 
-
 INSERT INTO `indicator` VALUES
-(1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1, null,@cid),
-(2,'Avail','.1.3.6.1.4.1.2021.4.6.0',null,null,'00FF0066', 1, null,@cid),
-(3,'Buffered','.1.3.6.1.4.1.2021.4.14.0',null,null,'0000FF66', 1, null,@cid),
-(4,'Cached','.1.3.6.1.4.1.2021.4.15.0',null,null,'FF000066', 1, null,@cid),
-(5,'User','.1.3.6.1.4.1.2021.11.50.0',null,null,'0000FF66', 2, null,@cid),
-(6,'Wait','.1.3.6.1.4.1.2021.11.54.0',null,null,'FF000066', 2, null,@cid),
-(7,'Nice','.1.3.6.1.4.1.2021.11.51.0',null,null,'FFFF0066', 2, null,@cid),
-(8,'Syst','.1.3.6.1.4.1.2021.11.52.0',null,null,'00FFFF66', 2, null,@cid),
-(9,'Kernel','.1.3.6.1.4.1.2021.11.55.0',null,null,'FF00FF66', 2, null,@cid),
-(10,'Interrupt','.1.3.6.1.4.1.2021.11.56.0',null,null,'66666666', 2, null,@cid),
-(11,'Idle','.1.3.6.1.4.1.2021.11.53.0',null,null,'00FF0066', 2, null,@cid),
-(12,'ReqPerSec','Total Accesses',0,null,'0000FF99', 3, null,@cid),
-(13,'IdleWorkers','IdleWorkers',null,null,'00FF0099', 4, null,@cid),
-(14,'BusyWorkers','BusyWorkers',null,null,'FF000099', 4, null,@cid),
-(15,'RAM free','Memory/Available MBytes',null,null,'FF000099', 5, 'MBytes', @cid),
-(16,'RAM pool paged','Memory/Pool Paged Bytes',null,null,'FF000099', 5, 'Bytes',@cid),
-(17,'RAM used','Memory/PercentMemoryUsed',null,null,'FF000099', 5, '%',@cid),
-(18,'CPU used','Processor/% Processor Time',null,null,'FF000099', 5, '%',@cid),
-(19,'CPU Queue Length','System/Processor Queue Length',null,null,'FF000099', 5, 'process',@cid),
-(20,'Disk idle time','LogicalDisk/% Idle Time',null,null,'FF000099', 5, '%',@cid),
-(21,'Disk free space','LogicalDisk/% Free Space',null,null,'FF000099', 5, '%',@cid),
-(22,'Network used','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5, '%',@cid),
-(23,'Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions',@cid),
-(24,'RAM I/O','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec',@cid);
-
-SET @cid = (SELECT class_type_id FROM `class_type` WHERE class_type = "ActionType"); 
-INSERT INTO `action_type` VALUES 
-(1,'WorkflowMigration',@cid),
-(2,'WorkflowAlert',@cid);
-
-SET @cid = (SELECT class_type_id FROM `class_type` WHERE class_type = "ActionTypeParameter"); 
-INSERT INTO `action_type_parameter` VALUES 
-(1,1,'trigger_rule_type',@cid),
-(2,1,'file_path',@cid),
-(3,1,'ou_to',@cid),
-(4,1,'user_message',@cid),
-(5,1,'logout_time',@cid),
-(6,2,'trigger_rule_type',@cid),
-(7,2,'file_path',@cid),
-(8,2,'user_message',@cid);
-
-        
-
+(1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1, null),
+(2,'Avail','.1.3.6.1.4.1.2021.4.6.0',null,null,'00FF0066', 1, null),
+(3,'Buffered','.1.3.6.1.4.1.2021.4.14.0',null,null,'0000FF66', 1, null),
+(4,'Cached','.1.3.6.1.4.1.2021.4.15.0',null,null,'FF000066', 1, null),
+(5,'User','.1.3.6.1.4.1.2021.11.50.0',null,null,'0000FF66', 2, null),
+(6,'Wait','.1.3.6.1.4.1.2021.11.54.0',null,null,'FF000066', 2, null),
+(7,'Nice','.1.3.6.1.4.1.2021.11.51.0',null,null,'FFFF0066', 2, null),
+(8,'Syst','.1.3.6.1.4.1.2021.11.52.0',null,null,'00FFFF66', 2, null),
+(9,'Kernel','.1.3.6.1.4.1.2021.11.55.0',null,null,'FF00FF66', 2, null),
+(10,'Interrupt','.1.3.6.1.4.1.2021.11.56.0',null,null,'66666666', 2, null),
+(11,'Idle','.1.3.6.1.4.1.2021.11.53.0',null,null,'00FF0066', 2, null),
+(12,'ReqPerSec','Total Accesses',0,null,'0000FF99', 3, null),
+(13,'IdleWorkers','IdleWorkers',null,null,'00FF0099', 4, null),
+(14,'BusyWorkers','BusyWorkers',null,null,'FF000099', 4, null),
+(15,'RAM free','Memory/Available MBytes',null,null,'FF000099', 5, 'MBytes'),
+(16,'RAM pool paged','Memory/Pool Paged Bytes',null,null,'FF000099', 5, 'Bytes'),
+(17,'RAM used','Memory/PercentMemoryUsed',null,null,'FF000099', 5, '%'),
+(18,'CPU used','Processor/% Processor Time',null,null,'FF000099', 5, '%'),
+(19,'CPU Queue Length','System/Processor Queue Length',null,null,'FF000099', 5, 'process'),
+(20,'Disk idle time','LogicalDisk/% Idle Time',null,null,'FF000099', 5, '%'),
+(21,'Disk free space','LogicalDisk/% Free Space',null,null,'FF000099', 5, '%'),
+(22,'Network used','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5, '%'),
+(23,'Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions'),
+(24,'RAM I/O','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec');
 
 --
 -- initial permissions for user guest
