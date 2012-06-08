@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 5 june 2012
 
-package 'Entity::Connector::SCO';
+package Entity::Connector::Sco;
 use base 'Entity::Connector';
 use base 'Manager::WorkflowManager';
 
