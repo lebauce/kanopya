@@ -682,7 +682,7 @@ INSERT INTO `scope_parameter` VALUES (3,2,'cluster_name');
 -- Initial Host manager for kanopya cluster
 --
 
-INSERT INTO `ServiceProviderManager` VALUES (1, @admin_cluster, 'host_manager', @physical_hoster, null);
+INSERT INTO `service_provider_manager` VALUES (1, @admin_cluster, 'host_manager', @physical_hoster, null);
 
 
 --
