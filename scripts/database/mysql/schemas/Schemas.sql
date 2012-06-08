@@ -132,7 +132,7 @@ CREATE TABLE `cluster` (
 CREATE TABLE `service_provider_manager` (
   `service_provider_manager_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `service_provider_id` int(8) unsigned NOT NULL,
-  `service_provider_manager_type` char(64) NOT NULL,
+  `manager_type` char(64) NOT NULL,
   `manager_id` int(8) unsigned NOT NULL,
   `param_preset_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_provider_manager_id`),

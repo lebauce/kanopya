@@ -36,17 +36,17 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
-    service_provider_manager_type => {
+    manager_type => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0
     },
-    service_provider_manager_id => {
+    manager_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_extended  => 0
     },
-    service_provider_manager_params => {
+   param_preset_id   => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_extended  => 0
@@ -63,7 +63,7 @@ sub addParams {
 
     my $preset;
     eval {
-        $preset = ParamPreset->get(id => $self->getAttr(name => 'manager_params'));
+        $preset = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
 
         if ($args{override}) {
             $preset->update(params => $args{params});
@@ -73,8 +73,8 @@ sub addParams {
         }
     };
     if ($@) {
-        $preset = ParamPreset->new(name => 'manager_params', params => $args{params});
-        $self->setAttr(name  => 'manager_params',
+        $preset = ParamPreset->new(name => 'param_preset_id', params => $args{params});
+        $self->setAttr(name  => 'param_preset_id',
                        value => $preset->getAttr(name => 'param_preset_id'));
         $self->save();
     }
@@ -84,7 +84,7 @@ sub getParams {
     my $self = shift;
     my %args = @_;
 
-    my $param_presets = ParamPreset->get(id => $self->getAttr(name => 'manager_params'));
+    my $param_presets = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
 
     return $param_presets->load();
 }
