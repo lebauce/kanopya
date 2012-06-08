@@ -1,4 +1,9 @@
 // each link will show the div with id "view_<link_name>" and hide all div in "#view-container"
+
+require('KIO/services.js');
+require('KIO/workflows.js');
+require('KIO/users.js');
+
 var mainmenu_def = {
     'Administration'    : {
         'Kanopya'          : [],

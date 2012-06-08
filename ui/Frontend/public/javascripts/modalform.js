@@ -1,3 +1,8 @@
+require('jquery/jquery.form.js');
+require('jquery/jquery.validate.js');
+require('jquery/jquery.form.wizard.js');
+require('jquery/jquery.qtip.min.js');
+
 $.validator.addMethod("regex", function(value, element, regexp) {
     var re = new RegExp(regexp);
     return this.optional(element) || re.test(value);

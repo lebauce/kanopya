@@ -1,3 +1,5 @@
+require('jquery/jquery.form.js');
+require('jquery/jquery.form.wizard.js');
 
 function    createSCOWorkflowDefButton(container) {
 

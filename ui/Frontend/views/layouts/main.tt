@@ -18,23 +18,16 @@
 <script src="/javascripts/jquery/jquery-ui-1.8.19.custom.js"></script>
 <script src="/javascripts/jquery/jquery.layout.js"></script>
 <script src='/javascripts/jquery/jquery.jqGrid.min.js'></script>
+<script type='text/javascript' src='/javascripts/i18n/grid.locale-en.js'></script>
 
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
 
-<script src='/javascripts/jquery/jquery.qtip.min.js'></script>
-
-<script src='/javascripts/jquery/jquery.form.js'></script>
-<script src='/javascripts/jquery/jquery.validate.js'></script>
-<script src='/javascripts/jquery/jquery.form.wizard.js'></script>
-
 <script src='/javascripts/require.js'></script>
 
-<script type='text/javascript' src='/javascripts/i18n/grid.locale-en.js'></script>
 
 <script src="/javascripts/kanopya.ui.js"></script>
 <script src="/javascripts/menu.js"></script>
 <script src="/javascripts/views.js"></script>
-<!-- <script src='/javascripts/gritter.js'></script> -->
 
 </head>
 <body>
