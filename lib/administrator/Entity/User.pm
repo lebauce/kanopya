@@ -21,6 +21,7 @@ use base "Entity";
 
 use strict;
 use warnings;
+use Administrator;
 use Digest::MD5 "md5_hex";
 use Kanopya::Exceptions;
 use General;
@@ -83,6 +84,12 @@ sub methods {
                         'perm_holder' => 'entity',
         },
         'setperm'    => {'description' => 'set permissions on this user', 
+                        'perm_holder' => 'entity',
+        },
+        'getProfiles' => {'description' => 'get user profiles', 
+                        'perm_holder' => 'entity',
+        },
+         'setProfiles' => {'description' => 'set user profiles', 
                         'perm_holder' => 'entity',
         },
     };
@@ -156,6 +163,36 @@ sub remove {
         );
     }
     $self->SUPER::delete();
+}
+
+sub setProfiles {
+    my ($self, %args) = @_; 
+    my $adm = Administrator->new;
+    $self->{_dbix}->user_profiles->delete_all;
+    foreach my $profile (@{$args{profile_names}}) {
+        my $row = $adm->{db}->resultset('Profile')->find(
+            {profile_name => $profile},
+            {key => 'profile_name'}
+        );
+        if(defined $row) {
+            $self->{_dbix}->user_profiles->create(
+                { profile_id => $row->id }
+            );
+        } else {
+            my $msg = "Unknown profile $profile";
+            throw Kanopya::Exception::Internal::IncorrectParam(error => $msg);
+        }
+    }
+}
+
+sub getProfiles {
+    my ($self) = @_;
+    my $result = $self->{_dbix}->user_profiles; 
+    my @array = ();
+    while(my $row = $result->next) {
+        push @array, $row->profile->get_column('profile_name');
+    }
+    return \@array;
 }
 
 =head2 toString
