@@ -333,7 +333,7 @@ function servicesList (container_id, elem_id) {
 }
 
 function createUpdateNodeButton(container, elem_id) {
-    var button = $("<button>", { text : 'Update Nodes' });
+    var button = $("<button>", { text : 'Update Nodes' }).button({ icons : { primary : 'ui-icon-refresh' } });
     // Check if there is a configured directory service
     if (isThereAConnector(elem_id, 'DirectoryService') === true) {
         $(button).bind('click', function(event) {
@@ -463,23 +463,33 @@ function loadServicesConfig (container_id, elem_id) {
     var externalclustername = '';
     
     if (isThereAConnector(elem_id, 'DirectoryService') === false) {
-        var b   = $("<button>", { text : 'Add a Directory Service', id : 'adddirectory' });
+        var b   = $("<a>", { text : 'Add a Directory Service', id : 'adddirectory' });
         b.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
-        b.appendTo(container);
+        b.appendTo(container).button({ icons : { primary : 'ui-icon-plusthick' } });
     }
     
     if (isThereAConnector(elem_id, 'MonitoringService') === false) {
         var bu  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
-        bu.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
-        bu.appendTo(container);
+        bu.bind('click', function() { createMonDirDialog(elem_id, 'MonitoringService').start(); });
+        bu.appendTo(container).button({ icons : { primary : 'ui-icon-plusthick' } });
     }
     
     var connectorsTypeHash = {};
     var connectorsTypeArray = new Array;
     
-    var table = $("<table>").appendTo(container);
-
     var that = this;
+
+    $.ajax({
+        url     : '/api/externalcluster/' + elem_id,
+        type    : 'GET',
+        success : function(data) {
+            var table   = $("<table>").css("width", "100%").appendTo(container);
+            $(table).append($("<tr>").append($("<td>", { colspan : 2, class : 'table-title', text : "General" })));
+            $(table).append($("<tr>").append($("<td>", { text : 'Name :', width : '100' })).append($("<td>", { text : data.externalcluster_name })));
+            $(table).append($("<tr>").append($("<td>", { text : 'Description :' })).append($("<td>", { text : data.externalcluster_desc })));
+            $(table).append($("<tr>", { height : '15' }).append($("<td>", { colspan : 2 })));
+        }
+    });
 
     $.ajax({
         url: '/api/connectortype?dataType=jqGrid',
@@ -488,7 +498,10 @@ function loadServicesConfig (container_id, elem_id) {
                     $(connTypeData.rows).each(function(row) {
                     //connectorsTypeHash = { 'pk' : connTypeData.rows[row].pk, 'connectorName' : connTypeData.rows[row].connector_name };
                     var pk = connTypeData.rows[row].pk;
-                    connectorsTypeArray[pk] = connTypeData.rows[row].connector_name;
+                    connectorsTypeArray[pk] = {
+                        name        : connTypeData.rows[row].connector_name,
+                        category    : connTypeData.rows[row].connector_category
+                    };
                 });
             }
     });
@@ -496,33 +509,39 @@ function loadServicesConfig (container_id, elem_id) {
     $.ajax({
         url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
         success: function(data) {
+            var table = $("<table>").appendTo(container);
+            $(table).append($("<tr>").append($("<td>", { colspan : 3, class : 'table-title', text : "Connectors" })));
             $(data.rows).each(function(row) {
                 var connectorTypePk = data.rows[row].connector_type_id;
-                var connectorName = connectorsTypeArray[connectorTypePk] || 'UnknownConnector';
-                var tr  = $("<tr>", { rel : connectorName.toLowerCase() }).append($("<td>", { text : connectorName }));
-                var confButton  = $("<button>", { text : 'Configure', rel : data.rows[row].pk });
-                var delButton   = $("<button>", { text : 'Delete', rel : data.rows[row].pk });
-                $(tr).append($(confButton)).append($(delButton));
+                var connectorName = connectorsTypeArray[connectorTypePk].name || 'UnknownConnector';
+                var tr  = $("<tr>", {
+                    rel : connectorName.toLowerCase() + "|" + connectorsTypeArray[connectorTypePk].category.toLowerCase()
+                }).append($("<td>", {
+                    text : connectorsTypeArray[connectorTypePk].category + " :"
+                }).css('padding-top', '6px')).append($("<td>", { text : connectorName }).css('padding-top', '6px'));
+                var confButton  = $("<a>", { text : 'Configure', rel : data.rows[row].pk });
+                var delButton   = $("<a>", { text : 'Delete', rel : data.rows[row].pk });
+                $(tr).append($("<td>").append($(confButton))).append($("<td>").append($(delButton)));
                 $(tr).appendTo(table);
 
                 // Bind configure and delete actions on buttons
                 $(confButton).bind('click', { button : confButton }, function(event) {
                     var button  = $(event.data.button);
                     var id      = $(button).attr('rel');
-                    var name    = $(button).parent('tr').attr('rel');
-                    that.createSpecServDialog(elem_id, name, false, 2, undefined, id).start();
-                });
+                    var name    = $(button).parents('tr').attr('rel').split('|');
+                    that.createSpecServDialog(elem_id, name[0], false, name[1], undefined, id).start();
+                }).button({ icons : { primary : 'ui-icon-wrench' } });
                 $(delButton).bind('click', { button : delButton }, function(event) {
                     var button  = $(event.data.button);
                     $.ajax({
                         type    : 'delete',
-                        url     : '/api/' + button.parent('tr').attr('rel') + '/' + button.attr('rel'),
+                        url     : '/api/' + button.parents('tr').attr('rel').split('|')[0] + '/' + button.attr('rel'),
                         success : function() {
                             $(container).empty();
                             that.loadServicesConfig(container_id, elem_id);
                         }
                     });
-                });
+                }).button({ icons : { primary : 'ui-icon-trash' } });
             });
         }
     });

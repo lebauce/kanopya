@@ -74,3 +74,13 @@ td.helpCell {
   font-size       : 11px;
   padding-bottom  : 10px;
 }
+
+td.table-title {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+a.linkbutton {
+  cursor: pointer;
+  font-weight: bold;
+}
