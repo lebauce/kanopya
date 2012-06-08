@@ -14,7 +14,9 @@ function    createSCOWorkflowDefButton(container) {
     }
 
     // Create a button
-    var button  = $("<button>", { text : "Create a Workflow definition" });
+    var button  = $("<a>", { text : "Create a Workflow definition" }).button({
+        icons : { primary : 'ui-icon-plusthick' }
+    });
 
     var scopes      = {};
     var scopeparams = {};

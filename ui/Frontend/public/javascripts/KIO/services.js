@@ -1,6 +1,8 @@
 // Some global service variables declaration
 // TODO a nice class :)
 
+require('modalform.js');
+
 // Current service instance
 var service_id;
 
