@@ -103,6 +103,19 @@ sub _rootTable {
     return $class;
 }
 
+sub normalizeName {
+    my $name = shift;
+    my $i = 0;
+    while ($i < length($name)) {
+        if (substr($name, $i, 1) eq "_") {
+            $name = substr($name, 0, $i) . ucfirst(substr($name, $i + 1, 1)) . substr($name, $i + 2)
+        }
+        $i += 1;
+    }
+
+    return ucfirst($name);
+};
+
 sub classFromDbix {
     my $source = shift;
     my $args = @_;
@@ -115,15 +128,7 @@ sub classFromDbix {
         $name = ucfirst($source->from) . "::" . $name;
     }
 
-    my $i = 0;
-    while ($i < length($name)) {
-        if (substr($name, $i, 1) eq "_") {
-            $name = substr($name, 0, $i) . ucfirst(substr($name, $i + 1, 1)) . substr($name, $i + 2)
-        }
-        $i += 1;
-    }
-
-    return $name;
+    return normalizeName($name);
 }
 
 # checkAttrs : check attribute validity in the class hierarchy 
@@ -411,6 +416,54 @@ sub get {
     return $self;
 }
 
+sub getJoin {
+    my $class = shift;
+
+    my $parent_join;
+    my @hierarchy = split(/::/, $class);
+    my $depth = scalar @hierarchy;
+    my $n = $depth;
+    my $adm = Administrator->new();
+    while ($n > 0) {
+        last if $hierarchy[$n - 1] eq "BaseDB";
+        $parent_join = $adm->{db}->source($hierarchy[$n - 1])->has_relationship("parent") ?
+                           ($parent_join ? { parent => $parent_join } : "parent") :
+                           $parent_join;
+
+        $n -= 1;
+    }
+
+    return $parent_join;
+}
+
+sub getJoinQuery {
+    my $class = shift;
+    my @comps = @_;
+
+    my $adm = Administrator->new();
+    my $source = $adm->{db}->source(_buildClassNameFromString($class));
+
+    my @joins;
+    for my $comp (@comps) {
+        my @segment = ();
+        while (! $source->has_relationship($comp)) {
+            @segment = ("parent", @segment);
+            last if ! $source->has_relationship("parent");
+            $source = $source->related_source("parent");
+        }
+
+        $source = $source->related_source($comp);
+        @joins = (@joins, @segment, $comp);
+    }
+
+    my $joins;
+    for my $comp (reverse @joins) {
+        $joins = { $comp => $joins };
+    }
+
+    return $joins;
+}
+
 # search : retrieve several instance via a hash ref filter 
 
 sub search {
@@ -422,24 +475,28 @@ sub search {
 
     my $table = _buildClassNameFromString($class);
     my $adm = Administrator->new();
+    my $joins = $class->getJoin();
 
-    my $join;
-    my @hierarchy = split(/::/, $class);
-    my $depth = scalar @hierarchy;
-    my $n = $depth;
-    while ($n > 0) {
-        last if $hierarchy[$n - 1] eq "BaseDB";
-        $join = $adm->{db}->source($hierarchy[$n - 1])->has_relationship("parent") ?
-                    ($join ? { parent => $join } : "parent") :
-                    $join;
+    for my $filter (keys %{$args{hash}}) {
+        my @comps = split('\.', $filter);
+        my $value = $args{hash}->{$filter};
 
-        $n -= 1;
+        if (scalar (@comps) > 1) {
+            my $value = $args{hash}->{$filter};
+            my $attr = pop @comps;
+
+            delete $args{hash}->{$filter};
+
+            push @$joins, $class->getJoinQuery(@comps);
+
+            $args{hash}->{$comps[-1] . '.' . $attr} = $value;
+        }
     }
 
     my $rs = $adm->_getDbixFromHash('table'    => $table,
                                     'hash'     => $args{hash},
                                     'page'     => $args{page},
-                                    'join'     => $join,
+                                    'join'     => $joins,
                                     'rows'     => $args{rows},
                                     'order_by' => $args{order_by});
 
