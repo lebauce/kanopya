@@ -291,8 +291,8 @@ sub checkConfigurationPattern {
             if (defined $manager_def->{manager_id}) {
                 my $manager = Entity->get(id => $manager_def->{manager_id});
 
-                $manager->checkManagerParams(manager_type   => $manager_def->{manager_type},
-                                             manager_params => $manager_def->{manager_params});
+                $manager->checkManagerParams(service_provider_manager_type   => $manager_def->{service_provider_manager_type},
+                                             param_preset_id => $manager_def->{param_preset_id});
             }
         }
 
@@ -393,21 +393,21 @@ sub configureManagers {
             # and set manager parameters if defined.
             my $cluster_manager;
             eval {
-                $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $manager->{manager_type},
+                $cluster_manager = ServiceProviderManager->find(hash => { service_provider_anager_type => $manager->{service_provider_manager_type},
                                                                   cluster_id   => $self->getId });
             };
             if ($@) {
                 $cluster_manager = $self->addManager(manager      => Entity->get(id => $manager->{manager_id}),
-                                                     manager_type => $manager->{manager_type});
+                                                     service_provider_manager_type => $manager->{service_provider_manager_type});
             }
-            if ($manager->{manager_params}) {
-                $cluster_manager->addParams(params => $manager->{manager_params}, override => 1);
+            if ($manager->{param_preset_id}) {
+                $cluster_manager->addParams(params => $manager->{param_preset_id}, override => 1);
             }
         }
     }
 
-    my $disk_manager   = $self->getManager(manager_type => 'disk_manager');
-    my $export_manager = eval { $self->getManager(manager_type => 'export_manager') };
+    my $disk_manager   = $self->getManager(service_provider_manager_type => 'disk_manager');
+    my $export_manager = eval { $self->getManager(service_provider_manager_type => 'export_manager') };
 
     # If the export manager exists, deduce the boot policy
     if ($export_manager) {
@@ -421,7 +421,7 @@ sub configureManagers {
                               boot_policy => $self->getAttr(name => 'cluster_boot_policy')
                           );
 
-        $self->addManager(manager => $export_manager, manager_type => "export_manager");
+        $self->addManager(manager => $export_manager, service_provider_manager_type => "export_manager");
     }
 
     # Get export manager parameter related to si shared value.
@@ -432,7 +432,7 @@ sub configureManagers {
     #       but there will be export manager params consitency problem if policies are updated.
     if ($readonly_param) {
         $self->addManagerParameter(
-            manager_type => 'export_manager',
+            service_provider_manager_type => 'export_manager',
             name         => $readonly_param->{name},
             value        => $readonly_param->{value}
         );
@@ -475,16 +475,16 @@ sub addManager {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'manager', "manager_type" ]);
+    General::checkParams(args => \%args, required => [ 'manager', "service_provider_manager_type" ]);
 
     my $manager = ServiceProviderManager->new(
                       cluster_id   => $self->getAttr(name => 'entity_id'),
-                      manager_type => $args{manager_type},
+                      service_provider_manager_type => $args{service_provider_manager_type},
                       manager_id   => $args{manager}->getAttr(name => 'entity_id')
                   );
 
-    if ($args{manager_params}) {
-        $manager->addParams(params => $args{manager_params});
+    if ($args{param_preset_id}) {
+        $manager->addParams(params => $args{param_preset_id});
     }
     return $manager;
 }
@@ -918,7 +918,7 @@ sub getHosts {
 sub getHostManager {
     my $self = shift;
 
-    return $self->getManager(manager_type => 'host_manager');
+    return $self->getManager(service_provider_manager_type => 'host_manager');
 }
 
 =head2 getCurrentNodesCount
@@ -1150,9 +1150,9 @@ sub addManagerParameter {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'manager_type', 'name', 'value' ]);
+    General::checkParams(args => \%args, required => [ 'service_provider_manager_type', 'name', 'value' ]);
 
-    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
+    my $cluster_manager = ServiceProviderManager->find(hash => { service_provider_manager_type => $args{service_provider_manager_type},
                                                          cluster_id   => $self->getId });
 
     $cluster_manager->addParams(params => { $args{name} => $args{value} });
@@ -1162,9 +1162,9 @@ sub getManagerParameters {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'manager_type' ]);
+    General::checkParams(args => \%args, required => [ 'service_provider_manager_type' ]);
 
-    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
+    my $cluster_manager = ServiceProviderManager->find(hash => { service_provider_manager_type => $args{service_provider_manager_type},
                                                          cluster_id   => $self->getId });
     return $cluster_manager->getParams();
 }
@@ -1178,9 +1178,9 @@ sub getManager {
         return $self->SUPER::getManager(%args);
     }
 
-    General::checkParams(args => \%args, required => [ 'manager_type' ]);
+    General::checkParams(args => \%args, required => [ 'service_provider_manager_type' ]);
 
-    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
+    my $cluster_manager = ServiceProviderManager->find(hash => { service_provider_manager_type => $args{service_provider_manager_type},
                                                          cluster_id   => $self->getId });
     return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
 }
@@ -1381,6 +1381,6 @@ sub generateDefaultMonitoringConfiguration {
 sub getCollectorManager {
     my $self = shift;
 
-    return $self->getManager(manager_type => 'collector_manager' );
+    return $self->getManager(service_provider_manager_type => 'collector_manager' );
 }
 1;
