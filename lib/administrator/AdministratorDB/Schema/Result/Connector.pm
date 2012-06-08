@@ -230,4 +230,10 @@ __PACKAGE__->might_have(
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+    { "foreign.entity_id" => "self.connector_id" },
+    { cascade_copy => 0, cascade_delete => 1 }
+);
 1;
