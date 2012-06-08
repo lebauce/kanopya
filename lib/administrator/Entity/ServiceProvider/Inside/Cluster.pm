@@ -292,7 +292,7 @@ sub checkConfigurationPattern {
                 my $manager = Entity->get(id => $manager_def->{manager_id});
 
                 $manager->checkManagerParams(manager_type   => $manager_def->{manager_type},
-                                             param_preset_id => $manager_def->{param_preset_id});
+                                             manager_params => $manager_def->{manager_params});
             }
         }
 
@@ -400,8 +400,8 @@ sub configureManagers {
                 $cluster_manager = $self->addManager(manager      => Entity->get(id => $manager->{manager_id}),
                                                      manager_type => $manager->{manager_type});
             }
-            if ($manager->{param_preset_id}) {
-                $cluster_manager->addParams(params => $manager->{param_preset_id}, override => 1);
+            if ($manager->{manager_params}) {
+                $cluster_manager->addParams(params => $manager->{manager_params}, override => 1);
             }
         }
     }
@@ -483,8 +483,8 @@ sub addManager {
                       manager_id   => $args{manager}->getAttr(name => 'entity_id')
                   );
 
-    if ($args{param_preset_id}) {
-        $manager->addParams(params => $args{param_preset_id});
+    if ($args{manager_params}) {
+        $manager->addParams(params => $args{manager_params});
     }
     return $manager;
 }
