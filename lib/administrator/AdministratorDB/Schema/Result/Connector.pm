@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::Connector;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Connector
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Connector
+=head1 TABLE: C<connector>
 
 =cut
 
@@ -65,6 +69,17 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</connector_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("connector_id");
 
 =head1 RELATIONS
@@ -97,26 +112,6 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "connector_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Outside>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::Outside",
-  { outside_id => "service_provider_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
 );
 
 =head2 connector_type
@@ -164,6 +159,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 sco
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Sco>
+
+=cut
+
+__PACKAGE__->might_have(
+  "sco",
+  "AdministratorDB::Schema::Result::Sco",
+  { "foreign.sco_id" => "self.connector_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 scom
 
 Type: might_have
@@ -177,6 +187,26 @@ __PACKAGE__->might_have(
   "AdministratorDB::Schema::Result::Scom",
   { "foreign.scom_id" => "self.connector_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Outside>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::Outside",
+  { outside_id => "service_provider_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 ucs_manager
@@ -194,13 +224,10 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-20 16:41:59
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HvyVFwqWOFlj4OsHXKpeXQ
 
-__PACKAGE__->belongs_to(
-  "parent",
-  "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.connector_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-08 14:15:52
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tNOt4OGSNpE7xXGfENJ+bQ
 
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
