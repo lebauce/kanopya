@@ -1,6 +1,9 @@
 
 $('.widget').live('widgetLoadContent',function(e, obj){
-     console.log('Load content of ' + obj.widget.id);
+    // Check if loaded widget is for us
+     if (obj.widget.element.find('.nmBarGraph').length == 0) {return;}
+
+     console.log('Load content of widget bargraph ' + obj.widget.id);
 
      var sp_id = obj.widget.metadata.service_id;
      fillNodeMetricList(
@@ -48,7 +51,7 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
     if (nodemetric_combination_id == 'default') { return }
     //loading_start();
     var params = {id:nodemetric_combination_id};
-    graph_container_div.html('');
+    graph_container_div.children().remove();
     $.getJSON(nodes_view_bargraph, params, function(data) {
         if (data.error){ alert (data.error); }
         else {
