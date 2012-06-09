@@ -16,7 +16,7 @@ var dash_template;
 
 $(document).ready(function() {
     // Create and init dashboard used for services
-    initServiceDashboard();
+    //initServiceDashboard();
 });
 
 function initServiceDashboard() {
@@ -42,7 +42,16 @@ function initServiceDashboard() {
     dash_template =  $('<div id="template"></div>');
     $('body').append(dash_template);
     $("#template").hide();
-    $("#template").load("dashboard_templates.html", initDashboard);
+    //$("#template").load("dashboard_templates.html", initDashboard);
+
+    $.ajax({
+        url: "dashboard_templates.html",
+        async : false,
+        success : function(data) {
+            $('#template').html(data);
+            initDashboard();
+        }
+      });
 
     function initDashboard() {
 
@@ -398,6 +407,11 @@ function loadServicesOverview (container_id, elem_id) {
     var container = $('#' + container_id);
     var externalclustername = '';
 
+    // First init
+    if (service_dashboard === undefined) {
+        initServiceDashboard();
+    }
+
     service_id = elem_id;
 
     $.ajax({
@@ -443,6 +457,12 @@ function loadServicesOverview (container_id, elem_id) {
             // Update or Create
             $.ajax(req);
         });
+    });
+
+    // Clear dashboard (remove widgets)
+    $.each(service_dashboard.widgets, function(id, widget) {
+        widget.remove();
+        delete service_dashboard.widgets[id];
     });
 
     // Retrieve saved conf and set dashboard
