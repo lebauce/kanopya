@@ -1,0 +1,19 @@
+<script>
+    require('widgets/widget_nodes_histogram.js');
+</script>
+
+<div class="nodes_overview">
+<div class="nmHistogram">
+        <div class="indicator_dropdown">
+            <select class='nmHistogram_list'>
+                <option selected="selected" id="default">Select an indicator</option>
+            </select>
+        </div>
+        <br />
+        <div>
+            <label for="part_number"> number of partitions(default 10)</label>
+            <input type="text" id="part_number">
+        </div>
+        <div class="nodes_histogram"></div>
+    </div>
+</div>

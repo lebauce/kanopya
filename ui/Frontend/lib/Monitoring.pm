@@ -24,6 +24,8 @@ get '/serviceprovider/:spid/nodesview/bargraph' => sub {
     my $cluster_id    = params->{spid} || 0;
     my $nodemetric_combination_id = params->{'id'};
 
+    content_type('application/json');
+
     my $compute_result = _computeNodemetricCombination (cluster_id => $cluster_id, combination_id => $nodemetric_combination_id);
 
     if ($compute_result->{'error'}) {
@@ -31,11 +33,69 @@ get '/serviceprovider/:spid/nodesview/bargraph' => sub {
     }
 
     my $nodelist = [ @{$compute_result->{'nodes'}}, @{$compute_result->{'undef'}} ];
-    
-    content_type('application/json');
+
     return to_json {values => $compute_result->{'values'}, nodelist => $nodelist};
 };
 
+=head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram'
+
+    Desc: Create a frequency distribution from the values computed to the selected nodemetric combination
+    return to the monitor.js a scalar containing the quantity of nodes, an array containing the number of nodes per partitions and another array containing the partitions (interval) of values 
+
+=cut  
+
+ajax '/serviceprovider/:spid/nodesview/histogram' => sub {
+    my $cluster_id    = params->{spid} || 0;
+    my $nodemetric_combination_id = params->{'id'}; 
+    my $part_number = params->{'pn'};
+
+    content_type('application/json');
+
+    #we gather computation result for the nodemetric combination
+    my $compute_result = _computeNodemetricCombination(cluster_id => $cluster_id, combination_id => $nodemetric_combination_id);
+
+    if ($compute_result->{'error'}) {
+        return to_json {error => $compute_result->{'error'}};
+    }
+    
+    #we define the number of nodes
+    my $nodes_quantity = scalar(@{$compute_result->{'nodes'}}) + scalar(@{$compute_result->{'undef'}});
+    my $values_number = scalar(@{$compute_result->{'values'}});
+    my $min = 0;
+    my @partitions_scopes;
+    my @nbof_nodes_per_partition;
+
+    #We catch the case where only one value is returned: statistics::descriptive cannot create a distribution from only one value.
+    if ($values_number == 1) {
+        #we push into the array the only node value
+        push @partitions_scopes, $min.' - '.$compute_result->{'values'}[0];
+        push @nbof_nodes_per_partition, 1;
+
+        #then we push into the array the number of undef nodes values
+        push @partitions_scopes, 'undef';
+        push @nbof_nodes_per_partition, scalar(@{$compute_result->{'undef'}});
+
+        return to_json {partitions => \@partitions_scopes, nbof_nodes_in_partition => \@nbof_nodes_per_partition, nodesquantity => $nodes_quantity};
+    } else {
+        #we get the combination values and give them to statistics descriptive
+        my $all_values = Statistics::Descriptive::Full->new();
+        $all_values->add_data($compute_result->{'values'});
+        my $partitioned_values = $all_values->frequency_distribution_ref($part_number);
+
+        #we build two arrays, one containing the partition "label", and the other containing the related values
+        foreach my $partition_scope ( sort { $a <=> $b } keys %$partitioned_values) {
+            push @partitions_scopes, $min.' - '.$partition_scope;
+            push @nbof_nodes_per_partition, $partitioned_values->{$partition_scope};
+            $min = $partition_scope;
+        }
+
+        #we add to the lists the undef values
+        push @partitions_scopes, 'undef';
+        push @nbof_nodes_per_partition, scalar(@{$compute_result->{'undef'}});
+
+        return to_json {partitions => \@partitions_scopes, nbof_nodes_in_partition => \@nbof_nodes_per_partition, nodesquantity => $nodes_quantity};
+    }
+};
 
 =head2 sub _computeNodemetricCombination
 

@@ -3,20 +3,20 @@
   {
   "data" : [
     {
-      "id" : "widget_node_bargraph",
-      "title" : "Nodes overview",
-      "description" : "Nodes bar graph widget",
+      "id" : "widget_nodes_histo",
+      "title" : "Nodes histogram",
+      "description" : "Nodes histogram widget",
       "creator" : "Hedera",
-      "url" : "widgets/widget_nodes_bargraph.html",
+      "url" : "widgets/widget_nodes_histogram.html",
       "image": "widgets/widget_nodes_bargraph.png",
       "metadata" : {}
     },
     {
-      "id" : "widget_node_bargraph_config",
-      "title" : "Nodes overview config",
-      "description" : "Nodes bar graph widget configurable (nodemetric selection)",
+      "id" : "widget_nodes_bargraph",
+      "title" : "Nodes overview",
+      "description" : "Show value of a selected metric for each nodes",
       "creator" : "Hedera",
-      "url" : "widgets/widget_nodes_bargraph_config.html",
+      "url" : "widgets/widget_nodes_bargraph.html",
       "editurl" : "widgets/editwidget2.html",
       "image": "widgets/widget_nodes_bargraph.png",
       "metadata" : {}

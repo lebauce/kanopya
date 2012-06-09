@@ -4,12 +4,12 @@
   "layout": "layout2",
   "data" : [
     {
-      "title" : "Default nodes overview with config",
-      "id" : "widget_node_bargraph_config_2",
+      "title" : "Default nodes overview",
+      "id" : "1",
       "column" : "first",
       "open" : true,
       "editurl" : "widgets/editwidget2.html",
-      "url" : "widgets/widget_nodes_bargraph_config.html"
+      "url" : "widgets/widget_nodes_bargraph.html"
     }
   ]
   }
