@@ -777,6 +777,23 @@ function loadServicesRessources (container_id, elem_id) {
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
 }
 
+function callMethodFormatter(id, key, methodName, params) {
+    var ret = "";
+    $.ajax({
+        async       : false,
+        type        : 'POST',
+        contentType : 'application/json',
+        data        : JSON.stringify(params || {}),
+        url         : '/api/' + key + '/' + id + '/' + methodName,
+        complete    : function(jqXHR, statusText) {
+            if (statusText === 'success') {
+                ret = jqXHR.responseText;
+            }
+        }
+    });
+    return (ret !== "") ? ret : cellValue;
+}
+
 function loadServicesMonitoring (container_id, elem_id) {
     var container = $("#" + container_id);
 	
@@ -790,7 +807,9 @@ function loadServicesMonitoring (container_id, elem_id) {
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
             { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
-            { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
+            { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200, formatter : function(cellValue) {
+                return callMethodFormatter(elem_id, 'externalcluster', 'getIndicatorNameFromId', { 'indicator_id' : cellValue });
+            } },
         ]
     } );
     
@@ -804,7 +823,9 @@ function loadServicesMonitoring (container_id, elem_id) {
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
-            { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200 },
+            { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200, formatter : function(cellValue, options, row) {
+                return callMethodFormatter(row.pk, 'aggregatecombination', 'toString');
+            } },
         ]
     } );
 	
@@ -818,7 +839,9 @@ function loadServicesMonitoring (container_id, elem_id) {
         colModel: [ 
             { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
-            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', width: 170 },
+            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', width: 170, formatter : function(cellValue, options, row) {
+                return callMethodFormatter(row.pk, 'nodemetriccombination', 'toString');
+            } },
         ]
     } );
 }

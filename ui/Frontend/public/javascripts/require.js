@@ -14,6 +14,7 @@ function _require() {
             complete    : function(jqXHR, textStatus) {
                 loadedScripts[fileName] = true;
                 if (textStatus === "parsererror") {
+                    console.warn("ParserError in " + fileName);
                     eval(jqXHR.responseText);
                 }
             }

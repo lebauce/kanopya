@@ -64,6 +64,14 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+  return {
+    'toString'  => {
+      'description' => 'toString',
+      'perm_holder' => 'entity'
+    }
+  }
+}
 
 sub new {
     my $class = shift;
