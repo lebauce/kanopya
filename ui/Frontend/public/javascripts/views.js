@@ -1,6 +1,25 @@
 // store handlers during menu creation, used for content callbacks
 var _content_handlers = {};
 
+var SQLops = {
+'eq' : '=',        // equal
+'ne' : '<>',       // not equal
+'lt' : '<',        // less than
+'le' : '<=',       // less than or equal
+'gt' : '>',        // greater than
+'ge' : '>=',       // greater than or equal
+'bw' : 'LIKE',     // begins with
+'bn' : 'NOT LIKE', // doesn't begin with
+'in' : 'LIKE',     // is in
+'ni' : 'NOT LIKE', // is not in
+'ew' : 'LIKE',     // ends with
+'en' : 'NOT LIKE', // doesn't end with
+'cn' : 'LIKE',     // contains
+'nc' : 'NOT LIKE'  // doesn't contain
+};
+
+var searchoptions = { sopt : $.map(SQLops, function(n) { return n; } ) };
+
 function reload_content(container_id, elem_id) {
     //alert(_content_handlers['content_hosts']);
     //alert('Reload' + container_id);
@@ -86,46 +105,96 @@ function show_detail(grid_id, elem_id, row_data) {
 
 }
 
-function create_grid(content_container_id, grid_id, colNames, colModel) {
-    
-    var content_container = $('#' + content_container_id);
-    //var grid_id = content_container_id + '_grid';
-    var pager_id = grid_id + '_pager';
-    
-    //content_container.append('<div>Host Content</div>');
-    content_container.append("<table id='" + grid_id + "'></table>");
-    content_container.append("<div id='" + pager_id + "'></div>");
+function create_grid(options) {
 
-    $('#' + grid_id).jqGrid({ 
-        datatype: "local",
-        //loadonce: true,
-        height: 'auto',
-        width: 'auto',
-        colNames:colNames,
-        colModel:colModel,
-        //multiselect: true,
-        //rowNum:5, rowList:[5,10,20,50],
-        //caption: "Messages",
-        pager : '#' + pager_id,
-        altRows: true,
-        onSelectRow: function (id) {
-            var row_data = $('#' + grid_id).getRowData(id);
-            show_detail(grid_id, id, row_data);
-            //alert('Select row: ' + id);
+    var content_container = $('#' + options.content_container_id);
+    var pager_id = options.grid_id + '_pager';
+
+    content_container.append("<table id='" + options.grid_id + "'></table>");
+
+    if (!options.pager) {
+        content_container.append("<div id='" + pager_id + "'></div>");
+    }
+
+    $.each(options.colModel, function (model) {
+        model.searchoptions = searchoptions;
+        model.search = true;
+    });
+
+    var grid = $('#' + options.grid_id).jqGrid({ 
+        jsonReader : {
+            root: "rows",
+            page: "page",
+            total: "pages",
+            records: "records",
+            repeatitems: false,
         },
+        
+        height: options.height || 'auto',
+        width: options.width || 'auto',
+        colNames: options.colNames,
+        colModel: options.colModel,
+        pager: options.pager || '#' + pager_id,
+        altRows: true,
+        rowNum: options.rowNum || 10,
+        rowList: options.rowList || undefined,
+
+        onSelectRow: function (id) {
+            var row_data = $('#' + options.grid_id).getRowData(id);
+            show_detail(options.grid_id, id, row_data);
+        },
+
         loadError: function (xhr, status, error) {
             var error_msg = xhr.responseText;
             alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 
-        }
-        // onReload ????
-        //loadComplete: function (xhr) {}
+        },
+
+        datatype: function (postdata) {
+            var data = { dataType : 'jqGrid' };
+
+            if (postdata.page) {
+                data.page = postdata.page;
+            }
+
+            if (postdata.rows) {
+                data.rows = postdata.rows;
+            }
+
+            if (postdata.sidx) {
+                data.order_by = postdata.sidx;
+                if (postdata.sord == "desc") {
+                    data.order_by += " DESC";
+                }
+            }
+
+            if (postdata._search) {
+                var operator = SQLops[postdata.searchOper];
+                var query = postdata.searchString;
+
+                if (postdata.searchOper == 'bw' || postdata.searchOper == 'bn') query = query + '%';
+                if (postdata.searchOper == 'ew' || postdata.searchOper == 'en' ) query = '%' + query;
+                if (postdata.searchOper == 'cn' || postdata.searchOper == 'nc' ||
+                    postdata.searchOper == 'in' || postdata.searchOper == 'ni') {
+                    query = '%' + query + '%';
+                }
+
+                data[postdata.searchField] = (operator != "=" ? operator + "," : "") + query;
+            }
+
+            $.getJSON(options.url, data, function (data) {
+                var thegrid = jQuery('#' + options.grid_id)[0];
+                thegrid.addJSONData(data);
+            });
+        },
     });
     
-    $('#' + grid_id).jqGrid('navGrid','#' + pager_id,{edit:false,add:false,del:false}); 
-    
-    $('#' + grid_id).jqGrid('setGridWidth', $('#' + grid_id).parent().width()-20);
-    
+    $('#' + options.grid_id).jqGrid('navGrid', '#' + pager_id, { edit: false, add: false, del: false }); 
+
+    $('#' + options.grid_id).jqGrid('setGridWidth', $('#' + options.grid_id).parent().width() - 20);
+
+    return grid;
 }
+
 function reload_grid (grid_id,  data_route) {
     var grid = $('#' + grid_id);
     grid.jqGrid("clearGridData");

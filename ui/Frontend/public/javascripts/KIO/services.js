@@ -336,14 +336,17 @@ function createAddServiceButton(container) {
 function servicesList (container_id, elem_id) {
     var container = $('#' + container_id);
     
-    create_grid(container_id, 'services_list',
-                ['ID','Name', 'State'],
-                [ 
-                 {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-                 {name:'externalcluster_name',index:'service_name', width:200},
-                 {name:'externalcluster_state',index:'service_state', width:90,formatter:StateFormatter},
-                 ]);
-    reload_grid('services_list', '/api/externalcluster');
+    create_grid( {
+        url: '/api/externalcluster',
+        content_container_id: container_id,
+        grid_id: 'services_list',
+        colNames: [ 'ID', 'Name', 'State' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
+            { name: 'externalcluster_name', index: 'service_name', width: 200 },
+            { name: 'externalcluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
+        ]
+    });
     
     createAddServiceButton(container);
 }
@@ -575,120 +578,141 @@ function loadServicesConfig (container_id, elem_id) {
 }
 
 function loadServicesRessources (container_id, elem_id) {
-	var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
-	create_grid(container_id, loadServicesRessourcesGridId,
-            ['id','state', 'hostname'],
-            [ 
-             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'externalnode_state',index:'externalnode_state', width:90,formatter:StateFormatter},
-             {name:'externalnode_hostname',index:'externalnode_hostname', width:200,},
-           ]);
-    reload_grid('service_ressources_list', '/api/host');
+    var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
+    create_grid( {
+        url: '/api/host',
+        content_container_id: container_id,
+        grid_id: loadServicesRessourcesGridId,
+        colNames: [ 'id', 'state', 'hostname' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'externalnode_state', index: 'externalnode_state', width: 90, formatter: StateFormatter },
+            { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 200 },
+        ]
+    } );
 
     createUpdateNodeButton($('#' + container_id), elem_id);
     reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
-   
 }
 
 function loadServicesMonitoring (container_id, elem_id) {
-
-	var container = $("#" + container_id);
+    var container = $("#" + container_id);
 	
-	$("<div>", { html : "Clustermetric : " }).appendTo(container);
-	var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
-	create_grid(container_id, loadServicesMonitoringGridId,
-            ['id','name', 'indicator'],
-            [ 
-             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'clustermetric_label',index:'clustermetric_label', width:90,},
-             {name:'clustermetric_indicator_id',index:'clustermetric_indicator_id', width:200,},
-           ]);
-    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/clustermetrics');
+    $("<div>", { html : "Clustermetric : " }).appendTo(container);
+    var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/clustermetrics',
+        content_container_id: container_id,
+        grid_id: loadServicesMonitoringGridId,
+        colNames: [ 'id', 'name', 'indicator' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
+            { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
+            { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
+        ]
+    } );
     
     $("<div>", { html : "<br />Aggregate Combinations : " }).appendTo(container);
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_combinations_' + elem_id;
-	create_grid(container_id, loadServicesMonitoringGridId,
-            ['id','name', 'formula'],
-            [ 
-             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'aggregate_combination_label',index:'aggregate_combination_label', width:90,},
-             {name:'aggregate_combination_formula',index:'aggregate_combination_formula', width:200,},
-           ]);
-    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/aggregate_combinations');
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/aggregate_combinations',
+        content_container_id: container_id,
+        grid_id: loadServicesMonitoringGridId,
+        colNames: [ 'id', 'name', 'formula' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
+            { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200 },
+        ]
+    } );
 	
-	$("<div>", { html : "<br />Nodemetric Combinations : " }).appendTo(container);
-	var loadServicesMonitoringGridId = 'service_ressources_nodemetric_combination_' + elem_id;
-	create_grid(container_id, loadServicesMonitoringGridId,
-            ['id','name', 'formula'],
-            [ 
-             {name:'pk',index:'pk', width:90, sorttype:"int", hidden:true, key:true},
-             {name:'nodemetric_combination_label',index:'nodemetric_combination_label', width:120,},
-             {name:'nodemetric_combination_formula',index:'nodemetric_combination_formula', width:170,},
-           ]);
-    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/nodemetric_combinations');
+    $("<div>", { html : "<br />Nodemetric Combinations : " }).appendTo(container);
+    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_combination_' + elem_id;
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/nodemetric_combinations',
+        content_container_id: container_id,
+        grid_id: loadServicesMonitoringGridId,
+        colNames: [ 'id', 'name', 'formula' ],
+        colModel: [ 
+            { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
+            { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
+            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', width: 170 },
+        ]
+    } );
 }
 
 function loadServicesRules (container_id, elem_id) {
+    var container = $("#" + container_id);
 	
-	var container = $("#" + container_id);
-	
-	$("<div>", { text : "Nodemetric Conditions : " }).appendTo(container);
+    $("<div>", { text : "Nodemetric Conditions : " }).appendTo(container);
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_condition_' + elem_id;
-	create_grid(container_id, loadServicesMonitoringGridId,
-            ['id','name', 'separator', 'threshold'],
-            [ 
-             {name:'pk',index:'pk',sorttype:"int", hidden:true, key:true},
-             {name:'nodemetric_condition_label',index:'nodemetric_condition_label',width:120,},
-             {name:'nodemetric_condition_comparator',index:'nodemetric_condition_comparator',width:220,},
-             {name:'nodemetric_condition_threshold',index:'nodemetric_condition_threshold',width:220,},
-           ]);
-    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/nodemetric_conditions');
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/nodemetric_conditions',
+        content_container_id: container_id,
+        grid_id: loadServicesMonitoringGridId,
+        colNames: [ 'id', 'name', 'separator', 'threshold' ],
+        colModel: [
+            { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
+            { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 120 },
+            { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 220 },
+            { name: 'nodemetric_condition_threshold', index: 'nodemetric_condition_threshold', width: 220 },
+        ]
+    } );
     
     //$('#' + loadServicesMonitoringGridId).jqGrid('setGridWidth', $('#' + loadServicesMonitoringGridId).width('700px'));
     
     $("<div>", { html : "<br />Nodemetric Rules : " }).appendTo(container);
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_rules_' + elem_id;
-	create_grid(container_id, loadServicesMonitoringGridId,
-            ['id','name', 'state', 'eval', 'description', 'timestamp', 'formula'],
-            [ 
-             {name:'pk',index:'pk', sorttype:"int", hidden:true, key:true},
-             {name:'nodemetric_rule_label',index:'nodemetric_rule_label',width:120,},
-             {name:'nodemetric_rule_state',index:'nodemetric_rule_state',width:60,formater:StateFormatter},
-             {name:'nodemetric_rule_last_eval',index:'nodemetric_rule_last_eval',width:60},
-             {name:'nodemetric_rule_description',index:'nodemetric_rule_description',width:190,},
-             {name:'nodemetric_rule_timestamp',index:'nodemetric_rule_timestamp',width:60,},
-             {name:'nodemetric_rule_formula',index:'nodemetric_rule_formula',width:60,},
-           ]);
-    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/nodemetric_rules');
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/nodemetric_rules',
+        content_container_id: container_id,
+        grid_id: loadServicesMonitoringGridId,
+        colNames: [ 'id', 'name', 'state', 'eval', 'description', 'timestamp', 'formula' ],
+        colModel: [
+            { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
+            { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
+            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60, formater: StateFormatter },
+            { name: 'nodemetric_rule_last_eval', index: 'nodemetric_rule_last_eval', width: 60 },
+            { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 190 },
+            { name: 'nodemetric_rule_timestamp', index: 'nodemetric_rule_timestamp', width: 60 },
+            { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 60 },
+        ]
+    });
     
     //$('#' + loadServicesMonitoringGridId).jqGrid('setGridWidth', $('#' + loadServicesMonitoringGridId).width('700px'));
     
     $("<div>", { html : "<br />Aggregate Conditions : " }).appendTo(container);
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_conditions_' + elem_id;
-	create_grid(container_id, loadServicesMonitoringGridId,
-            ['id','name', 'state', 'threshold', 'last eval', 'time limit'],
-            [ 
-             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'aggregate_condition_label',index:'aggregate_condition_label', width:120,},
-             {name:'state',index:'state', width:60,formatter:StateFormatter},
-             {name:'threshold',index:'threshold', width:60,},
-             {name:'last_eval',index:'last_eval', width:160,},
-             {name:'time_limit',index:'time_limit', width:160,},
-           ]);
-    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/aggregate_conditions');
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/aggregate_conditions',
+        content_container_id: container_id,
+        grid_id: loadServicesMonitoringGridId,
+        colNames: [ 'id', 'name', 'state', 'threshold', 'last eval', 'time limit' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'aggregate_condition_label', index: 'aggregate_condition_label', width: 120 },
+            { name: 'state', index: 'state', width: 60, formatter: StateFormatter },
+            { name: 'threshold', index: 'threshold', width: 60 },
+            { name: 'last_eval', index: 'last_eval', width: 160 },
+            { name: 'time_limit', index: 'time_limit', width: 160 },
+        ]
+    } );
 	
-	$("<div>", { html : "<br />Aggregate Rules : " }).appendTo(container);
-	var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
-	create_grid(container_id, loadServicesMonitoringGridId,
-            ['id','name', 'state', 'formula', 'description', 'timestamp'],
-            [ 
-             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
-             {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,formatter:StateFormatter},
-             {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
-             {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
-             {name:'aggregate_rule_timestamp',index:'aggregate_rule_timestamp', width:90,},
-           ]);
-    reload_grid(loadServicesMonitoringGridId,'/api/externalcluster/' + elem_id + '/aggregate_rules');
+    $("<div>", { html : "<br />Aggregate Rules : " }).appendTo(container);
+    var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/aggregate_rules',
+        content_container_id: container_id,
+        grid_id: loadServicesMonitoringGridId,
+        colNames: [ 'id', 'name', 'state', 'formula', 'description', 'timestamp' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'aggregate_rule_label', index: 'aggregate_rule_label', width: 90 },
+            { name: 'aggregate_rule_state', index: 'aggregate_rule_state', width: 90, formatter: StateFormatter },
+            { name: 'aggregate_rule_formula', index: 'aggregate_rule_formula', width: 90 },
+            { name: 'aggregate_rule_description', index: 'aggregate_rule_description', width: 200 },
+            { name: 'aggregate_rule_timestamp', index: 'aggregate_rule_timestamp', width: 90 },
+        ]
+    } );
 }
