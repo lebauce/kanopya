@@ -336,7 +336,7 @@ function createAddServiceButton(container) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a service'});
+    var button = $("<button>", {html : 'Add a service'}).button({ icons : { primary : 'ui-icon-plusthick' } });
     button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
@@ -521,11 +521,26 @@ function servicesList (container_id, elem_id) {
         url: '/api/externalcluster',
         content_container_id: container_id,
         grid_id: 'services_list',
-        colNames: [ 'ID', 'Name', 'State' ],
+        afterInsertRow: function(grid, rowid) {
+            var id  = $(grid).getCell(rowid, 'pk');
+            $.ajax({
+                url     : '/api/externalcluster/' + id + '/externalnodes',
+                type    : 'GET',
+                success : function(data) {
+                    var i   = 0;
+                    $(data).each(function() {
+                        ++i;
+                    });
+                    $(grid).setCell(rowid, 'node_number', i);
+                }
+            });
+        },
+        colNames: [ 'ID', 'Name', 'State', 'Node Number' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
             { name: 'externalcluster_name', index: 'service_name', width: 200 },
             { name: 'externalcluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
+            { name: 'node_number', index: 'node_number', width: 150 }
         ]
     });
     
