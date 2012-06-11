@@ -673,18 +673,6 @@ function loadServicesConfig (container_id, elem_id) {
     var container = $('#' + container_id);
     var externalclustername = '';
     
-    if (isThereAConnector(elem_id, 'DirectoryService') === false) {
-        var b   = $("<a>", { text : 'Add a Directory Service', id : 'adddirectory' });
-        b.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
-        b.appendTo(container).button({ icons : { primary : 'ui-icon-plusthick' } });
-    }
-    
-    if (isThereAConnector(elem_id, 'MonitoringService') === false) {
-        var bu  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
-        bu.bind('click', function() { createMonDirDialog(elem_id, 'MonitoringService').start(); });
-        bu.appendTo(container).button({ icons : { primary : 'ui-icon-plusthick' } });
-    }
-    
     var connectorsTypeHash = {};
     var connectorsTypeArray = new Array;
     
@@ -717,10 +705,12 @@ function loadServicesConfig (container_id, elem_id) {
             }
     });
 
+    var ctnr    = $("<div>");
+
     $.ajax({
         url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
         success: function(data) {
-            var table = $("<table>").appendTo(container);
+            var table = $("<table>", { id : "connectorslist" }).prependTo(ctnr);
             $(table).append($("<tr>").append($("<td>", { colspan : 3, class : 'table-title', text : "Connectors" })));
             $(data.rows).each(function(row) {
                 var connectorTypePk = data.rows[row].connector_type_id;
@@ -754,8 +744,21 @@ function loadServicesConfig (container_id, elem_id) {
                     });
                 }).button({ icons : { primary : 'ui-icon-trash' } });
             });
+            $(ctnr).appendTo(container);
         }
     });
+    
+    if (isThereAConnector(elem_id, 'DirectoryService') === false) {
+        var b   = $("<a>", { text : 'Add a Directory Service', id : 'adddirectory' });
+        b.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
+        b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
+    }
+    
+    if (isThereAConnector(elem_id, 'MonitoringService') === false) {
+        var bu  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
+        bu.bind('click', function() { createMonDirDialog(elem_id, 'MonitoringService').start(); });
+        bu.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
+    }
 }
 
 function loadServicesRessources (container_id, elem_id) {
@@ -777,39 +780,38 @@ function loadServicesRessources (container_id, elem_id) {
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
 }
 
-function callMethodFormatter(id, key, methodName, params) {
-    var ret = "";
+function setCellWithCallMethod(url, grid, rowid, colName, data) {
     $.ajax({
-        async       : false,
         type        : 'POST',
         contentType : 'application/json',
-        data        : JSON.stringify(params || {}),
-        url         : '/api/' + key + '/' + id + '/' + methodName,
-        complete    : function(jqXHR, statusText) {
-            if (statusText === 'success') {
-                ret = jqXHR.responseText;
+        data        : JSON.stringify(data || {}),
+        url         : url,
+        complete    : function(jqXHR, status) {
+            if (status === 'success') {
+                $(grid).setCell(rowid, colName, jqXHR.responseText);
             }
         }
     });
-    return (ret !== "") ? ret : cellValue;
 }
 
 function loadServicesMonitoring (container_id, elem_id) {
     var container = $("#" + container_id);
-	
     $("<div>", { html : "Service metric : " }).appendTo(container);
     var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/clustermetrics',
         content_container_id: container_id,
         grid_id: loadServicesMonitoringGridId,
+        afterInsertRow: function(grid, rowid) {
+            var current = $(grid).getCell(rowid, 'clustermetric_indicator_id');
+            var url     = '/api/externalcluster/' + elem_id + '/getIndicatorNameFromId';
+            setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id', { 'indicator_id' : current });
+        },
         colNames: [ 'id', 'name', 'indicator' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
             { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
-            { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200, formatter : function(cellValue) {
-                return callMethodFormatter(elem_id, 'externalcluster', 'getIndicatorNameFromId', { 'indicator_id' : cellValue });
-            } },
+            { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
         ]
     } );
     
@@ -819,13 +821,16 @@ function loadServicesMonitoring (container_id, elem_id) {
         url: '/api/externalcluster/' + elem_id + '/aggregate_combinations',
         content_container_id: container_id,
         grid_id: loadServicesMonitoringGridId,
+        afterInsertRow: function(grid, rowid) {
+            var id  = $(grid).getCell(rowid, 'pk');
+            var url = '/api/aggregatecombination/' + id + '/toString';
+            setCellWithCallMethod(url, grid, rowid, 'aggregate_combination_formula');
+        },
         colNames: [ 'id', 'name', 'formula' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
-            { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200, formatter : function(cellValue, options, row) {
-                return callMethodFormatter(row.pk, 'aggregatecombination', 'toString');
-            } },
+            { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200 },
         ]
     } );
 	
@@ -835,13 +840,16 @@ function loadServicesMonitoring (container_id, elem_id) {
         url: '/api/externalcluster/' + elem_id + '/nodemetric_combinations',
         content_container_id: container_id,
         grid_id: loadServicesMonitoringGridId,
+        afterInsertRow: function(grid, rowid) {
+            var id  = $(grid).getCell(rowid, 'pk');
+            var url = '/api/nodemetriccombination/' + id + '/toString';
+            setCellWithCallMethod(url, grid, rowid, 'nodemetric_combination_formula');
+        },
         colNames: [ 'id', 'name', 'formula' ],
         colModel: [ 
             { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
-            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', width: 170, formatter : function(cellValue, options, row) {
-                return callMethodFormatter(row.pk, 'nodemetriccombination', 'toString');
-            } },
+            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', width: 170 },
         ]
     } );
 }
@@ -875,6 +883,11 @@ function loadServicesRules (container_id, elem_id) {
         content_container_id: container_id,
         grid_id: loadServicesMonitoringGridId,
         colNames: [ 'id', 'name', 'state', 'description', 'formula' ],
+        afterInsertRow: function(grid, rowid) {
+            var id  = $(grid).getCell(rowid, 'pk');
+            var url = '/api/nodemetricrule/' + id + '/toString';
+            setCellWithCallMethod(url, grid, rowid, 'nodemetric_rule_formula');
+        },
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
@@ -921,7 +934,12 @@ function loadServicesRules (container_id, elem_id) {
              {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,formatter:serviceStateFormatter},
              {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
              {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
-           ]
+           ],
+        afterInsertRow: function(grid, rowid) {
+            var id  = $(grid).getCell(rowid, 'pk');
+            var url = '/api/aggregaterule/' + id + '/toString';
+            setCellWithCallMethod(url, grid, rowid, 'aggregate_rule_formula');
+        },
     } );
     
     createServiceRule(container_id, elem_id)

@@ -121,6 +121,8 @@ function create_grid(options) {
         model.search = true;
     });
 
+    options.afterInsertRow = options.afterInsertRow || $.noop;
+
     var grid = $('#' + options.grid_id).jqGrid({ 
         jsonReader : {
             root: "rows",
@@ -129,7 +131,9 @@ function create_grid(options) {
             records: "records",
             repeatitems: false,
         },
-        
+
+        afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(grid, rowid, rowdata, rowelem); },
+
         height: options.height || 'auto',
         width: options.width || 'auto',
         colNames: options.colNames,
