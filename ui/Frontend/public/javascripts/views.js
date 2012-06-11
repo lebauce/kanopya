@@ -105,6 +105,19 @@ function show_detail(grid_id, elem_id, row_data) {
 
 }
 
+// Callback when click on remove icon for a row
+function removeGridEntry (grid_id, id, url) {
+    $("#"+grid_id).jqGrid(
+            'delGridRow',
+            id,
+            {
+                url : url + '/' + id,
+                ajaxDelOptions : { type : 'DELETE'},
+                afterComplete : function () {$("#"+grid_id).trigger('gridChange')}
+            }
+    );
+}
+
 function create_grid(options) {
 
     var content_container = $('#' + options.content_container_id);
@@ -122,6 +135,23 @@ function create_grid(options) {
     });
 
     options.afterInsertRow = options.afterInsertRow || $.noop;
+
+    // Add delete action column
+    options.colNames.push('Actions');
+    options.colModel.push({index:'action_remove', width : '40px', formatter: 
+        function(cell, formatopts, row) {
+            // We can't directly use 'actions' default formatter because it not support DELETE
+            // So we implement our own action delete formatter based on default 'actions' formatter behavior
+            var remove_action = '';
+            remove_action += '<div class="ui-pg-div ui-inline-del"';
+            remove_action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
+            remove_action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
+            remove_action += 'onclick="removeGridEntry(\''+  options.grid_id + '\',' +row.pk + ',\'' + options.url + '\')" style="float:left;margin-left:5px;" title="Delete selected row">';
+            remove_action += '<span class="ui-icon ui-icon-trash"></span>';
+            remove_action += '</div>';
+            return remove_action;
+        }});
+    var actions_col_idx = options.colNames.length - 1;
 
     var grid = $('#' + options.grid_id).jqGrid({ 
         jsonReader : {
@@ -143,9 +173,16 @@ function create_grid(options) {
         rowNum: options.rowNum || 10,
         rowList: options.rowList || undefined,
 
-        onSelectRow: function (id) {
-            var row_data = $('#' + options.grid_id).getRowData(id);
-            show_detail(options.grid_id, id, row_data);
+//        onSelectRow: function (id) {
+//            var row_data = $('#' + options.grid_id).getRowData(id);
+//            show_detail(options.grid_id, id, row_data);
+//        },
+
+        onCellSelect: function(rowid, index, contents, target) {
+            if (index != actions_col_idx) {
+                var row_data = $('#' + options.grid_id).getRowData(rowid);
+                show_detail(options.grid_id, rowid, row_data)
+            }
         },
 
         loadError: function (xhr, status, error) {
