@@ -551,6 +551,8 @@ function servicesList (container_id, elem_id) {
         ]
     });
     
+    $("#services_list").on('gridChange', reloadServices);
+    
     createAddServiceButton(container);
 }
 
