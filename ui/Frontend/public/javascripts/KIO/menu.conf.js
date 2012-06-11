@@ -14,8 +14,7 @@ var mainmenu_def = {
     'Services'   : {
         //onLoad : load_services,
         masterView : [
-                      {label : 'Overview', id : 'services_overview'},
-                      {label : 'Services', id : 'services_list', onLoad : function(cid) { require('KIO/services.js'); servicesList(cid); }}
+                      {label : 'Overview', id : 'services_overview', onLoad : function(cid) { require('KIO/services.js'); servicesList(cid); }}
                       ],
         json : {url         : '/api/externalcluster',
                 label_key   : 'externalcluster_name',
