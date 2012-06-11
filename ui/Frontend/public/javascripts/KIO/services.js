@@ -1,3 +1,4 @@
+
 // Some global service variables declaration
 // TODO a nice class :)
 
@@ -154,10 +155,20 @@ function initServiceDashboard() {
         service_dashboard = s_dashboard;
     } // end inner function initDasboard
 }
+var comparators = ['<','>'];
+var rulestates = ['enabled','disabled'];
 
 // Set the correct state icon for each element :
 function StateFormatter(cell, options, row) {
 	if (cell == 'up') {
+		return "<img src='/images/icons/up.png' title='up' />";
+	} else {
+		return "<img src='/images/icons/broken.png' title='broken' />";
+	}
+}
+
+function serviceStateFormatter(cell, options, row) {
+	if (cell == 'enabled') {
 		return "<img src='/images/icons/up.png' title='up' />";
 	} else {
 		return "<img src='/images/icons/broken.png' title='broken' />";
@@ -332,6 +343,176 @@ function createAddServiceButton(container) {
     });   
     $(container).append(button);
 };
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function createNodemetricCondition(container_id, elem_id) {
+    var service_fields  = {
+        nodemetric_condition_label    : {
+            label   : 'Name',
+            type	: 'text',
+        },
+        nodemetric_condition_comparator    : {
+            label   : 'Comparator',
+            type    : 'select',
+            options   : comparators,
+        },
+        nodemetric_condition_threshold	: {
+        	label	: 'Threshold',
+        	type	: 'text',	
+        },
+        nodemetric_condition_combination_id	:{
+        	label	: 'Combination',
+        	display	: 'nodemetric_combination_label',
+        },
+        nodemetric_condition_service_provider_id	:{
+        	type	: 'hidden',
+        	value	: elem_id,	
+        }
+    };
+    var service_opts    = {
+        title       : 'Create a Nodemetric Condition',
+        name        : 'nodemetriccondition',
+        fields      : service_fields,
+        error       : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
+        }
+    };
+
+    var button = $("<button>", {html : 'Add a nodemetric condition'});
+  	button.bind('click', function() {
+        mod = new ModalForm(service_opts);
+        mod.start();
+    });
+    $('#' + container_id).append(button);
+};
+
+function createNodemetricRule(container_id, elem_id) {
+    var service_fields  = {
+        nodemetric_rule_label    : {
+            label   : 'Name',
+            type	: 'text',
+        },
+        nodemetric_rule_description    : {
+            label   : 'Description',
+            type    : 'textarea',
+        },
+        nodemetric_rule_formula	: {
+        	label	: 'Formula',
+        	type	: 'text',	
+        },
+        nodemetric_rule_state	:{
+        	label   : 'State',
+	        type    : 'select',
+    	    options   : rulestates,
+        },
+        nodemetric_rule_service_provider_id	:{
+        	type	: 'hidden',
+        	value	: elem_id,
+        },
+    };
+    var service_opts    = {
+        title       : 'Create a Nodemetric Rule',
+        name        : 'nodemetricrule',
+        fields      : service_fields,
+        error       : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
+        }
+    };
+
+    var button = $("<button>", {html : 'Add a nodemetric condition'});
+  	button.bind('click', function() {
+        mod = new ModalForm(service_opts);
+        mod.start();
+    });
+    $('#' + container_id).append(button);
+};
+
+function createServiceCondition(container_id, elem_id) {
+    var service_fields  = {
+        aggregate_condition_label    : {
+            label   : 'Name',
+            type	: 'text',
+        },
+        threshold	:{
+        	label	: 'Threshold',
+        	type	: 'text',	
+        },
+        comparator	: {
+        	label   : 'Comparator',
+	        type    : 'select',
+    	    options   : comparators,	
+        },
+        aggregate_combination_id	:{
+        	label	: 'Combination',
+        	display	: 'aggregate_combination_label',
+        },
+        state	:{
+        	label   : 'State',
+	        type    : 'select',
+    	    options   : rulestates,
+        },
+        aggregate_condition_service_provider_id	:{
+        	type	: 'hidden',
+        	value	: elem_id,
+        },
+    };
+    var service_opts    = {
+        title       : 'Create a Service Condition',
+        name        : 'aggregatecondition',
+        fields      : service_fields,
+        error       : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
+        }
+    };
+
+    var button = $("<button>", {html : 'Add a Service Condition'});
+  	button.bind('click', function() {
+        mod = new ModalForm(service_opts);
+        mod.start();
+    });
+    $('#' + container_id).append(button);
+};
+
+function createServiceRule(container_id, elem_id) {
+    var service_fields  = {
+        aggregate_rule_label    : {
+            label   : 'Name',
+            type	: 'text',
+        },
+        aggregate_rule_description	:{
+        	label	: 'Description',
+        	type	: 'textearea',	
+        },
+        aggregate_rule_state	:{
+        	label   : 'State',
+	        type    : 'select',
+    	    options   : rulestates,	
+        },
+        aggregate_rule_formula	: {
+        	label   : 'Formula',
+            type	: 'text',	
+        },
+        aggregate_rule_service_provider_id	:{
+        	type	: 'hidden',
+        	value	: elem_id,
+        },
+    };
+    var service_opts    = {
+        title       : 'Create a Service Rule',
+        name        : 'aggregaterule',
+        fields      : service_fields,
+        error       : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
+        }
+    };
+
+    var button = $("<button>", {html : 'Add a Service Rule'});
+  	button.bind('click', function() {
+        mod = new ModalForm(service_opts);
+        mod.start();
+    });
+    $('#' + container_id).append(button);
+};
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function servicesList (container_id, elem_id) {
     var container = $('#' + container_id);
@@ -599,7 +780,7 @@ function loadServicesRessources (container_id, elem_id) {
 function loadServicesMonitoring (container_id, elem_id) {
     var container = $("#" + container_id);
 	
-    $("<div>", { html : "Clustermetric : " }).appendTo(container);
+    $("<div>", { html : "Service metric : " }).appendTo(container);
     var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/clustermetrics',
@@ -613,7 +794,7 @@ function loadServicesMonitoring (container_id, elem_id) {
         ]
     } );
     
-    $("<div>", { html : "<br />Aggregate Combinations : " }).appendTo(container);
+    $("<div>", { html : "<br />Service Combinations : " }).appendTo(container);
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_combinations_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/aggregate_combinations',
@@ -660,6 +841,8 @@ function loadServicesRules (container_id, elem_id) {
         ]
     } );
     
+    createNodemetricCondition(container_id, elem_id);
+    
     //$('#' + loadServicesMonitoringGridId).jqGrid('setGridWidth', $('#' + loadServicesMonitoringGridId).width('700px'));
     
     $("<div>", { html : "<br />Nodemetric Rules : " }).appendTo(container);
@@ -668,51 +851,55 @@ function loadServicesRules (container_id, elem_id) {
         url: '/api/externalcluster/' + elem_id + '/nodemetric_rules',
         content_container_id: container_id,
         grid_id: loadServicesMonitoringGridId,
-        colNames: [ 'id', 'name', 'state', 'eval', 'description', 'timestamp', 'formula' ],
+        colNames: [ 'id', 'name', 'state', 'description', 'formula' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
             { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60, formater: StateFormatter },
-            { name: 'nodemetric_rule_last_eval', index: 'nodemetric_rule_last_eval', width: 60 },
             { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 190 },
-            { name: 'nodemetric_rule_timestamp', index: 'nodemetric_rule_timestamp', width: 60 },
             { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 60 },
         ]
     });
+
+    
+    createNodemetricRule(container_id, elem_id);
     
     //$('#' + loadServicesMonitoringGridId).jqGrid('setGridWidth', $('#' + loadServicesMonitoringGridId).width('700px'));
     
-    $("<div>", { html : "<br />Aggregate Conditions : " }).appendTo(container);
+    $("<div>", { html : "<br />Service Conditions : " }).appendTo(container);
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_conditions_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/aggregate_conditions',
         content_container_id: container_id,
         grid_id: loadServicesMonitoringGridId,
-        colNames: [ 'id', 'name', 'state', 'threshold', 'last eval', 'time limit' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'aggregate_condition_label', index: 'aggregate_condition_label', width: 120 },
-            { name: 'state', index: 'state', width: 60, formatter: StateFormatter },
-            { name: 'threshold', index: 'threshold', width: 60 },
-            { name: 'last_eval', index: 'last_eval', width: 160 },
-            { name: 'time_limit', index: 'time_limit', width: 160 },
-        ]
+        colNames: ['id','name', 'state', 'threshold', 'last eval', 'time limit'],
+        colModel: [ 
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'aggregate_condition_label',index:'aggregate_condition_label', width:120,},
+             {name:'state',index:'state', width:60,formatter:serviceStateFormatter},
+             {name:'threshold',index:'threshold', width:60,},
+             {name:'comparator',index:'comparator', width:160,},
+             {name:'threshold',index:'threshold', width:160,},
+           ]
     } );
+    
+    createServiceCondition(container_id, elem_id);
 	
-    $("<div>", { html : "<br />Aggregate Rules : " }).appendTo(container);
+    $("<div>", { html : "<br />Service Rules : " }).appendTo(container);
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/aggregate_rules',
         content_container_id: container_id,
         grid_id: loadServicesMonitoringGridId,
-        colNames: [ 'id', 'name', 'state', 'formula', 'description', 'timestamp' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'aggregate_rule_label', index: 'aggregate_rule_label', width: 90 },
-            { name: 'aggregate_rule_state', index: 'aggregate_rule_state', width: 90, formatter: StateFormatter },
-            { name: 'aggregate_rule_formula', index: 'aggregate_rule_formula', width: 90 },
-            { name: 'aggregate_rule_description', index: 'aggregate_rule_description', width: 200 },
-            { name: 'aggregate_rule_timestamp', index: 'aggregate_rule_timestamp', width: 90 },
-        ]
+        colNames: ['id','name', 'state', 'formula', 'description'],
+        colModel: [ 
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
+             {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,formatter:serviceStateFormatter},
+             {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
+             {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
+           ]
     } );
+    
+    createServiceRule(container_id, elem_id)
 }

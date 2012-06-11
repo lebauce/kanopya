@@ -115,6 +115,7 @@ my %resources = (
     "workflow"                 => "Workflow",
     "workflowdef"              => "WorkflowDef",
     "mockmonitor"              => "Entity::Connector::MockMonitor",
+    "nodemetriccombination"    => "NodemetricCombination",
 );
 
 sub db_to_json {
