@@ -381,7 +381,7 @@ function createNodemetricCondition(container_id, elem_id) {
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
-    });
+    }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
 
@@ -422,7 +422,7 @@ function createNodemetricRule(container_id, elem_id) {
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
-    });
+    }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
 
@@ -468,7 +468,7 @@ function createServiceCondition(container_id, elem_id) {
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
-    });
+    }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
 
@@ -509,7 +509,7 @@ function createServiceRule(container_id, elem_id) {
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
-    });
+    }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
