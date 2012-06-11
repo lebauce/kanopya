@@ -6,7 +6,7 @@
 appname: "Frontend"
 
 # Select for wich product we want ui (KIM/KIO)
-kanopya_product: "KIO"
+kanopya_product: "KIM"
 
 
 # The default layout to use for your application (located in

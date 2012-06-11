@@ -24,7 +24,6 @@
 
 <script src='/javascripts/require.js'></script>
 
-
 <script src="/javascripts/kanopya.ui.js"></script>
 <script src="/javascripts/menu.js"></script>
 <script src="/javascripts/views.js"></script>
