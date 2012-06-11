@@ -616,6 +616,17 @@ CREATE TABLE `old_operation` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `workflow_def_manager`
+--
+
+CREATE TABLE `workflow_def_manager` (
+    `manager_id` int(8) unsigned,
+    `workflow_def_id` int (8) unsigned,
+    UNIQUE KEY (`manager_id`, `workflow_def_id`),
+    CONSTRAINT FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+)   ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `workflow`
 --
 

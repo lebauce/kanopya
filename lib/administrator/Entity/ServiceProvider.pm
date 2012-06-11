@@ -49,9 +49,18 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+=head2 getManager
+
+    Desc: get a service provider manager object
+    Args: $manager_type (string)
+    Return: manager object
+
+=cut
+
 sub getManager {
-	throw Kanopya::Exception::NotImplemented();
+    throw Kanopya::Exception::NotImplemented();
 }
+
 
 sub getState {
     throw Kanopya::Exception::NotImplemented();
@@ -99,6 +108,73 @@ sub findManager {
     }
 
     return @managers;
+}
+
+
+=head2 addManager
+
+    Desc: add a manager to a service provider
+    Args: manager object (Component or connector entity) and $manager_type (string)
+    Return: manager object
+
+=cut
+
+
+sub addManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'manager', "manager_type" ]);
+
+    my $manager = ServiceProviderManager->new(
+                      service_provider_id   => $self->getAttr(name => 'entity_id'),
+                      manager_type => $args{manager_type},
+                      manager_id   => $args{manager}->getAttr(name => 'entity_id')
+                  );
+
+    if ($args{manager_params}) {
+        $manager->addParams(params => $args{manager_params});
+    }
+    return $manager;
+}
+
+=head2 addManagerParameter
+
+    Desc: add  parameters to a service provider manager
+    Args: manager type (string), param name (string) param value (string) (string)
+    Return: none
+
+=cut
+
+sub addManagerParameter {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'manager_type', 'name', 'value' ]);
+
+    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
+                                                         service_provider_id   => $self->getId });
+
+    $cluster_manager->addParams(params => { $args{name} => $args{value} });
+}
+
+=head2 getManagerParameters
+
+    Desc: get a service provider manager parameters
+    Args: manager type (string)
+    Return: \%manager_params
+
+=cut
+
+sub getManagerParameters {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'manager_type' ]);
+
+    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
+                                                         service_provider_id   => $self->getId });
+    return $cluster_manager->getParams();
 }
 
 =head2 addNetworkInterface

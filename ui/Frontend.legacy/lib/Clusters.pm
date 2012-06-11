@@ -464,6 +464,7 @@ post '/clusters/add' => sub {
         }
     }
 
+    #$log->debug(Dumper \%parameters);
     eval {
         Entity::ServiceProvider::Inside::Cluster->create(%parameters);
     };

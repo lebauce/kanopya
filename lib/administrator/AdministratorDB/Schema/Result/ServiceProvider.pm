@@ -1,21 +1,17 @@
-use utf8;
 package AdministratorDB::Schema::Result::ServiceProvider;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::ServiceProvider
-
-=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<service_provider>
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::ServiceProvider
 
 =cut
 
@@ -41,17 +37,6 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
-
-=head1 PRIMARY KEY
-
-=over 4
-
-=item * L</service_provider_id>
-
-=back
-
-=cut
-
 __PACKAGE__->set_primary_key("service_provider_id");
 
 =head1 RELATIONS
@@ -230,7 +215,7 @@ __PACKAGE__->belongs_to(
   "service_provider",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "service_provider_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 service_provider_managers
@@ -249,16 +234,16 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 19:20:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Tg7hu9eKFQS3hxwhNBnzGQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-08 15:21:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fX1IhYDvpDq4zGM2tpWAJQ
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
-__PACKAGE__->belongs_to(
-  "parent",
-    "AdministratorDB::Schema::Result::Entity",
-        { "foreign.entity_id" => "self.service_provider_id" },
-            { cascade_copy => 0, cascade_delete => 1 }
-);
+# You can replace this text with custom content, and it will be preserved on regeneration
+ __PACKAGE__->belongs_to(
+   "parent",
+     "AdministratorDB::Schema::Result::Entity",
+         { "foreign.entity_id" => "self.service_provider_id" },
+             { cascade_copy => 0, cascade_delete => 1 }
+ );
 
 1;
