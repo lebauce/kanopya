@@ -94,7 +94,7 @@ sub _constructInfra{
 
     #GET LIST OF ALL HV
     my $hvs;
-    my $opennebula = Entity->get(id => $cluster->getAttr(name => "host_manager_id"));
+    my $opennebula   = $cluster->getManager(manager_type => 'host_manager');
     my $hypervisors_r = $opennebula->{_dbix}->opennebula3_hypervisors;
 
     while (my $row = $hypervisors_r->next) {
