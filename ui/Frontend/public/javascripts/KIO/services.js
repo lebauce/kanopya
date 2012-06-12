@@ -350,7 +350,7 @@ function createAddServiceButton(container) {
     });   
     $(container).append(button);
 };
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////NODES AND METRICS MODALS//////////////////////////////////
 function createNodemetricCondition(container_id, elem_id) {
     var service_fields  = {
         nodemetric_condition_label    : {
@@ -519,7 +519,7 @@ function createServiceRule(container_id, elem_id) {
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////END OF : NODES AND METRICS MODALS//////////////////////////////////
 
 function servicesList (container_id, elem_id) {
     var container = $('#' + container_id);
@@ -884,31 +884,16 @@ function loadServicesMonitoring (container_id, elem_id) {
 
 function loadServicesRules (container_id, elem_id) {
     var container = $("#" + container_id);
-	
-    $("<div>", { text : "Nodemetric Conditions : " }).appendTo(container);
-    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_condition_' + elem_id;
-    create_grid( {
-        url: '/api/externalcluster/' + elem_id + '/nodemetric_conditions',
-        content_container_id: container_id,
-        grid_id: loadServicesMonitoringGridId,
-        colNames: [ 'id', 'name', 'separator', 'threshold' ],
-        colModel: [
-            { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
-            { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 120 },
-            { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 220 },
-            { name: 'nodemetric_condition_threshold', index: 'nodemetric_condition_threshold', width: 220 },
-        ]
-    } );
     
-    createNodemetricCondition(container_id, elem_id);
-    
-    //$('#' + loadServicesMonitoringGridId).jqGrid('setGridWidth', $('#' + loadServicesMonitoringGridId).width('700px'));
-    
-    $("<div>", { html : "<br />Nodemetric Rules : " }).appendTo(container);
+    ////////////////////////RULES ACCORDION//////////////////////////////////
+        	
+    var divacc = $('<div id="accordionrule">').appendTo(container);
+    $('<h3><a href="#">Node :</a></h3>').appendTo(divacc);
+    $('<div id="node_accordion_container">').appendTo(divacc);
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_rules_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/nodemetric_rules',
-        content_container_id: container_id,
+        content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         colNames: [ 'id', 'name', 'state', 'description', 'formula' ],
         afterInsertRow: function(grid, rowid) {
@@ -919,22 +904,20 @@ function loadServicesRules (container_id, elem_id) {
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
-            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60, formater: StateFormatter },
+            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60, formatter:serviceStateFormatter },
             { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 190 },
             { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 60 },
         ]
-    });
-
-    
-    createNodemetricRule(container_id, elem_id);
-    
-    //$('#' + loadServicesMonitoringGridId).jqGrid('setGridWidth', $('#' + loadServicesMonitoringGridId).width('700px'));
-    
-    $("<div>", { html : "<br />Service Conditions : " }).appendTo(container);
+    } );
+    createNodemetricRule('node_accordion_container', elem_id);
+    $('</div>').appendTo(divacc);
+    $('<h3><a href="#">Service :</a></h3>').appendTo(divacc);
+    $('<div id="service_accordion_container">').appendTo(divacc);
+    $('<div>Service Conditions :</div>').appendTo('');
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_conditions_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/aggregate_conditions',
-        content_container_id: container_id,
+        content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         colNames: ['id','name', 'state', 'threshold', 'last eval', 'time limit'],
         colModel: [ 
@@ -946,14 +929,11 @@ function loadServicesRules (container_id, elem_id) {
              {name:'threshold',index:'threshold', width:160,},
            ]
     } );
-    
-    createServiceCondition(container_id, elem_id);
-	
-    $("<div>", { html : "<br />Service Rules : " }).appendTo(container);
+    createServiceCondition('service_accordion_container', elem_id);
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/aggregate_rules',
-        content_container_id: container_id,
+        content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         colNames: ['id','name', 'state', 'formula', 'description'],
         colModel: [ 
@@ -969,6 +949,13 @@ function loadServicesRules (container_id, elem_id) {
             setCellWithCallMethod(url, grid, rowid, 'aggregate_rule_formula');
         },
     } );
+    createServiceRule('service_accordion_container', elem_id);
+    $('</div>').appendTo(divacc);
+
+    $('</div>').appendTo(divacc);
+    $('</div>').appendTo(divacc);
     
-    createServiceRule(container_id, elem_id)
+    $('#accordionrule').accordion({autoHeight : false });	    
+    
+    ////////////////////////END OF : RULES ACCORDION//////////////////////////////////
 }
