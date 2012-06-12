@@ -40,6 +40,9 @@ var details_def = {
         'customers_list' : [ { label  : 'Overview',
                                id     : 'customer_detail_overview',
                                onLoad : customers.load_details },
+                            { label  : 'Services',
+                               id     : 'customer_detail_services',
+                               onLoad : customers.load_services },
                              
                       ],
 };

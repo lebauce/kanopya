@@ -4,6 +4,7 @@ require('detailstable.js');
 function Customers() {
     Customers.prototype.load_content = function(container_id, elem_id) {
         function createAddCustomerButton(cid) {
+            var container = $('#' + cid);
             var user_fields  = {
                 user_firstname : {
                     label : 'First Name',
@@ -47,19 +48,19 @@ function Customers() {
                 }
             };
                         
+            $('<hr/>').appendTo(container);
             var button = $("<button>", {html : 'new customer'});
             button.bind('click', function() {
                 new ModalForm(user_opts).start();
             });   
-            $('#' + cid).append(button);
+            container.append(button);
         };
     
-        var container = $('#' + container_id);
         create_grid({
             url: '/api/user?user_profiles.profile.profile_name=Customer',
             content_container_id: container_id,
             grid_id: 'customers_list',
-            colNames: ['user id','first name','last name','user email' ],
+            colNames: ['user id','first name','last name','email' ],
             colModel: [    
                  {name:'user_id',index:'user_id', width:60, sorttype:"int", hidden:true, key:true},
                  {name:'user_firstname',index:'user_firstname', width:120},
@@ -68,20 +69,57 @@ function Customers() {
             ]
         });
         
-        //reload_grid('customers_list', '/api/user?user_profiles.profile.profile_name=Customer');
+        reload_grid('customers_list', '/api/user?user_profiles.profile.profile_name=Customer');
         createAddCustomerButton(container_id);
     }
     
     Customers.prototype.load_details = function(container_id, elem_id) {
         var customer_opts = {
-            fields : {
-                param1 : { value : 'toto' },
-                param2 : { value : 'totdsjlkfjqmdlkfo' },
-                param3 : { value : 't o t d dvdvev b  o' }
-            }
+            url    : '/api/user/' + elem_id,
+            fields : { user_firstname : {label: 'First name'},
+                       user_lastname  : {label: 'Last name'},
+                       user_email     : {label: 'Email'},
+                       user_desc      : {label: 'Description'},
+                    },
         };
         
-        new DetailsTable(container_id, elem_id, customer_opts);
+        var details = new DetailsTable(container_id, elem_id, customer_opts);
+        details.addAction({label: 'update', action: function() {
+            var form = new ModalForm({
+                id       : elem_id,
+                title    : 'Update customer',
+                name     : 'user',
+                fields   : customer_opts.fields,
+                callback : function() { details.refresh(); }
+            }).start();
+        }});
+        
+        details.addAction({label: 'detele', action: function() {
+            $.ajax({ 
+                type: 'delete', 
+                async: false, 
+                url: '/api/user/'+elem_id,
+                success: function() { },
+                error: function(jqXHR, textStatus, errorThrown) { 
+                    alert(jqXHR.responseText); } 
+            });
+            
+        }});
+        details.show();
+    }
+
+    Customers.prototype.load_services = function(container_id, elem_id) {
+        create_grid({
+            url: '/api/cluster?user_id='+elem_id,
+            content_container_id: container_id,
+            grid_id: 'customer_services_list',
+            colNames: ['cluster id','name', 'description' ],
+            colModel: [    
+                 {name:'cluster_id',index:'cluster_id', width:60, sorttype:"int", hidden:true, key:true},
+                 {name:'cluster_name',index:'cluster_name', width:120},
+                 {name:'cluster_desc',index:'cluster_desc', width:300},
+            ]
+        });
     }
 }
 
