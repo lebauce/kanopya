@@ -861,7 +861,7 @@ function loadServicesConfig (container_id, elem_id) {
 function loadServicesRessources (container_id, elem_id) {
     var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
     create_grid( {
-        url: '/api/host',
+        url: '/api/externalnode?outside_id=' + elem_id,
         content_container_id: container_id,
         grid_id: loadServicesRessourcesGridId,
         colNames: [ 'id', 'state', 'hostname' ],
@@ -873,7 +873,7 @@ function loadServicesRessources (container_id, elem_id) {
     } );
 
     createUpdateNodeButton($('#' + container_id), elem_id);
-    reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
+    //reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
 }
 
