@@ -197,7 +197,7 @@ sub setConf {
     # Update the configuration of the component Mounttable of the cluster,
     # to automatically mount the images repositories.
     my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
-    my $mounttable = $cluster->getComponent(name => "Mounttable", version => "1");
+    my $mounttable = $cluster->getComponent(name => "Linux", version => "0");
 
     my $oldconf = $mounttable->getConf();
     my @mountentries = @{$oldconf->{mountdefs}};
@@ -210,17 +210,17 @@ sub setConf {
                                    );
 
             push @mountentries, {
-                mounttable1_mount_dumpfreq   => 0,
-                mounttable1_mount_filesystem => 'nfs',
-                mounttable1_mount_point      => $conf->{image_repository_path} . '/' . $repo->{repository_name},
-                mounttable1_mount_device     => $container_access->getAttr(name => 'container_access_export'),
-                mounttable1_mount_options    => 'rw,sync,vers=3',
-                mounttable1_mount_passnum    => 0,
+                linux0_mount_dumpfreq   => 0,
+                linux0_mount_filesystem => 'nfs',
+                linux0_mount_point      => $conf->{image_repository_path} . '/' . $repo->{repository_name},
+                linux0_mount_device     => $container_access->getAttr(name => 'container_access_export'),
+                linux0_mount_options    => 'rw,sync,vers=3',
+                linux0_mount_passnum    => 0,
             };
         }
     }
 
-    $mounttable->setConf({ mounttable_mountdefs => \@mountentries});
+    $mounttable->setConf({ linux_mountdefs => \@mountentries});
 }
 
 sub getNetConf {
