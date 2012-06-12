@@ -1,0 +1,16 @@
+{
+"result" :
+  {
+  "data" : [
+    {
+      "id" : "widget_dash_info",
+      "title" : "Dashboard howto",
+      "description" : "Information about customizing your dashboard",
+      "creator" : "Hedera",
+      "url" : "widgets/widget_dash_info.html",
+      "image": "widgets/widget_info.png",
+      "metadata" : {}
+    }
+  ]
+  }
+}
