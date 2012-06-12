@@ -152,7 +152,7 @@ sub oneRun {
         # Try to lock the context to check if entities are locked by others workflow
         eval {
             $log->debug("Calling lock of operation $opclass.");
-            $workflow->lockContext();
+            $operation->lockContext();
 
             if ($op->getAttr(name => 'state') eq 'blocked') {
                 $op->setState(state => 'ready');
@@ -231,15 +231,16 @@ sub oneRun {
 
             # Cancelling the workflow
             eval {
-                # Unlock the entities as the workflow will be cancelled
-                $workflow->unlockContext();
+#                # Unlock the entities as the workflow will be cancelled
+#                $workflow->unlockContext();
 
-                $adm->{db}->txn_begin;
+#                $adm->{db}->txn_begin;
 
                 # Try to cancel all workflow operations, and delete them.
+                # Context entities will be unlocked by this call
                 $workflow->cancel(config => $self->{config});
 
-                $adm->{db}->txn_commit;
+#                $adm->{db}->txn_commit;
             };
             if ($@){
                 my $err_rollback = $@;
@@ -284,7 +285,7 @@ sub oneRun {
 
             # Unlock the context to update it.
             eval {
-                $workflow->unlockContext();
+                $operation->unlockContext();
             };
             if ($@) {
                 my $err_unlock = $@;
@@ -296,12 +297,6 @@ sub oneRun {
             eval {
                 # Update the workflow context
                 $workflow->pepareNextOp(context => $op->{context}, params => $op->{params});
-
-                # If the workflow isn't finished, lock the context
-                # to protect entities from other workflows.
-                if ($workflow->getAttr(name => 'state') eq 'running') {
-                    $workflow->lockContext();
-                }
             };
             if ($@) {
                 my $err_prepare = $@;

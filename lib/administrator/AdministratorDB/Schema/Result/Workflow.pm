@@ -108,24 +108,9 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 workflow_parameters
 
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::WorkflowParameter>
-
-=cut
-
-__PACKAGE__->has_many(
-  "workflow_parameters",
-  "AdministratorDB::Schema::Result::WorkflowParameter",
-  { "foreign.workflow_id" => "self.workflow_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-22 15:15:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CylQKFpQpw2x7AnCXl5DWA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-06-12 10:46:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5pifrGf9leFRuakFzUvYvw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

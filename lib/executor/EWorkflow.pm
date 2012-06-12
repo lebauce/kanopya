@@ -66,6 +66,7 @@ sub cancel {
     for my $operation (@operations) {
         if ($operation->getAttr(name => 'state') ne 'pending') {
             eval {
+                $operation->unlockContext();
                 EFactory::newEOperation(op => $operation, config => $self->{config})->cancel();
             };
             if ($@){
@@ -75,7 +76,6 @@ sub cancel {
         $operation->delete();
     }
 
-    $self->unlockContext();
     $self->setState(state => 'cancelled');
 }
 

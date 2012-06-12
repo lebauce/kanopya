@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::Result::WorkflowParameter;
+package AdministratorDB::Schema::Result::OperationParameter;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -11,22 +11,22 @@ use base 'DBIx::Class::Core';
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::WorkflowParameter
+AdministratorDB::Schema::Result::OperationParameter
 
 =cut
 
-__PACKAGE__->table("workflow_parameter");
+__PACKAGE__->table("operation_parameter");
 
 =head1 ACCESSORS
 
-=head2 workflow_param_id
+=head2 operation_parameter_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_auto_increment: 1
   is_nullable: 0
 
-=head2 workflow_id
+=head2 operation_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -54,14 +54,14 @@ __PACKAGE__->table("workflow_parameter");
 =cut
 
 __PACKAGE__->add_columns(
-  "workflow_param_id",
+  "operation_parameter_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_auto_increment => 1,
     is_nullable => 0,
   },
-  "workflow_id",
+  "operation_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -75,29 +75,29 @@ __PACKAGE__->add_columns(
   "tag",
   { data_type => "char", is_nullable => 1, size => 64 },
 );
-__PACKAGE__->set_primary_key("workflow_param_id");
-__PACKAGE__->add_unique_constraint("workflow_id", ["workflow_id", "name", "tag"]);
+__PACKAGE__->set_primary_key("operation_parameter_id");
+__PACKAGE__->add_unique_constraint("operation_id", ["operation_id", "name", "tag"]);
 
 =head1 RELATIONS
 
-=head2 workflow
+=head2 operation
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Workflow>
+Related object: L<AdministratorDB::Schema::Result::Operation>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "workflow",
-  "AdministratorDB::Schema::Result::Workflow",
-  { workflow_id => "workflow_id" },
+  "operation",
+  "AdministratorDB::Schema::Result::Operation",
+  { operation_id => "operation_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-11 15:06:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6DKezTHyQQD81n4diwwnxA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-06-12 10:46:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PVknAqls+gJ8xx4tbC9tKA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

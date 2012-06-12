@@ -40,8 +40,11 @@ use warnings;
 
 use General;
 use Workflow;
+use ParamPreset;
 use Kanopya::Exceptions;
+
 use DateTime;
+use Hash::Merge;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -84,18 +87,17 @@ sub new {
     my $adm = Administrator->new();
 
     # If workflow not defined, initiate a new one with parameters
-    my $workflow;
     if (not defined $args{workflow_id}) {
-        $workflow = Workflow->new();
+        my $workflow = Workflow->new();
         $args{workflow_id} = $workflow->getAttr(name => 'workflow_id');
     }
-    else {
-        $workflow = Workflow->get(id => $args{workflow_id})
-    }
-
-    if (defined $args{params}) {
-        $workflow->setParams(params => $args{params});
-    }
+#    else {
+#        $workflow = Workflow->get(id => $args{workflow_id})
+#    }
+#
+#    if (defined $args{params}) {
+#        $workflow->setParams(params => $args{params});
+#    }
 
     # Compute the execution time if required
     my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef;
@@ -128,11 +130,17 @@ sub new {
         $log->error($@);
         $adm->{db}->txn_rollback;
     }
+
+    bless $self, $class;
+
+    if (defined $args{params}) {
+        $self->setParams(params => $args{params});
+    }
+
     $adm->{db}->txn_commit;
 
     $log->info(ref($self)." saved to database (added in execution list)");
 
-    bless $self, $class;
     return $self;
 }
 
@@ -219,21 +227,6 @@ sub getWorkflow {
     # my $workflow = $self->getRelation(name => 'workflow');
     return Workflow->get(id => $self->getAttr(name => 'workflow_id'));
 }
-=head2 getParams
-    
-    Class : Public
-    
-    Desc : This method returns all params
-    
-    Return : hashref : all parameters of operation
-=cut
-
-sub getParams {
-    my $self = shift;
-    my %params;
-
-    return $self->getWorkflow->getParams();
-}
 
 =head setHopedExecutionTime
     modify the field value hoped_execution_time in database
@@ -284,6 +277,159 @@ sub setState {
 
     $self->setAttr(name => 'state', value => $args{state});
     $self->save();
+}
+
+sub setParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'params' ]);
+
+    # Firstly get the existing params for this operation
+    my $existing_params = $self->getParams;
+
+    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+    $existing_params = $merge->merge($existing_params, $args{params});
+
+    my $param_list = $self->buildParams(hash => $existing_params);
+
+    # TODO: Could be smarter
+    $self->{_dbix}->operation_parameters->delete();
+    for my $param (@{$param_list}) {
+        $self->{_dbix}->operation_parameters->create($param);
+    }
+}
+
+sub buildParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'hash' ]);
+
+    my $op_params = [];
+    while(my ($key, $value) = each %{$args{hash}}) {
+        if (not defined $value) { next; }
+
+        # If value is a hash, this is a set of tagged params
+        if (ref($value) eq 'HASH') {
+            while(my ($subkey, $subvalue) = each %{$value}) {
+                my $param_value;
+
+                # If tag is 'context', this is entities params
+                if ($key eq 'context') {
+                    if (not ($subvalue->isa('Entity') or $subvalue->isa('EEntity'))) {
+                        throw Kanopya::Exception::Internal(
+                                  error => "Can not enqueue operation <$args{type}> with param <$subkey> " .
+                                           "of type 'context' that is not an entity."
+                              );
+                    }
+                    $param_value = $subvalue->getAttr(name => 'entity_id');
+                }
+                # If tag is 'preset', this is a composite param, we store it as a ParamPreset
+                elsif ($key eq 'presets') {
+                    my $preset = ParamPreset->new(name => $subkey, params => $subvalue);
+                    $param_value = $preset->getAttr(name => 'param_preset_id');
+                }
+                else {
+                    $param_value = $subvalue;
+                }
+                push @$op_params, { name => $subkey, value => $param_value, tag => $key};
+            }
+        }
+        else {
+             push @$op_params, { name => $key, value => $value };
+        }
+    }
+    return $op_params;
+}
+
+sub getParams {
+    my $self = shift;
+    my %args = @_;
+
+    my %params;
+    my $params_rs = $self->{_dbix}->operation_parameters;
+    while (my $param = $params_rs->next){
+        my $name  = $param->get_column('name');
+        my $tag   = $param->get_column('tag');
+        my $value = $param->get_column('value');
+
+        if ($tag) {
+            if ($tag eq 'context') {
+                # Try to instanciate value as an entity.
+                eval {
+                    $value = EFactory::newEEntity(data => Entity->get(id => $value));
+                };
+                if ($@) {
+                    # Can skip errors on entity instanciation. Could be usefull when
+                    # loading context that containing deleted entities.
+                    if (not ($@->isa('Kanopya::Exception::DB') and $args{skip_not_found})) {
+                        $errmsg = "Workflow <" . $self->getAttr(name => 'workflow_id') .
+                                   ">, context param <$value>, seems not to be an entity id.\n$@";
+                        $log->debug($errmsg);
+                        throw Kanopya::Exception::Internal(error => $errmsg);
+                    }
+                    else{ next; }
+                }
+                $params{$tag}->{$name} = $value;
+            }
+            elsif ($tag eq 'presets') {
+                my $preset = ParamPreset->get(id => $value);
+                $params{$name} = $preset->load();
+            }
+            else {
+                $params{$tag}->{$name} = $value;
+            }
+        }
+        else {
+            $params{$name} = $value;
+        }
+    }
+    return \%params;
+}
+
+sub lockContext {
+    my $self = shift;
+    my %args = @_;
+
+    my $adm = Administrator->new();
+
+    $adm->{db}->txn_begin;
+    my $entity;
+    eval {
+        for $entity (values %{ $self->getParams->{context} }) {
+            $log->debug("Trying to lock entity <$entity>");
+            $entity->lock(workflow => $self->getWorkflow);
+        }
+    };
+    if ($@) {
+        $adm->{db}->txn_rollback;
+        throw $@;
+    }
+    $adm->{db}->txn_commit;
+}
+
+sub unlockContext {
+    my $self = shift;
+    my %args = @_;
+
+    my $adm = Administrator->new();
+
+    # Get the params with option 'skip_not_found', as some input context entities,
+    # could be deleted by the operation, so no need to unlock them.
+    my $params = $self->getParams(skip_not_found => 1);
+
+    $adm->{db}->txn_begin;
+    for my $entity (values %{ $params->{context} }) {
+        $log->debug("Trying to unlock entity <$entity>");
+        eval {
+            $entity->unlock(workflow => $self);
+        };
+        if ($@) {
+            $log->debug($@);
+        }
+    }
+    $adm->{db}->txn_commit;
 }
 
 1;
