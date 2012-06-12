@@ -432,12 +432,8 @@ INSERT INTO `connector_type` VALUES
 (5,'NetappVolumeManager','1','Storage'),
 (6,'NetappLunManager','1','Export'),
 (7,'NetappVolumeManager','1','Export'),
-<<<<<<< HEAD
-(8,'SCO',1,'WorkflowManager'),
+(8,'Sco',1,'WorkflowManager'),
 (9,'MockMonitor','1','MonitoringService');
-=======
-(8,'Sco',1,'WorkflowManager');
->>>>>>> dev
 
 --
 -- interace role list
