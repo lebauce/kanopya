@@ -206,8 +206,8 @@ function isThereAConnector(elem_id, connector_category) {
     return is;
 }
 
-function createSpecServDialog(provider_id, name, first, category, elem, editid) {
-    var allFields   = {
+function getAllConnectorFields() {
+    return {
         'activedirectory'   : {
             ad_host             : {
                 label   : 'Domain controller',
@@ -234,8 +234,13 @@ function createSpecServDialog(provider_id, name, first, category, elem, editid) 
                 type    : 'checkbox'
             },
         },
+        'sco'               : {},
         'mockmonitor'       : {}
     };
+}
+
+function createSpecServDialog(provider_id, name, first, category, elem, editid) {
+    var allFields   = getAllConnectorFields();
     var ad_opts     = {
         title           : ((editid === undefined) ? 'Add' : 'Edit') + ' a ' + category,
         name            : name,
@@ -280,9 +285,12 @@ function createMonDirDialog(elem_id, category, firstDialog) {
             options = data;
         }
     });
+    var fields      = getAllConnectorFields();
     for (option in options) {
         option = options[option];
-        $(select).append($("<option>", { value : option.connector_name.toLowerCase(), text : option.connector_name }));
+        if (fields.hasOwnProperty(option.connector_name.toLowerCase())) {
+            $(select).append($("<option>", { value : option.connector_name.toLowerCase(), text : option.connector_name }));
+        }
     }
     $(select).bind('change', function(event) {
         var name    = event.currentTarget.value;
@@ -293,7 +301,6 @@ function createMonDirDialog(elem_id, category, firstDialog) {
         $(ADMod.content).append(ADMod.form);
         ADMod.startWizard();
     });
-    // create the default form (activedirectory for directory and scom for monitoring)
     ADMod   = createSpecServDialog(elem_id, $(select).attr('value'), firstDialog, category, select);
     return ADMod;
 }
@@ -720,7 +727,7 @@ function loadServicesConfig (container_id, elem_id) {
             }
     });
 
-    var ctnr    = $("<div>");
+    var ctnr    = $("<div>", { id : 'connectorslistcontainer' });
 
     $.ajax({
         url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
@@ -770,9 +777,15 @@ function loadServicesConfig (container_id, elem_id) {
     }
     
     if (isThereAConnector(elem_id, 'MonitoringService') === false) {
-        var bu  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
-        bu.bind('click', function() { createMonDirDialog(elem_id, 'MonitoringService').start(); });
-        bu.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
+        var b  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
+        b.bind('click', function() { createMonDirDialog(elem_id, 'MonitoringService').start(); });
+        b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
+    }
+
+    if (isThereAConnector(elem_id, 'WorkflowManager') === false) {
+        var b   = $("<button>", { text : 'Add a Workflow Manager', id : 'addworkflowmanager' });
+        b.bind('click', function() { createMonDirDialog(elem_id, 'WorkflowManager').start(); });
+        b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
     }
 }
 

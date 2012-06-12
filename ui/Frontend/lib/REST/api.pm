@@ -99,6 +99,7 @@ my %resources = (
     "openssh5"                 => "Entity::Component::Openssh5",
     "operation"                => "Operation",
     "outside"                  => "Entity::ServiceProvider::Outside",
+    "sco"                      => "Entity::Connector::Sco",
     "scom"                     => "Entity::Connector::Scom",
     "scomindicator"            => "ScomIndicator",
     "scope"                    => "Scope",
