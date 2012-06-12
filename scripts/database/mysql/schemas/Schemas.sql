@@ -132,7 +132,7 @@ CREATE TABLE `cluster` (
 CREATE TABLE `service_provider_manager` (
   `service_provider_manager_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `service_provider_id` int(8) unsigned NOT NULL,
-  `service_provider_manager_type` char(64) NOT NULL,
+  `manager_type` char(64) NOT NULL,
   `manager_id` int(8) unsigned NOT NULL,
   `param_preset_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_provider_manager_id`),
@@ -612,6 +612,17 @@ CREATE TABLE `old_operation` (
   KEY (`type`),
   FOREIGN KEY (`type`) REFERENCES `operationtype` (`operationtype_name`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `workflow_def_manager`
+--
+
+CREATE TABLE `workflow_def_manager` (
+    `manager_id` int(8) unsigned,
+    `workflow_def_id` int (8) unsigned,
+    UNIQUE KEY (`manager_id`, `workflow_def_id`),
+    CONSTRAINT FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+)   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `workflow`

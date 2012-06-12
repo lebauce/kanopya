@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 5 june 2012
 
-package 'Entity::Connector::SCO';
+package Entity::Connector::Sco;
 use base 'Entity::Connector';
 use base 'Manager::WorkflowManager';
 
@@ -24,3 +24,8 @@ use strict;
 use warnings;
 use General;
 use Kanopya::Exceptions;
+
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
+1;

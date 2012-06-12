@@ -44,12 +44,14 @@ package Monitor;
 
 use strict;
 use warnings;
-use RRDTool::OO;
 use XML::Simple;
 use Administrator;
 use Entity::ServiceProvider::Inside::Cluster;
 use General;
 use Log::Log4perl "get_logger";
+if ($^O eq 'linux') {
+	require RRDTool::OO;
+}
 
 use Data::Dumper;
 

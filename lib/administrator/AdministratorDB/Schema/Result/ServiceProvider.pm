@@ -139,6 +139,23 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nodemetric_combinations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NodemetricCombination>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nodemetric_combinations",
+  "AdministratorDB::Schema::Result::NodemetricCombination",
+  {
+    "foreign.nodemetric_combination_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nodemetric_rules
 
 Type: has_many
@@ -152,24 +169,6 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Result::NodemetricRule",
   {
     "foreign.nodemetric_rule_service_provider_id" => "self.service_provider_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-__PACKAGE__->has_many(
-  "nodemetric_conditions",
-  "AdministratorDB::Schema::Result::NodemetricCondition",
-  {
-    "foreign.nodemetric_condition_service_provider_id" => "self.service_provider_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-__PACKAGE__->has_many(
-  "nodemetric_combinations",
-  "AdministratorDB::Schema::Result::NodemetricCombination",
-  {
-    "foreign.nodemetric_combination_service_provider_id" => "self.service_provider_id",
   },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -189,6 +188,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 scom_indicators
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ScomIndicator>
+
+=cut
+
+__PACKAGE__->has_many(
+  "scom_indicators",
+  "AdministratorDB::Schema::Result::ScomIndicator",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 service_provider
 
 Type: belongs_to
@@ -204,15 +218,32 @@ __PACKAGE__->belongs_to(
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 service_provider_managers
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-05 20:08:58
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jmeQMTUC0LG2/ymZYpgUtw
+Type: has_many
 
-__PACKAGE__->belongs_to(
-  "parent",
-  "AdministratorDB::Schema::Result::Entity",
-  { "foreign.entity_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_provider_managers",
+  "AdministratorDB::Schema::Result::ServiceProviderManager",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
+
+
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-08 15:21:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fX1IhYDvpDq4zGM2tpWAJQ
+
+
+# You can replace this text with custom content, and it will be preserved on regeneration
+ __PACKAGE__->belongs_to(
+   "parent",
+     "AdministratorDB::Schema::Result::Entity",
+         { "foreign.entity_id" => "self.service_provider_id" },
+             { cascade_copy => 0, cascade_delete => 1 }
+ );
 
 1;

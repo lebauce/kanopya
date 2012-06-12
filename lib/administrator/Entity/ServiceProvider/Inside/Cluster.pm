@@ -394,7 +394,7 @@ sub configureManagers {
             my $cluster_manager;
             eval {
                 $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $manager->{manager_type},
-                                                                  cluster_id   => $self->getId });
+                                                                  service_provider_id   => $self->getId });
             };
             if ($@) {
                 $cluster_manager = $self->addManager(manager      => Entity->get(id => $manager->{manager_id}),
@@ -469,24 +469,6 @@ sub configureInterfaces {
             }
         }
     }
-}
-
-sub addManager {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'manager', "manager_type" ]);
-
-    my $manager = ServiceProviderManager->new(
-                      cluster_id   => $self->getAttr(name => 'entity_id'),
-                      manager_type => $args{manager_type},
-                      manager_id   => $args{manager}->getAttr(name => 'entity_id')
-                  );
-
-    if ($args{manager_params}) {
-        $manager->addParams(params => $args{manager_params});
-    }
-    return $manager;
 }
 
 =head2 update
@@ -1146,46 +1128,6 @@ sub getNewNodeNumber {
 	return $counter;
 }
 
-sub addManagerParameter {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'manager_type', 'name', 'value' ]);
-
-    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
-                                                         cluster_id   => $self->getId });
-
-    $cluster_manager->addParams(params => { $args{name} => $args{value} });
-}
-
-sub getManagerParameters {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'manager_type' ]);
-
-    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
-                                                         cluster_id   => $self->getId });
-    return $cluster_manager->getParams();
-}
-
-sub getManager {
-    my $self = shift;
-    my %args = @_;
-
-    # The parent method getManager should disappeared
-    if (defined $args{id}) {
-        return $self->SUPER::getManager(%args);
-    }
-
-    General::checkParams(args => \%args, required => [ 'manager_type' ]);
-
-    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
-                                                         cluster_id   => $self->getId });
-    return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
-}
-
-
 =head2 getIndicatorsIds
 
     Desc: call collector manager to retrieve indicators ids available for the service provider 
@@ -1371,6 +1313,21 @@ sub generateDefaultMonitoringConfiguration {
     }
 }
 
+sub getManager {
+    my $self = shift;
+    my %args = @_;
+
+    # The parent method getManager should disappeared
+     if (defined $args{id}) {
+        return $self->SUPER::getManager(%args);
+    }
+
+    General::checkParams(args => \%args, required => [ 'manager_type' ]);
+
+    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
+                                                         service_provider_id   => $self->getId });
+    return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
+}
 =head2 getCollectorManager
 
     Desc: retrieve collector manager object for this service provider.
@@ -1381,6 +1338,6 @@ sub generateDefaultMonitoringConfiguration {
 sub getCollectorManager {
     my $self = shift;
 
-    return $self->getManager(manager_type => 'collector_manager' );
+    return $self->getManager(manager_type => 'Collectormanager' );
 }
 1;

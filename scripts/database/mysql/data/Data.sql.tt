@@ -79,7 +79,7 @@ INSERT INTO `class_type` VALUES
 (76, 'Entity::Component::Puppetagent2'),
 (77, 'Entity::Component::Puppetmaster2'),
 (78, 'Entity::Component::Kanopyacollector1'),
-(79, 'Entity::Connector::SCO'),
+(79, 'Entity::Connector::Sco'),
 (80, 'Entity::Connector::MockMonitor');
 
 --
@@ -432,8 +432,12 @@ INSERT INTO `connector_type` VALUES
 (5,'NetappVolumeManager','1','Storage'),
 (6,'NetappLunManager','1','Export'),
 (7,'NetappVolumeManager','1','Export'),
+<<<<<<< HEAD
 (8,'SCO',1,'WorkflowManager'),
 (9,'MockMonitor','1','MonitoringService');
+=======
+(8,'Sco',1,'WorkflowManager');
+>>>>>>> dev
 
 --
 -- interace role list
@@ -679,6 +683,13 @@ INSERT INTO `scope` VALUES (2,'service_provider');
 INSERT INTO `scope_parameter` VALUES (1,1,'ou_from');
 INSERT INTO `scope_parameter` VALUES (2,1,'node_hostname');
 INSERT INTO `scope_parameter` VALUES (3,2,'cluster_name');
+
+--
+-- Initial Host manager for kanopya cluster
+--
+
+INSERT INTO `service_provider_manager` VALUES (1, @admin_cluster, 'host_manager', @physical_hoster, null);
+
 
 --
 -- Monitoring data

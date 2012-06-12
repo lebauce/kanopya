@@ -71,21 +71,6 @@ __PACKAGE__->set_primary_key("param_preset_id");
 
 =head1 RELATIONS
 
-=head2 cluster_managers
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::ClusterManager>
-
-=cut
-
-__PACKAGE__->has_many(
-  "cluster_managers",
-  "AdministratorDB::Schema::Result::ClusterManager",
-  { "foreign.manager_params" => "self.param_preset_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 relation
 
 Type: belongs_to
@@ -98,12 +83,7 @@ __PACKAGE__->belongs_to(
   "relation",
   "AdministratorDB::Schema::Result::ParamPreset",
   { param_preset_id => "relation" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 param_presets
@@ -136,6 +116,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_provider_managers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_provider_managers",
+  "AdministratorDB::Schema::Result::ServiceProviderManager",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 workflow_defs
 
 Type: has_many
@@ -152,9 +147,9 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-06-01 10:34:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:C5dvL1FIXrROXluckHSVqA
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-08 15:21:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zXvM5BvInwVeSQbdiCBERA
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# You can replace this text with custom content, and it will be preserved on regeneration
 1;
