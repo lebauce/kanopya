@@ -1,4 +1,4 @@
-# EScaleMemoryHost.pm - Operation class implementing memory scale in 
+# EScaleMemoryHost.pm - Operation class implementing memory scale in
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -60,14 +60,9 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => $self->{context}, required => [ "host" ]);
-    
+    General::checkParams(args => $self->{context}, required => [ "host", "cloudmanager_comp"]);
     General::checkParams(args => $self->{params}, required => [ "memory" ]);
-    
-    # Get OpenNebula Cluster
-    my $entity = Entity->get(id => $self->{context}->{host}->getAttr(name => 'host_manager_id'));
-    $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(data => $entity);
-    
+
     # Verify if there is enough resource in HV
 
     my $vm_id = $self->{context}->{host}->getId();
@@ -108,7 +103,7 @@ This module is a part of Administrator package so refers to Administrator config
 
 =head1 DEPENDENCIES
 
-This module depends of 
+This module depends of
 
 =over
 

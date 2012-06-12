@@ -44,7 +44,6 @@ use warnings;
 use Data::Dumper;
 use Clone qw(clone);
 use List::Util;
-use Operation;
 use Administrator;
 
 # logger
@@ -66,9 +65,10 @@ sub new {
     }
     else{
         General::checkParams(args => \%args, required => ['cluster_id']);
-        $self->{_cluster_id} = $args{cluster_id};
-        $self->{_infra}      = $self->_constructInfra();
-        $self->{_admin}      = Administrator->new();
+        $self->{_cluster_id}    = $args{cluster_id};
+        $self->{_infra}         = $self->_constructInfra();
+        $self->{_admin}         = Administrator->new();
+        $self->{_operationPlan} = [];
     }
     return $self;
 }
@@ -197,7 +197,7 @@ sub isScalingAuthorized{
 sub isMigrationAuthorized{
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['vm_id','hv_id']);
-    
+
     my $vm_id = $args{vm_id};
     my $hv_id = $args{hv_id};
 
@@ -369,6 +369,7 @@ sub scaleMemoryHost{
             scale_metric     => 'ram',
         );
     }
+    return $self->{_operationPlan};
 };
 
 
@@ -427,6 +428,7 @@ sub scaleCpuHost{
             scale_metric     => 'cpu',
         );
     }
+    return $self->{_operationPlan};
 };
 
 =head2 _scaleMetric
@@ -642,7 +644,7 @@ sub _scaleOrder{
     if ($scale_metric eq 'ram'){
         $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
         if(!defined $self->{_test}){
-            Operation->enqueue(
+            push @{$self->{_operationPlan}}, {
                 type => 'ScaleMemoryHost',
                 priority => 1,
                 params => {
@@ -651,13 +653,13 @@ sub _scaleOrder{
                     },
                     memory  => $new_value / (1024*1024),
                 }
-            );
+            };
         }
     }
     elsif ($scale_metric eq 'cpu') {
         $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
         if(!defined $self->{_test}){
-            Operation->enqueue(
+            push @{$self->{_operationPlan}}, {
                 type => 'ScaleCpuHost',
                 priority => 1,
                 params => {
@@ -666,7 +668,7 @@ sub _scaleOrder{
                     },
                     cpu_number => $new_value,
                 }
-            );
+            };
         }
     }
 }
@@ -713,7 +715,7 @@ sub _migrateVmOrder{
 
     $log->info("Enqueuing MigrateHost of host $vm_id to hypervisor $hv_dest_id");
     if(!defined $self->{_test}){
-        Operation->enqueue(
+        push @{$self->{_operationPlan}}, {
             type => 'MigrateHost',
             priority => 1,
             params => {
@@ -722,7 +724,7 @@ sub _migrateVmOrder{
                    hypervisor_dst => Entity->get(id=>$hv_dest_id),
                }
             }
-        );
+          };
     }
     $log->info("=> migration $vm_id to $hv_dest_id");
 }

@@ -385,16 +385,26 @@ get '/hosts/scale_memory/:host_id' => sub {
 };
 
 post '/hosts/scale_memory' => sub {
-    my $host_id    = params->{host_id};
-    my $cluster_id = Entity::Host->get('id'=>$host_id)->getClusterId();
-
-    my $cm = CapacityManagement->new(cluster_id => $cluster_id);
+    my $host_id           = params->{host_id};
+    my $host              = Entity->get(id => $host_id);
+    my $cloudmanager_id   = $host->getAttr(name => 'host_manager_id');
+    my $cloudmanager_comp = Entity->get(id => $cloudmanager_id);
     
-    $log->info("post ".params->{host_id}." ".params->{memory_quantity});
-    $cm->scaleMemoryHost(
-        host_id => params->{host_id},
-        memory  => params->{memory_quantity}
-    );
+    my $wf_params = {
+        scalein_value => params->{memory_quantity},
+        scalein_type  => 'memory',
+        context => {
+            host              => $host, 
+            cloudmanager_comp => $cloudmanager_comp,
+        }
+    };
+
+    my $wf     = Workflow->run(name => 'ScaleInWorkflow', params => $wf_params);
+
+#    $cm->scaleMemoryHost(
+#        host_id => params->{host_id},
+#        memory  => params->{memory_quantity}
+#    );
 
 #    Operation->enqueue(
 #        type => 'ScaleMemoryHost',
@@ -423,21 +433,23 @@ post '/hosts/scale_cpu' => sub {
 #            cpu_number => params->{vcpu_number}
 #        }
 #    );
+    my $host_id           = params->{host_id};
+    my $host              = Entity->get(id => $host_id);
+    my $cloudmanager_id   = $host->getAttr(name => 'host_manager_id');
+    my $cloudmanager_comp = Entity->get(id => $cloudmanager_id);
     
-    my $host_id    = params->{host_id};
-    my $cluster_id = Entity::Host->get('id'=>$host_id)->getClusterId();
+    my $wf_params = {
+        scalein_value => params->{vcpu_number},
+        scalein_type  => 'cpu',
+        context => {
+            host              => $host, 
+            cloudmanager_comp => $cloudmanager_comp,
+        }
+    };
 
-    my $cm = CapacityManagement->new(cluster_id => $cluster_id);
-    
-    $log->info("call scaleCpuHost ".params->{host_id}." ".params->{vcpu_number});
-    $cm->scaleCpuHost(
-        host_id     => params->{host_id},
-        vcpu_number => params->{vcpu_number}
-    );
+    my $wf     = Workflow->run(name => 'ScaleInWorkflow', params => $wf_params);
 
     redirect '/infrastructures/hosts/'.$host_id;
-
-    #redirect '/infrastructures/hosts';
 };
 
 
