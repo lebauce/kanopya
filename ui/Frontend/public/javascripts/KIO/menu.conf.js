@@ -36,7 +36,8 @@ function _sco_workflow(cid, eid) {
 }
 
 var details_def = {
-        'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'}
+        'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
+        'service_ressources_list' : [{ label : 'Server details' , id : 'service_ressource' }]
 };
 
 // Placeholder handler wich display elem json from rest api

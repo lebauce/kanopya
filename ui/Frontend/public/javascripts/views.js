@@ -132,7 +132,9 @@ function create_grid(options) {
     var content_container = $('#' + options.content_container_id);
     var pager_id = options.grid_id + '_pager';
 
-    content_container.append("<table id='" + options.grid_id + "'></table>");
+    // Grid class allow to manipulate grid (show_detail of a row) even if grid is associated to an instance (same grid logic but different id)
+    var grid_class = options.grid_class || options.grid_id;
+    content_container.append($("<table>", {'id' : options.grid_id, 'class' : grid_class}));
 
     if (!options.pager) {
         content_container.append("<div id='" + pager_id + "'></div>");
@@ -190,7 +192,7 @@ function create_grid(options) {
         onCellSelect: function(rowid, index, contents, target) {
             if (index != actions_col_idx) {
                 var row_data = $('#' + options.grid_id).getRowData(rowid);
-                show_detail(options.grid_id, rowid, row_data)
+                show_detail(grid_class, rowid, row_data)
             }
         },
 

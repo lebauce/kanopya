@@ -866,6 +866,7 @@ function loadServicesRessources (container_id, elem_id) {
         url: '/api/externalnode?outside_id=' + elem_id,
         content_container_id: container_id,
         grid_id: loadServicesRessourcesGridId,
+        grid_class: 'service_ressources_list',
         colNames: [ 'id', 'state', 'hostname' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
