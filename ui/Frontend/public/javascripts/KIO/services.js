@@ -162,8 +162,10 @@ var rulestates = ['enabled','disabled'];
 function StateFormatter(cell, options, row) {
 	if (cell == 'up') {
 		return "<img src='/images/icons/up.png' title='up' />";
-	} else {
+	} else if (cell == 'broken') {
 		return "<img src='/images/icons/broken.png' title='broken' />";
+	} else {
+	    return "<img src='/images/icons/down.png' title='down' />";
 	}
 }
 
