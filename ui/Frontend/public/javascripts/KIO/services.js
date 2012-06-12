@@ -960,7 +960,7 @@ function loadServicesRules (container_id, elem_id) {
     ////////////////////////RULES ACCORDION//////////////////////////////////
         	
     var divacc = $('<div id="accordionrule">').appendTo(container);
-    $('<h3><a href="#">Node :</a></h3>').appendTo(divacc);
+    $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
     $('<div id="node_accordion_container">').appendTo(divacc);
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_rules_' + elem_id;
     create_grid( {
@@ -982,8 +982,8 @@ function loadServicesRules (container_id, elem_id) {
         ]
     } );
     createNodemetricRule('node_accordion_container', elem_id);
-    $('</div>').appendTo(divacc);
-    $('<h3><a href="#">Service :</a></h3>').appendTo(divacc);
+
+    $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
     $('<div id="service_accordion_container">').appendTo(divacc);
     $('<div>Service Conditions :</div>').appendTo('');
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_conditions_' + elem_id;
@@ -1022,12 +1022,15 @@ function loadServicesRules (container_id, elem_id) {
         },
     } );
     createServiceRule('service_accordion_container', elem_id);
-    $('</div>').appendTo(divacc);
 
-    $('</div>').appendTo(divacc);
-    $('</div>').appendTo(divacc);
-    
-    $('#accordionrule').accordion({autoHeight : false });	    
+    $('#accordionrule').accordion({
+        autoHeight  : false,
+        active      : false,
+        change      : function (event, ui) {
+            // Set all grids size to fit accordion content
+            ui.newContent.find('.ui-jqgrid-btable').jqGrid('setGridWidth', ui.newContent.width());
+        }
+    });
     
     ////////////////////////END OF : RULES ACCORDION//////////////////////////////////
 }
