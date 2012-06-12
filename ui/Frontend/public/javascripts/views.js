@@ -148,7 +148,7 @@ function create_grid(options) {
     options.afterInsertRow = options.afterInsertRow || $.noop;
 
     // Add delete action column
-    options.colNames.push('Actions');
+    options.colNames.push('');
     options.colModel.push({index:'action_remove', width : '40px', formatter: 
         function(cell, formatopts, row) {
             // We can't directly use 'actions' default formatter because it not support DELETE
