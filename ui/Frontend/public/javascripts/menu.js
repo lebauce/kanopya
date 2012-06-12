@@ -68,7 +68,8 @@ function build_submenu(container, view_id, links, elem_id) {
     var submenu_cont = $('<ul></ul>').appendTo(view);
     
     view.tabs({
-        select: function(event, ui) { 
+        // Load content on show event because we need the tab be visible to have a width and so scale content
+        show: function(event, ui) {
             var link = String(ui.tab);
             //alert('Event select : ' + link.split('#')[1] + '  => ' + ui.panel);
             reload_content(link.split('#')[1], elem_id);

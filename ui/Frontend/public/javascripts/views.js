@@ -176,7 +176,9 @@ function create_grid(options) {
         afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(grid, rowid, rowdata, rowelem); },
 
         height: options.height || 'auto',
-        width: options.width || 'auto',
+        //width: options.width || 'auto',
+        autowidth   : true,
+        shrinkToFit : true,
         colNames: options.colNames,
         colModel: options.colModel,
         pager: options.pager || '#' + pager_id,
@@ -242,7 +244,7 @@ function create_grid(options) {
     
     $('#' + options.grid_id).jqGrid('navGrid', '#' + pager_id, { edit: false, add: false, del: false }); 
 
-    $('#' + options.grid_id).jqGrid('setGridWidth', $('#' + options.grid_id).parent().width() - 20);
+   //$('#' + options.grid_id).jqGrid('setGridWidth', $('#' + options.grid_id).closest('.current_content').width() - 20, true);
 
     return grid;
 }
