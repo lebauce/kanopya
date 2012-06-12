@@ -106,6 +106,7 @@ my %resources = (
     "scopeparameter"           => "ScopeParameter",
     "snmpd5"                   => "Entity::Component::Snmpd5",
     "serviceprovider"          => "Entity::ServiceProvider",
+    "serviceprovidermanager"   => "ServiceProviderManager",
     "syslogng3"                => "Entity::Component::Syslogng3",
     "systemimage"              => "Entity::Systemimage",
     "tier"                     => "Entity::Tier",

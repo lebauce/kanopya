@@ -49,6 +49,15 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        'findManager'   => {
+            'description'   => 'findManager',
+            'perm_holder'   => 'entity'
+        }
+    };
+}
+
 =head2 getManager
 
     Desc: get a service provider manager object
@@ -107,7 +116,7 @@ sub findManager {
         }
     }
 
-    return @managers;
+    return wantarray ? @managers : \@managers;
 }
 
 

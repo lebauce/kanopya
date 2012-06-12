@@ -727,11 +727,12 @@ function loadServicesConfig (container_id, elem_id) {
             }
     });
 
-    var ctnr    = $("<div>", { id : 'connectorslistcontainer' });
-
     $.ajax({
         url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
         success: function(data) {
+            var ctnr    = $("<div>", { id : 'connectorslistcontainer' });
+            $(ctnr).appendTo(container);
+            $(container).append($('<br />'));
             var table = $("<table>", { id : "connectorslist" }).prependTo(ctnr);
             $(table).append($("<tr>").append($("<td>", { colspan : 3, class : 'table-title', text : "Connectors" })));
             $(data.rows).each(function(row) {
@@ -766,27 +767,93 @@ function loadServicesConfig (container_id, elem_id) {
                     });
                 }).button({ icons : { primary : 'ui-icon-trash' } });
             });
-            $(ctnr).appendTo(container);
+
+            if (isThereAConnector(elem_id, 'DirectoryService') === false) {
+                var b   = $("<a>", { text : 'Add a Directory Service', id : 'adddirectory' });
+                b.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
+                b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
+            }
+            
+            if (isThereAConnector(elem_id, 'MonitoringService') === false) {
+                var b  = $("<a>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
+                b.bind('click', function() { createMonDirDialog(elem_id, 'MonitoringService').start(); });
+                b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
+            }
+        
+            if (isThereAConnector(elem_id, 'WorkflowManager') === false) {
+                var b   = $("<a>", { text : 'Add a Workflow Connector', id : 'addworkflowmanager' });
+                b.bind('click', function() { createMonDirDialog(elem_id, 'WorkflowManager').start(); });
+                b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
+            }
         }
     });
-    
-    if (isThereAConnector(elem_id, 'DirectoryService') === false) {
-        var b   = $("<a>", { text : 'Add a Directory Service', id : 'adddirectory' });
-        b.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
-        b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
-    }
-    
-    if (isThereAConnector(elem_id, 'MonitoringService') === false) {
-        var b  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
-        b.bind('click', function() { createMonDirDialog(elem_id, 'MonitoringService').start(); });
-        b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
-    }
 
-    if (isThereAConnector(elem_id, 'WorkflowManager') === false) {
-        var b   = $("<button>", { text : 'Add a Workflow Manager', id : 'addworkflowmanager' });
-        b.bind('click', function() { createMonDirDialog(elem_id, 'WorkflowManager').start(); });
-        b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
-    }
+    $.ajax({
+        url     : '/api/serviceprovidermanager?service_provider_id=' + elem_id,
+        success : function(data) {
+            var ctnr    = $("<div>", { id : "managerslistcontainer" });
+            $(ctnr).appendTo($(container));
+            var table   = $("<table>", { id : 'managerslist' }).prependTo($(ctnr));
+            $(table).append($("<tr>").append($("<td>", { colspan : 3, class : 'table-title', text : "Managers" })));
+
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                $(table).append($("<tr>", { text : data[i].manager_type }));
+            }
+
+            var addManagerButton    = $("<a>", { text : 'Add a Manager' }).button({ icons : { primary : 'ui-icon-plusthick' } });
+            addManagerButton.bind('click', function() {
+                $.ajax({
+                    url         : '/api/serviceprovider/' + elem_id + '/findManager',
+                    type        : 'POST',
+                    contentType : 'application/json',
+                    data        : JSON.stringify({ 'category' : 'WorkflowManager' }),
+                    success     : function(data) {
+                        var select  = $("<select>", { name : 'managerselection' })
+                        for (var i in data) if (data.hasOwnProperty(i)) {
+                            var theName     = data[i].name;
+                            var manager     = data[i];
+                            $.ajax({
+                                url     : '/api/externalcluster/' + data[i].service_provider_id,
+                                async   : false,
+                                success : function(data) {
+                                    theName = data.externalcluster_name + " - " + theName;
+                                    $(select).append($("<option>", { text : theName, value : manager.id }));
+                                }
+                            });
+                        }
+                        $("<fieldset>").append($(select)).appendTo(container).dialog({
+                            title           : 'Add a manager',
+                            closeOnEscape   : false,
+                            draggable       : false,
+                            resizable       : false,
+                            buttons         : {
+                                'Cancel'    : function() { $(this).dialog("destroy"); },
+                                'Ok'        : function() {
+                                    var dial    = this;
+                                    $.ajax({
+                                        url         : '/api/serviceprovidermanager',
+                                        type        : 'POST',
+                                        data        : {
+                                            manager_type        : 'WorkflowManager',
+                                            manager_id          : $(select).attr('value'),
+                                            service_provider_id : elem_id,
+                                        },
+                                        success     : function() {
+                                            $(dial).dialog("destroy");
+                                            $(container).empty();
+                                            that.loadServicesConfig(container_id, elem_id);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+            addManagerButton.appendTo($(ctnr));
+        }
+    });
+
 }
 
 function loadServicesRessources (container_id, elem_id) {
