@@ -107,13 +107,22 @@ function show_detail(grid_id, elem_id, row_data) {
 
 // Callback when click on remove icon for a row
 function removeGridEntry (grid_id, id, url) {
+    var dialog_height   = 120;
+    var dialog_width    = 300;
     $("#"+grid_id).jqGrid(
             'delGridRow',
             id,
             {
-                url : url + '/' + id,
-                ajaxDelOptions : { type : 'DELETE'},
-                afterComplete : function () {$("#"+grid_id).trigger('gridChange')}
+                url             : url + '/' + id,
+                ajaxDelOptions  : { type : 'DELETE'},
+                modal           : true,
+                drag            : false,
+                resize          : false,
+                width           : dialog_width,
+                height          : dialog_height,
+                top             : ($(window).height() / 2) - (dialog_height / 2),
+                left            : ($(window).width() / 2) - (dialog_width / 2),
+                afterComplete   : function () {$("#"+grid_id).trigger('gridChange')}
             }
     );
 }
