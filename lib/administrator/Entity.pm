@@ -7,7 +7,7 @@ use Log::Log4perl 'get_logger';
 use EntityLock;
 use EntityComment;
 use Workflow;
-use WorkflowParameter;
+use OperationParameter;
 use Kanopya::Exceptions;
 
 my $log = get_logger('administrator');
@@ -269,13 +269,13 @@ sub getWorkflows {
 
     # TODO: join tables workflow and workflow_parameter to get
     #       paramters of running workflow only.
-    my @contexes = WorkflowParameter->search(hash => {
+    my @contexes = OperationParameter->search(hash => {
                        tag   => 'context',
                        value => $self->getId
                    });
 
     for my $context (@contexes) {
-        my $workflow = Workflow->get(id => $context->getAttr(name => 'workflow_id'));
+        my $workflow = Operaton->get(id => $context->getAttr(name => 'operation_id'))->getWorkflow;
         if ($workflow->getAttr(name => 'state') eq 'running') {
             push @workflows, $workflow;
         }
