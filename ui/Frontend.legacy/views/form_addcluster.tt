@@ -171,10 +171,10 @@
     <tr><td><input type="radio" name="cluster_si_shared" value="1" />shared (one image for all nodes)</td>
     </tr>
     <tr><td></td><td><input type="checkbox" name="cluster_si_persistent" value="checked" checked />persistent (do not delete images automatically)</td></tr>
-    <!--<tr><td class="label">Boot Policy :</td>
+    <tr><td class="label">Boot Policy :</td>
         <td><select id="boot_policy" name="cluster_boot_policy"></select>
         </td>
-    </tr>-->
+    </tr>
     <tr><td class="label">Image size :</td>
         <td><input type="text" name="disk_manager_param_systemimage_size" maxlength="16" size="5"/>
             <select name="systemimage_size_unit">
@@ -317,6 +317,7 @@ $('#min_node, #max_node').change(UpdateMinMaxNode);
 $('#host_provider').change(UpdateCloudmanagers);
 $('#cloud_manager').change(UpdateCloudmanagersSubform);
 $('#groupschoice').change(Updateusers);
+$('#export_manager').change(UpdateExportmanagers);
 
 Updateusers();
 UpdateCloudmanagers();
