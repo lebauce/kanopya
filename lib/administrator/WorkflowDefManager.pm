@@ -22,7 +22,7 @@ use warnings;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
-    service_provider_manager_id              =>  {pattern       => '^.*$',
+    manager_id                               =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
