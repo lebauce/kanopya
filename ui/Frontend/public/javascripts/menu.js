@@ -56,7 +56,10 @@ function build_mainmenu() {
         }
     }
     
-    container.accordion( {clearStyle: true} );
+    container.accordion( {
+        clearStyle  : true,     // size to content
+        active      : false,    // all parts closed at start
+    } );
 }
 
 function build_submenu(container, view_id, links, elem_id) {
@@ -77,8 +80,7 @@ function build_submenu(container, view_id, links, elem_id) {
     });
     for (var smenu in links) {
         var id_suffix = elem_id ? elem_id : 'static';
-        //if (elem_id) {id_suffix = elem_id};
-         
+
         var content_id = 'content_' + links[smenu]['id'] + '_' + id_suffix;
         var content = $('<div id="' + content_id + '"></div>');
         view.append(content);

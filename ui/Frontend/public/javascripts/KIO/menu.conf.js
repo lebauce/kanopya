@@ -1,16 +1,6 @@
 // each link will show the div with id "view_<link_name>" and hide all div in "#view-container"
 
 var mainmenu_def = {
-    'Administration'    : {
-        'Kanopya'          : [],
-        'Right Management' :  [
-                               {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('KIO/users.js'); usersList(cid, eid); }},
-                               {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('KIO/users.js'); groupsList(cid, eid); }},
-                               {label : 'Permissions', id : 'permissions'}
-                               ],
-        'Monitoring'       : [],
-        'Workflows'        : [{ label : 'SCO' , id : 'workflow_sco', onLoad : _sco_workflow }]
-    },
     'Services'   : {
         //onLoad : load_services,
         masterView : [
@@ -27,6 +17,16 @@ var mainmenu_def = {
                                {label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRules(cid, eid);}},
                                ]
                 }
+    },
+    'Administration'    : {
+        'Kanopya'          : [],
+        'Right Management' :  [
+                               {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('KIO/users.js'); usersList(cid, eid); }},
+                               {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('KIO/users.js'); groupsList(cid, eid); }},
+                               {label : 'Permissions', id : 'permissions'}
+                               ],
+        'Monitoring'       : [],
+        'Workflows'        : [{ label : 'SCO' , id : 'workflow_sco', onLoad : _sco_workflow }]
     },
 };
 
