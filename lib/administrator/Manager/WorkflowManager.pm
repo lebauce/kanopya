@@ -31,6 +31,7 @@ use Data::Dumper;
 
 use WorkflowDef;
 use WorkflowDefManager;
+use ParamPreset;
 
 =head2 checkWorkflowManagerParams
 
@@ -38,21 +39,6 @@ use WorkflowDefManager;
 
 sub checkWorkflowManagerParams { 
     throw Kanopya::Exception::NotImplemented();
-}
-
-=head2 getWorkflowDef
-    Return WorkflowDef object
-=cut
-
-sub getWorkflowDefs() {
-    my ($self,%args) = @_;
-
-    my $manager_id   = $self->getId;
-    my @workflow_def = WorkflowDefManager->search (
-                            hash => {service_provider_manager_id => $manager_id}
-                        );
-
-    return \@workflow_def;
 }
 
 =head2 createWorkflow
@@ -69,29 +55,109 @@ sub createWorkflow {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => [ 'workflow_name' ]);
 
-    my $service_provider_id = $self->getServiceProvider()->getAttr(name => 'service_provider_id');
+    my $service_provider_id = $self->getServiceProvider()
+                                ->getAttr(name => 'service_provider_id');
     my $workflow_def_name   = $args{workflow_name};
     my %workflow_def_params;
     my $workflow;
     
     #creation of a new instance of workflow_def
-    if (defined $args{workflow_params}) {
-        %workflow_def_params = %{$args{workflow_params}};
-        $workflow            = WorkflowDef->new(workflow_def_name => $workflow_def_name,
-                                                params            => \%workflow_def_params
+    if (defined $args{params}) {
+        %workflow_def_params = %{$args{params}};
+        $workflow            = WorkflowDef->new(
+                                workflow_def_name => $workflow_def_name,
+                                params            => \%workflow_def_params
                                );
     } else { 
-        $workflow            = WorkflowDef->new(workflow_def_name => $workflow_def_name);
+        $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name);
     }
 
     #now associating the new workflow to the manager
     my $workflow_def_id = $workflow->getAttr(name => 'workflow_def_id');
     my $manager_id      = $self->getId;
-    WorkflowDefManager->new(manager_id => $manager_id, workflow_def_id => $workflow_def_id);
+    WorkflowDefManager->new(
+        manager_id => $manager_id,
+        workflow_def_id => $workflow_def_id
+    );
 }
 
 sub instanciateWorkflow { };
 sub getSpecificWorkflowParameters { };
 sub runWorkflow { };
+
+=head2 getWorkflowDefs
+    Desc: Get a list of workflow defs related to the manager
+
+    Args: none
+
+    Return: array of objects, \@manager_workflow_defs
+=cut
+
+sub getWorkflowDefs {
+    my ($self,%args) = @_;
+
+    #first we gather all the workflow def related to the current manager
+    my @manager_workflow_defs = WorkflowDefManager->search (
+                            hash => {manager_id => $self->getId}
+                        );
+   
+    #then we create a list of workflow_def from the workflow_def_id accessible 
+    #through the previously gathered list of objects
+    my @workflow_defs;
+
+    foreach my $manager_workflow_def (@manager_workflow_defs) {
+        my $workflow_def_id = $manager_workflow_def->getAttr(
+                                name => 'workflow_def_id'
+                              );
+        my $workflow_def    = $self->getWorkflowDef(
+                                workflow_def_id => $workflow_def_id
+                              );
+        push @workflow_defs, $workflow_def;
+    }
+
+    return \@workflow_defs;
+}
+
+=head2 getWorkflowDef
+    Desc: Get a workflow def from its id
+
+    Args: workflow_def_id
+
+    Return: reference on an object, $workflow_def
+=cut
+
+sub getWorkflowDef {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow_def_id' ]);
+
+    my $workflow_def = WorkflowDef->find (
+                            hash => {workflow_def_id => $args{workflow_def_id}}
+                       );
+
+    return $workflow_def;
+}
+
+=head2 _getParams
+    Desc: Get the full params list for a workflow def.
+
+    Args: workflow_def_id
+
+    Return: \@param_list 
+=cut
+
+sub _getParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow_def_id' ]);
+    
+    my $workflow_def_id = $args{workflow_def_id};
+
+    #get the param preset id from the workflow def
+    my $workflow_def = $self->getWorkflowDef(workflow_def_id=>$workflow_def_id);
+    my @param_list   = $workflow_def->getParamPreset();
+
+    return \@param_list;
+}
 
 1;

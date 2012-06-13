@@ -29,6 +29,7 @@ use ScopeParameter;
 use Scope;
 use Workflow;
 use WorkflowDef;
+use WorkflowDefManager;
 use Entity::ServiceProvider;
 
 use Log::Log4perl 'get_logger';
@@ -37,10 +38,5 @@ my $errmsg;
 
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
-
-
-sub instanciateWorkflow { };
-sub getSpecificWorkflowParameters { };
-sub runWorkflow { };
 
 1;
