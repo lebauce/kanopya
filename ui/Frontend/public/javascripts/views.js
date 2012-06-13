@@ -41,6 +41,8 @@ function reload_content(container_id, elem_id) {
             // Fill info panel
             if (_content_handlers[container_id]['info']) {
                 $('#info-container').load(_content_handlers[container_id]['info'].url);
+            } else {
+                $('#info-container').html('');
             }
         }
     }
@@ -120,11 +122,12 @@ function show_detail(grid_id, elem_id, row_data) {
 function removeGridEntry (grid_id, id, url) {
     var dialog_height   = 120;
     var dialog_width    = 300;
+    var delete_url      = url.split('?')[0] + '/' + id;
     $("#"+grid_id).jqGrid(
             'delGridRow',
             id,
             {
-                url             : url + '/' + id,
+                url             : delete_url,
                 ajaxDelOptions  : { type : 'DELETE'},
                 modal           : true,
                 drag            : false,
@@ -168,7 +171,7 @@ function create_grid(options) {
             remove_action += '<div class="ui-pg-div ui-inline-del"';
             remove_action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
             remove_action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
-            remove_action += 'onclick="removeGridEntry(\''+  options.grid_id + '\',' +row.pk + ',\'' + options.url + '\')" style="float:left;margin-left:5px;" title="Delete selected row">';
+            remove_action += 'onclick="removeGridEntry(\''+  options.grid_id + '\',' +row.pk + ',\'' + options.url + '\')" style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
             remove_action += '<span class="ui-icon ui-icon-trash"></span>';
             remove_action += '</div>';
             return remove_action;

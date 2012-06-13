@@ -550,7 +550,8 @@ function servicesList (container_id, elem_id) {
             { name: 'externalcluster_name', index: 'service_name', width: 200 },
             { name: 'externalcluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
             { name: 'node_number', index: 'node_number', width: 150 }
-        ]
+        ],
+        elem_name : 'service',
     });
     
     $("#services_list").on('gridChange', reloadServices);
