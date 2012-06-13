@@ -271,7 +271,7 @@ INSERT INTO `entity` VALUES (@eid, 9, NULL);
 INSERT INTO `processormodel` VALUES (@eid,'AMD','G-T56N',2,1.6,1,18,1,1);
 SET @eid := @eid +1;
 
--- 
+--
 -- powersupplycard models
 --
 
@@ -375,25 +375,29 @@ INSERT INTO `operationtype` VALUES
 (45,'CancelWorkflow'),
 (46,'LaunchSCOWorkflow'),
 (47,'UpdatePuppetCluster'),
-(48,'UpdateComponent');
-
+(48,'UpdateComponent'),
+(49,'LaunchScaleInWorkflow'),
+(50,'LaunchOptimiaasWorkflow');
 --
 -- Workflows definition
 --
 
-INSERT INTO `workflow_def` VALUES 
+INSERT INTO `workflow_def` VALUES
 (1,'AddNode', NULL),
-(2,'StopNode', NULL);
+(2,'StopNode', NULL),
+(3,'OptimiaasWorkflow', NULL),
+(4,'ScaleInWorkflow',NULL);
 
-INSERT INTO `workflow_step` VALUES 
+INSERT INTO `workflow_step` VALUES
 (1, 1, 42),
 (2, 1, 23),
 (3, 1, 24),
 (4, 1, 27),
 (5, 2, 25),
 (6, 2, 21),
-(7, 2, 26);
-
+(7, 2, 26),
+(8, 3, 50),
+(9, 4, 49);
 --
 -- components type list
 --
@@ -504,7 +508,7 @@ SET @admin_host := @eid;
 SET @eid := @eid +1;
 
 --
--- admin poolip 
+-- admin poolip
 --
 INSERT INTO `entity` VALUES (@eid, 49, NULL);
 INSERT INTO `poolip` VALUES (@eid, 'kanopya_admin', '[% poolip_addr %]', '[% poolip_mask %]', '[% poolip_netmask %]', '[% poolip_gateway %]');
@@ -517,11 +521,11 @@ SET @eid := @eid +1;
 INSERT INTO `network_poolip` VALUES (@admin_network, @poolid);
 
 --
--- admin iface 
+-- admin iface
 --
 INSERT INTO `entity` VALUES (@eid, 74, NULL);
 INSERT INTO `iface` VALUES (@eid,'eth0','[% mb_hw_address %]',0,@admin_host, @kanopya_cluster_interface);
-SET @admin_iface := @eid; 
+SET @admin_iface := @eid;
 SET @eid := @eid +1;
 
 --
@@ -574,7 +578,7 @@ SET @pvid := @pvid +1;
 [% END %]
 
 --
--- iscsitarget 
+-- iscsitarget
 --
 
 INSERT INTO `entity` VALUES (@eid, 21, NULL);
