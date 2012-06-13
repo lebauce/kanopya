@@ -42,16 +42,6 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
-
-sub getManager {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-    return Entity::Connector->get(id => $args{id});
-}
-
 =head2 addConnector
 
 link an existing connector with the outside service provider
