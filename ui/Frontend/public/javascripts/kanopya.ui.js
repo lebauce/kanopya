@@ -2,9 +2,52 @@ var lastMsgId = '';
 
 $(document).ready(function () {
 
+    var loginModalOpened    = false;
+
     $(this).ajaxComplete(function(event, jqXHR) {
-        if (jqXHR.responseXML !== undefined) {
-            window.location.href    = '/login';
+        if (jqXHR.responseXML !== undefined && !loginModalOpened) {
+            loginModalOpened    = true;
+            var form    = $("<form>", { id : "loginform"});
+            var table   = $("<table>", { width : "100%" }).appendTo($(form));
+            $(table).append($("<tr>")
+              .append($("<td>", { align : 'center', colspan : 2, id : 'errorCell', class : 'ui-state-error ui-corner-all' }).css('display', 'none')));
+            $(table).append($("<tr>")
+              .append($("<td>").append($("<label>", { for : 'loginInput', text : 'Login : ' })))
+              .append($("<td>", { align : 'right' })
+                .append($("<input>", { type : 'text', name : 'login', id : 'loginInput' }))));
+            $(table).append($("<tr>")
+              .append($("<td>").append($("<label>", { for : 'passwordInput', text : 'Password : ' })))
+              .append($("<td>", { align : 'right' })
+                .append($("<input>", { type : 'password', name : 'password', id : 'passwordInput' }))));
+            $(form).dialog({
+                resizable       : false,
+                draggable       : false,
+                closeOnEscape   : false,
+                modal           : true,
+                buttons         : {
+                    'Ok'    : function() {
+                      var dial  = this;
+                      $.ajax({
+                        url         : '/login',
+                        type        : 'POST',
+                        data        : {
+                            login       : $(form).find("input#loginInput").attr('value'),
+                            password    : $(form).find("input#passwordInput").attr('value')
+                        },
+                        complete    : function(a, b) {
+                            var response    = JSON.parse(a.responseText);
+                            if (response.status === 'success') {
+                                $(dial).dialog("destroy");
+                                loginModalOpened    = false;
+                            } else {
+                                $("#errorCell").empty().text("Login failed").css("display", "block");
+                            }
+                        }
+                      });
+                    }
+                }
+            });
+            $("a.ui-dialog-titlebar-close").remove();
         }
     });
 
