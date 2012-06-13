@@ -30,16 +30,16 @@ prefix '/architectures';
 
 sub _timestamp_format {
     my %args = @_;
-    
+
     return 'unk' if (not defined $args{timestamp});
-    
+
     my $period = time() - $args{timestamp};
    	my @time = (int($period/3600), int(($period % 3600) / 60), $period % 60);
     my $time_str = "";
     $time_str .= $time[0] . "h" if ($time[0] > 0);
     $time_str .= $time[1] . "m" if ($time[0] > 0 || $time[1] > 0);
-    $time_str .= $time[2] . "s"; 
-    
+    $time_str .= $time[2] . "s";
+
     return $time_str;
 }
 
@@ -57,7 +57,7 @@ sub _clusters {
             cluster_id           => $n->getAttr(name => 'cluster_id'),
             cluster_name         => $n->getAttr(name => 'cluster_name'),
             cluster_basehostname => $n->getAttr(name=>'cluster_basehostname')
-            
+
         };
         my  $user_id = $n->getAttr(name=>'user_id');
         my $minnode = $n->getAttr(name => 'cluster_min_node');
@@ -103,16 +103,16 @@ sub _clusters {
 
 sub _externalclusters {
     my @extclusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
-    
+
     my @clusters;
     foreach my $cluster (@extclusters) {
-        
+
         my $nodes = $cluster->getNodes();
         my $nbnodes = scalar(@$nodes);
-        
+
         my $clusterstate = $cluster->getAttr('name' => 'externalcluster_state');
-        
-        
+
+
         push @clusters, {
             route_base      => 'extclusters',
             link_activity   => 1,
@@ -126,7 +126,7 @@ sub _externalclusters {
             nbnodesup       => $nbnodes,
         };
     }
-    
+
     return \@clusters;
 }
 
@@ -136,7 +136,7 @@ sub _managers {
 
     General::checkParams(args => \%args, required => ['category']);
 
-    my ($category) = @_; 
+    my ($category) = @_;
     my @datamanagers = Entity::ServiceProvider->findManager(category => $args{category}, service_provider_id => $args{service_provider_id});
 
     return @datamanagers;
@@ -188,14 +188,14 @@ sub _host_providers {
     foreach my $s (@cloudmanagers) {
         $temp{ $s->{service_provider_id} } = 0;
     }
-    
+
     my $sp = [];
     foreach my $id (keys %temp) {
         my $tmp = {};
         my $sp_entity = Entity::ServiceProvider->get(id => $id);
         $tmp->{id} = $id;
         $tmp->{name} = $sp_entity->toString();
-        
+
         push (@$sp, $tmp);
     }
     return $sp;
@@ -244,7 +244,7 @@ get '/clusters/users/:gpid' => sub {
     my $adm        = Administrator->new();
 	my $loguser_id = $adm->{_rightchecker}->{user_id};
 	my $loguser    = Entity::User->get(id => $loguser_id);
-	 
+
     my $gp_id = param('gpid');
     my $gp_selected=Entity::Gp->get(id => param('gpid'));
     my @eusers= $gp_selected->getEntities();
@@ -256,7 +256,7 @@ get '/clusters/users/:gpid' => sub {
 	    $tmp->{user_id}        = $u->getAttr(name=>'user_id');
 	    $str .='<option value='.$tmp->{user_id}.'>'.$tmp->{user_firstname}.' '.$tmp->{user_lastname}.'</option>';
     }
-    content_type('text/html'); 
+    content_type('text/html');
     return $str;
 };
 
@@ -336,7 +336,7 @@ get '/clusters/cloudmanagers/:hostproviderid' => sub {
             $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
         }
     }
-    
+
     content_type('text/html');
     return $str;
 };
@@ -352,12 +352,12 @@ get '/clusters/exportmanagers/:storageproviderid' => sub {
             $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
         }
     }
-    
+
     content_type('text/html');
     return $str;
 };
 
-# route to dynamically update cloud managers parameters 
+# route to dynamically update cloud managers parameters
 
 get '/clusters/cloudmanagers/:hostproviderid/subform/:cloudmanagerid' => sub {
     my $storageid = param('hostproviderid');
@@ -373,9 +373,9 @@ get '/clusters/cloudmanagers/:hostproviderid/subform/:cloudmanagerid' => sub {
             my $connectordetail = $cloudmanager->getConnectorType();
             $template = 'connectors/'.lc($connectordetail->{connector_name}).'_subform_addcluster.tt';
         }
-        
+
         my $template_params = {};
-            
+
         my $config = $cloudmanager->getConf();
         content_type('text/html');
         template "$template", $config, {layout => undef};
@@ -384,7 +384,7 @@ get '/clusters/cloudmanagers/:hostproviderid/subform/:cloudmanagerid' => sub {
     }
 };
 
-# route to dynamically update boot policies list 
+# route to dynamically update boot policies list
 
 get '/clusters/cloudmanagers/:hostproviderid/bootpolicies/:cloudmanagerid' => sub {
     my $storageid = param('hostproviderid');
@@ -407,7 +407,7 @@ post '/clusters/add' => sub {
     my %parameters = params;
 
     my $sizeinbyte = General::convertToBytes(
-        value => $parameters{disk_manager_param_systemimage_size}, 
+        value => $parameters{disk_manager_param_systemimage_size},
         units => $parameters{systemimage_size_unit}
     );
 
@@ -487,7 +487,7 @@ post '/clusters/add' => sub {
 # external cluster add form display
 
 get '/extclusters/add' => sub {
-    
+
     template 'form_addexternalcluster', {
         title_page                  => "External Clusters - Add",
     }, { layout => '' };
@@ -497,7 +497,7 @@ get '/extclusters/add' => sub {
 
 post '/extclusters/add' => sub {
     my $adm = Administrator->new;
-    
+
     my $params = {
         externalcluster_name           => params->{'name'},
         externalcluster_desc           => params->{'desc'},
@@ -537,12 +537,12 @@ get '/clusters' => sub {
             $can_create = 1;
         }
     }
-    
+
     template 'clusters', {
         title_page         => 'Clusters - Clusters',
         clusters_list => [ @{_clusters()}, @{_externalclusters()} ],
         can_create => $can_create,
-        
+
     }, { layout => 'main' };
 };
 
@@ -591,7 +591,7 @@ get '/clusters/:clusterid' => sub {
     } else {
         $kernel = 'no specific kernel';
     }
-    
+
     # state info
     my ($cluster_state, $timestamp) = split ':', $ecluster->getAttr('name' => 'cluster_state');
 
@@ -656,7 +656,7 @@ get '/clusters/:clusterid' => sub {
                 host_internal_ip => $n->getAdminIp(),
                 cluster_id => $cluster_id,
             };
-            
+
             # Manage remove link
             if ($id == $master_id) {
                 $tmp->{link_remove} = 0;
@@ -669,7 +669,7 @@ get '/clusters/:clusterid' => sub {
 
             # Manage node state
             my ($node_state, $time_stamp) = $n->getNodeState();
-            # The first elem is the regexp to match with the state and the second elem is the associated state for ui 
+            # The first elem is the regexp to match with the state and the second elem is the associated state for ui
             for my $state ( ['^in', 'up'],                # node 'in' is displayed as 'Up'
                             ['goingin', 'starting'],      # match pregoingin, goingin and diplayed as starting
                             ['goingout', 'stopping'],     # match pregoingout, goingout and diplayed as stopping
@@ -751,7 +751,7 @@ get '/clusters/:clusterid' => sub {
         link_deactivate    => $methods->{'deactivate'}->{'granted'} ? $link_deactivate : 0,
         link_start         => $methods->{'start'}->{'granted'} && $link_start,
         link_stop          => $methods->{'stop'}->{'granted'} && $link_stop,
-        link_edit          => $methods->{'update'}->{'granted'}, 
+        link_edit          => $methods->{'update'}->{'granted'},
         link_addnode       => $methods->{'addNode'}->{'granted'} ? $link_addnode : 0,
         link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
         can_setperm        => $methods->{'setperm'}->{'granted'},
@@ -767,9 +767,9 @@ get '/extclusters/:clusterid' => sub {
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id);
 
     my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id,extcluster => $extcluster);
-    
+
     # Connectors
-    my @connectors = map { 
+    my @connectors = map {
         {
             'connector_id'              => $_->getAttr(name => 'connector_id'),
             'link_configureconnector'   => 1,
@@ -793,12 +793,12 @@ get '/extclusters/:clusterid' => sub {
 
     my $disabled_nodes = $extcluster->getDisabledNodes();
     my $num_nodes_disabled = scalar @$disabled_nodes;
-    
+
     my @nodes = (@$disabled_nodes,@{$cluster_eval->{nm_rule_nodes}});
     my @nodes_sort = sort {
-        $order->{$a->{state}} cmp $order->{$b->{state}} 
+        $order->{$a->{state}} cmp $order->{$b->{state}}
     } @nodes;
-    
+
     template 'extclusters_details', {
         title_page             => "External Clusters - Cluster's overview",
         active                 => 1,
@@ -825,7 +825,7 @@ get '/extclusters/:clusterid' => sub {
         num_clusterrule_verif  => $cluster_eval->{cm_rule_nok},
         num_nodes_disabled     => $num_nodes_disabled,
 
-        
+
     }, { layout => 'main' };
 };
 
@@ -995,7 +995,7 @@ get '/clusters/:clusterid/components/add' => sub {
         $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
         $esystemimage = Entity::Systemimage->get(id => $ecluster->getAttr(name => 'masterimage_id'));
         $systemimage_components = $esystemimage->getProvidedComponents();
-        
+
         $cluster_components = $ecluster->getComponents(administrator => $adm, category => 'all');
     };
     if($@) {
@@ -1009,7 +1009,7 @@ get '/clusters/:clusterid/components/add' => sub {
     else {
         foreach my $c  (@$systemimage_components) {
             my $found = 0;
-            
+
             while(my ($component_id, $component) = each %$cluster_components) {
                 my $attrs = $component->getComponentAttr();
                 if($attrs->{component_type_id} eq $c->{component_type_id}) { $found = 1; }
@@ -1243,7 +1243,7 @@ get '/clusters/:clusterid/workflow/:workflowid/cancel' => sub {
 # cluster node addition form display
 
 get '/clusters/:clusterid/nodes/add' => sub {
-	
+
 	my @freehosts = Entity::Host->getFreeHosts();
 	#$log->info("nombre de free hosts : ".scalar(@freehosts));
 	my $physical_hosts = [];
@@ -1254,7 +1254,7 @@ get '/clusters/:clusterid/nodes/add' => sub {
 		};
 		push @$physical_hosts, $tmp;
 	}
-	
+
 	my @virtclusters = _virtualization_clusters();
     $log->info("nombre de virt clusters : ".scalar(@virtclusters));
     my $virt_clusters = [];
@@ -1265,17 +1265,17 @@ get '/clusters/:clusterid/nodes/add' => sub {
 		};
 		push @$virt_clusters, $tmp;
 	}
-    
+
     template 'form_addnode', {
         title_page                  => "Clusters - Add node",
         'cluster_id'                => params->{clusterid},
         'physical_hosts'			=> $physical_hosts,
         'virt_clusters'			    => $virt_clusters,
         'vm_template'				=> [],
-        
+
 
     }, { layout => '' };
-    
+
 
 };
 
@@ -1283,7 +1283,7 @@ get '/clusters/:clusterid/nodes/add' => sub {
 
 post '/clusters/:clusterid/nodes/add' => sub {
     my $adm = Administrator->new;
-    
+
     my %args = (
 		type          => param('node_type') eq 'auto' ? undef : param('node_type'),
 		core          => param('core')    eq '' ? undef : param('core'),
@@ -1291,9 +1291,9 @@ post '/clusters/:clusterid/nodes/add' => sub {
 		host_id       => param('host_id') eq '-1' ? undef : param('host_id'),
 		cloud_cluster => param('cloud_cluster') eq '-1' ? undef : param('cloud_cluster'),
     );
-    
-    
-    
+
+
+
     eval {
         my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $cluster->addNode(%args);
@@ -1314,11 +1314,26 @@ post '/clusters/:clusterid/nodes/add' => sub {
 
 #OPTIMISE HV+VM INFRASTRUCTURE
 get '/clusters/:clusterid/optimiaas' => sub{
-    my $cm = CapacityManagement->new(cluster_id => param('clusterid'));
-    
+
     $log->info("*** OPTIMIAAS***");
-    $cm->optimIaas();
-    
+
+    my $cluster_id        = params->{clusterid};
+    my $cluster           = Entity->get(id => $cluster_id);
+    my $cloudmanager_comp = $cluster->getHostManager();
+
+    my $wf_params = {
+        context => {
+            cluster           => $cluster,
+            cloudmanager_comp => $cloudmanager_comp,
+        }
+    };
+
+    my $wf     = Workflow->run(name => 'OptimiaasWorkflow', params => $wf_params);
+
+
+    #my $cm = CapacityManagement->new(cluster_id => param('clusterid'));
+    #$cm->optimIaas();
+
     redirect('/architectures/clusters/'.param('clusterid'));
 };
 
@@ -1327,7 +1342,7 @@ get '/clusters/:clusterid/optimiaas' => sub{
 get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
     my $adm = Administrator->new;
     eval {
-        my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
+    my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $ecluster->removeNode(host_id => param('nodeid'));
     };
        if($@) {
@@ -1352,19 +1367,19 @@ get '/extclusters/:clusterid/nodes/update' => sub {
 
     eval {
         my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
-        
+
         my $rep = $cluster->updateNodes( password => param('password') );
-        
+
         $node_count       = $rep->{node_count};
         my $created_nodes = $rep->{created_nodes};
-        
+
         foreach my $node (@$created_nodes){
             NodemetricRule::setAllRulesUndefForANode(
                 cluster_id     => param('clusterid'),
                 node_id        => $node->{id},
             );
-        } 
-        
+        }
+
     };
     if($@) {
         my $exception = $@;
@@ -1378,7 +1393,7 @@ get '/extclusters/:clusterid/nodes/update' => sub {
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster successfully update nodes');
         $res{msg} = "$node_count node" . ( $node_count > 1 ? 's' : '') . " retrieved.";
     }
-    
+
     to_json \%res;
 };
 

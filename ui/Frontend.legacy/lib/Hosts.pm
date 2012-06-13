@@ -175,7 +175,7 @@ post '/hosts/add' => sub {
         $parameters{powersupplycard_id}     = params->{powersupplycard_id};
         $parameters{powersupplyport_number} = params->{powersupplyport_number};
     }
-    
+
     eval {
         $manager->createHost(%parameters);
     };
@@ -218,7 +218,7 @@ get '/hosts/:hostid/activate' => sub {
        {
          eval {
 		 $host->activate();
-	  
+
     };
     if($@) {
         my $exception = $@;
@@ -236,7 +236,7 @@ get '/hosts/:hostid/activate' => sub {
  else
 	   {
 	  $adm->addMessage(from => 'Administrator', level => 'info', content => 'no interface defined');
-	  #redirect '/infrastructures/hosts/'.param('hostid');  
+	  #redirect '/infrastructures/hosts/'.param('hostid');
    }
 
 };
@@ -358,19 +358,26 @@ get '/hosts/migrate/:host_id' => sub {
 
     template 'form_migratevm',  {
 	host_id => params->{'host_id'},
-	hypervisor_list => $hypervisors,    
+	hypervisor_list => $hypervisors,
     }, { layout => '' };
 };
 
 post '/hosts/migrate' => sub {
     #TODO: Move this into a Host method.
+    my $host_id           = params->{host_id};
+    my $host              = Entity->get(id => $host_id);
+    my $cloudmanager_id   = $host->getAttr(name => 'host_manager_id');
+    my $cloudmanager_comp = Entity->get(id => $cloudmanager_id);
+
+
     Operation->enqueue(
         type => 'MigrateHost',
         priority => 1,
         params => {
             context => {
-                host           => Entity->get(id => params->{host_id}),
-                hypervisor_dst => Entity->get(id => params->{hypervisors})
+                host              => $host,
+                hypervisor_dst    => Entity->get(id => params->{hypervisors}),
+                cloudmanager_comp => $cloudmanager_comp,
             }
         }
     );
@@ -380,7 +387,7 @@ post '/hosts/migrate' => sub {
 
 get '/hosts/scale_memory/:host_id' => sub {
     template 'form_scalememory',  {
-        host_id => params->{'host_id'},   
+        host_id => params->{'host_id'},
     }, { layout => '' };
 };
 
@@ -389,12 +396,12 @@ post '/hosts/scale_memory' => sub {
     my $host              = Entity->get(id => $host_id);
     my $cloudmanager_id   = $host->getAttr(name => 'host_manager_id');
     my $cloudmanager_comp = Entity->get(id => $cloudmanager_id);
-    
+
     my $wf_params = {
         scalein_value => params->{memory_quantity},
         scalein_type  => 'memory',
         context => {
-            host              => $host, 
+            host              => $host,
             cloudmanager_comp => $cloudmanager_comp,
         }
     };
@@ -420,7 +427,7 @@ post '/hosts/scale_memory' => sub {
 
 get '/hosts/scale_cpu/:host_id' => sub {
     template 'form_scalecpu',  {
-	host_id => params->{'host_id'},   
+	host_id => params->{'host_id'},
     }, { layout => '' };
 };
 
@@ -437,12 +444,12 @@ post '/hosts/scale_cpu' => sub {
     my $host              = Entity->get(id => $host_id);
     my $cloudmanager_id   = $host->getAttr(name => 'host_manager_id');
     my $cloudmanager_comp = Entity->get(id => $cloudmanager_id);
-    
+
     my $wf_params = {
         scalein_value => params->{vcpu_number},
         scalein_type  => 'cpu',
         context => {
-            host              => $host, 
+            host              => $host,
             cloudmanager_comp => $cloudmanager_comp,
         }
     };
@@ -469,7 +476,7 @@ get '/hosts/:hostid' => sub {
     my $host_manager;
     my $ehost = Entity::Host->get(id => param('hostid'));
     my $methods = $ehost->getPerms();
-    
+
     # host model
     my $mmodel_id = $ehost->getAttr(name => 'hostmodel_id');
     if($mmodel_id) {
@@ -513,7 +520,7 @@ get '/hosts/:hostid' => sub {
 
     # harddisks list
     my $harddisks = $ehost->getHarddisks();
-    
+
     my $hds= [];
     foreach my $hd (@$harddisks) {
         my $tmp = {};

@@ -91,6 +91,13 @@ sub execute {
                "> scale in to <$self->{params}->{memory}> ram.");
 }
 
+
+sub finish {
+    my $self = shift;
+    # Delete all but cloudmanager
+    delete $self->{context}->{host};
+    delete $self->{params}->{memory};
+}
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
