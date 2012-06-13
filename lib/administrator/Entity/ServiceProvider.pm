@@ -65,6 +65,7 @@ sub methods {
     Return: manager object
 
 =cut
+
 sub getManager {
     my $self = shift;
     my %args = @_;
