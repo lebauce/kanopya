@@ -87,7 +87,10 @@ function build_submenu(container, view_id, links, elem_id) {
         view.tabs('add', '#' + content_id , links[smenu]['label']);
         
         if (links[smenu]['onLoad']) {
-            _content_handlers[content_id] = {'onLoad' : links[smenu]['onLoad']};
+            _content_handlers[content_id] = {
+                    'onLoad' : links[smenu]['onLoad'],
+                    'info' : links[smenu]['info']
+            };
         }
     }
     

@@ -58,8 +58,21 @@ $(document).ready(function () {
                        resizable : false,
                        slidable : false,
                    },
+                   center : {
+                       onresize : function () {
+                           // Manage current jqgrid resizing
+                           $('.current_content .ui-jqgrid-btable').each( function () {
+                               // Also manage grid inside an accordion
+                               var new_width = $(this).closest('.ui-accordion-content').width() || $('.current_content').width();
+                               $(this).jqGrid('setGridWidth', new_width);
+                           } );
+                       }
+                   },
                    north : { closable : false },
                    west : { closable : false, resizable : true},
+                   east : {
+                       resizable : true,
+                   },
                    south : {
                        togglerContent_closed : 'Messages',
                        togglerLength_closed : 100,
@@ -67,10 +80,11 @@ $(document).ready(function () {
                        togglerContent_open : 'Messages',
                        togglerLength_open : 100,
                        spacing_open : 14,
-                       initClosed : true,},
+                       initClosed : true
+                   },
                }
-    );               
-               
+    );
+
 	$.ajax({
 		url: '/api/message?order_by=message_id%20DESC&rows=1&dataType=jqGrid',
 		success: function(data) {

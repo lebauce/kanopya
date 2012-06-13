@@ -37,6 +37,11 @@ function reload_content(container_id, elem_id) {
             // Fill container using related handler
             var handler = _content_handlers[container_id]['onLoad'];
             handler(container_id, elem_id);
+
+            // Fill info panel
+            if (_content_handlers[container_id]['info']) {
+                $('#info-container').load(_content_handlers[container_id]['info'].url);
+            }
         }
     }
 }
