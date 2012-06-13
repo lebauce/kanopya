@@ -1,6 +1,13 @@
 var lastMsgId = '';
 
 $(document).ready(function () {
+
+    $(this).ajaxComplete(function(event, jqXHR) {
+        if (jqXHR.responseXML !== undefined) {
+            window.location.href    = '/login';
+        }
+    });
+
     var main_layout = $('body').layout(
                { 
                    applyDefaultStyles: true,

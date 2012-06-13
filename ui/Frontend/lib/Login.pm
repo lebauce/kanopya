@@ -16,7 +16,9 @@ get qr(/.*) => sub {
         return pass;
     }
     elsif ( ! $eid  ) {
-        session login_redirect_url => $path;
+        if (not $path =~ /^\/api/) {
+            session login_redirect_url => $path;
+        }
         return redirect '/login';
     }
     else {
