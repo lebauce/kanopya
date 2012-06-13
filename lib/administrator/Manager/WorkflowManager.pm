@@ -77,16 +77,17 @@ sub createWorkflow {
     #creation of a new instance of workflow_def
     if (defined $args{workflow_params}) {
         %workflow_def_params = %{$args{workflow_params}};
-        $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name,
-                                        params            => \%workflow_def_params
-                   );
+        $workflow            = WorkflowDef->new(workflow_def_name => $workflow_def_name,
+                                                params            => \%workflow_def_params
+                               );
     } else { 
-        $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name);
+        $workflow            = WorkflowDef->new(workflow_def_name => $workflow_def_name);
     }
 
     #now associating the new workflow to the manager
     my $workflow_def_id = $workflow->getAttr(name => 'workflow_def_id');
-    WorkflowDefManager->new(service_provider_manager_id => $service_provider_id, workflow_def_id => $workflow_def_id);
+    my $manager_id      = $self->getId;
+    WorkflowDefManager->new(manager_id => $manager_id, workflow_def_id => $workflow_def_id);
 }
 
 sub instanciateWorkflow { };
