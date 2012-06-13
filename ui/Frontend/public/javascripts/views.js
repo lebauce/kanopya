@@ -67,7 +67,7 @@ function show_detail(grid_id, elem_id, row_data) {
     
     // Override generic behavior, custom detail handling
     if (menu_links.onSelectRow) {
-        menu_links.onSelectRow(elem_id);
+        menu_links.onSelectRow(elem_id, row_data);
         return;
     }
 
