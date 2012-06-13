@@ -19,7 +19,14 @@ __PACKAGE__->table("workflow_def_manager");
 
 =head1 ACCESSORS
 
-=head2 service_provider_manager_id
+=head2 workflow_def_manager_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_auto_increment: 1
+  is_nullable: 0
+
+=head2 manager_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -35,7 +42,14 @@ __PACKAGE__->table("workflow_def_manager");
 =cut
 
 __PACKAGE__->add_columns(
-  "service_provider_manager_id",
+  "workflow_def_manager_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_auto_increment => 1,
+    is_nullable => 0,
+  },
+  "manager_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "workflow_def_id",
   {
@@ -45,10 +59,8 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
-__PACKAGE__->add_unique_constraint(
-  "service_provider_manager_id",
-  ["service_provider_manager_id", "workflow_def_id"],
-);
+__PACKAGE__->set_primary_key("workflow_def_manager_id");
+__PACKAGE__->add_unique_constraint("manager_id", ["manager_id", "workflow_def_id"]);
 
 =head1 RELATIONS
 
@@ -68,8 +80,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-13 15:20:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ALqGHBKnCT+bT/w6+EmgJA
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-13 17:32:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tltltO81/vmWTHRLHH8l2g
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
