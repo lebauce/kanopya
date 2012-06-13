@@ -65,6 +65,12 @@ function show_detail(grid_id, elem_id, row_data) {
         return;
     }
     
+    // Override generic behavior, custom detail handling
+    if (menu_links.onSelectRow) {
+        menu_links.onSelectRow(elem_id);
+        return;
+    }
+
     // Else, modal details
     var id = 'view_detail_' + elem_id;
     var view_detail_container = $('<div></div>');
