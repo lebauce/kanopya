@@ -1342,7 +1342,8 @@ CREATE TABLE `nodemetric_condition` (
   `nodemetric_condition_threshold` double NOT NULL,
   PRIMARY KEY (`nodemetric_condition_id`),
   KEY (`nodemetric_condition_combination_id`),
-  FOREIGN KEY (`nodemetric_condition_combination_id`) REFERENCES `nodemetric_combination` (`nodemetric_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
+  FOREIGN KEY (`nodemetric_condition_combination_id`) REFERENCES `nodemetric_combination` (`nodemetric_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,  
+  FOREIGN KEY (`nodemetric_condition_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

@@ -1,21 +1,17 @@
-use utf8;
 package AdministratorDB::Schema::Result::NodemetricCondition;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::NodemetricCondition
-
-=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<nodemetric_condition>
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::NodemetricCondition
 
 =cut
 
@@ -40,6 +36,7 @@ __PACKAGE__->table("nodemetric_condition");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 nodemetric_condition_combination_id
@@ -73,7 +70,12 @@ __PACKAGE__->add_columns(
   "nodemetric_condition_label",
   { data_type => "char", is_nullable => 1, size => 255 },
   "nodemetric_condition_service_provider_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "nodemetric_condition_combination_id",
   {
     data_type => "integer",
@@ -86,17 +88,6 @@ __PACKAGE__->add_columns(
   "nodemetric_condition_threshold",
   { data_type => "double precision", is_nullable => 0 },
 );
-
-=head1 PRIMARY KEY
-
-=over 4
-
-=item * L</nodemetric_condition_id>
-
-=back
-
-=cut
-
 __PACKAGE__->set_primary_key("nodemetric_condition_id");
 
 =head1 RELATIONS
@@ -115,13 +106,30 @@ __PACKAGE__->belongs_to(
   {
     nodemetric_combination_id => "nodemetric_condition_combination_id",
   },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 nodemetric_condition_service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "nodemetric_condition_service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  {
+    service_provider_id => "nodemetric_condition_service_provider_id",
+  },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 17:15:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dMXtWoAQOZdMkgiAryhKQw
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-13 11:27:52
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:37t2YDDS3CuoZFoZArY3Hw
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# You can replace this text with custom content, and it will be preserved on regeneration
 1;
