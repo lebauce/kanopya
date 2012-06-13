@@ -397,6 +397,7 @@ sub configureManagers {
                                                                   service_provider_id   => $self->getId });
             };
             if ($@) {
+                next if not $manager->{manager_id}; 
                 $cluster_manager = $self->addManager(manager      => Entity->get(id => $manager->{manager_id}),
                                                      manager_type => $manager->{manager_type});
             }

@@ -43,7 +43,7 @@ __PACKAGE__->table("operation");
 =head2 state
 
   data_type: 'char'
-  default_value: 'pending:0'
+  default_value: 'pending'
   is_nullable: 0
   size: 32
 
@@ -105,7 +105,7 @@ __PACKAGE__->add_columns(
   "state",
   {
     data_type => "char",
-    default_value => "pending:0",
+    default_value => "pending",
     is_nullable => 0,
     size => 32,
   },
@@ -128,7 +128,7 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("operation_id");
-__PACKAGE__->add_unique_constraint("execution_rank", ["execution_rank"]);
+__PACKAGE__->add_unique_constraint("execution_rank", ["execution_rank", "workflow_id"]);
 
 =head1 RELATIONS
 
@@ -177,15 +177,25 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 operation_parameters
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-11 11:05:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CzIaO+qJW0gQ7/fUkdr+yw
+Type: has_many
 
- __PACKAGE__->has_one(
-   "entitylink",
-   "AdministratorDB::Schema::Result::OperationEntity",
-   { "foreign.operation_id" => "self.operation_id" },
-   { cascade_copy => 0, cascade_delete => 0 }
+Related object: L<AdministratorDB::Schema::Result::OperationParameter>
+
+=cut
+
+__PACKAGE__->has_many(
+  "operation_parameters",
+  "AdministratorDB::Schema::Result::OperationParameter",
+  { "foreign.operation_id" => "self.operation_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
+
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-06-12 10:46:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cd13OMAP+pDjvbVi7NIFOw
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

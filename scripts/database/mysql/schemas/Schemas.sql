@@ -467,7 +467,7 @@ CREATE TABLE `host` (
 
 --
 -- Table structure for table `iface`
--- 
+--
 CREATE TABLE `iface` (
   `iface_id` int(8) UNSIGNED NOT NULL,
   `iface_name` char(32) NOT NULL ,
@@ -627,6 +627,38 @@ CREATE TABLE `workflow_def_manager` (
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `operation_parameter`
+--
+
+CREATE TABLE `operation_parameter` (
+  `operation_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `operation_id` int(8) unsigned NOT NULL,
+  `name` char(64) NOT NULL,
+  `value` char(255) NOT NULL,
+  `tag` char(64) DEFAULT NULL,
+  PRIMARY KEY (`operation_parameter_id`),
+  UNIQUE KEY (`operation_id`, `name`, `tag`),
+  KEY (`operation_id`),
+  FOREIGN KEY (`operation_id`) REFERENCES `operation` (`operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `old_operation_parameter`
+--
+
+CREATE TABLE `old_operation_parameter` (
+  `old_operation_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `old_operation_id` int(8) unsigned NOT NULL,
+  `name` char(64) NOT NULL,
+  `value` char(255) NOT NULL,
+  `tag` char(64) DEFAULT NULL,
+  PRIMARY KEY (`old_operation_parameter_id`),
+  UNIQUE KEY (`old_operation_id`, `name`, `tag`),
+  KEY (`old_operation_id`),
+  FOREIGN KEY (`old_operation_id`) REFERENCES `old_operation` (`old_operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `workflow`
 --
 
@@ -635,22 +667,6 @@ CREATE TABLE `workflow` (
   `workflow_name` char(64) DEFAULT NULL,
   `state` char(32) NOT NULL DEFAULT 'running',
   PRIMARY KEY (`workflow_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `workflow_parameter`
---
-
-CREATE TABLE `workflow_parameter` (
-  `workflow_param_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `workflow_id` int(8) unsigned NOT NULL,
-  `name` char(64) NOT NULL,
-  `value` char(255) NOT NULL,
-  `tag` char(64) DEFAULT NULL,
-  PRIMARY KEY (`workflow_param_id`),
-  UNIQUE KEY (`workflow_id`, `name`, `tag`),
-  KEY (`workflow_id`),
-  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -669,7 +685,7 @@ CREATE TABLE `workflow_def` (
 
 --
 -- Table structure for table `workflow_step`
--- 
+--
 
 CREATE TABLE `workflow_step` (
   `workflow_step_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -987,7 +1003,7 @@ CREATE TABLE `tier` (
 
 --
 -- Table structure for table `component_type`
--- 
+--
 
 CREATE TABLE `component_type` (
   `component_type_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1083,7 +1099,7 @@ CREATE TABLE `component_installed` (
 
 --
 -- Table structure for table `connector_type`
--- 
+--
 
 CREATE TABLE `connector_type` (
   `connector_type_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1106,7 +1122,7 @@ CREATE TABLE `connector` (
   KEY (`service_provider_id`),
   FOREIGN KEY (`service_provider_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`connector_type_id`),
-  FOREIGN KEY (`connector_type_id`) REFERENCES `connector_type` (`connector_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION  
+  FOREIGN KEY (`connector_type_id`) REFERENCES `connector_type` (`connector_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1313,7 +1329,7 @@ CREATE TABLE `aggregate_condition` (
   FOREIGN KEY (`aggregate_condition_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   PRIMARY KEY (`aggregate_condition_id`),
   KEY (`aggregate_combination_id`),
-  FOREIGN KEY (`aggregate_combination_id`) REFERENCES `aggregate_combination` (`aggregate_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
+  FOREIGN KEY (`aggregate_combination_id`) REFERENCES `aggregate_combination` (`aggregate_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1344,7 +1360,7 @@ CREATE TABLE `nodemetric_condition` (
   `nodemetric_condition_threshold` double NOT NULL,
   PRIMARY KEY (`nodemetric_condition_id`),
   KEY (`nodemetric_condition_combination_id`),
-  FOREIGN KEY (`nodemetric_condition_combination_id`) REFERENCES `nodemetric_combination` (`nodemetric_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
+  FOREIGN KEY (`nodemetric_condition_combination_id`) REFERENCES `nodemetric_combination` (`nodemetric_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

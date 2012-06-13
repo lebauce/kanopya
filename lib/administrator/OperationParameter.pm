@@ -15,7 +15,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package WorkflowParameter;
+package OperationParameter;
 use base 'BaseDB';
 
 use strict;
@@ -27,7 +27,7 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger('administrator');
 
 use constant ATTR_DEF => {
-    workflow_id => {
+    operation_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_extended  => 0

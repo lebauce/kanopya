@@ -1,4 +1,4 @@
-# EScaleCpuHost.pm - Operation class implementing vcpus scale in 
+# EScaleCpuHost.pm - Operation class implementing vcpus scale in
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -59,14 +59,12 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => $self->{context}, required => [ "host" ]);
-    
+    General::checkParams(args => $self->{context}, required => [ "host","cloudmanager_comp" ]);
+
     General::checkParams(args => $self->{params}, required => [ "cpu_number" ]);
-    
+
     # Get OpenNebula Cluster
-    my $entity = Entity->get(id => $self->{context}->{host}->getAttr(name => 'host_manager_id'));
-    $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(data => $entity);
-    
+
     # Verify if there is enough resource in HV
 
 
@@ -83,7 +81,7 @@ sub prepare {
 
     if($check == 0){
         my $errmsg = "Not enough CPU in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
-        throw Kanopya::Exception::Internal(error => $errmsg); 
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
 
@@ -94,6 +92,14 @@ sub execute{
 
     $log->info("Host <" .  $self->{context}->{host}->getAttr(name => 'entity_id') .
                "> scale in to <$self->{params}->{cpu_number}> cpu number.");
+}
+
+
+sub finish {
+      my $self = shift;
+      # Delete all but cloudmanager
+      delete $self->{context}->{host};
+      delete $self->{params}->{cpu};
 }
 
 =head1 DIAGNOSTICS
@@ -108,7 +114,7 @@ This module is a part of Administrator package so refers to Administrator config
 
 =head1 DEPENDENCIES
 
-This module depends of 
+This module depends of
 
 =over
 
