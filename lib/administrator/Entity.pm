@@ -49,7 +49,7 @@ sub getMasterGroupName {
 =head2 getMasterGroupEid
 
     Class : public
-    
+
     desc : return entity_id of entity master group
     TO BE CALLED ONLY ON CHILD CLASS/INSTANCE
     return : scalar : entity_id
@@ -72,7 +72,7 @@ return groups resultset where this entity appears (only on an already stored ent
 
 sub getGroups {
     my $self = shift;
-    if( not $self->{_dbix}->in_storage ) { return; } 
+    if( not $self->{_dbix}->in_storage ) { return; }
     #$log->debug("======> GetGroups call <======");
     my $mastergroup = $self->getMasterGroupEid();
     my $groups = $self->{_rightschecker}->{_schema}->resultset('Gp')->search(
@@ -81,7 +81,7 @@ sub getGroups {
             'ingroups.entity_id' => $self->{_dbix}->id,
             'gp_name' => $mastergroup ]
         },
-            
+
         { join => [qw/ingroups/] }
     );
     return $groups;
@@ -89,7 +89,7 @@ sub getGroups {
 
 sub asString {
     my $self = shift;
-    
+
     my %h = $self->getAttrs;
     my @s = map { "$_ => $h{$_}, " } keys %h;
     return ref $self, " ( ",  @s,  " )";
@@ -101,7 +101,7 @@ sub asString {
 
     desc : return a structure describing method permissions for the current authenticated user.
         If called on a class, return methods permissions holded by mastergroup only.
-        Else return all methods permissions. 
+        Else return all methods permissions.
 
     return : hash ref
 
@@ -114,14 +114,14 @@ sub getPerms {
     my $mastergroupeid = $self->getMasterGroupEid();
     my $methods = $self->methods();
     my $granted;
-        
+
     foreach my $m (keys %$methods) {
         if($methods->{$m}->{'perm_holder'} eq 'mastergroup') {
-            $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroupeid, method => $m);    
+            $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroupeid, method => $m);
             $methods->{$m}->{'granted'} = $granted;
         }
         elsif($class and $methods->{$m}->{'perm_holder'} eq 'entity') {
-            $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => $m);    
+            $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => $m);
             $methods->{$m}->{'granted'} = $granted;
         }
         else {
@@ -140,21 +140,21 @@ sub addPerm {
     my $self = shift;
     my %args = @_;
     my $class = ref $self;
-    
+
     General::checkParams(args => \%args, required => ['method', 'entity_id']);
-    
+
     my $adm = Administrator->new();
-       
+
     if($class) {
         # addPerm call from an instance of type $class
           my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'setPerm');
               if(not $granted) {
                throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{entity_id}");
            }
-           # 
+           #
         $adm->{_rightchecker}->addPerm(
-            consumer_id => $args{entity_id}, 
-            consumed_id => $self->{_entity_id}, 
+            consumer_id => $args{entity_id},
+            consumed_id => $self->{_entity_id},
             method         => $args{method},
         );
     }
@@ -167,13 +167,13 @@ sub addPerm {
               if(not $granted) {
                throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{id}");
            }
-        
+
         $adm->{_rightchecker}->addPerm(
-            consumer_id => $args{entity_id}, 
-            consumed_id => $entity_id, 
+            consumer_id => $args{entity_id},
+            consumed_id => $entity_id,
             method         => $args{method},
         );
-    
+
     }
 }
 
@@ -199,23 +199,23 @@ sub getEntities {
     General::checkParams(args => \%args, required => ['type', 'hash']);
 
     my $adm = Administrator->new();
-    
+
     $rs = $adm->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
     $log->debug( "_getEntityClass with type = $args{type}");
-    
+
     my $id_name = lc($args{type}) . "_id";
     $entity_class = "Entity::$args{type}";
 
     while ( my $row = $rs->next ) {
         my $id = $row->get_column($id_name);
-        my $obj = eval { $entity_class->get(id => $id); }; 
+        my $obj = eval { $entity_class->get(id => $id); };
         if($@) {
-            my $exception = $@; 
+            my $exception = $@;
             if (Kanopya::Exception::Permission::Denied->caught()) {
                 $log->info("no right to access to object <$args{type}> with  <$id>");
                 next;
             }
-            else { $exception->rethrow(); } 
+            else { $exception->rethrow(); }
         }
         else { push @objs, $obj; }
     }
@@ -230,7 +230,7 @@ sub getId() {
 
 sub getComment {
     my $self = shift;
-    
+
     my $comment_id = $self->getAttr(name => 'entity_comment_id');
     if ($comment_id) {
         return EntityComment->get(id => $comment_id)->getAttr(name => 'entity_comment');
@@ -257,7 +257,7 @@ sub setComment {
         $self->setAttr(name => 'entity_comment_id', value => $comment->getAttr(name => 'entity_comment_id'));
         $self->save();
     }
-    
+
     $log->info($comment);
 }
 
@@ -275,7 +275,7 @@ sub getWorkflows {
                    });
 
     for my $context (@contexes) {
-        my $workflow = Operaton->get(id => $context->getAttr(name => 'operation_id'))->getWorkflow;
+        my $workflow = Operation->get(id => $context->getAttr(name => 'operation_id'))->getWorkflow;
         if ($workflow->getAttr(name => 'state') eq 'running') {
             push @workflows, $workflow;
         }

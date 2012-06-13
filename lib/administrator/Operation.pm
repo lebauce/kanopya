@@ -216,7 +216,18 @@ sub delete {
     );
     $new_old_op->insert;
 
+    my $params_rs = $self->{_dbix}->operation_parameters;
+    while (my $param = $params_rs->next){
+        $new_old_op->create_related('old_operation_parameters', {
+            name  => $param->get_column('name'),
+            value => $param->get_column('value'),
+            tag   => $param->get_column('tag'),
+        });
+    }
+
+    $params_rs->delete;
     $self->{_dbix}->delete();
+
     $log->info(ref($self)." deleted from database (removed from execution list)");
 }
 

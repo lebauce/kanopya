@@ -632,6 +632,22 @@ CREATE TABLE `operation_parameter` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `old_operation_parameter`
+--
+
+CREATE TABLE `old_operation_parameter` (
+  `old_operation_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `old_operation_id` int(8) unsigned NOT NULL,
+  `name` char(64) NOT NULL,
+  `value` char(255) NOT NULL,
+  `tag` char(64) DEFAULT NULL,
+  PRIMARY KEY (`old_operation_parameter_id`),
+  UNIQUE KEY (`old_operation_id`, `name`, `tag`),
+  KEY (`old_operation_id`),
+  FOREIGN KEY (`old_operation_id`) REFERENCES `old_operation` (`old_operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `workflow`
 --
 
