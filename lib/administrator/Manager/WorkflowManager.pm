@@ -1,4 +1,4 @@
-# CollectorManager.pm - Object class of Collector Manager included in Administrator
+# WorkflowManager.pm - Object class of Workflow Manager included in Administrator
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -22,20 +22,67 @@ use base "Manager";
 
 use strict;
 use warnings;
-use Log::Log4perl "get_logger";
-use Data::Dumper;
 use Kanopya::Exceptions;
 use General;
 
+use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
+use Data::Dumper;
 
-=head2 checkManagerParams
+use WorkflowDef;
+use WorkflowDefManager;
+
+=head2 checkWorkflowManagerParams
 
 =cut
 
-sub checkWorkflowManagerParams { };
+sub checkWorkflowManagerParams { 
+    throw Kanopya::Exception::NotImplemented();
+}
 
-sub createWorkflow { };
+=head2 getWorkflowDef
+    Return WorkflowDef object
+=cut
+
+sub getWorkflowDefs() {
+    my ($self,%args) = @_;
+
+    my $manager_id   = $self->getId;
+    my @workflow_def = WorkflowDefManager->search (
+                            hash => {service_provider_manager_id => $manager_id}
+                        );
+
+    return \@workflow_def;
+}
+
+=head2 createWorkflow
+    Desc: Create a new instance of WorkflowDef. Can be use for initial workflow
+    instanciation, but also for workflow definition (with defined specific
+    parameters)
+
+    Args: $workflow_name (string), \%workflow_params
+
+    Return: none
+=cut
+
+sub createWorkflow { 
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => [ 'workflow_name' ]);
+
+    my $workflow_def_name   = $args{workflow_name};
+    my $workflow_def_params = $args{workflow_params};
+    my $service_provider_id = $self->getServiceProvider()->getAttr(name => 'service_provider_id');
+
+    #creation of a new instance of workflow_def
+    my $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name,
+                     params            => $workflow_def_params
+                    );
+
+    #now associating the new workflow to the manager
+    my $workflow_def_id = $workflow->getAttr(name => 'workflow_def_id');
+    WorkflowDefManager->new(service_provider_manager_id => $service_provider_id, workflow_def_id => $workflow_def_id);
+}
+
 sub instanciateWorkflow { };
 sub getSpecificWorkflowParameters { };
 sub runWorkflow { };

@@ -618,9 +618,10 @@ CREATE TABLE `old_operation` (
 --
 
 CREATE TABLE `workflow_def_manager` (
-    `manager_id` int(8) unsigned,
-    `workflow_def_id` int (8) unsigned,
+    `service_provider_manager_id` int(8) unsigned,
+    `workflow_def_id` int(8) unsigned,
     UNIQUE KEY (`manager_id`, `workflow_def_id`),
+    CONSTRAINT FOREIGN KEY (`service_provider_manager_id`) REFERENCES `service_provider_manager` (`service_provider_manager_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     CONSTRAINT FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -25,7 +25,22 @@ use warnings;
 use General;
 use Kanopya::Exceptions;
 
+use ScopeParameter;
+use Scope;
+use Workflow;
+use WorkflowDef;
+use Entity::ServiceProvider;
+
+use Log::Log4perl 'get_logger';
+my $log = get_logger('administrator');
+my $errmsg;
+
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
+
+
+sub instanciateWorkflow { };
+sub getSpecificWorkflowParameters { };
+sub runWorkflow { };
 
 1;

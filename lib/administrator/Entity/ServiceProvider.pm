@@ -56,6 +56,7 @@ sub getAttrDef { return ATTR_DEF; }
     Return: manager object
 
 =cut
+
 sub getManager {
     my $self = shift;
     my %args = @_;
