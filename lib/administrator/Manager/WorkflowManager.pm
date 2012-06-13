@@ -69,14 +69,20 @@ sub createWorkflow {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => [ 'workflow_name' ]);
 
-    my $workflow_def_name   = $args{workflow_name};
-    my $workflow_def_params = $args{workflow_params};
     my $service_provider_id = $self->getServiceProvider()->getAttr(name => 'service_provider_id');
-
+    my $workflow_def_name   = $args{workflow_name};
+    my %workflow_def_params;
+    my $workflow;
+    
     #creation of a new instance of workflow_def
-    my $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name,
-                     params            => $workflow_def_params
-                    );
+    if (defined $args{workflow_params}) {
+        %workflow_def_params = %{$args{workflow_params}};
+        $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name,
+                                        params            => \%workflow_def_params
+                   );
+    } else { 
+        $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name);
+    }
 
     #now associating the new workflow to the manager
     my $workflow_def_id = $workflow->getAttr(name => 'workflow_def_id');
