@@ -37,8 +37,53 @@ function _sco_workflow(cid, eid) {
 
 var details_def = {
         'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
-        'service_ressources_list' : [{ label : 'Server details' , id : 'service_ressource' }]
+        //'service_ressources_list' : [{ label : 'Server details' , id : 'service_ressource' }],
+        'service_ressources_list' : [
+                               { label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },
+                               { label : 'Rules', id : 'rules', onLoad : node_rules_tab },
+		],
 };
+
+function node_detail_tab(cid, eid) {
+	
+}
+
+function node_rules_tab(cid, eid) {
+	
+	function verifiedNodeRuleStateFormatter(cell, options, row) {
+	
+		var VerifiedRuleFormat;
+		// Where rowid = rule_id
+		$.ajax({
+ 			url: '/api/externalnode/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
+ 			async: false,
+	 		success: function(answer) {
+				if (answer.length == 0) {
+					VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
+				} else if (answer[0].verified_noderule_state == 'verified') {
+					VerifiedRuleFormat = "<img src='/images/icons/broken.png' title='broken' />"
+				} else if (answer[0].verified_noderule_state == 'undef') {
+					VerifiedRuleFormat = "<img src='/images/icons/down.png' title='down' />";
+				}
+  			}
+		});
+		return VerifiedRuleFormat;
+	}
+
+	var loadNodeRulesTabGridId = 'node_rules_tabs';
+    create_grid( {
+        url: '/api/nodemetricrule',
+        content_container_id: cid,
+        grid_id: loadNodeRulesTabGridId,
+        grid_class: 'node_rules_tab',
+        colNames: [ 'id', 'rule', 'state' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 90,},
+            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 200, formatter: verifiedNodeRuleStateFormatter },
+        ]
+    } );	
+}
 
 // Placeholder handler wich display elem json from rest api
 function displayJSON (container_id, elem_id) {
