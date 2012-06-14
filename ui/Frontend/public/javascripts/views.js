@@ -62,38 +62,40 @@ function create_all_content() {
 
 function show_detail(grid_id, elem_id, row_data) {
 
-    var menu_links = details_def[grid_id];
+    var details_info = details_def[grid_id];
     
     // Not defined details menu
-    if (menu_links === undefined) {
+    if (details_info === undefined) {
         alert('Details not defined yet ( menu.conf.js -> details_def["' + grid_id + '"] )');
         return;
     }
     
     // Details accessible from menu (dynamic loaded menu)
-    if (menu_links.link_to_menu) {
-        var view_link_id = 'link_view_' + row_data[menu_links.label_key].replace(/ /g, '_') + '_' + elem_id;
+    if (details_info.link_to_menu) {
+        var view_link_id = 'link_view_' + row_data[details_info.label_key].replace(/ /g, '_') + '_' + elem_id;
         $('#' + view_link_id + ' > .view_link').click();
         return;
     }
-    
+
     // Override generic behavior, custom detail handling
-    if (menu_links.onSelectRow) {
-        menu_links.onSelectRow(elem_id, row_data);
+    if (details_info.onSelectRow) {
+        details_info.onSelectRow(elem_id, row_data);
         return;
     }
 
     // Else, modal details
     var id = 'view_detail_' + elem_id;
     var view_detail_container = $('<div></div>');
-    build_detailmenu(view_detail_container, id, menu_links, elem_id);
-    
-    //var dialog = $('<div></div>')
+    build_detailmenu(view_detail_container, id, details_info.tabs, elem_id);
+
+    // Set dialog title using column defined in conf
+    var title = details_info.title && details_info.title.from_column && row_data[details_info.title.from_column];
+
     var dialog = $(view_detail_container)
     .dialog({
         autoOpen: true,
         modal: true,
-        title: "detail entity " + elem_id,//link.attr('title' + '#content'),
+        title: title,
         width: 800,
         height: 500,
         resizable: true,
@@ -114,13 +116,15 @@ function show_detail(grid_id, elem_id, row_data) {
             }
         },
     });
-    
-    // Show the view
-    //$('#' + id).show();
-    
+
+    // Remove dialog title if wanted
+    if (details_info.title == 'none') {
+        $(view_detail_container).dialog('widget').find(".ui-dialog-titlebar").hide();
+    }
+
     // Load first tab content
-    reload_content('content_' + menu_links[0]['id'], elem_id, true);
-        
+    reload_content('content_' + details_info.tabs[0]['id'], elem_id, true);
+
     //dialog.load('/api/host/' + elem_id);
     //dialog.load('/details/iaas.html');
 
