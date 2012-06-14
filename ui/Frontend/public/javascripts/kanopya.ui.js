@@ -3,11 +3,12 @@ var lastMsgId = '';
 $(document).ready(function () {
 
     var loginModalOpened    = false;
+    var mustOpen            = true;
 
     $(this).ajaxComplete(function(event, jqXHR) {
-        if (jqXHR.responseXML !== undefined && !loginModalOpened) {
+        if (jqXHR.responseXML !== undefined && !loginModalOpened && mustOpen) {
             loginModalOpened    = true;
-            var form    = $("<form>", { id : "loginform"});
+            var form    = $("<form>", { id : "loginform", class : 'LOGINFORM' });
             var table   = $("<table>", { width : "100%" }).appendTo($(form));
             $(table).append($("<tr>")
               .append($("<td>", { align : 'center', colspan : 2, id : 'errorCell', class : 'ui-state-error ui-corner-all' }).css('display', 'none')));
@@ -23,6 +24,7 @@ $(document).ready(function () {
                 resizable       : false,
                 draggable       : false,
                 closeOnEscape   : false,
+                close           : function() { $(this).remove(); },
                 modal           : true,
                 buttons         : {
                     'Ok'    : function() {
@@ -39,6 +41,7 @@ $(document).ready(function () {
                             if (response.status === 'success') {
                                 $(dial).dialog("destroy");
                                 loginModalOpened    = false;
+                                mustOpen            = false;
                             } else {
                                 $("#errorCell").empty().text("Login failed").css("display", "block");
                             }
@@ -48,6 +51,8 @@ $(document).ready(function () {
                 }
             });
             $("a.ui-dialog-titlebar-close").remove();
+        } else if (jqXHR.responseXML !== undefined && !mustOpen) {
+          mustOpen  = true;
         }
     });
 
