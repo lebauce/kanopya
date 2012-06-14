@@ -34,12 +34,14 @@ var mainmenu_def = {
 
 var details_def = {
         'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
-        //'service_ressources_list' : [{ label : 'Server details' , id : 'service_ressource' }],
-        'service_ressources_list' : [
-                               { label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },
-                               { label : 'Rules', id : 'rules', onLoad : node_rules_tab },
-		],
-        'workflowmanagement' : { onSelectRow : workflowdetails }
+        'service_ressources_list' : {
+            tabs : [
+                    { label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },
+                    { label : 'Rules', id : 'rules', onLoad : node_rules_tab },
+                    ],
+            title : { from_column : 'externalnode_hostname' }
+        },
+        'workflowmanagement' : { onSelectRow : workflowdetails },
 };
 
 function node_detail_tab(cid, eid) {
