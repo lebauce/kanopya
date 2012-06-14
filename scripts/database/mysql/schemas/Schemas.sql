@@ -1553,7 +1553,7 @@ CREATE TABLE `policy` (
   `param_preset_id` int(8) unsigned NOT NULL,
   `policy_name` char(64) NOT NULL,
   `policy_desc` char(255) DEFAULT NULL,
-  `policy_type` char(64) DEFAULT NULL,
+  `policy_type` char(64) NOT NULL,
   PRIMARY KEY (`policy_id`),
   KEY (`param_preset_id`),
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
