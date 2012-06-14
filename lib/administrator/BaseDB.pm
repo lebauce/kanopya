@@ -7,6 +7,8 @@ use Administrator;
 use General;
 use POSIX qw(ceil);
 use Hash::Merge;
+use Class::ISA;
+
 
 use strict;
 use warnings;
@@ -15,6 +17,20 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
 my $errmsg;
+
+sub getMethods {
+  my $class     = shift;
+  my $methods   = {};
+  my @supers    = Class::ISA::super_path($class);
+  push(@supers, $class);
+  my $merge     = Hash::Merge->new();
+  for my $sup (@supers) {
+    if ($sup->can('methods')) {
+      $methods    = $merge->merge( $methods, $sup->methods() );
+    }
+  }
+  return $methods;
+}
 
 # getAttrDefs : return a hash ref containing all ATTR_DEF for each class
 # in the hierarchy
