@@ -102,6 +102,18 @@ sub getConnectorType {
 
 }
 
+=head2 getHostingPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    return [];
+}
 
 =head2 getServiceProvider
 
