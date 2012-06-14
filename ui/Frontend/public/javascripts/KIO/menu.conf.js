@@ -81,7 +81,8 @@ function node_rules_tab(cid, eid) {
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 90,},
             { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 200, formatter: verifiedNodeRuleStateFormatter },
-        ]
+        ],
+        action_delete : 'no',
     } );	
 }
 

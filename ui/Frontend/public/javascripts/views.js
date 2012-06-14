@@ -86,7 +86,11 @@ function show_detail(grid_id, elem_id, row_data) {
     // Else, modal details
     var id = 'view_detail_' + elem_id;
     var view_detail_container = $('<div></div>');
-    build_detailmenu(view_detail_container, id, details_info.tabs, elem_id);
+
+    //build_detailmenu(view_detail_container, id, details_info.tabs, elem_id);
+    build_submenu(view_detail_container, id, details_info.tabs, elem_id);
+    view_detail_container.find('#' + id).show();
+
 
     // Set dialog title using column defined in conf
     var title = details_info.title && details_info.title.from_column && row_data[details_info.title.from_column];
@@ -173,22 +177,24 @@ function create_grid(options) {
 
     options.afterInsertRow = options.afterInsertRow || $.noop;
 
-    // Add delete action column
-    options.colNames.push('');
-    options.colModel.push({index:'action_remove', width : '40px', formatter: 
-        function(cell, formatopts, row) {
-            // We can't directly use 'actions' default formatter because it not support DELETE
-            // So we implement our own action delete formatter based on default 'actions' formatter behavior
-            var remove_action = '';
-            remove_action += '<div class="ui-pg-div ui-inline-del"';
-            remove_action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
-            remove_action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
-            remove_action += 'onclick="removeGridEntry(\''+  options.grid_id + '\',' +row.pk + ',\'' + options.url + '\')" style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
-            remove_action += '<span class="ui-icon ui-icon-trash"></span>';
-            remove_action += '</div>';
-            return remove_action;
-        }});
-    var actions_col_idx = options.colNames.length - 1;
+    // Add delete action column (by default)
+    var actions_col_idx = options.colNames.length;
+    if (options.action_delete === undefined || options.action_delete != 'no') {
+        options.colNames.push('');
+        options.colModel.push({index:'action_remove', width : '40px', formatter:
+            function(cell, formatopts, row) {
+                // We can't directly use 'actions' default formatter because it not support DELETE
+                // So we implement our own action delete formatter based on default 'actions' formatter behavior
+                var remove_action = '';
+                remove_action += '<div class="ui-pg-div ui-inline-del"';
+                remove_action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
+                remove_action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
+                remove_action += 'onclick="removeGridEntry(\''+  options.grid_id + '\',' +row.pk + ',\'' + options.url + '\')" style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
+                remove_action += '<span class="ui-icon ui-icon-trash"></span>';
+                remove_action += '</div>';
+                return remove_action;
+            }});
+    }
 
     var grid = $('#' + options.grid_id).jqGrid({ 
         jsonReader : {
