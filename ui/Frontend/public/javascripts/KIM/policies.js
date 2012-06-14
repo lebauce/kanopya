@@ -1,22 +1,84 @@
 require('jquery/jquery.form.js');
 require('jquery/jquery.validate.js');
 require('jquery/jquery.form.wizard.js');
-require('jquery/jquery.qtip.min.js');
+require('KIM/policiesdefs.js');
 
-$.validator.addMethod("regex", function(value, element, regexp) {
-    var re = new RegExp(regexp);
-    return this.optional(element) || re.test(value);
-}, "Please check your input");
-    
-var ModalForm = (function() {
-    function ModalForm(args) {
+function load_policy_content (container_id) {
+    var policy_type = container_id.split('_')[1];
+
+    function createAddPolicyButton(cid, grid) {
+        var policy_opts = {
+            title       : 'Add a ' + policy_type + ' policy',
+            name        : 'policy',
+            fields      : policies[policy_type],
+            callback    : function () { grid.trigger("reloadGrid"); }
+        };
+
+        var button = $("<button>", {html : 'Add a ' + policy_type + ' policy'});
+        button.bind('click', function() {
+            new PolicyForm(policy_opts).start();
+        });
+        $('#' + cid).append(button);
+    };
+
+    var container = $('#' + container_id);
+    var grid = create_grid( {
+        url: '/api/policy?policy_type=' + policy_type,
+        content_container_id: container_id,
+        grid_id: policy_type + '_policy_list',
+        colNames: [ 'ID', 'Name', 'Description' ],
+        colModel: [ { name:'policy_id',   index:'policy_id',   width:60, sorttype:"int", hidden:true, key:true},
+                    { name:'policy_name', index:'policy_name', width:300 },
+                    { name:'policy_desc', index:'policy_desc', width:500 } ]
+    } );
+
+    createAddPolicyButton(container_id, grid);
+}
+
+function load_policy_details (elem_id, row_data) {
+    var policy;
+    $.ajax({
+        type     : 'GET',
+        async    : false,
+        url      : '/api/policy/' + elem_id,
+        dataTYpe : 'json',
+        success  : $.proxy(function(d) {
+            policy = d;
+        }, this)
+    });
+
+    var flattened_policy;
+    $.ajax({
+        type     : 'POST',
+        async    : false,
+        url      : '/api/policy/' + elem_id + '/getFlattenedHash',
+        dataTYpe : 'json',
+        success  : $.proxy(function(d) {
+            flattened_policy = d;
+        }, this)
+    });
+
+    jQuery.extend(flattened_policy, policy);
+
+    var policy_opts = {
+        title       : 'Edit the ' + policy.policy_type + ' policy: ' + policy.policy_name,
+        name        : 'policy',
+        fields      : policies[policy.policy_type],
+        values      : flattened_policy,
+    };
+
+    new PolicyForm(policy_opts).start();
+}
+
+var PolicyForm = (function() {
+    function PolicyForm(args) {
         this.handleArgs(args);
-        
+
         this.content    = $("<div>", { id : this.name });
-        
+
         this.validateRules      = {};
         this.validateMessages   = {};
-        
+
         var method      = 'POST';
         var action      = '/api/' + this.baseName;
         // Check if it is a creation or an update form
@@ -30,112 +92,45 @@ var ModalForm = (function() {
         this.form       = $("<form>", { method : method, action : action}).appendTo(this.content).append(this.table);
         this.table      = $("<table>").css('width', '100%').appendTo($(this.form));
         this.stepTables = [];
-        
-        // Retrieve data structure from REST
-        $.ajax({
-            type        : 'GET',
-            url         : '/api/attributes/' + this.baseName,
-            dataType    : 'json',
-            async       : false,
-            success     : $.proxy(function(data) {
-                    var values = {};
-                    // If it is an update form, retrieve old datas from REST
-                    if (this.id !== undefined) {
-                        $.ajax({
-                            type        : 'GET',
-                            async       : false,
-                            url         : '/api/' + this.baseName + '/' + this.id,
-                            dataType    : 'json',
-                            success     : function(data) {
-                                values = data;
-                            }
-                        });
-                    }
-                    
-                    // For each element in the data structure, add an input
-                    // to the form
-                    for (elem in this.fields) if (this.fields.hasOwnProperty(elem)) {
-                        var val = values[elem] || this.fields[elem].value;
-                        if (elem in data.attributes) { // Whether just an input
-                            this.newFormElement(elem, data.attributes[elem], val);
-                        } else { // Or retrieve all possibles values and create a select element
-                            var datavalues = this.getForeignValues(data, elem);
-                            this.newDropdownElement(elem, data.attributes[elem], val, datavalues);
-                        }
-                    }
-            }, this)
-        });
+
+        // For each element in fields, add an input to the form
+        for (var elem in this.fields) {
+            if (this.fields[elem].type === 'select') {
+                this.newDropdownElement(elem);
+            }
+            else {
+                this.newFormElement(elem);
+            }
+        }
     }
-    
-    ModalForm.prototype.start = function() {
+
+    PolicyForm.prototype.start = function() {
         $(document).append(this.content);
         // Open the modal and start the form wizard
         this.openDialog();
         this.startWizard();
     }
-    
-    ModalForm.prototype.getForeignValues = function(data, elem) {
-        var datavalues = undefined;
-        for (relation in data.relations) {
-            for (prop in data.relations[relation].cond)
-            if (data.relations[relation].cond.hasOwnProperty(prop)) {
-                if (data.relations[relation].cond[prop] === 'self.' + elem) {
-                    var cond = this.fields[elem].cond || "";
-                    relation    = data.relations[relation].resource;
-                    $.ajax({
-                        type        : 'GET',
-                        async       : false,
-                        url         : '/api/' + relation + cond,
-                        dataType    : 'json',
-                        success     : $.proxy(function(d) {
-                            datavalues = d;
-                        }, this)
-                    });
-                    break;
-                }
-                break;
-            }
-        }
-        return datavalues;
-    }
-    
-    ModalForm.prototype.handleArgs = function(args) {
-        
+
+    PolicyForm.prototype.handleArgs = function(args) {
         if ('name' in args) {
             this.baseName   = args.name;
             this.name       = 'form_' + args.name;
-        } else {
-            throw new Error("ModalForm : Must provide a name");
         }
-        
+
         this.id             = args.id;
         this.callback       = args.callback     || $.noop;
-        if (args.fields) {
-            this.fields         = args.fields;
-        } else {
-            throw new Error("ModalForm : Must provide at least one field");
-        }
+        this.fields         = args.fields       || {};
+        this.values         = args.values       || {};
         this.title          = args.title        || this.name;
         this.skippable      = args.skippable    || false;
         this.beforeSubmit   = args.beforeSubmit || $.noop;
         this.cancelCallback = args.cancel       || $.noop;
         this.error          = args.error        || $.noop;
+
+        this.dynamicFields  = new Array();
     }
- 
-    ModalForm.prototype.exportArgs = function() {
-        return {
-            name            : this.name,
-            id              : this.id,
-            callback        : this.callback,
-            fields          : this.fields,
-            title           : this.title,
-            skippable       : this.skippable,
-            beforeSubmit    : this.beforeSubmit,
-            cancelCallback  : this.cancelCallback
-        };
-    }
-    
-    ModalForm.prototype.mustDisableField = function(elementName, element) {
+
+    PolicyForm.prototype.mustDisableField = function(elementName, element) {
         if (this.fields[elementName].disabled == true) {
             return true;
         }
@@ -145,8 +140,11 @@ var ModalForm = (function() {
         return false;
     }
 
-    ModalForm.prototype.newFormElement = function(elementName, element, value) {
+    PolicyForm.prototype.newFormElement = function(elementName, after) {
         var field = this.fields[elementName];
+        var element = field;
+        var value   = this.values[elementName] || field.value;
+
         // Create input and label DOM elements
         var label = $("<label>", { for : 'input_' + elementName, text : elementName });
         if (field.label !== undefined) {
@@ -157,8 +155,10 @@ var ModalForm = (function() {
             var type    = field.type || 'text';
             var input   = $("<input>", { type : type });
         } else if (field.type === 'textarea') {
+            var type    = 'textarea';
             var input   = $("<textarea>");
-        } else if (field.type === 'select') {
+        }
+        else if (field.type === 'select') {
             var input   = $("<select>");
             var isArray = field.options instanceof Array;
             for (var i in field.options) if (field.options.hasOwnProperty(i)) {
@@ -171,7 +171,7 @@ var ModalForm = (function() {
             }
         }
         $(input).attr({ name : elementName, id : 'input_' + elementName });
-        
+
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
         if (element.is_mandatory == true) {
@@ -182,24 +182,25 @@ var ModalForm = (function() {
         if ($(input).attr('type') !== 'checkbox' && element.pattern !== undefined) {
             this.validateRules[elementName].regex = element.pattern;
         }
-        
+
         // Insert value if any
         if (value !== undefined) {
-            if (type === 'text' || type === 'hidden') {//patched for hidden fields
+            if (type === 'text' || type === 'textarea' || type === 'hidden') {//patched for hidden fields
                 $(input).attr('value', value);
             } else if (type === 'checkbox' && value == true) {
                 $(input).attr('checked', 'checked');
             }
         }
-        
+
         $(label).text($(label).text() + " : ");
-        
+
         // Finally, insert DOM elements in the form
+        var tr;
         var container = this.findContainer(field.step);
         if (input.is("textarea")) {
-            this.insertTextarea(input, label, container, field.help || element.description);
+            tr = this.insertTextarea(input, label, container, field.help || element.description, after);
         } else {
-            this.insertTextInput(input, label, container, field.help || element.description);
+            tr = this.insertTextInput(input, label, container, field.help || element.description, after);
         }
 
         if (this.mustDisableField(elementName, element) === true) {
@@ -209,9 +210,13 @@ var ModalForm = (function() {
         if ($(input).attr('type') === 'date') {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
         }
+
+        return tr;
     }
-    
-    ModalForm.prototype.newDropdownElement = function(elementName, element, current, values) {
+
+    PolicyForm.prototype.newDropdownElement = function(elementName, values, current, after) {
+        var container = this.findContainer(this.fields[elementName].step);
+
         // Create input and label DOM elements
         var label   = $("<label>", { for : 'input_' + elementName, text : elementName });
         if (this.fields[elementName].label !== undefined) {
@@ -219,22 +224,159 @@ var ModalForm = (function() {
         }
         var input   = $("<select>", { name : elementName, id : 'input_' + elementName });
 
+        if (this.fields[elementName].depends) {
+            var that = this;
+
+            input.change(function (event) {
+                for (var depend in that.fields[elementName].depends) {
+                    that.updateFromParent(that.form.find("#input_" + that.fields[elementName].depends[depend]), event.target.value);
+                }
+            });
+        }
+
+        if (this.fields[elementName].params) {
+            var that = this;
+            function updatePolicyParamsOnChange (event) {
+                that.updatePolicyParams(input, event.target.value);
+            }
+            input.change(updatePolicyParamsOnChange);
+        }
+
+        if (this.fields[elementName].parent) {
+            var parent = this.form.find("#input_" + this.fields[elementName].parent);
+            this.updateFromParent(input, parent.val());
+
+        } else if (! values) {
+            var values = undefined;
+            $.ajax({
+                type        : 'GET',
+                async       : false,
+                url         : '/api/' + this.fields[elementName].entity,
+                dataTYpe    : 'json',
+                success     : $.proxy(function(d) {
+                    values = d;
+                }, this)
+            });
+        }
+
         // Inject all values in the select
         for (value in values) {
-            var display = this.fields[elementName].display || 'pk';
-            var option  = $("<option>", { value : values[value].pk , text : values[value][display] });
+            var key = undefined;
+            var text = undefined;
+            if (typeof values[value] === "object") {
+                var display = 'pk';
+
+                /* Ugly hack for getting the name of the service provider,
+                 * whatever its type. Please do not blam me...
+                 */
+                if (this.fields[elementName].entity === 'serviceprovider') {
+                    for (var attr in values[value]) {
+                        if (attr.indexOf("_name", attr.length - "_name".length) !== -1) {
+                            display = attr;
+                        }
+                    }
+                } else {
+                    display = this.fields[elementName].display || 'pk';
+                }
+                key = values[value].pk;
+                text = values[value][display];
+
+            } else {
+                key = values[value];
+                text = values[value];
+            }
+
+            var option = $("<option>", { value : key , text : text });
             $(input).append(option);
-            if (current !== undefined && current == values[value].pk) {
+            if (current !== undefined && current == key) {
                 $(option).attr('selected', 'selected');
             }
         }
-        
         // Finally, insert DOM elements in the form
-        var container = this.findContainer(this.fields[elementName].step);
-        this.insertTextInput(input, label, container);
+        var inserted = this.insertTextInput(input, label, container, this.fields[elementName].help || this.fields[elementName].description, after);
+
+        // Raise the onChange event to update related objects
+        input.change();
+
+        return inserted;
     }
-    
-    ModalForm.prototype.findContainer = function(step) {
+
+    PolicyForm.prototype.updateFromParent = function (element, selected_id) {
+        var datavalues = undefined;
+        var name = element.attr('name');
+
+        if (! name) { return; }
+
+        /* Arg... Can not call the route according to this.fields[elementName].entity,
+         * as we do not have a common parent class for component and connector.
+         * So use the findManager workaround method for instance.
+         */
+        $.ajax({
+            type     : 'POST',
+            async    : false,
+            url      : '/api/serviceprovider/' + selected_id + '/findManager',
+            data     : { category: this.fields[name].category, service_provider_id: selected_id },
+            dataTYpe : 'json',
+            success  : $.proxy(function(d) {
+                datavalues = d;
+            }, this)
+        });
+
+        element.empty();
+        // Inject all values in the select
+        for (var value in datavalues) {
+            var display = 'name';
+            var option  = $("<option>", { value : datavalues[value].id , text : datavalues[value][display] });
+            element.append(option);
+        }
+        element.change();
+    }
+
+    PolicyForm.prototype.updatePolicyParams = function (element, selected_id) {
+        var name  = element.attr('name');
+        this.removeDynamicFields();
+
+        if (! selected_id) { return; }
+
+        var componentvalues = undefined;
+        $.ajax({
+            type        : 'POST',
+            async       : false,
+            url         : '/api/' + this.fields[name].entity + '/' + selected_id + '/' + this.fields[name].params.func,
+            data        : this.fields[name].params.args,
+            dataType    : 'json',
+            success     : $.proxy(function(d) {
+                datavalues = d;
+            }, this)
+        });
+
+        for (var value in datavalues) {
+            this.fields[datavalues[value].name] = {
+                label : datavalues[value].label,
+                step  : this.fields[name].step
+            }
+
+            var tr = undefined;
+            if (datavalues[value].values) {
+                tr = this.newDropdownElement(datavalues[value].name,
+                                             datavalues[value].values,
+                                             this.values[datavalues[value].name],
+                                             name);
+            } else {
+                tr = this.newFormElement(datavalues[value].name, name);
+            }
+            this.dynamicFields.push(tr);
+        }
+    }
+
+    PolicyForm.prototype.removeDynamicFields = function () {
+        for (var field in this.dynamicFields) {
+            this.dynamicFields[field].remove();
+        }
+        this.dynamicFields = new Array();
+    }
+
+    PolicyForm.prototype.findContainer = function(step) {
         if (step !== undefined) {
             var table = this.stepTables[step];
             if (table === undefined) {
@@ -249,7 +391,7 @@ var ModalForm = (function() {
         }
     }
 
-    ModalForm.prototype.createHelpElem = function(help) {
+    PolicyForm.prototype.createHelpElem = function(help) {
         if (help !== undefined) {
             var helpElem        = $("<span>", { class : 'ui-icon ui-icon-info' });
             $(helpElem).css({
@@ -271,28 +413,44 @@ var ModalForm = (function() {
             });
             return helpElem;
         } else {
-            return $("<span>").css({ display : 'block', width : '16px', 'margin-left' : '2px', height : '1px', float : 'right' });
+            return undefined;
         }
     }
 
-    ModalForm.prototype.insertTextInput = function(input, label, container, help) {
+    PolicyForm.prototype.insertTextInput = function(input, label, container, help, after) {
         var linecontainer   = $("<tr>").css('position', 'relative').appendTo(container);
         $("<td>", { align : 'left' }).append(label).appendTo(linecontainer);
         $("<td>", { align : 'right' }).append(input).append(this.createHelpElem(help)).appendTo(linecontainer);
         if (this.fields[$(input).attr('name')].type === 'hidden') {
             $(linecontainer).css('display', 'none');
         }
+
+        if (after) {
+            this.form.find("#input_" + after).parent().parent().after(linecontainer);
+        } else {
+            linecontainer.appendTo(container);
+        }
+        return linecontainer;
     }
-    
-    ModalForm.prototype.insertTextarea = function(input, label, container, help) {
+
+    PolicyForm.prototype.insertTextarea = function(input, label, container, help, after) {
         var labelcontainer = $("<td>", { align : 'left', colspan : '2' }).append(label);
         var inputcontainer = $("<td>", { align : 'left', colspan : '2' }).append(input);
-        $("<tr>").append($(labelcontainer).append(this.createHelpElem(help))).appendTo(container);
-        $("<tr>").append(inputcontainer).appendTo(container);
+        var labelline = $("<tr>").append($(labelcontainer).append(this.createHelpElem(help)));
+        var arealine = $("<tr>").append(inputcontainer);
         $(input).css('width', '100%');
+
+        if (after) {
+            this.form.find("#input_" + after).after(arealine);
+            this.form.find("#input_" + after).after(labelline);
+        } else {
+            labelline.appendTo(container);
+            arealine.appendTo(container);
+        }
+        return labelcontainer;
     }
-    
-    ModalForm.prototype.beforeSerialize = function(form, options) {
+
+    PolicyForm.prototype.beforeSerialize = function(form, options) {
         // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
         for (field in this.fields) {
             if (this.fields[field].type === 'checkbox') {
@@ -305,8 +463,8 @@ var ModalForm = (function() {
             }
         }
     }
-    
-    ModalForm.prototype.changeStep = function(event, data) {
+
+    PolicyForm.prototype.changeStep = function(event, data) {
         var steps   = $(this.form).children("table.step");
         var text    = "";
         var i       = 1;
@@ -326,8 +484,8 @@ var ModalForm = (function() {
         });
         $(this.content).children("div#" + this.name + "_steps").html(text);
     }
-    
-    ModalForm.prototype.handleBeforeSubmit = function(arr, $form, opts) {
+
+    PolicyForm.prototype.handleBeforeSubmit = function(arr, $form, opts) {
         var b   = this.beforeSubmit(arr, $form, opts, this) || true;
         if (b) {
             var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
@@ -337,8 +495,8 @@ var ModalForm = (function() {
         }
         return b;
     }
-    
-    ModalForm.prototype.startWizard = function() {
+
+    PolicyForm.prototype.startWizard = function() {
         $(this.form).formwizard({
             disableUIStyles     : true,
             validationEnabled   : true,
@@ -375,7 +533,7 @@ var ModalForm = (function() {
                 }, this)
             }
         });
-        
+
         var steps = $(this.form).children("table");
         if (steps.length > 1) {
             $(steps).each(function() {
@@ -393,8 +551,8 @@ var ModalForm = (function() {
             $(this.form).bind('step_shown', $.proxy(this.changeStep, this));
         }
     }
-    
-    ModalForm.prototype.openDialog = function() {
+
+    PolicyForm.prototype.openDialog = function() {
         var buttons = {
             'Cancel'    : $.proxy(this.cancel, this),
             'Ok'        : $.proxy(this.validateForm, this)
@@ -412,12 +570,12 @@ var ModalForm = (function() {
             draggable       : false,
             width           : 500,
             buttons         : buttons,
-            closeOnEscape   : false
+            closeOnEscape   : false,
         });
         $('.ui-dialog-titlebar-close').remove();
     }
 
-    ModalForm.prototype.cancel = function() {
+    PolicyForm.prototype.cancel = function() {
         var state = $(this.form).formwizard("state");
         if (state.isFirstStep) {
             this.cancelCallback();
@@ -426,20 +584,21 @@ var ModalForm = (function() {
         else {
             $(this.form).formwizard("back");
         }
-        
     }
- 
-    ModalForm.prototype.closeDialog = function() {
+
+    PolicyForm.prototype.closeDialog = function() {
+        this.removeDynamicFields();
+
         $(this).dialog("close");
         $(this).dialog("destroy");
         $(this.form).formwizard("destroy");
         $(this.content).remove();
     }
- 
-    ModalForm.prototype.validateForm = function () {
+
+    PolicyForm.prototype.validateForm = function () {
         $(this.form).formwizard("next");
     }
-    
-    return ModalForm;
+
+    return PolicyForm;
     
 })();

@@ -89,6 +89,7 @@ my %resources = (
     "php5"                     => "Entity::Component::Php5",
     "physicalhoster0"          => "Entity::Component::Physicalhoster0",
     "pleskpanel10"             => "Entity::ParallelsProduct::Pleskpanel10",
+    "policy"                   => "Policy",
     "poolip"                   => "Entity::Poolip",
     "powersupplycard"          => "Entity::Powersupplycard",
     "powersupplycardmodel"     => "Entity::Powersupplycardmodel",

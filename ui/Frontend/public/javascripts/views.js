@@ -271,7 +271,7 @@ function create_grid(options) {
         } : 'local',
         data: (options.hasOwnProperty('data')) ? options.data : []
     });
-    
+
     $('#' + options.grid_id).jqGrid('navGrid', '#' + pager_id, { edit: false, add: false, del: false }); 
 
    //$('#' + options.grid_id).jqGrid('setGridWidth', $('#' + options.grid_id).closest('.current_content').width() - 20, true);
