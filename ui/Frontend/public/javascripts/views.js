@@ -20,16 +20,21 @@ var SQLops = {
 
 var searchoptions = { sopt : $.map(SQLops, function(n) { return n; } ) };
 
-function reload_content(container_id, elem_id) {
+// keep_last option is a quick fix to avoid remove content when opening details dialog
+function reload_content(container_id, elem_id, keep_last) {
     //alert(_content_handlers['content_hosts']);
     //alert('Reload' + container_id);
     if (_content_handlers[container_id]) {
         if (_content_handlers[container_id]['onLoad']) {
            
             // Clean prev container content
-            var current_content = $('.current_content')
+            var current_content = $('.current_content');
             current_content.removeClass('current_content');
-            current_content.children().remove();
+            if (keep_last === undefined || keep_last == false) {
+                current_content.children().remove();
+            } else {
+                current_content.addClass('last_content');
+            }
 
             // Tag this container as current
             $('#' + container_id).addClass('current_content');
@@ -93,7 +98,10 @@ function show_detail(grid_id, elem_id, row_data) {
         height: 500,
         resizable: true,
         draggable: false,
-        close: function(event, ui) { $(this).remove(); }, // detail modals are never closed, they are destroyed
+        close: function(event, ui) {
+            $('.last_content').addClass('current_content').removeClass('last_content');
+            $(this).remove();
+        }, // detail modals are never closed, they are destroyed
         buttons: {
             Ok: function() {
                 //$(this).find('#target').submit();
@@ -111,7 +119,7 @@ function show_detail(grid_id, elem_id, row_data) {
     //$('#' + id).show();
     
     // Load first tab content
-    reload_content('content_' + menu_links[0]['id'], elem_id);
+    reload_content('content_' + menu_links[0]['id'], elem_id, true);
         
     //dialog.load('/api/host/' + elem_id);
     //dialog.load('/details/iaas.html');
