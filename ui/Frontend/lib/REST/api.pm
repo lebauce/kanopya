@@ -378,14 +378,13 @@ sub setupREST {
             require (General::getLocFromClass(entityclass => $class));
 
             my ($id, $method) = splat;
-
-            my $methods = $class->methods();
+            my $obj = $class->get(id => $id);
+            my $methods = $obj->toJSON(model => 1)->{methods};
 
             if (not defined $methods->{$method}) {
                 throw Kanopya::Exception::NotImplemented(error => "Method not implemented");
             }
 
-            my $obj = $class->get(id => $id);
             my %params;
             if ((split(/;/, request->content_type))[0] eq "application/json") {
                 %params = %{from_json(request->body)};

@@ -86,6 +86,10 @@ sub getAttrDefs {
     return $result;
 }
 
+sub methods {
+    return { };
+}
+
 sub getId {
     my $self = shift;
 
@@ -666,6 +670,7 @@ sub toJSON {
     my $hash = {};
     my $class = ref ($self) || $self;
     my $attributes;
+    my $merge = Hash::Merge->new();
 
     eval {
         $attributes = $class->getAttrDefs();
@@ -711,6 +716,13 @@ sub toJSON {
                     delete $hash->{attributes}->{$relname . "_id"};
                 }
             }
+
+            my $klass = join("::", @hierarchy);
+            if ($klass->can("methods")) {
+                $hash->{methods} = $merge->merge($hash->{methods} || { }, $klass->methods());
+            }
+
+            pop @hierarchy;
         }
 
         $hash->{pk} = {
@@ -719,9 +731,6 @@ sub toJSON {
             is_extended  => 0
         };
 
-        if ($class->can("methods")) {
-            $hash->{methods} = $class->methods();
-        }
     }
     else {
         $hash->{pk} = $self->getId;
