@@ -171,6 +171,85 @@ function    deleteWorkflowDef(workflowdef_id) {
 }
 
 function    sco_workflow(container_id) {
-    var container   = $("#" + container_id);
-    createSCOWorkflowDefButton(container);
+    var container       = $("#" + container_id);
+    var connectorTypeId;
+    $.ajax({
+        type        : 'POST',
+        url         : '/api/serviceprovider/1/findManager',
+        contentType : 'application/json',
+        data        : JSON.stringify({ 'category' : 'WorkflowManager' }),
+        success     : function(data) {
+            var workflowmanagers    = data;
+            for (var i in workflowmanagers) if (workflowmanagers.hasOwnProperty(i)) {
+                $.ajax({
+                    url     : '/api/serviceprovider/' + workflowmanagers[i].service_provider_id,
+                    type    : 'GET',
+                    async   : false,
+                    success : function(data) {
+                        workflowmanagers[i].service_provider    = data;
+                        for (var prop in data) if (data.hasOwnProperty(prop)) {
+                            if ((new RegExp("_name$")).test(prop)) {
+                                workflowmanagers[i].service_provider_name = data[prop];
+                            }
+                        }
+                    }
+                });
+            }
+            create_grid({
+                grid_id                 : 'workflowmanagement',
+                content_container_id    : container_id,
+                colNames                : [ 'Id', 'Service', 'Name' ],
+                colModel                : [
+                    { name : 'id', index : 'id', width : 60, sorttype : 'int' },
+                    { name : 'service_provider_name', index : 'service_provider_name'},
+                    { name : 'name', index : 'name' },
+                ],
+                data                    : workflowmanagers,
+            });
+        }
+    });
 }
+
+function workflowdetails(workflowmanagerid, workflowmanager) {
+    $.ajax({
+        url         : '/api/entity/' + workflowmanager.id + '/getWorkflowDefsIds',
+        type        : 'POST',
+        contentType : 'application/json',
+        data        : JSON.stringify({}),
+        success     : function(data) {
+            var     workflows   = new Array;
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                $.ajax({
+                    url     : '/api/workflowdef/' + data[i],
+                    async   : false,
+                    success : function(data) {
+                        workflows.push(data);
+                    }
+                });
+            }
+            var dial    = $("<div>", {
+                id      : "workflowmanagerdetailsdialog",
+                width   : "600px"
+            }).appendTo($('body'));
+            create_grid({
+                grid_id                 : 'workflowdefsgrid',
+                content_container_id    : 'workflowmanagerdetailsdialog',
+                colNames                : [ 'Id', 'Name' ],
+                colModel                : [
+                    { name : 'pk', index : 'pk', width : 30, sorttype : 'int' },
+                    { name : 'workflow_def_name', index : 'workflow_def_name' }
+                ],
+                data                    : workflows
+            });
+            createSCOWorkflowDefButton(dial);
+            $(dial).dialog({
+                close       : function() { $(this).remove(); },
+                width       : 626,
+                draggable   : false,
+                resizable   : false,
+                title       : workflowmanager.service_provider_name + ' - ' + workflowmanager.name
+            });
+        }
+    });
+}
+

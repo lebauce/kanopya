@@ -379,12 +379,12 @@ sub setupREST {
 
             my ($id, $method) = splat;
             my $obj = $class->get(id => $id);
-            my $methods = $obj->toJSON(model => 1)->{methods};
+            #my $methods = $obj->toJSON(model => 1)->{methods};
+            my $methods = $obj->getMethods();
 
             if (not defined $methods->{$method}) {
                 throw Kanopya::Exception::NotImplemented(error => "Method not implemented");
             }
-
             my %params;
             if ((split(/;/, request->content_type))[0] eq "application/json") {
                 %params = %{from_json(request->body)};

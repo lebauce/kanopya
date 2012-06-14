@@ -187,7 +187,7 @@ function create_grid(options) {
             repeatitems: false,
         },
 
-        afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(grid, rowid, rowdata, rowelem); },
+        afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(this, rowid, rowdata, rowelem); },
 
         height: options.height || 'auto',
         //width: options.width || 'auto',
@@ -217,7 +217,7 @@ function create_grid(options) {
             alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 
         },
 
-        datatype: function (postdata) {
+        datatype: (options.hasOwnProperty('url')) ? function (postdata) {
             var data = { dataType : 'jqGrid' };
 
             if (postdata.page) {
@@ -249,11 +249,12 @@ function create_grid(options) {
                 data[postdata.searchField] = (operator != "=" ? operator + "," : "") + query;
             }
 
+            var thegrid = jQuery('#' + options.grid_id)[0];
             $.getJSON(options.url, data, function (data) {
-                var thegrid = jQuery('#' + options.grid_id)[0];
                 thegrid.addJSONData(data);
             });
-        },
+        } : 'local',
+        data: (options.hasOwnProperty('data')) ? options.data : []
     });
     
     $('#' + options.grid_id).jqGrid('navGrid', '#' + pager_id, { edit: false, add: false, del: false }); 

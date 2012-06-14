@@ -1,5 +1,7 @@
 // each link will show the div with id "view_<link_name>" and hide all div in "#view-container"
 
+require('KIO/workflows.js');
+
 var mainmenu_def = {
     'Services'   : {
         //onLoad : load_services,
@@ -26,14 +28,9 @@ var mainmenu_def = {
                                {label : 'Permissions', id : 'permissions'}
                                ],
         'Monitoring'       : [],
-        'Workflows'        : [{ label : 'SCO' , id : 'workflow_sco', onLoad : _sco_workflow }]
+        'Workflows'        : [{ label : 'Workflow Management' , id : 'workflowmanagement', onLoad : sco_workflow }]
     },
 };
-
-function _sco_workflow(cid, eid) {
-    require('KIO/workflows.js');
-    sco_workflow(cid, eid);
-}
 
 var details_def = {
         'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
@@ -42,6 +39,7 @@ var details_def = {
                                { label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },
                                { label : 'Rules', id : 'rules', onLoad : node_rules_tab },
 		],
+        'workflowmanagement' : { onSelectRow : workflowdetails }
 };
 
 function node_detail_tab(cid, eid) {

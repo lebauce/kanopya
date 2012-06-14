@@ -5,7 +5,7 @@ $(document).ready(function () {
     var loginModalOpened    = false;
     var mustOpen            = true;
 
-    $(this).ajaxComplete(function(event, jqXHR) {
+    $(this).ajaxComplete(function(event, jqXHR, ajaxOptions) {
         if (jqXHR.responseXML !== undefined && !loginModalOpened && mustOpen) {
             loginModalOpened    = true;
             var form    = $("<form>", { id : "loginform", class : 'LOGINFORM' });

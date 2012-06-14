@@ -824,6 +824,10 @@ function loadServicesOverview (container_id, elem_id) {
 
 }
 
+function scoConfigurationDialog(elem_id, sco_id) {
+  console.log(sco_id);
+}
+
 function loadServicesConfig (container_id, elem_id) {
     var container = $('#' + container_id);
     var externalclustername = '';
@@ -886,7 +890,11 @@ function loadServicesConfig (container_id, elem_id) {
                     var button  = $(event.data.button);
                     var id      = $(button).attr('rel');
                     var name    = $(button).parents('tr').attr('rel').split('|');
-                    that.createSpecServDialog(elem_id, name[0], false, name[1], undefined, id).start();
+                    if (name[0] === 'sco') {
+                        that.scoConfigurationDialog(elem_id, id);
+                    } else {
+                        that.createSpecServDialog(elem_id, name[0], false, name[1], undefined, id).start();
+                    }
                 }).button({ icons : { primary : 'ui-icon-wrench' } });
                 $(delButton).bind('click', { button : delButton }, function(event) {
                     var button  = $(event.data.button);
@@ -910,12 +918,14 @@ function loadServicesConfig (container_id, elem_id) {
             if (isThereAConnector(elem_id, 'MonitoringService') === false) {
                 var b  = $("<a>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
                 b.bind('click', function() { createMonDirDialog(elem_id, 'MonitoringService').start(); });
+                $(ctnr).append($("<br />"));
                 b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
             }
         
             if (isThereAConnector(elem_id, 'WorkflowManager') === false) {
                 var b   = $("<a>", { text : 'Add a Workflow Connector', id : 'addworkflowmanager' });
                 b.bind('click', function() { createMonDirDialog(elem_id, 'WorkflowManager').start(); });
+                $(ctnr).append($("<br />"));
                 b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
             }
         }
