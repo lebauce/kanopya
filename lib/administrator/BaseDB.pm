@@ -19,10 +19,10 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 sub getMethods {
-  my $class     = shift;
+  my $self      = shift;
   my $methods   = {};
-  my @supers    = Class::ISA::super_path($class);
-  push(@supers, $class);
+  my @supers    = Class::ISA::super_path(ref($self));
+  push(@supers, ref($self));
   my $merge     = Hash::Merge->new();
   for my $sup (@supers) {
     if ($sup->can('methods')) {
