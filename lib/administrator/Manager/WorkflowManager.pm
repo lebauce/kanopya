@@ -138,15 +138,122 @@ sub getWorkflowDef {
     return $workflow_def;
 }
 
-=head2 _getParams
+=head2 _getAutomaticParams
+    Desc: Get the automatic params list for a workflow def.
+
+    Args: workflow_def_id, \@all_params, $scope_id
+
+    Return: \%automatic_params (param name as keys, undef as value)
+=cut
+
+sub _getAutomaticParams {
+    my ($self,%args) = @_;
+    
+    General::checkParams(args => \%args, required => ['data_params','scope_id']);
+
+    my $data_params          = $args{data_params};
+    my $scope_id             = $args{scope_id};
+    my $scope_parameter_list = $self->getScopeParameterNameList(
+                                    scope_id => $scope_id
+                               );
+
+    my %automatic_params;
+
+    for my $param (@$scope_parameter_list) {
+        if (exists $data_params->{$param}){
+            $automatic_params{$param} = undef;
+        }
+    }
+
+    return \%automatic_params;
+}
+
+=head2 getParams
+    Desc: Get the params list for a workflow def, extract the "data" params, 
+    and then differenciate between them the automatic and specific
+    parameters.
+
+    Args: workflow_def_id
+
+    Return: \%params ($params{automatic}, $params{specific}) 
+=cut
+
+sub getParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow_def_id' ]);
+
+    my $workflow_def_id = $args{workflow_def_id};
+
+    #get all workflow params        
+    my $all_params         = $self->_getAllParams(
+                                workflow_def_id => $workflow_def_id
+                             );  
+    my $brut_data_params   = $all_params->{data};
+
+    #extract the parameter from the raw data given as parameter to the workflow
+    my $prepared_data_params = $self->_prepareParams(
+                                data_params => $brut_data_params
+                             );  
+    my $scope_id           = $all_params->{internal}->{scope_id};
+
+    #now differenciate automatic params from specific ones
+    my %params;
+    $params{automatic}  = undef;
+    $params{specific}   = undef;
+    #get automatic params
+    $params{automatic} = $self->_getAutomaticParams(
+                            data_params => $prepared_data_params,
+                            scope_id    => $scope_id
+                         );  
+    #print Dumper $params{automatic};
+
+    #get specific params
+    $params{specific} = $self->getSpecificParams(
+                            data_params => $prepared_data_params,
+                            scope_id    => $scope_id
+                        );
+    #print Dumper $params{specific};
+
+    print Dumper \%params;
+    return \%params;
+}
+
+=head2 getSpecificParams
+    Desc: Get the automatic params list for a workflow def.
+
+    Args: workflow_def_id, \@all_params, $scope_id
+
+    Return: \%all_params (param name as keys, undef as value)
+=cut
+
+sub getSpecificParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'scope_id', 'data_params' ]);
+    my $data_params           = $args{data_params};
+    my $scope_id              = $args{scope_id};
+    my $scope_parameter_list  = $self->getScopeParameterNameList(
+                                    scope_id => $scope_id
+                               );
+
+    # Remove automatic params
+    for my $scope_parameter (@$scope_parameter_list) {
+        delete $data_params->{$scope_parameter};
+    };
+
+    return $data_params; 
+}
+
+=head2 _getAllParams
     Desc: Get the full params list for a workflow def.
 
     Args: workflow_def_id
 
-    Return: \@param_list 
+    Return: \%all_params 
 =cut
 
-sub _getParams {
+sub _getAllParams {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'workflow_def_id' ]);
@@ -155,9 +262,42 @@ sub _getParams {
 
     #get the param preset id from the workflow def
     my $workflow_def = $self->getWorkflowDef(workflow_def_id=>$workflow_def_id);
-    my @param_list   = $workflow_def->getParamPreset();
+    my $all_params  = $workflow_def->getParamPreset();
 
-    return \@param_list;
+    return $all_params;
 }
 
+
+=head2 getScopeParameterNameList
+    Desc: Get a params list for a scope 
+
+    Args: scope_id
+
+    Return: \@scope_params 
+=cut
+
+sub getScopeParameterNameList {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'scope_id' ]);
+
+    my @scopeParameterList = ScopeParameter->search(
+                                hash=>{scope_id => $args{scope_id}}
+                             );
+    my @scope_params = map {$_->getAttr(name => 'scope_parameter_name')} 
+                            @scopeParameterList; 
+
+    return \@scope_params;
+}
+
+=head2 _prepareParams
+    Desc: Retrieve the list of effective parameters desired by the user in the
+          final file 
+
+    Args: \%brut_data_params
+ 
+    Return: \%prepared_data_params 
+=cut
+
+sub _prepareParams { };
 1;
