@@ -37,6 +37,10 @@ sub methods {
     'getWorkflowDefsIds'    => {
         'description'   => 'getWorkflowDefs',
         'perm_holder'   => 'entity'
+    },
+    'createWorkflow'        => {
+        'description'   => 'createWorkflow',
+        'perm_holder'   => 'entity'
     }
   };
 }

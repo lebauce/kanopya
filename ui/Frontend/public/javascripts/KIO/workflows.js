@@ -1,7 +1,7 @@
 require('jquery/jquery.form.js');
 require('jquery/jquery.form.wizard.js');
 
-function    createSCOWorkflowDefButton(container) {
+function    createSCOWorkflowDefButton(container, managerid) {
 
     function    createParameterList(parameters) {
         var list    = $("<ul>").css({
@@ -97,40 +97,28 @@ function    createSCOWorkflowDefButton(container) {
             disableUIStyles     : true,
             formPluginEnabled   : true,
             formOptions         : {
-                success         : function(data) {
+                beforeSubmit    : function(data) {
                     var pk      = data.pk;
                     var params  = {
-                        params  : {
-                            scope_id    : $('select#param_preset_id').attr('value'),
-                            output_dir  : $('input#directoryinput').attr('value'),
-                            tt_content  : $('textarea#workflow_def_filecontent').attr('value')
+                        workflow_name   : $('input#workflow_def_name').val(),
+                        workflow_params : {
+                            scope_id    : $('select#param_preset_id').val(),
+                            output_dir  : $('input#directoryinput').val(),
+                            tt_content  : $('textarea#workflow_def_filecontent').val()
                         }
                     };
                     $.ajax({
-                        url         : '/api/workflowdef/' + pk + "/setParamPreset",
-                        type        : 'post',
+                        url         : '/api/entity/' + managerid + "/createWorkflow",
+                        type        : 'POST',
                         contentType : 'application/json',
                         data        : JSON.stringify(params),
                         complete    : function(a, status, c) {
-                            if (status === 'error') {
-                                deleteWorkflowDef(pk);
-                            } else {
-                                $.ajax({
-                                    url         : '/api/workflowdef/' + pk + "/addStep",
-                                    type        : 'post',
-                                    contentType : 'application/json',
-                                    data        : JSON.stringify({ 'operationtype_id' : '46' }),
-                                    complete    : function(a, status, c) {
-                                        if (status === 'error') {
-                                            deleteWorkflowDef(pk);
-                                        } else {
-                                            $(form).dialog("destroy");
-                                        }
-                                    }
-                                });
+                            if (status === 'success') {
+                                $(form).dialog('destroy');
                             }
                         }
                     });
+                    return false;
                 }
             }
         });
@@ -210,7 +198,7 @@ function    sco_workflow(container_id) {
     });
 }
 
-function workflowdetails(workflowmanagerid, workflowmanager) {
+function    workflowdetails(workflowmanagerid, workflowmanager) {
     $.ajax({
         url         : '/api/entity/' + workflowmanager.id + '/getWorkflowDefsIds',
         type        : 'POST',
@@ -241,12 +229,13 @@ function workflowdetails(workflowmanagerid, workflowmanager) {
                 ],
                 data                    : workflows
             });
-            createSCOWorkflowDefButton(dial);
+            createSCOWorkflowDefButton(dial, workflowmanager.id);
             $(dial).dialog({
                 close       : function() { $(this).remove(); },
                 width       : 626,
                 draggable   : false,
                 resizable   : false,
+                modal       : true,
                 title       : workflowmanager.service_provider_name + ' - ' + workflowmanager.name
             });
         }
