@@ -60,6 +60,13 @@ function load_policy_details (elem_id, row_data) {
 
     jQuery.extend(flattened_policy, policy);
 
+    var fields = policies[policy.policy_type];
+    fields['policy_id'] = {
+        label        : 'Policy id',
+        type         : 'hidden',
+        value        : policy.policy_id,
+    };
+
     var policy_opts = {
         title       : 'Edit the ' + policy.policy_type + ' policy: ' + policy.policy_name,
         name        : 'policy',

@@ -1550,13 +1550,13 @@ CREATE TABLE `service_template` (
 
 CREATE TABLE `policy` (
   `policy_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `param_preset_id` int(8) unsigned NOT NULL,
+  `param_preset_id` int(8) unsigned DEFAULT NULL,
   `policy_name` char(64) NOT NULL,
   `policy_desc` char(255) DEFAULT NULL,
   `policy_type` char(64) NOT NULL,
   PRIMARY KEY (`policy_id`),
   KEY (`param_preset_id`),
-  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

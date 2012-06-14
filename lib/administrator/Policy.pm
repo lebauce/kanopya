@@ -68,6 +68,7 @@ sub methods {
 sub new {
     my $class = shift;
     my %args = @_;
+    my $self;
 
     # Firstly pop the policy atrributes
     my $attrs = {
@@ -76,14 +77,40 @@ sub new {
         policy_desc => delete $args{policy_desc},
     };
 
-    $class->checkAttrs(attrs => $attrs);
+    # Pop the policy id if defined
+    my $policy_id = delete $args{policy_id};
 
-    # Build the policy pattern from
-    my $pattern = $class->buildPatternFromHash(policy_type => $attrs->{policy_type}, hash => \%args);
-    my $preset  = ParamPreset->new(name => $attrs->{policy_type}, params => $pattern);
-    $attrs->{param_preset_id} = $preset->getAttr(name => 'param_preset_id');
+    # If policy_id defined, this is a policy update.
+    if ($policy_id) {
+        $self = Policy->get(id => $policy_id);
 
-    return $class->SUPER::new(%$attrs);
+        # Set the policy atrributtes
+        for my $name (keys %$attrs) {
+            $self->setAttr(name => $name, value => $attrs->{$name});
+        }
+        $self->save();
+
+        # Remove the old policy configuration parttern.
+        my $presets = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
+
+        # Build the policy pattern from
+        my $pattern = $class->buildPatternFromHash(policy_type => $attrs->{policy_type}, hash => \%args);
+        #my $preset  = ParamPreset->new(name => $attrs->{policy_type}, params => $pattern);
+        $presets->update(params => $pattern, override => 1);
+        #$self->setAttr(name => 'param_preset_id', value => $preset->getAttr(name => 'param_preset_id'));
+    }
+    # Else this a policy creation
+    else {
+        $class->checkAttrs(attrs => $attrs);
+
+        # Build the policy pattern from
+        my $pattern = $class->buildPatternFromHash(policy_type => $attrs->{policy_type}, hash => \%args);
+        my $preset  = ParamPreset->new(name => $attrs->{policy_type}, params => $pattern);
+        $attrs->{param_preset_id} = $preset->getAttr(name => 'param_preset_id');
+
+        $self = $class->SUPER::new(%$attrs);
+    }
+    return $self;
 }
 
 sub buildPatternFromHash {

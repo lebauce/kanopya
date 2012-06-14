@@ -141,7 +141,10 @@ sub update {
 
     General::checkParams(args => \%args, required => [ 'params' ]);
 
-    my $existing = $self->load();
+    my $existing = {};
+    if (not $args{override}) {
+        $existing = $self->load();
+    }
 
     # Remove existing childs before insert the new ones marged with args.
     my @childs = ParamPreset->search(hash => { relation => $self->getAttr(name => 'param_preset_id') });
