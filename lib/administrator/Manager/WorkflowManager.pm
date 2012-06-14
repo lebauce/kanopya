@@ -32,12 +32,35 @@ use Data::Dumper;
 use WorkflowDef;
 use WorkflowDefManager;
 
+sub methods {
+  return {
+    'getWorkflowDefsIds'    => {
+        'description'   => 'getWorkflowDefs',
+        'perm_holder'   => 'entity'
+    }
+  };
+}
+
 =head2 checkWorkflowManagerParams
 
 =cut
 
 sub checkWorkflowManagerParams { 
     throw Kanopya::Exception::NotImplemented();
+}
+
+sub getWorkflowDefsIds() {
+    my ($self,%args)    = @_;
+
+    my $manager_id      = $self->getId;
+    my @wfids           = ();
+    my @workflow_def    = WorkflowDefManager->search (
+                            hash => {manager_id => $manager_id}
+                        );
+    for my $wf (@workflow_def) {
+      push(@wfids, $wf->getAttr(name => 'workflow_def_id'));
+    }
+    return \@wfids;
 }
 
 =head2 getWorkflowDef
@@ -49,9 +72,8 @@ sub getWorkflowDefs() {
 
     my $manager_id   = $self->getId;
     my @workflow_def = WorkflowDefManager->search (
-                            hash => {service_provider_manager_id => $manager_id}
+                            hash => {manager_id => $manager_id}
                         );
-
     return \@workflow_def;
 }
 
