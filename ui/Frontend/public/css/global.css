@@ -84,3 +84,7 @@ a.linkbutton {
   cursor: pointer;
   font-weight: bold;
 }
+
+.master_view {
+    height : 100%;
+}
