@@ -35,7 +35,7 @@ function load_policy_content (container_id) {
     createAddPolicyButton(container_id, grid);
 }
 
-function load_policy_details (elem_id, row_data) {
+function load_policy_details (elem_id, row_data, grid_id) {
     var policy;
     $.ajax({
         type     : 'GET',
@@ -72,6 +72,7 @@ function load_policy_details (elem_id, row_data) {
         name        : 'policy',
         fields      : policies[policy.policy_type],
         values      : flattened_policy,
+        callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
     };
 
     new PolicyForm(policy_opts).start();
@@ -103,7 +104,7 @@ var PolicyForm = (function() {
         // For each element in fields, add an input to the form
         for (var elem in this.fields) {
             if (this.fields[elem].type === 'select') {
-                this.newDropdownElement(elem);
+                this.newDropdownElement(elem, undefined, this.values[elem]);
             }
             else {
                 this.newFormElement(elem);
@@ -229,7 +230,7 @@ var PolicyForm = (function() {
         if (this.fields[elementName].label !== undefined) {
             $(label).text(this.fields[elementName].label);
         }
-        var input   = $("<select>", { name : elementName, id : 'input_' + elementName });
+        var input = $("<select>", { name : elementName, id : 'input_' + elementName });
 
         if (this.fields[elementName].depends) {
             var that = this;
@@ -264,6 +265,11 @@ var PolicyForm = (function() {
                     values = d;
                 }, this)
             });
+        }
+
+        if (! this.fields[elementName].is_mandatory) {
+            var option = $("<option>", { value : -1 , text : '-' });
+            $(input).append(option);
         }
 
         // Inject all values in the select
@@ -460,13 +466,17 @@ var PolicyForm = (function() {
     PolicyForm.prototype.beforeSerialize = function(form, options) {
         // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
         for (field in this.fields) {
+            var input = $(form).find('#input_' + field);
+            console.log(input);
             if (this.fields[field].type === 'checkbox') {
-                var checkbox = $(form).find('input[name="' + field + '"]');
-                if (checkbox.attr('value') === 'on') {
-                    checkbox.attr('value', '1');
-                } else if (checkbox.attr('value') === 'off') {
-                    checkbox.attr('value', '0');
+                if (input.attr('checked') === 'checked') {
+                    input.attr('value', '1');
+                } else {
+                    input.attr('checked', 'checked');
+                    input.attr('value', '0');
                 }
+            } else if (input.attr('value') == -1) {
+                input.attr('value', '');
             }
         }
     }
@@ -517,7 +527,7 @@ var PolicyForm = (function() {
             },
             formPluginEnabled   : true,
             formOptions         : {
-                beforeSerialize : $.proxy(this.beforeSerialize, this),
+                //beforeSerialize : $.proxy(this.beforeSerialize, this),
                 beforeSubmit    : $.proxy(this.handleBeforeSubmit, this),
                 success         : $.proxy(function(data) {
                     // Ugly but must delete all DOM elements
@@ -603,6 +613,9 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.validateForm = function () {
+        // Call before submit here to transform checkboxes values.
+        this.beforeSerialize(this.form);
+
         $(this.form).formwizard("next");
     }
 
