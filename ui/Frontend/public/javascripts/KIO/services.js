@@ -35,9 +35,6 @@ function initServiceDashboard() {
 //    dash_header.append($('<button>', { 'class' : 'editlayout', html : 'Edit layout'}));
     dash_header.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
 
-
- 
- 
     //$('#view-container').append(dash_header);
     $('#view-container').append(dash_div);
 
