@@ -101,17 +101,14 @@ var policies = {
         cluster_domainname : {
             label        : 'Domain name',
             type         : 'text',
-            is_mandatory : 1,
         },
         cluster_nameserver1 : {
             label        : 'Name server 1',
             type         : 'text',
-            is_mandatory : 1,
         },
         cluster_nameserver2 : {
             label        : 'Name server 2',
             type         : 'text',
-            is_mandatory : 1,
         },
     },
     system: {
@@ -136,29 +133,24 @@ var policies = {
             type         : 'select',
             entity       : 'masterimage',
             display      : 'masterimage_name',
-            is_mandatory : 1,
         },
         kernel_id : {
             label        : 'Kernel',
             type         : 'select',
             entity       : 'kernel',
             display      : 'kernel_name',
-            is_mandatory : 1,
         },
         systemimage_size : {
             label        : 'System image size',
             type         : 'text',
-            is_mandatory : 1,
         },
         cluster_si_shared : {
             label        : 'System image shared',
             type         : 'checkbox',
-            is_mandatory : 1,
         },
         cluster_si_persistent : {
             label        : 'Persistent system images',
             type         : 'checkbox',
-            is_mandatory : 1,
         },
     },
     scalability: {
@@ -181,17 +173,14 @@ var policies = {
         cluster_min_node : {
             label        : 'Minimum node number',
             type         : 'text',
-            is_mandatory : 1,
         },
         cluster_max_node : {
             label        : 'Maximum node number',
             type         : 'text',
-            is_mandatory : 1,
         },
         cluster_priority : {
             label        : 'Cluster priority',
             type         : 'text',
-            is_mandatory : 1,
         },
     },
 }
