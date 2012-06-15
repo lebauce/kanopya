@@ -61,7 +61,7 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => $self->{context}, required => [ "hypervisor_dst", "host" ]);
+    General::checkParams(args => $self->{context}, required => [ "hypervisor_dst", "host", "cloudmanager_comp" ]);
 
     eval {
         # Check cloudCluster
@@ -71,9 +71,7 @@ sub prepare {
 
         #TODO Check if a cloudmanager is in the cluster
         # Get OpenNebula Cluster (now fix but will be configurable)
-        my $entity = Entity->get(id => $self->{context}->{host}->getAttr(name => 'host_manager_id'));
-        $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(data => $entity);
-        
+
         # Check if host is on the hypervisors cluster
         if ($self->{context}->{'hypervisor_dst'}->getClusterId() !=
             $self->{context}->{'host'}->getServiceProvider->getAttr(name => "entity_id")) {
@@ -91,7 +89,7 @@ sub prepare {
 
         if($check == 0){
             my $errmsg = "Not enough ressource in HV $hv_id for VM $vm_id migration";
-            throw Kanopya::Exception::Internal(error => $errmsg); 
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
     };
     if($@) {
@@ -114,6 +112,24 @@ sub execute{
                $self->{context}->{hypervisor_dst}->getAttr(name => 'entity_id') . ">");
 }
 
+sub finish{
+  my $self = shift;
+
+  delete $self->{context}->{host};
+  delete $self->{context}->{hypervisor_dst};
+}
+
+
+sub postrequisites {
+    my $self = shift;
+    my $is_check = $self->{context}->{cloudmanager_comp}->checkMigration(
+        host               => $self->{context}->{host},
+        hypervisor_dst     => $self->{context}->{hypervisor_dst},
+        hypervisor_cluster => $self->{context}->{hypervisor_cluster},
+    );
+
+    ($is_check == 1)? return 0 : return 15;
+}
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
@@ -126,7 +142,7 @@ This module is a part of Administrator package so refers to Administrator config
 
 =head1 DEPENDENCIES
 
-This module depends of 
+This module depends of
 
 =over
 

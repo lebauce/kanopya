@@ -169,9 +169,24 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 old_operation_parameters
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-11 11:05:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:n4nOno9n/KHeCmZYCxP7Fw
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::OldOperationParameter>
+
+=cut
+
+__PACKAGE__->has_many(
+  "old_operation_parameters",
+  "AdministratorDB::Schema::Result::OldOperationParameter",
+  { "foreign.old_operation_id" => "self.old_operation_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-06-12 15:39:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:eHM7C5gkujG0pe7zzPc+bA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

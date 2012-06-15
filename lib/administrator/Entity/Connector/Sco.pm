@@ -27,9 +27,14 @@ use Kanopya::Exceptions;
 
 use ScopeParameter;
 use Scope;
+
+use Operationtype;
 use Workflow;
 use WorkflowDef;
+use WorkflowDefManager;
 use Entity::ServiceProvider;
+
+use Data::Dumper;
 
 use Log::Log4perl 'get_logger';
 my $log = get_logger('administrator');
@@ -37,6 +42,64 @@ my $errmsg;
 
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
+ 
+=head2 _prepareParams
+    Desc: Retrieve the list of effective parameters desired by the user in the
+          final file 
+
+    Args: \%brut_data_params
+
+    Return: \%prepared_data_params 
+=cut
+
+sub _prepareParams {
+    my ($self,%args) = @_;
+    
+    General::checkParams(args => \%args, required => [ 'data_params' ]);
+    
+    my $data_params      = $args{data_params};
+    my $template_content = $data_params->{template_content};
+    my %prepared_data_params;
+
+    #print Dumper $template_content;
+    my @lines            = split (/\n/, $template_content);
+
+    foreach my $line (@lines) {
+        my @split = split(/\[\% | \%\]/, $line);
+        for (my $i = 1; $i < (scalar @split); $i+=2){
+            $prepared_data_params{$split[$i]} = undef;
+        }
+    }
+    #print Dumper \%prepared_data_params;
+
+    return \%prepared_data_params;
+}
+
+=head2 createWorkflow
+    Desc: override the workflow manager createWorkflow() 
+          to add specific workflow step 
+
+    Args: $workflow_name
+
+    Return: created $workflow (object)
+=cut
+
+sub createWorkflow {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow_name' ]);
+
+    my $workflow          = $self->SUPER::createWorkflow(%args);
+    my $operation_type    = Operationtype->find(
+                                hash => {operationtype_name => 'LaunchSCOWorkflow'}
+                            );
+    my $operation_type_id = $operation_type->getAttr(name => 'operationtype_id');
+
+    #we add a new step to the workflow
+    $workflow->addStep(operationtype_id => $operation_type_id);
+
+    return $workflow;
+}
 
 
 sub instanciateWorkflow { };
