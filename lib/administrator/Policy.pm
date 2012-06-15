@@ -95,9 +95,7 @@ sub new {
 
         # Build the policy pattern from
         my $pattern = $class->buildPatternFromHash(policy_type => $attrs->{policy_type}, hash => \%args);
-        #my $preset  = ParamPreset->new(name => $attrs->{policy_type}, params => $pattern);
         $presets->update(params => $pattern, override => 1);
-        #$self->setAttr(name => 'param_preset_id', value => $preset->getAttr(name => 'param_preset_id'));
     }
     # Else this a policy creation
     else {
@@ -105,7 +103,7 @@ sub new {
 
         # Build the policy pattern from
         my $pattern = $class->buildPatternFromHash(policy_type => $attrs->{policy_type}, hash => \%args);
-        my $preset  = ParamPreset->new(name => $attrs->{policy_type}, params => $pattern);
+        my $preset  = ParamPreset->new(name => $attrs->{policy_type} . '_policy', params => $pattern);
         $attrs->{param_preset_id} = $preset->getAttr(name => 'param_preset_id');
 
         $self = $class->SUPER::new(%$attrs);
@@ -132,7 +130,7 @@ sub buildPatternFromHash {
     # Transform the policy form hash to a cluster configuration pattern
     for my $name (keys %{$args{hash}}) {
         # Handle defined values only
-        if (defined $args{hash}->{$name} and $args{hash}->{$name}) {
+        if (defined $args{hash}->{$name}) {
             # Handle managers
             if ($name =~ m/_manager_id/) {
                 my $manager_type = $name;
@@ -152,6 +150,10 @@ sub buildPatternFromHash {
                         $pattern{managers}->{$manager_type}->{manager_params}->{$param} = $args{hash}->{$param};
                     }
                 }
+            }
+            # Can we handle this param whithout hard code  ?
+            elsif ($name eq 'systemimage_size') {
+                $pattern{managers}->{disk_manager}->{manager_params}->{$name} = $args{hash}->{$name};
             }
             # Handle cluster attributtes.
             elsif (exists $cluster_attrs->{$name}) {

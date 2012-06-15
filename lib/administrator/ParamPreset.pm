@@ -61,7 +61,7 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    if (defined $params) {
+    if (defined $params and keys %$params) {
         $self->update(params => $params);
     }
 
@@ -132,7 +132,10 @@ sub store {
     if ($args{nopopulate}) {
         return \@tostore;
     }
-    $self->{_dbix}->param_presets->populate(\@tostore);
+
+    for my $entry (@tostore) {
+        $self->{_dbix}->param_presets->populate([$entry]);
+    }
 }
 
 sub update {
