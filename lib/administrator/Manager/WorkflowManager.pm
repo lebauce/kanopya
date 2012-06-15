@@ -178,33 +178,6 @@ sub runWorkflow {
 #    $Workflow->run(name => $workflow_def);
 }
 
-=head2 _setSpecificValues 
-    Desc: set specific values for a workflow def 
-
-    Args: \@specific_params, $workflow_def_id
-
-    Return: \%defined_specific_params 
-=cut
-
-sub _setSpecificValues {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => ['workflow_def_id',
-                                                      'specific_params'
-                                                     ]);
-   #get the workflow specific params
-   my $defined_specific_params   = $args{specific_params};
-   my $params                    = $self->getParams(
-                                       workflow_def_id => $args{workflow_def_id}
-                                   );
-   my $undefined_specific_params = $params->{specific};
-
-   while (my ($param, $value) = each (%$undefined_specific_params)) {
-        
-   }
-
-}
-
 =head2 getWorkflowDefs
     Desc: Get a list of workflow defs related to the manager
 
