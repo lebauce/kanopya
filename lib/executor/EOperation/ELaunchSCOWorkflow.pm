@@ -62,11 +62,9 @@ sub prepare {
     $self->SUPER::prepare();
 
     General::checkParams(args => $self->{params}, required => [
-        'template_dir',
-        'template_file',
         'output_directory',
-        'filename',
-        'vars',
+        'output_file',
+        'workflow_values',
     ]);
     
 }
@@ -75,26 +73,24 @@ sub execute{
     my $self = shift;
     $self->SUPER::execute();
    
-    my $template_dir     = $self->{params}->{template_dir};
-    my $template_file    = $self->{params}->{template_file};
     my $output_directory = $self->{params}->{output_directory};
-    my $filename         = $self->{params}->{filename};
-    my $vars             = $self->{params}->{vars};
+    my $output_file      = $self->{params}->{output_file};
+    my $template_content = $self->{params}->{template_content};
+    my $wf_values        = $self->{params}->{workflow_values};
 
     
     
     my $template_conf = {
-        INCLUDE_PATH => $template_dir,
-        INTERPOLATE  => 0,               # expand "$var" in plain text
+        INTERPOLATE  => 0,               # expand "$wf_values" in plain text
         POST_CHOMP   => 0,               # cleanup whitespace
         EVAL_PERL    => 1,               # evaluate Perl code blocks
         ABSOLUTE     => 1,
     };
     
     my $tt = Template->new($template_conf) || die $Template::ERROR,"\n";
-    my $output_file = $output_directory.'/'.$filename;
-    $tt->process($template_file,$vars,$output_file) or throw Kanopya::Exception::Internal(
-                     error => "Error when processing template $template_file in $output_file : ".$tt->error()
+    my $output_path = $output_directory.'/'.$output_file;
+    $tt->process(\$template_content, $wf_values, $output_path) or throw Kanopya::Exception::Internal(
+                     error => "Error when processing template $template_content in $output_path : ".$tt->error()
                  );
 }
 
