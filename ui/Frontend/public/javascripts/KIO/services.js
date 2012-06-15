@@ -1149,6 +1149,7 @@ function loadServicesRules (container_id, elem_id) {
         url: '/api/externalcluster/' + elem_id + '/nodemetric_rules',
         content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
+        grid_class: 'service_ressources_nodemetric_rules',
         colNames: [ 'id', 'name', 'enabled', 'description', 'formula' ],
         afterInsertRow: function(grid, rowid) {
             var id  = $(grid).getCell(rowid, 'pk');
