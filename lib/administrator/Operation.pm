@@ -56,11 +56,11 @@ my $errmsg;
 sub enqueue {
     my $class = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
 
 #    my $op_rs = $adm->{db}->resultset('Operation')->search(
-#                    { type => $args{type}, 
+#                    { type => $args{type},
 #                      -or  => $op_params, },
 #                    { select   => [ { count => 'operation_parameters.operation_id', -as => 'mycount'} ],
 #                      join     => 'operation_parameters',
@@ -145,13 +145,13 @@ sub new {
 }
 
 =head2 getNextOp
-    
+
     Class : Public
-    
+
     Desc : This method return next operation to execute
 
-    Returns the concrete Operation with the execution_rank min 
-    
+    Returns the concrete Operation with the execution_rank min
+
 =cut
 
 sub getNextOp {
@@ -188,11 +188,11 @@ sub getNextOp {
 }
 
 =head2 delete
-    
+
     Class : Public
-    
+
     Desc : This method delete Operation and its parameters
-    
+
 =cut
 
 sub delete {
@@ -241,15 +241,15 @@ sub getWorkflow {
 
 =head setHopedExecutionTime
     modify the field value hoped_execution_time in database
-    arg: value : duration in seconds 
+    arg: value : duration in seconds
 =cut
 
 sub setHopedExecutionTime {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['value']);
-    
+
     my $t = time + $args{value};
     $self->{_dbix}->set_column('hoped_execution_time', $t);
     $self->{_dbix}->update;
@@ -328,6 +328,11 @@ sub buildParams {
 
                 # If tag is 'context', this is entities params
                 if ($key eq 'context') {
+                    if (not defined $subvalue) {
+                        $log->warn("Context value anormally undefined: $subkey");
+                        next;
+                    }
+
                     if (not ($subvalue->isa('Entity') or $subvalue->isa('EEntity'))) {
                         throw Kanopya::Exception::Internal(
                                   error => "Can not enqueue operation <$args{type}> with param <$subkey> " .
@@ -431,13 +436,14 @@ sub unlockContext {
     my $params = $self->getParams(skip_not_found => 1);
 
     $adm->{db}->txn_begin;
-    for my $entity (values %{ $params->{context} }) {
-        $log->debug("Trying to unlock entity <$entity>");
+    for my $key (keys %{ $params->{context} }) {
+        my $entity = $params->{context}->{$key};
+        $log->debug("Trying to unlock entity <$key>:<$entity>");
         eval {
             $entity->unlock(workflow => $self);
         };
         if ($@) {
-            $log->debug($@);
+            $log->debug("Unable to unlock context param <$key>\n$@");
         }
     }
     $adm->{db}->txn_commit;

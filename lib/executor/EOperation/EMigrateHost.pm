@@ -61,28 +61,29 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => $self->{context}, required => [ "hypervisor_dst", "host", "cloudmanager_comp" ]);
+    General::checkParams(args => $self->{context}, required => [ "host", "vm", "cloudmanager_comp" ]);
 
     eval {
         # Check cloudCluster
-        $self->{context}->{hypervisor_cluster} = Entity::ServiceProvider->get(
-                                                     id => $self->{context}->{hypervisor_dst}->getClusterId()
+        if( not defined $self->{context}->{cluster}){
+            $self->{context}->{cluster} = Entity::ServiceProvider->get(
+                                                     id => $self->{context}->{host}->getClusterId()
                                                  );
-
+        }
         #TODO Check if a cloudmanager is in the cluster
         # Get OpenNebula Cluster (now fix but will be configurable)
 
         # Check if host is on the hypervisors cluster
-        if ($self->{context}->{'hypervisor_dst'}->getClusterId() !=
-            $self->{context}->{'host'}->getServiceProvider->getAttr(name => "entity_id")) {
-            throw Kanopya::Exception::Internal::WrongValue(error => "Host is not on the hypervisor cluster");
+        if ($self->{context}->{'host'}->getClusterId() !=
+            $self->{context}->{'vm'}->getServiceProvider->getAttr(name => "entity_id")) {
+            throw Kanopya::Exception::Internal::WrongValue(error => "vm is not on the hypervisor cluster");
         }
 
         #Check if there is enough ressource in destination host
 
-        my $vm_id      = $self->{context}->{host}->getAttr(name => 'entity_id');
-        my $cluster_id = $self->{context}->{host}->getClusterId();
-        my $hv_id      = $self->{context}->{'hypervisor_dst'}->getId();
+        my $vm_id      = $self->{context}->{vm}->getAttr(name => 'entity_id');
+        my $cluster_id = $self->{context}->{vm}->getClusterId();
+        my $hv_id      = $self->{context}->{'host'}->getId();
 
         my $cm    = CapacityManagement->new(cluster_id => $cluster_id);
         my $check = $cm->isMigrationAuthorized(vm_id => $vm_id, hv_id => $hv_id);
@@ -94,8 +95,8 @@ sub prepare {
     };
     if($@) {
         my $err = $@;
-        $errmsg = "Incorrect params dst<" . $self->{context}->{hypervisor_dst}->getAttr(name => 'entity_id') .
-                  ">, host <" . $self->{context}->{host}->getAttr(name => 'entity_id') . "\n" . $err;
+        $errmsg = "Incorrect params dst<" . $self->{context}->{host}->getAttr(name => 'entity_id') .
+                  ">, host <" . $self->{context}->{vm}->getAttr(name => 'entity_id') . "\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -104,28 +105,28 @@ sub prepare {
 sub execute{
     my $self = shift;
 
-    $self->{context}->{cloudmanager_comp}->migrateHost(host               => $self->{context}->{host},
-                                                        hypervisor_dst     => $self->{context}->{hypervisor_dst},
-                                                        hypervisor_cluster => $self->{context}->{hypervisor_cluster});
+    $self->{context}->{cloudmanager_comp}->migrateHost( host               => $self->{context}->{vm},
+                                                        hypervisor_dst     => $self->{context}->{host},
+                                                        hypervisor_cluster => $self->{context}->{cluster});
 
-    $log->info("Host <" . $self->{context}->{host}->getAttr(name => 'entity_id') . "> is migrating to <" .
-               $self->{context}->{hypervisor_dst}->getAttr(name => 'entity_id') . ">");
+    $log->info("VM <" . $self->{context}->{vm}->getAttr(name => 'entity_id') . "> is migrating to <" .
+               $self->{context}->{host}->getAttr(name => 'entity_id') . ">");
 }
 
 sub finish{
   my $self = shift;
 
+  delete $self->{context}->{vm};
   delete $self->{context}->{host};
-  delete $self->{context}->{hypervisor_dst};
 }
 
 
 sub postrequisites {
     my $self = shift;
     my $is_check = $self->{context}->{cloudmanager_comp}->checkMigration(
-        host               => $self->{context}->{host},
-        hypervisor_dst     => $self->{context}->{hypervisor_dst},
-        hypervisor_cluster => $self->{context}->{hypervisor_cluster},
+        host               => $self->{context}->{vm},
+        hypervisor_dst     => $self->{context}->{host},
+        hypervisor_cluster => $self->{context}->{cluster},
     );
 
     ($is_check == 1)? return 0 : return 15;

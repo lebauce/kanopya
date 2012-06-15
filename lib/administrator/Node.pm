@@ -23,7 +23,6 @@ use warnings;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
-
 my $log = get_logger('administrator');
 
 use constant ATTR_DEF => {
@@ -66,5 +65,10 @@ use constant ATTR_DEF => {
 
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getServiceProvider(){
+    my $self = shift;
+    return Entity->get(id => $self->getAttr(name => 'inside_id'));
+}
 
 1;

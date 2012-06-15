@@ -80,7 +80,8 @@ INSERT INTO `class_type` VALUES
 (77, 'Entity::Component::Puppetmaster2'),
 (78, 'Entity::Component::Kanopyacollector1'),
 (79, 'Entity::Connector::Sco'),
-(80, 'Entity::Connector::MockMonitor');
+(80, 'Entity::Connector::MockMonitor'),
+(81, 'Entity::Component::Kanopyaworkflow0');
 
 --
 -- entity comment list
@@ -422,8 +423,8 @@ INSERT INTO `component_type` VALUES
 (17,'Puppetagent','2','Configurationagent'),
 (18,'Puppetmaster','2','Configurationserver'),
 (19,'Kanopyacollector','1','Collectormanager'),
-(20, 'Keepalived','1','LoadBalancer');
-
+(20, 'Keepalived','1','LoadBalancer'),
+(21, 'Kanopyaworkflow','0','Workflowmanager');
 --
 -- connectors type list
 --
@@ -667,6 +668,17 @@ INSERT INTO `entity` VALUES (@eid, 78, NULL);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 19, NULL, NULL);
 INSERT INTO `kanopyacollector1` VALUES(@eid, 3600, 86400);
 SET @eid := @eid +1;
+
+--
+-- Kanopyaworkflow
+--
+
+INSERT INTO `entity` VALUES (@eid, 81, NULL);
+INSERT INTO `component` VALUES(@eid, @admin_cluster, 21, NULL, NULL);
+INSERT INTO `kanopyaworkflow0` VALUES(@eid);
+SET @eid := @eid +1;
+
+
 
 --
 -- Scopes

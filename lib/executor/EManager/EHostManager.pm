@@ -189,6 +189,9 @@ sub getFreeHost {
         delete $args{ram_unit};
     }
 
+    $log->info ("Pute pute pute");
+    $log->info ("Ta mere la pute " . (Dumper $self->_getEntity->getAttrDefs));
+    
     $args{host_manager_id} = $self->_getEntity->getAttr(name => 'entity_id');
 
     return DecisionMaker::HostSelector->getHost(%args);

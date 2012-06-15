@@ -340,14 +340,18 @@ get '/hosts/:hostid/removeharddisk/:harddiskid' => sub {
     else { redirect '/infrastructures/hosts/'.param('hostid'); }
 };
 
+
 get '/hosts/migrate/:host_id' => sub {
     my $hypervisors = [];
     my $host = Entity::Host->get(id => params->{'host_id'});
     my $opennebula = Entity->get(id => $host->getAttr(name => "host_manager_id"));
-    my $hypervisors_r = $opennebula->{_dbix}->opennebula3_hypervisors->search(
-        { -not => { 'opennebula3_vms.vm_host_id' => param('host_id') } },
-        { join => 'opennebula3_vms' }
-    );
+    #my $hypervisors_r = $opennebula->{_dbix}->opennebula3_hypervisors->search(
+    #     { -not => { 'opennebula3_vms.vm_host_id' => param('host_id') } },
+    #    { join => 'opennebula3_vms' }
+    #);
+
+    my $hypervisors_r = $opennebula->{_dbix}->opennebula3_hypervisors;
+
     while (my $row = $hypervisors_r->next) {
 	my $hypervisor = Entity::Host->get(id => $row->get_column('hypervisor_host_id'));
 	push @$hypervisors, {
@@ -375,8 +379,8 @@ post '/hosts/migrate' => sub {
         priority => 1,
         params => {
             context => {
-                host              => $host,
-                hypervisor_dst    => Entity->get(id => params->{hypervisors}),
+                vm                => $host,
+                host              => Entity->get(id => params->{hypervisors}),
                 cloudmanager_comp => $cloudmanager_comp,
             }
         }
@@ -392,8 +396,15 @@ get '/hosts/scale_memory/:host_id' => sub {
 };
 
 post '/hosts/scale_memory' => sub {
-    my $host_id           = params->{host_id};
-    my $host              = Entity->get(id => $host_id);
+
+    my $host_id              = params->{host_id};
+    my $host                 = Entity->get(id => $host_id);
+
+    #  my $node                 = $host->getNode();
+    #  my $service_provider     = $node->getServiceProvider();
+    #  my $wf_manager           = $service_provider->getManager(manager_type => 'workflow_manager');
+    #  $wf_manager->instanciateWorkflow();
+
     my $cloudmanager_id   = $host->getAttr(name => 'host_manager_id');
     my $cloudmanager_comp = Entity->get(id => $cloudmanager_id);
 
@@ -405,23 +416,7 @@ post '/hosts/scale_memory' => sub {
             cloudmanager_comp => $cloudmanager_comp,
         }
     };
-
     my $wf     = Workflow->run(name => 'ScaleInWorkflow', params => $wf_params);
-
-#    $cm->scaleMemoryHost(
-#        host_id => params->{host_id},
-#        memory  => params->{memory_quantity}
-#    );
-
-#    Operation->enqueue(
-#        type => 'ScaleMemoryHost',
-#        priority => 1,
-#        params => {
-#            host_id => params->{host_id},
-#            memory  => params->{memory_quantity}
-#        }
-#    );
-
     redirect '/infrastructures/hosts/'.$host_id;
 };
 

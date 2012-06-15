@@ -121,9 +121,10 @@ sub migrateHost {
 
     my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
 
-    my $command = $self->_oneadmin_command(command => "onevm livemigrate $host_id $hypervisor_id");
+    my $command_to_exec = "onevm livemigrate $host_id $hypervisor_id" ;
+    my $command = $self->_oneadmin_command(command => $command_to_exec);
     my $result = $masternode_econtext->execute(command => $command);
-
+    $log->debug('Migration command: '.$command_to_exec);
     return $self->_getEntity()->migrateHost(%args);
 }
 
@@ -148,10 +149,20 @@ sub checkMigration{
     my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
     my $result = $masternode_econtext->execute(command => $command);
     my $hxml = XMLin($result->{stdout});
-    $log->info('****************');
-    $log->info(Dumper $hxml);
+
+    my $history = $hxml->{HISTORY_RECORDS}->{HISTORY};
+    my $hypervisor_migr;
+
+    if (ref $history eq 'HASH') {
+        $hypervisor_migr = $history->{HOSTNAME};
+    }
+    else { # ref $history eq 'ARRAY'
+        $hypervisor_migr =  $history->[0]->{HOSTNAME};
+    }
+
     my $state = $hxml->{LCM_STATE};
-    ($state == 3) ? return 1 : return 0;
+    $log->info("State = $state ; CURRENT_H = $hypervisor_migr ; DEST_H = $hypervisor_host_name");
+    ($state == 3 && ($hypervisor_migr eq $hypervisor_host_name )) ? return 1 : return 0;
 }
 
 # execute memory scale in
@@ -378,6 +389,8 @@ sub postStartNode {
         host_id => $args{host}->getAttr(name => 'host_id'),
         id      => $id,
     );
+    $command = $self->_oneadmin_command(command => "onehost enable $hostname");
+    $result = $self->getEContext->execute(command => $command);
 }
 
 sub preStopNode {

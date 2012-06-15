@@ -1279,6 +1279,7 @@ get '/clusters/:clusterid/nodes/add' => sub {
 
 };
 
+
 # cluster node addition processing
 
 post '/clusters/:clusterid/nodes/add' => sub {
@@ -1323,7 +1324,7 @@ get '/clusters/:clusterid/optimiaas' => sub{
 
     my $wf_params = {
         context => {
-            cluster           => $cluster,
+            vm_cluster           => $cluster,
             cloudmanager_comp => $cloudmanager_comp,
         }
     };

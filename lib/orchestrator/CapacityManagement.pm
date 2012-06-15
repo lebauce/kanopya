@@ -259,6 +259,7 @@ sub optimIaas{
         plan => $current_plan
     );
     $log->debug(Dumper $infra->{hvs});
+    return $self->{_operationPlan};
 }
 
 sub _applyMigrationPlan{
@@ -335,7 +336,9 @@ sub scaleMemoryHost{
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['host_id','memory']);
 
-    if($args{memory} =~ /\D/){
+
+
+     if($args{memory} =~ /\D/){
         $self->{_admin}->addMessage(
                             from    => 'Capacity Management',
                             level   => 'info',
@@ -529,8 +532,91 @@ sub _scaleMetric {
                         content => "NOT ENOUGH PLACE TO CHANGE $scale_metric OF $vm_id TO VALUE $new_value",
                     );
                     $log->info("NOT ENOUGH PLACE TO CHANGE $scale_metric OF $vm_id TO VALUE $new_value");
+                    $self->_scaleOnNewHV(
+                         vm_id        => $vm_id,
+                         new_value    => $new_value,
+                         scale_metric => $scale_metric,
+                     );
+                 }
+            }
+        }
+    }
+}
+
+sub _scaleOnNewHV {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['vm_id', 'new_value', 'scale_metric']);
+    my $vm_id        = $args{vm_id};
+    my $new_value    = $args{new_value};
+    my $scale_metric = $args{scale_metric};
+
+    my $cluster    = Entity->get(id => $self->{_cluster_id});
+    my $opennebula = $cluster->getManager(manager_type => 'host_manager');
+    my $hv_cluster = $opennebula->getServiceProvider();
+
+    #ADD NEW HV
+    push @{$self->{_operationPlan}}, {
+        type     => 'AddNode',
+        priority => '1',
+        params   => { context => { cluster => $hv_cluster } },
+     };
+    push @{$self->{_operationPlan}}, {
+        type     => 'PreStartNode',
+        priority => '1',
+    };
+    push @{$self->{_operationPlan}}, {
+        type     => 'StartNode',
+        priority => '1',
+    };
+    push @{$self->{_operationPlan}}, {
+        type     => 'PostStartNode',
+        priority => '1',
+    };
+
+    # MIGRATE HOST
+    # NO HOST CONTEXT ! WILL BE HERITATE BY POST START NODE
+    if(!defined $self->{_test}){
+        push @{$self->{_operationPlan}}, {
+            type => 'MigrateHost',
+            priority => 1,
+            params => {
+                context => {
+                    vm => Entity->get(id=>$vm_id),
                 }
             }
+        };
+    }
+    $log->info("=> migration $vm_id to new started HV");
+
+    # SCALE HOST
+    if ($scale_metric eq 'ram'){
+        $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
+        if(!defined $self->{_test}){
+            push @{$self->{_operationPlan}}, {
+                type => 'ScaleMemoryHost',
+                priority => 1,
+                params => {
+                    context => {
+                        host => Entity->get(id => $vm_id),
+                    },
+                    memory  => $new_value / (1024*1024),
+                }
+            };
+        }
+    }
+    elsif ($scale_metric eq 'cpu') {
+        $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
+        if(!defined $self->{_test}){
+            push @{$self->{_operationPlan}}, {
+                type => 'ScaleCpuHost',
+                priority => 1,
+                params => {
+                    context => {
+                        host => Entity->get(id => $vm_id),
+                    },
+                    cpu_number => $new_value,
+                }
+            };
         }
     }
 }
@@ -679,6 +765,7 @@ sub _migrateVmModifyInfra{
     my $hv_dest_id = $args{hv_dest_id};
     my $hvs        = $args{hvs};
 
+    # FIND VM HOST ID
     while (my ($hv_id, $hv) = each %$hvs) {
         my $count = 0;
         my $index_search;
@@ -720,8 +807,8 @@ sub _migrateVmOrder{
             priority => 1,
             params => {
                context => {
-                   host           => Entity->get(id=>$vm_id),
-                   hypervisor_dst => Entity->get(id=>$hv_dest_id),
+                   vm           => Entity->get(id=>$vm_id),
+                   host         => Entity->get(id=>$hv_dest_id),
                }
             }
           };

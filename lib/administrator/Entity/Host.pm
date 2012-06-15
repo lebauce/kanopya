@@ -181,7 +181,7 @@ sub methods {
 
 =head2 getHyperVisor
 
-    desc: Return the hyper visor if the host is a VM, else return undef 
+    desc: Return the hyper visor if the host is a VM, else return undef
 
 =cut
 
@@ -192,9 +192,9 @@ sub getHyperVisorHostId(){
     my $host_type = $self->getHostManager()->getHostType();
     my ($state,$timestamp) = $self->getNodeState();
     if($host_type eq "Virtual Machine" && $state eq 'in'){
-        
+
         my $opennebula3_vms = $self->{_dbix}->opennebula3_vms;
-        
+
         if($opennebula3_vms->count > 1) {
             throw Kanopya::Exception::Internal(
              error => "VM must have only one HV host"
@@ -293,6 +293,11 @@ sub getNodeSystemimage {
 
     my $systemimage_id = $self->{_dbix}->node->get_column('systemimage_id');
     return Entity::Systemimage->get(id => $systemimage_id);
+}
+
+sub getNode {
+    my $self = shift;
+    return Node->get(id => $self->{_dbix}->node->get_column('node_id'));
 }
 
 =head2 getHostRAM
@@ -433,7 +438,7 @@ sub associateInterfaces {
     General::checkParams(args => \%args, required => [ 'cluster' ]);
 
     my @ifaces = $self->getIfaces;
-    
+
     # Try to find a proper iface to assign to each interfaces.
     foreach my $interface (@{$args{cluster}->getNetworkInterfaces}) {
         my $assigned = 0;
@@ -476,9 +481,9 @@ sub dissociateInterfaces {
     args:
         iface_name : Char : interface identifier
         iface_mac_addr : Char : the mac address linked to iface
-        iface_pxe:Int :0 or 1 
-        host_id: Int 
-        
+        iface_pxe:Int :0 or 1
+        host_id: Int
+
     return: iface identifier
 
 =cut
@@ -513,14 +518,14 @@ sub getIfaces {
     my $self = shift;
     my %args = @_;
     my @ifaces = ();
-    
+
     # Make sure to have all pxe ifaces before non pxe ones within the resulting array
     foreach my $pxe (1, 0) {
         my @ifcs = Entity::Iface->search(hash => { host_id   => $self->getAttr(name => 'host_id'),
                                                    iface_pxe => $pxe });
         for my $iface (@ifcs) {
             if (defined ($args{role})) {
-                if (my $interface_id = $iface->isAssociated) { 
+                if (my $interface_id = $iface->isAssociated) {
                     my $interface = Entity::Interface->get(id => $iface->getAttr(name => 'interface_id'));
                     if ($interface->getRole->getAttr(name => 'interface_role_name') ne $args{role}) {
                         next;
@@ -590,11 +595,11 @@ sub getAdminIface {
     }
     return $ifaces[0];
 }
-                                                                           
+
 sub getAdminIp {
     my $self = shift;
     my %args = @_;
-     
+
     my $iface = $self->getAdminIface();
     if ($iface and $iface->hasIp) {
         if (defined ($iface) and $iface->hasIp) {

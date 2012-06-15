@@ -83,7 +83,7 @@ sub prepare {
     # Instanciate dhcpd
     my $dhcpd = $self->{context}->{bootserver}->getComponent(name => "Dhcpd", version => 3);
     $self->{context}->{dhcpd_component} = EFactory::newEEntity(data => $dhcpd);
- 
+
     # Instanciate puppetmaster
     my $puppetmaster = $self->{context}->{bootserver}->getComponent(name => 'Puppetmaster', version => 2);
     $self->{context}->{component_puppetmaster} = EFactory::newEEntity(data => $puppetmaster);
@@ -156,16 +156,16 @@ sub execute {
                              mount_point => $mountpoint,
                              cluster     => $self->{context}->{cluster},
                              erollback   => $self->{erollback});
-    
+
         # retrieve puppet definition to create manifest
         $puppet_definitions .= $ecomponent->getPuppetDefinition(
             host    => $self->{context}->{host},
             cluster => $self->{context}->{cluster},
         );
     }
-    
+
     # check if this cluster must be managed by puppet and kanopya puppetmaster
-    my $puppetagent = eval { 
+    my $puppetagent = eval {
         $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
                                                   version => 2
         );
@@ -173,7 +173,7 @@ sub execute {
     if($puppetagent) {
         my $conf = $puppetagent->getConf();
         if($conf->{puppetagent2_mode} eq 'kanopya') {
-            
+
             # create, sign and push a puppet certificate on the image
             $log->info('Puppent agent component configured with kanopya puppet master');
             my $fqdn = $self->{context}->{host}->getAttr(name => 'host_hostname');
@@ -182,12 +182,12 @@ sub execute {
                 mount_point => $mountpoint,
                 host_fqdn   => $fqdn
             );
-     
+
             $self->{context}->{component_puppetmaster}->createHostManifest(
                 host_fqdn          => $fqdn,
                 puppet_definitions => $puppet_definitions
             );
-            
+
         }
     }
 
@@ -240,6 +240,10 @@ sub finish {
     delete $self->{context}->{bootserver};
     delete $self->{context}->{dhcpd_component};
     delete $self->{context}->{component_puppetmaster};
+    delete $self->{context}->{container};
+    delete $self->{context}->{container_access};
+    delete $self->{context}->{export_manager};
+    delete $self->{context}->{systemimage};
 }
 
 sub _generateNetConf {
@@ -306,12 +310,12 @@ sub _generateNetConf {
         template_file => 'network_interfaces.tt',
         data          => { interfaces => \@net_ifaces }
     );
-    
+
     $self->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/network'
     );
-    
+
     # Disable network deconfiguration during halt
     unlink "$args{mount_point}/etc/rc0.d/S35networking";
 }
@@ -424,7 +428,7 @@ sub _generateBootConf {
             );
         }
     }
- 
+
     # Set up fastboot
     $self->getEContext->execute(
         command => "touch $args{mount_point}/fastboot"
@@ -442,11 +446,11 @@ sub _generatePXEConf {
     my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->getAttr(name => "kernel_id");
 
     my $clustername = $args{cluster}->getAttr(name => 'cluster_name');
-    my $hostname = $args{host}->getAttr(name => 'host_hostname'); 
+    my $hostname = $args{host}->getAttr(name => 'host_hostname');
 
     my $kernel_version = Entity::Kernel->get(id => $kernel_id)->getAttr(name => 'kernel_version');
     my $boot_policy    = $args{cluster}->getAttr(name => 'cluster_boot_policy');
-    
+
     my $tftpdir = $self->{config}->{tftp}->{directory};
 
     my $nfsexport = "";
@@ -456,13 +460,13 @@ sub _generatePXEConf {
 
     ## Here we create a dedicated initramfs for the node
     # we create a temporary working directory for the initrd
-    
+
     $log->info('Dedicated initramfs build');
     my $initrddir = "/tmp/$clustername-$hostname";
     my $cmd = "mkdir -p $initrddir";
     $self->getEContext->execute(command => $cmd);
-    
-    # check and retrieve compression type  
+
+    # check and retrieve compression type
     my $initrd = "$tftpdir/initrd_$kernel_version";
     $cmd = "file $initrd | grep -o -E '(gzip|bzip2)'";
     my $result = $self->getEContext->execute(command => $cmd);
@@ -477,21 +481,21 @@ sub _generatePXEConf {
             error => "Invalid compress type for $initrd ; must be gzip or bzip2"
         );
     }
-    
+
     # we decompress and extract the original initrd to this directory
     $cmd = "(cd $initrddir && $decompress $initrd | cpio -i)";
     $self->getEContext->execute(command => $cmd);
-    
+
     # append files to the archive directory
-    my $sourcefile = $args{mount_point}.'/etc/udev/rules.d/70-persistent-net.rules'; 
+    my $sourcefile = $args{mount_point}.'/etc/udev/rules.d/70-persistent-net.rules';
     $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
     $self->getEContext->execute(command => $cmd);
-    
+
     # create the final storing directory
     my $path = "$tftpdir/$clustername/$hostname";
     $cmd = "mkdir -p $path";
     $self->getEContext->execute(command => $cmd);
-    
+
     # rebuild and compress the new initrd
     my $newinitrd = $path."/initrd_$kernel_version";
     $cmd = "(cd $initrddir && find . | cpio -H newc -o | bzip2 > $newinitrd)";
@@ -665,12 +669,12 @@ sub _generateNtpdateConf {
     );
 
     unlink "/tmp/$tmpfile";
-    
+
     # send ntpdate init script
     $tmpfile = $rand->randpattern("cccccccc");
     $input = "ntpdate";
     $data = {};
-    
+
     $template->process($input, $data, "/tmp/$tmpfile")
         or throw Kanopya::Exception::Internal::IncorrectParam(
                      error => "Error while generating ntpdate init script ". $template->error() . "\n"
@@ -680,7 +684,7 @@ sub _generateNtpdateConf {
         src  => "/tmp/$tmpfile",
         dest => "$args{mount_point}/etc/init.d/ntpdate"
     );
-    
+
     $self->getEContext->execute(command => "chmod +x $args{mount_point}/etc/init.d/ntpdate");
     $self->getEContext->execute(command => "chroot $args{mount_point} /sbin/insserv -d ntpdate");
 }

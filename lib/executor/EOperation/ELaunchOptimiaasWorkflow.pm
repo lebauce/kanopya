@@ -56,14 +56,14 @@ sub prepare {
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
-    General::checkParams(args => $self->{context}, required => [ "cluster", "cloudmanager_comp" ]);
+    General::checkParams(args => $self->{context}, required => [ "vm_cluster", "cloudmanager_comp" ]);
 }
 
 sub execute{
     my $self = shift;
     $self->SUPER::execute();
 
-    my $cluster_id     = $self->{context}->{cluster}->getId();
+    my $cluster_id     = $self->{context}->{vm_cluster}->getId();
     my $cm             = CapacityManagement->new(cluster_id => $cluster_id);
     my $operation_plan = $cm->optimIaas();
 

@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::Component;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Component
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Component
+=head1 TABLE: C<component>
 
 =cut
 
@@ -93,6 +97,17 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</component_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("component_id");
 
 =head1 RELATIONS
@@ -142,26 +157,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Inside>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::Inside",
-  { inside_id => "service_provider_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
 =head2 component_template
 
 Type: belongs_to
@@ -195,26 +190,6 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::ComponentType",
   { component_type_id => "component_type_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 tier
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Tier>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "tier",
-  "AdministratorDB::Schema::Result::Tier",
-  { tier_id => "tier_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
 );
 
 =head2 dhcpd3
@@ -292,6 +267,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kanopyaworkflow0
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Kanopyaworkflow0>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopyaworkflow0",
+  "AdministratorDB::Schema::Result::Kanopyaworkflow0",
+  { "foreign.kanopyaworkflow_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 keepalived1
 
 Type: might_have
@@ -349,21 +339,6 @@ __PACKAGE__->might_have(
   "memcached1",
   "AdministratorDB::Schema::Result::Memcached1",
   { "foreign.memcached1_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 mounttable1
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Mounttable1>
-
-=cut
-
-__PACKAGE__->might_have(
-  "mounttable1",
-  "AdministratorDB::Schema::Result::Mounttable1",
-  { "foreign.mounttable1_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -502,6 +477,26 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Inside>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::Inside",
+  { inside_id => "service_provider_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
 =head2 snmpd5
 
 Type: might_have
@@ -532,16 +527,37 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 tier
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-05-28 11:11:50
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:W2hl+LH9pBOkTgjv1dtAkw
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Tier>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "tier",
+  "AdministratorDB::Schema::Result::Tier",
+  { tier_id => "tier_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-06-14 15:52:19
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/KoQlMf4P0QcBgq3PBV8LQ
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
     { "foreign.entity_id" => "self.component_id" },
     { cascade_copy => 0, cascade_delete => 1 }
 );
+
 1;
