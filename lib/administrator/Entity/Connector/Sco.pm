@@ -27,7 +27,7 @@ use Kanopya::Exceptions;
 
 use ScopeParameter;
 use Scope;
-
+use Externalnode;
 use Operationtype;
 use Workflow;
 use WorkflowDef;
@@ -101,9 +101,79 @@ sub createWorkflow {
     return $workflow;
 }
 
+=head2 _getAutomaticParams
+    Desc: get the values for the workflow's specific params 
 
-sub instanciateWorkflow { };
-sub getSpecificWorkflowParameters { };
-sub runWorkflow { };
+    Args: \%automatic_params
+
+    Return: created $workflow (object)
+=cut
+
+sub _getAutomaticParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'automatic_params', 'sp_id' ]);
+
+    my $automatic_params = $args{automatic_params};
+    
+    if (exists $automatic_params->{node_hostname}) {
+        $automatic_params->{node_hostname}  = $self->_getNodeHostname();
+    }
+    if (exists $automatic_params->{ou_from}) {
+        $automatic_params->{ou_from}  = $self->_getOuFrom();
+    }
+    if (exists $automatic_params->{service_provider_name}) {
+        $automatic_params->{service_provider_name} = $self->_getServiceProviderName($args{sp_id});
+    }
+
+    return $automatic_params;
+}
+
+=head2 _getNodeHostname
+    Desc: get a node hostname
+
+    Args: 
+
+    Return:
+=cut
+
+sub _getNodeHostname {
+    my ($self,%args) = @_;
+
+}
+
+=head2 _getOuFrom
+    Desc: get the origin OU for a node or a set of node 
+
+    Args: 
+
+    Return: 
+=cut
+
+sub _getOuFrom {
+
+}
+
+=head2 _getServiceProviderName
+    Desc: get the name of the service provider that triggered the rule
+
+    Args: $service_provider_id 
+
+    Return: $sp_name
+=cut
+
+sub _getServiceProviderName {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'sp_id' ]);
+
+    my $service_provider = Entity::ServiceProvider->find(hash => {
+                               service_provider_id => $args{sp_id},
+                           });
+
+    my $sp_name          = $service_provider->getAttr(name => 'service_provider_name');
+
+    return $sp_name;
+}
 
 1;

@@ -187,12 +187,52 @@ sub associateWorkflow {
 sub runWorkflow {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'workflow_def' ]);
+    General::checkParams(args => \%args, required => [ 
+                                            'workflow_def_id',
+                                            'service_provider_id' 
+                                         ]);
     
-    my $workflow_def = $args{workflow_def};
+    my $workflow_def_id = $args{workflow_def_id};
+    my $workflow        = $self->getWorkflowDef(
+                              workflow_def_id => $workflow_def_id
+                          );
+    my $workflow_name   = $workflow->getAttr(
+                              name => 'workflow_def_name'
+                          );
 
+    #gather the workflow params
+    my $all_params = $self->_getAllParams(
+                        workflow_def_id => $workflow_def_id
+                     );
 
-#    $Workflow->run(name => $workflow_def);
+    #resolve the automatic params values
+    my $automatic_values = _getAutomaticParams(
+                                automatic_params => $all_params->{automatic},
+                                sp_id            => $args{service_provider_id},
+                           );
+
+    #replace the undefined automatic params with the defined ones
+    $all_params->{automatic} = $automatic_values;
+
+    #merge automatic and specific params in one hash
+    my $workflow_values = {
+         node_hostname  => 'doe',
+         ou_from        => 'computers',
+         message        => 'un message',
+         message2       => 'un autre message',
+         };
+
+    #create final workflow params hash
+    my $workflow_params = {
+        output_directory => $all_params->{internal}->{output_dir},
+        output_file      => 'workflow_'.$workflow_name.'_'.time(),
+        template_content => $all_params->{data}->{template_content},
+        workflow_values  => $workflow_values,    
+    };
+   
+    print Dumper $workflow_params;
+    #run the workflow with fully the defined params
+    Workflow->run(name => $workflow_name, params => $workflow_params);
 }
 
 =head2 getWorkflowDefs
