@@ -63,21 +63,13 @@ function build_mainmenu() {
 }
 
 function build_submenu(container, view_id, links, elem_id) {
-    //var container = $('#view-container');
-    
     // Create the div container for this view
     var view = $('<div class="master_view" id="' + view_id + '"></div>').appendTo(container);
     // Tab container of the view
     var submenu_cont = $('<ul></ul>').appendTo(view);
-    
-    view.tabs({
-        // Load content on show event because we need the tab be visible to have a width and so scale content
-        show: function(event, ui) {
-            var link = String(ui.tab);
-            //alert('Event select : ' + link.split('#')[1] + '  => ' + ui.panel);
-            reload_content(link.split('#')[1], elem_id);
-        }
-    });
+
+    view.tabs({});
+
     for (var smenu in links) {
         var id_suffix = elem_id ? elem_id : 'static';
 
@@ -93,10 +85,17 @@ function build_submenu(container, view_id, links, elem_id) {
             };
         }
     }
-    
+
+    // Load content on show event because we need the tab be visible to have a width and so scale content (grid autowidth)
+    // Set here and not at tabs creation to avoid async problem (i.e trigger tabsshow before _content_handlers update)
+    view.bind("tabsshow", function(event, ui) {
+        var link = String(ui.tab);
+        reload_content(link.split('#')[1], elem_id);
+    });
     view.hide();
 }
 
+// Not used TO REMOVE
 function build_detailmenu(container, view_id, links, elem_id) {
     // Create the div container for this view
     var view = $('<div class="master_view" id="' + view_id + '"></div>').appendTo(container);
@@ -146,7 +145,7 @@ function onViewLinkSelect(event) {
     //reload content of the current selected sub menu of the selected view (menu)
     var content_ref =  view.find('.ui-tabs-selected a').attr('href');
     if (content_ref !== undefined) {
-        var content_id  = content_ref.split('#')[1]
+        var content_id  = content_ref.split('#')[1];
         reload_content(content_id, elem_id);
     }
     

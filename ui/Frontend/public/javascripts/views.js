@@ -22,14 +22,12 @@ var searchoptions = { sopt : $.map(SQLops, function(n) { return n; } ) };
 
 // keep_last option is a quick fix to avoid remove content when opening details dialog
 function reload_content(container_id, elem_id, keep_last) {
-    //alert(_content_handlers['content_hosts']);
-    //alert('Reload' + container_id);
-    if (_content_handlers[container_id]) {
+    if (_content_handlers.hasOwnProperty(container_id)) {
         if (_content_handlers[container_id]['onLoad']) {
-           
             // Clean prev container content
             var current_content = $('.current_content');
             current_content.removeClass('current_content');
+
             if (keep_last === undefined || keep_last == false) {
                 current_content.children().remove();
             } else {
@@ -91,7 +89,6 @@ function show_detail(grid_id, grid_class, elem_id, row_data) {
     build_submenu(view_detail_container, id, details_info.tabs, elem_id);
     view_detail_container.find('#' + id).show();
 
-
     // Set dialog title using column defined in conf
     var title = details_info.title && details_info.title.from_column && row_data[details_info.title.from_column];
 
@@ -106,8 +103,8 @@ function show_detail(grid_id, grid_class, elem_id, row_data) {
         draggable: false,
         close: function(event, ui) {
             $('.last_content').addClass('current_content').removeClass('last_content');
-            $(this).remove();
-        }, // detail modals are never closed, they are destroyed
+            $(this).remove(); // detail modals are never closed, they are destroyed
+        },
         buttons: {
             Ok: function() {
                 //$(this).find('#target').submit();
@@ -127,7 +124,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data) {
     }
 
     // Load first tab content
-    reload_content('content_' + details_info.tabs[0]['id'], elem_id, true);
+    reload_content('content_' + details_info.tabs[0]['id'] + '_' + elem_id, elem_id, true);
 
     //dialog.load('/api/host/' + elem_id);
     //dialog.load('/details/iaas.html');
