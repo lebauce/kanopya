@@ -31,10 +31,13 @@ function initServiceDashboard() {
 
     // Dashboard actions
     dash_header = $('<div class="headerlinks"></div>');
-    dash_header.append('<a class="openaddwidgetdialog headerlink" href="#"><font color="black">Add Widget</font></a>&nbsp;&nbsp;');
-    dash_header.append('<a class="editlayout headerlink" href="#"><font color="black">Edit layout</font></a>&nbsp;&nbsp;');
-    dash_header.append('<a class="savedashboard headerlink" href="#"><font color="black">Save Dashboard</font></a>');
+    dash_header.append($('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'}));
+//    dash_header.append($('<button>', { 'class' : 'editlayout', html : 'Edit layout'}));
+    dash_header.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
 
+
+ 
+ 
     //$('#view-container').append(dash_header);
     $('#view-container').append(dash_div);
 
@@ -773,6 +776,10 @@ function loadServicesOverview (container_id, elem_id) {
     container.append(dash_header);
     container.append(dash_div);
     container.append(dash_template);
+
+    // Make jquery button (must be done after append to container, each time)
+    container.find(".openaddwidgetdialog").button({ icons : { primary : 'ui-icon-plusthick' } });
+    container.find(".savedashboard").button({ icons : { primary : 'ui-icon-disk' } });
 
     //service_dashboard.setLayout(undefined);
     //service_dashboard.setLayout('layout2');
