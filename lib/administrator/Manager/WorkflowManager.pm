@@ -48,11 +48,12 @@ sub checkWorkflowManagerParams {
 
     Args: $workflow_name (string), \%workflow_params
 
-    Return: none
+    Return: created workflow (object)
 =cut
 
 sub createWorkflow { 
     my ($self,%args) = @_;
+
     General::checkParams(args => \%args, required => [ 'workflow_name' ]);
 
     my $service_provider_id = $self->getServiceProvider()
@@ -60,13 +61,26 @@ sub createWorkflow {
     my $workflow_def_name   = $args{workflow_name};
     my %workflow_def_params;
     my $workflow;
-    
+
     #creation of a new instance of workflow_def
     if (defined $args{params}) {
         %workflow_def_params = %{$args{params}};
+
+        #sort the specific params from the automatic params
+        my $params           = $self->_getSortedParams(
+                                params => \%workflow_def_params
+                               );
+        #append the automatic params to workflow params
+        $workflow_def_params{automatic} = $params->{automatic};
+
+        #IF the specific params are not set, add them to the params
+        if (!defined $workflow_def_params{specific} ) {
+            $workflow_def_params{specific}  = $params->{specific};
+        }
+
         $workflow            = WorkflowDef->new(
                                 workflow_def_name => $workflow_def_name,
-                                params            => \%workflow_def_params
+                                params            => \%workflow_def_params,
                                );
     } else { 
         $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name);
@@ -79,11 +93,117 @@ sub createWorkflow {
         manager_id => $manager_id,
         workflow_def_id => $workflow_def_id
     );
+
+    return $workflow;
 }
 
-sub instanciateWorkflow { };
-sub getSpecificWorkflowParameters { };
-sub runWorkflow { };
+=head2 associateWorkflow
+    Desc: create a new instance of WorkflowDef that has defined specific
+          parameters. This instance will be used for future runs
+    
+    Args: $origin_workflow_name (string), 
+          $origin_workflow_def_id,
+          \%specific_params
+
+    Return: created workflow object (get by calling createWorkflow())
+=cut
+
+sub associateWorkflow { 
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'origin_workflow_name',
+                                                       'new_workflow_name',
+                                                       'origin_workflow_def_id',
+                                                       'specific_params'
+                                                     ]);
+
+    my $workflow_def_id = $args{origin_workflow_def_id};
+    my $specific_params = $args{specific_params};
+
+    #check if the workflow name is an already existing workflow. If not
+    #throw an error => you can only associate an existing workflow to
+    #a rule
+
+    #get all workflow defs related to this manager
+    my $workflow_defs = $self->getWorkflowDefs();
+    #initiate a counter to recense existing workflows
+    my $existing_origin_workflows = 0;
+
+    foreach my $workflow_def (@$workflow_defs) {
+        if((grep {$_->getAttr(name => 'workflow_def_name') 
+        eq $args{origin_workflow_name}} $workflow_def) == 1) {
+            $existing_origin_workflows++;
+        } 
+    }
+    if ($existing_origin_workflows == 0) {
+        my $errmsg = 'Unknown workflow_def name '.$args{origin_workflow_name};
+        throw Kanopya::Exception(error => $errmsg);
+    }
+    
+    #get the original workflow's params and replace undefined specific params
+    #with the now defined specific params
+    my $workflow_params = $self->_getAllParams(
+                              workflow_def_id => $workflow_def_id
+                          );
+    $workflow_params->{specific} = $specific_params;
+
+    #add special parameter to indicate that the workflow is associated 
+    #to a rule
+    $workflow_params->{internal}->{association} = 1;
+
+    #print Dumper $workflow_params;
+
+    $self->createWorkflow(
+        workflow_name => $args{new_workflow_name},
+        params        => $workflow_params
+    );
+}
+
+=head2 runWorkflow
+    Desc: run a workflow 
+
+    Args:
+
+    Return: 
+=cut
+
+sub runWorkflow {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow_def' ]);
+    
+    my $workflow_def = $args{workflow_def};
+
+
+#    $Workflow->run(name => $workflow_def);
+}
+
+=head2 _setSpecificValues 
+    Desc: set specific values for a workflow def 
+
+    Args: \@specific_params, $workflow_def_id
+
+    Return: \%defined_specific_params 
+=cut
+
+sub _setSpecificValues {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['workflow_def_id',
+                                                      'specific_params'
+                                                     ]);
+   #get the workflow specific params
+   my $defined_specific_params   = $args{specific_params};
+   my $params                    = $self->getParams(
+                                       workflow_def_id => $args{workflow_def_id}
+                                   );
+   my $undefined_specific_params = $params->{specific};
+
+   while (my ($param, $value) = each (%$undefined_specific_params)) {
+        
+   }
+
+}
 
 =head2 getWorkflowDefs
     Desc: Get a list of workflow defs related to the manager
@@ -169,11 +289,10 @@ sub _getAutomaticParams {
 }
 
 =head2 getParams
-    Desc: Get the params list for a workflow def, extract the "data" params, 
-    and then differenciate between them the automatic and specific
-    parameters.
+    Desc: get specific and automatic params from workflow_def_id. Usefull for
+          GUI when retriving specific and automatic params is required
 
-    Args: workflow_def_id
+    Args: $workflow_def_id
 
     Return: \%params ($params{automatic}, $params{specific}) 
 =cut
@@ -184,11 +303,38 @@ sub getParams {
     General::checkParams(args => \%args, required => [ 'workflow_def_id' ]);
 
     my $workflow_def_id = $args{workflow_def_id};
+    my %params;
+    $params{automatic} = undef;
+    $params{specific}  = undef;
+    
+    #retrieve all workflow params
+    my $all_params = $self->_getAllParams(workflow_def_id => $workflow_def_id);
+    
+    $params{automatic} = $all_params->{automatic};
+    $params{specific}  = $all_params->{specific};
+
+    return \%params;
+}
+
+
+=head2 _getSortedParams
+    Desc: With the given params for a workflow def, extract the "data" params, 
+    and then differenciate between them the automatic and specific
+    parameters.
+
+    Args: \%params
+
+    Return: \%sorted_params ($sorted_params{automatic}, $sorted_params{specific}) 
+=cut
+
+sub _getSortedParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'params' ]);
 
     #get all workflow params        
-    my $all_params         = $self->_getAllParams(
-                                workflow_def_id => $workflow_def_id
-                             );  
+    my $all_params         = $args{params};
+
     my $brut_data_params   = $all_params->{data};
 
     #extract the parameter from the raw data given as parameter to the workflow
@@ -198,25 +344,26 @@ sub getParams {
     my $scope_id           = $all_params->{internal}->{scope_id};
 
     #now differenciate automatic params from specific ones
-    my %params;
-    $params{automatic}  = undef;
-    $params{specific}   = undef;
+    my %sorted_params;
+    $sorted_params{automatic}  = undef;
+    $sorted_params{specific}   = undef;
+
     #get automatic params
-    $params{automatic} = $self->_getAutomaticParams(
-                            data_params => $prepared_data_params,
-                            scope_id    => $scope_id
-                         );  
-    #print Dumper $params{automatic};
+    $sorted_params{automatic} = $self->_getAutomaticParams(
+                                    data_params => $prepared_data_params,
+                                    scope_id    => $scope_id
+                                );  
+    #print Dumper $sorted_params{automatic};
 
     #get specific params
-    $params{specific} = $self->getSpecificParams(
-                            data_params => $prepared_data_params,
-                            scope_id    => $scope_id
-                        );
-    #print Dumper $params{specific};
+    $sorted_params{specific} = $self->getSpecificParams(
+                                data_params => $prepared_data_params,
+                                scope_id    => $scope_id
+                               );
+    #print Dumper $sorted_params{specific};
 
-    print Dumper \%params;
-    return \%params;
+    #print Dumper \%sorted_params;
+    return \%sorted_params;
 }
 
 =head2 getSpecificParams
@@ -262,7 +409,7 @@ sub _getAllParams {
 
     #get the param preset id from the workflow def
     my $workflow_def = $self->getWorkflowDef(workflow_def_id=>$workflow_def_id);
-    my $all_params  = $workflow_def->getParamPreset();
+    my $all_params   = $workflow_def->getParamPreset();
 
     return $all_params;
 }

@@ -1298,14 +1298,16 @@ CREATE TABLE `aggregate_combination` (
 --
 
 CREATE TABLE `aggregate_rule` (
-  `aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  `aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `aggregate_rule_label` char(255),
   `aggregate_rule_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_rule_formula` char(32) NOT NULL ,
   `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
   `aggregate_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
   `aggregate_rule_state` char(32) NOT NULL ,
+  `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,
   `aggregate_rule_description` TEXT,
+  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`aggregate_rule_service_provider_id`),
   FOREIGN KEY (`aggregate_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
@@ -1372,11 +1374,13 @@ CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `nodemetric_rule_label` char(255),
   `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
-  `nodemetric_rule_formula` char(32) NOT NULL ,
-  `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
-  `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
-  `nodemetric_rule_state` char(32) NOT NULL ,
+  `nodemetric_rule_formula` char(32) NOT NULL,
+  `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL,
+  `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL,
+  `nodemetric_rule_state` char(32) NOT NULL,
+  `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_description` TEXT,
+  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`nodemetric_rule_service_provider_id`),
   FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;

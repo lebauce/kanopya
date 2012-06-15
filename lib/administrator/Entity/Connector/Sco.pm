@@ -27,6 +27,7 @@ use Kanopya::Exceptions;
 
 use ScopeParameter;
 use Scope;
+use Operationtype;
 use Workflow;
 use WorkflowDef;
 use WorkflowDefManager;
@@ -71,4 +72,31 @@ sub _prepareParams {
 
     return \%prepared_data_params;
 }
+
+=head2 createWorkflow
+    Desc: override the workflow manager createWorkflow() 
+          to add specific workflow step 
+
+    Args: $workflow_name
+
+    Return: created $workflow (object)
+=cut
+
+sub createWorkflow {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow_name' ]);
+
+    my $workflow          = $self->SUPER::createWorkflow(%args);
+    my $operation_type    = Operationtype->find(
+                                hash => {operationtype_name => 'LaunchSCOWorkflow'}
+                            );
+    my $operation_type_id = $operation_type->getAttr(name => 'operationtype_id');
+
+    #we add a new step to the workflow
+    $workflow->addStep(operationtype_id => $operation_type_id);
+
+    return $workflow;
+}
+
 1;
