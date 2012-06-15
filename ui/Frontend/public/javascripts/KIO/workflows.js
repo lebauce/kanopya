@@ -1,7 +1,7 @@
 require('jquery/jquery.form.js');
 require('jquery/jquery.form.wizard.js');
 
-function    createSCOWorkflowDefButton(container, managerid) {
+function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
 
     function    createParameterList(parameters) {
         var list    = $("<ul>").css({
@@ -115,6 +115,8 @@ function    createSCOWorkflowDefButton(container, managerid) {
                         complete    : function(a, status, c) {
                             if (status === 'success') {
                                 $(form).dialog('destroy');
+                                $(dial).dialog('close');
+                                workflowdetails(wfid, wf);
                             }
                         }
                     });
@@ -199,6 +201,18 @@ function    sco_workflow(container_id) {
 }
 
 function    workflowdetails(workflowmanagerid, workflowmanager) {
+    var dial    = $("<div>", {
+        id      : "workflowmanagerdetailsdialog",
+        width   : "600px"
+    }).appendTo($('body'));
+    $(dial).dialog({
+        close       : function() { $(this).remove(); },
+        width       : 626,
+        draggable   : false,
+        resizable   : false,
+        modal       : true,
+        title       : workflowmanager.service_provider_name + ' - ' + workflowmanager.name
+    });
     $.ajax({
         url         : '/api/entity/' + workflowmanager.id + '/getWorkflowDefsIds',
         type        : 'POST',
@@ -215,10 +229,6 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
                     }
                 });
             }
-            var dial    = $("<div>", {
-                id      : "workflowmanagerdetailsdialog",
-                width   : "600px"
-            }).appendTo($('body'));
             create_grid({
                 grid_id                 : 'workflowdefsgrid',
                 content_container_id    : 'workflowmanagerdetailsdialog',
@@ -229,15 +239,8 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
                 ],
                 data                    : workflows
             });
-            createSCOWorkflowDefButton(dial, workflowmanager.id);
-            $(dial).dialog({
-                close       : function() { $(this).remove(); },
-                width       : 626,
-                draggable   : false,
-                resizable   : false,
-                modal       : true,
-                title       : workflowmanager.service_provider_name + ' - ' + workflowmanager.name
-            });
+            $(dial).dialog("option", "position", $(dial).dialog("option", "position"));
+            createSCOWorkflowDefButton(dial, workflowmanager.id, dial, workflowmanagerid, workflowmanager);
         }
     });
 }
