@@ -60,13 +60,13 @@ function create_all_content() {
     }
 }
 
-function show_detail(grid_id, elem_id, row_data) {
+function show_detail(grid_id, grid_class, elem_id, row_data) {
 
-    var details_info = details_def[grid_id];
+    var details_info = details_def[grid_class];
     
     // Not defined details menu
     if (details_info === undefined) {
-        alert('Details not defined yet ( menu.conf.js -> details_def["' + grid_id + '"] )');
+        alert('Details not defined yet ( menu.conf.js -> details_def["' + grid_class + '"] )');
         return;
     }
     
@@ -79,7 +79,7 @@ function show_detail(grid_id, elem_id, row_data) {
 
     // Override generic behavior, custom detail handling
     if (details_info.onSelectRow) {
-        details_info.onSelectRow(elem_id, row_data);
+        details_info.onSelectRow(elem_id, row_data, grid_id);
         return;
     }
 
@@ -226,7 +226,7 @@ function create_grid(options) {
         onCellSelect: function(rowid, index, contents, target) {
             if (index != actions_col_idx) {
                 var row_data = $('#' + options.grid_id).getRowData(rowid);
-                show_detail(grid_class, rowid, row_data)
+                show_detail(options.grid_id, grid_class, rowid, row_data)
             }
         },
 
