@@ -36,16 +36,17 @@ var details_def = {
         'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
         'service_ressources_list' : {
             tabs : [
-                    { label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },
-                    { label : 'Rules', id : 'rules', onLoad : node_rules_tab },
+                    	{ label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },
+                    	{ label : 'Rules', id : 'rules', onLoad : node_rules_tab },
                     ],
             title : { from_column : 'externalnode_hostname' }
         },
         'workflowmanagement' : { onSelectRow : workflowdetails },
 		'service_ressources_nodemetric_rules' : {
 			tabs : [
-								{ label : 'Nodes', id : 'nodes', onLoad : rule_nodes_tab },
-							],
+						{ label : 'Nodes', id : 'nodes', onLoad : rule_nodes_tab },
+						{ label : 'Rule', id : 'rule', onLoad : function(cid, eid) {  } },
+					],
 			title : { from_column : 'nodemetric_rule_label' }
 		},
 };
@@ -117,18 +118,28 @@ function rule_nodes_tab(cid, eid) {
 		return VerifiedRuleFormat;
 	}
 	
+	var oid;
+	$.ajax({
+ 		url: '/api/externalnode/' + eid,
+ 				async: false,
+	 			success: function(answer) {
+					oid = answer.outside_id;
+  				}
+			});
+	
 	var loadNodeRulesTabGridId = 'rule_nodes_tabs';
     create_grid( {
-        url: '/api/externalnode?outside_id=67',
+        url: '/api/externalnode?outside_id=' + oid,
         content_container_id: cid,
         grid_id: loadNodeRulesTabGridId,
-        grid_class: 'service_ressources_nodemetric_rules',
+        grid_class: 'rule_nodes_grid',
         colNames: [ 'id', 'hostname', 'state' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 110,},
             { name: 'verified_noderule_state', index: 'verified_noderule_state', width: 60, formatter: verifiedRuleNodesStateFormatter,}, 
-        ]
+        ],
+        action_delete : 'no',
     } );
 }
 
