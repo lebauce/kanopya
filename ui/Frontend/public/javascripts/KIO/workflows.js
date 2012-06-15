@@ -101,10 +101,14 @@ function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
                     var pk      = data.pk;
                     var params  = {
                         workflow_name   : $('input#workflow_def_name').val(),
-                        workflow_params : {
-                            scope_id    : $('select#param_preset_id').val(),
-                            output_dir  : $('input#directoryinput').val(),
-                            tt_content  : $('textarea#workflow_def_filecontent').val()
+                        params          : {
+                            internal    : {
+                                scope_id    : $('select#param_preset_id').val(),
+                                output_dir  : $('input#directoryinput').val(),
+                            },
+                            data        : {
+                                template_content  : $('textarea#workflow_def_filecontent').val()
+                            }
                         }
                     };
                     $.ajax({
