@@ -89,8 +89,8 @@ sub update {
     my %updated = ();
 
     foreach my $key (keys %{$self}) {
-        if (($key ne "old") and
-            (not defined $self->{old}{$key}) or
+        next if $key eq "old";
+        if ((not defined $self->{old}{$key}) or
             (not ($self->{$key} eq $self->{old}{$key}))) {
             $updated{$key} = $self->{$key};
         }
