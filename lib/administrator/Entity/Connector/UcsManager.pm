@@ -86,6 +86,10 @@ sub AUTOLOAD {
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
 
+    if (not defined $self->{api}) {
+        $self->init();
+    }
+
     return $self->{api}->$method(%args);
 }
 
