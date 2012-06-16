@@ -95,7 +95,7 @@ sub removeDisk {
               );
     }
 
-    my $container_name = $args{container}->getAttr(name => 'name');
+    my $container_name = $args{container}->getAttr(name => 'container_name');
 
     $self->_getEntity()->volume_offline(name => $container_name);
     $self->_getEntity()->volume_destroy(name  => $container_name,
