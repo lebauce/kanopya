@@ -250,7 +250,7 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
     });
 }
 
-function    workflowRuleAssociation(eid) {
+function    workflowRuleAssociation(eid, scid) {
     var dial    = $("<div>");
     var form    = $("<table>", { width : '100%' }).appendTo($("<form>").appendTo(dial));
     var wfdefs  = [];
@@ -334,21 +334,22 @@ function    workflowRuleAssociation(eid) {
                     $(select).bind('change', createForm);
                     for (var i in data) if (data.hasOwnProperty(i)) {
                         $.ajax({
-                            async   : false,
                             url     : '/api/workflowdef/' + data[i],
                             type    : 'GET',
                             success : function(wfd) {
                                 $.ajax({
-                                    async       : false,
                                     url         : '/api/entity/' + manager.pk + '/_getAllParams',
                                     type        : 'POST',
                                     contentType : 'application/json',
                                     data        : JSON.stringify({ 'workflow_def_id' : wfd.pk }),
                                     success     : function(data) {
-                                        if (data.internal.association == null || data.internal.association == false) {
+                                        console.log(data.internal.scope_id + " | " + scid);
+                                        if ((data.internal.association == null || data.internal.association == false)
+                                            && data.internal.scope_id == scid) {
                                             wfd.specificparams  = data.specific;
                                             wfdefs.push(wfd);
                                             $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
+                                            $(select).change();
                                         }
                                     }
                                 });
@@ -366,15 +367,14 @@ function    workflowRuleAssociation(eid) {
                             'Ok'        : validateTheForm
                         }
                     });
-                    $(select).change();
                 }
             });
         }
     });
 }
 
-function    createWorkflowRouteAssociationButton(cid, eid) {
+function    createWorkflowRuleAssociationButton(cid, eid, scid) {
     var button  = $("<a>", { text : 'Associate a Workflow' }).button();
-    button.bind('click', function() { workflowRuleAssociation(eid); });
+    button.bind('click', function() { workflowRuleAssociation(eid, scid); });
     $('#' + cid).append(button);
 }

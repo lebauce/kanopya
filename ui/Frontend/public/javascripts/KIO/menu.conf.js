@@ -44,12 +44,22 @@ var details_def = {
         'workflowmanagement' : { onSelectRow : workflowdetails },
 		'service_ressources_nodemetric_rules' : {
 			tabs : [
-                            { label : 'Overview', id : 'overview', onLoad : createWorkflowRouteAssociationButton },
+                            { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
+                                createWorkflowRuleAssociationButton(cid, eid, 1);
+                            }},
 						{ label : 'Nodes', id : 'nodes', onLoad : rule_nodes_tab },
 						{ label : 'Rule', id : 'rule', onLoad : rule_detail_tab },
 					],
 			title : { from_column : 'nodemetric_rule_label' }
 		},
+                'service_ressources_aggregate_rules' : {
+                    tabs    : [
+                        { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
+                            createWorkflowRuleAssociationButton(cid, eid, 2);
+                        }},
+                    ],
+                    title   : { from_column : 'aggregate_rule_label' }
+                }
 };
 
 function node_detail_tab(cid, eid) {

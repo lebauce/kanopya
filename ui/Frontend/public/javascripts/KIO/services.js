@@ -1199,6 +1199,7 @@ function loadServicesRules (container_id, elem_id) {
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/aggregate_rules',
+        grid_class: 'service_ressources_aggregate_rules',
         content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         colNames: ['id','name', 'enabled', 'formula', 'description'],
