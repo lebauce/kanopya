@@ -161,9 +161,10 @@ var statistics_function_name = ['mean','variance','std','max','min','kurtosis','
 
 // Set the correct state icon for each element :
 function StateFormatter(cell, options, row) {
-	if (cell == 'up') {
+	//if (cell == 'up') {
+	if ( cell.indexOf('up') != -1 ) {
 		return "<img src='/images/icons/up.png' title='up' />";
-	} else if (cell == 'broken') {
+	} else if ( cell.indexOf('broken') != -1 ) {
 		return "<img src='/images/icons/broken.png' title='broken' />";
 	} else {
 	    return "<img src='/images/icons/down.png' title='down' />";
@@ -609,7 +610,6 @@ function createServiceRule(container_id, elem_id) {
         ]
     } );
 
-	
     var service_fields  = {
         aggregate_rule_label    : {
             label   : 'Name',
@@ -622,6 +622,10 @@ function createServiceRule(container_id, elem_id) {
         aggregate_rule_formula	: {
         	label   : 'Formula',
             type	: 'text',	
+        },
+        clustermetric_label :{
+            label   : 'Formula',
+            display : 'clustermetric_label',   
         },
         aggregate_rule_state	:{
         	label   : 'Enabled',
@@ -1042,56 +1046,12 @@ function loadServicesMonitoring (container_id, elem_id) {
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
     $('<div id="node_monitoring_accordion_container">').appendTo(divacc);
     var container = $("#" + container_id);
-    $("<div>", { html : "Service metric : " }).appendTo('node_monitoring_accordion_container');
     
-    var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
-    create_grid( {
-        url: '/api/externalcluster/' + elem_id + '/clustermetrics',
-        content_container_id: 'node_monitoring_accordion_container',
-        grid_id: loadServicesMonitoringGridId,
-        afterInsertRow: function(grid, rowid) {
-            var current = $(grid).getCell(rowid, 'clustermetric_indicator_id');
-            var url     = '/api/externalcluster/' + elem_id + '/getIndicatorNameFromId';
-            setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id', { 'indicator_id' : current });
-        },
-        colNames: [ 'id', 'name', 'indicator' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
-            { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
-            { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
-        ]
-    } );
-    createServiceMetric('node_monitoring_accordion_container', elem_id);
-    
-    $("<div>", { html : "<br />Service Combinations : " }).appendTo('node_monitoring_accordion_container');
-    var loadServicesMonitoringGridId = 'service_ressources_aggregate_combinations_' + elem_id;
-    create_grid( {
-        url: '/api/externalcluster/' + elem_id + '/aggregate_combinations',
-        content_container_id: 'node_monitoring_accordion_container',
-        grid_id: loadServicesMonitoringGridId,
-        afterInsertRow: function(grid, rowid) {
-            var id  = $(grid).getCell(rowid, 'pk');
-            var url = '/api/aggregatecombination/' + id + '/toString';
-            setCellWithCallMethod(url, grid, rowid, 'aggregate_combination_formula');
-        },
-        colNames: [ 'id', 'name', 'formula' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
-            { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200 },
-        ]
-    } );
-    createServiceConbination('node_monitoring_accordion_container', elem_id);
-    
-	$('<h3><a href="#">Service</a></h3>').appendTo(divacc);
-    $('<div id="service_monitoring_accordion_container">').appendTo(divacc);
-    $('<div>Service Conditions :</div>').appendTo('');
-    $("<div>", { html : "<br />Nodemetric Combinations : " }).appendTo('service_monitoring_accordion_container');
-    
+    $("<p>", { html : "Nodemetric Combinations  : " }).appendTo('#service_monitoring_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_combination_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/nodemetric_combinations',
-        content_container_id: 'service_monitoring_accordion_container',
+        content_container_id: 'node_monitoring_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         afterInsertRow: function(grid, rowid) {
             var id  = $(grid).getCell(rowid, 'pk');
@@ -1105,7 +1065,51 @@ function loadServicesMonitoring (container_id, elem_id) {
             { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', width: 170 },
         ]
     } );
-    createNodemetricCombination('service_monitoring_accordion_container', elem_id);
+    createNodemetricCombination('node_monitoring_accordion_container', elem_id);
+
+
+	$('<h3><a href="#">Service</a></h3>').appendTo(divacc);
+    $('<div id="service_monitoring_accordion_container">').appendTo(divacc);
+   
+    $("<p>", { html : "Service Metric  : " }).appendTo('#service_monitoring_accordion_container');
+    var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/clustermetrics',
+        content_container_id: 'service_monitoring_accordion_container',
+        grid_id: loadServicesMonitoringGridId,
+        afterInsertRow: function(grid, rowid) {
+            var current = $(grid).getCell(rowid, 'clustermetric_indicator_id');
+            var url     = '/api/externalcluster/' + elem_id + '/getIndicatorNameFromId';
+            setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id', { 'indicator_id' : current });
+        },
+        colNames: [ 'id', 'name', 'indicator' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
+            { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
+            { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
+        ]
+    } );
+    createServiceMetric('service_monitoring_accordion_container', elem_id);
+    
+    $("<p>", { html : "Service Combinations  : " }).appendTo('#service_monitoring_accordion_container');
+    var loadServicesMonitoringGridId = 'service_ressources_aggregate_combinations_' + elem_id;
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/aggregate_combinations',
+        content_container_id: 'service_monitoring_accordion_container',
+        grid_id: loadServicesMonitoringGridId,
+        afterInsertRow: function(grid, rowid) {
+            var id  = $(grid).getCell(rowid, 'pk');
+            var url = '/api/aggregatecombination/' + id + '/toString';
+            setCellWithCallMethod(url, grid, rowid, 'aggregate_combination_formula');
+        },
+        colNames: [ 'id', 'name', 'formula' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
+            { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200 },
+        ]
+    } );
+    createServiceConbination('service_monitoring_accordion_container', elem_id);
     
     $('#accordion_monitoring_rule').accordion({
         autoHeight  : false,

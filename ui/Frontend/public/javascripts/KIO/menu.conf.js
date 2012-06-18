@@ -45,7 +45,7 @@ var details_def = {
 		'service_ressources_nodemetric_rules' : {
 			tabs : [
 						{ label : 'Nodes', id : 'nodes', onLoad : rule_nodes_tab },
-						{ label : 'Rule', id : 'rule', onLoad : function(cid, eid) {  } },
+						{ label : 'Rule', id : 'rule', onLoad : rule_detail_tab },
 					],
 			title : { from_column : 'nodemetric_rule_label' }
 		},
@@ -53,6 +53,10 @@ var details_def = {
 
 function node_detail_tab(cid, eid) {
 	
+}
+
+function rule_detail_tab(cid, eid) {
+    
 }
 
 // This function load grid with list of rules for verified state corelation with the the selected node :
