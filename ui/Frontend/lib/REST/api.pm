@@ -174,7 +174,7 @@ sub format_results {
     delete $args{dataType};
     delete $args{expand};
 
-    $params{page} = $args{page} || 1;
+    $params{page} = $args{page};
     delete $args{page};
 
     if (defined $args{rows}) {
