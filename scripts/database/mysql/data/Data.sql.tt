@@ -387,7 +387,6 @@ INSERT INTO `workflow_def` VALUES
 (1,'AddNode', NULL),
 (2,'StopNode', NULL),
 (3,'OptimiaasWorkflow', NULL),
-(4,'ScaleInWorkflow',NULL);
 
 INSERT INTO `workflow_step` VALUES
 (1, 1, 42),
@@ -942,6 +941,18 @@ SET @cid = (SELECT component_type_id FROM `component_type` WHERE component_name 
 INSERT INTO `param_preset` VALUES (44, "keepalived", NULL, 41);
 INSERT INTO `param_preset` VALUES (45, "component_type", @cid, 44);
 
+-- workflow scalein param preset
+INSERT INTO value (46, "workflow_def_params", NULL, NULL);
+INSERT INTO value (47, "specific", NULL, 46 );
+INSERT INTO value (48, "scalein_type", NULL, 47 );
+INSERT INTO value (49, "scalein_value", NULL, 47 );
+INSERT INTO value (50, "automatic", NULL, 46 );
+INSERT INTO value (51, "context", NULL, 50 );
+INSERT INTO value (52, "cloudmanager_comp", NULL, 51 );
+INSERT INTO value (53, "host", NULL, 51 );
+
+INSERT INTO `workflow_def` VALUES (4,'ScaleInWorkflow',46);
+
 INSERT INTO `policy` VALUES (1, 1, 'Default physical host', "Hosting policy for default physical hosts.", 'hosting');
 INSERT INTO `policy` VALUES (2, 10, 'Kanopya LVM disk exported via ISCSI', "Datastore on Kanopya cluster for PXE boot via ISCSI.", 'storage');
 INSERT INTO `policy` VALUES (3, 18, 'Default network configuration', "Default network configuration, with admin and public interfaces.", 'network');
@@ -949,4 +960,7 @@ INSERT INTO `policy` VALUES (4, 29, 'Cluster manual scalability', "Manual scalab
 INSERT INTO `policy` VALUES (5, 33, 'Debian squeeze', "Hosting policy for standard physical hosts.", 'system');
 
 INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5);
+
+
+
 
