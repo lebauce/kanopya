@@ -250,29 +250,121 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
     });
 }
 
-function    workflowRuleAssociation() {
+function    workflowRuleAssociation(eid) {
     var dial    = $("<div>");
+    var form    = $("<table>", { width : '100%' }).appendTo($("<form>").appendTo(dial));
+    var wfdefs  = [];
+    var manager;
+
+    function createForm(event) {
+        var wfdefid     = $(event.currentTarget).val();
+        for (var i in wfdefs) if (wfdefs.hasOwnProperty(i)) {
+            if (wfdefs[i].pk === wfdefid) {
+                var wfdef       = wfdefs[i];
+                var specparams  = wfdefs[i].specificparams;
+                $(form).empty();
+                $(form).append($("<input>", {
+                    type    : 'hidden',
+                    name    : 'origin_workflow_name',
+                    id      : 'input_origin_workflow_name',
+                    value   : wfdef.workflow_def_name
+                }));
+                $(form).append($("<input>", {
+                    type    : 'hidden',
+                    name    : 'origin_workflow_id',
+                    id      : 'input_origin_workflow_id',
+                    value   : wfdef.workflow_def_id
+                }));
+                for (var j in specparams) if (specparams.hasOwnProperty(j)) {
+                    var line    = $("<tr>").appendTo(form);
+                    $(line).append($("<td>").append($("<label>", {
+                        for     : 'input_specific_param_' + j,
+                        text    : j
+                    })));
+                    $(line).append($("<td>", { align : "right" }).append($("<input>", {
+                        type    : 'test',
+                        name    : j,
+                        id      : 'input_specific_param_' + j,
+                        class   : 'input_specific_param'
+                    })));
+                }
+                break;
+            }
+        }
+    }
+
+    function    validateTheForm() {
+        var params              = {
+            origin_workflow_name    : $("input#input_origin_workflow_name").val(),
+            new_workflow_name       : eid + '_' + $("input#input_origin_workflow_name").val(),
+            origin_workflow_def_id  : $("input#input_origin_workflow_id").val(),
+            specific_params         : {}
+        };
+        var specparamsinputs    = $("input.input_specific_param");
+        $(specparamsinputs).each(function() {
+            params.specific_params[$(this).attr('name')]    = $(this).val();
+        });
+        $.ajax({
+            url         : '/api/entity/' + manager.pk + '/associateWorkflow',
+            type        : 'POST',
+            contentType : 'application/json',
+            data        : JSON.stringify(params),
+            complete    : function(a) {
+                if (a.status === 200) {
+                    $(dial).dialog('close');
+                }
+            }
+        });
+    }
+
     $.ajax({
         url         : '/api/serviceprovider/69/getManager',
         type        : 'POST',
         contentType : 'application/json',
         data        : JSON.stringify({ 'manager_type' : 'WorkflowManager' }),
         success     : function(data) {
-            var manager = data;
+            manager = data;
             $.ajax({
                 url         : '/api/entity/' + manager.pk + '/getWorkflowDefsIds',
                 type        : 'POST',
                 contentType : 'application/json',
                 data        : JSON.stringify({}),
                 success     : function(data) {
-                    var wfdefs  = data;
-                    console.log(data);
+                    var select  = $('<select>').prependTo(dial);
+                    $(select).bind('change', createForm);
+                    for (var i in data) if (data.hasOwnProperty(i)) {
+                        $.ajax({
+                            async   : false,
+                            url     : '/api/workflowdef/' + data[i],
+                            type    : 'GET',
+                            success : function(wfd) {
+                                $.ajax({
+                                    async       : false,
+                                    url         : '/api/entity/' + manager.pk + '/getParams',
+                                    type        : 'POST',
+                                    contentType : 'application/json',
+                                    data        : JSON.stringify({ 'workflow_def_id' : wfd.pk }),
+                                    success     : function(data) {
+                                        wfd.specificparams  = data.specific;
+                                        wfdefs.push(wfd);
+                                        $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
+                                    }
+                                });
+                            }
+                        });
+                    }
                     $(dial).dialog({
-                        draggable       :  false,
+                        draggable       : false,
                         resizable       : false,
                         closeOnEscape   : false,
-                        close           : function() { $(this).remove(); }
+                        modal           : true,
+                        close           : function() { $(this).remove(); },
+                        buttons         : {
+                            'Cancel'    : function() { $(this).dialog('close'); },
+                            'Ok'        : validateTheForm
+                        }
                     });
+                    $(select).change();
                 }
             });
         }
@@ -281,6 +373,6 @@ function    workflowRuleAssociation() {
 
 function    createWorkflowRouteAssociationButton(cid, eid) {
     var button  = $("<a>", { text : 'Associate a Workflow' }).button();
-    button.bind('click', function() { workflowRuleAssociation(); });
+    button.bind('click', function() { workflowRuleAssociation(eid); });
     $('#' + cid).append(button);
 }
