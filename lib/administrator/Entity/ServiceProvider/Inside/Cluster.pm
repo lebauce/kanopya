@@ -400,7 +400,7 @@ sub configureManagers {
                                                                   service_provider_id   => $self->getId });
             };
             if ($@) {
-                next if not $manager->{manager_id}; 
+                next if not $manager->{manager_id};
                 $cluster_manager = $self->addManager(manager      => Entity->get(id => $manager->{manager_id}),
                                                      manager_type => $manager->{manager_type});
             }
@@ -575,7 +575,7 @@ sub deactivate {
 
 sub getTiers {
     my $self = shift;
-    
+
     my %tiers;
     my $rs_tiers = $self->{_dbix}->tiers;
     if (! defined $rs_tiers) {
@@ -635,12 +635,12 @@ sub getComponents {
         my $comptype_category = $component_row->get_column('component_category');
         my $comptype_name     = $component_row->get_column('component_name');
         my $comptype_version  = $component_row->get_column('component_version');
-        
+
         $log->debug("Component name: $comptype_name");
         $log->debug("Component version: $comptype_version");
         $log->debug("Component category: $comptype_category");
         $log->debug("Component id: $comp_id");
-        
+
         if (($args{category} eq "all")||
             ($args{category} eq $comptype_category)){
             $log->debug("One component instance found with " . ref($component_row));
@@ -824,20 +824,20 @@ sub addComponent {
 
 =head2 addComponentFromType
 
-create a new componant and link it to the cluster 
+create a new componant and link it to the cluster
 
 =cut
 
 sub addComponentFromType {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['component_type_id']);
 
 	my $type_id = $args{component_type_id};
 	my $adm = Administrator->new();
 	my $row = $adm->{db}->resultset('ComponentType')->find($type_id);
-	my $comp_name = $row->get_column('component_name');	
+	my $comp_name = $row->get_column('component_name');
 	my $comp_version = $row->get_column('component_version');
 	my $comp_class = 'Entity::Component::'.$comp_name.$comp_version;
 	my $location = General::getLocFromClass(entityclass => $comp_class);
@@ -1110,17 +1110,17 @@ sub setState {
 sub getNewNodeNumber {
 	my $self = shift;
 	my $nodes = $self->getHosts();
-	
+
 	# if no nodes already registered, number is 1
 	if(! keys %$nodes) { return 1; }
-	
+
 	my @current_nodes_number = ();
 	while( my ($host_id, $host) = each(%$nodes) ) {
-		push @current_nodes_number, $host->getNodeNumber();	
+		push @current_nodes_number, $host->getNodeNumber();
 	}
 	@current_nodes_number = sort(@current_nodes_number);
 	$log->debug("Nodes number sorted: ".Dumper(@current_nodes_number));
-	
+
 	my $counter = 1;
 	for my $number (@current_nodes_number) {
 		if("$counter" eq "$number") {
@@ -1135,7 +1135,7 @@ sub getNewNodeNumber {
 
 =head2 getIndicatorsIds
 
-    Desc: call collector manager to retrieve indicators ids available for the service provider 
+    Desc: call collector manager to retrieve indicators ids available for the service provider
     return \@indicators_ids;
 
 =cut
@@ -1163,7 +1163,7 @@ sub getIndicatorOidFromId {
     General::checkParams(args => \%args, required => ['indicator_id']);
 
     my $collector_manager = $self->getCollectorManager();
- 
+
     #return the name
     my $indicator_oid = $collector_manager->getIndicatorOidFromId ( indicator_id => $args{'indicator_id'} );
     return $indicator_oid;
@@ -1182,7 +1182,7 @@ sub getIndicatorNameFromId {
     General::checkParams(args => \%args, required => ['indicator_id']);
 
     my $collector_manager = $self->getCollectorManager();
- 
+
     #return the name
     my $indicator_name = $collector_manager->getIndicatorNameFromId ( indicator_id => $args{'indicator_id'} );
     return $indicator_name;
@@ -1201,7 +1201,7 @@ sub getIndicatorUnitFromId {
     General::checkParams(args => \%args, required => ['indicator_id']);
 
     my $collector_manager = $self->getCollectorManager();
- 
+
     #return the unit
     my $indicator_unit = $collector_manager->getIndicatorUnitFromId ( indicator_id => $args{'indicator_id'} );
     return $indicator_unit;
@@ -1241,7 +1241,7 @@ sub getNodeState {
     my $host       = Entity::Host->find(hash => {host_hostname => $args{hostname}});
     my $host_id    = $host->getId();
     my $node       = Node->find(hash => {host_id => $host_id});
-    my $node_state = $node->getAttr(name => 'node_state'); 
+    my $node_state = $node->getAttr(name => 'node_state');
 
     return $node_state;
 }
@@ -1260,14 +1260,14 @@ sub getNodesMetrics {
     General::checkParams(args => \%args, required => ['time_span', 'indicators']);
 
     my $collector_manager = $self->getCollectorManager();
-    
+
     my $nodes = $self->getHosts();
     my @nodelist;
-    
+
     while (my ($host_id,$host_object) = each(%$nodes)) {
         push @nodelist, $host_object->getAttr (name => 'host_hostname');
     }
- 
+
     #return the data
     my $monitored_values = $collector_manager->retrieveData ( nodelist => \@nodelist, time_span => $args{'time_span'}, indicators_ids => $args{'indicators'} );
     return $monitored_values;
@@ -1285,14 +1285,14 @@ sub generateDefaultMonitoringConfiguration {
 
     my $indicators_ids = $self->getIndicatorsIds();
     my $service_provider_id = $self->getAttr( name => 'cluster_id' );
-   
-    #We create a nodemetric combination for each indicator 
+
+    #We create a nodemetric combination for each indicator
     foreach my $indicator (@$indicators_ids) {
         my $combination_param = {
             nodemetric_combination_formula => 'id'.$indicator,
             nodemetric_combination_service_provider_id => $service_provider_id,
-         }; 
-        NodemetricCombination->new(%$combination_param);  
+         };
+        NodemetricCombination->new(%$combination_param);
     }
 
     #definition of the functions
@@ -1343,6 +1343,6 @@ sub getManager {
 sub getCollectorManager {
     my $self = shift;
 
-    return $self->getManager(manager_type => 'Collectormanager' );
+    return $self->getManager(manager_type => 'collector_manager' );
 }
 1;

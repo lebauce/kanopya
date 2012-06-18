@@ -25,8 +25,9 @@ use warnings;
 use General;
 use Kanopya::Exceptions;
 use Data::Dumper;
-
+use Hash::Merge qw( merge);
 use Log::Log4perl 'get_logger';
+use WorkflowStep;
 my $log = get_logger('administrator');
 my $errmsg;
 
@@ -34,8 +35,85 @@ use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
 
-sub instanciateWorkflow { };
-sub getSpecificWorkflowParameters { };
-sub runWorkflow { };
+
+
+sub associateWorkflow {
+    my ($self,%args) = @_;
+
+    my $new_wf_def = $self->SUPER::associateWorkflow(%args);
+
+    my @steps = WorkflowStep->search(
+        hash => {
+            workflow_def_id => $args{origin_workflow_def_id},
+        }
+    );
+
+    for my $step (@steps) {
+        WorkflowStep->new(
+            workflow_def_id  => $new_wf_def->getId(),
+            operationtype_id => $step->getAttr(name => 'operationtype_id'),
+        );
+    }
+}
+
+sub _getAutomaticValues{
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['automatic_params']);
+
+    my $automatic_params = $args{automatic_params};
+
+    if (exists $automatic_params->{context}->{host}) {
+        $automatic_params->{context}->{host} = $args{host};
+    }
+    if (exists $automatic_params->{context}->{cloudmanager_comp}) {
+        $automatic_params->{context}->{cloudmanager_comp} = $args{cloudmanager_comp};
+    }
+
+    return $automatic_params;
+}
+
+sub runWorkflow {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [
+                                            'workflow_def_id',
+                                         ]);
+    my $workflow_def_id = $args{workflow_def_id};
+    my $workflow        = $self->getWorkflowDef(
+                              workflow_def_id => $workflow_def_id
+                          );
+    my $workflow_name   = $workflow->getAttr(
+                              name => 'workflow_def_name'
+                          );
+
+    #gather the workflow params
+    my $all_params = $self->_getAllParams(
+                        workflow_def_id => $workflow_def_id
+                     );
+
+    #resolve the automatic params values
+    # NOT FULLY FUNCTIONNAL YET
+    my $automatic_values = $self->_getAutomaticValues(
+                                automatic_params => $all_params->{automatic},
+                                sp_id            => $args{service_provider_id},
+                                %args,
+                           );
+    #replace the undefined automatic params with the defined ones
+    $all_params->{automatic} = $automatic_values;
+
+    #run the workflow with fully the defined param
+    my $workflow_params = merge(
+    $all_params->{automatic},
+    $all_params->{specific},
+    );
+
+
+    $log->info('*************************************************');
+    $log->info(Dumper keys %$workflow_params);
+
+    Workflow->run(name => $workflow_name, params => $workflow_params);
+}
+
 
 1;
