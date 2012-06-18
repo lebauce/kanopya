@@ -567,8 +567,8 @@ sub search {
 
     if (defined ($args{dataType}) and $args{dataType} eq "hash") {
         return {
-            page    => $args{page} || undef,
-            pages   => $args{rows} ? ceil($total / $args{rows}) : 1,
+            page    => $args{page} || 1,
+            pages   => ceil($total / ($args{rows} || ($args{page} ? 10 : 1))),
             records => scalar @objs,
             rows    => \@objs,
             total   => $total,
