@@ -691,14 +691,14 @@ function servicesList (container_id, elem_id) {
     createAddServiceButton(container);
 }
 
-function createUpdateNodeButton(container, elem_id) {
+function createUpdateNodeButton(container, elem_id, grid) {
     var button = $("<button>", { text : 'Update Nodes' }).button({ icons : { primary : 'ui-icon-refresh' } });
     // Check if there is a configured directory service
     if (isThereAConnector(elem_id, 'DirectoryService') === true) {
         $(button).bind('click', function(event) {
             var dialog = $("<div>", { css : { 'text-align' : 'center' } });
             dialog.append($("<label>", { for : 'adpassword', text : 'Please enter your password :' }));
-            dialog.append($("<input>", { id : 'adpassword', name : 'adpassword' }));
+            dialog.append($("<input>", { id : 'adpassword', name : 'adpassword', type : 'password' }));
             // Create the modal dialog
             $(dialog).dialog({
                 modal           : true,
@@ -725,6 +725,7 @@ function createUpdateNodeButton(container, elem_id) {
                             });
                             // If the form succeed, then we can close the dialog
                             if (ok === true) {
+                                $(grid).trigger("reloadGrid");
                                 $(this).dialog('destroy');
                             }
                         } else {
@@ -1022,7 +1023,7 @@ function loadServicesRessources (container_id, elem_id) {
         ]
     } );
 
-    createUpdateNodeButton($('#' + container_id), elem_id);
+    createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesRessourcesGridId));
     //reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
 }
