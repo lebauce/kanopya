@@ -710,7 +710,6 @@ function createUpdateNodeButton(container, elem_id, grid) {
                     'Ok'    : function() {
                         var waitingPopup    = $("<div>", { text : 'Waiting...' }).css('text-align', 'center').dialog({
                             draggable   : false,
-                            modal       : true,
                             resizable   : false,
                             onClose     : function() { $(this).remove(); }
                         });
