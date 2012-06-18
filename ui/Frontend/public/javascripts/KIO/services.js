@@ -1186,7 +1186,18 @@ function loadServicesRules (container_id, elem_id) {
             { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60, formatter:serviceStateFormatter },
             { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 190 },
             { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 60 },
-        ]
+        ],
+        details: {
+            tabs : [
+                        { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
+                            require('KIO/workflows.js');
+                            createWorkflowRuleAssociationButton(cid, eid, 1, elem_id);
+                        }},
+                        { label : 'Nodes', id : 'nodes', onLoad : rule_nodes_tab },
+                        { label : 'Rule', id : 'rule', onLoad : rule_detail_tab },
+                    ],
+            title : { from_column : 'nodemetric_rule_label' }
+        },
     } );
     createNodemetricRule('node_accordion_container', elem_id);
 	// Here's the second part of the accordion :
@@ -1231,6 +1242,15 @@ function loadServicesRules (container_id, elem_id) {
             var url = '/api/aggregaterule/' + id + '/toString';
             setCellWithCallMethod(url, grid, rowid, 'aggregate_rule_formula');
         },
+        details : {
+            tabs    : [
+                { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
+                    require('KIO/workflows.js');
+                    createWorkflowRuleAssociationButton(cid, eid, 2, elem_id);
+               }},
+            ],
+            title   : { from_column : 'aggregate_rule_label' }
+        }
     } );
     createServiceRule('service_accordion_container', elem_id);
 

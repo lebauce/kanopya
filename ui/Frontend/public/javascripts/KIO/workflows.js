@@ -250,7 +250,7 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
     });
 }
 
-function    workflowRuleAssociation(eid, scid, cid) {
+function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
     var dial    = $("<div>");
     var form    = $("<table>", { width : '100%' }).appendTo($("<form>").appendTo(dial));
     var wfdefs  = [];
@@ -319,7 +319,7 @@ function    workflowRuleAssociation(eid, scid, cid) {
     }
 
     $.ajax({
-        url         : '/api/serviceprovider/69/getManager',
+        url         : '/api/serviceprovider/' + serviceprovider_id + '/getManager',
         type        : 'POST',
         contentType : 'application/json',
         data        : JSON.stringify({ 'manager_type' : 'WorkflowManager' }),
@@ -373,8 +373,8 @@ function    workflowRuleAssociation(eid, scid, cid) {
     });
 }
 
-function    createWorkflowRuleAssociationButton(cid, eid, scid) {
+function    createWorkflowRuleAssociationButton(cid, eid, scid, serviceprovider_id) {
     var button  = $("<a>", { text : 'Associate a Workflow' }).button();
-    button.bind('click', function() { workflowRuleAssociation(eid, scid, cid); });
+    button.bind('click', function() { workflowRuleAssociation(eid, scid, cid, serviceprovider_id); });
     $('#' + cid).append(button);
 }
