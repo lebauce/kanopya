@@ -708,8 +708,15 @@ function createUpdateNodeButton(container, elem_id, grid) {
                 closeOnEscape   : false,
                 buttons         : {
                     'Ok'    : function() {
-                        var passwd  = $("input#adpassword").attr('value');
-                        var ok      = false;
+                        var waitingPopup    = $("<div>", { text : 'Waiting...' }).css('text-align', 'center').dialog({
+                            draggable   : false,
+                            modal       : true,
+                            resizable   : false,
+                            onClose     : function() { $(this).remove(); }
+                        });
+                        $(waitingPopup).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
+                        var passwd          = $("input#adpassword").attr('value');
+                        var ok              = false;
                         // If a password was typen, then we can submit the form
                         if (passwd !== "" && passwd !== undefined) {
                             $.ajax({
@@ -727,6 +734,7 @@ function createUpdateNodeButton(container, elem_id, grid) {
                             if (ok === true) {
                                 $(grid).trigger("reloadGrid");
                                 $(this).dialog('destroy');
+                                $(waitingPopup).dialog('close');
                             }
                         } else {
                             $("input#adpassword").css('border', '1px solid #f00');
