@@ -699,7 +699,7 @@ function createUpdateNodeButton(container, elem_id, grid) {
             var dialog = $("<div>", { css : { 'text-align' : 'center' } });
             dialog.append($("<label>", { for : 'adpassword', text : 'Please enter your password :' }));
             dialog.append($("<input>", { id : 'adpassword', name : 'adpassword', type : 'password' }));
-            dialog.append($("<br />")).append($("<div>", { id : "adpassworderror", class : 'ui-corner-all' }));
+            dialog.append($("<div>", { id : "adpassworderror", class : 'ui-corner-all' }));
             // Create the modal dialog
             $(dialog).dialog({
                 modal           : true,

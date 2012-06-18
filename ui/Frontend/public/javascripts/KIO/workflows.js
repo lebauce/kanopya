@@ -202,7 +202,7 @@ function    sco_workflow(container_id) {
             });
         }
     });
-    $(container).append(createWorkflowRouteAssociationButton())
+    $(container).append(createWorkflowRuleAssociationButton())
 }
 
 function    workflowdetails(workflowmanagerid, workflowmanager) {
@@ -250,7 +250,7 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
     });
 }
 
-function    workflowRuleAssociation(eid, scid) {
+function    workflowRuleAssociation(eid, scid, cid) {
     var dial    = $("<div>");
     var form    = $("<table>", { width : '100%' }).appendTo($("<form>").appendTo(dial));
     var wfdefs  = [];
@@ -312,6 +312,7 @@ function    workflowRuleAssociation(eid, scid) {
             complete    : function(a) {
                 if (a.status === 200) {
                     $(dial).dialog('close');
+                    reload_content(cid, eid);
                 }
             }
         });
@@ -343,7 +344,6 @@ function    workflowRuleAssociation(eid, scid) {
                                     contentType : 'application/json',
                                     data        : JSON.stringify({ 'workflow_def_id' : wfd.pk }),
                                     success     : function(data) {
-                                        console.log(data.internal.scope_id + " | " + scid);
                                         if ((data.internal.association == null || data.internal.association == false)
                                             && data.internal.scope_id == scid) {
                                             wfd.specificparams  = data.specific;
@@ -375,6 +375,6 @@ function    workflowRuleAssociation(eid, scid) {
 
 function    createWorkflowRuleAssociationButton(cid, eid, scid) {
     var button  = $("<a>", { text : 'Associate a Workflow' }).button();
-    button.bind('click', function() { workflowRuleAssociation(eid, scid); });
+    button.bind('click', function() { workflowRuleAssociation(eid, scid, cid); });
     $('#' + cid).append(button);
 }
