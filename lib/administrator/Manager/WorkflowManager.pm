@@ -206,6 +206,7 @@ sub runWorkflow {
                      );
 
     #resolve the automatic params values
+    # NOT FULLY FUNCTIONNAL YET
     my $automatic_values = _getAutomaticParams(
                                 automatic_params => $all_params->{automatic},
                                 sp_id            => $args{service_provider_id},
@@ -223,6 +224,7 @@ sub runWorkflow {
          };
 
     #create final workflow params hash
+    # MOCKUP##############MOCKUP #
     my $workflow_params = {
         output_directory => $all_params->{internal}->{output_dir},
         output_file      => 'workflow_'.$workflow_name.'_'.time(),
