@@ -246,7 +246,7 @@ function getAllConnectorFields() {
 function createSpecServDialog(provider_id, name, first, category, elem, editid) {
     var allFields   = getAllConnectorFields();
     var ad_opts     = {
-        title           : ((editid === undefined) ? 'Add' : 'Edit') + ' a ' + category,
+        title           : ((editid === undefined) ? 'Add a ' + category : 'Edit ' + name),
         name            : name,
         fields          : allFields[name],
         prependElement  : elem,
@@ -699,6 +699,7 @@ function createUpdateNodeButton(container, elem_id, grid) {
             var dialog = $("<div>", { css : { 'text-align' : 'center' } });
             dialog.append($("<label>", { for : 'adpassword', text : 'Please enter your password :' }));
             dialog.append($("<input>", { id : 'adpassword', name : 'adpassword', type : 'password' }));
+            dialog.append($("<br />")).append($("<div>", { id : "adpassworderror", class : 'ui-corner-all' }));
             // Create the modal dialog
             $(dialog).dialog({
                 modal           : true,
@@ -708,6 +709,7 @@ function createUpdateNodeButton(container, elem_id, grid) {
                 closeOnEscape   : false,
                 buttons         : {
                     'Ok'    : function() {
+                        $("div#adpassworderror").removeClass("ui-state-error").empty();
                         var waitingPopup    = $("<div>", { text : 'Waiting...' }).css('text-align', 'center').dialog({
                             draggable   : false,
                             resizable   : false,
@@ -726,14 +728,20 @@ function createUpdateNodeButton(container, elem_id, grid) {
                                     password    : passwd
                                 },
                                 success : function(data) {
-                                    ok  = true;
+                                    $(waitingPopup).dialog('close');
+                                    // Ugly but there is no other way to differentiate error from confirm messages for now
+                                    if ((new RegExp("^## EXCEPTION")).test(data.msg)) {
+                                        $("input#adpassword").val("");
+                                        $("div#adpassworderror").text(data.msg).addClass('ui-state-error');
+                                    } else {
+                                        ok  = true;
+                                    }
                                 }
                             });
                             // If the form succeed, then we can close the dialog
                             if (ok === true) {
                                 $(grid).trigger("reloadGrid");
                                 $(this).dialog('destroy');
-                                $(waitingPopup).dialog('close');
                             }
                         } else {
                             $("input#adpassword").css('border', '1px solid #f00');
