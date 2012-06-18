@@ -340,14 +340,16 @@ function    workflowRuleAssociation(eid) {
                             success : function(wfd) {
                                 $.ajax({
                                     async       : false,
-                                    url         : '/api/entity/' + manager.pk + '/getParams',
+                                    url         : '/api/entity/' + manager.pk + '/_getAllParams',
                                     type        : 'POST',
                                     contentType : 'application/json',
                                     data        : JSON.stringify({ 'workflow_def_id' : wfd.pk }),
                                     success     : function(data) {
-                                        wfd.specificparams  = data.specific;
-                                        wfdefs.push(wfd);
-                                        $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
+                                        if (data.internal.association == null || data.internal.association == false) {
+                                            wfd.specificparams  = data.specific;
+                                            wfdefs.push(wfd);
+                                            $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
+                                        }
                                     }
                                 });
                             }

@@ -43,7 +43,7 @@ sub methods {
         'description'   => 'createWorkflow',
         'perm_holder'   => 'entity'
     },
-    'getParams'             => {
+    '_getAllParams'             => {
         'description'   => 'getParams',
         'perm_holder'   => 'entity'
     },
