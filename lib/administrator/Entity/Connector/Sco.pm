@@ -121,7 +121,7 @@ sub _getAutomaticParams {
     my $scope_name = Scope->find(hash => { scope_name => $scope_id });
     
     if ($scope_name eq 'node') {
-        if (exists $automatic_params->{node_hostname} && defined $args{host_name}) {
+        if ((exists $automatic_params->{node_hostname}) && (defined $args{host_name})) {
             $automatic_params->{node_hostname}  = $args{host_name}; 
         } else {
             $errmsg = 'Workflow Manager could not retrieve node hostname';
@@ -194,6 +194,22 @@ sub _getServiceProviderName {
     my $sp_name          = $service_provider->getAttr(name => 'service_provider_name');
 
     return $sp_name;
+}
+
+sub defineFinalParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'all_params' ]);
+
+    my $all_params      = $args{all_params};
+
+    my $workflow_params = { 
+        output_directory => $all_params->{internal}->{output_dir},
+        output_file      => 'workflow_'.$workflow_name.'_'.time(),
+        template_content => $all_params->{data}->{template_content},
+    };
+
+    return $workflow_params;
 }
 
 1;

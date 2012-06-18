@@ -90,22 +90,21 @@ sub createWorkflow {
     if (defined $args{params}) {
         %workflow_def_params = %{$args{params}};
 
-        #sort the specific params from the automatic params
-        my $params           = $self->_getSortedParams(
-                                params => \%workflow_def_params
-                               );
-        #append the automatic params to workflow params
-        $workflow_def_params{automatic} = $params->{automatic};
+        if ((!exists $workflow_def_params{automatic}) && (!exists $workflow_def_params{specific})) { 
+            #sort the specific params from the automatic params
+            my $params = $self->_getSortedParams(
+                             params => \%workflow_def_params
+                         );
 
-        #IF the specific params are not set, add them to the params
-        if (!defined $workflow_def_params{specific} ) {
+            #append the automatic and specific params to workflow params
+            $workflow_def_params{automatic} = $params->{automatic};
             $workflow_def_params{specific}  = $params->{specific};
         }
 
-        $workflow            = WorkflowDef->new(
-                                workflow_def_name => $workflow_def_name,
-                                params            => \%workflow_def_params,
-                               );
+        $workflow = WorkflowDef->new(
+                        workflow_def_name => $workflow_def_name,
+                        params            => \%workflow_def_params,
+                    );
     } else { 
         $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name);
     }
@@ -185,11 +184,11 @@ sub associateWorkflow {
                    );
 
     #Then we finally link the workflow to the rule
-    $self->_linkWorkflowToRule(
-        workflow => $workflow, 
-        rule_id  => $args{rule_id}, 
-        scope_id => {$workflow_params->{internal}->{scope_id}} 
-    );
+    return $self->_linkWorkflowToRule(
+               workflow => $workflow, 
+               rule_id  => $args{rule_id}, 
+               scope_id => {$workflow_params->{internal}->{scope_id}} 
+           );
 }
 
 =head2 _linkWorkflowToRule
@@ -270,12 +269,14 @@ sub runWorkflow {
 
     #replace the undefined automatic params with the defined ones
     $all_params->{automatic} = $automatic_values;
-
+    
     #merge automatic and specific params in one hash
     my $merge           = Hash::Merge->new(); 
     my $workflow_values = $merge->($all_params->{automatic}, $all_params->{specific});
+    
+    #prepare final workflow params hash
+    my $workflow_params = $self->_defineFinalParams(all_params => $all_params);
 
-    #create final workflow params hash
     my $workflow_params = {
         output_directory => $all_params->{internal}->{output_dir},
         output_file      => 'workflow_'.$workflow_name.'_'.time(),
@@ -284,7 +285,7 @@ sub runWorkflow {
     };
    
     print Dumper $workflow_params;
-    #run the workflow with fully the defined params
+    #run the workflow with the fully defined params
     Workflow->run(name => $workflow_name, params => $workflow_params);
 }
 
