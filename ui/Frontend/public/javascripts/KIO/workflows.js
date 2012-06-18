@@ -202,6 +202,7 @@ function    sco_workflow(container_id) {
             });
         }
     });
+    $(container).append(createWorkflowRouteAssociationButton())
 }
 
 function    workflowdetails(workflowmanagerid, workflowmanager) {
@@ -249,3 +250,37 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
     });
 }
 
+function    workflowRuleAssociation() {
+    var dial    = $("<div>");
+    $.ajax({
+        url         : '/api/serviceprovider/69/getManager',
+        type        : 'POST',
+        contentType : 'application/json',
+        data        : JSON.stringify({ 'manager_type' : 'WorkflowManager' }),
+        success     : function(data) {
+            var manager = data;
+            $.ajax({
+                url         : '/api/entity/' + manager.pk + '/getWorkflowDefsIds',
+                type        : 'POST',
+                contentType : 'application/json',
+                data        : JSON.stringify({}),
+                success     : function(data) {
+                    var wfdefs  = data;
+                    console.log(data);
+                    $(dial).dialog({
+                        draggable       :  false,
+                        resizable       : false,
+                        closeOnEscape   : false,
+                        close           : function() { $(this).remove(); }
+                    });
+                }
+            });
+        }
+    });
+}
+
+function    createWorkflowRouteAssociationButton(cid, eid) {
+    var button  = $("<a>", { text : 'Associate a Workflow' }).button();
+    button.bind('click', function() { workflowRuleAssociation(); });
+    $('#' + cid).append(button);
+}

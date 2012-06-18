@@ -399,6 +399,8 @@ sub setupREST {
                     }
                     elsif ($ret->isa("Workflow")) {
                         $ret = Workflow->get(id => $ret->getId)->toJSON;
+                    } else {
+                        $ret = $ret->toJSON;
                     }
                 }
             };

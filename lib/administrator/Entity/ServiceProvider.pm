@@ -38,6 +38,7 @@ use Entity::Component;
 use Entity::Connector;
 use Entity::Interface;
 use Administrator;
+use ServiceProviderManager;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -53,6 +54,10 @@ sub methods {
     return {
         'findManager'   => {
             'description'   => 'findManager',
+            'perm_holder'   => 'entity'
+        },
+        'getManager'    => {
+            'description'   => 'getManager',
             'perm_holder'   => 'entity'
         }
     };

@@ -44,6 +44,7 @@ var details_def = {
         'workflowmanagement' : { onSelectRow : workflowdetails },
 		'service_ressources_nodemetric_rules' : {
 			tabs : [
+                            { label : 'Overview', id : 'overview', onLoad : createWorkflowRouteAssociationButton },
 						{ label : 'Nodes', id : 'nodes', onLoad : rule_nodes_tab },
 						{ label : 'Rule', id : 'rule', onLoad : rule_detail_tab },
 					],
