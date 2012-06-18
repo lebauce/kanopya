@@ -36,64 +36,64 @@ var details_def = {
         'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
         'service_ressources_list' : {
             tabs : [
-                    	{ label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },
-                    	{ label : 'Rules', id : 'rules', onLoad : node_rules_tab },
+                        { label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },
+                        { label : 'Rules', id : 'rules', onLoad : node_rules_tab },
                     ],
             title : { from_column : 'externalnode_hostname' }
         },
         'workflowmanagement' : { onSelectRow : workflowdetails },
-		'service_ressources_nodemetric_rules' : {
-			tabs : [
-                            { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
-                                createWorkflowRuleAssociationButton(cid, eid, 1);
-                            }},
-						{ label : 'Nodes', id : 'nodes', onLoad : rule_nodes_tab },
-						{ label : 'Rule', id : 'rule', onLoad : rule_detail_tab },
-					],
-			title : { from_column : 'nodemetric_rule_label' }
-		},
-                'service_ressources_aggregate_rules' : {
-                    tabs    : [
+        'service_ressources_nodemetric_rules' : {
+            tabs : [
                         { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
-                            createWorkflowRuleAssociationButton(cid, eid, 2);
+                            createWorkflowRuleAssociationButton(cid, eid, 1);
                         }},
+                        { label : 'Nodes', id : 'nodes', onLoad : rule_nodes_tab },
+                        { label : 'Rule', id : 'rule', onLoad : rule_detail_tab },
                     ],
-                    title   : { from_column : 'aggregate_rule_label' }
-                }
+            title : { from_column : 'nodemetric_rule_label' }
+        },
+        'service_ressources_aggregate_rules' : {
+            tabs    : [
+                { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
+                    createWorkflowRuleAssociationButton(cid, eid, 2);
+                }},
+            ],
+            title   : { from_column : 'aggregate_rule_label' }
+        }
 };
 
 function node_detail_tab(cid, eid) {
-	
+
 }
 
 function rule_detail_tab(cid, eid) {
-    
+
 }
 
 // This function load grid with list of rules for verified state corelation with the the selected node :
 function node_rules_tab(cid, eid) {
-	
-	function verifiedNodeRuleStateFormatter(cell, options, row) {
-	
-		var VerifiedRuleFormat;
-		// Where rowid = rule_id
-		$.ajax({
- 			url: '/api/externalnode/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
- 			async: false,
-	 		success: function(answer) {
-				if (answer.length == 0) {
-					VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
-				} else if (answer[0].verified_noderule_state == 'verified') {
-					VerifiedRuleFormat = "<img src='/images/icons/broken.png' title='broken' />"
-				} else if (answer[0].verified_noderule_state == 'undef') {
-					VerifiedRuleFormat = "<img src='/images/icons/down.png' title='down' />";
-				}
-  			}
-		});
-		return VerifiedRuleFormat;
-	}
 
-	var loadNodeRulesTabGridId = 'node_rules_tabs';
+    function verifiedNodeRuleStateFormatter(cell, options, row) {
+    
+        var VerifiedRuleFormat;
+        // Where rowid = rule_id
+        $.ajax({
+             url: '/api/externalnode/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
+             async: false,
+             success: function(answer) {
+                if (answer.length == 0) {
+                    VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
+                } else if (answer[0].verified_noderule_state == 'verified') {
+                    VerifiedRuleFormat = "<img src='/images/icons/broken.png' title='broken' />"
+                } else if (answer[0].verified_noderule_state == 'undef') {
+                    VerifiedRuleFormat = "<img src='/images/icons/down.png' title='down' />";
+                }
+              }
+        });
+        return VerifiedRuleFormat;
+    }
+
+    var loadNodeRulesTabGridId = 'node_rules_tabs';
     create_grid( {
         url: '/api/nodemetricrule',
         content_container_id: cid,
@@ -106,43 +106,43 @@ function node_rules_tab(cid, eid) {
             { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 200, formatter: verifiedNodeRuleStateFormatter },
         ],
         action_delete : 'no',
-    } );	
+    } );
 }
 
 // This function load a grid with the list of current service's nodes for state corelation with rules
 function rule_nodes_tab(cid, eid) {
-	
-	function verifiedRuleNodesStateFormatter(cell, options, row) {
-		var VerifiedRuleFormat;
-			// Where rowid = rule_id
-			$.ajax({
- 				url: '/api/externalnode/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
- 				async: false,
-	 			success: function(answer) {
-					if (answer.length == 0) {
-						VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
-					} else if (answer[0].verified_noderule_state == undefined) {
-						VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
-					} else if (answer[0].verified_noderule_state == 'verified') {
-						VerifiedRuleFormat = "<img src='/images/icons/broken.png' title='broken' />";
-					} else if (answer[0].verified_noderule_state == 'undef') {
-						VerifiedRuleFormat = "<img src='/images/icons/down.png' title='down' />";
-					}
-  				}
-			});
-		return VerifiedRuleFormat;
-	}
-	
-	var oid;
-	$.ajax({
- 		url: '/api/externalnode/' + eid,
- 				async: false,
-	 			success: function(answer) {
-					oid = answer.outside_id;
-  				}
-			});
-	
-	var loadNodeRulesTabGridId = 'rule_nodes_tabs';
+    
+    function verifiedRuleNodesStateFormatter(cell, options, row) {
+        var VerifiedRuleFormat;
+            // Where rowid = rule_id
+            $.ajax({
+                 url: '/api/externalnode/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
+                 async: false,
+                 success: function(answer) {
+                    if (answer.length == 0) {
+                        VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
+                    } else if (answer[0].verified_noderule_state == undefined) {
+                        VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
+                    } else if (answer[0].verified_noderule_state == 'verified') {
+                        VerifiedRuleFormat = "<img src='/images/icons/broken.png' title='broken' />";
+                    } else if (answer[0].verified_noderule_state == 'undef') {
+                        VerifiedRuleFormat = "<img src='/images/icons/down.png' title='down' />";
+                    }
+                  }
+            });
+        return VerifiedRuleFormat;
+    }
+    
+    var oid;
+    $.ajax({
+         url: '/api/externalnode/' + eid,
+                 async: false,
+                 success: function(answer) {
+                    oid = answer.outside_id;
+                  }
+            });
+    
+    var loadNodeRulesTabGridId = 'rule_nodes_tabs';
     create_grid( {
         url: '/api/externalnode?outside_id=' + oid,
         content_container_id: cid,

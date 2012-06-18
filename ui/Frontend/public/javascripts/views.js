@@ -58,9 +58,11 @@ function create_all_content() {
     }
 }
 
-function show_detail(grid_id, grid_class, elem_id, row_data) {
+// function show_detail manage grid element details
+// param 'details' is optionnal and allow to specify/override details_def for this grid
+function show_detail(grid_id, grid_class, elem_id, row_data, details) {
 
-    var details_info = details_def[grid_class];
+    var details_info = details || details_def[grid_class];
     
     // Not defined details menu
     if (details_info === undefined) {
@@ -223,7 +225,7 @@ function create_grid(options) {
         onCellSelect: function(rowid, index, contents, target) {
             if (index != actions_col_idx) {
                 var row_data = $('#' + options.grid_id).getRowData(rowid);
-                show_detail(options.grid_id, grid_class, rowid, row_data)
+                show_detail(options.grid_id, grid_class, rowid, row_data, options.details)
             }
         },
 
