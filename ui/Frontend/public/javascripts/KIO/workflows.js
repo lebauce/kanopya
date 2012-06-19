@@ -87,8 +87,9 @@ function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
             resizable       : false,
             closeOnEscape   : false,
             title           : 'Create a Workflow Definition',
+            close           : function() { $(this).remove(); },
             buttons         : {
-                'Cancel'    : function() { $(this).dialog("destroy"); },
+                'Cancel'    : function() { $(this).dialog("close"); },
                 'Ok'        : function() { $(form).formwizard("next"); }
             }
         }).parents("div.ui-dialog").find("a.ui-dialog-titlebar-close").remove();
@@ -118,7 +119,7 @@ function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
                         data        : JSON.stringify(params),
                         complete    : function(a, status, c) {
                             if (status === 'success') {
-                                $(form).dialog('destroy');
+                                $(form).dialog('close');
                                 $(dial).dialog('close');
                                 workflowdetails(wfid, wf);
                             }
