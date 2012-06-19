@@ -115,3 +115,106 @@ function groupsList (container_id, elem_id) {
     
     createAddGroupButton(container_id);
 }
+
+function _generatePermissionsSelect(container, condition, changeCallback, callback) {
+    changeCallback  = changeCallback || $.noop;
+    callback        = callback || $.noop;
+    $.ajax({
+        url     : '/api/gp?' + condition,
+        type    : 'GET',
+        success : function(data) {
+            var gpselect    = $('<select>').prependTo(container).bind('change', changeCallback);
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                $(gpselect).append($("<option>", { html : data[i].gp_name, rel : 'gp', value : data[i].gp_id }));
+            }
+            if (changeCallback !== $.noop) {
+                $(gpselect).change();
+            }
+            callback(gpselect);
+        }
+    });
+}
+
+function permissions(cid) {
+    var     container           = $('#' + cid);
+    var     struct              = $('<table>').appendTo(container);
+    var     groupSelector       = $('<td>', { colspan : 2 }).appendTo($('<tr>').appendTo(struct));
+    var     line                = $('<tr>').appendTo(struct);
+    var     userGroupSelector   = $('<td>').appendTo(line);
+    var     targetGroupSelector = $('<td>').appendTo(line);
+
+    var     lastUsrGrpSel;
+
+    var cb                      = function(select) {
+        var name;
+        $(groupSelector).children('select').children('option').each(function() {
+            if ($(this).attr('selected') != null) {
+                name    = $(this).text().toLowerCase();
+            }
+        });
+        $.ajax({
+            url     : '/api/' + name,
+            type    : 'GET',
+            success : function(data) {
+                $(select).prepend($('<option>', { rel : 'discard', text : 'Groups : ' }));
+                if (data.length > 0) {
+                    $(select).append($('<option>', { rel : 'discard', text : 'Entities : ' }));
+                    for (var i in data) if (data.hasOwnProperty(i)) {
+                        var id      = data[i].pk;
+                        var text    = data[i][name + '_name'];
+                        // Ugly workaround for user
+                        if (name === 'user') {
+                            text    = data[i]['user_login'];
+                        }
+                        $(select).append($('<option>', { rel : name, text : text, value : id }));
+                    }
+                }
+            }
+        });
+    }
+
+    var showtable               = function(event) {
+        // Prevent from selecting option with rel=discard
+        for (var i = 0; i < event.currentTarget.childElementCount; ++i) {
+            if (event.currentTarget[i].value == event.currentTarget.value) {
+                if ($(event.currentTarget[i]).attr('rel') === 'discard') {
+                    $(lastUsrGrpSel).attr('selected', true);
+                } else {
+                    lastUsrGrpSel   = event.currentTarget[i];
+                }
+                break;
+            }
+        }
+
+        var a   = $(userGroupSelector).children('select').val();
+        var b   = $(targetGroupSelector).children('select').val();
+    }
+
+    var groupSelectorChange     = function(event) {
+        $(targetGroupSelector).empty();
+        var     gname;
+        for (var i = 0; i < event.currentTarget.childElementCount; ++i) {
+            if (event.currentTarget[i].value == event.currentTarget.value) {
+                gname   = event.currentTarget[i].label;
+                break;
+            }
+        }
+        _generatePermissionsSelect(targetGroupSelector, 'gp_type=' + gname, showtable, cb);
+    }
+
+    _generatePermissionsSelect(groupSelector, 'gp_system=1', groupSelectorChange);
+    _generatePermissionsSelect(userGroupSelector, 'gp_system=0&gp_type=User', showtable);
+
+    $.ajax({
+        url     : '/api/user?user_system=0',
+        type    : 'GET',
+        success : function(data) {  
+            var select  = $(userGroupSelector).children('select').first();
+            $(select).prepend($('<option>', { rel : 'discard', text : 'Groups :' }));
+            $(select).append($('<option>', { rel : 'discard', text : 'Users :' }));
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                $(select).append($('<option>', { rel : 'user', value : data[i].user_id, text : data[i].user_login }));
+            }
+        }
+    });
+}
