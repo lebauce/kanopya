@@ -101,7 +101,7 @@ sub createWorkflow {
     return $workflow;
 }
 
-=head2 _getAutomaticParams
+=head2 _getAutomaticValues
     Desc: get the values for the workflow's specific params 
 
     Args: \%automatic_params
@@ -109,7 +109,7 @@ sub createWorkflow {
     Return: created $workflow (object)
 =cut
 
-sub _getAutomaticParams {
+sub _getAutomaticValues {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'automatic_params', 'sp_id', 'scope_id' ]);
