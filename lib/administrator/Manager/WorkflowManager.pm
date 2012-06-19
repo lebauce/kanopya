@@ -187,7 +187,7 @@ sub associateWorkflow {
     return $self->_linkWorkflowToRule(
                workflow => $workflow, 
                rule_id  => $args{rule_id}, 
-               scope_id => {$workflow_params->{internal}->{scope_id}} 
+               scope_id => $workflow_params->{internal}->{scope_id} 
            );
 }
 
