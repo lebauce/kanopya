@@ -336,24 +336,53 @@ sub scaleMemoryHost{
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['host_id','memory']);
 
+     my $sign = substr($args{memory},0,1); # get the first value
+     my $mem_input;
 
+     if($sign eq '+' || $sign eq '-'){
+         $mem_input = substr $args{memory},1; # remove sign
+     } else {
+         $mem_input = $args{memory};
+     }
 
-     if($args{memory} =~ /\D/){
+     if($mem_input =~ /\D/){
         $self->{_admin}->addMessage(
                             from    => 'Capacity Management',
                             level   => 'info',
                             content => "Wrong format for scale in memory value (typed : $args{memory})",
                          );
         $log->warn("*** Wrong format for scale in memory value (typed : $args{memory})*** ");
+        return $self->{_operationPlan};
+    }else{
+        $mem_input *= 1024 * 1024; #GIVEN IN MB
     }
-    elsif($args{memory} <= 0 ){
+
+    # Compute absolute memory instead of relative
+    my $memory;   
+    if($sign eq '+'){
+        $memory = $self->{_infra}->{vms}->{$args{host_id}}->{ram} + $mem_input;
+    } elsif ($sign eq '-') {
+        $memory = $self->{_infra}->{vms}->{$args{host_id}}->{ram} - $mem_input;
+    } elsif ($sign =~ /\d/) {
+        $memory = $mem_input;
+    }else{
+        $self->{_admin}->addMessage(
+                            from    => 'Capacity Management',
+                            level   => 'info',
+                            content => "Wrong format for scale in memory value (typed : $args{memory})",
+                         );
+        $log->warn("*** Wrong format for scale in memory value (typed : $args{memory})*** ");
+        return $self->{_operationPlan};
+    }
+
+    if($memory <= 0 ){
         $self->{_admin}->addMessage(
                              from    => 'Capacity Management',
                              level   => 'info',
                              content => "Scale in memory value must be strictly positive (typed : $args{memory}");
         $log->warn("*** CANNOT SCALE RAM TO A NEGATIVE VALUE (typed : $args{memory})*** ");
     }
-    elsif ($args{memory} > 4096 ) { # WARNING TODO : UNHARCODE 4096 which corresponds to the maximum defined in the VM Template
+    elsif ($memory > 4096*1024*1024 ) { # WARNING TODO : UNHARCODE 4096 which corresponds to the maximum defined in the VM Template
             $self->{_admin}->addMessage(
                                 from    => 'Capacity Management',
                                 level   => 'info',
@@ -367,7 +396,7 @@ sub scaleMemoryHost{
         $self->_scaleMetric(
             infra            => $self->{_infra},
             vm_id            => $args{host_id},
-            new_value        => $args{memory}*1024*1024, #Memory given in MB
+            new_value        => $memory, 
             hv_selection_ids => \@hv_selection_ids,
             scale_metric     => 'ram',
         );
