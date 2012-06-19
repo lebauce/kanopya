@@ -118,7 +118,8 @@ sub _getAutomaticParams {
     
     #get the scope
     my $scope_id   = $args{scope_id};
-    my $scope_name = Scope->find(hash => { scope_name => $scope_id });
+    my $scope      = Scope->find(hash => { scope_id => $scope_id });
+    my $scope_name = $scope->getAttr(name => 'scope_name');
     
     if ($scope_name eq 'node') {
         if ((exists $automatic_params->{node_hostname}) && (defined $args{host_name})) {
@@ -127,6 +128,7 @@ sub _getAutomaticParams {
             $errmsg = 'Workflow Manager could not retrieve node hostname';
             $log->error($errmsg);
         }
+
         if (exists $automatic_params->{ou_from}) {
             eval {
                 $automatic_params->{ou_from}  = $self->_getOuFrom(sp_id => $args{sp_id});
@@ -167,7 +169,7 @@ sub _getOuFrom {
 
     my $service_provider            = Entity::ServiceProvider->get(id => $args{sp_id});
     my $directory_service_connector = $service_provider->getConnector(
-                                          'catgory' => 'DirectoryService'
+                                          'category' => 'DirectoryService'
                                       );
     my $ou_from                     = $directory_service_connector->getAttr(
                                           name => 'ad_nodes_base_dn'
@@ -196,17 +198,30 @@ sub _getServiceProviderName {
     return $sp_name;
 }
 
-sub defineFinalParams {
+=head2 _defineFinalParams
+    Desc: create the final hash for workflow->run() 
+
+    Args: \%all_params, $workflow_name
+
+    Return: \%workflow_params
+=cut
+
+sub _defineFinalParams {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'all_params' ]);
+    General::checkParams(args => \%args, required => [ 'all_params', 'workflow_name' ]);
 
     my $all_params      = $args{all_params};
+    my $workflow_name   = $args{workflow_name};
+
+    #merge automatic and specific params in one hash
+    my $workflow_values = Hash::Merge::merge($all_params->{automatic}, $all_params->{specific});
 
     my $workflow_params = { 
         output_directory => $all_params->{internal}->{output_dir},
         output_file      => 'workflow_'.$workflow_name.'_'.time(),
         template_content => $all_params->{data}->{template_content},
+        workflow_values  => $workflow_values,
     };
 
     return $workflow_params;

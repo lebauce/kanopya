@@ -267,24 +267,19 @@ sub runWorkflow {
             %args,
         );
 
+    #print Dumper $automatic_values;
+
     #replace the undefined automatic params with the defined ones
     $all_params->{automatic} = $automatic_values;
-    
-    #merge automatic and specific params in one hash
-    my $merge           = Hash::Merge->new(); 
-    my $workflow_values = $merge->($all_params->{automatic}, $all_params->{specific});
-    
-    #prepare final workflow params hash
-    my $workflow_params = $self->_defineFinalParams(all_params => $all_params);
-
-    my $workflow_params = {
-        output_directory => $all_params->{internal}->{output_dir},
-        output_file      => 'workflow_'.$workflow_name.'_'.time(),
-        template_content => $all_params->{data}->{template_content},
-        workflow_values  => $workflow_values,    
-    };
    
-    print Dumper $workflow_params;
+    #prepare final workflow params hash
+    my $workflow_params = $self->_defineFinalParams(
+                              all_params => $all_params, 
+                              workflow_name => $workflow_name
+                          );
+
+    #print Dumper $workflow_params;
+
     #run the workflow with the fully defined params
     Workflow->run(name => $workflow_name, params => $workflow_params);
 }
