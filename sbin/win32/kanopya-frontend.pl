@@ -152,14 +152,23 @@ sub install_service
   # The command includes the --run switch needed in main()
       $parameters = "\"$fn\" --run";
 
-
+	#gather login and pwd
+	my $login;
+	my $pwd;
+	print "Please enter your full Kanopya machine user: \n";
+	chomp($login = <STDIN>);
+	print "Please enter your full Kanopya machine password: \n";
+	ReadMode('noecho');
+	chomp($pwd = <STDIN>);
+	ReadMode('original');
+	
    # Populate the service configuration hash
    # The hash is required by Win32::Daemon::CreateService
    my %srv_config = (
       name         => $srv_name,
       display      => $srv_name,
-	  user			=> 'Administrator@hedera.forest',
-	  password		=> 'H3d3r4#234',
+	  user			=> $login,
+	  password		=> $pwd,
       path         => $path,
       description  => $srv_desc,
       parameters   => $parameters,
