@@ -73,10 +73,16 @@ $(document).ready(function () {
                            } );
                        }
                    },
-                   north : { closable : false },
-                   west : { closable : false, resizable : true},
+                   north : {
+                       closable : false
+                   },
+                   west : {
+                       closable : false,
+                       resizable : true
+                   },
                    east : {
                        resizable : true,
+                       initClosed : true
                    },
                    south : {
                        togglerContent_closed : 'Messages',
@@ -90,16 +96,15 @@ $(document).ready(function () {
                }
     );
 
-	$.ajax({
-		url: '/api/message?order_by=message_id%20DESC&rows=1&dataType=jqGrid',
-		success: function(data) {
-			$(data.rows).each(function(row) {
-				lastMsgId = data.rows[row].pk;
-			});
-		}
-	});
+    $.ajax({
+        url: '/api/message?order_by=message_id%20DESC&rows=1&dataType=jqGrid',
+        success: function(data) {
+            $(data.rows).each(function(row) {
+                lastMsgId = data.rows[row].pk;
+            });
+        }
+    });
                 
     // call for the themeswitcher
     //$('#switcher').themeswitcher();
-    
 });

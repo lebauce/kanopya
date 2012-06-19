@@ -101,15 +101,14 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
         title: title,
         width: 800,
         height: 500,
-        resizable: true,
-        draggable: false,
+        resizable: false,
+        draggable: true,
         close: function(event, ui) {
             $('.last_content').addClass('current_content').removeClass('last_content');
             $(this).remove(); // detail modals are never closed, they are destroyed
         },
         buttons: {
             Ok: function() {
-                //$(this).find('#target').submit();
                 //loading_start();
                 $(this).dialog('close');
                 
@@ -206,6 +205,7 @@ function create_grid(options) {
 
         afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(this, rowid, rowdata, rowelem); },
 
+        caption : options.caption || '',
         height: options.height || 'auto',
         //width: options.width || 'auto',
         autowidth   : true,
@@ -277,6 +277,11 @@ function create_grid(options) {
     $('#' + options.grid_id).jqGrid('navGrid', '#' + pager_id, { edit: false, add: false, del: false }); 
 
    //$('#' + options.grid_id).jqGrid('setGridWidth', $('#' + options.grid_id).closest('.current_content').width() - 20, true);
+
+    // If exists details conf then we set row as selectable
+    if (options.details || details_def[grid_class]) {
+       grid.addClass('selectable_rows');
+    }
 
     return grid;
 }

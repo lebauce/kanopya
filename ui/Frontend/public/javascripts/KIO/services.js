@@ -31,9 +31,9 @@ function initServiceDashboard() {
 
     // Dashboard actions
     dash_header = $('<div class="headerlinks"></div>');
-    dash_header.append('<a class="openaddwidgetdialog headerlink" href="#"><font color="black">Add Widget</font></a>&nbsp;&nbsp;');
-    dash_header.append('<a class="editlayout headerlink" href="#"><font color="black">Edit layout</font></a>&nbsp;&nbsp;');
-    dash_header.append('<a class="savedashboard headerlink" href="#"><font color="black">Save Dashboard</font></a>');
+    dash_header.append($('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'}));
+//    dash_header.append($('<button>', { 'class' : 'editlayout', html : 'Edit layout'}));
+    dash_header.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
 
     //$('#view-container').append(dash_header);
     $('#view-container').append(dash_div);
@@ -1015,6 +1015,10 @@ function loadServicesOverview (container_id, elem_id) {
     container.append(dash_div);
     container.append(dash_template);
 
+    // Make jquery button (must be done after append to container, each time)
+    container.find(".openaddwidgetdialog").button({ icons : { primary : 'ui-icon-plusthick' } });
+    container.find(".savedashboard").button({ icons : { primary : 'ui-icon-disk' } });
+
     //service_dashboard.setLayout(undefined);
     //service_dashboard.setLayout('layout2');
 
@@ -1125,8 +1129,8 @@ function loadServicesConfig (container_id, elem_id) {
                 }).append($("<td>", {
                     text : connectorsTypeArray[connectorTypePk].category + " :"
                 }).css('padding-top', '6px')).append($("<td>", { text : connectorName }).css('padding-top', '6px'));
-                var confButton  = $("<a>", { text : 'Configure', rel : data.rows[row].pk });
-                var delButton   = $("<a>", { text : 'Delete', rel : data.rows[row].pk });
+                var confButton  = $("<a>", { text : 'Configure', rel : data.rows[row].pk, 'class' : 'no-margin' });
+                var delButton   = $("<a>", { text : 'Delete', rel : data.rows[row].pk, 'class' : 'no-margin' });
                 $(tr).append($("<td>").append($(confButton))).append($("<td>").append($(delButton)));
                 $(tr).appendTo(table);
 
@@ -1358,9 +1362,9 @@ function loadServicesMonitoring (container_id, elem_id) {
 	$('<h3><a href="#">Service</a></h3>').appendTo(divacc);
     $('<div id="service_monitoring_accordion_container">').appendTo(divacc);
    
-    $("<p>", { html : "Service Metric  : " }).appendTo('#service_monitoring_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
     create_grid( {
+        caption : 'Metrics',
         url: '/api/externalcluster/' + elem_id + '/clustermetrics',
         content_container_id: 'service_monitoring_accordion_container',
         grid_id: loadServicesMonitoringGridId,
@@ -1378,9 +1382,10 @@ function loadServicesMonitoring (container_id, elem_id) {
     } );
     createServiceMetric('service_monitoring_accordion_container', elem_id);
     
-    $("<p>", { html : "Service Combinations  : " }).appendTo('#service_monitoring_accordion_container');
+    $("<p>").appendTo('#service_monitoring_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_combinations_' + elem_id;
     create_grid( {
+        caption: 'Metric combinations',
         url: '/api/externalcluster/' + elem_id + '/aggregate_combinations',
         content_container_id: 'service_monitoring_accordion_container',
         grid_id: loadServicesMonitoringGridId,
@@ -1417,9 +1422,9 @@ function loadServicesRules (container_id, elem_id) {
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
     $('<div id="node_accordion_container">').appendTo(divacc);
     // Display nodemetric conditions
-    $("<p>", { html : "Node Conditions : " }).appendTo('#node_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_conditions_' + elem_id;
     create_grid( {
+        caption: 'Conditions',
         url: '/api/externalcluster/' + elem_id + '/nodemetric_conditions',
         content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
@@ -1434,9 +1439,10 @@ function loadServicesRules (container_id, elem_id) {
     createNodemetricCondition('node_accordion_container', elem_id)
     
     // Display nodemetric rules
-    $("<p>", { html : "Node Rules : " }).appendTo('#node_accordion_container');
+    $("<p>").appendTo('#node_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_rules_' + elem_id;
     create_grid( {
+        caption: 'Rules',
         url: '/api/externalcluster/' + elem_id + '/nodemetric_rules',
         content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
@@ -1471,9 +1477,9 @@ function loadServicesRules (container_id, elem_id) {
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
     $('<div id="service_accordion_container">').appendTo(divacc);
     // Display service conditions :
-    $("<p>", { html : "Service Conditions : " }).appendTo('#service_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_conditions_' + elem_id;
     create_grid( {
+        caption: 'Conditions',
         url: '/api/externalcluster/' + elem_id + '/aggregate_conditions',
         content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
@@ -1489,9 +1495,10 @@ function loadServicesRules (container_id, elem_id) {
     } );
     createServiceCondition('service_accordion_container', elem_id);
     // Display services rules :
-    $("<p>", { html : "Service Rules : " }).appendTo('#service_accordion_container');
+    $("<p>").appendTo('#service_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
     create_grid( {
+        caption: 'Rules',
         url: '/api/externalcluster/' + elem_id + '/aggregate_rules',
         grid_class: 'service_ressources_aggregate_rules',
         content_container_id: 'service_accordion_container',
