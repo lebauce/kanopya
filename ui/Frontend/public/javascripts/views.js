@@ -20,16 +20,19 @@ var SQLops = {
 
 var searchoptions = { sopt : $.map(SQLops, function(n) { return n; } ) };
 
-function reload_content(container_id, elem_id) {
-    //alert(_content_handlers['content_hosts']);
-    //alert('Reload' + container_id);
-    if (_content_handlers[container_id]) {
+// keep_last option is a quick fix to avoid remove content when opening details dialog
+function reload_content(container_id, elem_id, keep_last) {
+    if (_content_handlers.hasOwnProperty(container_id)) {
         if (_content_handlers[container_id]['onLoad']) {
-           
             // Clean prev container content
-            var current_content = $('.current_content')
+            var current_content = $('.current_content');
             current_content.removeClass('current_content');
-            current_content.children().remove();
+
+            if (keep_last === undefined || keep_last == false) {
+                current_content.children().remove();
+            } else {
+                current_content.addClass('last_content');
+            }
 
             // Tag this container as current
             $('#' + container_id).addClass('current_content');
@@ -37,6 +40,13 @@ function reload_content(container_id, elem_id) {
             // Fill container using related handler
             var handler = _content_handlers[container_id]['onLoad'];
             handler(container_id, elem_id);
+
+            // Fill info panel
+            if (_content_handlers[container_id]['info']) {
+                $('#info-container').load(_content_handlers[container_id]['info'].url);
+            } else {
+                $('#info-container').html('');
+            }
         }
     }
 }
@@ -48,39 +58,55 @@ function create_all_content() {
     }
 }
 
-function show_detail(grid_id, elem_id, row_data) {
+// function show_detail manage grid element details
+// param 'details' is optionnal and allow to specify/override details_def for this grid
+function show_detail(grid_id, grid_class, elem_id, row_data, details) {
 
-    var menu_links = details_def[grid_id];
+    var details_info = details || details_def[grid_class];
     
     // Not defined details menu
-    if (menu_links === undefined) {
-        alert('Details not defined yet ( menu.conf.js -> details_def["' + grid_id + '"] )');
+    if (details_info === undefined) {
+        alert('Details not defined yet ( menu.conf.js -> details_def["' + grid_class + '"] )');
         return;
     }
     
     // Details accessible from menu (dynamic loaded menu)
-    if (menu_links.link_to_menu) {
-        var view_link_id = 'link_view_' + row_data[menu_links.label_key].replace(/ /g, '_') + '_' + elem_id;
+    if (details_info.link_to_menu) {
+        var view_link_id = 'link_view_' + row_data[details_info.label_key].replace(/ /g, '_') + '_' + elem_id;
         $('#' + view_link_id + ' > .view_link').click();
         return;
     }
-    
+
+    // Override generic behavior, custom detail handling
+    if (details_info.onSelectRow) {
+        details_info.onSelectRow(elem_id, row_data, grid_id);
+        return;
+    }
+
     // Else, modal details
     var id = 'view_detail_' + elem_id;
     var view_detail_container = $('<div></div>');
-    build_detailmenu(view_detail_container, id, menu_links, elem_id);
-    
-    //var dialog = $('<div></div>')
+
+    //build_detailmenu(view_detail_container, id, details_info.tabs, elem_id);
+    build_submenu(view_detail_container, id, details_info.tabs, elem_id);
+    view_detail_container.find('#' + id).show();
+
+    // Set dialog title using column defined in conf
+    var title = details_info.title && details_info.title.from_column && row_data[details_info.title.from_column];
+
     var dialog = $(view_detail_container)
     .dialog({
         autoOpen: true,
         modal: true,
-        title: "detail entity " + elem_id,//link.attr('title' + '#content'),
+        title: title,
         width: 800,
         height: 500,
         resizable: true,
         draggable: false,
-        close: function(event, ui) { $(this).remove(); }, // detail modals are never closed, they are destroyed
+        close: function(event, ui) {
+            $('.last_content').addClass('current_content').removeClass('last_content');
+            $(this).remove(); // detail modals are never closed, they are destroyed
+        },
         buttons: {
             Ok: function() {
                 //$(this).find('#target').submit();
@@ -93,16 +119,41 @@ function show_detail(grid_id, elem_id, row_data) {
             }
         },
     });
-    
-    // Show the view
-    //$('#' + id).show();
-    
+
+    // Remove dialog title if wanted
+    if (details_info.title == 'none') {
+        $(view_detail_container).dialog('widget').find(".ui-dialog-titlebar").hide();
+    }
+
     // Load first tab content
-    reload_content('content_' + menu_links[0]['id'], elem_id);
-        
+    reload_content('content_' + details_info.tabs[0]['id'] + '_' + elem_id, elem_id, true);
+
     //dialog.load('/api/host/' + elem_id);
     //dialog.load('/details/iaas.html');
 
+}
+
+// Callback when click on remove icon for a row
+function removeGridEntry (grid_id, id, url) {
+    var dialog_height   = 120;
+    var dialog_width    = 300;
+    var delete_url      = url.split('?')[0] + '/' + id;
+    $("#"+grid_id).jqGrid(
+            'delGridRow',
+            id,
+            {
+                url             : delete_url,
+                ajaxDelOptions  : { type : 'DELETE'},
+                modal           : true,
+                drag            : false,
+                resize          : false,
+                width           : dialog_width,
+                height          : dialog_height,
+                top             : ($(window).height() / 2) - (dialog_height / 2),
+                left            : ($(window).width() / 2) - (dialog_width / 2),
+                afterComplete   : function () {$("#"+grid_id).trigger('gridChange')}
+            }
+    );
 }
 
 function create_grid(options) {
@@ -110,7 +161,9 @@ function create_grid(options) {
     var content_container = $('#' + options.content_container_id);
     var pager_id = options.grid_id + '_pager';
 
-    content_container.append("<table id='" + options.grid_id + "'></table>");
+    // Grid class allow to manipulate grid (show_detail of a row) even if grid is associated to an instance (same grid logic but different id)
+    var grid_class = options.grid_class || options.grid_id;
+    content_container.append($("<table>", {'id' : options.grid_id, 'class' : grid_class}));
 
     if (!options.pager) {
         content_container.append("<div id='" + pager_id + "'></div>");
@@ -123,6 +176,25 @@ function create_grid(options) {
 
     options.afterInsertRow = options.afterInsertRow || $.noop;
 
+    // Add delete action column (by default)
+    var actions_col_idx = options.colNames.length;
+    if (options.action_delete === undefined || options.action_delete != 'no') {
+        options.colNames.push('');
+        options.colModel.push({index:'action_remove', width : '40px', formatter:
+            function(cell, formatopts, row) {
+                // We can't directly use 'actions' default formatter because it not support DELETE
+                // So we implement our own action delete formatter based on default 'actions' formatter behavior
+                var remove_action = '';
+                remove_action += '<div class="ui-pg-div ui-inline-del"';
+                remove_action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
+                remove_action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
+                remove_action += 'onclick="removeGridEntry(\''+  options.grid_id + '\',' +row.pk + ',\'' + options.url + '\')" style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
+                remove_action += '<span class="ui-icon ui-icon-trash"></span>';
+                remove_action += '</div>';
+                return remove_action;
+            }});
+    }
+
     var grid = $('#' + options.grid_id).jqGrid({ 
         jsonReader : {
             root: "rows",
@@ -132,10 +204,12 @@ function create_grid(options) {
             repeatitems: false,
         },
 
-        afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(grid, rowid, rowdata, rowelem); },
+        afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(this, rowid, rowdata, rowelem); },
 
         height: options.height || 'auto',
-        width: options.width || 'auto',
+        //width: options.width || 'auto',
+        autowidth   : true,
+        shrinkToFit : true,
         colNames: options.colNames,
         colModel: options.colModel,
         pager: options.pager || '#' + pager_id,
@@ -143,9 +217,16 @@ function create_grid(options) {
         rowNum: options.rowNum || 10,
         rowList: options.rowList || undefined,
 
-        onSelectRow: function (id) {
-            var row_data = $('#' + options.grid_id).getRowData(id);
-            show_detail(options.grid_id, id, row_data);
+//        onSelectRow: function (id) {
+//            var row_data = $('#' + options.grid_id).getRowData(id);
+//            show_detail(options.grid_id, id, row_data);
+//        },
+
+        onCellSelect: function(rowid, index, contents, target) {
+            if (index != actions_col_idx) {
+                var row_data = $('#' + options.grid_id).getRowData(rowid);
+                show_detail(options.grid_id, grid_class, rowid, row_data, options.details)
+            }
         },
 
         loadError: function (xhr, status, error) {
@@ -153,7 +234,7 @@ function create_grid(options) {
             alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 
         },
 
-        datatype: function (postdata) {
+        datatype: (options.hasOwnProperty('url')) ? function (postdata) {
             var data = { dataType : 'jqGrid' };
 
             if (postdata.page) {
@@ -185,16 +266,17 @@ function create_grid(options) {
                 data[postdata.searchField] = (operator != "=" ? operator + "," : "") + query;
             }
 
+            var thegrid = jQuery('#' + options.grid_id)[0];
             $.getJSON(options.url, data, function (data) {
-                var thegrid = jQuery('#' + options.grid_id)[0];
                 thegrid.addJSONData(data);
             });
-        },
+        } : 'local',
+        data: (options.hasOwnProperty('data')) ? options.data : []
     });
     
     $('#' + options.grid_id).jqGrid('navGrid', '#' + pager_id, { edit: false, add: false, del: false }); 
 
-    $('#' + options.grid_id).jqGrid('setGridWidth', $('#' + options.grid_id).parent().width() - 20);
+   //$('#' + options.grid_id).jqGrid('setGridWidth', $('#' + options.grid_id).closest('.current_content').width() - 20, true);
 
     return grid;
 }

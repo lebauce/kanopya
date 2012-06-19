@@ -4,12 +4,11 @@
   "layout": "layout2",
   "data" : [
     {
-      "title" : "Default nodes overview",
+      "title" : "Dashboard howto",
       "id" : "1",
       "column" : "first",
       "open" : true,
-      "editurl" : "widgets/editwidget2.html",
-      "url" : "widgets/widget_nodes_bargraph.html"
+      "url" : "widgets/widget_dash_info.html"
     }
   ]
   }

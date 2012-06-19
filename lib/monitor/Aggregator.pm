@@ -141,9 +141,9 @@ sub update() {
                 }
             };
             if($@){
-                #print '*** Aggregator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***'."\n";
+                $log->info('*** Aggregator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***');
             }else{
-                #print '*** Aggregator collecting for service provider '.$service_provider_id.' ***'."\n";
+                $log->info('*** Aggregator collecting for service provider '.$service_provider_id.' ***');
 
                 # Construct input of the SCOM retriever
                 my $host_indicator_for_retriever = $self->_contructRetrieverOutput(service_provider_id => $service_provider_id );

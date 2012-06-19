@@ -157,21 +157,25 @@ function initServiceDashboard() {
 }
 var comparators = ['<','>'];
 var rulestates = ['enabled','disabled'];
+var statistics_function_name = ['mean','variance','std','max','min','kurtosis','skewness','dataOut','sum'];
 
 // Set the correct state icon for each element :
 function StateFormatter(cell, options, row) {
-	if (cell == 'up') {
+	//if (cell == 'up') {
+	if ( cell.indexOf('up') != -1 ) {
 		return "<img src='/images/icons/up.png' title='up' />";
-	} else {
+	} else if ( cell.indexOf('broken') != -1 ) {
 		return "<img src='/images/icons/broken.png' title='broken' />";
+	} else {
+	    return "<img src='/images/icons/down.png' title='down' />";
 	}
 }
 
 function serviceStateFormatter(cell, options, row) {
 	if (cell == 'enabled') {
-		return "<img src='/images/icons/up.png' title='up' />";
+		return "<img src='/images/icons/up.png' title='enabled' />";
 	} else {
-		return "<img src='/images/icons/broken.png' title='broken' />";
+		return "<img src='/images/icons/down.png' title='disabled' />";
 	}
 }
  
@@ -206,8 +210,8 @@ function isThereAConnector(elem_id, connector_category) {
     return is;
 }
 
-function createSpecServDialog(provider_id, name, first, category, elem, editid) {
-    var allFields   = {
+function getAllConnectorFields() {
+    return {
         'activedirectory'   : {
             ad_host             : {
                 label   : 'Domain controller',
@@ -234,10 +238,15 @@ function createSpecServDialog(provider_id, name, first, category, elem, editid) 
                 type    : 'checkbox'
             },
         },
+        'sco'               : {},
         'mockmonitor'       : {}
     };
+}
+
+function createSpecServDialog(provider_id, name, first, category, elem, editid) {
+    var allFields   = getAllConnectorFields();
     var ad_opts     = {
-        title           : ((editid === undefined) ? 'Add' : 'Edit') + ' a ' + category,
+        title           : ((editid === undefined) ? 'Add a ' + category : 'Edit ' + name),
         name            : name,
         fields          : allFields[name],
         prependElement  : elem,
@@ -280,9 +289,12 @@ function createMonDirDialog(elem_id, category, firstDialog) {
             options = data;
         }
     });
+    var fields      = getAllConnectorFields();
     for (option in options) {
         option = options[option];
-        $(select).append($("<option>", { value : option.connector_name.toLowerCase(), text : option.connector_name }));
+        if (fields.hasOwnProperty(option.connector_name.toLowerCase())) {
+            $(select).append($("<option>", { value : option.connector_name.toLowerCase(), text : option.connector_name }));
+        }
     }
     $(select).bind('change', function(event) {
         var name    = event.currentTarget.value;
@@ -293,7 +305,6 @@ function createMonDirDialog(elem_id, category, firstDialog) {
         $(ADMod.content).append(ADMod.form);
         ADMod.startWizard();
     });
-    // create the default form (activedirectory for directory and scom for monitoring)
     ADMod   = createSpecServDialog(elem_id, $(select).attr('value'), firstDialog, category, select);
     return ADMod;
 }
@@ -343,12 +354,239 @@ function createAddServiceButton(container) {
     });   
     $(container).append(button);
 };
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////MONITORING MODALS//////////////////////////////////
+function createServiceMetric(container_id, elem_id) {
+    
+    var service_fields  = {
+        clustermetric_label    : {
+            label   : 'Name',
+            type	: 'text',
+        },
+        clustermetric_statistics_function_name    : {
+            label   : 'Statistic function name',
+            type    : 'select',
+            options   : statistics_function_name,
+        },
+        clustermetric_window_time	: {
+        	label	: 'Window time',
+        	type	: 'text',	
+        },
+        clustermetric_indicator_id	:{
+        	label	: 'Combination',
+        	display	: 'clustermetric_indicator_label',
+        },
+        clustermetric_service_provider_id	:{
+        	type	: 'hidden',
+        	value	: elem_id,	
+        }
+    };
+    var service_opts    = {
+        title       : 'Create a Service Metric',
+        name        : 'clustermetric',
+        fields      : service_fields,
+        error       : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
+        }
+    };
+
+    var button = $("<button>", {html : 'Add a service metric'});
+  	button.bind('click', function() {
+        mod = new ModalForm(service_opts);
+        mod.start();
+    }).button({ icons : { primary : 'ui-icon-plusthick' } });
+    $('#' + container_id).append(button);
+};
+
+function createServiceConbination(container_id, elem_id) {
+    var service_fields  = {
+        aggregate_combination_label    : {
+            label   : 'Name',
+            type	: 'text',
+        },
+        aggregate_combination_formula    : {
+            label   : 'Formula',
+            type	: 'text',
+        },
+        aggregate_combination_service_provider_id	:{
+        	type	: 'hidden',
+        	value	: elem_id,	
+        },
+    };
+    var service_opts    = {
+        title       : 'Create a Combination',
+        name        : 'aggregatecombination',
+        fields      : service_fields,
+        error       : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
+        }
+    };
+
+    var button = $("<button>", {html : 'Add a combination'});
+  	button.bind('click', function() {
+        mod = new ModalForm(service_opts);
+        mod.start();
+                    ////////////////////////////////////// Service Combination Forumla Construction ///////////////////////////////////////////
+        
+        $(function() {
+    var availableTags = new Array();
+    $.ajax({
+        url: '/api/aggregatecombination?dataType=jqGrid',
+        async   : false,
+        success: function(answer) {
+                    $(answer.rows).each(function(row) {
+                    var pk = answer.rows[row].pk;
+                    availableTags.push({label : answer.rows[row].aggregate_combination_label, value : answer.rows[row].aggregate_combination_id});
+
+                });
+            }
+    });
+
+    function split( val ) {
+			return val.split( / \s*/ );
+		}
+	    function extractLast( term ) {
+			return split( term ).pop();
+		}
+
+		$( "#input_aggregate_combination_formula" )
+			// don't navigate away from the field on tab when selecting an item
+			.bind( "keydown", function( event ) {
+				if ( event.keyCode === $.ui.keyCode.TAB &&
+						$( this ).data( "autocomplete" ).menu.active ) {
+					event.preventDefault();
+				}
+			})
+			.autocomplete({
+				minLength: 0,
+				source: function( request, response ) {
+					// delegate back to autocomplete, but extract the last term
+					response( $.ui.autocomplete.filter(
+						availableTags, extractLast( request.term ) ) );
+				},
+				focus: function() {
+					// prevent value inserted on focus
+					return false;
+				},
+				select: function( event, ui ) {
+					var terms = split( this.value );
+					// remove the current input
+					terms.pop();
+					// add the selected item
+					terms.push( "id" + ui.item.value );
+					// add placeholder to get the comma-and-space at the end
+					//terms.push( "" );
+					this.value = terms;
+					this.value = terms.join(" ");
+					return false;
+				}
+			});
+	});
+    ////////////////////////////////////// END OF : Service Combination Forumla Construction ///////////////////////////////////////////
+
+    }).button({ icons : { primary : 'ui-icon-plusthick' } });
+    $('#' + container_id).append(button);
+};
+
+function createNodemetricCombination(container_id, elem_id) {
+    var service_fields  = {
+        nodemetric_combination_label    : {
+            label   : 'Name',
+            type	: 'text',
+        },
+        nodemetric_combination_formula    : {
+            label   : 'Formula',
+            type	: 'text',
+        },
+        aggregate_combination_service_provider_id	:{
+        	type	: 'hidden',
+        	value	: elem_id,	
+        },
+    };
+    var service_opts    = {
+        title       : 'Create a Combination',
+        name        : 'nodemetriccombination',
+        fields      : service_fields,
+        error       : function(data) {
+            $("div#waiting_default_insert").dialog("destroy");
+        }
+    };
+
+    var button = $("<button>", {html : 'Add a combination'});
+  	button.bind('click', function() {
+        mod = new ModalForm(service_opts);
+        mod.start();
+            ////////////////////////////////////// Node Combination Forumla Construction ///////////////////////////////////////////
+        
+        $(function() {
+    var availableTags = new Array();
+    $.ajax({
+        url: '/api/nodemetriccombination?dataType=jqGrid',
+        async   : false,
+        success: function(answer) {
+                    $(answer.rows).each(function(row) {
+                    var pk = answer.rows[row].pk;
+                    availableTags.push({label : answer.rows[row].nodemetric_combination_label, value : answer.rows[row].nodemetric_combination_id});
+
+                });
+            }
+    });
+
+    function split( val ) {
+			return val.split( / \s*/ );
+		}
+	    function extractLast( term ) {
+			return split( term ).pop();
+		}
+
+		$( "#input_nodemetric_combination_formula" )
+			// don't navigate away from the field on tab when selecting an item
+			.bind( "keydown", function( event ) {
+				if ( event.keyCode === $.ui.keyCode.TAB &&
+						$( this ).data( "autocomplete" ).menu.active ) {
+					event.preventDefault();
+				}
+			})
+			.autocomplete({
+				minLength: 0,
+				source: function( request, response ) {
+					// delegate back to autocomplete, but extract the last term
+					response( $.ui.autocomplete.filter(
+						availableTags, extractLast( request.term ) ) );
+				},
+				focus: function() {
+					// prevent value inserted on focus
+					return false;
+				},
+				select: function( event, ui ) {
+					var terms = split( this.value );
+					// remove the current input
+					terms.pop();
+					// add the selected item
+					terms.push( "id" + ui.item.value );
+					// add placeholder to get the comma-and-space at the end
+					//terms.push( "" );
+					this.value = terms;
+					this.value = terms.join(" ");
+					return false;
+				}
+			});
+	});
+    ////////////////////////////////////// END OF : Node Combination Forumla Construciton ///////////////////////////////////////////
+
+    }).button({ icons : { primary : 'ui-icon-plusthick' } });
+    $('#' + container_id).append(button);
+};
+
+    ////////////////////////NODES AND METRICS MODALS//////////////////////////////////
 function createNodemetricCondition(container_id, elem_id) {
     var service_fields  = {
         nodemetric_condition_label    : {
             label   : 'Name',
             type	: 'text',
+        },
+        nodemetric_condition_combination_id	:{
+        	label	: 'Combination',
+        	display	: 'nodemetric_combination_label',
         },
         nodemetric_condition_comparator    : {
             label   : 'Comparator',
@@ -359,17 +597,13 @@ function createNodemetricCondition(container_id, elem_id) {
         	label	: 'Threshold',
         	type	: 'text',	
         },
-        nodemetric_condition_combination_id	:{
-        	label	: 'Combination',
-        	display	: 'nodemetric_combination_label',
-        },
         nodemetric_condition_service_provider_id	:{
         	type	: 'hidden',
         	value	: elem_id,	
         }
     };
     var service_opts    = {
-        title       : 'Create a Nodemetric Condition',
+        title       : 'Create a Condition',
         name        : 'nodemetriccondition',
         fields      : service_fields,
         error       : function(data) {
@@ -377,7 +611,7 @@ function createNodemetricCondition(container_id, elem_id) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a nodemetric condition'});
+    var button = $("<button>", {html : 'Add condition'});
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
@@ -400,7 +634,7 @@ function createNodemetricRule(container_id, elem_id) {
         	type	: 'text',	
         },
         nodemetric_rule_state	:{
-        	label   : 'State',
+        	label   : 'Enabled',
 	        type    : 'select',
     	    options   : rulestates,
         },
@@ -410,7 +644,7 @@ function createNodemetricRule(container_id, elem_id) {
         },
     };
     var service_opts    = {
-        title       : 'Create a Nodemetric Rule',
+        title       : 'Create a Rule',
         name        : 'nodemetricrule',
         fields      : service_fields,
         error       : function(data) {
@@ -418,10 +652,69 @@ function createNodemetricRule(container_id, elem_id) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a nodemetric condition'});
+    var button = $("<button>", {html : 'Add a rule'});
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
+  
+    ////////////////////////////////////// Node Rule Forumla Construciton ///////////////////////////////////////////
+        
+        $(function() {
+    var availableTags = new Array();
+    $.ajax({
+        url: '/api/nodemetriccondition?dataType=jqGrid',
+        async   : false,
+        success: function(answer) {
+                    $(answer.rows).each(function(row) {
+                    var pk = answer.rows[row].pk;
+                    availableTags.push({label : answer.rows[row].nodemetric_condition_label, value : answer.rows[row].nodemetric_condition_id});
+
+                });
+            }
+    });
+
+    function split( val ) {
+			return val.split( / \s*/ );
+		}
+	    function extractLast( term ) {
+			return split( term ).pop();
+		}
+
+		$( "#input_nodemetric_rule_formula" )
+			// don't navigate away from the field on tab when selecting an item
+			.bind( "keydown", function( event ) {
+				if ( event.keyCode === $.ui.keyCode.TAB &&
+						$( this ).data( "autocomplete" ).menu.active ) {
+					event.preventDefault();
+				}
+			})
+			.autocomplete({
+				minLength: 0,
+				source: function( request, response ) {
+					// delegate back to autocomplete, but extract the last term
+					response( $.ui.autocomplete.filter(
+						availableTags, extractLast( request.term ) ) );
+				},
+				focus: function() {
+					// prevent value inserted on focus
+					return false;
+				},
+				select: function( event, ui ) {
+					var terms = split( this.value );
+					// remove the current input
+					terms.pop();
+					// add the selected item
+					terms.push( "id" + ui.item.value );
+					// add placeholder to get the comma-and-space at the end
+					//terms.push( "" );
+					this.value = terms;
+					this.value = terms.join(" ");
+					return false;
+				}
+			});
+	});
+    ////////////////////////////////////// END OF : Node Rule Forumla Construciton ///////////////////////////////////////////
+  
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
@@ -432,21 +725,21 @@ function createServiceCondition(container_id, elem_id) {
             label   : 'Name',
             type	: 'text',
         },
-        threshold	:{
-        	label	: 'Threshold',
-        	type	: 'text',	
+        aggregate_combination_id	:{
+        	label	: 'Combination',
+        	display	: 'aggregate_combination_label',
         },
         comparator	: {
         	label   : 'Comparator',
 	        type    : 'select',
     	    options   : comparators,	
         },
-        aggregate_combination_id	:{
-        	label	: 'Combination',
-        	display	: 'aggregate_combination_label',
+        threshold	:{
+        	label	: 'Threshold',
+        	type	: 'text',	
         },
         state	:{
-        	label   : 'State',
+        	label   : 'Enabled',
 	        type    : 'select',
     	    options   : rulestates,
         },
@@ -473,6 +766,19 @@ function createServiceCondition(container_id, elem_id) {
 };
 
 function createServiceRule(container_id, elem_id) {
+		
+	var loadServicesMonitoringGridId = 'service_rule_creation_condition_listing_' + elem_id;
+    create_grid( {
+        url: '/api/nodemetriccondition',
+        content_container_id: 'service_condition_listing_for_service_rule_creation',
+        grid_id: loadServicesMonitoringGridId,
+        colNames: [ 'id', 'name' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
+            { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 90 },
+        ]
+    } );
+
     var service_fields  = {
         aggregate_rule_label    : {
             label   : 'Name',
@@ -482,14 +788,14 @@ function createServiceRule(container_id, elem_id) {
         	label	: 'Description',
         	type	: 'textearea',	
         },
+        aggregate_rule_formula :{
+            label   : 'Formula',
+            type    : 'text',
+        },
         aggregate_rule_state	:{
-        	label   : 'State',
+        	label   : 'Enabled',
 	        type    : 'select',
     	    options   : rulestates,	
-        },
-        aggregate_rule_formula	: {
-        	label   : 'Formula',
-            type	: 'text',	
         },
         aggregate_rule_service_provider_id	:{
         	type	: 'hidden',
@@ -497,7 +803,7 @@ function createServiceRule(container_id, elem_id) {
         },
     };
     var service_opts    = {
-        title       : 'Create a Service Rule',
+        title       : 'Create a Rule',
         name        : 'aggregaterule',
         fields      : service_fields,
         error       : function(data) {
@@ -505,14 +811,74 @@ function createServiceRule(container_id, elem_id) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a Service Rule'});
+    var button = $("<button>", {html : 'Add a Rule'});
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
+        
+    
+    ////////////////////////////////////// Service Rule Forumla Construciton ///////////////////////////////////////////
+    $(function() {
+    var availableTags = new Array();
+    $.ajax({
+        url: '/api/aggregatecondition?dataType=jqGrid',
+        async   : false,
+        success: function(answer) {
+                    $(answer.rows).each(function(row) {
+                    var pk = answer.rows[row].pk;
+                    availableTags.push({label : answer.rows[row].aggregate_condition_label, value : answer.rows[row].aggregate_condition_id});
+
+                });
+                availableTags.join("AND","OR");
+            }
+    });
+
+    function split( val ) {
+			return val.split( / \s*/ );
+		}
+	    function extractLast( term ) {
+			return split( term ).pop();
+		}
+
+		$( "#input_aggregate_rule_formula" )
+			// don't navigate away from the field on tab when selecting an item
+			.bind( "keydown", function( event ) {
+				if ( event.keyCode === $.ui.keyCode.TAB &&
+						$( this ).data( "autocomplete" ).menu.active ) {
+					event.preventDefault();
+				}
+			})
+			.autocomplete({
+				minLength: 0,
+				source: function( request, response ) {
+					// delegate back to autocomplete, but extract the last term
+					response( $.ui.autocomplete.filter(
+						availableTags, extractLast( request.term ) ) );
+				},
+				focus: function() {
+					// prevent value inserted on focus
+					return false;
+				},
+				select: function( event, ui ) {
+					var terms = split( this.value );
+					// remove the current input
+					terms.pop();
+					// add the selected item
+					terms.push( "id" + ui.item.value );
+					// add placeholder to get the comma-and-space at the end
+					//terms.push( "" );
+					this.value = terms;
+					this.value = terms.join(" ");
+					return false;
+				}
+			});
+	});
+    //////////////////////////////////////  END OF : Service Rule Forumla Construciton ///////////////////////////////////////////
+    
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
-    $('#' + container_id).append(button);
+    $('#' + container_id).append(button);  
 };
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////END OF : NODES AND METRICS MODALS//////////////////////////////////
 
 function servicesList (container_id, elem_id) {
     var container = $('#' + container_id);
@@ -535,26 +901,30 @@ function servicesList (container_id, elem_id) {
                 }
             });
         },
-        colNames: [ 'ID', 'Name', 'State', 'Node Number' ],
+        colNames: [ 'ID', 'Name', 'Enabled', 'Node Number' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
             { name: 'externalcluster_name', index: 'service_name', width: 200 },
             { name: 'externalcluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
             { name: 'node_number', index: 'node_number', width: 150 }
-        ]
+        ],
+        elem_name : 'service',
     });
+    
+    $("#services_list").on('gridChange', reloadServices);
     
     createAddServiceButton(container);
 }
 
-function createUpdateNodeButton(container, elem_id) {
+function createUpdateNodeButton(container, elem_id, grid) {
     var button = $("<button>", { text : 'Update Nodes' }).button({ icons : { primary : 'ui-icon-refresh' } });
     // Check if there is a configured directory service
     if (isThereAConnector(elem_id, 'DirectoryService') === true) {
         $(button).bind('click', function(event) {
             var dialog = $("<div>", { css : { 'text-align' : 'center' } });
             dialog.append($("<label>", { for : 'adpassword', text : 'Please enter your password :' }));
-            dialog.append($("<input>", { id : 'adpassword', name : 'adpassword' }));
+            dialog.append($("<input>", { id : 'adpassword', name : 'adpassword', type : 'password' }));
+            dialog.append($("<div>", { id : "adpassworderror", class : 'ui-corner-all' }));
             // Create the modal dialog
             $(dialog).dialog({
                 modal           : true,
@@ -564,8 +934,15 @@ function createUpdateNodeButton(container, elem_id) {
                 closeOnEscape   : false,
                 buttons         : {
                     'Ok'    : function() {
-                        var passwd  = $("input#adpassword").attr('value');
-                        var ok      = false;
+                        $("div#adpassworderror").removeClass("ui-state-error").empty();
+                        var waitingPopup    = $("<div>", { text : 'Waiting...' }).css('text-align', 'center').dialog({
+                            draggable   : false,
+                            resizable   : false,
+                            onClose     : function() { $(this).remove(); }
+                        });
+                        $(waitingPopup).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
+                        var passwd          = $("input#adpassword").attr('value');
+                        var ok              = false;
                         // If a password was typen, then we can submit the form
                         if (passwd !== "" && passwd !== undefined) {
                             $.ajax({
@@ -576,11 +953,19 @@ function createUpdateNodeButton(container, elem_id) {
                                     password    : passwd
                                 },
                                 success : function(data) {
-                                    ok  = true;
+                                    $(waitingPopup).dialog('close');
+                                    // Ugly but there is no other way to differentiate error from confirm messages for now
+                                    if ((new RegExp("^## EXCEPTION")).test(data.msg)) {
+                                        $("input#adpassword").val("");
+                                        $("div#adpassworderror").text(data.msg).addClass('ui-state-error');
+                                    } else {
+                                        ok  = true;
+                                    }
                                 }
                             });
                             // If the form succeed, then we can close the dialog
                             if (ok === true) {
+                                $(grid).trigger("reloadGrid");
                                 $(this).dialog('destroy');
                             }
                         } else {
@@ -684,6 +1069,10 @@ function loadServicesOverview (container_id, elem_id) {
 
 }
 
+function scoConfigurationDialog(elem_id, sco_id) {
+  console.log(sco_id);
+}
+
 function loadServicesConfig (container_id, elem_id) {
     var container = $('#' + container_id);
     var externalclustername = '';
@@ -720,11 +1109,12 @@ function loadServicesConfig (container_id, elem_id) {
             }
     });
 
-    var ctnr    = $("<div>");
-
     $.ajax({
         url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
         success: function(data) {
+            var ctnr    = $("<div>", { id : 'connectorslistcontainer' });
+            $(ctnr).appendTo(container);
+            $(container).append($('<br />'));
             var table = $("<table>", { id : "connectorslist" }).prependTo(ctnr);
             $(table).append($("<tr>").append($("<td>", { colspan : 3, class : 'table-title', text : "Connectors" })));
             $(data.rows).each(function(row) {
@@ -745,7 +1135,11 @@ function loadServicesConfig (container_id, elem_id) {
                     var button  = $(event.data.button);
                     var id      = $(button).attr('rel');
                     var name    = $(button).parents('tr').attr('rel').split('|');
-                    that.createSpecServDialog(elem_id, name[0], false, name[1], undefined, id).start();
+                    if (name[0] === 'sco') {
+                        that.scoConfigurationDialog(elem_id, id);
+                    } else {
+                        that.createSpecServDialog(elem_id, name[0], false, name[1], undefined, id).start();
+                    }
                 }).button({ icons : { primary : 'ui-icon-wrench' } });
                 $(delButton).bind('click', { button : delButton }, function(event) {
                     var button  = $(event.data.button);
@@ -759,30 +1153,105 @@ function loadServicesConfig (container_id, elem_id) {
                     });
                 }).button({ icons : { primary : 'ui-icon-trash' } });
             });
-            $(ctnr).appendTo(container);
+
+            if (isThereAConnector(elem_id, 'DirectoryService') === false) {
+                var b   = $("<a>", { text : 'Add a Directory Service', id : 'adddirectory' });
+                b.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
+                b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
+            }
+            
+            if (isThereAConnector(elem_id, 'MonitoringService') === false) {
+                var b  = $("<a>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
+                b.bind('click', function() { createMonDirDialog(elem_id, 'MonitoringService').start(); });
+                $(ctnr).append($("<br />"));
+                b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
+            }
+        
+            if (isThereAConnector(elem_id, 'WorkflowManager') === false) {
+                var b   = $("<a>", { text : 'Add a Workflow Connector', id : 'addworkflowmanager' });
+                b.bind('click', function() { createMonDirDialog(elem_id, 'WorkflowManager').start(); });
+                $(ctnr).append($("<br />"));
+                b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
+            }
         }
     });
-    
-    if (isThereAConnector(elem_id, 'DirectoryService') === false) {
-        var b   = $("<a>", { text : 'Add a Directory Service', id : 'adddirectory' });
-        b.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
-        b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
-    }
-    
-    if (isThereAConnector(elem_id, 'MonitoringService') === false) {
-        var bu  = $("<button>", { text : 'Add a Monitoring Service', id : 'addmonitoring' });
-        bu.bind('click', function() { createMonDirDialog(elem_id, 'MonitoringService').start(); });
-        bu.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
-    }
+
+    $.ajax({
+        url     : '/api/serviceprovidermanager?service_provider_id=' + elem_id,
+        success : function(data) {
+            var ctnr    = $("<div>", { id : "managerslistcontainer" });
+            $(ctnr).appendTo($(container));
+            var table   = $("<table>", { id : 'managerslist' }).prependTo($(ctnr));
+            $(table).append($("<tr>").append($("<td>", { colspan : 3, class : 'table-title', text : "Managers" })));
+
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                $(table).append($("<tr>", { text : data[i].manager_type }));
+            }
+
+            var addManagerButton    = $("<a>", { text : 'Add a Manager' }).button({ icons : { primary : 'ui-icon-plusthick' } });
+            addManagerButton.bind('click', function() {
+                $.ajax({
+                    url         : '/api/serviceprovider/' + elem_id + '/findManager',
+                    type        : 'POST',
+                    contentType : 'application/json',
+                    data        : JSON.stringify({ 'category' : 'WorkflowManager' }),
+                    success     : function(data) {
+                        var select  = $("<select>", { name : 'managerselection' })
+                        for (var i in data) if (data.hasOwnProperty(i)) {
+                            var theName     = data[i].name;
+                            var manager     = data[i];
+                            $.ajax({
+                                url     : '/api/externalcluster/' + data[i].service_provider_id,
+                                async   : false,
+                                success : function(data) {
+                                    theName = data.externalcluster_name + " - " + theName;
+                                    $(select).append($("<option>", { text : theName, value : manager.id }));
+                                }
+                            });
+                        }
+                        $("<fieldset>").append($(select)).appendTo(container).dialog({
+                            title           : 'Add a manager',
+                            closeOnEscape   : false,
+                            draggable       : false,
+                            resizable       : false,
+                            buttons         : {
+                                'Cancel'    : function() { $(this).dialog("destroy"); },
+                                'Ok'        : function() {
+                                    var dial    = this;
+                                    $.ajax({
+                                        url         : '/api/serviceprovidermanager',
+                                        type        : 'POST',
+                                        data        : {
+                                            manager_type        : 'WorkflowManager',
+                                            manager_id          : $(select).attr('value'),
+                                            service_provider_id : elem_id,
+                                        },
+                                        success     : function() {
+                                            $(dial).dialog("destroy");
+                                            $(container).empty();
+                                            that.loadServicesConfig(container_id, elem_id);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+            addManagerButton.appendTo($(ctnr));
+        }
+    });
+
 }
 
 function loadServicesRessources (container_id, elem_id) {
     var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
     create_grid( {
-        url: '/api/host',
+        url: '/api/externalnode?outside_id=' + elem_id,
         content_container_id: container_id,
         grid_id: loadServicesRessourcesGridId,
-        colNames: [ 'id', 'state', 'hostname' ],
+        grid_class: 'service_ressources_list',
+        colNames: [ 'id', 'enabled', 'hostname' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'externalnode_state', index: 'externalnode_state', width: 90, formatter: StateFormatter },
@@ -790,8 +1259,8 @@ function loadServicesRessources (container_id, elem_id) {
         ]
     } );
 
-    createUpdateNodeButton($('#' + container_id), elem_id);
-    reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
+    createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesRessourcesGridId));
+    //reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
 }
 
@@ -810,50 +1279,20 @@ function setCellWithCallMethod(url, grid, rowid, colName, data) {
 }
 
 function loadServicesMonitoring (container_id, elem_id) {
-    var container = $("#" + container_id);
-    $("<div>", { html : "Service metric : " }).appendTo(container);
-    var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
-    create_grid( {
-        url: '/api/externalcluster/' + elem_id + '/clustermetrics',
-        content_container_id: container_id,
-        grid_id: loadServicesMonitoringGridId,
-        afterInsertRow: function(grid, rowid) {
-            var current = $(grid).getCell(rowid, 'clustermetric_indicator_id');
-            var url     = '/api/externalcluster/' + elem_id + '/getIndicatorNameFromId';
-            setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id', { 'indicator_id' : current });
-        },
-        colNames: [ 'id', 'name', 'indicator' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
-            { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
-            { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
-        ]
-    } );
-    
-    $("<div>", { html : "<br />Service Combinations : " }).appendTo(container);
-    var loadServicesMonitoringGridId = 'service_ressources_aggregate_combinations_' + elem_id;
-    create_grid( {
-        url: '/api/externalcluster/' + elem_id + '/aggregate_combinations',
-        content_container_id: container_id,
-        grid_id: loadServicesMonitoringGridId,
-        afterInsertRow: function(grid, rowid) {
-            var id  = $(grid).getCell(rowid, 'pk');
-            var url = '/api/aggregatecombination/' + id + '/toString';
-            setCellWithCallMethod(url, grid, rowid, 'aggregate_combination_formula');
-        },
-        colNames: [ 'id', 'name', 'formula' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
-            { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200 },
-        ]
-    } );
 	
-    $("<div>", { html : "<br />Nodemetric Combinations : " }).appendTo(container);
+	var container = $("#" + container_id);
+    ////////////////////////MONITORING ACCORDION//////////////////////////////////
+        	
+    var divacc = $('<div id="accordion_monitoring_rule">').appendTo(container);
+    $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
+    $('<div id="node_monitoring_accordion_container">').appendTo(divacc);
+    var container = $("#" + container_id);
+    
+    $("<p>", { html : "Nodemetric Combinations  : " }).appendTo('#service_monitoring_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_combination_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/nodemetric_combinations',
-        content_container_id: container_id,
+        content_container_id: 'node_monitoring_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         afterInsertRow: function(grid, rowid) {
             var id  = $(grid).getCell(rowid, 'pk');
@@ -867,37 +1306,96 @@ function loadServicesMonitoring (container_id, elem_id) {
             { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', width: 170 },
         ]
     } );
+    createNodemetricCombination('node_monitoring_accordion_container', elem_id);
+
+
+	$('<h3><a href="#">Service</a></h3>').appendTo(divacc);
+    $('<div id="service_monitoring_accordion_container">').appendTo(divacc);
+   
+    $("<p>", { html : "Service Metric  : " }).appendTo('#service_monitoring_accordion_container');
+    var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/clustermetrics',
+        content_container_id: 'service_monitoring_accordion_container',
+        grid_id: loadServicesMonitoringGridId,
+        afterInsertRow: function(grid, rowid) {
+            var current = $(grid).getCell(rowid, 'clustermetric_indicator_id');
+            var url     = '/api/externalcluster/' + elem_id + '/getIndicatorNameFromId';
+            setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id', { 'indicator_id' : current });
+        },
+        colNames: [ 'id', 'name', 'indicator' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
+            { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
+            { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
+        ]
+    } );
+    createServiceMetric('service_monitoring_accordion_container', elem_id);
+    
+    $("<p>", { html : "Service Combinations  : " }).appendTo('#service_monitoring_accordion_container');
+    var loadServicesMonitoringGridId = 'service_ressources_aggregate_combinations_' + elem_id;
+    create_grid( {
+        url: '/api/externalcluster/' + elem_id + '/aggregate_combinations',
+        content_container_id: 'service_monitoring_accordion_container',
+        grid_id: loadServicesMonitoringGridId,
+        afterInsertRow: function(grid, rowid) {
+            var id  = $(grid).getCell(rowid, 'pk');
+            var url = '/api/aggregatecombination/' + id + '/toString';
+            setCellWithCallMethod(url, grid, rowid, 'aggregate_combination_formula');
+        },
+        colNames: [ 'id', 'name', 'formula' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
+            { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200 },
+        ]
+    } );
+    createServiceConbination('service_monitoring_accordion_container', elem_id);
+    
+    $('#accordion_monitoring_rule').accordion({
+        autoHeight  : false,
+        active      : false,
+        change      : function (event, ui) {
+            // Set all grids size to fit accordion content
+            ui.newContent.find('.ui-jqgrid-btable').jqGrid('setGridWidth', ui.newContent.width());
+        }
+    });
 }
 
 function loadServicesRules (container_id, elem_id) {
     var container = $("#" + container_id);
-	
-    $("<div>", { text : "Nodemetric Conditions : " }).appendTo(container);
-    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_condition_' + elem_id;
+    
+    ////////////////////////RULES ACCORDION//////////////////////////////////
+        	
+    var divacc = $('<div id="accordionrule">').appendTo(container);
+    $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
+    $('<div id="node_accordion_container">').appendTo(divacc);
+    // Display nodemetric conditions
+    $("<p>", { html : "Node Conditions : " }).appendTo('#node_accordion_container');
+    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_conditions_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/nodemetric_conditions',
-        content_container_id: container_id,
+        content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
-        colNames: [ 'id', 'name', 'separator', 'threshold' ],
+        colNames: [ 'id', 'name', 'comparator', 'threshold' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 120 },
-            { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 220 },
-            { name: 'nodemetric_condition_threshold', index: 'nodemetric_condition_threshold', width: 220 },
+            { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 60,},
+            { name: 'nodemetric_condition_threshold', index: 'nodemetric_condition_threshold', width: 190 },
         ]
     } );
+    createNodemetricCondition('node_accordion_container', elem_id)
     
-    createNodemetricCondition(container_id, elem_id);
-    
-    //$('#' + loadServicesMonitoringGridId).jqGrid('setGridWidth', $('#' + loadServicesMonitoringGridId).width('700px'));
-    
-    $("<div>", { html : "<br />Nodemetric Rules : " }).appendTo(container);
+    // Display nodemetric rules
+    $("<p>", { html : "Node Rules : " }).appendTo('#node_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_rules_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/nodemetric_rules',
-        content_container_id: container_id,
+        content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
-        colNames: [ 'id', 'name', 'state', 'description', 'formula' ],
+        grid_class: 'service_ressources_nodemetric_rules',
+        colNames: [ 'id', 'name', 'enabled', 'description', 'formula' ],
         afterInsertRow: function(grid, rowid) {
             var id  = $(grid).getCell(rowid, 'pk');
             var url = '/api/nodemetricrule/' + id + '/toString';
@@ -906,24 +1404,34 @@ function loadServicesRules (container_id, elem_id) {
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
-            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60, formater: StateFormatter },
+            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60, formatter:serviceStateFormatter },
             { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 190 },
             { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 60 },
-        ]
-    });
-
-    
-    createNodemetricRule(container_id, elem_id);
-    
-    //$('#' + loadServicesMonitoringGridId).jqGrid('setGridWidth', $('#' + loadServicesMonitoringGridId).width('700px'));
-    
-    $("<div>", { html : "<br />Service Conditions : " }).appendTo(container);
+        ],
+        details: {
+            tabs : [
+                        { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
+                            require('KIO/workflows.js');
+                            createWorkflowRuleAssociationButton(cid, eid, 1, elem_id);
+                        }},
+                        { label : 'Nodes', id : 'nodes', onLoad : rule_nodes_tab },
+                        { label : 'Rule', id : 'rule', onLoad : rule_detail_tab },
+                    ],
+            title : { from_column : 'nodemetric_rule_label' }
+        },
+    } );
+    createNodemetricRule('node_accordion_container', elem_id);
+	// Here's the second part of the accordion :
+    $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
+    $('<div id="service_accordion_container">').appendTo(divacc);
+    // Display service conditions :
+    $("<p>", { html : "Service Conditions : " }).appendTo('#service_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_conditions_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/aggregate_conditions',
-        content_container_id: container_id,
+        content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
-        colNames: ['id','name', 'state', 'threshold', 'last eval', 'time limit'],
+        colNames: ['id','name', 'enabled', 'threshold', 'comparator', 'time limit'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_condition_label',index:'aggregate_condition_label', width:120,},
@@ -933,16 +1441,16 @@ function loadServicesRules (container_id, elem_id) {
              {name:'threshold',index:'threshold', width:160,},
            ]
     } );
-    
-    createServiceCondition(container_id, elem_id);
-	
-    $("<div>", { html : "<br />Service Rules : " }).appendTo(container);
+    createServiceCondition('service_accordion_container', elem_id);
+    // Display services rules :
+    $("<p>", { html : "Service Rules : " }).appendTo('#service_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
     create_grid( {
         url: '/api/externalcluster/' + elem_id + '/aggregate_rules',
-        content_container_id: container_id,
+        grid_class: 'service_ressources_aggregate_rules',
+        content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
-        colNames: ['id','name', 'state', 'formula', 'description'],
+        colNames: ['id','name', 'enabled', 'formula', 'description'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
@@ -955,7 +1463,26 @@ function loadServicesRules (container_id, elem_id) {
             var url = '/api/aggregaterule/' + id + '/toString';
             setCellWithCallMethod(url, grid, rowid, 'aggregate_rule_formula');
         },
+        details : {
+            tabs    : [
+                { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
+                    require('KIO/workflows.js');
+                    createWorkflowRuleAssociationButton(cid, eid, 2, elem_id);
+               }},
+            ],
+            title   : { from_column : 'aggregate_rule_label' }
+        }
     } );
+    createServiceRule('service_accordion_container', elem_id);
+
+    $('#accordionrule').accordion({
+        autoHeight  : false,
+        active      : false,
+        change      : function (event, ui) {
+            // Set all grids size to fit accordion content
+            ui.newContent.find('.ui-jqgrid-btable').jqGrid('setGridWidth', ui.newContent.width());
+        }
+    });
     
-    createServiceRule(container_id, elem_id)
+    ////////////////////////END OF : RULES ACCORDION//////////////////////////////////
 }

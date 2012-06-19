@@ -38,6 +38,7 @@ use Entity::Component;
 use Entity::Connector;
 use Entity::Interface;
 use Administrator;
+use ServiceProviderManager;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -48,6 +49,19 @@ my $errmsg;
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        'findManager'   => {
+            'description'   => 'findManager',
+            'perm_holder'   => 'entity'
+        },
+        'getManager'    => {
+            'description'   => 'getManager',
+            'perm_holder'   => 'entity'
+        }
+    };
+}
 
 =head2 getManager
 
@@ -63,7 +77,7 @@ sub getManager {
 
     # The parent method getManager should disappeared
     if (defined $args{id}) {
-        Entity->get(id => $args{id});
+        return Entity->get(id => $args{id});
     }
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
@@ -118,7 +132,7 @@ sub findManager {
         }
     }
 
-    return @managers;
+    return wantarray ? @managers : \@managers;
 }
 
 

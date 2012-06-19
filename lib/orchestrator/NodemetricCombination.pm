@@ -38,7 +38,8 @@ use constant ATTR_DEF => {
     nodemetric_combination_formula =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
-                                 is_editable    => 1},
+                                 is_editable    => 1,
+                                 description    => "Construct a formula by indicator's names with all mathematical operators. It's possible to use parenthesis with spaces between each element of the formula."},
 };
 
 sub getAttrDef { return ATTR_DEF; }

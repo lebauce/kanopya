@@ -156,6 +156,23 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nodemetric_conditions
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NodemetricCondition>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nodemetric_conditions",
+  "AdministratorDB::Schema::Result::NodemetricCondition",
+  {
+    "foreign.nodemetric_condition_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nodemetric_rules
 
 Type: has_many

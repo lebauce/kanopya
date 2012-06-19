@@ -16,7 +16,9 @@ get qr(/.*) => sub {
         return pass;
     }
     elsif ( ! $eid  ) {
-        session login_redirect_url => $path;
+        if (not $path =~ /^\/api/) {
+            session login_redirect_url => $path;
+        }
         return redirect '/login';
     }
     else {
@@ -42,7 +44,11 @@ post '/login' => sub {
 
     my $error = form_validator_error('login', $input_hash);
     if ( $error ) {
-        return template 'login', { errors => $error }, { layout => 'login' };
+        if (request->is_ajax) {
+            return to_json({ status => 'error', 'reason' => $error }, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
+        } else {
+            return template 'login', { errors => $error }, { layout => 'login' };
+        }
     }
 
     eval {
@@ -57,14 +63,22 @@ post '/login' => sub {
             user => "Authentication failed for login $user"
         };
         $log->error('Authentication failed for login ', $user);
-        return template 'login', { fail => $fail }, { layout => 'login' }
+        if (request->is_ajax) {
+            return to_json({ status => 'error', 'reason' => $fail }, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
+        } else {
+            return template 'login', { fail => $fail }, { layout => 'login' };
+        }
     }
     else {
         session EID      => $ENV{EID};
         session username => $user;
         $log->info('Authentication succeed for login ', $user);
         delete session->{login_redirect_url};
-        redirect $redirect;
+        if (request->is_ajax) {
+            return to_json({ status => 'success' }, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
+        } else {
+            redirect $redirect;
+        }
     }
 };
 

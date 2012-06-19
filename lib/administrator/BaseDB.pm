@@ -7,6 +7,8 @@ use Administrator;
 use General;
 use POSIX qw(ceil);
 use Hash::Merge;
+use Class::ISA;
+
 
 use strict;
 use warnings;
@@ -15,6 +17,20 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
 my $errmsg;
+
+sub getMethods {
+  my $self      = shift;
+  my $methods   = {};
+  my @supers    = Class::ISA::super_path(ref($self));
+  push(@supers, ref($self));
+  my $merge     = Hash::Merge->new();
+  for my $sup (@supers) {
+    if ($sup->can('methods')) {
+      $methods    = $merge->merge( $methods, $sup->methods() );
+    }
+  }
+  return $methods;
+}
 
 # getAttrDefs : return a hash ref containing all ATTR_DEF for each class
 # in the hierarchy
@@ -84,6 +100,10 @@ sub getAttrDefs {
     }
 
     return $result;
+}
+
+sub methods {
+    return { };
 }
 
 sub getId {
@@ -547,8 +567,8 @@ sub search {
 
     if (defined ($args{dataType}) and $args{dataType} eq "hash") {
         return {
-            page    => $args{page} || undef,
-            pages   => $args{rows} ? ceil($total / $args{rows}) : 1,
+            page    => $args{page} || 1,
+            pages   => ceil($total / ($args{rows} || ($args{page} ? 10 : 1))),
             records => scalar @objs,
             rows    => \@objs,
             total   => $total,
@@ -666,6 +686,7 @@ sub toJSON {
     my $hash = {};
     my $class = ref ($self) || $self;
     my $attributes;
+    my $merge = Hash::Merge->new();
 
     eval {
         $attributes = $class->getAttrDefs();
@@ -711,6 +732,13 @@ sub toJSON {
                     delete $hash->{attributes}->{$relname . "_id"};
                 }
             }
+
+            my $klass = join("::", @hierarchy);
+            if ($klass->can("methods")) {
+                $hash->{methods} = $merge->merge($hash->{methods} || { }, $klass->methods());
+            }
+
+            pop @hierarchy;
         }
 
         $hash->{pk} = {
@@ -719,9 +747,6 @@ sub toJSON {
             is_extended  => 0
         };
 
-        if ($class->can("methods")) {
-            $hash->{methods} = $class->methods();
-        }
     }
     else {
         $hash->{pk} = $self->getId;

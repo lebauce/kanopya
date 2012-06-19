@@ -31,13 +31,13 @@ use constant ATTR_DEF => {
                     pattern        => '.*',
                     is_mandatory   => 0,
                     is_extended    => 0,
-                    is_editable    => 0
+                    is_editable    => 1
                  },
                  scom_usessl => {
                    pattern  => '^[01]$',
                    is_mandatory => 0,
                    is_extended => 0,
-                   is_editable => 0
+                   is_editable => 1
                  }
 };
 

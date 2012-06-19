@@ -4,21 +4,15 @@
   "category": [
     {
       "id":1,
-      "title" : "General",
-      "amount" : 2,
-      "url" : "jsonfeed/category1_widgets.json"
-    },
-    {
-      "id":2,
-      "title" : "Listing",
-      "amount": 1,
-      "url" : "jsonfeed/category2_widgets.json"
-    },
-    {
-      "id":3,
       "title" : "Monitoring",
       "amount": 2,
       "url" : "jsonfeed/category_monitoring_widgets.json"
+    },
+    {
+      "id":2,
+      "title" : "Info",
+      "amount" : 1,
+      "url" : "jsonfeed/category_info_widgets.json"
     }
   ]
   }

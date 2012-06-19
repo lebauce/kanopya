@@ -26,13 +26,8 @@ EOperation::ELaunchSCOWorkflow - Operation class implementing SCO workflow launc
 This Object represent an operation.
 It allows to implement SCO workflow launching
 
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
 =cut
+
 package EOperation::ELaunchSCOWorkflow;
 use base "EOperation";
 

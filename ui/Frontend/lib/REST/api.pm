@@ -99,12 +99,14 @@ my %resources = (
     "openssh5"                 => "Entity::Component::Openssh5",
     "operation"                => "Operation",
     "outside"                  => "Entity::ServiceProvider::Outside",
+    "sco"                      => "Entity::Connector::Sco",
     "scom"                     => "Entity::Connector::Scom",
     "scomindicator"            => "ScomIndicator",
     "scope"                    => "Scope",
     "scopeparameter"           => "ScopeParameter",
     "snmpd5"                   => "Entity::Component::Snmpd5",
     "serviceprovider"          => "Entity::ServiceProvider",
+    "serviceprovidermanager"   => "ServiceProviderManager",
     "syslogng3"                => "Entity::Component::Syslogng3",
     "systemimage"              => "Entity::Systemimage",
     "tier"                     => "Entity::Tier",
@@ -172,7 +174,7 @@ sub format_results {
     delete $args{dataType};
     delete $args{expand};
 
-    $params{page} = $args{page} || 1;
+    $params{page} = $args{page};
     delete $args{page};
 
     if (defined $args{rows}) {
@@ -376,14 +378,13 @@ sub setupREST {
             require (General::getLocFromClass(entityclass => $class));
 
             my ($id, $method) = splat;
-
-            my $methods = $class->methods();
+            my $obj = $class->get(id => $id);
+            #my $methods = $obj->toJSON(model => 1)->{methods};
+            my $methods = $obj->getMethods();
 
             if (not defined $methods->{$method}) {
                 throw Kanopya::Exception::NotImplemented(error => "Method not implemented");
             }
-
-            my $obj = $class->get(id => $id);
             my %params;
             if ((split(/;/, request->content_type))[0] eq "application/json") {
                 %params = %{from_json(request->body)};
@@ -398,6 +399,8 @@ sub setupREST {
                     }
                     elsif ($ret->isa("Workflow")) {
                         $ret = Workflow->get(id => $ret->getId)->toJSON;
+                    } else {
+                        $ret = $ret->toJSON;
                     }
                 }
             };

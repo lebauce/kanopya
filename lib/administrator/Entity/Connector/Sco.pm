@@ -35,6 +35,7 @@ use WorkflowDefManager;
 use Entity::ServiceProvider;
 
 use Data::Dumper;
+
 use Log::Log4perl 'get_logger';
 my $log = get_logger('administrator');
 my $errmsg;
@@ -111,52 +112,76 @@ sub createWorkflow {
 sub _getAutomaticParams {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'automatic_params', 'sp_id' ]);
+    General::checkParams(args => \%args, required => [ 'automatic_params', 'sp_id', 'scope_id' ]);
 
     my $automatic_params = $args{automatic_params};
     
-    if (exists $automatic_params->{node_hostname}) {
-        $automatic_params->{node_hostname}  = $self->_getNodeHostname();
-    }
-    if (exists $automatic_params->{ou_from}) {
-        $automatic_params->{ou_from}  = $self->_getOuFrom();
-    }
-    if (exists $automatic_params->{service_provider_name}) {
-        $automatic_params->{service_provider_name} = $self->_getServiceProviderName($args{sp_id});
+    #get the scope
+    my $scope_id   = $args{scope_id};
+    my $scope      = Scope->find(hash => { scope_id => $scope_id });
+    my $scope_name = $scope->getAttr(name => 'scope_name');
+    
+    if ($scope_name eq 'node') {
+        if ((exists $automatic_params->{node_hostname}) && (defined $args{host_name})) {
+            $automatic_params->{node_hostname}  = $args{host_name}; 
+        } else {
+            $errmsg = 'Workflow Manager could not retrieve node hostname';
+            $log->error($errmsg);
+        }
+
+        if (exists $automatic_params->{ou_from}) {
+            eval {
+                $automatic_params->{ou_from}  = $self->_getOuFrom(sp_id => $args{sp_id});
+            };
+            if ($@) {
+                $errmsg = 'Error while trying to retrieve ou_from parameter :'.$@;
+                $log->error($errmsg);
+            }
+        }
+
+    } elsif ($scope_name eq 'service_provider') {
+        if (exists $automatic_params->{service_provider_name}) {
+            eval {
+                $automatic_params->{service_provider_name} = $self->_getServiceProviderName(sp_id => $args{sp_id});
+            };
+            if ($@) {
+                $errmsg = 'Error while trying to retrieve service provider name :'.$@;
+                $log->error($errmsg);
+            }
+        }
     }
 
     return $automatic_params;
 }
 
-=head2 _getNodeHostname
-    Desc: get a node hostname
-
-    Args: 
-
-    Return:
-=cut
-
-sub _getNodeHostname {
-    my ($self,%args) = @_;
-
-}
-
 =head2 _getOuFrom
     Desc: get the origin OU for a node or a set of node 
 
-    Args: 
+    Args: $sp_id
 
-    Return: 
+    Return: $ou_from
 =cut
 
 sub _getOuFrom {
+    my ($self,%args) = @_;
 
+    General::checkParams(args => \%args, required => [ 'sp_id' ]);
+
+    my $service_provider            = Entity::ServiceProvider->get(id => $args{sp_id});
+    my $directory_service_connector = $service_provider->getConnector(
+                                          'category' => 'DirectoryService'
+                                      );
+    my $ou_from                     = $directory_service_connector->getAttr(
+                                          name => 'ad_nodes_base_dn'
+                                      );
+
+    return $ou_from;
 }
 
 =head2 _getServiceProviderName
     Desc: get the name of the service provider that triggered the rule
 
-    Args: $service_provider_id 
+    Args: $sp_id 
 
     Return: $sp_name
 =cut
@@ -166,13 +191,40 @@ sub _getServiceProviderName {
 
     General::checkParams(args => \%args, required => [ 'sp_id' ]);
 
-    my $service_provider = Entity::ServiceProvider->find(hash => {
-                               service_provider_id => $args{sp_id},
-                           });
+    my $service_provider = Entity::ServiceProvider->get(id => $args{sp_id});
 
     my $sp_name          = $service_provider->getAttr(name => 'service_provider_name');
 
     return $sp_name;
+}
+
+=head2 _defineFinalParams
+    Desc: create the final hash for workflow->run() 
+
+    Args: \%all_params, $workflow_name
+
+    Return: \%workflow_params
+=cut
+
+sub _defineFinalParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'all_params', 'workflow_name' ]);
+
+    my $all_params      = $args{all_params};
+    my $workflow_name   = $args{workflow_name};
+
+    #merge automatic and specific params in one hash
+    my $workflow_values = Hash::Merge::merge($all_params->{automatic}, $all_params->{specific});
+
+    my $workflow_params = { 
+        output_directory => $all_params->{internal}->{output_dir},
+        output_file      => 'workflow_'.$workflow_name.'_'.time(),
+        template_content => $all_params->{data}->{template_content},
+        workflow_values  => $workflow_values,
+    };
+
+    return $workflow_params;
 }
 
 1;
