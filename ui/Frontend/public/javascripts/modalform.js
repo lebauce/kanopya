@@ -253,7 +253,7 @@ var ModalForm = (function() {
         if (help !== undefined) {
             var helpElem        = $("<span>", { class : 'ui-icon ui-icon-info' });
             $(helpElem).css({
-                cursor  : 'pointer',
+                cursor  : 'help',
                 margin  : '2px 0 0 2px',
                 float   : 'right'
             });
