@@ -24,6 +24,7 @@ use warnings;
 use WorkflowDef;
 use ParamPreset;
 use Kanopya::Exceptions;
+use Operation;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';

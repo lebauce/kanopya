@@ -608,7 +608,6 @@ sub clustermetricManagement{
     my $service_provider_id = $service_provider->getId();
 
     my $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
-    my $workflow_def_id  = $rule->getAttr(name => 'workflow_def_id');
 
     #GET RULES RELATIVE TO A CLUSTER
     my @rules = AggregateRule->search(hash=>{
@@ -617,6 +616,8 @@ sub clustermetricManagement{
     });
 
     for my $aggregate_rule (@rules){
+        my $workflow_def_id  = $aggregate_rule->getAttr(name => 'workflow_def_id');
+
         $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
 
             $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
