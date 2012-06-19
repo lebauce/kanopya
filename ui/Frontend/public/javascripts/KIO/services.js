@@ -31,9 +31,9 @@ function initServiceDashboard() {
 
     // Dashboard actions
     dash_header = $('<div class="headerlinks"></div>');
-    dash_header.append($('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'}));
-//    dash_header.append($('<button>', { 'class' : 'editlayout', html : 'Edit layout'}));
-    dash_header.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
+    dash_header.append('<a class="openaddwidgetdialog headerlink" href="#"><font color="black">Add Widget</font></a>&nbsp;&nbsp;');
+    dash_header.append('<a class="editlayout headerlink" href="#"><font color="black">Edit layout</font></a>&nbsp;&nbsp;');
+    dash_header.append('<a class="savedashboard headerlink" href="#"><font color="black">Save Dashboard</font></a>');
 
     //$('#view-container').append(dash_header);
     $('#view-container').append(dash_div);
@@ -356,6 +356,7 @@ function createAddServiceButton(container) {
 };
     ////////////////////////MONITORING MODALS//////////////////////////////////
 function createServiceMetric(container_id, elem_id) {
+    
     var service_fields  = {
         clustermetric_label    : {
             label   : 'Name',
@@ -388,7 +389,7 @@ function createServiceMetric(container_id, elem_id) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a nodemetric condition'});
+    var button = $("<button>", {html : 'Add a service metric'});
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
@@ -412,7 +413,7 @@ function createServiceConbination(container_id, elem_id) {
         },
     };
     var service_opts    = {
-        title       : 'Create a Service Combination',
+        title       : 'Create a Combination',
         name        : 'aggregatecombination',
         fields      : service_fields,
         error       : function(data) {
@@ -420,10 +421,68 @@ function createServiceConbination(container_id, elem_id) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a service combination'});
+    var button = $("<button>", {html : 'Add a combination'});
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
+                    ////////////////////////////////////// Service Combination Forumla Construction ///////////////////////////////////////////
+        
+        $(function() {
+    var availableTags = new Array();
+    $.ajax({
+        url: '/api/aggregatecombination?dataType=jqGrid',
+        async   : false,
+        success: function(answer) {
+                    $(answer.rows).each(function(row) {
+                    var pk = answer.rows[row].pk;
+                    availableTags.push({label : answer.rows[row].aggregate_combination_label, value : answer.rows[row].aggregate_combination_id});
+
+                });
+            }
+    });
+
+    function split( val ) {
+			return val.split( / \s*/ );
+		}
+	    function extractLast( term ) {
+			return split( term ).pop();
+		}
+
+		$( "#input_aggregate_combination_formula" )
+			// don't navigate away from the field on tab when selecting an item
+			.bind( "keydown", function( event ) {
+				if ( event.keyCode === $.ui.keyCode.TAB &&
+						$( this ).data( "autocomplete" ).menu.active ) {
+					event.preventDefault();
+				}
+			})
+			.autocomplete({
+				minLength: 0,
+				source: function( request, response ) {
+					// delegate back to autocomplete, but extract the last term
+					response( $.ui.autocomplete.filter(
+						availableTags, extractLast( request.term ) ) );
+				},
+				focus: function() {
+					// prevent value inserted on focus
+					return false;
+				},
+				select: function( event, ui ) {
+					var terms = split( this.value );
+					// remove the current input
+					terms.pop();
+					// add the selected item
+					terms.push( "id" + ui.item.value );
+					// add placeholder to get the comma-and-space at the end
+					//terms.push( "" );
+					this.value = terms;
+					this.value = terms.join(" ");
+					return false;
+				}
+			});
+	});
+    ////////////////////////////////////// END OF : Service Combination Forumla Construction ///////////////////////////////////////////
+
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
@@ -444,7 +503,7 @@ function createNodemetricCombination(container_id, elem_id) {
         },
     };
     var service_opts    = {
-        title       : 'Create a Nodemetric Combination',
+        title       : 'Create a Combination',
         name        : 'nodemetriccombination',
         fields      : service_fields,
         error       : function(data) {
@@ -452,10 +511,68 @@ function createNodemetricCombination(container_id, elem_id) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a nodemetric combination'});
+    var button = $("<button>", {html : 'Add a combination'});
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
+            ////////////////////////////////////// Node Combination Forumla Construction ///////////////////////////////////////////
+        
+        $(function() {
+    var availableTags = new Array();
+    $.ajax({
+        url: '/api/nodemetriccombination?dataType=jqGrid',
+        async   : false,
+        success: function(answer) {
+                    $(answer.rows).each(function(row) {
+                    var pk = answer.rows[row].pk;
+                    availableTags.push({label : answer.rows[row].nodemetric_combination_label, value : answer.rows[row].nodemetric_combination_id});
+
+                });
+            }
+    });
+
+    function split( val ) {
+			return val.split( / \s*/ );
+		}
+	    function extractLast( term ) {
+			return split( term ).pop();
+		}
+
+		$( "#input_nodemetric_combination_formula" )
+			// don't navigate away from the field on tab when selecting an item
+			.bind( "keydown", function( event ) {
+				if ( event.keyCode === $.ui.keyCode.TAB &&
+						$( this ).data( "autocomplete" ).menu.active ) {
+					event.preventDefault();
+				}
+			})
+			.autocomplete({
+				minLength: 0,
+				source: function( request, response ) {
+					// delegate back to autocomplete, but extract the last term
+					response( $.ui.autocomplete.filter(
+						availableTags, extractLast( request.term ) ) );
+				},
+				focus: function() {
+					// prevent value inserted on focus
+					return false;
+				},
+				select: function( event, ui ) {
+					var terms = split( this.value );
+					// remove the current input
+					terms.pop();
+					// add the selected item
+					terms.push( "id" + ui.item.value );
+					// add placeholder to get the comma-and-space at the end
+					//terms.push( "" );
+					this.value = terms;
+					this.value = terms.join(" ");
+					return false;
+				}
+			});
+	});
+    ////////////////////////////////////// END OF : Node Combination Forumla Construciton ///////////////////////////////////////////
+
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
@@ -486,7 +603,7 @@ function createNodemetricCondition(container_id, elem_id) {
         }
     };
     var service_opts    = {
-        title       : 'Create a Nodemetric Condition',
+        title       : 'Create a Condition',
         name        : 'nodemetriccondition',
         fields      : service_fields,
         error       : function(data) {
@@ -494,7 +611,7 @@ function createNodemetricCondition(container_id, elem_id) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a nodemetric condition'});
+    var button = $("<button>", {html : 'Add condition'});
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
@@ -527,7 +644,7 @@ function createNodemetricRule(container_id, elem_id) {
         },
     };
     var service_opts    = {
-        title       : 'Create a Nodemetric Rule',
+        title       : 'Create a Rule',
         name        : 'nodemetricrule',
         fields      : service_fields,
         error       : function(data) {
@@ -535,10 +652,69 @@ function createNodemetricRule(container_id, elem_id) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a nodemetric rule'});
+    var button = $("<button>", {html : 'Add a rule'});
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
+  
+    ////////////////////////////////////// Node Rule Forumla Construciton ///////////////////////////////////////////
+        
+        $(function() {
+    var availableTags = new Array();
+    $.ajax({
+        url: '/api/nodemetriccondition?dataType=jqGrid',
+        async   : false,
+        success: function(answer) {
+                    $(answer.rows).each(function(row) {
+                    var pk = answer.rows[row].pk;
+                    availableTags.push({label : answer.rows[row].nodemetric_condition_label, value : answer.rows[row].nodemetric_condition_id});
+
+                });
+            }
+    });
+
+    function split( val ) {
+			return val.split( / \s*/ );
+		}
+	    function extractLast( term ) {
+			return split( term ).pop();
+		}
+
+		$( "#input_nodemetric_rule_formula" )
+			// don't navigate away from the field on tab when selecting an item
+			.bind( "keydown", function( event ) {
+				if ( event.keyCode === $.ui.keyCode.TAB &&
+						$( this ).data( "autocomplete" ).menu.active ) {
+					event.preventDefault();
+				}
+			})
+			.autocomplete({
+				minLength: 0,
+				source: function( request, response ) {
+					// delegate back to autocomplete, but extract the last term
+					response( $.ui.autocomplete.filter(
+						availableTags, extractLast( request.term ) ) );
+				},
+				focus: function() {
+					// prevent value inserted on focus
+					return false;
+				},
+				select: function( event, ui ) {
+					var terms = split( this.value );
+					// remove the current input
+					terms.pop();
+					// add the selected item
+					terms.push( "id" + ui.item.value );
+					// add placeholder to get the comma-and-space at the end
+					//terms.push( "" );
+					this.value = terms;
+					this.value = terms.join(" ");
+					return false;
+				}
+			});
+	});
+    ////////////////////////////////////// END OF : Node Rule Forumla Construciton ///////////////////////////////////////////
+  
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
@@ -590,19 +766,12 @@ function createServiceCondition(container_id, elem_id) {
 };
 
 function createServiceRule(container_id, elem_id) {
-	
-	$('<div id="service_condition_listing_for_service_rule_creation">', { html : "pouet : " }).appendTo('#aggregaterule');
-	
+		
 	var loadServicesMonitoringGridId = 'service_rule_creation_condition_listing_' + elem_id;
     create_grid( {
         url: '/api/nodemetriccondition',
         content_container_id: 'service_condition_listing_for_service_rule_creation',
         grid_id: loadServicesMonitoringGridId,
-        /*afterInsertRow: function(grid, rowid) {
-            var current = $(grid).getCell(rowid, 'clustermetric_indicator_id');
-            var url     = '/api/externalcluster/' + elem_id + '/getIndicatorNameFromId';
-            setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id', { 'indicator_id' : current });
-        },*/
         colNames: [ 'id', 'name' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
@@ -619,13 +788,9 @@ function createServiceRule(container_id, elem_id) {
         	label	: 'Description',
         	type	: 'textearea',	
         },
-        aggregate_rule_formula	: {
-        	label   : 'Formula',
-            type	: 'text',	
-        },
-        clustermetric_label :{
+        aggregate_rule_formula :{
             label   : 'Formula',
-            display : 'clustermetric_label',   
+            type    : 'text',
         },
         aggregate_rule_state	:{
         	label   : 'Enabled',
@@ -638,7 +803,7 @@ function createServiceRule(container_id, elem_id) {
         },
     };
     var service_opts    = {
-        title       : 'Create a Service Rule',
+        title       : 'Create a Rule',
         name        : 'aggregaterule',
         fields      : service_fields,
         error       : function(data) {
@@ -646,12 +811,72 @@ function createServiceRule(container_id, elem_id) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a Service Rule'});
+    var button = $("<button>", {html : 'Add a Rule'});
   	button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
+        
+    
+    ////////////////////////////////////// Service Rule Forumla Construciton ///////////////////////////////////////////
+    $(function() {
+    var availableTags = new Array();
+    $.ajax({
+        url: '/api/aggregatecondition?dataType=jqGrid',
+        async   : false,
+        success: function(answer) {
+                    $(answer.rows).each(function(row) {
+                    var pk = answer.rows[row].pk;
+                    availableTags.push({label : answer.rows[row].aggregate_condition_label, value : answer.rows[row].aggregate_condition_id});
+
+                });
+                availableTags.join("AND","OR");
+            }
+    });
+
+    function split( val ) {
+			return val.split( / \s*/ );
+		}
+	    function extractLast( term ) {
+			return split( term ).pop();
+		}
+
+		$( "#input_aggregate_rule_formula" )
+			// don't navigate away from the field on tab when selecting an item
+			.bind( "keydown", function( event ) {
+				if ( event.keyCode === $.ui.keyCode.TAB &&
+						$( this ).data( "autocomplete" ).menu.active ) {
+					event.preventDefault();
+				}
+			})
+			.autocomplete({
+				minLength: 0,
+				source: function( request, response ) {
+					// delegate back to autocomplete, but extract the last term
+					response( $.ui.autocomplete.filter(
+						availableTags, extractLast( request.term ) ) );
+				},
+				focus: function() {
+					// prevent value inserted on focus
+					return false;
+				},
+				select: function( event, ui ) {
+					var terms = split( this.value );
+					// remove the current input
+					terms.pop();
+					// add the selected item
+					terms.push( "id" + ui.item.value );
+					// add placeholder to get the comma-and-space at the end
+					//terms.push( "" );
+					this.value = terms;
+					this.value = terms.join(" ");
+					return false;
+				}
+			});
+	});
+    //////////////////////////////////////  END OF : Service Rule Forumla Construciton ///////////////////////////////////////////
+    
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
-    $('#' + container_id).append(button);
+    $('#' + container_id).append(button);  
 };
     ////////////////////////END OF : NODES AND METRICS MODALS//////////////////////////////////
 
@@ -789,10 +1014,6 @@ function loadServicesOverview (container_id, elem_id) {
     container.append(dash_header);
     container.append(dash_div);
     container.append(dash_template);
-
-    // Make jquery button (must be done after append to container, each time)
-    container.find(".openaddwidgetdialog").button({ icons : { primary : 'ui-icon-plusthick' } });
-    container.find(".savedashboard").button({ icons : { primary : 'ui-icon-disk' } });
 
     //service_dashboard.setLayout(undefined);
     //service_dashboard.setLayout('layout2');
