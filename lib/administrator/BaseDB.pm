@@ -701,7 +701,7 @@ sub toJSON {
                 $hash->{attributes}->{$attr} = $attributes->{$class}->{$attr};
             }
             else {
-                if (defined $self->getAttr(name => $attr)) {
+                if ((not $args{no_empty}) or (defined $self->getAttr(name => $attr))) {
                     $hash->{$attr} = $self->getAttr(name => $attr);
                 }
             }
