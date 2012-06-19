@@ -295,10 +295,10 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
 
     function    validateTheForm() {
         var params              = {
-            origin_workflow_name    : $("input#input_origin_workflow_name").val(),
             new_workflow_name       : eid + '_' + $("input#input_origin_workflow_name").val(),
             origin_workflow_def_id  : $("input#input_origin_workflow_id").val(),
-            specific_params         : {}
+            specific_params         : {},
+            rule_id                 : eid
         };
         var specparamsinputs    = $("input.input_specific_param");
         $(specparamsinputs).each(function() {
