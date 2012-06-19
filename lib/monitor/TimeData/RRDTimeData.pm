@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use General;
 use Data::Dumper;
+use Kanopya::Config;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -57,25 +58,29 @@ B<throws>  : 'RRD creation failed' if the creation is a failure §WARNING§: the
 =cut
 
 sub createTimeDataStore{
-	#rrd creation example: system ('$rrd create target.rrd --start 1328190055 --step 300 DS:mem:GAUGE:600:0:671744 RRA:AVERAGE:0.5:12:24');
+    #rrd creation example: system ('$rrd create target.rrd --start 1328190055 --step 300 DS:mem:GAUGE:600:0:671744 RRA:AVERAGE:0.5:12:24');
     my %args = @_;
     $log->debug(Dumper(\%args));
-	
+
     General::checkParams(args => \%args, required => ['name']); 
-	
+
 	my $name = _formatName(name => $args{'name'});
 
     my $RRA_chain;
     my $DS_chain;
     my $opts = '';
-	
+
+    #get collect frequency from configuration file
+    my $monitor_configuration = Kanopya::Config::get('monitor');
+    my $frequency             = $monitor_configuration->{rrd_step}->{step};
+
     #definition of the options. If unset, default rrd start time is (now -10s)
-    if (defined $args{'options'}){
+    if (defined $args{'options'}) {
         my $options = $args{'options'};
 
         if (defined $options->{start}) {
             $opts .= '-b '.$options->{'start'}.' ';
-        }else{
+        } else {
 			my $time = time();
 			my $moduloTime = $time % 60;
 			my $finalTime = $time - $moduloTime;
@@ -84,16 +89,16 @@ sub createTimeDataStore{
 
         if (defined $options->{step}) {
             $opts .= '-s '.$options->{'step'}.' ';
-        }else{
-            $opts .= '-s 60 ';
+        } else {
+            $opts .= '-s '.$frequency;
         }
-    }else{
-            $opts .= '-s 60 ';
-			my $time = time();
-			my $moduloTime = $time % 60;
-			my $finalTime = $time - $moduloTime;
-			$opts .= '-b '.$finalTime.' ';
-        }
+    } else {
+        $opts .= '-s '.$frequency;
+        my $time = time();
+        my $moduloTime = $time % 60;
+        my $finalTime = $time - $moduloTime;
+        $opts .= '-b '.$finalTime.' ';
+    }
 	
     #default parameter for Round Robin Archive
     my %RRA_params = (function => 'LAST', XFF => '0', PDPnb => '1', CDPnb => '7200');
@@ -112,7 +117,8 @@ sub createTimeDataStore{
     $RRA_chain = 'RRA:'.$RRA_params{'function'}.':'.$RRA_params{'XFF'}.':'.$RRA_params{'PDPnb'}.':'.$RRA_params{'CDPnb'};
 
     #default parameter for Data Source
-    my %DS_params = (DSname => 'aggregate', type => 'GAUGE', heartbeat => '120', min => '0', max => 'U');
+    my $heartbeat = $frequency * 2;
+    my %DS_params = (DSname => 'aggregate', type => 'GAUGE', heartbeat => $heartbeat, min => '0', max => 'U');
 
     if (defined $args{'DS'}){
         my $DS = $args{'DS'};
