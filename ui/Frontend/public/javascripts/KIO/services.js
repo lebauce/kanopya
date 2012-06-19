@@ -1256,12 +1256,58 @@ function loadServicesRessources (container_id, elem_id) {
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'externalnode_state', index: 'externalnode_state', width: 90, formatter: StateFormatter },
             { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 200 },
-        ]
+        ],
+        details : {
+            tabs : [
+                        { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
+                    ],
+            title : { from_column : 'externalnode_hostname' }
+        },
     } );
 
     createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesRessourcesGridId));
     //reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
+}
+
+// This function load grid with list of rules for verified state corelation with the the selected node :
+function node_rules_tab(cid, eid, service_provider_id) {
+    
+
+    function verifiedNodeRuleStateFormatter(cell, options, row) {
+    
+        var VerifiedRuleFormat;
+        // Where rowid = rule_id
+        $.ajax({
+             url: '/api/externalnode/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
+             async: false,
+             success: function(answer) {
+                if (answer.length == 0) {
+                    VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
+                } else if (answer[0].verified_noderule_state == 'verified') {
+                    VerifiedRuleFormat = "<img src='/images/icons/broken.png' title='broken' />"
+                } else if (answer[0].verified_noderule_state == 'undef') {
+                    VerifiedRuleFormat = "<img src='/images/icons/down.png' title='down' />";
+                }
+              }
+        });
+        return VerifiedRuleFormat;
+    }
+
+    var loadNodeRulesTabGridId = 'node_rules_tabs';
+    create_grid( {
+        url: '/api/nodemetricrule?nodemetric_rule_service_provider_id=' + service_provider_id,
+        content_container_id: cid,
+        grid_id: loadNodeRulesTabGridId,
+        grid_class: 'node_rules_tab',
+        colNames: [ 'id', 'rule', 'state' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 90,},
+            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 200, formatter: verifiedNodeRuleStateFormatter },
+        ],
+        action_delete : 'no',
+    } );
 }
 
 function setCellWithCallMethod(url, grid, rowid, colName, data) {
@@ -1404,7 +1450,7 @@ function loadServicesRules (container_id, elem_id) {
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
-            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60, formatter:serviceStateFormatter },
+            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60,},
             { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 190 },
             { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 60 },
         ],
@@ -1435,7 +1481,7 @@ function loadServicesRules (container_id, elem_id) {
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_condition_label',index:'aggregate_condition_label', width:120,},
-             {name:'state',index:'state', width:60,formatter:serviceStateFormatter},
+             {name:'state',index:'state', width:60,},
              {name:'threshold',index:'threshold', width:60,},
              {name:'comparator',index:'comparator', width:160,},
              {name:'threshold',index:'threshold', width:160,},
@@ -1450,11 +1496,12 @@ function loadServicesRules (container_id, elem_id) {
         grid_class: 'service_ressources_aggregate_rules',
         content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
-        colNames: ['id','name', 'enabled', 'formula', 'description'],
+        colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
-             {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,formatter:serviceStateFormatter},
+             {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,},
+             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90,},
              {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
              {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
            ],
