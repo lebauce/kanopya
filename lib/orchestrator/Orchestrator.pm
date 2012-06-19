@@ -496,6 +496,9 @@ sub _evalRule {
     my $service_provider = $args{service_provider};
 
     my $service_provider_id = $service_provider->getId();
+
+    my $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+    my $workflow_def_id  = $rule->getAttr(name => 'workflow_def_id');
     my $rep = 0;
     #Eval the rule for each node
 
@@ -540,7 +543,7 @@ sub _evalRule {
                     cluster_id => $service_provider_id,
                     state      => 'verified'
                 );
-
+                $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, host_name => $host_name);
             }
         }else{
             #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
@@ -604,6 +607,9 @@ sub clustermetricManagement{
     my $cluster_evaluation = {};
     my $service_provider_id = $service_provider->getId();
 
+    my $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+    my $workflow_def_id  = $rule->getAttr(name => 'workflow_def_id');
+
     #GET RULES RELATIVE TO A CLUSTER
     my @rules = AggregateRule->search(hash=>{
         aggregate_rule_service_provider_id => $service_provider_id,
@@ -621,6 +627,7 @@ sub clustermetricManagement{
 
             if(defined $result){
                 if($result == 1){
+                    $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id);
                 }
             }
         } # for my $aggregate_rule 
