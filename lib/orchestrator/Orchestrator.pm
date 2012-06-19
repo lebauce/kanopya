@@ -66,7 +66,7 @@ my $log = get_logger("orchestrator");
                 
 =head2 new
     
-    Class : Public
+    Class : Publiu
     
     Desc : Instanciate Orchestrator object
     
@@ -608,7 +608,6 @@ sub clustermetricManagement{
     my $service_provider_id = $service_provider->getId();
 
     my $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
-    my $workflow_def_id  = $rule->getAttr(name => 'workflow_def_id');
 
     #GET RULES RELATIVE TO A CLUSTER
     my @rules = AggregateRule->search(hash=>{
@@ -627,6 +626,7 @@ sub clustermetricManagement{
 
             if(defined $result){
                 if($result == 1){
+                    my $workflow_def_id  = $aggregate_rule->getAttr(name => 'workflow_def_id');
                     $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id);
                 }
             }
