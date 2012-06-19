@@ -260,7 +260,7 @@ sub runWorkflow {
 
     #resolve the automatic params values
     my $automatic_values;
-    $automatic_values = $self->_getAutomaticParams(
+    $automatic_values = $self->_getAutomaticValues(
             automatic_params => $all_params->{automatic},
             sp_id            => $service_provider_id,
             scope_id         => $scope_id,
