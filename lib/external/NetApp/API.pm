@@ -22,6 +22,7 @@ use General;
 use EContext::Local;
 use Kanopya::Exceptions;
 
+use XML::Simple;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -54,11 +55,11 @@ sub AUTOLOAD {
     $method =~ s/_/-/g;
 
     my $request = NaElement->new($method);
-    foreach my $key (keys %args) {
-        my $value = $args{$key};
-        $key =~ s/_/-/g;
-        $request->child_add_string($key, $value);
-    }
+
+    $request->{xmlrequest} = XML::Simple->new(
+                                 NoAttr => 1,
+                                 RootName => $method)
+                             ->XMLout(\%args);
 
     my $response = $self->{server}->invoke_elem($request);
     if ($response->results_status() eq "failed") {

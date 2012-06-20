@@ -188,24 +188,24 @@ sub createExport {
     my $master = $kanopya_cluster->getMasterNode();
 
     eval {
-        $self->_getEntity()->igroup_create(initiator_group_name => "igroup_kanopya_master",
-                                           initiator_group_type => "iscsi");
+        $self->_getEntity()->igroup_create('initiator-group-name' => "igroup_kanopya_master",
+                                           'initiator-group-type' => "iscsi");
     };
 
     eval {
-        $self->_getEntity()->igroup_add(initiator            => $master->getAttr(name => "host_initiatorname"),
-                                        initiator_group_name => "igroup_kanopya_master");
+        $self->_getEntity()->igroup_add('initiator'            => $master->getAttr(name => "host_initiatorname"),
+                                        'initiator-group-name' => "igroup_kanopya_master");
     };
 
     my $lun_id;
     eval {
-        $lun_id = $api->lun_map(path            => $lun_path,
-                                initiator_group => 'igroup_kanopya_master')->child_get_string("lun-id-assigned");
+        $lun_id = $api->lun_map('path'            => $lun_path,
+                                'initiator-group' => 'igroup_kanopya_master')->child_get_string("lun-id-assigned");
     };
     if ($@) {
         # The LUN is already mapped, get its lun ID
         my @mappings = $api->lun_initiator_list_map_info(
-                           initiator => $master->getAttr(name => "host_initiatorname")
+                           'initiator' => $master->getAttr(name => "host_initiatorname")
                        )->child_get("lun-maps")->children_get;
 
         for my $mapping (@mappings) {
@@ -283,21 +283,21 @@ sub addExportClient {
     my $initiator_group = 'igroup_kanopya_' . $cluster->getAttr(name => "cluster_name");
 
     eval {
-        $self->_getEntity()->igroup_create(initiator_group_name => $initiator_group,
-                                           initiator_group_type => "iscsi");
+        $self->_getEntity()->igroup_create('initiator-group-name' => $initiator_group,
+                                           'initiator-group-type' => "iscsi");
     };
 
     eval {
         $log->info("Adding node " . $host->getAttr(name => "host_initiatorname") .
                    " to initiator group " . $initiator_group);
-        $self->_getEntity()->igroup_add(initiator            => $host->getAttr(name => "host_initiatorname"),
-                                        initiator_group_name => $initiator_group);
+        $self->_getEntity()->igroup_add('initiator'            => $host->getAttr(name => "host_initiatorname"),
+                                        'initiator-group-name' => $initiator_group);
     };
 
     $log->info("Mapping LUN $path to $initiator_group");
     eval {
-        my $lun_id = $self->_getEntity()->lun_map(path            => $path,
-                                                  initiator_group => $initiator_group);
+        my $lun_id = $self->_getEntity()->lun_map('path'            => $path,
+                                                  'initiator-group' => $initiator_group);
 
         $args{export}->setAttr(name  => "number",
                                value => $lun_id->child_get_string("lun-id-assigned"));

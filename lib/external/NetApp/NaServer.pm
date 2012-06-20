@@ -482,7 +482,7 @@ sub invoke_elem ($) {
 	my $server_type = $self->get_server_type();
 
 	#my $xmlrequest = $req->sprintf();
-	my $xmlrequest = $req->toEncodedString();
+	my $xmlrequest = $req->{xmlrequest} || $req->toEncodedString();
 
         # This is the filer url, in a form acceptable
 	# to the method line of an HTTP transaction.
