@@ -28,7 +28,9 @@ function usersList (container_id, elem_id) {
             fields: user_fields,
         };
                     
-        var button = $("<button>", {html : 'Add a user'});
+        var button = $("<button>", {html : 'Add a user'}).button({
+            icons   : { primary : 'ui-icon-plusthick' }
+        });
         button.bind('click', function() {
             new ModalForm(user_opts).start();
         });   
@@ -93,7 +95,9 @@ function groupsList (container_id, elem_id) {
             fields: group_fields,
         };
                     
-        var button = $("<button>", {html : 'Add a group'});
+        var button = $("<button>", {html : 'Add a group'}).button({
+          icons : { primary : 'ui-icon-plusthick' }
+        });
         button.bind('click', function() {
             new ModalForm(group_opts).start();
         });   
