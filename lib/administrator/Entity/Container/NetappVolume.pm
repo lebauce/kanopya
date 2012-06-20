@@ -28,5 +28,10 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub volumePath {
+    my $self = shift;
+
+    return '/vol/' . $self->getAttr(name => "container_name");
+}
 
 1;

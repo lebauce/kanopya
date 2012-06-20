@@ -168,4 +168,43 @@ sub removeExport {
     $args{container_access}->delete();
 }
 
+=head2 addExportClient
+
+    Desc : Autorize client to access an export
+    args:
+        export : export to give access to
+        host : host to authorize
+
+=cut
+
+sub addExportClient {
+    my $self = shift;
+    my %args = @_;
+
+    my $host = $args{host};
+    my $volume = $args{export}->getContainer;
+
+    eval {
+        $self->_getEntity()->nfs_exportfs_append_rules(
+            persistent => [ "true" ],
+            rules => {
+                "exports-rule-info" => [ {
+                    "pathname" => $volume->volumePath,
+                    "nosuid" => "true",
+                    "read-write" => {
+                        "exports-hostname-info" => [ {
+                            "name" => $host->getAdminIp
+                        } ]
+                    },
+                    "root" => {
+                        "exports-hostname-info" => [ {
+                            "name" => $host->getAdminIp
+                        } ]
+                    }
+                } ]
+            }
+        );
+    }
+}
+
 1;
