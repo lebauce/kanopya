@@ -123,7 +123,7 @@ function _generatePermissionsSelect(container, condition, changeCallback, callba
         url     : '/api/gp?' + condition,
         type    : 'GET',
         success : function(data) {
-            var gpselect    = $('<select>').prependTo(container).bind('change', changeCallback);
+            var gpselect    = $('<select>', { rel : $(container).attr('rel') }).prependTo(container).bind('change', changeCallback);
             for (var i in data) if (data.hasOwnProperty(i)) {
                 $(gpselect).append($("<option>", { html : data[i].gp_name, rel : 'gp', value : data[i].gp_id }));
             }
@@ -140,10 +140,10 @@ function permissions(cid) {
     var     struct              = $('<table>').appendTo(container);
     var     groupSelector       = $('<td>', { colspan : 2 }).appendTo($('<tr>').appendTo(struct));
     var     line                = $('<tr>').appendTo(struct);
-    var     userGroupSelector   = $('<td>').appendTo(line);
-    var     targetGroupSelector = $('<td>').appendTo(line);
+    var     userGroupSelector   = $('<td>', { rel : 'users' }).appendTo(line);
+    var     targetGroupSelector = $('<td>', { rel : 'target' }).appendTo(line);
 
-    var     lastUsrGrpSel;
+    var     lastUsrGrpSel   = {};
 
     var cb                      = function(select) {
         var name;
@@ -174,13 +174,14 @@ function permissions(cid) {
     }
 
     var showtable               = function(event) {
+        var a   = $(event.currentTarget).attr('rel');
         // Prevent from selecting option with rel=discard
         for (var i = 0; i < event.currentTarget.childElementCount; ++i) {
             if (event.currentTarget[i].value == event.currentTarget.value) {
                 if ($(event.currentTarget[i]).attr('rel') === 'discard') {
-                    $(lastUsrGrpSel).attr('selected', true);
+                    $(lastUsrGrpSel[a]).attr('selected', true);
                 } else {
-                    lastUsrGrpSel   = event.currentTarget[i];
+                    lastUsrGrpSel[a]   = event.currentTarget[i];
                 }
                 break;
             }
