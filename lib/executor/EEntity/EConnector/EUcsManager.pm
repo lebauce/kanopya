@@ -140,7 +140,7 @@ sub getFreeHost {
 
             my $pxe = 1;
             my @ethernets = $sp->children("vnicEther");
-            @ethernets = reverse sort { $b->{name} <=> $a->{name} } @ethernets;
+            @ethernets = sort { $a->{name} cmp $b->{name} } @ethernets;
 
             for my $ethernet (@ethernets) {
                 my $ifname = $ethernet->{name};
