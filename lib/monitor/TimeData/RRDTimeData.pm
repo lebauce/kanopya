@@ -90,10 +90,10 @@ sub createTimeDataStore{
         if (defined $options->{step}) {
             $opts .= '-s '.$options->{'step'}.' ';
         } else {
-            $opts .= '-s '.$frequency;
+            $opts .= '-s '.$frequency.' ';
         }
     } else {
-        $opts .= '-s '.$frequency;
+        $opts .= '-s '.$frequency.' ';
         my $time = time();
         my $moduloTime = $time % 60;
         my $finalTime = $time - $moduloTime;
