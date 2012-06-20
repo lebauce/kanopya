@@ -28,6 +28,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+  return {
+    getWorkflows    => {
+        description => 'getWorkflows',
+        perm_holder => 'entity'
+    }
+  };
+}
+
 sub primarykey { return 'entity_id'; }
 
 =head2 getMasterGroupName
@@ -280,7 +289,7 @@ sub getWorkflows {
             push @workflows, $workflow;
         }
     }
-    return @workflows;
+    return wantarray ? @workflows : \@workflows;
 }
 
 sub lock {
