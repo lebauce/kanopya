@@ -1015,22 +1015,13 @@ function loadServicesOverview (container_id, elem_id) {
 
     service_id = elem_id;
 
-    $.ajax({
- 		url: '/api/externalcluster?dataType=jqGrid',
- 		success: function(data) {
-			$(data.rows).each(function(row) {
-				if ( data.rows[row].pk == elem_id ) {
-    				externalclustername = data.rows[row].externalcluster_name;
-    				$('<div>Overview for Service ' + externalclustername + '<div>').appendTo(container);
-    			}
-    		});
-    	}
-	});
-
     dash_div.hide();
     container.append(dash_header);
     container.append(dash_div);
-    container.append(dash_template);
+    //container.append(dash_template);
+
+    // Needed to have the container with a good height
+    container.css('overflow', 'hidden');
 
     // Make jquery button (must be done after append to container, each time)
     container.find(".openaddwidgetdialog").button({ icons : { primary : 'ui-icon-plusthick' } });

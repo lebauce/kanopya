@@ -1,3 +1,4 @@
+require('widgets/widget_common.js');
 
 $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
@@ -86,7 +87,7 @@ function timedGraph(first_graph_line, min, max, label, div_id) {
     // var first_graph_line=[['03-14-2012 16:23', 0], ['03-14-2012 16:17', 0], ['03-14-2012 16:12', 0],['03-14-2012 16:15',null], ['03-14-2012 16:19', 0], ['03-14-2012 16:26', null]];
     // alert ('min: '+min+' max: '+max);
     // alert ('data for selected combination: '+first_graph_line);
-    cluster_timed_graph = $.jqplot(div_id, [first_graph_line], {
+    var cluster_timed_graph = $.jqplot(div_id, [first_graph_line], {
         title:label,
         seriesDefaults: {
             breakOnNull:true,
@@ -124,6 +125,9 @@ function timedGraph(first_graph_line, min, max, label, div_id) {
         }
         
     });
+
+    // Attach resize event handlers
+    setGraphResizeHandlers(div_id, cluster_timed_graph);
 }
 
 function toggleTrendLine() {

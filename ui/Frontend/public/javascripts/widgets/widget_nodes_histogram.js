@@ -1,3 +1,4 @@
+require('widgets/widget_common.js');
 
 $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
@@ -72,7 +73,7 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nod
 
 function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div_id, nodesquantity, title) {
     $.jqplot.config.enablePlugins = true;
-    nodes_bar_graph = $.jqplot(div_id, [nbof_nodes_in_partition], {
+    var nodes_bar_graph = $.jqplot(div_id, [nbof_nodes_in_partition], {
     title: title,
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
@@ -95,7 +96,8 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
                 }
             },
             yaxis:{
-                label:'#nodes',
+                label:'# nodes',
+                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
                 min:0,
                 max:nodesquantity,
             },
@@ -106,6 +108,10 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
             showMarker:false,
         }
     });
+
+    // Attach resize event handlers
+    setGraphResizeHandlers(div_id, nodes_bar_graph);
+
 }
 
 //simple function to check if a variable is an integer

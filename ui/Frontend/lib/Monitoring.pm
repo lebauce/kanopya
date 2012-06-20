@@ -134,7 +134,7 @@ ajax '/serviceprovider/:spid/nodesview/histogram' => sub {
 
         #we build two arrays, one containing the partition "label", and the other containing the related values
         foreach my $partition_scope ( sort { $a <=> $b } keys %$partitioned_values) {
-            push @partitions_scopes, $min.' - '.$partition_scope;
+            push @partitions_scopes, sprintf('%.2f',$min) . ' - ' . sprintf('%.2f',$partition_scope);
             push @nbof_nodes_per_partition, $partitioned_values->{$partition_scope};
             $min = $partition_scope;
         }
@@ -280,7 +280,7 @@ sub _computeNodemetricCombination {
             return \%rep;
         }
         #we now sort this array
-        my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
+        my @sorted_nodes_values =  sort { $b->{value} <=> $a->{value} } @nodes_values_to_sort;
         # we split the array into 2 distincts one, that will be returned to the monitor.js
         my @nodes = map { $_->{node} } @sorted_nodes_values;
         my @values = map { $_->{value} } @sorted_nodes_values;  

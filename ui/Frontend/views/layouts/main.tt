@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="<% request.uri_base %>/css/layout.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/ui.jqgrid.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/jquery.gritter.css" />
+<link rel="stylesheet" href="<% request.uri_base %>/css/jquery.jqplot.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/theme/default/dashboardui.css" />
 
 <link rel="stylesheet" href="<% request.uri_base %>/css/kanopya_style.css" />

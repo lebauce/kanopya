@@ -17,7 +17,6 @@
 /* format the text inside the toggler (layout) */
 .ui-layout-toggler .content {
    font-size: 12px; /* IMPORTANT: default = 1px */
-   font-weight: bold;
    text-align: center;
    color: #FFFFFF;
 }
