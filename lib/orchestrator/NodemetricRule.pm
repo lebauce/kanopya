@@ -20,6 +20,7 @@ use Data::Dumper;
 use NodemetricCondition;
 use Entity::ServiceProvider;
 use Entity::ServiceProvider::Outside::Externalcluster;
+use VerifiedNodeRule;
 use List::MoreUtils qw {any} ;
 use Switch;
 # logger
@@ -251,6 +252,15 @@ sub deleteVerifiedRule  {
     }
 }
 
+=head2 getVerifiedRuleWfDefId
+    Desc: Check if a workflow def has been triggered for a verified rule
+
+    Args: $hostname, $service_provider_id
+
+    Return: $workflow_def_id or 0
+
+=cut
+
 sub getVerifiedRuleWfDefId {
     my ($self,%args) = @_;
 
@@ -258,7 +268,8 @@ sub getVerifiedRuleWfDefId {
     my $service_provider_id = $args{service_provider_id};
     my $service_provider    = Entity::ServiceProvider->get('id' => $service_provider_id);
 
-    my $nodes = $service_provider->getNodes();
+    my $nodes               = $service_provider->getNodes();
+    my $rule_id             = $self->getAttr(name => 'nodemetric_rule_id');
     my $node_id;
 
     foreach my $node (@$nodes) {
@@ -273,9 +284,11 @@ sub getVerifiedRuleWfDefId {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     else {
-        my $workflow_def_id = $self->{_dbix}->verified_noderules->search (
-                                  { verified_noderule_externalnode_id => $node_id }
-                              )->single->get_column('workflow_def_id');
+        my $verified_noderule = VerifiedNodeRule->find(hash => {
+                                    verified_noderule_externalnode_id    => $node_id,
+                                    verified_noderule_nodemetric_rule_id => $rule_id
+                                });
+        my $workflow_def_id   = $verified_noderule->getAttr(name => 'workflow_def_id');
 
         if (defined $workflow_def_id) {
             return $workflow_def_id;
@@ -286,6 +299,47 @@ sub getVerifiedRuleWfDefId {
     }
 
 }
+
+=head2 deleteVerifiedRuleWfDefId
+    Desc: delete the workflow def id indication in verified_noderule table to indicate
+          that the verified rule has no more running workflow
+
+    Args: $hostname, $service_provider_id
+
+    Return: $workflow_def_id or 0
+
+=cut
+
+sub deleteVerifiedRuleWfDefId {
+    my ($self,%args) = @_;
+
+    my $hostname            = $args{hostname};
+    my $service_provider_id = $args{service_provider_id};
+    my $rule_id             = $self->getAttr(name => 'nodemetric_rule_id');
+    my $nodes               = $service_provider->getNodes();
+    my $node_id;
+
+    foreach my $node (@$nodes) {
+        if($node->{hostname} eq $hostname) {
+            $node_id = $node->{id};
+        }
+    }
+
+    if(not defined $node_id){
+        my $errmsg = "unknown node $hostname in service provider $service_provider_id";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+    else {
+        my $verified_noderule = VerifiedNodeRule->find(hash => {
+                                    verified_noderule_externalnode_id    => $node_id,
+                                    verified_noderule_nodemetric_rule_id => $rule_id
+                                });
+        $verified_noderule->setAttr(name => 'workflow_def_id', value => 'null');
+        $verified_noderule->save();
+    }
+}
+
 sub setVerifiedRule{
     my $self = shift;
     my %args = @_;

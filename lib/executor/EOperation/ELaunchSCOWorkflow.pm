@@ -60,6 +60,7 @@ sub prepare {
         'output_directory',
         'output_file',
         'workflow_values',
+        'template_content',
     ]);
     
 }
@@ -120,9 +121,14 @@ sub finish {
     my $rule_id = $self->{params}->{rule_id};
 
     if ($self->{params}->{scope_name} eq 'node') {
+        my $rule = NodemetricRule->find(hash => {rule_id => $rule_id});
+        $rule->deleteVerifiedRuleWfDefId(
+            hostname => $wf_values->{node_hostname}, 
+            service_provider_id => $self->{params}->{sp_id},
+        );
     }
     elsif ($self->{params}->{scope_name} eq 'service_provider') {
-        my $rule = AggregateRule->find (hash => {rule_id => $rule_id});
+        my $rule = AggregateRule->find(hash => {rule_id => $rule_id});
         $rule->enable();
     }
 }

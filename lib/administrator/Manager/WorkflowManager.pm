@@ -277,7 +277,8 @@ sub runWorkflow {
     my $workflow_params = $self->_defineFinalParams(
                               all_params    => $all_params,
                               workflow_name => $workflow_name,
-                              rule_id       => $rule_id
+                              rule_id       => $rule_id,
+                              sp_id         => $service_provider_id,
                           );
 
     #print Dumper $workflow_params;

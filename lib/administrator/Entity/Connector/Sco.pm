@@ -209,11 +209,12 @@ sub _getServiceProviderName {
 sub _defineFinalParams {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'all_params', 'workflow_name', 'rule_id' ]);
+    General::checkParams(args => \%args, required => [ 'all_params', 'workflow_name', 'rule_id', 'sp_id' ]);
 
-    my $rule_id         = $args{rule_id};
-    my $all_params      = $args{all_params};
-    my $workflow_name   = $args{workflow_name};
+    my $rule_id             = $args{rule_id};
+    my $all_params          = $args{all_params};
+    my $workflow_name       = $args{workflow_name};
+    my $service_provider_id = $args{sp_id};
 
     #get scope name for operation
     my $scope_id   = $all_params->{internal}->{scope_id};
@@ -230,6 +231,7 @@ sub _defineFinalParams {
         workflow_values  => $workflow_values,
         scope_name       => $scope_name,
         rule_id          => $rule_id,
+        sp_id            => $service_provider_id,
     };
 
     return $workflow_params;
