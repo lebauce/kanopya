@@ -178,6 +178,17 @@ function serviceStateFormatter(cell, options, row) {
 		return "<img src='/images/icons/down.png' title='disabled' />";
 	}
 }
+
+function lastevalStateFormatter(cell, options, row) {
+	//if (cell == 'up') {
+	if ( cell == 0 ) {
+		return "<img src='/images/icons/up.png' title='up' />";
+	} else if ( cell == 1 ) {
+		return "<img src='/images/icons/broken.png' title='broken' />";
+	} else if ( cell == null ) {
+	    return "<img src='/images/icons/down.png' title='down' />";
+	}
+}
  
 // Check if there is a configured directory service
 function isThereAConnector(elem_id, connector_category) {
@@ -372,6 +383,20 @@ function createAddServiceButton(container) {
     ////////////////////////MONITORING MODALS//////////////////////////////////
 function createServiceMetric(container_id, elem_id) {
     
+    
+    var indicators = new Array();
+    $.ajax({
+        async   : false,
+ 		url: '/api/scomindicator',
+ 		success: function(rows) {
+		   $(rows).each(function(row) {
+		       var indid = rows[row].indicator_id;
+    	       indicators[indid] = rows[row].indicator_name;
+    	   });
+    	   console.log(indicators);
+  		}
+	});
+    
     var service_fields  = {
         clustermetric_label    : {
             label   : 'Name',
@@ -387,8 +412,9 @@ function createServiceMetric(container_id, elem_id) {
         	type	: 'text',	
         },
         clustermetric_indicator_id	:{
-        	label	: 'Combination',
-        	display	: 'clustermetric_indicator_label',
+        	label	: 'Indicator',
+        	type	: 'select',
+        	options : indicators,
         },
         clustermetric_service_provider_id	:{
         	type	: 'hidden',
@@ -1609,7 +1635,7 @@ function loadServicesRules (container_id, elem_id) {
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
              {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,},
-             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90,},
+             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90, formatter : lastevalStateFormatter},
              {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
              {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
            ],

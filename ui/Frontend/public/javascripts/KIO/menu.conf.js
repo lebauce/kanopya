@@ -28,11 +28,11 @@ var mainmenu_def = {
                                {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('KIO/users.js'); groupsList(cid, eid); }},
                                {label : 'Permissions', id : 'permissions', onLoad : function(cid, eid) { require('KIO/users.js'); permissions(cid, eid); }}
                                ],
-        'Monitoring'       : [],
         'Workflows'        : [
             { label : 'Overview', id : 'workflows_overview', onLoad : workflowsoverview },
-            { label : 'Workflow Management' , id : 'workflowmanagement', onLoad : sco_workflow }
-        ]
+            { label : 'Workflow Management' , id : 'workflowmanagement', onLoad : sco_workflow },
+        ],
+        'Monitoring'       : [{label : 'Scom', id : 'scommanagement',onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }}],
     },
 };
 
