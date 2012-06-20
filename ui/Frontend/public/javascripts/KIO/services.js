@@ -917,6 +917,7 @@ function servicesList (container_id, elem_id) {
                 }
             });
         },
+        rowNum : 25,
         colNames: [ 'ID', 'Name', 'Enabled', 'Node Number' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
@@ -1279,6 +1280,7 @@ function loadServicesRessources (container_id, elem_id) {
         content_container_id: container_id,
         grid_id: loadServicesRessourcesGridId,
         grid_class: 'service_ressources_list',
+        rowNum : 25,
         colNames: [ 'id', 'enabled', 'hostname' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
@@ -1353,10 +1355,51 @@ function setCellWithCallMethod(url, grid, rowid, colName, data) {
 }
 
 function loadServicesMonitoring (container_id, elem_id) {
-	
-	var container = $("#" + container_id);
+
+    var container = $("#" + container_id);
+
+    // Nodemetric bargraph details handler
+    function nodeMetricDetailsBargraph(cid, nodeMetric_id) {
+      // Use dashboard widget outside of the dashboard
+      var cont = $('#' + cid);
+      var graph_div = $('<div>', { 'class' : 'widgetcontent' });
+      cont.addClass('widget');
+      cont.append(graph_div);
+      graph_div.load('/widgets/widget_nodes_bargraph.html', function() {
+          $('.indicator_dropdown').remove();
+          showNodemetricCombinationBarGraph(graph_div, nodeMetric_id, '', elem_id);
+      });
+    }
+
+    // Nodemetric histogram details handler
+    function nodeMetricDetailsHistogram(cid, nodeMetric_id) {
+      // Use dashboard widget outside of the dashboard
+      var cont = $('#' + cid);
+      var graph_div = $('<div>', { 'class' : 'widgetcontent' });
+      cont.addClass('widget');
+      cont.append(graph_div);
+      graph_div.load('/widgets/widget_nodes_histogram.html', function() {
+          $('.indicator_dropdown').remove();
+          $('.part_number_input').remove();
+          showNodemetricCombinationHistogram(graph_div, nodeMetric_id, '', 10, elem_id);
+      });
+    }
+
+    // Clustermetric historical graph details handler
+    function clusterMetricDetailsHistorical(cid, clusterMetric_id) {
+      // Use dashboard widget outside of the dashboard
+      var cont = $('#' + cid);
+      var graph_div = $('<div>', { 'class' : 'widgetcontent' });
+      cont.addClass('widget');
+      cont.append(graph_div);
+      graph_div.load('/widgets/widget_historical_service_metric.html', function() {
+          $('.clustermetric_options').remove();
+          showCombinationGraph(graph_div, clusterMetric_id, '', '', '', elem_id);
+      });
+    }
+
     ////////////////////////MONITORING ACCORDION//////////////////////////////////
-        	
+
     var divacc = $('<div id="accordion_monitoring_rule">').appendTo(container);
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
     $('<div id="node_monitoring_accordion_container">').appendTo(divacc);
@@ -1378,7 +1421,14 @@ function loadServicesMonitoring (container_id, elem_id) {
             { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
             { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', width: 170 },
-        ]
+        ],
+        details: {
+            tabs : [
+                    { label : 'Nodes graph', id : 'nodesgraph', onLoad : nodeMetricDetailsBargraph },
+                    { label : 'Histogram', id : 'histogram', onLoad : nodeMetricDetailsHistogram },
+                ],
+            title : { from_column : 'nodemetric_combination_label' }
+        },
     } );
     createNodemetricCombination('node_monitoring_accordion_container', elem_id);
 
@@ -1423,7 +1473,13 @@ function loadServicesMonitoring (container_id, elem_id) {
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
             { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200 },
-        ]
+        ],
+        details: {
+            tabs : [
+                    { label : 'Historical graph', id : 'servicehistoricalgraph', onLoad : clusterMetricDetailsHistorical },
+                ],
+            title : { from_column : 'aggregate_combination_label' }
+        },
     } );
     createServiceConbination('service_monitoring_accordion_container', elem_id);
     
