@@ -210,6 +210,22 @@ function isThereAConnector(elem_id, connector_category) {
     return is;
 }
 
+function isThereAManager(elem_id, category) {
+    var is  = false;
+
+    $.ajax({
+        url         : '/api/serviceprovider/' + elem_id + '/getManager',
+        type        : 'POST',
+        contentType : 'application/json',
+        data        : JSON.stringify({ 'manager_type' : category }),
+        async       : false,
+        success     : function(data) {
+            is  = true;
+        }
+    });
+    return is;
+}
+
 function getAllConnectorFields() {
     return {
         'activedirectory'   : {
@@ -1197,57 +1213,60 @@ function loadServicesConfig (container_id, elem_id) {
                 });
             }
 
-            var addManagerButton    = $("<a>", { text : 'Add a Manager' }).button({ icons : { primary : 'ui-icon-plusthick' } });
-            addManagerButton.bind('click', function() {
-                $.ajax({
-                    url         : '/api/serviceprovider/' + elem_id + '/findManager',
-                    type        : 'POST',
-                    contentType : 'application/json',
-                    data        : JSON.stringify({ 'category' : 'WorkflowManager' }),
-                    success     : function(data) {
-                        var select  = $("<select>", { name : 'managerselection' })
-                        for (var i in data) if (data.hasOwnProperty(i)) {
-                            var theName     = data[i].name;
-                            var manager     = data[i];
-                            $.ajax({
-                                url     : '/api/externalcluster/' + data[i].service_provider_id,
-                                async   : false,
-                                success : function(data) {
-                                    theName = data.externalcluster_name + " - " + theName;
-                                    $(select).append($("<option>", { text : theName, value : manager.id }));
+            if (isThereAManager(elem_id, 'WorkflowManager') === false) {
+                var addManagerButton    = $("<a>", { text : 'Add a Workflow Manager' }).button({ icons : { primary : 'ui-icon-plusthick' } });
+                addManagerButton.bind('click', function() {
+                    $.ajax({
+                        url         : '/api/serviceprovider/' + elem_id + '/findManager',
+                        type        : 'POST',
+                        contentType : 'application/json',
+                        data        : JSON.stringify({ 'category' : 'WorkflowManager' }),
+                        success     : function(data) {
+                            var select  = $("<select>", { name : 'managerselection' })
+                            for (var i in data) if (data.hasOwnProperty(i)) {
+                                var theName     = data[i].name;
+                                var manager     = data[i];
+                                $.ajax({
+                                    url     : '/api/externalcluster/' + data[i].service_provider_id,
+                                    async   : false,
+                                    success : function(data) {
+                                        theName = data.externalcluster_name + " - " + theName;
+                                        $(select).append($("<option>", { text : theName, value : manager.id }));
+                                    }
+                                });
+                            }
+                            $("<fieldset>").append($(select)).appendTo(container).dialog({
+                                title           : 'Add a workflow manager',
+                                closeOnEscape   : false,
+                                draggable       : false,
+                                resizable       : false,
+                                buttons         : {
+                                    'Cancel'    : function() { $(this).dialog("destroy"); },
+                                    'Ok'        : function() {
+                                        var dial    = this;
+                                        $.ajax({
+                                            url         : '/api/serviceprovidermanager',
+                                            type        : 'POST',
+                                            data        : {
+                                                manager_type        : 'WorkflowManager',
+                                                manager_id          : $(select).attr('value'),
+                                                service_provider_id : elem_id,
+                                            },
+                                            success     : function() {
+                                                $(dial).dialog("destroy");
+                                                $(container).empty();
+                                                that.loadServicesConfig(container_id, elem_id);
+                                            }
+                                        });
+                                    }
                                 }
                             });
                         }
-                        $("<fieldset>").append($(select)).appendTo(container).dialog({
-                            title           : 'Add a manager',
-                            closeOnEscape   : false,
-                            draggable       : false,
-                            resizable       : false,
-                            buttons         : {
-                                'Cancel'    : function() { $(this).dialog("destroy"); },
-                                'Ok'        : function() {
-                                    var dial    = this;
-                                    $.ajax({
-                                        url         : '/api/serviceprovidermanager',
-                                        type        : 'POST',
-                                        data        : {
-                                            manager_type        : 'WorkflowManager',
-                                            manager_id          : $(select).attr('value'),
-                                            service_provider_id : elem_id,
-                                        },
-                                        success     : function() {
-                                            $(dial).dialog("destroy");
-                                            $(container).empty();
-                                            that.loadServicesConfig(container_id, elem_id);
-                                        }
-                                    });
-                                }
-                            }
-                        });
-                    }
+                    });
                 });
-            });
-            addManagerButton.appendTo($(ctnr));
+                addManagerButton.appendTo($(ctnr));
+            }
+
         }
     });
 
