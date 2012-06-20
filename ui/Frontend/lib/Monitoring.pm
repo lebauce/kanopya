@@ -6,12 +6,62 @@ use Data::Dumper;
 
 use Administrator;
 use NodemetricCombination;
+use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("webui");
 
 prefix '/monitoring';
 
+
+=head2 ajax '/extclusters/:extclusterid/monitoring/clustersview'
+
+    Desc: Get the values corresponding to the selected combination for the currently monitored cluster, 
+    return to the monitor.js an 2D array containing the timestamped values for the combination, plus a start time and a stop time
+
+=cut
+
+ajax '/serviceprovider/:spid/clustersview' => sub {
+    my $cluster_id    = params->{spid} || 0;
+    my $combination_id = params->{'id'};
+    my $start = params->{'start'};
+    my $start_timestamp;
+    my $stop = params->{'stop'};
+    my $stop_timestamp; 
+    my $date_parser = DateTime::Format::Strptime->new( pattern => '%m-%d-%Y %H:%M' );
+
+    content_type('application/json');
+
+    #If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
+    if ($start eq '') {
+        $start = DateTime->now->set_time_zone('local');
+        $start->subtract( days => 1 );
+        $start_timestamp = $start->epoch(); 
+        $start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
+    } else {
+        my $start_dt = $date_parser->parse_datetime($start);
+        $start_timestamp = $start_dt->epoch();
+    }
+
+    if ($stop eq '') {
+        $stop = DateTime->now->set_time_zone('local');
+        $stop_timestamp = $stop->epoch(); 
+        $stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
+    } else {
+        my $stop_dt = $date_parser->parse_datetime($stop);
+        $stop_timestamp = $stop_dt->epoch() ;
+    }
+
+    #we get the combination values and return them to the javascript
+    my $compute_result = _computeClustermetricCombination (combination_id => $combination_id, start_tms => $start_timestamp, stop_tms => $stop_timestamp);
+
+    if ($compute_result->{'error'}) {
+        return to_json {error => $compute_result->{'error'}};
+    } else {
+        my $histovalues = $compute_result->{'histovalues'};
+        return to_json {first_histovalues => $histovalues, min => $start, max => $stop};
+    }
+};
 
 =head2 ajax '/serviceprovider/:spid/nodesview/bargraph'
 
@@ -96,6 +146,62 @@ ajax '/serviceprovider/:spid/nodesview/histogram' => sub {
         return to_json {partitions => \@partitions_scopes, nbof_nodes_in_partition => \@nbof_nodes_per_partition, nodesquantity => $nodes_quantity};
     }
 };
+
+=head2 sub _computeClustermetricCombination
+
+    Desc: Compute the clustermetric combination for the cluster and return a reference to an array containing the corresponding values and related times
+    return: \@histovalues;
+
+=cut
+
+sub _computeClustermetricCombination () {
+    my %args = @_;
+    my $combination_id = $args{combination_id};
+    my $start_timestamp = $args{start_tms};
+    my $stop_timestamp = $args{stop_tms};
+    my $combination = AggregateCombination->get('id' => $combination_id);
+    my $error;
+    my %aggregate_combination;
+    my @histovalues;
+    my %rep;
+    
+    eval {
+        %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
+        # $log->info('values returned by compute values: '.Dumper \%aggregate_combination);
+    };
+    if ($@) {
+        $error="$@";
+        $log->error($error);
+        $rep{'error'} = $error;
+        return \%rep;
+    } elsif (!%aggregate_combination || scalar(keys %aggregate_combination) == 0) {
+        $error='no values could be computed for this combination';
+        $log->error($error);
+        $rep{'error'} = $error;
+        return \%rep;
+    } else {
+        my $undef_count = 0;
+        my $res_number = scalar(keys %aggregate_combination);
+        while (my ($date, $value) = each %aggregate_combination) {
+            my $dt = DateTime->from_epoch(epoch => $date)->set_time_zone('local');
+            my $date_string = $dt->strftime('%m-%d-%Y %H:%M');
+            push @histovalues, [$date_string,$value];
+            # we reference the undef values in order to throw an error if all values are undef
+            if (!defined $value) {
+                $undef_count++;
+            }
+        }
+        if ($res_number == $undef_count) {
+            $error = 'all values retrieved for the selected time windows were undefined';
+            $log->error($error);
+            $rep{'error'} = $error;
+            return \%rep;
+        }
+
+        $rep{'histovalues'} = \@histovalues;
+        return \%rep;
+    }
+}
 
 =head2 sub _computeNodemetricCombination
 

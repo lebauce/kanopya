@@ -49,7 +49,9 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
     var graph_div_id_prefix = 'nodes_bargraph' + widget_id;
     
     if (nodemetric_combination_id == 'default') { return }
-    //loading_start();
+
+    widget_loading_start( $(curobj).closest('.widget') );
+
     var params = {id:nodemetric_combination_id};
     graph_container_div.children().remove();
     $.getJSON(nodes_view_bargraph, params, function(data) {
@@ -78,7 +80,7 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
             //var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
             //graph_container_div.append(button);
         }
-        //loading_stop();
+        widget_loading_stop( $(curobj).closest('.widget') );
     });
 }
 

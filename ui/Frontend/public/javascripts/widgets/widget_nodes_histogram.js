@@ -55,7 +55,7 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nod
     } else if (!part_number) {
         part_number = 10;
     }
-//    loading_start();
+    widget_loading_start( $(curobj).closest('.widget') );
     var params = {id:nodemetric_combination_id,pn:part_number};
     //graph_div.html('');
     $.getJSON(nodes_view_histogram, params, function(data) {
@@ -66,7 +66,7 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nod
         }
 //        var button = '<input type=\"button\" value=\"refresh\" id=\"nch_button\" onclick=\"nch_replot()\"/>';
 //        $("#"+div_id).append(button);
-//        loading_stop();
+        widget_loading_stop( $(curobj).closest('.widget') );
     });
 }
 

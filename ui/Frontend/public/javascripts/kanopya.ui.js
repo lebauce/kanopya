@@ -1,5 +1,16 @@
 var lastMsgId = '';
 
+// Dashboard widget loading
+// TODO: not here, use dashboard conf (loadingHtml, widgetContentClass), maybe use events
+function widget_loading_start( widget ) {
+    var loadingHtml = '<div class="loading"><img alt="Loading, please wait" src="/css/theme/loading.gif" /><p>Loading...</p></div>';
+    $(loadingHtml).appendTo(widget.find('.widgetcontent'));
+}
+
+function widget_loading_stop( widget ) {
+    widget.find('.loading').remove();
+}
+
 $(document).ready(function () {
 
     var loginModalOpened    = false;

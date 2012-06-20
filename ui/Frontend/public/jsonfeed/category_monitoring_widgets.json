@@ -2,13 +2,13 @@
 "result" :
   {
   "data" : [
-    {
-      "id" : "widget_nodes_histo",
-      "title" : "Nodes histogram",
-      "description" : "Nodes histogram widget",
+     {
+      "id" : "widget_historical_service_metric",
+      "title" : "Historical Service metric",
+      "description" : "Historical service metric combination widget",
       "creator" : "Hedera",
-      "url" : "widgets/widget_nodes_histogram.html",
-      "image": "widgets/widget_nodes_bargraph.png",
+      "url" : "widgets/widget_historical_service_metric.html",
+      "image": "widgets/widget_historical_service_metric.jpg",
       "metadata" : {}
     },
     {
@@ -20,7 +20,16 @@
       "editurl" : "widgets/editwidget2.html",
       "image": "widgets/widget_nodes_bargraph.png",
       "metadata" : {}
-    }  
+    },
+    {
+      "id" : "widget_nodes_histo",
+      "title" : "Nodes histogram",
+      "description" : "Nodes histogram widget",
+      "creator" : "Hedera",
+      "url" : "widgets/widget_nodes_histogram.html",
+      "image": "widgets/widget_nodes_bargraph.png",
+      "metadata" : {}
+    }
   ]
   }
 }
