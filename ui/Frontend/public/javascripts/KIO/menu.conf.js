@@ -29,7 +29,10 @@ var mainmenu_def = {
                                {label : 'Permissions', id : 'permissions', onLoad : function(cid, eid) { require('KIO/users.js'); permissions(cid, eid); }}
                                ],
         'Monitoring'       : [],
-        'Workflows'        : [{ label : 'Workflow Management' , id : 'workflowmanagement', onLoad : sco_workflow }]
+        'Workflows'        : [
+            { label : 'Overview', id : 'workflows_overview', onLoad : workflowsoverview },
+            { label : 'Workflow Management' , id : 'workflowmanagement', onLoad : sco_workflow }
+        ]
     },
 };
 

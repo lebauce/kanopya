@@ -390,12 +390,27 @@ function    workflowslist(cid, eid) {
                 content_container_id    : cid,
                 grid_id                 : 'workflowsgrid',
                 data                    : data,
-                colNames                : [ 'Name', 'State' ],
+                colNames                : [ 'Id', 'Name', 'State' ],
                 colModel                : [
+                    { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
                     { name : 'workflow_name', index : 'workflow_name' },
                     { name : 'state', index : 'state' }
                 ]
             });
         }
     });
+}
+
+function    workflowsoverview(cid, eid) {
+  create_grid({
+        url                     : '/api/workflow',
+        grid_id                 : 'workflowslistgrid',
+        content_container_id    : cid,
+        colNames                : [ 'Id', 'Name', 'State' ],
+        colModel                : [
+            { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
+            { name : 'workflow_name', index : 'workflow_name' },
+            { name : 'state', index : 'state' }
+        ]
+  });
 }
