@@ -235,6 +235,21 @@ sub format_results {
     }
 }
 
+sub makeToJson {
+  if ($#_ == 0) {
+    my $var   = shift;
+    if ($var->can("toJSON")) {
+      if ($var->isa("Operation")) {
+        return Operation->get(id => $var->getId)->toJSON;
+      } elsif ($var->isa("Workflow")) {
+        return Workflow->get(id => $var->getId)->toJSON;
+      } else {
+        return $var->toJSON;
+      }
+    }
+  }
+}
+
 sub setupREST {
 
     foreach my $resource (keys %resources) {
@@ -393,18 +408,15 @@ sub setupREST {
             }
             my $ret = $obj->$method(%params);
             eval {
-                if ($ret->can("toJSON")) {
-                    if ($ret->isa("Operation")) {
-                        $ret = Operation->get(id => $ret->getId)->toJSON;
-                    }
-                    elsif ($ret->isa("Workflow")) {
-                        $ret = Workflow->get(id => $ret->getId)->toJSON;
-                    } else {
-                        $ret = $ret->toJSON;
-                    }
+                if (ref($ret) eq "ARRAY") {
+                  for my $retElem (@{$ret}) {
+                    $retElem    = makeToJson($retElem);
+                  }
+                } else {
+                  $ret  = makeToJson($ret);
                 }
             };
-
+    
             return to_json($ret, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
         };
 
