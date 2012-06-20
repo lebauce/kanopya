@@ -542,7 +542,7 @@ sub _evalRule {
 
                 my $wf_def_id = $rule->getVerifiedRuleWfDefId (
                                     service_provider_id => $service_provider_id,
-                                    hostname            => $hostname,
+                                    hostname            => $host_name,
                                 );
 
                 if ($wf_def_id != 0) {
@@ -651,7 +651,7 @@ sub clustermetricManagement{
                 if($result == 1){
                     $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, rule_id => $rule_id);
                     $aggregate_rule->setAttr(aggregate_rule_state =>'disabled');
-                    $aggretrigate_rule->save();
+                    $aggregate_rule->save();
                 }
             }
         } # for my $aggregate_rule 

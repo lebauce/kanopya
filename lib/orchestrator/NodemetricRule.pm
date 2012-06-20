@@ -316,6 +316,7 @@ sub deleteVerifiedRuleWfDefId {
     my $hostname            = $args{hostname};
     my $service_provider_id = $args{service_provider_id};
     my $rule_id             = $self->getAttr(name => 'nodemetric_rule_id');
+    my $service_provider    = Entity::ServiceProvider->get('id' => $service_provider_id);
     my $nodes               = $service_provider->getNodes();
     my $node_id;
 
