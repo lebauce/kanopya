@@ -385,16 +385,29 @@ function    workflowslist(cid, eid) {
         url     : '/api/serviceprovider/' + eid + '/getWorkflows',
         type    : 'POST',
         success : function(data) {
-            console.log(data);
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                data[i].currentOperation    = 'Loading...';
+            }
             create_grid({
                 content_container_id    : cid,
                 grid_id                 : 'workflowsgrid',
                 data                    : data,
-                colNames                : [ 'Id', 'Name', 'State' ],
+                colNames                : [ 'Id', 'Name', 'State', 'Current Operation' ],
+                afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
+                    $.ajax({
+                        url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
+                        type    : 'POST',
+                        success : function(data) {
+                            rowelem.currentOperation    = data.type;
+                            $(grid).setCell(rowid, 'currentOperation', rowelem.currentOperation);
+                        }
+                    });
+                },
                 colModel                : [
                     { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
                     { name : 'workflow_name', index : 'workflow_name' },
-                    { name : 'state', index : 'state' }
+                    { name : 'state', index : 'state' },
+                    { name : 'currentOperation', index : 'currentOperation' }
                 ]
             });
         }
@@ -406,11 +419,21 @@ function    workflowsoverview(cid, eid) {
         url                     : '/api/workflow',
         grid_id                 : 'workflowslistgrid',
         content_container_id    : cid,
-        colNames                : [ 'Id', 'Name', 'State' ],
+        colNames                : [ 'Id', 'Name', 'State', 'CurrentOperation' ],
+        afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
+            $.ajax({
+                url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
+                type    : 'POST',
+                success : function(data) {
+                    $(grid).setCell(rowid, 'currentOperation', data.type);
+                }
+            });
+        },
         colModel                : [
             { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
             { name : 'workflow_name', index : 'workflow_name' },
-            { name : 'state', index : 'state' }
+            { name : 'state', index : 'state' },
+            { name : 'currentOperation', index : 'currentOperation', formatter : function(a) { if (a == null) return 'Loading...'; else return a; } }
         ]
   });
 }
