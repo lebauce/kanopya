@@ -1,14 +1,7 @@
-var DetailsTable = (function() {
-    function DetailsTable(container_id, elem_id, opts) {
-        this.container = $('#'+container_id);
-        this.table = $('<table></table>');
-        this.url = opts.url;
-        this.fields = opts.fields;
-        this.actions = [];
-        
-        this.buildTable();
-    }
-    
+// DetailsTable class
+
+function DetailsTable(container_id, elem_id, opts) {
+   
     DetailsTable.prototype.show = function () {
         var me = this;
         this.table.appendTo(this.container);
@@ -24,7 +17,14 @@ var DetailsTable = (function() {
         });
     }
     
-    DetailsTable.prototype.buildTable = function() {
+    DetailsTable.prototype._buildAttribute = function(label, value) {
+        var tr = $('<tr></tr>');
+        $('<td></td>', { style: 'font-weight: bold', text: label+':' }).appendTo(tr);
+        $('<td></td>', { text: value }).appendTo(tr);
+        tr.appendTo(this.table);
+    }
+    
+    DetailsTable.prototype._buildTable = function() {
         this.table.empty();
         $.ajax({
             type: 'GET', 
@@ -36,10 +36,7 @@ var DetailsTable = (function() {
                 var table = this.table; 
                 for(key in this.fields) { 
                     if(data.hasOwnProperty(key)) {
-                        var tr = $('<tr></tr>');
-                        $('<td></td>', { style: 'font-weight: bold', text: this.fields[key].label+':' }).appendTo(tr);
-                        $('<td></td>', { text: data[key] }).appendTo(tr);
-                        tr.appendTo(table);
+                        this._buildAttribute(this.fields[key].label, data[key]);
                     }
                 }
             }, this) 
@@ -55,10 +52,17 @@ var DetailsTable = (function() {
     }
     
     DetailsTable.prototype.refresh = function() {
-        this.buildTable();
+        this._buildTable();
         this.show();
     }
     
-    return DetailsTable;
+    this.container = $('#'+container_id);
+    this.table = $('<table></table>');
+    this.url = '/api/' + opts.name + '/' + elem_id;
+    this.fields = opts.fields;
+    this.actions = [];
+    console.log(this);
+    this._buildTable();
     
-})();
+}
+
