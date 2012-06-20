@@ -379,3 +379,23 @@ function    createWorkflowRuleAssociationButton(cid, eid, scid, serviceprovider_
     button.bind('click', function() { workflowRuleAssociation(eid, scid, cid, serviceprovider_id); });
     $('#' + cid).append(button);
 }
+
+function    workflowslist(cid, eid) {
+    $.ajax({
+        url     : '/api/serviceprovider/' + eid + '/getWorkflows',
+        type    : 'POST',
+        success : function(data) {
+            console.log(data);
+            create_grid({
+                content_container_id    : cid,
+                grid_id                 : 'workflowsgrid',
+                data                    : data,
+                colNames                : [ 'Name', 'State' ],
+                colModel                : [
+                    { name : 'workflow_name', index : 'workflow_name' },
+                    { name : 'state', index : 'state' }
+                ]
+            });
+        }
+    });
+}
