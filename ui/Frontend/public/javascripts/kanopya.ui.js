@@ -16,7 +16,18 @@ $(document).ready(function () {
     var loginModalOpened    = false;
     var mustOpen            = true;
 
+    var openedRequests      = 0;
+
+    $(this).ajaxSend(function() {
+        ++openedRequests;
+        $('body').css('cursor', 'wait');
+    });
+
     $(this).ajaxComplete(function(event, jqXHR, ajaxOptions) {
+        --openedRequests;
+        if (openedRequests === 0) {
+            $('body').css('cursor', 'default');
+        }
         if (jqXHR.responseXML !== undefined && !loginModalOpened && mustOpen) {
             loginModalOpened    = true;
             var form    = $("<form>", { id : "loginform", class : 'LOGINFORM' });
