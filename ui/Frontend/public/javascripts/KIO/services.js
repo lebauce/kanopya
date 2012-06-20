@@ -1189,7 +1189,12 @@ function loadServicesConfig (container_id, elem_id) {
             $(table).append($("<tr>").append($("<td>", { colspan : 3, class : 'table-title', text : "Managers" })));
 
             for (var i in data) if (data.hasOwnProperty(i)) {
-                $(table).append($("<tr>", { text : data[i].manager_type }));
+                $.ajax({
+                    url     : '/api/serviceprovider/' + data[i].service_provider_id,
+                    success : function(sp) {
+                        $(table).append($("<tr>", { text : data[i].manager_type + " : " + sp.externalcluster_name }));
+                    }
+                });
             }
 
             var addManagerButton    = $("<a>", { text : 'Add a Manager' }).button({ icons : { primary : 'ui-icon-plusthick' } });
