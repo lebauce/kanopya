@@ -168,7 +168,7 @@ sub eval {
     eval $arrayString;
     
     if (defined $res){
-        my $store = ($res)?1:0;    
+        my $store = ($res)?1:0;
         $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
         $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
         $self->save();

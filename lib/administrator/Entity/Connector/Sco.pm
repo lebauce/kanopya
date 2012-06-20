@@ -209,10 +209,16 @@ sub _getServiceProviderName {
 sub _defineFinalParams {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'all_params', 'workflow_name' ]);
+    General::checkParams(args => \%args, required => [ 'all_params', 'workflow_name', 'rule_id' ]);
 
+    my $rule_id         = $args{rule_id};
     my $all_params      = $args{all_params};
     my $workflow_name   = $args{workflow_name};
+
+    #get scope name for operation
+    my $scope_id   = $all_params->{internal}->{scope_id};
+    my $scope      = Scope->find(hash => { scope_id => $scope_id });
+    my $scope_name = $scope->getAttr(name => 'scope_name');
 
     #merge automatic and specific params in one hash
     my $workflow_values = Hash::Merge::merge($all_params->{automatic}, $all_params->{specific});
@@ -222,6 +228,8 @@ sub _defineFinalParams {
         output_file      => 'workflow_'.$workflow_name.'_'.time(),
         template_content => $all_params->{data}->{template_content},
         workflow_values  => $workflow_values,
+        scope_name       => $scope_name,
+        rule_id          => $rule_id,
     };
 
     return $workflow_params;

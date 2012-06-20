@@ -18,6 +18,7 @@ use warnings;
 use base 'BaseDB';
 use Data::Dumper;
 use NodemetricCondition;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use List::MoreUtils qw {any} ;
 use Switch;
@@ -180,16 +181,16 @@ sub evalOnOneNode{
 sub isVerifiedForANode{
     my $self = shift;
     my %args = @_;
-    
+
     my $externalcluster_id  = $args{externalcluster_id};
     my $externalnode_id     = $args{externalnode_id};
-    
+
     my $row = $self->{_dbix}
         ->verified_noderules
         ->find({
             verified_noderule_externalnode_id    => $externalnode_id,
         });
-        
+
     if(defined $row){
         my $state = $row->verified_noderule_state;
         switch ($state){
@@ -204,7 +205,7 @@ sub isVerifiedForANode{
     }else{
         return 0;
     }
-    
+
 };
 
 sub deleteVerifiedRule  {
@@ -250,6 +251,41 @@ sub deleteVerifiedRule  {
     }
 }
 
+sub getVerifiedRuleWfDefId {
+    my ($self,%args) = @_;
+
+    my $hostname            = $args{hostname};
+    my $service_provider_id = $args{service_provider_id};
+    my $service_provider    = Entity::ServiceProvider->get('id' => $service_provider_id);
+
+    my $nodes = $service_provider->getNodes();
+    my $node_id;
+
+    foreach my $node (@$nodes) {
+        if($node->{hostname} eq $hostname) {
+            $node_id = $node->{id};
+        }
+    }
+
+    if(not defined $node_id){
+        my $errmsg = "unknown node $hostname in service provider $service_provider_id";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+    else {
+        my $workflow_def_id = $self->{_dbix}->verified_noderules->search (
+                                  { verified_noderule_externalnode_id => $node_id }
+                              )->single->get_column('workflow_def_id');
+
+        if (defined $workflow_def_id) {
+            return $workflow_def_id;
+        }
+        else {
+            return 0;
+        }
+    }
+
+}
 sub setVerifiedRule{
     my $self = shift;
     my %args = @_;

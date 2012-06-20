@@ -40,8 +40,8 @@ use Kanopya::Exceptions;
 use EFactory;
 
 use Template;
-#use Entity::ServiceProvider::Inside::Cluster;
-#use Entity::Host;
+use AggregateRule;
+use NodemetricRule;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -110,6 +110,22 @@ sub postrequisites {
     }
     else {
         return $period;
+    }
+}
+
+sub finish {
+    my $self = shift;
+
+    #reactive the linked rule
+    my $rule_id = $self->{params}->{rule_id};
+
+    if ($self->{params}->{scope_name} eq 'node') {
+        my $rule = NodemetricRule->find (hash => {rule_id => $rule_id});
+        $rule->enable();
+    }
+    elsif ($self->{params}->{scope_name} eq 'service_provider') {
+        my $rule = AggregateRule->find (hash => {rule_id => $rule_id});
+        $rule->enable();
     }
 }
 
