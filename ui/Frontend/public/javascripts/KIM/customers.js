@@ -75,7 +75,7 @@ function Customers() {
     
     Customers.prototype.load_details = function(container_id, elem_id) {
         var customer_opts = {
-            url    : '/api/user/' + elem_id,
+            name   : 'user',
             fields : { user_firstname : {label: 'First name'},
                        user_lastname  : {label: 'Last name'},
                        user_email     : {label: 'Email'},
@@ -84,6 +84,8 @@ function Customers() {
         };
         
         var details = new DetailsTable(container_id, elem_id, customer_opts);
+       
+        
         details.addAction({label: 'update', action: function() {
             var form = new ModalForm({
                 id       : elem_id,
@@ -99,10 +101,11 @@ function Customers() {
                 type: 'delete', 
                 async: false, 
                 url: '/api/user/'+elem_id,
-                success: function() { },
+                success: function() { $('#'+container_id).closest('.master_view').parent().dialog('close'); },
                 error: function(jqXHR, textStatus, errorThrown) { 
                     alert(jqXHR.responseText); } 
             });
+            
             
         }});
         details.show();
