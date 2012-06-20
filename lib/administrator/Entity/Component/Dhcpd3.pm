@@ -136,19 +136,19 @@ sub getConf {
         my @data_hosts = ();
         while(my $host = $hosts->next) {
             push @data_hosts, {
-                domain_name =>$host->get_column('dhcpd3_hosts_domain_name'),
+                domain_name        => $host->get_column('dhcpd3_hosts_domain_name'),
                 domain_name_server => $host->get_column('dhcpd3_hosts_domain_name_server'),
-                ip_address => $host->get_column('dhcpd3_hosts_ipaddr'),
-                ntp_server => $host->get_column('dhcpd3_hosts_ntp_server'),
-                mac_address => $host->get_column('dhcpd3_hosts_mac_address'), 
-                hostname => $host->get_column('dhcpd3_hosts_hostname'), 
-                #kernel_version => $host->kernel->get_column('kernel_version')
+                ip_address         => $host->get_column('dhcpd3_hosts_ipaddr'),
+                ntp_server         => $host->get_column('dhcpd3_hosts_ntp_server'),
+                mac_address        => $host->get_column('dhcpd3_hosts_mac_address'),
+                hostname           => $host->get_column('dhcpd3_hosts_hostname'),
             };
         }
         push @data_subnets, {
-            net => $subnet->get_column('dhcpd3_subnet_net'),
-            mask => $subnet->get_column('dhcpd3_subnet_mask'),
-            nodes => \@data_hosts
+            net     => $subnet->get_column('dhcpd3_subnet_net'),
+            mask    => $subnet->get_column('dhcpd3_subnet_mask'),
+            gateway => $subnet->get_column('dhcpd3_subnet_gateway'),
+            nodes   => \@data_hosts
         };
     }
 

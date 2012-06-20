@@ -610,7 +610,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 24, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,5,NULL,2);
 INSERT INTO `dhcpd3` VALUES (@eid,'hedera-technology.com',NULL,'node001');
-INSERT INTO `dhcpd3_subnet` VALUES (1,@eid,'[% ipv4_internal_network_ip %]','[% poolip_netmask %]');
+INSERT INTO `dhcpd3_subnet` VALUES (1,@eid,'[% ipv4_internal_network_ip %]','[% poolip_netmask %]','[% poolip_gateway %]');
 SET @eid := @eid +1;
 
 --

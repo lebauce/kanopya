@@ -13,6 +13,9 @@ subnet [% subnet.net %] netmask [% subnet.mask %] {
 site-option-space "pxelinux";
 option subnet-mask [% subnet.mask %];
 next-server [% server_ip %];
+[% IF subnet.gateway %]
+option routers [% subnet.gateway %];
+[% END %]
 option pxelinux.magic f1:00:74:7e;
 if exists dhcp-parameter-request-list {
  option dhcp-parameter-request-list = concat(option dhcp-parameter-request-list,d0,d1,d2,d3);

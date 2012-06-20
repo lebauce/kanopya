@@ -45,6 +45,13 @@ __PACKAGE__->table("dhcpd3_subnet");
   is_nullable: 0
   size: 40
 
+=head2 dhcpd3_subnet_gateway
+
+  data_type: 'char'
+  default_value: '0.0.0.0'
+  is_nullable: 0
+  size: 40
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -66,6 +73,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 40 },
   "dhcpd3_subnet_mask",
   { data_type => "char", is_nullable => 0, size => 40 },
+  "dhcpd3_subnet_gateway",
+  {
+    data_type => "char",
+    default_value => "0.0.0.0",
+    is_nullable => 0,
+    size => 40,
+  },
 );
 __PACKAGE__->set_primary_key("dhcpd3_subnet_id");
 
@@ -98,12 +112,12 @@ __PACKAGE__->belongs_to(
   "dhcpd3",
   "AdministratorDB::Schema::Result::Dhcpd3",
   { dhcpd3_id => "dhcpd3_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:asNC/E+DVKRQXmhfMnxGiA
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-20 03:38:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FTfTf2ImvfgAGFehZwu4vw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

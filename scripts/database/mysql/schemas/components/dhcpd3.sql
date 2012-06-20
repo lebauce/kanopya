@@ -24,6 +24,7 @@ CREATE TABLE `dhcpd3_subnet` (
   `dhcpd3_id` int(8) unsigned NOT NULL,
   `dhcpd3_subnet_net` char(40) NOT NULL,
   `dhcpd3_subnet_mask` char(40) NOT NULL,
+  `dhcpd3_subnet_gateway` char(40),
   PRIMARY KEY (`dhcpd3_subnet_id`),
   KEY `fk_dhcpd3_subnet_1` (`dhcpd3_id`),
   CONSTRAINT `fk_dhcpd3_subnet_1` FOREIGN KEY (`dhcpd3_id`) REFERENCES `dhcpd3` (`dhcpd3_id`) ON DELETE CASCADE ON UPDATE NO ACTION
