@@ -31,13 +31,16 @@ var mainmenu_def = {
 // Key of this map is id of the list (grid)
 // onLoad handlers are called with params (content_container_id, selected_elem_id)
 var details_def = {
-        'iaas_list' : [ { label  : 'Overview', 
-                          id     : 'iaas_detail_overview'},
-                        { label  : 'Hypervisor', 
-                          id     : 'iass_detail_hyp',
-                          onLoad : load_iaas_detail_hypervisor },
-                      ],
-        'customers_list' : [ { label  : 'Overview',
+        'iaas_list' : { tabs: 
+                        [   { label  : 'Overview', 
+                                id     : 'iaas_detail_overview'},
+                            { label  : 'Hypervisor', 
+                                id     : 'iass_detail_hyp',
+                                onLoad : load_iaas_detail_hypervisor },
+                        ],
+                    },
+        'customers_list' : { tabs: 
+                        [ { label  : 'Overview',
                                id     : 'customer_detail_overview',
                                onLoad : customers.load_details },
                             { label  : 'Services',
@@ -45,5 +48,6 @@ var details_def = {
                                onLoad : customers.load_services },
                              
                       ],
+                  },
 };
 
