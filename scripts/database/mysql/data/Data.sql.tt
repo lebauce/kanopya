@@ -964,6 +964,8 @@ INSERT INTO `param_preset` values (50, "automatic", NULL, 46 );
 INSERT INTO `param_preset` values (51, "context", NULL, 50 );
 INSERT INTO `param_preset` values (52, "cloudmanager_comp", NULL, 51 );
 INSERT INTO `param_preset` values (53, "host", NULL, 51 );
+INSERT INTO `param_preset` values (54, "internal", NULL, 46 );
+INSERT INTO `param_preset` values (55, "scope_id", 1, 54 );
 
 UPDATE `kanopya`.`workflow_def` SET `param_preset_id` = '46' WHERE `workflow_def`.`workflow_def_name` = 'ScaleInWorkflow';
 

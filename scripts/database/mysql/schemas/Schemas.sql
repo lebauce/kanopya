@@ -536,19 +536,20 @@ CREATE TABLE `powersupply` (
 --
 
 CREATE TABLE `node` (
-  `node_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `inside_id` int(8) unsigned NOT NULL,
+  `node_id` int(8) unsigned NOT NULL,
   `host_id` int(8) unsigned NOT NULL,
   `master_node` int(1) unsigned DEFAULT NULL,
   `node_state` char(32),
   `node_prev_state` char(32),
   `node_number` int(8) unsigned NOT NULL,
   `systemimage_id` int(8) unsigned DEFAULT NULL,
+  `inside_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`node_id`),
   UNIQUE KEY (`host_id`),
+  FOREIGN KEY (`node_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`inside_id`),
-  FOREIGN KEY (`inside_id`) REFERENCES `inside` (`inside_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`inside_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`systemimage_id`),
   FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1493,13 +1494,13 @@ CREATE TABLE `externalcluster` (
 CREATE TABLE `externalnode` (
   `externalnode_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `externalnode_hostname` char(255) NOT NULL,
-  `outside_id` int(8) unsigned NOT NULL,
+  `service_provider_id` int(8) unsigned NOT NULL,
   `externalnode_state` char(32),
   `externalnode_prev_state` char(32),
   PRIMARY KEY (`externalnode_id`),
-  UNIQUE KEY (`externalnode_hostname`,`outside_id`),
-  KEY (`outside_id`),
-  FOREIGN KEY (`outside_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  UNIQUE KEY (`externalnode_hostname`,`service_provider_id`),
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
