@@ -26,11 +26,74 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Masterimage;
 use Entity::Systemimage;
 use Entity::Host;
-
+use CapacityManagement;
+use Workflow;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 my $log = get_logger("executor");
 my $errmsg;
 
+
+sub prerequisites {
+    my ($self, %args) = @_;
+    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+
+    if (defined $self->{params}->{remediation_workflow_id}){
+
+        my $wf = Workflow->get(id => $self->{params}->{remediation_workflow_id});
+        $log->info('REMEDIATION WORKFLOW <'.($self->{params}->{remediation_workflow_id}).'> STATE <'.($wf->getAttr(name => 'state')).'> ');
+
+        if($wf->getAttr(name => 'state') eq 'cancelled') {
+            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> cancelled, EXCEPTION');
+            throw Kanopya::Exception::Internal(error => 'Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> has been cancelled');
+        }
+        elsif ($wf->getAttr(name => 'state') eq 'done') {
+            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> done, let us continue');
+            # HERE NO RETURN => CONTINUE AFTER THE IF
+        }
+        elsif ($wf->getAttr(name => 'state') eq 'running') {
+            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> still running, waiting for its end');
+            return 20;
+        }
+        else {
+            $log->info('Remediation workflow <'.($self->{params}->{remediation_worfklow_id}).'> status unknown : '.($wf->getAttr(name => 'state')).', EXCEPTION');
+            throw Kanopya::Exception::Internal(error => 'Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> has been cancelled');
+        }
+   }
+
+   my $cluster = $self->{context}->{cluster};
+   my $host_type = $cluster->getHostManager()->getHostType();
+
+   $log->info("#########<$host_type>############");
+
+   if($host_type eq 'Virtual Machine') {
+       my $host_manager_params = $cluster->getManagerParameters(manager_type => 'host_manager');
+       my $cm = CapacityManagement->new(cluster_id => $cluster->getId());
+
+       my $hypervisor_id = $cm->getHypervisorIdForVM(
+                                 wanted_values => {
+                                     ram => $host_manager_params->{ram},
+                                     cpu => $host_manager_params->{cpu},
+                                 }
+       );
+       if(defined $hypervisor_id){
+            $log->info('HYPERVISOR READY ('.($hypervisor_id).') OK ');
+            return 0;
+       } else {
+            $log->info('NEED TO START A NEW HYPERVISOR');
+
+            my $opennebula = $cluster->getManager(manager_type => 'host_manager');
+            my $hv_cluster = $opennebula->getServiceProvider();
+            my $wf = $hv_cluster->addNode();
+            $self->{params}->{remediation_workflow_id} = $wf->getAttr(name => 'workflow_id');
+            $log->info('LAUNCH REMEDIATION WORKFLOW ID = '.($self->{params}->{remediation_workflow_id}));
+            return 15;
+        }
+   }
+   else {   #Physical
+       return 0
+   }
+}
 =head2 prepare
 
     $op->prepare();
@@ -41,7 +104,6 @@ sub prepare {
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
-
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
     # Get the disk manager for disk creation
