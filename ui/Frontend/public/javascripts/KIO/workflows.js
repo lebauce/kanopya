@@ -74,7 +74,7 @@ function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
 
         $(mod).append(firstLine).append(secondLine).append(thirdLine);
 
-        var loremipsum  = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in mauris ante. Mauris arcu felis, aliquet pellentesque ornare vitae, congue non purus. Nullam nunc orci, ultrices vitae porta non, consequat in lacus. Nunc ut rutrum felis. Cras suscipit lectus mauris. Duis et dictum quam. Vestibulum lacus elit, commodo tincidunt dignissim vel, eleifend quis purus. Nunc sit amet dignissim sem.";
+        var loremipsum  = "Insert in the text box bellow the content of the SCO workflow file. On the left you have the name of the automatic parameters available for the scope you selected, 'node' or 'service provider'. Insert the text you want, and parameters surrounded by \[\% \%\] markups, like [% ou_from %]. You can also enter specific parameters that will be asked for definition while associating the workflow to a rule.";
 
         var expls       = $("<td>", { colspan : 2, text : loremipsum }).appendTo($("<tr>"));
         $(expls).addClass('helpCell').prependTo(mod);
