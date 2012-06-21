@@ -90,15 +90,16 @@ function scomManagement(cid, eid) {
                     });
             }
             
-            // Insert the new indicator in 'indicator' table :
+            // Insert the new indicator in 'indicator' table linked to scom_indicator_set :
             // WARNING : This is dutty fix for customer deadline compliance, SHOULD BE CHANGE BY REAL CODE :
             var scom_indicatorset_id = 5;
-            var indicator_min = Fdata.scom_indicator_min;
-            var indicator_max = Fdata.scom_indicator_max;
-            var indicator_name = Fdata.scom_indicator_name;
-            var indicator_unit = Fdata.scom_indicator_unit;
-            var indicator_oid = Fdata.scom_indicator_oid;
-            var indicatorFromScom = { "indicator_min" : indicator_min, "indicator_name" : indicator_name, "indicatorset_id" : scom_indicatorset_id, "indicator_max" : indicator_max, "indicator_unit" : indicator_unit, "indicator_oid" : indicator_oid };
+            var indicatorFromScom = {};
+            var indicator_min = beforeSubmitJSONData.scom_indicator_min;
+            var indicator_max = beforeSubmitJSONData.scom_indicator_max;
+            var indicator_name = beforeSubmitJSONData.scom_indicator_name;
+            var indicator_unit = beforeSubmitJSONData.scom_indicator_unit;
+            var indicator_oid = beforeSubmitJSONData.scom_indicator_oid;
+            indicatorFromScom = {"indicator_min": indicator_min, "indicator_name": indicator_name, "indicatorset_id": scom_indicatorset_id, "indicator_max": indicator_max, "indicator_unit": indicator_unit, "indicator_oid": indicator_oid };
             
             console.log(indicatorFromScom);
             
