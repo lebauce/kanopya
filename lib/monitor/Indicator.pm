@@ -39,7 +39,7 @@ use constant ATTR_DEF => {
                                  is_extended    => 0,
                                  is_editable    => 1},
     indicator_color            =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
+                                 is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
     indicatorset_id            =>  {pattern       => '^.*$',
