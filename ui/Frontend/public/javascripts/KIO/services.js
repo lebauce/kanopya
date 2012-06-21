@@ -1286,7 +1286,19 @@ function loadServicesConfig (container_id, elem_id) {
                         $.ajax({
                             url     : '/api/serviceprovider/' + mangr.service_provider_id,
                             success : function(sp) {
-                                $(table).append($("<tr>", { text : data[i].manager_type + " : " + sp.externalcluster_name }));
+                                var l   = $("<tr>", { text : data[i].manager_type + " : " + sp.externalcluster_name });
+                                $(table).append(l);
+                                $.ajax({
+                                    url     : '/api/connector/' + mangr.pk,
+                                    success : function(conn) {
+                                        $.ajax({
+                                            url     : '/api/connectortype/' + conn.connector_type_id,
+                                            success : function(conntype) {
+                                                $(l).text($(l).text() + ' - ' + conntype.connector_name);
+                                            }
+                                        });
+                                    }
+                                });
                             }
                         });
                   }
