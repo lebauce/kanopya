@@ -648,6 +648,12 @@ function nodemetricconditionmodal(elem_id, editid) {
             $("div#waiting_default_insert").dialog("destroy");
         },
         callback    : function() {
+            if (editid !== undefined) {
+                $.ajax({
+                    url     : '/api/nodemetriccondition/' + editid + '/updateName',
+                    type    : 'POST'
+                });
+            }
             $('#service_ressources_nodemetric_conditions_' + elem_id).trigger('reloadGrid');
         }
     };
@@ -802,6 +808,12 @@ function serviceconditionmodal(elem_id, editid) {
             $("div#waiting_default_insert").dialog("destroy");
         },
         callback    : function() {
+            if (editid !== undefined) {
+                $.ajax({
+                    url     : '/api/aggregatecondition/' + editid + '/updateName',
+                    type    : 'POST'
+                });
+            }
             $('#service_ressources_aggregate_conditions_' + elem_id).trigger('reloadGrid');
         }
     };
