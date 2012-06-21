@@ -123,7 +123,7 @@ sub finish {
     if ($self->{params}->{scope_name} eq 'node') {
         my $rule = NodemetricRule->find(hash => {rule_id => $rule_id});
         $rule->deleteVerifiedRuleWfDefId(
-            hostname => $wf_values->{node_hostname}, 
+            hostname => $self->{params}->{workflow_values}->{node_hostname}, 
             service_provider_id => $self->{params}->{sp_id},
         );
     }

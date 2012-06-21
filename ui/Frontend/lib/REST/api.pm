@@ -16,11 +16,6 @@ my $API_VERSION = "0.1";
 prepare_serializer_for_format;
 
 my %resources = (
-    "action"                   => "Action",
-    "actionparamater"          => "ActionParameter",
-    "actiontriggered"          => "ActionTriggered",
-    "actiontype"               => "ActionType",
-    "actiontypeparameter"      => "ActionTypeParameter",
     "activedirectory"          => "Entity::Connector::ActiveDirectory",
     "aggregator"               => "Aggregator",
     "atftpd0"                  => "Entity::Component::Atftpd0",

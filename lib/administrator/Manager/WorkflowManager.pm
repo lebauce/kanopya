@@ -239,12 +239,12 @@ sub _linkWorkflowToRule {
 sub runWorkflow {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'workflow_def_id', 'rule_id' ]);
+    General::checkParams(args => \%args, required => [ 'workflow_def_id', 'rule_id', 'service_provider_id' ]);
 
     my $rule_id             = $args{rule_id};
     my $workflow_def_id     = $args{workflow_def_id};
-    my $service_provider_id = $self->getServiceProvider()
-                                ->getAttr(name => 'service_provider_id');
+    my $service_provider_id = $args{service_provider_id};
+
     my $workflow            = $self->getWorkflowDef(
                                   workflow_def_id => $workflow_def_id
                               );
@@ -263,7 +263,6 @@ sub runWorkflow {
     my $automatic_values;
     $automatic_values = $self->_getAutomaticValues(
             automatic_params => $all_params->{automatic},
-            sp_id            => $service_provider_id,
             scope_id         => $scope_id,
             %args,
         );

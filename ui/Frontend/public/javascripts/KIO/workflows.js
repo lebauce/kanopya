@@ -172,7 +172,7 @@ function    sco_workflow(container_id) {
         type        : 'POST',
         url         : '/api/serviceprovider/1/findManager',
         contentType : 'application/json',
-        data        : JSON.stringify({ 'category' : 'WorkflowManager' }),
+        data        : JSON.stringify({ 'category' : 'workflow_manager' }),
         success     : function(data) {
             var workflowmanagers    = data;
             for (var i in workflowmanagers) if (workflowmanagers.hasOwnProperty(i)) {

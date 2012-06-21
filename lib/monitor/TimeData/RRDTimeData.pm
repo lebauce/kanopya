@@ -36,7 +36,7 @@ my $rrd;
 #Quick solution to handle windows and linux
 if ($^O eq 'MSWin32') {
     $dir = 'C:\\tmp\\monitor\\TimeData\\';
-    $rrd = '$rrd';
+    $rrd = 'rrdtool.exe';
 } elsif ($^O eq 'linux') {
     $rrd = '/usr/bin/rrdtool';
     $dir = '/var/cache/kanopya/monitor/';

@@ -32,7 +32,7 @@ use Operationtype;
 use Workflow;
 use WorkflowDef;
 use WorkflowDefManager;
-use Entity::ServiceProvider;
+use Entity::ServiceProvider::Outside::Externalcluster;
 
 use Data::Dumper;
 
@@ -112,15 +112,16 @@ sub createWorkflow {
 sub _getAutomaticValues {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'automatic_params', 'sp_id', 'scope_id' ]);
+    General::checkParams(args => \%args, required => [ 'automatic_params', 'scope_id' ]);
 
     my $automatic_params = $args{automatic_params};
-    
+
     #get the scope
-    my $scope_id   = $args{scope_id};
-    my $scope      = Scope->find(hash => { scope_id => $scope_id });
-    my $scope_name = $scope->getAttr(name => 'scope_name');
-    
+    my $scope_id            = $args{scope_id};
+    my $service_provider_id = $args{service_provider_id};
+    my $scope               = Scope->find(hash => { scope_id => $scope_id });
+    my $scope_name          = $scope->getAttr(name => 'scope_name');
+
     if ($scope_name eq 'node') {
         if ((exists $automatic_params->{node_hostname}) && (defined $args{host_name})) {
             $automatic_params->{node_hostname}  = $args{host_name}; 
@@ -131,7 +132,7 @@ sub _getAutomaticValues {
 
         if (exists $automatic_params->{ou_from}) {
             eval {
-                $automatic_params->{ou_from}  = $self->_getOuFrom(sp_id => $args{sp_id});
+                $automatic_params->{ou_from}  = $self->_getOuFrom(sp_id => $service_provider_id);
             };
             if ($@) {
                 $errmsg = 'Error while trying to retrieve ou_from parameter :'.$@;
@@ -142,7 +143,7 @@ sub _getAutomaticValues {
     } elsif ($scope_name eq 'service_provider') {
         if (exists $automatic_params->{service_provider_name}) {
             eval {
-                $automatic_params->{service_provider_name} = $self->_getServiceProviderName(sp_id => $args{sp_id});
+                $automatic_params->{service_provider_name} = $self->_getServiceProviderName(sp_id => $service_provider_id);
             };
             if ($@) {
                 $errmsg = 'Error while trying to retrieve service provider name :'.$@;
@@ -167,7 +168,7 @@ sub _getOuFrom {
 
     General::checkParams(args => \%args, required => [ 'sp_id' ]);
 
-    my $service_provider            = Entity::ServiceProvider->get(id => $args{sp_id});
+    my $service_provider            = Entity::ServiceProvider::Outside::Externalcluster->get(id => $args{sp_id});
     my $directory_service_connector = $service_provider->getConnector(
                                           'category' => 'DirectoryService'
                                       );
@@ -193,7 +194,7 @@ sub _getServiceProviderName {
 
     my $service_provider = Entity::ServiceProvider->get(id => $args{sp_id});
 
-    my $sp_name          = $service_provider->getAttr(name => 'service_provider_name');
+    my $sp_name          = $service_provider->getAttr(name => 'externalcluster_name');
 
     return $sp_name;
 }
