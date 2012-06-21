@@ -1652,13 +1652,10 @@ function loadServicesRules (container_id, elem_id) {
             { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 60,},
             { name: 'nodemetric_condition_threshold', index: 'nodemetric_condition_threshold', width: 190 },
         ],
-<<<<<<< HEAD
-        details: { onSelectRow : function(eid) { nodemetricconditionmodal(elem_id, eid); } }
-=======
+        details: { onSelectRow : function(eid) { nodemetricconditionmodal(elem_id, eid); } },
         action_delete: {
             url : '/api/nodemetriccondition',
         },
->>>>>>> [UI] Grids : check and make modifs to make all elements deletables
     } );
     createNodemetricCondition('node_accordion_container', elem_id)
     
