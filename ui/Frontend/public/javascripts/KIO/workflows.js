@@ -172,7 +172,7 @@ function    sco_workflow(container_id) {
         type        : 'POST',
         url         : '/api/serviceprovider/1/findManager',
         contentType : 'application/json',
-        data        : JSON.stringify({ 'category' : 'workflow_manager' }),
+        data        : JSON.stringify({ 'category' : 'WorkflowManager' }),
         success     : function(data) {
             var workflowmanagers    = data;
             for (var i in workflowmanagers) if (workflowmanagers.hasOwnProperty(i)) {
@@ -323,7 +323,7 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
         url         : '/api/serviceprovider/' + serviceprovider_id + '/getManager',
         type        : 'POST',
         contentType : 'application/json',
-        data        : JSON.stringify({ 'manager_type' : 'WorkflowManager' }),
+        data        : JSON.stringify({ 'manager_type' : 'workflow_manager' }),
         success     : function(data) {
             manager = data;
             $.ajax({
