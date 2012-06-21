@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::Node;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Node
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Node
+=head1 TABLE: C<node>
 
 =cut
 
@@ -20,13 +24,6 @@ __PACKAGE__->table("node");
 =head1 ACCESSORS
 
 =head2 node_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_auto_increment: 1
-  is_nullable: 0
-
-=head2 inside_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -71,17 +68,17 @@ __PACKAGE__->table("node");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 inside_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
   "node_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_auto_increment => 1,
-    is_nullable => 0,
-  },
-  "inside_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -110,8 +107,39 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "inside_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</node_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("node_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<host_id>
+
+=over 4
+
+=item * L</host_id>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("host_id", ["host_id"]);
 
 =head1 RELATIONS
@@ -128,7 +156,7 @@ __PACKAGE__->belongs_to(
   "host",
   "AdministratorDB::Schema::Result::Host",
   { host_id => "host_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 inside
@@ -143,7 +171,22 @@ __PACKAGE__->belongs_to(
   "inside",
   "AdministratorDB::Schema::Result::Inside",
   { inside_id => "inside_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 node
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Externalnode>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "node",
+  "AdministratorDB::Schema::Result::Externalnode",
+  { externalnode_id => "node_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 systemimage
@@ -158,13 +201,27 @@ __PACKAGE__->belongs_to(
   "systemimage",
   "AdministratorDB::Schema::Result::Systemimage",
   { systemimage_id => "systemimage_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-21 21:53:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bYRnhBPKC/6DAUTGm45kcA
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-06-20 15:42:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CGc3DTiiUd11o1xwOaA3vw
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+__PACKAGE__->belongs_to(
+      "parent",
+      "AdministratorDB::Schema::Result::Externalnode",
+       { "foreign.externalnode_id" => "self.node_id" },
+       { cascade_copy => 0, cascade_delete => 1 }
+);
+
+
 1;
