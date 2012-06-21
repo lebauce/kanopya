@@ -481,6 +481,7 @@ sub _evalAllRules {
        } or do {
             print 'Error in evaluation of rule'.($rule->getAttr(name=>'nodemetric_rule_id')).' of cluster '.($rule->getAttr(name=>'nodemetric_rule_service_provider_id')).": $@\n";
             $log->error($@);
+            next RULE;
        }
    }
    return $rep;
@@ -520,6 +521,7 @@ sub _evalRule {
             next NODE;
         }
         else {
+            $log->info('Eval rule id <'.($rule->getAttr(name => 'nodemetric_rule_id')).'> on node hostname <'.$host_name.'>');
             $nodeEval = $rule->evalOnOneNode(
                 monitored_values_for_one_node => $monitored_values_for_one_node
             );
@@ -530,10 +532,10 @@ sub _evalRule {
             
             if($nodeEval eq 0){
                 #print ' WARNING'."\n";
-                $rule->deleteVerifiedRule(
-                    hostname   => $host_name,
-                    cluster_id => $service_provider_id,
-                );
+#                $rule->deleteVerifiedRule(
+#                    hostname   => $host_name,
+#                    cluster_id => $service_provider_id,
+#                );
             }else {
                 #print ' OK'."\n";
                 $rep++;
@@ -570,11 +572,11 @@ sub _evalRule {
             }
         }else{
             #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
-            $rule->setVerifiedRule(
-                hostname => $host_name,
-                cluster_id => $service_provider_id,
-                state      => 'undef'
-            );
+            #           $rule->setVerifiedRule(
+            #    hostname => $host_name,
+            #   cluster_id => $service_provider_id,
+            #    state      => 'undef'
+            #);
         }
     }
     return $rep;
