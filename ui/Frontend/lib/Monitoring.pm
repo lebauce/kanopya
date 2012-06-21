@@ -167,7 +167,7 @@ sub _computeClustermetricCombination () {
     
     eval {
         %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
-        # $log->info('values returned by compute values: '.Dumper \%aggregate_combination);
+        $log->info('values returned by compute values: '.Dumper \%aggregate_combination);
     };
     if ($@) {
         $error="$@";

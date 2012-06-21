@@ -1178,7 +1178,7 @@ function loadServicesConfig (container_id, elem_id) {
     $.ajax({
         url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
         success: function(data) {
-            var ctnr    = $("<div>", { id : 'connectorslistcontainer' });
+            var ctnr    = $("<div>", { id : 'connectorslistcontainer', 'class' : 'details_section' });
             $(ctnr).appendTo(container);
             $(container).append($('<br />'));
             var table = $("<table>", { id : "connectorslist" }).prependTo(ctnr);
@@ -1245,7 +1245,7 @@ function loadServicesConfig (container_id, elem_id) {
     $.ajax({
         url     : '/api/serviceprovidermanager?service_provider_id=' + elem_id,
         success : function(data) {
-            var ctnr    = $("<div>", { id : "managerslistcontainer" });
+            var ctnr    = $("<div>", { id : "managerslistcontainer", 'class' : 'details_section' });
             $(ctnr).appendTo($(container));
             var table   = $("<table>", { id : 'managerslist' }).prependTo($(ctnr));
             $(table).append($("<tr>").append($("<td>", { colspan : 3, class : 'table-title', text : "Managers" })));
@@ -1596,10 +1596,11 @@ function loadServicesRules (container_id, elem_id) {
         url: '/api/externalcluster/' + elem_id + '/nodemetric_conditions',
         content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
-        colNames: [ 'id', 'name', 'comparator', 'threshold' ],
+        colNames: [ 'id', 'name', 'combination', 'comparator', 'threshold' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 120 },
+            { name: 'nodemetric_condition_combination_id', index: 'nodemetric_condition_combination_id', width: 60 },
             { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 60,},
             { name: 'nodemetric_condition_threshold', index: 'nodemetric_condition_threshold', width: 190 },
         ]
@@ -1625,8 +1626,8 @@ function loadServicesRules (container_id, elem_id) {
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
             { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60,},
-            { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 190 },
-            { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 60 },
+            { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 120 },
+            { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 120 },
         ],
         details: {
             tabs : [
@@ -1651,14 +1652,14 @@ function loadServicesRules (container_id, elem_id) {
         url: '/api/externalcluster/' + elem_id + '/aggregate_conditions',
         content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
-        colNames: ['id','name', 'enabled', 'threshold', 'comparator', 'time limit'],
+        colNames: ['id','name', 'enabled', 'combination', 'comparator', 'threshold'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_condition_label',index:'aggregate_condition_label', width:120,},
              {name:'state',index:'state', width:60,},
-             {name:'threshold',index:'threshold', width:60,},
+             {name:'aggregate_combination_id',index:'aggregate_combination_id', width:60,},
              {name:'comparator',index:'comparator', width:160,},
-             {name:'threshold',index:'threshold', width:160,},
+             {name:'threshold',index:'threshold', width:60,},
            ]
     } );
     createServiceCondition('service_accordion_container', elem_id);

@@ -97,3 +97,8 @@ a.linkbutton {
 .selectable_rows .jqgrow:hover {
     cursor : pointer;
 }
+
+.details_section {
+    border-top: 1px solid #B2B2B2;
+    padding-top: 5px;
+}
