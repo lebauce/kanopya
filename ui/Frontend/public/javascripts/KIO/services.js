@@ -1197,10 +1197,15 @@ function loadServicesConfig (container_id, elem_id) {
 
             for (var i in data) if (data.hasOwnProperty(i)) {
                 $.ajax({
-                    url     : '/api/serviceprovider/' + data[i].service_provider_id,
-                    success : function(sp) {
-                        $(table).append($("<tr>", { text : data[i].manager_type + " : " + sp.externalcluster_name }));
-                    }
+                  url       : '/api/entity/' + data[i].manager_id,
+                  success   : function(mangr) {
+                        $.ajax({
+                            url     : '/api/serviceprovider/' + mangr.service_provider_id,
+                            success : function(sp) {
+                                $(table).append($("<tr>", { text : data[i].manager_type + " : " + sp.externalcluster_name }));
+                            }
+                        });
+                  }
                 });
             }
 
