@@ -351,7 +351,6 @@ function createAddServiceButton(container) {
                 });
                 $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
             }, 10);
-            return true;
         },
         callback    : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
