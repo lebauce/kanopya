@@ -1700,7 +1700,16 @@ function loadServicesRules (container_id, elem_id) {
                                 url     : '/api/nodemetricrule/' + eid,
                                 success : function(data) {
                                     var container   = $('#' + cid);
-                                    $(container).prepend($('<p>', { text : data.nodemetric_rule_label + " : " + data.nodemetric_rule_description }));
+                                    var p           = $('<p>', { text : data.nodemetric_rule_label + " : " + data.nodemetric_rule_description });
+                                    $(container).prepend(p);
+                                    if (data.workflow_def_id != null) {
+                                        $.ajax({
+                                            url     : '/api/workflowdef/' + data.workflow_def_id,
+                                            success : function(wfdef) {
+                                                $(p).html($(p).html() + '<br /><br />Associated workflow : ' + wfdef.workflow_def_name);
+                                            }
+                                        });
+                                    }
                                 }
                             });
                             require('KIO/workflows.js');
