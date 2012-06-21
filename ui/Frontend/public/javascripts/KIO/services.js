@@ -1760,6 +1760,13 @@ function loadServicesRules (container_id, elem_id) {
         details : {
             tabs    : [
                 { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
+                    $.ajax({
+                        url     : '/api/aggregaterule/' + eid,
+                        success : function(data) {
+                            var container   = $('#' + cid);
+                            $(container).prepend($('<p>', { text : data.aggregate_rule_label + " : " + data.aggregate_rule_description }));
+                        }
+                    });
                     require('KIO/workflows.js');
                     createWorkflowRuleAssociationButton(cid, eid, 2, elem_id);
                }},
