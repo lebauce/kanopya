@@ -384,16 +384,14 @@ function createAddServiceButton(container) {
 function createServiceMetric(container_id, elem_id) {
     
     
-    var indicators = new Array();
+    var indicators = {};
     $.ajax({
         async   : false,
- 		url: '/api/scomindicator',
+ 		url: '/api/scomindicator?service_provider_id=' + elem_id,
  		success: function(rows) {
 		   $(rows).each(function(row) {
-		       var indid = rows[row].indicator_id;
-    	       indicators[indid] = rows[row].indicator_name;
+    	       indicators[rows[row].scom_indicator_name] = rows[row].scom_indicator_id;
     	   });
-    	   console.log(indicators);
   		}
 	});
     
@@ -402,19 +400,19 @@ function createServiceMetric(container_id, elem_id) {
             label   : 'Name',
             type	: 'text',
         },
+        clustermetric_indicator_id	:{
+        	label	: 'Indicator',
+        	type	: 'select',
+        	options : indicators,
+        },
         clustermetric_statistics_function_name    : {
             label   : 'Statistic function name',
             type    : 'select',
             options   : statistics_function_name,
         },
-        clustermetric_window_time	: {
-        	label	: 'Window time',
-        	type	: 'text',	
-        },
-        clustermetric_indicator_id	:{
-        	label	: 'Indicator',
-        	type	: 'select',
-        	options : indicators,
+        clustermetric_window_time   :{
+            type    : 'hidden',
+            value   : '1200',
         },
         clustermetric_service_provider_id	:{
         	type	: 'hidden',
@@ -535,10 +533,10 @@ function createNodemetricCombination(container_id, elem_id) {
             type	: 'text',
         },
         nodemetric_combination_formula    : {
-            label   : 'Formula',
+            label   : 'Indicators Formula',
             type	: 'text',
         },
-        aggregate_combination_service_provider_id	:{
+        nodemetric_combination_service_provider_id	:{
         	type	: 'hidden',
         	value	: elem_id,	
         },
@@ -561,13 +559,12 @@ function createNodemetricCombination(container_id, elem_id) {
         $(function() {
     var availableTags = new Array();
     $.ajax({
-        url: '/api/nodemetriccombination?dataType=jqGrid',
+        url: '/api/scomindicator?service_provider_id=' + elem_id + '&dataType=jqGrid',
         async   : false,
         success: function(answer) {
                     $(answer.rows).each(function(row) {
                     var pk = answer.rows[row].pk;
-                    availableTags.push({label : answer.rows[row].nodemetric_combination_label, value : answer.rows[row].nodemetric_combination_id});
-
+                    availableTags.push({label : answer.rows[row].scom_indicator_name, value : answer.rows[row].scom_indicator_id});
                 });
             }
     });
@@ -1463,7 +1460,7 @@ function loadServicesMonitoring (container_id, elem_id) {
             var url = '/api/nodemetriccombination/' + id + '/toString';
             setCellWithCallMethod(url, grid, rowid, 'nodemetric_combination_formula');
         },
-        colNames: [ 'id', 'name', 'formula' ],
+        colNames: [ 'id', 'name', 'indicators formula' ],
         colModel: [ 
             { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
