@@ -1381,9 +1381,9 @@ function loadServicesRessources (container_id, elem_id) {
         rowNum : 25,
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             for (var i in serviceressources) if (serviceressources.hasOwnProperty(i)) {
-                var     ok          = $('<span>', { text : 0, rel : 'ok' });
-                var     notok       = $('<span>', { text : 0, rel : 'notok' });
-                var     undef       = $('<span>', { text : 0, rel : 'undef' });
+                var     ok          = $('<span>', { text : 0, rel : 'ok', css : {'padding-right' : '10px'} });
+                var     notok       = $('<span>', { text : 0, rel : 'notok', css : {'padding-right' : '10px'} });
+                var     undef       = $('<span>', { text : 0, rel : 'undef', css : {'padding-right' : '10px'} });
                 var     cellContent = $('<div>');
                 $(cellContent).append($('<img>', { rel : 'ok', src : '/images/icons/up.png' })).append(ok);
                 $(cellContent).append($('<img>', { rel : 'notok', src : '/images/icons/broken.png' })).append(notok);
@@ -1396,10 +1396,10 @@ function loadServicesRessources (container_id, elem_id) {
                     success     : function(data) {
                         if (parseInt(data) === 0) {
                             $(ok).text(parseInt($(ok).text()) + 1);
-                        } else if (parsenInt(data) === 1) {
-                            $(notok).text(parseInt($(ok).text()) + 1);
+                        } else if (parseInt(data) === 1) {
+                            $(notok).text(parseInt($(notok).text()) + 1);
                         } else if (data === null) {
-                            $(undef).text(parseInt($(ok).text()) + 1);
+                            $(undef).text(parseInt($(undef).text()) + 1);
                         }
                         if (parseInt($(ok).text()) <= 0) { $(cellContent).find('*[rel="ok"]').css('display', 'none'); } else { $(cellContent).find('*[rel="ok"]').css('display', 'inline'); }
                         if (parseInt($(notok).text()) <= 0) { $(cellContent).find('*[rel="notok"]').css('display', 'none'); } else { $(cellContent).find('*[rel="notok"]').css('display', 'inline'); }
