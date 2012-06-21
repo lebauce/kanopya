@@ -641,7 +641,7 @@ function nodemetricconditionmodal(elem_id, editid) {
         }
     };
     var service_opts    = {
-        title       : 'Create a Condition',
+        title       : ((editid === undefined) ? 'Create' : 'Edit') + ' a Condition',
         name        : 'nodemetriccondition',
         fields      : service_fields,
         error       : function(data) {
@@ -801,7 +801,7 @@ function serviceconditionmodal(elem_id, editid) {
         },
     };
     var service_opts    = {
-        title       : 'Create a Service Condition',
+        title       : ((editid === undefined) ? 'Create' : 'Edit') + ' a Service Condition',
         name        : 'aggregatecondition',
         fields      : service_fields,
         error       : function(data) {
