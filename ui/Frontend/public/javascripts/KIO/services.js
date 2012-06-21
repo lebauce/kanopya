@@ -1000,7 +1000,7 @@ function servicesList (container_id, elem_id) {
             });
         },
         rowNum : 25,
-        colNames: [ 'ID', 'Name', 'Enabled', 'Rules State', 'Node Number' ],
+        colNames: [ 'ID', 'Name', 'State', 'Rules State', 'Node Number' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
             { name: 'externalcluster_name', index: 'service_name', width: 200 },
@@ -1409,7 +1409,7 @@ function loadServicesRessources (container_id, elem_id) {
                 });
             }
         },
-        colNames: [ 'id', 'state', 'hostname', 'Rules State' ],
+        colNames: [ 'id', 'State', 'Hostname', 'Rules State' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'externalnode_state', index: 'externalnode_state', width: 90, formatter: StateFormatter },
@@ -1524,7 +1524,9 @@ function loadServicesMonitoring (container_id, elem_id) {
       cont.addClass('widget');
       cont.append(graph_div);
       graph_div.load('/widgets/widget_historical_service_metric.html', function() {
-          $('.clustermetric_options').remove();
+          $('.dropdown_container').remove();
+          setdatePicker(graph_div);
+          setRefreshButton(graph_div, clusterMetric_id, '', elem_id);
           showCombinationGraph(graph_div, clusterMetric_id, '', '', '', elem_id);
       });
     }

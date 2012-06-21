@@ -3,16 +3,12 @@
 </script>
 
 <div class="clustermetric_options">
-    <div class="field hidden">
-        <label for="combination_start_time">Start time (default is now - 1 day) </label>
-        <input type="text" id="combination_start_time" />
+    <div class="field">
+        <span style='white-space:nowrap'>Start: <input type="text" class="combination_start_time" /></span>
+        <span style='white-space:nowrap'>End: <input type="text" class="combination_end_time" /></span>
+        <button class='refresh_button hidden'>Refresh</button>
     </div>
-    <div class="field hidden">
-        <label for="combination_end_time">End time (default is now) </label>
-        <input type="text" id="combination_end_time" />
-    </div>
-    <div id="dropdown_container">
-        
+    <div class="dropdown_container">
         <select class="combination_list">
             <option selected="selected" id="default">Select a combination</option>
         </select>

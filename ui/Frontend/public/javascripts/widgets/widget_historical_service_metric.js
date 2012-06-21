@@ -4,26 +4,27 @@ $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
     if (obj.widget.element.find('.clusterCombinationView').length == 0) {return;}
 
-    console.log('Load content of widget histo ' + obj.widget.id);
+    console.log('Load content of widget service metric historical ' + obj.widget.id);
     
      var sp_id = obj.widget.metadata.service_id;
      fillServiceMetricCombinationList(
              obj.widget,
              sp_id
      );
+
+     setdatePicker(obj.widget.element);
 });
 
 function fillServiceMetricCombinationList (widget, sp_id) {
     var indic_list = widget.element.find('.combination_list');
     
     indic_list.change(function () {
-        //showNodemetricCombinationBarGraph(this, this.options[this.selectedIndex].id, this.options[this.selectedIndex].value, sp_id);
         showCombinationGraph(
                 this,
                 this.options[this.selectedIndex].id,
                 this.options[this.selectedIndex].value,
-                document.getElementById('combination_start_time').value,
-                document.getElementById('combination_end_time').value,
+                widget.element.find('.combination_start_time').val(),
+                widget.element.find('.combination_end_time').val(),
                 sp_id
         );
         widget.addMetadataValue('aggregate_combination_id', this.options[this.selectedIndex].id);
@@ -42,27 +43,36 @@ function fillServiceMetricCombinationList (widget, sp_id) {
     });
 }
 
-//format the dates given by datetimepicker
-//$(function() {
-//    $( "#combination_start_time" ).datetimepicker({
-//        dateFormat: 'mm-dd-yy'
-//    });
-//});
-//$(function() {
-//    $( "#combination_end_time" ).datetimepicker({
-//        dateFormat: 'mm-dd-yy'
-//    });
-//});
+function setdatePicker(widget_div) {
+    widget_div.find('.combination_start_time').datetimepicker({
+        dateFormat: 'mm-dd-yy'
+    });
+    widget_div.find('.combination_end_time').datetimepicker({
+        dateFormat: 'mm-dd-yy'
+    });
+}
+
+function setRefreshButton(widget_div, combi_id, combi_name, sp_id) {
+    widget_div.find('.refresh_button').click(function () {
+        showCombinationGraph(
+                widget_div,
+                combi_id,
+                combi_name,
+                widget_div.find('.combination_start_time').val(),
+                widget_div.find('.combination_end_time').val(),
+                sp_id
+        );
+    }).button({ icons : { primary : 'ui-icon-refresh' } }).show();
+}
 
 //function triggered on cluster_combination selection
 function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
     if (combi_id == 'default'){return}
-    
     var widget = $(curobj).closest('.widget');
     widget_loading_start( widget );
     
     var clustersview_url = '/monitoring/serviceprovider/' + sp_id +'/clustersview';
-    
+    var widget_id = $(curobj).closest('.widget').attr("id");
     var graph_container = widget.find('.clusterCombinationView');
     graph_container.children().remove();
     
@@ -71,7 +81,7 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
         if (data.error) { alert (data.error); }
         else {
             var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot()\"/>';
-            var div_id = 'cluster_combination_graph_' + sp_id;
+            var div_id = 'cluster_combination_graph_' + widget_id;
             var div = '<div id=\"'+div_id+'\"></div>';
             graph_container.css('display', 'block');
             graph_container.append(div);

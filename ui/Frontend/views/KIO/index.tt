@@ -8,6 +8,9 @@
 <script src="/javascripts/jquery/jqplot/jqplot.categoryAxisRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.dateAxisRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.highlighter.min.js"></script>
+
+<script src="/javascripts/jquery/jquery-ui-timepicker-addon.js"></script>
+
 <script src="/javascripts/KIO/menu.conf.js"></script>
 <script src='/javascripts/messages.js'></script>
 
