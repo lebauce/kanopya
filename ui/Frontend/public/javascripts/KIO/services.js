@@ -956,9 +956,15 @@ function servicesList (container_id, elem_id) {
                             ++ok;
                         }
                         var cellContent = $('<div>');
-                        $(cellContent).append($('<img>', { src : '/images/icons/up.png' })).append(ok + "&nbsp;");
-                        $(cellContent).append($('<img>', { src : '/images/icons/broken.png' })).append(verified + "&nbsp;");
-                        $(cellContent).append($('<img>', { src : '/images/icons/down.png' })).append(undef);
+                        if (ok > 0) {
+                            $(cellContent).append($('<img>', { src : '/images/icons/up.png' })).append(ok + "&nbsp;");
+                        }
+                        if (verified > 0) {
+                            $(cellContent).append($('<img>', { src : '/images/icons/broken.png' })).append(verified + "&nbsp;");
+                        }
+                        if (undef > 0) {
+                            $(cellContent).append($('<img>', { src : '/images/icons/down.png' })).append(undef);
+                        }
                         $(grid).setCell(rowid, 'rulesstate', cellContent.html());
                     }
                 }
@@ -1319,17 +1325,55 @@ function loadServicesConfig (container_id, elem_id) {
 
 function loadServicesRessources (container_id, elem_id) {
     var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
+    var serviceressources;
+    $.ajax({
+        url     : '/api/nodemetricrule?nodemetric_rule_service_provider_id=' + elem_id,
+        success : function(data) {
+            serviceressources   = data;
+        }
+    });
     create_grid( {
         url: '/api/externalnode?outside_id=' + elem_id,
         content_container_id: container_id,
         grid_id: loadServicesRessourcesGridId,
         grid_class: 'service_ressources_list',
         rowNum : 25,
-        colNames: [ 'id', 'enabled', 'hostname' ],
+        afterInsertRow: function(grid, rowid, rowdata, rowelem) {
+            for (var i in serviceressources) if (serviceressources.hasOwnProperty(i)) {
+                var     ok          = $('<span>', { text : 0, rel : 'ok' });
+                var     notok       = $('<span>', { text : 0, rel : 'notok' });
+                var     undef       = $('<span>', { text : 0, rel : 'undef' });
+                var     cellContent = $('<div>');
+                $(cellContent).append($('<img>', { rel : 'ok', src : '/images/icons/up.png' })).append(ok);
+                $(cellContent).append($('<img>', { rel : 'notok', src : '/images/icons/broken.png' })).append(notok);
+                $(cellContent).append($('<img>', { rel : 'undef', src : '/images/icons/down.png' })).append(undef);
+                $.ajax({
+                    url         : '/api/nodemetricrule/' + serviceressources[i].pk + '/isVerifiedForANode',
+                    type        : 'POST',
+                    contentType : 'application/json',
+                    data        : JSON.stringify({ 'externalcluster_id' : 67, 'externalnode_id' : rowdata.pk }),
+                    success     : function(data) {
+                        if (parseInt(data) === 0) {
+                            $(ok).text(parseInt($(ok).text()) + 1);
+                        } else if (parsenInt(data) === 1) {
+                            $(notok).text(parseInt($(ok).text()) + 1);
+                        } else if (data === null) {
+                            $(undef).text(parseInt($(ok).text()) + 1);
+                        }
+                        if (parseInt($(ok).text()) <= 0) { $(cellContent).find('*[rel="ok"]').css('display', 'none'); } else { $(cellContent).find('*[rel="ok"]').css('display', 'inline'); }
+                        if (parseInt($(notok).text()) <= 0) { $(cellContent).find('*[rel="notok"]').css('display', 'none'); } else { $(cellContent).find('*[rel="notok"]').css('display', 'inline'); }
+                        if (parseInt($(undef).text()) <= 0) { $(cellContent).find('*[rel="undef"]').css('display', 'none'); } else { $(cellContent).find('*[rel="undef"]').css('display', 'inline'); }
+                        $(grid).setCell(rowid, 'rulesstate', $(cellContent).html());
+                    }
+                });
+            }
+        },
+        colNames: [ 'id', 'enabled', 'hostname', 'Rules State' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'externalnode_state', index: 'externalnode_state', width: 90, formatter: StateFormatter },
             { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 200 },
+            { name: 'rulesstate', index: 'rulestate' }
         ],
         details : {
             tabs : [

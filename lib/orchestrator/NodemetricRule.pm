@@ -71,8 +71,12 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
   return {
-    'toString'  => {
+    'toString'              => {
       'description' => 'toString',
+      'perm_holder' => 'entity'
+    },
+    'isVerifiedForANode'    => {
+      'description' => 'isverifiedForANode',
       'perm_holder' => 'entity'
     }
   }
