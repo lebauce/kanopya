@@ -1340,7 +1340,7 @@ function loadServicesConfig (container_id, elem_id) {
                                             url         : '/api/serviceprovidermanager',
                                             type        : 'POST',
                                             data        : {
-                                                manager_type        : 'WorkflowManager',
+                                                manager_type        : 'workflow_manager',
                                                 manager_id          : $(select).attr('value'),
                                                 service_provider_id : elem_id,
                                             },
