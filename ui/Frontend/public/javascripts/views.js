@@ -179,6 +179,7 @@ function create_grid(options) {
     // Add delete action column (by default)
     var actions_col_idx = options.colNames.length;
     if (options.action_delete === undefined || options.action_delete != 'no') {
+        var delete_url_base = (options.action_delete && options.action_delete.url) || options.url;
         options.colNames.push('');
         options.colModel.push({index:'action_remove', width : '40px', formatter:
             function(cell, formatopts, row) {
@@ -188,7 +189,7 @@ function create_grid(options) {
                 remove_action += '<div class="ui-pg-div ui-inline-del"';
                 remove_action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
                 remove_action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
-                remove_action += 'onclick="removeGridEntry(\''+  options.grid_id + '\',' +row.pk + ',\'' + options.url + '\')" style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
+                remove_action += 'onclick="removeGridEntry(\''+  options.grid_id + '\',' +row.pk + ',\'' + delete_url_base + '\')" style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
                 remove_action += '<span class="ui-icon ui-icon-trash"></span>';
                 remove_action += '</div>';
                 return remove_action;

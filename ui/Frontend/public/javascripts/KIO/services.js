@@ -1517,6 +1517,9 @@ function loadServicesMonitoring (container_id, elem_id) {
                 ],
             title : { from_column : 'nodemetric_combination_label' }
         },
+        action_delete: {
+            url : '/api/nodemetriccombination',
+        }
     } );
     createNodemetricCombination('node_monitoring_accordion_container', elem_id);
 
