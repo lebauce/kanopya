@@ -878,7 +878,8 @@ sub getHosts {
 
     my %hosts;
     eval {
-        my $host_rs = $self->{_dbix}->parent->nodes;
+#        my $host_rs = $self->{_dbix}->parent->parent->nodes;
+        my $host_rs = $self->getAttr(name => 'nodes');
         while (my $node_row = $host_rs->next) {
             my $host_row = $node_row->host;
             $log->debug("Nodes found");
@@ -1245,6 +1246,26 @@ sub getNodeState {
 
     return $node_state;
 }
+
+sub getNodes {
+    my ($self, %args) = @_;
+
+    my $node_rs = $self->{_dbix}->parent->nodes;
+
+    my $domain_name;
+    my @nodes;
+    while (my $node_row = $node_rs->next) {
+        if($node_row->get_column('node_state') ne 'disabled'){
+            push @nodes, {
+                state              => $node_row->get_column('node_state'),
+                id                 => $node_row->get_column('node_id'),
+            };
+        }
+    }
+
+    return \@nodes;
+}
+
 
 
 =head2 getNodesMetrics
