@@ -73,8 +73,7 @@ sub createTimeDataStore{
     #get collect frequency from configuration file
     my $monitor_configuration = Kanopya::Config::get('monitor');
     my $frequency             = $monitor_configuration->{rrd_step}->{step};
-	my $orchestrator_configuration = Kanopya::Config::get('orchestrator');
-	my $heartbeat = $orchestrator_configuration->{time_step};
+	my $heartbeat = $monitor_configuration->{time_step};
 
     #definition of the options. If unset, default rrd start time is (now -10s)
     if (defined $args{'options'}) {
