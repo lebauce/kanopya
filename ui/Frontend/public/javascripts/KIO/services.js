@@ -400,15 +400,15 @@ function createServiceMetric(container_id, elem_id) {
             label   : 'Name',
             type	: 'text',
         },
-        clustermetric_indicator_id	:{
-        	label	: 'Indicator',
-        	type	: 'select',
-        	options : indicators,
-        },
         clustermetric_statistics_function_name    : {
             label   : 'Statistic function name',
             type    : 'select',
             options   : statistics_function_name,
+        },
+        clustermetric_indicator_id	:{
+        	label	: 'Indicator',
+        	type	: 'select',
+        	options : indicators,
         },
         clustermetric_window_time   :{
             type    : 'hidden',
@@ -1397,7 +1397,7 @@ function loadServicesRessources (container_id, elem_id) {
                 });
             }
         },
-        colNames: [ 'id', 'enabled', 'hostname', 'Rules State' ],
+        colNames: [ 'id', 'state', 'hostname', 'Rules State' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'externalnode_state', index: 'externalnode_state', width: 90, formatter: StateFormatter },

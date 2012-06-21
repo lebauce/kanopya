@@ -115,6 +115,9 @@ function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title) {
                 max:max,
             },
         },
+        grid:{
+            background: '#eeeeee',
+        },
         seriesColors: ["#D4D4D4" ,"#999999"],
         highlighter: { 
             show: true,

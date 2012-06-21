@@ -22,7 +22,8 @@ var mainmenu_def = {
                 }
     },
     'Administration'    : {
-        'Kanopya'          : [],
+        //'Kanopya'          : [],
+        'Monitoring'       : [{label : 'Scom', id : 'scommanagement',onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }}],
         'Right Management' :  [
                                {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('KIO/users.js'); usersList(cid, eid); }},
                                {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('KIO/users.js'); groupsList(cid, eid); }},
@@ -32,7 +33,6 @@ var mainmenu_def = {
             { label : 'Overview', id : 'workflows_overview', onLoad : workflowsoverview },
             { label : 'Workflow Management' , id : 'workflowmanagement', onLoad : sco_workflow },
         ],
-        'Monitoring'       : [{label : 'Scom', id : 'scommanagement',onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }}],
     },
 };
 

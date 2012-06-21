@@ -119,6 +119,9 @@ function timedGraph(first_graph_line, min, max, label, div_id) {
                 },
             },
         },
+        grid:{
+            background: '#eeeeee',
+        },
         highlighter: {
             show: true,
             // formatString: '<p class="cluster_combination_tooltip">Date: %s<br /> value: %f</p>',
