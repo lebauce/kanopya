@@ -208,6 +208,10 @@ sub oneRun {
 
             # Report the operation if required
             if ($delay) {
+                # Update the context with possibles newly set params
+                $op->{params}->{context} = $op->{context};
+                $op->setParams(params => $op->{params});
+
                 $op->report(duration => $delay);
 
                 if ($op->getAttr(name => 'state') eq 'ready') {
