@@ -26,7 +26,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Operation;
 use General;
-use Node;
+use Externalnode::Node;
 
 use Entity::ServiceProvider;
 use Entity::Container;
@@ -297,7 +297,7 @@ sub getNodeSystemimage {
 
 sub getNode {
     my $self = shift;
-    return Node->get(id => $self->{_dbix}->node->get_column('node_id'));
+    return Externalnode::Node->get(id => $self->{_dbix}->node->get_column('node_id'));
 }
 
 =head2 getHostRAM
@@ -372,18 +372,18 @@ sub becomeNode {
                                        'node_number', 'systemimage_id' ]);
 
     my $adm = Administrator->new();
-    my $res = $adm->{db}->resultset('Node')->create({
-                  inside_id      => $args{inside_id},
-                  host_id        => $self->getAttr(name => 'host_id'),
-                  master_node    => $args{master_node},
-                  node_number    => $args{node_number},
-                  systemimage_id => $args{systemimage_id},
-              });
+    my $node = Externalnode::Node->new(
+                  inside_id           => $args{inside_id},
+                  host_id             => $self->getAttr(name => 'host_id'),
+                  master_node         => $args{master_node},
+                  node_number         => $args{node_number},
+                  systemimage_id      => $args{systemimage_id},
+    );
 
     my $cluster = Entity::ServiceProvider->get(id => $args{inside_id});
     $self->associateInterfaces(cluster => $cluster);
 
-    return $res->get_column("node_id");
+    return $node->getAttr(name => 'node_id');
 }
 
 sub becomeMasterNode{
@@ -415,7 +415,7 @@ sub stopToBeNode{
     my $node;
     eval {
         # TODO: $node = $self->getRelated(name => 'node');
-        $node = Node->find(hash => { host_id => $self->getAttr(name => 'entity_id') });
+        $node = Externalnode::Node->find(hash => { host_id => $self->getAttr(name => 'entity_id') });
     };
     if($@) {
         $errmsg = "Node representing host " . $self->getAttr(name => "entity_id") . " not found!";
@@ -782,7 +782,7 @@ sub toString {
 
 sub getClusterId {
     my $self = shift;
-    return $self->{_dbix}->node->inside->get_column('inside_id');
+    return $self->{_dbix}->node->parent->service_provider->get_column('service_provider_id');
 }
 
 sub getPowerSupplyCardId {
