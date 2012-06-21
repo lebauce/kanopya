@@ -73,6 +73,8 @@ sub createTimeDataStore{
     #get collect frequency from configuration file
     my $monitor_configuration = Kanopya::Config::get('monitor');
     my $frequency             = $monitor_configuration->{rrd_step}->{step};
+	my $orchestrator_configuration = Kanopya::Config::get('orchestrator');
+	my $heartbeat = $orchestrator_configuration->{time_step};
 
     #definition of the options. If unset, default rrd start time is (now -10s)
     if (defined $args{'options'}) {
@@ -117,7 +119,7 @@ sub createTimeDataStore{
     $RRA_chain = 'RRA:'.$RRA_params{'function'}.':'.$RRA_params{'XFF'}.':'.$RRA_params{'PDPnb'}.':'.$RRA_params{'CDPnb'};
 
     #default parameter for Data Source
-    my $heartbeat = $frequency * 2;
+    # my $heartbeat = $frequency * 2;
     my %DS_params = (DSname => 'aggregate', type => 'GAUGE', heartbeat => $heartbeat, min => '0', max => 'U');
 
     if (defined $args{'DS'}){
@@ -293,10 +295,10 @@ sub updateTimeDataStore {
 
     my $cmd = $rrd.' updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
     $log->debug($cmd);
-    #print $cmd."\n";
+    # print $cmd."\n";
 
     my $exec =`$cmd 2>&1`;
-    #print $exec."\n";
+    # print $exec."\n";
     $log->debug($exec);
 
     if ($exec =~ m/^ERROR.*/){
