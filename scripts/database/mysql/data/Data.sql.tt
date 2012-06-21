@@ -552,6 +552,8 @@ INSERT INTO `ip` VALUES (1,'[% poolip_addr %]', @poolid, @admin_iface);
 -- admin node
 --
 
+
+INSERT INTO `externalnode` VALUES (1, [% kanopya_hostname %], @admin_cluster,'disabled',NULL,NULL);
 INSERT INTO `node` VALUES (1, @admin_cluster, @admin_host,1,'in:[% tmstp %]',NULL,1, NULL);
 
 --

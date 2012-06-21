@@ -537,13 +537,13 @@ CREATE TABLE `powersupply` (
 
 CREATE TABLE `node` (
   `node_id` int(8) unsigned NOT NULL,
+  `inside_id` int(8) unsigned NOT NULL,
   `host_id` int(8) unsigned NOT NULL,
   `master_node` int(1) unsigned DEFAULT NULL,
   `node_state` char(32),
   `node_prev_state` char(32),
   `node_number` int(8) unsigned NOT NULL,
   `systemimage_id` int(8) unsigned DEFAULT NULL,
-  `inside_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`node_id`),
   UNIQUE KEY (`host_id`),
   FOREIGN KEY (`node_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
