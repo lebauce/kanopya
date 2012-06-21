@@ -902,7 +902,7 @@ function servicesList (container_id, elem_id) {
         url: '/api/externalcluster',
         content_container_id: container_id,
         grid_id: 'services_list',
-        afterInsertRow: function(grid, rowid) {
+        afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             var id  = $(grid).getCell(rowid, 'pk');
             $.ajax({
                 url     : '/api/externalcluster/' + id + '/externalnodes',
@@ -915,13 +915,39 @@ function servicesList (container_id, elem_id) {
                     $(grid).setCell(rowid, 'node_number', i);
                 }
             });
+            // Rules State
+            $.ajax({
+                url     : '/api/aggregaterule?aggregate_rule_service_provider_id=' + rowelem.pk,
+                type    : 'GET',
+                success : function(aggregaterules) {
+                    var verified    = 0;
+                    var undef       = 0;
+                    var ok          = 0;
+                    for (var i in aggregaterules) if (aggregaterules.hasOwnProperty(i)) {
+                        var lasteval    = aggregaterules[i].aggregate_rule_last_eval;
+                        if (lasteval === '1') {
+                            ++verified;
+                        } else if (lasteval === null) {
+                            ++undef;
+                        } else if (lasteval === '0') {
+                            ++ok;
+                        }
+                        var cellContent = $('<div>');
+                        $(cellContent).append($('<img>', { src : '/images/icons/up.png' })).append(ok + "&nbsp;");
+                        $(cellContent).append($('<img>', { src : '/images/icons/broken.png' })).append(verified + "&nbsp;");
+                        $(cellContent).append($('<img>', { src : '/images/icons/down.png' })).append(undef);
+                        $(grid).setCell(rowid, 'rulesstate', cellContent.html());
+                    }
+                }
+            });
         },
         rowNum : 25,
-        colNames: [ 'ID', 'Name', 'Enabled', 'Node Number' ],
+        colNames: [ 'ID', 'Name', 'Enabled', 'Rules State', 'Node Number' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
             { name: 'externalcluster_name', index: 'service_name', width: 200 },
             { name: 'externalcluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
+            { name: 'rulesstate', index : 'rulesstate' },
             { name: 'node_number', index: 'node_number', width: 150 }
         ],
         elem_name : 'service',
