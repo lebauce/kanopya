@@ -40,7 +40,7 @@ ajax '/serviceprovider/:spid/clustersview' => sub {
         $start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
     } else {
         my $start_dt = $date_parser->parse_datetime($start);
-        my $start_dt->set_time_zone('local');
+        $start_dt->set_time_zone('local');
         $start_timestamp = $start_dt->epoch();
     }
 
@@ -50,7 +50,7 @@ ajax '/serviceprovider/:spid/clustersview' => sub {
         $stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
     } else {
         my $stop_dt = $date_parser->parse_datetime($stop);
-        my $stop_dt->set_time_zone('local');
+        $stop_dt->set_time_zone('local');
         $stop_timestamp = $stop_dt->epoch() ;
     }
 
