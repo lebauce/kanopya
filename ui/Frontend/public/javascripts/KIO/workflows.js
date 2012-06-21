@@ -332,6 +332,7 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
                 contentType : 'application/json',
                 data        : JSON.stringify({}),
                 success     : function(data) {
+                    var ok  = false;
                     if (data.length <= 0) {
                         alert('No workflow definition found.');
                     } else {
@@ -347,13 +348,18 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
                                         type        : 'POST',
                                         contentType : 'application/json',
                                         data        : JSON.stringify({ 'workflow_def_id' : wfd.pk }),
-                                        success     : function(data) {
-                                            if ((data.internal.association == null || data.internal.association == false)
-                                                && data.internal.scope_id == scid) {
-                                                wfd.specificparams  = data.specific;
+                                        success     : function(dat) {
+                                            if ((dat.internal.association == null || dat.internal.association == false)
+                                                && dat.internal.scope_id == scid) {
+                                                if (!ok) ok = true;
+                                                wfd.specificparams  = dat.specific;
                                                 wfdefs.push(wfd);
                                                 $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
                                                 $(select).change();
+                                            }
+                                            if (ok === false && (i + 1) == data.length) {
+                                                $(dial).dialog('close');
+                                                alert('No workflow definition found.');
                                             }
                                         }
                                     });

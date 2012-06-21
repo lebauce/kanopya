@@ -1684,6 +1684,13 @@ function loadServicesRules (container_id, elem_id) {
         details: {
             tabs : [
                         { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
+                            $.ajax({
+                                url     : '/api/nodemetricrule/' + eid,
+                                success : function(data) {
+                                    var container   = $('#' + cid);
+                                    $(container).prepend($('<p>', { text : data.nodemetric_rule_label + " : " + data.nodemetric_rule_description }));
+                                }
+                            });
                             require('KIO/workflows.js');
                             createWorkflowRuleAssociationButton(cid, eid, 1, elem_id);
                         }},
