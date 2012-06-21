@@ -176,19 +176,19 @@ sub associateWorkflow {
     #to a rule
     $workflow_params->{internal}->{association} = 1;
 
-    #print Dumper $workflow_params;
-
     my $workflow = $self->createWorkflow(
                        workflow_name => $args{new_workflow_name},
                        params        => $workflow_params,
                    );
 
     #Then we finally link the workflow to the rule
-    return $self->_linkWorkflowToRule(
+    $self->_linkWorkflowToRule(
                workflow => $workflow, 
                rule_id  => $args{rule_id}, 
                scope_id => $workflow_params->{internal}->{scope_id}
            );
+
+    return $workflow;
 }
 
 =head2 _linkWorkflowToRule
@@ -267,8 +267,6 @@ sub runWorkflow {
             %args,
         );
 
-    #print Dumper $automatic_values;
-
     #replace the undefined automatic params with the defined ones
     $all_params->{automatic} = $automatic_values;
    
@@ -279,8 +277,6 @@ sub runWorkflow {
                               rule_id       => $rule_id,
                               sp_id         => $service_provider_id,
                           );
-
-    #print Dumper $workflow_params;
 
     #run the workflow with the fully defined params
     Workflow->run(name => $workflow_name, params => $workflow_params);
@@ -433,16 +429,12 @@ sub _getSortedParams {
                                     data_params => $prepared_data_params,
                                     scope_id    => $scope_id
                                 );  
-    #print Dumper $sorted_params{automatic};
-
     #get specific params
     $sorted_params{specific} = $self->getSpecificParams(
                                 data_params => $prepared_data_params,
                                 scope_id    => $scope_id
                                );
-    #print Dumper $sorted_params{specific};
 
-    #print Dumper \%sorted_params;
     return \%sorted_params;
 }
 
