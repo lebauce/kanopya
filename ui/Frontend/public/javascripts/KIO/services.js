@@ -1293,7 +1293,7 @@ function loadServicesConfig (container_id, elem_id) {
                 });
             }
 
-            if (isThereAManager(elem_id, 'WorkflowManager') === false) {
+            if (isThereAManager(elem_id, 'workflow_manager') === false) {
                 var addManagerButton    = $("<a>", { text : 'Add a Workflow Manager' }).button({ icons : { primary : 'ui-icon-plusthick' } });
                 addManagerButton.bind('click', function() {
                     $.ajax({
