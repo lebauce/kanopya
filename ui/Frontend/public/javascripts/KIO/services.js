@@ -1784,8 +1784,17 @@ function loadServicesRules (container_id, elem_id) {
                     $.ajax({
                         url     : '/api/aggregaterule/' + eid,
                         success : function(data) {
-                            var container   = $('#' + cid);
-                            $(container).prepend($('<p>', { text : data.aggregate_rule_label + " : " + data.aggregate_rule_description }));
+                                    var container   = $('#' + cid);
+                                    var p           = $('<p>', { text : data.aggregate_rule_label + " : " + data.aggregate_rule_description });
+                                    $(container).prepend(p);
+                                    if (data.workflow_def_id != null) {
+                                        $.ajax({
+                                            url     : '/api/workflowdef/' + data.workflow_def_id,
+                                            success : function(wfdef) {
+                                                $(p).html($(p).html() + '<br /><br />Associated workflow : ' + wfdef.workflow_def_name);
+                                            }
+                                        });
+                                    }
                         }
                     });
                     require('KIO/workflows.js');
