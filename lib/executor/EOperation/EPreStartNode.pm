@@ -103,22 +103,23 @@ sub execute {
                             cluster => $self->{context}->{cluster});
     }
 
+
+    # define a hostname
+    my $hostname = $self->{context}->{cluster}->getAttr(name => 'cluster_basehostname');
+    if ($self->{context}->{cluster}->getAttr(name => 'cluster_max_node') > 1) {
+        $hostname .=  $self->{params}->{node_number};
+    }
+    $self->{context}->{host}->setAttr(name  => "host_hostname",
+                                      value => $hostname);
+    $self->{context}->{host}->save();
+
     $self->{context}->{host}->becomeNode(
         inside_id      => $self->{context}->{cluster}->getAttr(name => "cluster_id"),
         master_node    => 0,
         systemimage_id => $self->{context}->{systemimage}->getAttr(name => "entity_id"),
         node_number    => $self->{params}->{node_number},
-    );   
+    );
 
-    # define a hostname
-    my $hostname = $self->{context}->{cluster}->getAttr(name => 'cluster_basehostname');
-    if ($self->{context}->{cluster}->getAttr(name => 'cluster_max_node') > 1) {
-        $hostname .=  $self->{context}->{host}->getNodeNumber();
-    }
-    $self->{context}->{host}->setAttr(name  => "host_hostname",
-                                      value => $hostname);
-    $self->{context}->{host}->save();
-    
     # create the node working directory where generated files will be
     # stored.
     my $dir = $self->{config}->{clusters}->{directory};
