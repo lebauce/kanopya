@@ -1423,6 +1423,8 @@ function node_rules_tab(cid, eid, service_provider_id) {
 
     function verifiedNodeRuleStateFormatter(cell, options, row) {
     
+    //console.log(eid);
+    
         var VerifiedRuleFormat;
         // Where rowid = rule_id
         $.ajax({
@@ -1572,7 +1574,10 @@ function loadServicesMonitoring (container_id, elem_id) {
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
             { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
             { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
-        ]
+        ],
+        action_delete: {
+            url : '/api/clustermetric',
+        },
     } );
     createServiceMetric('service_monitoring_accordion_container', elem_id);
     
@@ -1599,6 +1604,9 @@ function loadServicesMonitoring (container_id, elem_id) {
                     { label : 'Historical graph', id : 'servicehistoricalgraph', onLoad : clusterMetricDetailsHistorical },
                 ],
             title : { from_column : 'aggregate_combination_label' }
+        },
+        action_delete: {
+            url : '/api/aggregatecombination',
         },
     } );
     createServiceConbination('service_monitoring_accordion_container', elem_id);
@@ -1644,7 +1652,13 @@ function loadServicesRules (container_id, elem_id) {
             { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 60,},
             { name: 'nodemetric_condition_threshold', index: 'nodemetric_condition_threshold', width: 190 },
         ],
+<<<<<<< HEAD
         details: { onSelectRow : function(eid) { nodemetricconditionmodal(elem_id, eid); } }
+=======
+        action_delete: {
+            url : '/api/nodemetriccondition',
+        },
+>>>>>>> [UI] Grids : check and make modifs to make all elements deletables
     } );
     createNodemetricCondition('node_accordion_container', elem_id)
     
@@ -1676,12 +1690,15 @@ function loadServicesRules (container_id, elem_id) {
                             require('KIO/workflows.js');
                             createWorkflowRuleAssociationButton(cid, eid, 1, elem_id);
                         }},
-                        { label : 'Nodes', id : 'nodes', onLoad : rule_nodes_tab },
-                        { label : 'Rule', id : 'rule', onLoad : rule_detail_tab },
+                        { label : 'Nodes', id : 'nodes', onLoad : function(cid, eid) { rule_nodes_tab(cid, eid, elem_id); } },
                     ],
             title : { from_column : 'nodemetric_rule_label' }
         },
+        action_delete: {
+            url : '/api/nodemetricrule',
+        },
     } );
+    
     createNodemetricRule('node_accordion_container', elem_id);
 	// Here's the second part of the accordion :
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
@@ -1744,7 +1761,10 @@ function loadServicesRules (container_id, elem_id) {
                }},
             ],
             title   : { from_column : 'aggregate_rule_label' }
-        }
+        },
+        action_delete: {
+            url : '/api/aggregaterule',
+        },
     } );
     createServiceRule('service_accordion_container', elem_id);
 
@@ -1758,4 +1778,47 @@ function loadServicesRules (container_id, elem_id) {
     });
     
     ////////////////////////END OF : RULES ACCORDION//////////////////////////////////
+}
+
+
+// This function load a grid with the list of current service's nodes for state corelation with rules
+function rule_nodes_tab(cid, rule_id, service_provider_id) {
+    
+    function verifiedRuleNodesStateFormatter(cell, options, row) {
+        var VerifiedRuleFormat;
+            // Where rowid = rule_id
+            
+            $.ajax({
+                 url: '/api/externalnode/' + row.pk + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + rule_id,
+                 async: false,
+                 success: function(answer) {
+                    if (answer.length == 0) {
+                        VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
+                    } else if (answer[0].verified_noderule_state == undefined) {
+                        VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
+                    } else if (answer[0].verified_noderule_state == 'verified') {
+                        VerifiedRuleFormat = "<img src='/images/icons/broken.png' title='broken' />";
+                    } else if (answer[0].verified_noderule_state == 'undef') {
+                        VerifiedRuleFormat = "<img src='/images/icons/down.png' title='down' />";
+                    }
+                  }
+            });
+        return VerifiedRuleFormat;
+    }
+//         url: '/api/externalnode/' + eid,
+    
+    var loadNodeRulesTabGridId = 'rule_nodes_tabs';
+    create_grid( {
+        url: '/api/externalnode?outside_id=' + service_provider_id,
+        content_container_id: cid,
+        grid_id: loadNodeRulesTabGridId,
+        grid_class: 'rule_nodes_grid',
+        colNames: [ 'id', 'hostname', 'state' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 110,},
+            { name: 'verified_noderule_state', index: 'verified_noderule_state', width: 60, formatter: verifiedRuleNodesStateFormatter,}, 
+        ],
+        action_delete : 'no',
+    } );
 }

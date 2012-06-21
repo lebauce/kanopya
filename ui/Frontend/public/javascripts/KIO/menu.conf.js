@@ -64,6 +64,10 @@ function rule_nodes_tab(cid, eid) {
     function verifiedRuleNodesStateFormatter(cell, options, row) {
         var VerifiedRuleFormat;
             // Where rowid = rule_id
+            
+            console.log(row.pk);
+            console.log(eid);
+            
             $.ajax({
                  url: '/api/externalnode/' + row.pk + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + eid,
                  async: false,
@@ -92,6 +96,7 @@ function rule_nodes_tab(cid, eid) {
             });
     
     var loadNodeRulesTabGridId = 'rule_nodes_tabs';
+    console.log(oid);
     create_grid( {
         url: '/api/externalnode?outside_id=' + oid,
         content_container_id: cid,
