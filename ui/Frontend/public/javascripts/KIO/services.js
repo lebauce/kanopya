@@ -616,28 +616,28 @@ function createNodemetricCombination(container_id, elem_id) {
 };
 
     ////////////////////////NODES AND METRICS MODALS//////////////////////////////////
-function createNodemetricCondition(container_id, elem_id) {
+function nodemetricconditionmodal(elem_id, editid) {
     var service_fields  = {
         nodemetric_condition_label    : {
             label   : 'Name',
-            type	: 'text',
+            type    : 'text',
         },
-        nodemetric_condition_combination_id	:{
-        	label	: 'Combination',
-        	display	: 'nodemetric_combination_label',
+        nodemetric_condition_combination_id :{
+            label   : 'Combination',
+            display : 'nodemetric_combination_label',
         },
         nodemetric_condition_comparator    : {
             label   : 'Comparator',
             type    : 'select',
             options   : comparators,
         },
-        nodemetric_condition_threshold	: {
-        	label	: 'Threshold',
-        	type	: 'text',	
+        nodemetric_condition_threshold: {
+            label   : 'Threshold',
+            type    : 'text',
         },
-        nodemetric_condition_service_provider_id	:{
-        	type	: 'hidden',
-        	value	: elem_id,	
+        nodemetric_condition_service_provider_id:{
+            type: 'hidden',
+            value: elem_id,
         }
     };
     var service_opts    = {
@@ -646,13 +646,21 @@ function createNodemetricCondition(container_id, elem_id) {
         fields      : service_fields,
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
+        },
+        callback    : function() {
+            $('#service_ressources_nodemetric_conditions_' + elem_id).trigger('reloadGrid');
         }
     };
-
+    if (editid !== undefined) {
+        service_opts.id = editid;
+        service_opts.fields.nodemetric_condition_label.type = 'hidden';
+    }
+    (new ModalForm(service_opts)).start();
+}
+function createNodemetricCondition(container_id, elem_id) {
     var button = $("<button>", {html : 'Add condition'});
-  	button.bind('click', function() {
-        mod = new ModalForm(service_opts);
-        mod.start();
+    button.bind('click', function() {
+        nodemetricconditionmodal(elem_id);
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
@@ -757,33 +765,33 @@ function createNodemetricRule(container_id, elem_id) {
     $('#' + container_id).append(button);
 };
 
-function createServiceCondition(container_id, elem_id) {
+function serviceconditionmodal(elem_id, editid) {
     var service_fields  = {
         aggregate_condition_label    : {
             label   : 'Name',
-            type	: 'text',
+            type    : 'text',
         },
-        aggregate_combination_id	:{
-        	label	: 'Combination',
-        	display	: 'aggregate_combination_label',
+        aggregate_combination_id    :{
+            label   : 'Combination',
+            display : 'aggregate_combination_label',
         },
-        comparator	: {
-        	label   : 'Comparator',
-	        type    : 'select',
-    	    options   : comparators,	
+        comparator  : {
+            label   : 'Comparator',
+            type    : 'select',
+            options : comparators,
         },
-        threshold	:{
-        	label	: 'Threshold',
-        	type	: 'text',	
+        threshold:{
+            label   : 'Threshold',
+            type    : 'text',
         },
-        state	:{
-        	label   : 'Enabled',
-	        type    : 'select',
-    	    options   : rulestates,
+        state:{
+            label   : 'Enabled',
+            type    : 'select',
+            options   : rulestates,
         },
         aggregate_condition_service_provider_id	:{
-        	type	: 'hidden',
-        	value	: elem_id,
+            type    : 'hidden',
+            value   : elem_id,
         },
     };
     var service_opts    = {
@@ -792,13 +800,22 @@ function createServiceCondition(container_id, elem_id) {
         fields      : service_fields,
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
+        },
+        callback    : function() {
+            $('#service_ressources_aggregate_conditions_' + elem_id).trigger('reloadGrid');
         }
     };
+    if (editid !== undefined) {
+        service_opts.id = editid;
+        service_opts.fields.aggregate_condition_label.type  = 'hidden';
+    }
+    (new ModalForm(service_opts)).start();
+}
 
+function createServiceCondition(container_id, elem_id) {
     var button = $("<button>", {html : 'Add a Service Condition'});
-  	button.bind('click', function() {
-        mod = new ModalForm(service_opts);
-        mod.start();
+    button.bind('click', function() {
+        serviceconditionmodal(elem_id);
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
@@ -814,7 +831,7 @@ function createServiceRule(container_id, elem_id) {
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
             { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 90 },
-        ]
+        ],
     } );
 
     var service_fields  = {
@@ -1614,7 +1631,8 @@ function loadServicesRules (container_id, elem_id) {
             { name: 'nodemetric_condition_combination_id', index: 'nodemetric_condition_combination_id', width: 60 },
             { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 60,},
             { name: 'nodemetric_condition_threshold', index: 'nodemetric_condition_threshold', width: 190 },
-        ]
+        ],
+        details: { onSelectRow : function(eid) { nodemetricconditionmodal(elem_id, eid); } }
     } );
     createNodemetricCondition('node_accordion_container', elem_id)
     
@@ -1679,7 +1697,8 @@ function loadServicesRules (container_id, elem_id) {
              {name:'aggregate_combination_id',index:'aggregate_combination_id', width:60,},
              {name:'comparator',index:'comparator', width:160,},
              {name:'threshold',index:'threshold', width:60,},
-           ]
+           ],
+        details: { onSelectRow : function(eid) { serviceconditionmodal(elem_id, eid); } }
     } );
     createServiceCondition('service_accordion_container', elem_id);
     // Display services rules :
