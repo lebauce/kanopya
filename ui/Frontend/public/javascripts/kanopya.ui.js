@@ -7,9 +7,13 @@ $(document).ready(function () {
 
     var openedRequests      = 0;
 
-    $(this).ajaxSend(function() {
+    $(this).ajaxSend(function(event) {
         ++openedRequests;
         $('body').css('cursor', 'wait');
+        setTimeout(function() {
+            openedRequests  = 0;
+            $('body').css('cursor', 'default');
+        }, 10000);
     });
 
     $(this).ajaxComplete(function(event, jqXHR, ajaxOptions) {
