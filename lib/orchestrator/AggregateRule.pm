@@ -134,8 +134,8 @@ sub toString(){
             $element = AggregateCondition->get('id'=>substr($element,2))->toString();
         }
      }
-     #return "@array";
-     return List::Util::reduce {$a.$b} @array;
+     return "@array";
+     #return List::Util::reduce {$a.$b} @array;
 }
 
 

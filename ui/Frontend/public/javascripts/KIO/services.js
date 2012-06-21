@@ -1596,6 +1596,14 @@ function loadServicesRules (container_id, elem_id) {
         url: '/api/externalcluster/' + elem_id + '/nodemetric_conditions',
         content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
+        afterInsertRow: function(grid, rowid, rowdata) {
+            $.ajax({
+                url     : '/api/nodemetriccombination/' + rowdata.nodemetric_condition_combination_id,
+                success : function(data) {
+                    $(grid).setCell(rowid, 'nodemetric_condition_combination_id', data.nodemetric_combination_label);
+                }
+            });
+        },
         colNames: [ 'id', 'name', 'combination', 'comparator', 'threshold' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
@@ -1652,6 +1660,14 @@ function loadServicesRules (container_id, elem_id) {
         url: '/api/externalcluster/' + elem_id + '/aggregate_conditions',
         content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
+        afterInsertRow: function(grid, rowid, rowdata, rowelem) {
+            $.ajax({
+                url     : '/api/aggregatecombination/' + rowdata.aggregate_combination_id,
+                success : function(data) {
+                    $(grid).setCell(rowid, 'aggregate_combination_id', data.aggregate_combination_label);
+                }
+            });
+        },
         colNames: ['id','name', 'enabled', 'combination', 'comparator', 'threshold'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
