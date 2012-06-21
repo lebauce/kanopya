@@ -60,6 +60,7 @@ my %resources = (
     "masterimage"              => "Entity::Masterimage",
     "memcached1"               => "Entity::Component::Memcached1",
     "message"                  => "Message",
+    "mockmonitor"              => "Entity::Connector::MockMonitor",
     "mounttable1"              => "Entity::Component::Mounttable1",
     "mysql5"                   => "Entity::Component::Mysql5",
     "netapp"                   => "Entity::ServiceProvider::Outside::Netapp",
@@ -111,8 +112,6 @@ my %resources = (
     "vlan"                     => "Entity::Network::Vlan",
     "workflow"                 => "Workflow",
     "workflowdef"              => "WorkflowDef",
-    "mockmonitor"              => "Entity::Connector::MockMonitor",
-    "nodemetriccombination"    => "NodemetricCombination",
 );
 
 sub db_to_json {
@@ -230,19 +229,19 @@ sub format_results {
     }
 }
 
-sub makeToJson {
-  if ($#_ == 0) {
-    my $var   = shift;
+sub jsonify {
+    my $var = shift;
+
     if ($var->can("toJSON")) {
-      if ($var->isa("Operation")) {
-        return Operation->get(id => $var->getId)->toJSON;
-      } elsif ($var->isa("Workflow")) {
-        return Workflow->get(id => $var->getId)->toJSON;
-      } else {
-        return $var->toJSON;
-      }
+        if ($var->isa("Operation") || $var->isa("Workflow")) {
+            return Entity->get(id => $var->getId)->toJSON;
+        } else {
+            return $var->toJSON;
+        }
     }
-  }
+    else {
+        return $var;
+    }
 }
 
 sub setupREST {
@@ -389,29 +388,33 @@ sub setupREST {
 
             my ($id, $method) = splat;
             my $obj = $class->get(id => $id);
-            #my $methods = $obj->toJSON(model => 1)->{methods};
             my $methods = $obj->getMethods();
 
             if (not defined $methods->{$method}) {
                 throw Kanopya::Exception::NotImplemented(error => "Method not implemented");
             }
+
             my %params;
             if ((split(/;/, request->content_type))[0] eq "application/json") {
                 %params = %{from_json(request->body)};
             } else {
                 %params = params;
             }
+
             my $ret = $obj->$method(%params);
+
             eval {
                 if (ref($ret) eq "ARRAY") {
-                  for my $retElem (@{$ret}) {
-                    $retElem    = makeToJson($retElem);
-                  }
+                    my @jsons;
+                    for my $elem (@{$ret}) {
+                        push @jsons, jsonify($elem);
+                    }
+                    $ret = \@jsons;
                 } else {
-                  $ret  = makeToJson($ret);
+                    $ret = jsonify($ret);
                 }
             };
-    
+
             return to_json($ret, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
         };
 
