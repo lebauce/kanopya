@@ -24,6 +24,8 @@ use strict;
 use warnings;
 use General;
 use Kanopya::Exceptions;
+use Entity::Host;
+
 use Data::Dumper;
 use Hash::Merge qw( merge);
 use Log::Log4perl 'get_logger';
@@ -64,16 +66,36 @@ sub _getAutomaticValues{
     my $automatic_params = $args{automatic_params};
 
     if (exists $automatic_params->{context}->{host}) {
-        $automatic_params->{context}->{host} = $args{host};
+        my $host = Entity::Host->find(hash => {'host_hostname' => $args{host_name}}); 
+        $automatic_params->{context}->{host} = $host;
     }
     if (exists $automatic_params->{context}->{cloudmanager_comp}) {
-        $automatic_params->{context}->{cloudmanager_comp} = $args{cloudmanager_comp};
+        my $host = Entity::Host->find(hash => {'host_hostname' => $args{host_name}});
+        my $cloudmanager_id   = $host->getAttr(name => 'host_manager_id');
+        my $cloudmanager_comp = Entity->get(id => $cloudmanager_id);
+        $automatic_params->{context}->{cloudmanager_comp} = $cloudmanager_comp;
     }
 
     return $automatic_params;
 }
 
-sub runWorkflow {
+
+sub _defineFinalParams{
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [
+                                            'all_params',
+                                         ]);
+    my $workflow_params = merge(
+        $args{all_params}->{automatic},
+        $args{all_params}->{specific},
+    );
+
+
+    return $workflow_params;
+}
+
+sub runWorkflow_old {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [
