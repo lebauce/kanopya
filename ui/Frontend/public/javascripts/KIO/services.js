@@ -1562,7 +1562,7 @@ function loadServicesMonitoring (container_id, elem_id, ext) {
     $("<p>", { html : "Nodemetric Combinations  : " }).appendTo('#service_monitoring_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_combination_' + elem_id;
     create_grid( {
-        url: '/api/' + external + 'cluster/' + elem_id + '/nodemetric_combinations',
+        url: '/api/serviceprovider/' + elem_id + '/nodemetric_combinations',
         content_container_id: 'node_monitoring_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         afterInsertRow: function(grid, rowid) {
@@ -1596,12 +1596,12 @@ function loadServicesMonitoring (container_id, elem_id, ext) {
     var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
     create_grid( {
         caption : 'Metrics',
-        url: '/api/' + external + 'cluster/' + elem_id + '/clustermetrics',
+        url: '/api/serviceprovider/' + elem_id + '/clustermetrics',
         content_container_id: 'service_monitoring_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         afterInsertRow: function(grid, rowid) {
             var current = $(grid).getCell(rowid, 'clustermetric_indicator_id');
-            var url     = '/api/' + external + 'cluster/' + elem_id + '/getIndicatorNameFromId';
+            var url     = '/api/serviceprovider/' + elem_id + '/getIndicatorNameFromId';
             setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id', { 'indicator_id' : current });
         },
         colNames: [ 'id', 'name', 'indicator' ],
@@ -1620,7 +1620,7 @@ function loadServicesMonitoring (container_id, elem_id, ext) {
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_combinations_' + elem_id;
     create_grid( {
         caption: 'Metric combinations',
-        url: '/api/' + external + 'cluster/' + elem_id + '/aggregate_combinations',
+        url: '/api/serviceprovider/' + elem_id + '/aggregate_combinations',
         content_container_id: 'service_monitoring_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         afterInsertRow: function(grid, rowid) {
@@ -1656,9 +1656,11 @@ function loadServicesMonitoring (container_id, elem_id, ext) {
     });
 }
 
-function loadServicesRules (container_id, elem_id) {
+function loadServicesRules (container_id, elem_id, ext) {
     var container = $("#" + container_id);
-    
+
+    ext = ext || '';
+
     ////////////////////////RULES ACCORDION//////////////////////////////////
         	
     var divacc = $('<div id="accordionrule">').appendTo(container);
@@ -1668,7 +1670,7 @@ function loadServicesRules (container_id, elem_id) {
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_conditions_' + elem_id;
     create_grid( {
         caption: 'Conditions',
-        url: '/api/externalcluster/' + elem_id + '/nodemetric_conditions',
+        url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions',
         content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         afterInsertRow: function(grid, rowid, rowdata) {
@@ -1699,7 +1701,7 @@ function loadServicesRules (container_id, elem_id) {
     var loadServicesMonitoringGridId = 'service_ressources_nodemetric_rules_' + elem_id;
     create_grid( {
         caption: 'Rules',
-        url: '/api/externalcluster/' + elem_id + '/nodemetric_rules',
+        url: '/api/serviceprovider/' + elem_id + '/nodemetric_rules',
         content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         grid_class: 'service_ressources_nodemetric_rules',
@@ -1755,7 +1757,7 @@ function loadServicesRules (container_id, elem_id) {
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_conditions_' + elem_id;
     create_grid( {
         caption: 'Conditions',
-        url: '/api/externalcluster/' + elem_id + '/aggregate_conditions',
+        url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions',
         content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
@@ -1783,7 +1785,7 @@ function loadServicesRules (container_id, elem_id) {
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
     create_grid( {
         caption: 'Rules',
-        url: '/api/externalcluster/' + elem_id + '/aggregate_rules',
+        url: '/api/serviceprovider/' + elem_id + '/aggregate_rules',
         grid_class: 'service_ressources_aggregate_rules',
         content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
