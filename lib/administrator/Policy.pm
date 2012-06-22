@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 use ParamPreset;
+use Entity::InterfaceRole;
 use Entity::ServiceProvider::Inside::Cluster;
 
 use Hash::Merge;
@@ -77,6 +78,8 @@ sub new {
         policy_desc => delete $args{policy_desc},
     };
 
+    $log->info(Dumper($attrs));
+
     # Pop the policy id if defined
     my $policy_id = delete $args{policy_id};
 
@@ -130,7 +133,7 @@ sub buildPatternFromHash {
     # Transform the policy form hash to a cluster configuration pattern
     for my $name (keys %{$args{hash}}) {
         # Handle defined values only
-        if (defined $args{hash}->{$name}) {
+        if (defined $args{hash}->{$name} and $args{hash}->{$name} ne '') {
             # Handle managers
             if ($name =~ m/_manager_id/) {
                 my $manager_type = $name;
@@ -149,6 +152,22 @@ sub buildPatternFromHash {
                     if (defined $args{hash}->{$param} and $args{hash}->{$param}) {
                         $pattern{managers}->{$manager_type}->{manager_params}->{$param} = $args{hash}->{$param};
                     }
+                }
+            }
+            # Handle components
+            elsif ($name =~ m/^component_type_/) {
+                $pattern{components}->{'component_' . $args{hash}->{$name}}->{component_type} = $args{hash}->{$name};
+            }
+            # Handle networks interfaces
+            elsif ($name =~ m/^interface_role_/) {
+                # Get the intefrace role name
+                my $role_name = Entity::InterfaceRole->get(id => $args{hash}->{$name})->getAttr(name => 'interface_role_name');
+                $pattern{interfaces}->{$role_name}->{interface_role} = $args{hash}->{$name};
+
+                my $interface_index = $name;
+                $interface_index =~ s/^interface_role_//g;
+                if ($args{hash}->{'interface_networks_' . $interface_index}) {
+                    $pattern{interfaces}->{$role_name}->{interface_networks} = [ $args{hash}->{'interface_networks_' . $interface_index} ];
                 }
             }
             # Can we handle this param whithout hard code  ?
@@ -186,6 +205,31 @@ sub getFlattenedHash {
                 for my $manager_param (keys %{$pattern->{$name}->{$manager_type}->{manager_params}}) {
                     $flat_hash{$manager_param} = $pattern->{$name}->{$manager_type}->{manager_params}->{$manager_param};
                 }
+            }
+        }
+        # Handle components
+        elsif ($name eq 'components') {
+            for my $component (values %{ $pattern->{$name} }) {
+                if (not defined $flat_hash{'component_type'}) {
+                    $flat_hash{'component_type'} = [];
+                }
+                push @{ $flat_hash{'component_type'} }, $component->{component_type};
+            }
+        }
+        # Handle network interfaces
+        elsif ($name eq 'interfaces') {
+            for my $interface (values %{ $pattern->{$name} }) {
+                if (not defined $flat_hash{'network_interface'}) {
+                    $flat_hash{'network_interface'} = [];
+                }
+
+                # For instance, do not return a list of network, as we are not able
+                # to handle mutliple network association to one interface.
+                if (defined $interface->{interface_networks} and ref($interface->{interface_networks}) eq 'ARRAY' and
+                    scalar($interface->{interface_networks})) {
+                    $interface->{interface_networks} = $interface->{interface_networks}[0];
+                }
+                push @{ $flat_hash{'network_interface'} }, $interface;
             }
         }
         else {
