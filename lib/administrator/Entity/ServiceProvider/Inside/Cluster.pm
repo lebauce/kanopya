@@ -27,6 +27,7 @@ use Entity::Host;
 use Externalnode::Node;
 use Entity::Systemimage;
 use Entity::Tier;
+use Externalnode::Node;
 use Operation;
 use Workflow;
 use NodemetricCombination;
@@ -37,6 +38,7 @@ use Administrator;
 use General;
 use ServiceProviderManager;
 use ServiceTemplate;
+use VerifiedNoderule;
 
 use Hash::Merge;
 
@@ -1163,32 +1165,50 @@ sub getNodeState {
 
     my $host       = Entity::Host->find(hash => {host_hostname => $args{hostname}});
     my $host_id    = $host->getId();
-    my $node       = Node->find(hash => {host_id => $host_id});
+    my $node       = Externalnode::Node->find(hash => {host_id => $host_id});
     my $node_state = $node->getAttr(name => 'node_state');
 
     return $node_state;
 }
 
 sub getNodes {
+
     my ($self, %args) = @_;
+    
+    my @nodes = Externalnode::Node->search(
+                    hash => {
+                        inside_id => $self->getId(),
+                    }
+    );
 
-    my $node_rs = $self->{_dbix}->parent->nodes;
+    my @node_hashs;
 
-    my $domain_name;
-    my @nodes;
-    while (my $node_row = $node_rs->next) {
-        if($node_row->get_column('node_state') ne 'disabled'){
-            push @nodes, {
-                state              => $node_row->get_column('node_state'),
-                id                 => $node_row->get_column('node_id'),
-            };
-        }
+    for my $node (@nodes){
+
+        my @verified_rules = VerifiedNoderule->search(
+                                                   hash => {
+                                                       verified_noderule_state => 'verified'
+                                                   }
+                                               );
+        my @undef_rules    = VerifiedNoderule->search(
+                                                   hash => {
+                                                       verified_noderule_state => 'undef'
+                                                   }
+                                               );
+
+        push @node_hashs, {
+            state              => $node->getAttr(name => 'externalnode_state'),            
+            id                 => $node->getAttr(name => 'externalnode_id'),
+            hostname           => $node->getAttr(name => 'externalnode_hostname'),
+            num_verified_rules => scalar @verified_rules,
+            num_undef_rules    => scalar @undef_rules,
+        };
+
     }
+        
 
-    return \@nodes;
+    return \@node_hashs;
 }
-
-
 
 =head2 getNodesMetrics
 

@@ -19,8 +19,7 @@ use base 'BaseDB';
 use Data::Dumper;
 use NodemetricCondition;
 use Entity::ServiceProvider;
-use Entity::ServiceProvider::Outside::Externalcluster;
-use VerifiedNodeRule;
+use VerifiedNoderule;
 use List::MoreUtils qw {any} ;
 use Switch;
 # logger
@@ -101,17 +100,20 @@ sub new {
 sub setUndefForEachNode{
     my ($self) = @_;
     #ADD A ROW IN VERIFIED_NODERULE TABLE indicating undef data
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(
+#    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(
+#                        'id' => $self->getAttr(name => 'nodemetric_rule_service_provider_id'),
+#                     );
+    my $service_provider = Entity::ServiceProvider->get(
                         'id' => $self->getAttr(name => 'nodemetric_rule_service_provider_id'),
                      );
-    
-    my $extnodes = $extcluster->getNodes();
-    
-    foreach my $extnode (@$extnodes) {
+
+    my $nodes = $service_provider->getNodes();
+
+    foreach my $node (@$nodes) {
         $self->{_dbix}
         ->verified_noderules
         ->update_or_create({
-            verified_noderule_externalnode_id    =>  $extnode->{'id'},
+            verified_noderule_externalnode_id    =>  $node->{'id'},
             verified_noderule_state              => 'undef',
         });
     }
@@ -175,7 +177,7 @@ sub evalOnOneNode{
     }
     my $res = undef;
     my $arrayString = '$res = '."@array"; 
-    
+
     $log->info("NM rule evaluation: $arrayString");
     #Evaluate the logic formula
     eval $arrayString;
@@ -187,8 +189,15 @@ sub isVerifiedForANode{
     my $self = shift;
     my %args = @_;
 
-    my $externalcluster_id  = $args{externalcluster_id};
-    my $externalnode_id     = $args{externalnode_id};
+    my $externalnode_id;
+    if(defined $args{externalnode_hostname}){
+        my $node = Externalnode->find(hash => {externalnode_hostname => $args{externalnode_hostname}});
+       $externalnode_id = $node->getId(); 
+   }
+    else {
+        $externalnode_id = $args{externalnode_id};
+    }
+
 
     my $row = $self->{_dbix}
         ->verified_noderules
@@ -223,9 +232,8 @@ sub deleteVerifiedRule  {
     # GET THE EXTERNAL NODE ID    
     # note : externalcluster_name is UNIQUE !
     
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
-    
-    my $extnodes = $extcluster->getNodes();
+    my $service_provider = Entity->get('id' => $cluster_id);    
+    my $extnodes = $service_provider->getNodes();
     
     my $externalnode_id;
     
@@ -240,7 +248,7 @@ sub deleteVerifiedRule  {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }else{
-        #print "** try to delete $externalnode_id **\n";
+        $log->info("Try to delete $externalnode_id ");
             my $verified_rule_dbix = 
                     $self->{_dbix}
                 ->verified_noderules
@@ -248,10 +256,10 @@ sub deleteVerifiedRule  {
                     verified_noderule_externalnode_id    => $externalnode_id,
                 });
             if(defined $verified_rule_dbix){
-                #print "** delete $externalnode_id **\n";
+                $log->info("Delete $externalnode_id");
                 $verified_rule_dbix->delete();
             } else {
-                #print "** not here $externalnode_id **\n";
+                $log->info("Not here $externalnode_id");
             }
     }
 }
@@ -356,9 +364,10 @@ sub setVerifiedRule{
     # GET THE EXTERNAL NODE ID    
     # note : externalcluster_name is UNIQUE !
     
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+    # my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
     
-    my $extnodes = $extcluster->getNodes();
+    my $service_provider = Entity->get('id' => $cluster_id);    
+    my $extnodes = $service_provider->getNodes();
     
     my $externalnode_id;
     
@@ -371,7 +380,9 @@ sub setVerifiedRule{
     if(not defined $externalnode_id){
         my $errmsg = "UNKOWN node $hostname in cluster $cluster_id";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);    }else{
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+    else{
        # print "** $externalnode_id **\n";
         $self->{_dbix}
                 ->verified_noderules

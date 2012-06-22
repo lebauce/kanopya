@@ -501,18 +501,16 @@ sub _evalRule {
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
         # Warning, not all the monitored values are required but we transmit 
         # all of them
-        
         #        if (0 ==  keys %$monitored_values_for_one_node) {
         #            $cluster->updateNodeState( hostname => $host_name, state => 'down' );
         #            next NODE;
         #        }
         #        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
-
         my $node_state = $service_provider->getNodeState(hostname=> $host_name);
-
         my $nodeEval;
+
         if($node_state eq 'disabled'){
-            print "Node $host_name has just been disabled, rule not evaluated\n"; 
+            $log->info("Node <$host_name> has just been disabled, rule not evaluated"); 
             next NODE;
         }
         else {
@@ -521,25 +519,43 @@ sub _evalRule {
                 monitored_values_for_one_node => $monitored_values_for_one_node
             );
         }
-        
-        if(defined $nodeEval){
-            #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name;
-            
-            if($nodeEval eq 0){
-                #print ' WARNING'."\n";
-#                $rule->deleteVerifiedRule(
-#                    hostname   => $host_name,
-#                    cluster_id => $service_provider_id,
-#                );
-            }else {
-                #print ' OK'."\n";
-                $rep++;
 
-                    $rule->setVerifiedRule(
+        if(defined $nodeEval){
+            if($nodeEval eq 0){
+                $log->info('Rule not verified for node <'.($host_name).'>');
+
+                if ($rule->isVerifiedForANode(externalnode_hostname => $host_name)){
+
+                    $log->info("REMOVE RULE FROM VERIFIED RULES");
+                    $rule->deleteVerifiedRule(
                         hostname   => $host_name,
                         cluster_id => $service_provider_id,
-                        state      => 'verified',
                     );
+                }
+            }
+            else {
+                $rep++;
+
+                if ($rule->isVerifiedForANode(externalnode_hostname => $host_name)){
+                    $log->info("Rule has been verifieds for node <$host_name> : do not trigger Workflow");
+                }
+                else{
+                    $log->info("RULE IS VERIFIED has been verifieds for node <$host_name> : TRIGGER Workflow");
+                    $rule->setVerifiedRule(
+                            hostname   => $host_name,
+                            cluster_id => $service_provider_id,
+                            state      => 'verified',
+                    );
+                }
+            }
+        }
+        else { #NOT DEFINED
+            $log->info('RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF');
+        }
+    } #END LOOP ON NODES
+    return $rep;
+}
+
 #                my $wf_def_id = $rule->getVerifiedRuleWfDefId (
 #                                    service_provider_id => $service_provider_id,
 #                                    hostname            => $host_name,
@@ -564,18 +580,7 @@ sub _evalRule {
 #                        rule_id => $rule_id
 #                    );
 #                }
-            }
-        }else{
-            #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
-            #           $rule->setVerifiedRule(
-            #    hostname => $host_name,
-            #   cluster_id => $service_provider_id,
-            #    state      => 'undef'
-            #);
-        }
-    }
-    return $rep;
-}
+
 # Construct hash table for the service provider.
 # Inspired by eponyme aggregator method 
 
