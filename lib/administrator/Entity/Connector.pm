@@ -29,11 +29,12 @@ my $log = get_logger("administrator");
 
 
 use constant ATTR_DEF => {
-    connector_type_id => {  pattern        => '\d*',
-                            is_mandatory   => 1,
-                            is_extended    => 0,
-                            is_editable    => 0
-                         },
+    connector_type_id => {
+        pattern        => '\d*',
+        is_mandatory   => 1,
+        is_extended    => 0,
+        is_editable    => 0
+    },
     service_provider_id => {
       pattern       => '^\d*$',
       is_mandatory  => 1,
@@ -43,6 +44,15 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        'getPolicyParams' => {
+            'description' => 'Return the params required for policies definition.',
+            'perm_holder' => 'entity',
+        }
+    }
+};
 
 sub new {
     my $class = shift;

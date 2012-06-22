@@ -71,7 +71,21 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {};
+
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        'getExportType' => {
+            'description' => 'Return the type of managed exports.',
+            'perm_holder' => 'entity',
+        },
+    }
+}
+
+sub getExportType {
+    return "ISCSI target";
+}
 
 use constant ACCESS_MODE => {
     READ_WRITE => 'wb',

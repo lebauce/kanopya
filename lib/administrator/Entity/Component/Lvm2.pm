@@ -73,6 +73,19 @@ my $errmsg;
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        'getDiskType' => {
+            'description' => 'Return the type of managed disks.',
+            'perm_holder' => 'entity',
+        },
+    }
+}
+
+sub getDiskType {
+    return "LVM logical volume";
+}
+
 =head2 checkDiskManagerParams
 
 =cut
