@@ -1205,7 +1205,7 @@ function loadServicesConfig (container_id, elem_id) {
             $(table).append($("<tr>", { height : '15' }).append($("<td>", { colspan : 2 })));
         }
     });
-s
+
     $.ajax({
         url: '/api/connectortype?dataType=jqGrid',
         async   : false,
@@ -1432,7 +1432,7 @@ function loadServicesRessources (container_id, elem_id, external) {
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: ext + 'node_state', index: ext + 'node_state', width: 90, formatter: StateFormatter },
-            { name: ext + 'node_hostname', index: ext + 'node_hostname', width: 200 },
+            { name: 'externalnode_hostname', index: ext + 'node_hostname', width: 200 },
             { name: 'rulesstate', index: 'rulestate' }
         ],
         details : {
