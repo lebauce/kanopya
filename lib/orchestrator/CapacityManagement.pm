@@ -989,9 +989,19 @@ sub _migrateOtherVmToScale{
         $vm_to_migrate_id = pop @sorted_vms;
         $log->info("Check $vm_to_migrate_id migration possibility...");
 
+        # remove vm HV from selection
+
+         my $vm_hv_id  = $self->_getHvIdFromVmId(
+                              hvs   => $infra->{hvs},
+                              vm_id => $vm_to_migrate_id,
+         );
+        my @selection = grep {$_ != $vm_hv_id} @$hv_selection_ids;
+
+        $log->info(Dumper \@selection);
+
         $hv_dest_id = $self->_findMinHVidRespectCapa(
             infra            => $infra,
-            hv_selection_ids => $hv_selection_ids,
+            hv_selection_ids => \@selection,,
             wanted_metrics   =>  $infra->{vms}->{$vm_to_migrate_id},
         );
     }
