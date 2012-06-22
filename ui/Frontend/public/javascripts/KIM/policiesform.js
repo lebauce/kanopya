@@ -799,7 +799,7 @@ var PolicyForm = (function() {
             if (text === "") {
                 text += prepend + i + ". " + $(this).attr('rel') + append;
             } else {
-                text += " >> " + prepend + i + ". " + $(this).attr('rel') + append;
+                text += " > " + prepend + i + ". " + $(this).attr('rel') + append;
             }
 
             ++i;
@@ -816,6 +816,9 @@ var PolicyForm = (function() {
                 $(this).attr('disabled', 'disabled');
             });
         }
+        this.form.find(':input').each(function () {
+            $(this).removeAttr('disabled');
+        });
         return b;
     }
 
@@ -903,8 +906,8 @@ var PolicyForm = (function() {
         if (state.isFirstStep) {
             this.cancelCallback();
             this.closeDialog();
-        }
-        else {
+
+        } else {
             $(this.form).formwizard("back");
         }
     }
@@ -919,7 +922,9 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.validateForm = function () {
-        this.beforeSerialize(this.form);
+        this.form.find(':input').each(function () {
+            $(this).attr('disabled', 'disabled');
+        });
         $(this.form).formwizard("next");
     }
 
