@@ -124,6 +124,19 @@ var PolicyForm = (function() {
         var element = field;
         var input_name = elementName;
 
+        /* Use select for checkboxes because non checked checkboxes are handled as
+         * non filled inputs. So fill the select with yes/no vlaues.
+         */
+        var type;
+        var options;
+        if (field.type === 'checkbox') {
+            type = 'select';
+            options = [ 'yes', 'no' ];
+        } else {
+            type = field.type;
+            options = field.options;
+        }
+
         // If type is 'set', post fix the element name with the current index
         if (field.set) {
             input_name = elementName + '_' + this.form.find("#input_" + elementName).length;
@@ -135,20 +148,24 @@ var PolicyForm = (function() {
         if (field.label !== undefined) {
             $(label).text(field.label);
         }
-        if (field.type === undefined ||
-            (field.type !== 'textarea' && field.type !== 'select')) {
-            var type    = field.type || 'text';
+        if (type === undefined ||
+            (type !== 'textarea' && type !== 'select')) {
+            var type    = type || 'text';
             var input   = $("<input>", { type : type });
-        } else if (field.type === 'textarea') {
+        } else if (type === 'textarea') {
             var type    = 'textarea';
             var input   = $("<textarea>");
         }
-        else if (field.type === 'select') {
+        else if (type === 'select') {
             var input   = $("<select>");
-            var isArray = field.options instanceof Array;
-            for (var i in field.options) if (field.options.hasOwnProperty(i)) {
-                var optionvalue = field.options[i];
-                var optiontext  = (isArray != true) ? i : field.options[i];
+            var isArray = options instanceof Array;
+            if (! this.fields[elementName].is_mandatory) {
+                var option = $("<option>", { value : '' , text : '-' });
+                input.append(option);
+            }
+            for (var i in options) if (options.hasOwnProperty(i)) {
+                var optionvalue = i;
+                var optiontext  = (isArray != true) ? i : options[i];
                 var option  = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
                 if (optionvalue === value) {
                     option.attr('selected', 'selected');
@@ -181,7 +198,8 @@ var PolicyForm = (function() {
                     }
                 }
             } else if (type === 'checkbox' && value == true) {
-                $(input).attr('checked', 'checked');
+                //$(input).attr('checked', 'checked');
+                $(input).attr('value', '1');
                 if (this.fields[elementName].disable_filled) {
                     input.attr('disabled', 'disabled');
                 }
@@ -762,24 +780,6 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.beforeSerialize = function(form, options) {
-        // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
-        for (field in this.fields) {
-            if (this.fields[field].type === 'checkbox') {
-                var input = $(form).find('#input_' + field);
-                if (input.attr('checked') === 'checked') {
-                    input.attr('value', '1');
-                } else {
-                    input.attr('checked', 'checked');
-                    input.attr('value', '0');
-                }
-            }
-        }
-//        // Empty values of input not set by the user.
-//        this.form.find('select').each(function() {
-//            if ($(this).attr('value') == -1) {
-//                $(this).attr('value', '');
-//            }
-//        });
     }
 
     PolicyForm.prototype.changeStep = function(event, data) {
