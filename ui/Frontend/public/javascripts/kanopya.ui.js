@@ -5,7 +5,22 @@ $(document).ready(function () {
     var loginModalOpened    = false;
     var mustOpen            = true;
 
+    var openedRequests      = 0;
+
+    $(this).ajaxSend(function(event) {
+        ++openedRequests;
+        $('body').css('cursor', 'wait');
+        setTimeout(function() {
+            openedRequests  = 0;
+            $('body').css('cursor', 'default');
+        }, 10000);
+    });
+
     $(this).ajaxComplete(function(event, jqXHR, ajaxOptions) {
+        --openedRequests;
+        if (openedRequests === 0) {
+            $('body').css('cursor', 'default');
+        }
         if (jqXHR.responseXML !== undefined && !loginModalOpened && mustOpen) {
             loginModalOpened    = true;
             var form    = $("<form>", { id : "loginform", class : 'LOGINFORM' });
@@ -71,12 +86,21 @@ $(document).ready(function () {
                                var new_width = $(this).closest('.ui-accordion-content').width() || $('.current_content').width();
                                $(this).jqGrid('setGridWidth', new_width);
                            } );
+
+                           // Manage current jqplot resizing
+                           $('.jqplot-target').trigger('resizeGraph');
                        }
                    },
-                   north : { closable : false },
-                   west : { closable : false, resizable : true},
+                   north : {
+                       closable : false
+                   },
+                   west : {
+                       closable : false,
+                       resizable : true
+                   },
                    east : {
                        resizable : true,
+                       initClosed : true
                    },
                    south : {
                        togglerContent_closed : 'Messages',
@@ -90,16 +114,15 @@ $(document).ready(function () {
                }
     );
 
-	$.ajax({
-		url: '/api/message?order_by=message_id%20DESC&rows=1&dataType=jqGrid',
-		success: function(data) {
-			$(data.rows).each(function(row) {
-				lastMsgId = data.rows[row].pk;
-			});
-		}
-	});
+    $.ajax({
+        url: '/api/message?order_by=message_id%20DESC&rows=1&dataType=jqGrid',
+        success: function(data) {
+            $(data.rows).each(function(row) {
+                lastMsgId = data.rows[row].pk;
+            });
+        }
+    });
                 
     // call for the themeswitcher
     //$('#switcher').themeswitcher();
-    
 });

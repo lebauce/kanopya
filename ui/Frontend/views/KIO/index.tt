@@ -4,35 +4,34 @@
 <script src="/javascripts/jquery/jqplot/jqplot.barRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.canvasAxisTickRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.canvasTextRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.canvasAxisLabelRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.categoryAxisRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.dateAxisRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.highlighter.min.js"></script>
+
+<script src="/javascripts/jquery/jquery-ui-timepicker-addon.js"></script>
+
 <script src="/javascripts/KIO/menu.conf.js"></script>
 <script src='/javascripts/messages.js'></script>
 
 <div id='view-container' class="ui-layout-center">
-    
-    
+    <!--div id='bread-scrumbs' >Salut</div-->
     <div id='view-dashboard' class='master_view'>
+        <img id='image-welcome' class='hidden' src='/images/welcome_box.png'/>
     </div>
-    
-    
-    
 </div>
-<div id='mainmenu-container' class="ui-layout-west">
+<div class="ui-layout-west">
+    <img id='menu_logo' src='/images/logo_kanopya.png'/><br/><br/>
+<div id='mainmenu-container'>
+</div>
 </div>
 <div id='info-container' class="ui-layout-east">
 </div>
 <div class="ui-layout-north">
     <div id='header'>
         <span id='product-name'>Kanopya Infrastructure Optimizer</span>
-        <div id="infologin">
-            logged as <span id="username"><% username %></span>
-        </div>
-        
-        <div class="logout">
-            <a href="/logout">Logout</a>
-        </div>
+        <span class="logout"><span class='ui-icon ui-icon-power'></span><a href="/logout">Logout</a></span>
+        <span id="infologin">logged as <span id="username"><% username %></span></span>
     </div>
 </div>
 <div class="ui-layout-south">

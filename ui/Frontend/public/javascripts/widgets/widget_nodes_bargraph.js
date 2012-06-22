@@ -1,3 +1,4 @@
+require('widgets/widget_common.js');
 
 $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
@@ -49,15 +50,17 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
     var graph_div_id_prefix = 'nodes_bargraph' + widget_id;
     
     if (nodemetric_combination_id == 'default') { return }
-    //loading_start();
+
+    widget_loading_start( $(curobj).closest('.widget') );
+
     var params = {id:nodemetric_combination_id};
     graph_container_div.children().remove();
     $.getJSON(nodes_view_bargraph, params, function(data) {
         if (data.error){ alert (data.error); }
         else {
             graph_container_div.css('display', 'block');
-            var min = data.values[0];
-            var max = data.values[(data.values.length-1)];
+            var max = data.values[0];
+            var min = data.values[(data.values.length-1)];
             // alert('min: '+min+ ' max: '+max); 
             var max_nodes_per_graph = 50;
             var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
@@ -78,14 +81,14 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
             //var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
             //graph_container_div.append(button);
         }
-        //loading_stop();
+        widget_loading_stop( $(curobj).closest('.widget') );
     });
 }
 
 //Jqplot bar plots
 function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title) {
     $.jqplot.config.enablePlugins = true;
-    nodes_bar_graph = $.jqplot(div_id, [values], {
+    var nodes_bar_graph = $.jqplot(div_id, [values], {
     title: title,
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
@@ -112,10 +115,16 @@ function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title) {
                 max:max,
             },
         },
+        grid:{
+            background: '#eeeeee',
+        },
         seriesColors: ["#D4D4D4" ,"#999999"],
         highlighter: { 
             show: true,
             showMarker:false,
         }
     });
+
+    // Attach resize event handlers
+    setGraphResizeHandlers(div_id, nodes_bar_graph);
 }

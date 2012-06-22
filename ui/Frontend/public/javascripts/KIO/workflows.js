@@ -74,7 +74,7 @@ function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
 
         $(mod).append(firstLine).append(secondLine).append(thirdLine);
 
-        var loremipsum  = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in mauris ante. Mauris arcu felis, aliquet pellentesque ornare vitae, congue non purus. Nullam nunc orci, ultrices vitae porta non, consequat in lacus. Nunc ut rutrum felis. Cras suscipit lectus mauris. Duis et dictum quam. Vestibulum lacus elit, commodo tincidunt dignissim vel, eleifend quis purus. Nunc sit amet dignissim sem.";
+        var loremipsum  = "Insert in the text box bellow the content of the SCO workflow file. On the left you have the name of the automatic parameters available for the scope you selected, 'node' or 'service provider'. Insert the text you want, and parameters surrounded by \[\% \%\] markups, like [% ou_from %]. You can also enter specific parameters that will be asked for definition while associating the workflow to a rule.";
 
         var expls       = $("<td>", { colspan : 2, text : loremipsum }).appendTo($("<tr>"));
         $(expls).addClass('helpCell').prependTo(mod);
@@ -87,8 +87,9 @@ function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
             resizable       : false,
             closeOnEscape   : false,
             title           : 'Create a Workflow Definition',
+            close           : function() { $(this).remove(); },
             buttons         : {
-                'Cancel'    : function() { $(this).dialog("destroy"); },
+                'Cancel'    : function() { $(this).dialog("close"); },
                 'Ok'        : function() { $(form).formwizard("next"); }
             }
         }).parents("div.ui-dialog").find("a.ui-dialog-titlebar-close").remove();
@@ -118,7 +119,7 @@ function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
                         data        : JSON.stringify(params),
                         complete    : function(a, status, c) {
                             if (status === 'success') {
-                                $(form).dialog('destroy');
+                                $(form).dialog('close');
                                 $(dial).dialog('close');
                                 workflowdetails(wfid, wf);
                             }
@@ -202,7 +203,7 @@ function    sco_workflow(container_id) {
             });
         }
     });
-    $(container).append(createWorkflowRouteAssociationButton())
+    $(container).append(createWorkflowRuleAssociationButton())
 }
 
 function    workflowdetails(workflowmanagerid, workflowmanager) {
@@ -250,37 +251,202 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
     });
 }
 
-function    workflowRuleAssociation() {
+function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
     var dial    = $("<div>");
+    var form    = $("<table>", { width : '100%' }).appendTo($("<form>").appendTo(dial));
+    var wfdefs  = [];
+    var manager;
+
+    function createForm(event) {
+        var wfdefid     = $(event.currentTarget).val();
+        for (var i in wfdefs) if (wfdefs.hasOwnProperty(i)) {
+            if (wfdefs[i].pk === wfdefid) {
+                var wfdef       = wfdefs[i];
+                var specparams  = wfdefs[i].specificparams;
+                $(form).empty();
+                $(form).append($("<input>", {
+                    type    : 'hidden',
+                    name    : 'origin_workflow_name',
+                    id      : 'input_origin_workflow_name',
+                    value   : wfdef.workflow_def_name
+                }));
+                $(form).append($("<input>", {
+                    type    : 'hidden',
+                    name    : 'origin_workflow_id',
+                    id      : 'input_origin_workflow_id',
+                    value   : wfdef.workflow_def_id
+                }));
+                for (var j in specparams) if (specparams.hasOwnProperty(j)) {
+                    var line    = $("<tr>").appendTo(form);
+                    $(line).append($("<td>").append($("<label>", {
+                        for     : 'input_specific_param_' + j,
+                        text    : j
+                    })));
+                    $(line).append($("<td>", { align : "right" }).append($("<input>", {
+                        type    : 'test',
+                        name    : j,
+                        id      : 'input_specific_param_' + j,
+                        class   : 'input_specific_param'
+                    })));
+                }
+                break;
+            }
+        }
+    }
+
+    function    validateTheForm() {
+        var params              = {
+            new_workflow_name       : eid + '_' + $("input#input_origin_workflow_name").val(),
+            origin_workflow_def_id  : $("input#input_origin_workflow_id").val(),
+            specific_params         : {},
+            rule_id                 : eid
+        };
+        var specparamsinputs    = $("input.input_specific_param");
+        $(specparamsinputs).each(function() {
+            params.specific_params[$(this).attr('name')]    = $(this).val();
+        });
+        $.ajax({
+            url         : '/api/entity/' + manager.pk + '/associateWorkflow',
+            type        : 'POST',
+            contentType : 'application/json',
+            data        : JSON.stringify(params),
+            complete    : function(a) {
+                if (a.status === 200) {
+                    $(dial).dialog('close');
+                    reload_content(cid, eid);
+                }
+            }
+        });
+    }
+
     $.ajax({
-        url         : '/api/serviceprovider/69/getManager',
+        url         : '/api/serviceprovider/' + serviceprovider_id + '/getManager',
         type        : 'POST',
         contentType : 'application/json',
-        data        : JSON.stringify({ 'manager_type' : 'WorkflowManager' }),
+        data        : JSON.stringify({ 'manager_type' : 'workflow_manager' }),
         success     : function(data) {
-            var manager = data;
+            manager = data;
             $.ajax({
                 url         : '/api/entity/' + manager.pk + '/getWorkflowDefsIds',
                 type        : 'POST',
                 contentType : 'application/json',
                 data        : JSON.stringify({}),
                 success     : function(data) {
-                    var wfdefs  = data;
-                    console.log(data);
-                    $(dial).dialog({
-                        draggable       :  false,
-                        resizable       : false,
-                        closeOnEscape   : false,
-                        close           : function() { $(this).remove(); }
-                    });
+                    var ok  = false;
+                    if (data.length <= 0) {
+                        alert('No workflow definition found.');
+                    } else {
+                        var select  = $('<select>').prependTo(dial);
+                        $(select).bind('change', createForm);
+                        for (var i in data) if (data.hasOwnProperty(i)) {
+                            $.ajax({
+                                url     : '/api/workflowdef/' + data[i],
+                                type    : 'GET',
+                                success : function(wfd) {
+                                    $.ajax({
+                                        url         : '/api/entity/' + manager.pk + '/_getAllParams',
+                                        type        : 'POST',
+                                        contentType : 'application/json',
+                                        data        : JSON.stringify({ 'workflow_def_id' : wfd.pk }),
+                                        success     : function(dat) {
+                                            if ((dat.internal.association == null || dat.internal.association == false)
+                                                && dat.internal.scope_id == scid) {
+                                                if (!ok) ok = true;
+                                                wfd.specificparams  = dat.specific;
+                                                wfdefs.push(wfd);
+                                                $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
+                                                $(select).change();
+                                            }
+                                            if (ok === false && (i + 1) == data.length) {
+                                                $(dial).dialog('close');
+                                                alert('No workflow definition found.');
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        $(dial).dialog({
+                            draggable       : false,
+                            resizable       : false,
+                            closeOnEscape   : false,
+                            modal           : true,
+                            close           : function() { $(this).remove(); },
+                            buttons         : {
+                                'Cancel'    : function() { $(this).dialog('close'); },
+                                'Ok'        : validateTheForm
+                            }
+                        });
+                    }
                 }
+            });
+        },
+        error       : function() {
+            alert("No workflow manager found.");
+        }
+    });
+}
+
+function    createWorkflowRuleAssociationButton(cid, eid, scid, serviceprovider_id) {
+    var button  = $("<a>", { text : 'Associate a Workflow' }).button();
+    button.bind('click', function() { workflowRuleAssociation(eid, scid, cid, serviceprovider_id); });
+    $('#' + cid).append(button);
+}
+
+function    workflowslist(cid, eid) {
+    $.ajax({
+        url     : '/api/serviceprovider/' + eid + '/getWorkflows',
+        type    : 'POST',
+        success : function(data) {
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                data[i].currentOperation    = 'Loading...';
+            }
+            create_grid({
+                content_container_id    : cid,
+                grid_id                 : 'workflowsgrid',
+                data                    : data,
+                colNames                : [ 'Id', 'Name', 'State', 'Current Operation' ],
+                afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
+                    $.ajax({
+                        url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
+                        type    : 'POST',
+                        success : function(data) {
+                            rowelem.currentOperation    = data.type;
+                            $(grid).setCell(rowid, 'currentOperation', rowelem.currentOperation);
+                        }
+                    });
+                },
+                colModel                : [
+                    { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
+                    { name : 'workflow_name', index : 'workflow_name' },
+                    { name : 'state', index : 'state' },
+                    { name : 'currentOperation', index : 'currentOperation' }
+                ]
             });
         }
     });
 }
 
-function    createWorkflowRouteAssociationButton(cid, eid) {
-    var button  = $("<a>", { text : 'Associate a Workflow' }).button();
-    button.bind('click', function() { workflowRuleAssociation(); });
-    $('#' + cid).append(button);
+function    workflowsoverview(cid, eid) {
+  create_grid({
+        url                     : '/api/workflow',
+        grid_id                 : 'workflowslistgrid',
+        content_container_id    : cid,
+        colNames                : [ 'Id', 'Name', 'State', 'CurrentOperation' ],
+        afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
+            $.ajax({
+                url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
+                type    : 'POST',
+                success : function(data) {
+                    $(grid).setCell(rowid, 'currentOperation', data.type);
+                }
+            });
+        },
+        colModel                : [
+            { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
+            { name : 'workflow_name', index : 'workflow_name' },
+            { name : 'state', index : 'state' },
+            { name : 'currentOperation', index : 'currentOperation', formatter : function(a) { if (a == null) return 'Loading...'; else return a; } }
+        ]
+  });
 }

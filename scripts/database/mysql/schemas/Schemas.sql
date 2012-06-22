@@ -1342,7 +1342,7 @@ CREATE TABLE `aggregate_rule` (
   `aggregate_rule_state` char(32) NOT NULL ,
   `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,
   `aggregate_rule_description` TEXT,
-  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`aggregate_rule_service_provider_id`),
   FOREIGN KEY (`aggregate_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
@@ -1416,7 +1416,7 @@ CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_state` char(32) NOT NULL,
   `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_description` TEXT,
-  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`nodemetric_rule_service_provider_id`),
   FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
@@ -1429,7 +1429,9 @@ CREATE TABLE `verified_noderule` (
   `verified_noderule_externalnode_id` int(8) unsigned NOT NULL,
   `verified_noderule_nodemetric_rule_id` int(8) unsigned NOT NULL,
   `verified_noderule_state` char(8) NOT NULL,
+  `workflow_def_id` int(8) unsigned default null,
   PRIMARY KEY (`verified_noderule_externalnode_id`,`verified_noderule_nodemetric_rule_id`),
+  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`verified_noderule_nodemetric_rule_id`),
   FOREIGN KEY (`verified_noderule_nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`verified_noderule_externalnode_id`),

@@ -77,7 +77,7 @@ sub getManager {
 
     # The parent method getManager should disappeared
     if (defined $args{id}) {
-        Entity->get(id => $args{id});
+        return Entity->get(id => $args{id});
     }
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);

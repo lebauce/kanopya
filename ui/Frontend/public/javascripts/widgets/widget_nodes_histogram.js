@@ -1,3 +1,4 @@
+require('widgets/widget_common.js');
 
 $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
@@ -55,7 +56,7 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nod
     } else if (!part_number) {
         part_number = 10;
     }
-//    loading_start();
+    widget_loading_start( $(curobj).closest('.widget') );
     var params = {id:nodemetric_combination_id,pn:part_number};
     //graph_div.html('');
     $.getJSON(nodes_view_histogram, params, function(data) {
@@ -66,13 +67,13 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nod
         }
 //        var button = '<input type=\"button\" value=\"refresh\" id=\"nch_button\" onclick=\"nch_replot()\"/>';
 //        $("#"+div_id).append(button);
-//        loading_stop();
+        widget_loading_stop( $(curobj).closest('.widget') );
     });
 }
 
 function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div_id, nodesquantity, title) {
     $.jqplot.config.enablePlugins = true;
-    nodes_bar_graph = $.jqplot(div_id, [nbof_nodes_in_partition], {
+    var nodes_bar_graph = $.jqplot(div_id, [nbof_nodes_in_partition], {
     title: title,
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
@@ -95,10 +96,14 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
                 }
             },
             yaxis:{
-                label:'#nodes',
+                label:'# nodes',
+                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
                 min:0,
                 max:nodesquantity,
             },
+        },
+        grid:{
+            background: '#eeeeee',
         },
         seriesColors: ["#D4D4D4" ,"#999999"],
         highlighter: { 
@@ -106,6 +111,10 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
             showMarker:false,
         }
     });
+
+    // Attach resize event handlers
+    setGraphResizeHandlers(div_id, nodes_bar_graph);
+
 }
 
 //simple function to check if a variable is an integer

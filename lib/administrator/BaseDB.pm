@@ -20,9 +20,9 @@ my $errmsg;
 
 sub getMethods {
   my $self      = shift;
+  my $class     = ref($self) || $self;
   my $methods   = {};
-  my @supers    = Class::ISA::super_path(ref($self));
-  push(@supers, ref($self));
+  my @supers    = Class::ISA::self_and_super_path($class);
   my $merge     = Hash::Merge->new();
   for my $sup (@supers) {
     if ($sup->can('methods')) {
@@ -701,7 +701,7 @@ sub toJSON {
                 $hash->{attributes}->{$attr} = $attributes->{$class}->{$attr};
             }
             else {
-                if (defined $self->getAttr(name => $attr)) {
+                if ((not $args{no_empty}) or (defined $self->getAttr(name => $attr))) {
                     $hash->{$attr} = $self->getAttr(name => $attr);
                 }
             }
@@ -734,12 +734,10 @@ sub toJSON {
             }
 
             my $klass = join("::", @hierarchy);
-            if ($klass->can("methods")) {
-                $hash->{methods} = $merge->merge($hash->{methods} || { }, $klass->methods());
-            }
-
             pop @hierarchy;
         }
+
+        $hash->{methods}    = $self->getMethods;
 
         $hash->{pk} = {
             pattern      => '^\d*$',

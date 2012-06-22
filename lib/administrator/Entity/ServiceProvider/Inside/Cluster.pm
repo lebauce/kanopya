@@ -304,6 +304,9 @@ sub checkConfigurationPattern {
 sub create {
     my ($class, %params) = @_;
 
+    General::checkParams(args => \%params, required => [ 'managers' ]);
+    General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
+
     my $admin = Administrator->new();
     my $mastergroup_eid = $class->getMasterGroupEid();
     my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
@@ -445,8 +448,8 @@ sub configureInterfaces {
     my %args = @_;
 
     if (defined $args{interfaces}) {
-        for my $interface (values %{ $args{interfaces} }) {
-            my $role = Entity::InterfaceRole->find(hash => { interface_role_name => $interface->{interface_role} });
+        for my $interface_pattern (values %{ $args{interfaces} }) {
+            my $role = Entity::InterfaceRole->find(hash => { interface_role_name => $interface_pattern->{interface_role} });
 
             # TODO: This mechanism do not allows to define many interfaces
             #       with the same role within policies.
@@ -463,8 +466,9 @@ sub configureInterfaces {
             if ($@) {
                 $interface = $self->addNetworkInterface(interface_role => $role);
             }
-            if ($interface->{interface_network}) {
-                for my $network_id (@{ $interface->{interface_network} }) {
+
+            if ($interface_pattern->{interface_networks}) {
+                for my $network_id (@{ $interface_pattern->{interface_networks} }) {
                     $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
                 }
             }

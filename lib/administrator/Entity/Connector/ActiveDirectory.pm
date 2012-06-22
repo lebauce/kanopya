@@ -33,29 +33,29 @@ use constant ATTR_DEF => {
     ad_host => {    pattern        => '.*',
                     is_mandatory   => 0,
                     is_extended    => 0,
-                    is_editable    => 0
+                    is_editable    => 1
                  },
     ad_user => {    pattern        => '.*',
                     is_mandatory   => 0,
                     is_extended    => 0,
-                    is_editable    => 0
+                    is_editable    => 1
              },
     ad_pwd => {     pattern        => '.*',
                     is_mandatory   => 0,
                     is_extended    => 0,
-                    is_editable    => 0
+                    is_editable    => 1
              },
     ad_nodes_base_dn => {
                     pattern        => '.*',
                     is_mandatory   => 0,
                     is_extended    => 0,
-                    is_editable    => 0
+                    is_editable    => 1
              },
     ad_usessl => {
       pattern       => '^[01]$',
       is_mandatory  => 0,
       is_extended   => 0,
-      is_editable   => 0
+      is_editable   => 1
     }
 
 };

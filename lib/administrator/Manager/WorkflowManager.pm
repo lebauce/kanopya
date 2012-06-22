@@ -24,11 +24,14 @@ use strict;
 use warnings;
 use Kanopya::Exceptions;
 use General;
+use Hash::Merge;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 use Data::Dumper;
 
+use AggregateRule;
+use NodemetricRule;
 use WorkflowDef;
 use WorkflowDefManager;
 use ParamPreset;
@@ -43,8 +46,12 @@ sub methods {
         'description'   => 'createWorkflow',
         'perm_holder'   => 'entity'
     },
-    'getParams'             => {
+    '_getAllParams'             => {
         'description'   => 'getParams',
+        'perm_holder'   => 'entity'
+    },
+    'associateWorkflow'     => {
+        'description'   => 'associateWorkflow',
         'perm_holder'   => 'entity'
     }
   };
@@ -83,22 +90,21 @@ sub createWorkflow {
     if (defined $args{params}) {
         %workflow_def_params = %{$args{params}};
 
-        #sort the specific params from the automatic params
-        my $params           = $self->_getSortedParams(
-                                params => \%workflow_def_params
-                               );
-        #append the automatic params to workflow params
-        $workflow_def_params{automatic} = $params->{automatic};
+        if ((!exists $workflow_def_params{automatic}) && (!exists $workflow_def_params{specific})) { 
+            #sort the specific params from the automatic params
+            my $params = $self->_getSortedParams(
+                             params => \%workflow_def_params
+                         );
 
-        #IF the specific params are not set, add them to the params
-        if (!defined $workflow_def_params{specific} ) {
+            #append the automatic and specific params to workflow params
+            $workflow_def_params{automatic} = $params->{automatic};
             $workflow_def_params{specific}  = $params->{specific};
         }
 
-        $workflow            = WorkflowDef->new(
-                                workflow_def_name => $workflow_def_name,
-                                params            => \%workflow_def_params,
-                               );
+        $workflow = WorkflowDef->new(
+                        workflow_def_name => $workflow_def_name,
+                        params            => \%workflow_def_params,
+                    );
     } else { 
         $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name);
     }
@@ -128,14 +134,16 @@ sub createWorkflow {
 sub associateWorkflow { 
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'origin_workflow_name',
-                                                       'new_workflow_name',
+    General::checkParams(args => \%args, required => [ 'new_workflow_name',
                                                        'origin_workflow_def_id',
-                                                       'specific_params'
+                                                       'specific_params',
+                                                       'rule_id',
                                                      ]);
 
-    my $workflow_def_id = $args{origin_workflow_def_id};
-    my $specific_params = $args{specific_params};
+    my $workflow_def_id      = $args{origin_workflow_def_id};
+    my $origin_workflow_name = $self->getWorkflowDef (workflow_def_id => $workflow_def_id)
+                                   ->getAttr(name => 'workflow_def_name');
+    my $specific_params      = $args{specific_params};
 
     #check if the workflow name is an already existing workflow. If not
     #throw an error => you can only associate an existing workflow to
@@ -147,13 +155,13 @@ sub associateWorkflow {
     my $existing_origin_workflows = 0;
 
     foreach my $workflow_def (@$workflow_defs) {
-        if((grep {$_->getAttr(name => 'workflow_def_name') 
-        eq $args{origin_workflow_name}} $workflow_def) == 1) {
+        if((grep {$_->getAttr(name => 'workflow_def_name')
+        eq $origin_workflow_name} $workflow_def) == 1) {
             $existing_origin_workflows++;
         } 
     }
     if ($existing_origin_workflows == 0) {
-        my $errmsg = 'Unknown workflow_def name '.$args{origin_workflow_name};
+        my $errmsg = 'Unknown workflow_def name '.$origin_workflow_name;
         throw Kanopya::Exception(error => $errmsg);
     }
     
@@ -164,16 +172,60 @@ sub associateWorkflow {
                           );
     $workflow_params->{specific} = $specific_params;
 
-    #add special parameter to indicate that the workflow is associated 
+    #add special parameter to indicate that the workflow is associated
     #to a rule
     $workflow_params->{internal}->{association} = 1;
 
     #print Dumper $workflow_params;
 
-    $self->createWorkflow(
-        workflow_name => $args{new_workflow_name},
-        params        => $workflow_params
-    );
+    my $workflow = $self->createWorkflow(
+                       workflow_name => $args{new_workflow_name},
+                       params        => $workflow_params,
+                   );
+
+    #Then we finally link the workflow to the rule
+    return $self->_linkWorkflowToRule(
+               workflow => $workflow, 
+               rule_id  => $args{rule_id}, 
+               scope_id => $workflow_params->{internal}->{scope_id}
+           );
+}
+
+=head2 _linkWorkflowToRule
+    Desc: link a workflow to a rule
+
+    Args: $workflow (object), $rule_id, $scope_id
+
+    Return: 
+=cut
+
+sub _linkWorkflowToRule {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow', 'rule_id', 'scope_id' ]);
+   
+    my $workflow = $args{workflow};
+    my $rule_id  = $args{rule_id};
+    my $scope_id = $args{scope_id};
+    my $rule;
+
+    #get workflow def id
+    my $workflow_def_id = $workflow->getAttr(name => 'workflow_def_id');
+
+    #we get the scope name  
+    my $scope      = Scope->find(hash => {scope_id => $scope_id});
+    my $scope_name = $scope->getAttr(name => 'scope_name');
+
+    if ($scope_name eq 'node') {
+        $rule = NodemetricRule->find(hash => {nodemetric_rule_id => $rule_id});
+        $rule->setAttr(name => 'workflow_def_id', value => $workflow_def_id);
+        $rule->save();
+
+    } elsif ($scope_name eq 'service_provider') {
+        $rule = AggregateRule->find(hash => {aggregate_rule_id => $rule_id});
+        $rule->setAttr(name => 'workflow_def_id', value => $workflow_def_id);
+        $rule->save();
+    }
 }
 
 =head2 runWorkflow
@@ -187,12 +239,51 @@ sub associateWorkflow {
 sub runWorkflow {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'workflow_def' ]);
-    
-    my $workflow_def = $args{workflow_def};
+    General::checkParams(args => \%args, required => [ 'workflow_def_id', 'rule_id', 'service_provider_id' ]);
 
+    my $rule_id             = $args{rule_id};
+    my $workflow_def_id     = $args{workflow_def_id};
+    my $service_provider_id = $args{service_provider_id};
 
-#    $Workflow->run(name => $workflow_def);
+    my $workflow            = $self->getWorkflowDef(
+                                  workflow_def_id => $workflow_def_id
+                              );
+    my $workflow_name       = $workflow->getAttr(
+                                  name => 'workflow_def_name'
+                              );
+
+    #gather the workflow params
+    my $all_params = $self->_getAllParams(
+                        workflow_def_id => $workflow_def_id
+                     );
+
+    my $scope_id   = $all_params->{internal}->{scope_id};
+
+    #resolve the automatic params values
+    my $automatic_values;
+    $automatic_values = $self->_getAutomaticValues(
+            automatic_params => $all_params->{automatic},
+            scope_id         => $scope_id,
+            %args,
+        );
+
+    #print Dumper $automatic_values;
+
+    #replace the undefined automatic params with the defined ones
+    $all_params->{automatic} = $automatic_values;
+   
+    #prepare final workflow params hash
+    my $workflow_params = $self->_defineFinalParams(
+                              all_params    => $all_params,
+                              workflow_name => $workflow_name,
+                              rule_id       => $rule_id,
+                              sp_id         => $service_provider_id,
+                          );
+
+    #print Dumper $workflow_params;
+
+    #run the workflow with the fully defined params
+    Workflow->run(name => $workflow_name, params => $workflow_params);
 }
 
 =head2 getWorkflowDefs

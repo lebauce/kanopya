@@ -24,6 +24,7 @@ use warnings;
 use WorkflowDef;
 use ParamPreset;
 use Kanopya::Exceptions;
+use Operation;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
@@ -45,6 +46,15 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        getCurrentOperation => {
+            description => 'getCurrentOperation',
+            perm_holder => 'entity'
+        }
+    };
+}
 
 sub run {
     my $class = shift;

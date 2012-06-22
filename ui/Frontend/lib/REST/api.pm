@@ -16,11 +16,6 @@ my $API_VERSION = "0.1";
 prepare_serializer_for_format;
 
 my %resources = (
-    "action"                   => "Action",
-    "actionparamater"          => "ActionParameter",
-    "actiontriggered"          => "ActionTriggered",
-    "actiontype"               => "ActionType",
-    "actiontypeparameter"      => "ActionTypeParameter",
     "activedirectory"          => "Entity::Connector::ActiveDirectory",
     "aggregator"               => "Aggregator",
     "atftpd0"                  => "Entity::Component::Atftpd0",
@@ -65,6 +60,7 @@ my %resources = (
     "masterimage"              => "Entity::Masterimage",
     "memcached1"               => "Entity::Component::Memcached1",
     "message"                  => "Message",
+    "mockmonitor"              => "Entity::Connector::MockMonitor",
     "mounttable1"              => "Entity::Component::Mounttable1",
     "mysql5"                   => "Entity::Component::Mysql5",
     "netapp"                   => "Entity::ServiceProvider::Outside::Netapp",
@@ -93,6 +89,7 @@ my %resources = (
     "powersupplycard"          => "Entity::Powersupplycard",
     "powersupplycardmodel"     => "Entity::Powersupplycardmodel",
     "processormodel"           => "Entity::Processormodel",
+    "profile"                  => "Profile",
     "puppetagent2"             => "Entity::Component::Puppetagent2",
     "puppetmaster2"            => "Entity::Component::Puppetmaster2",
     "openldap1"                => "Entity::Component::Openldap1",
@@ -116,9 +113,6 @@ my %resources = (
     "vlan"                     => "Entity::Network::Vlan",
     "workflow"                 => "Workflow",
     "workflowdef"              => "WorkflowDef",
-    "mockmonitor"              => "Entity::Connector::MockMonitor",
-    "nodemetriccombination"    => "NodemetricCombination",
-    "profile"                  => "Profile",
 );
 
 sub db_to_json {
@@ -233,6 +227,21 @@ sub format_results {
         return $result->{rows};
     } else {
         return $result;
+    }
+}
+
+sub jsonify {
+    my $var = shift;
+
+    if ($var->can("toJSON")) {
+        if ($var->isa("Operation") || $var->isa("Workflow")) {
+            return Entity->get(id => $var->getId)->toJSON;
+        } else {
+            return $var->toJSON;
+        }
+    }
+    else {
+        return $var;
     }
 }
 
@@ -380,29 +389,30 @@ sub setupREST {
 
             my ($id, $method) = splat;
             my $obj = $class->get(id => $id);
-            #my $methods = $obj->toJSON(model => 1)->{methods};
             my $methods = $obj->getMethods();
 
             if (not defined $methods->{$method}) {
                 throw Kanopya::Exception::NotImplemented(error => "Method not implemented");
             }
+
             my %params;
             if ((split(/;/, request->content_type))[0] eq "application/json") {
                 %params = %{from_json(request->body)};
             } else {
                 %params = params;
             }
+
             my $ret = $obj->$method(%params);
+
             eval {
-                if ($ret->can("toJSON")) {
-                    if ($ret->isa("Operation")) {
-                        $ret = Operation->get(id => $ret->getId)->toJSON;
+                if (ref($ret) eq "ARRAY") {
+                    my @jsons;
+                    for my $elem (@{$ret}) {
+                        push @jsons, jsonify($elem);
                     }
-                    elsif ($ret->isa("Workflow")) {
-                        $ret = Workflow->get(id => $ret->getId)->toJSON;
-                    } else {
-                        $ret = $ret->toJSON;
-                    }
+                    $ret = \@jsons;
+                } else {
+                    $ret = jsonify($ret);
                 }
             };
 

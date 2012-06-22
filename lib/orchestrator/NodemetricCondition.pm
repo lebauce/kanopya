@@ -51,6 +51,14 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        'updateName'    => {
+            description => 'updateName',
+            perm_holder => 'entity'
+        }
+    };
+}
 
 sub new {
     my $class = shift;
@@ -63,6 +71,19 @@ sub new {
     }
 
     return $self;
+}
+
+=head2 updateName
+
+    desc: set entity's name to .toString() return value
+
+=cut
+
+sub updateName {
+    my $self    = shift;
+
+    $self->setAttr(name => 'nodemetric_condition_label', value => $self->toString);
+    $self->save;
 }
 
 =head2 toString

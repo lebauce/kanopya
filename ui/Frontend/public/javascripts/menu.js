@@ -179,10 +179,15 @@ function loadMenuFromJSON(event) {
 $(document).ready(function () {
     build_mainmenu();
     
-    // Display dashboard when click on product name
-    $('#product-name').click( function () {
-            $('#view-container .master_view').hide();
-            $('#view-dashboard').show();
-        }
-    );
+    function show_mainpage() {
+        $('#view-container .master_view').hide();
+        $('#view-dashboard').show();
+    }
+
+    // Display dashboard when click on product name or kanopya logo
+    $('#product-name').click( show_mainpage );
+    $('#menu_logo').click( show_mainpage );
+
+    // Display welcome image only when everythings loaded
+    $('#image-welcome').show();
 });

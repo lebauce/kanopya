@@ -7,9 +7,8 @@
 }
 
 #header #infologin {
-  position: absolute;
-  top: 5px;
-  right: 100px;
+  float:right;
+  padding-right: 20px;
   color: #C2C2C2;
   font-size: 11px;
   font-weight: bold;
@@ -20,13 +19,7 @@
 }
 
 #header .logout {
-  position: absolute;
-  top: 5px;
-  right: 0px;
-  color: white;
-  text-align: center;
-  width: 84px;
-  height: 25px;
+  float:right;
   /*padding-top: 10px;*/
   font-size: 11px;
   font-weight: bold;
@@ -36,8 +29,6 @@
 #header .logout a {
   color: #C2C2C2;
   text-decoration: none;
-  background: #FFFFFF url(/images/picto_logout.png) no-repeat left;
-  padding-left: 25px;
 }
 
 #header #product-name {
@@ -52,6 +43,19 @@
     right: 200px;
 }
 
+#menu_logo {
+    cursor: pointer;
+}
+
+#image-welcome {
+    display: block;
+    margin: 100px auto;
+}
+
+#bread-scrumbs {
+    position : fixed;
+}
+
 a.view_link {
     text-decoration: none;
 }
@@ -62,6 +66,7 @@ a:hover.view_link {
 
 a.selected_viewlink {
     color: #7E388A;
+    font-weight: bold;
 }
 
 td {
@@ -87,4 +92,13 @@ a.linkbutton {
 
 .master_view {
     //height : 100%;
+}
+
+.selectable_rows .jqgrow:hover {
+    cursor : pointer;
+}
+
+.details_section {
+    border-top: 1px solid #B2B2B2;
+    padding-top: 5px;
 }

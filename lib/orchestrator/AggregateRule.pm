@@ -43,7 +43,8 @@ use constant ATTR_DEF => {
     aggregate_rule_formula     =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
-                                 is_editable    => 1},
+                                 is_editable    => 1,
+                                 description    => "Construct a formula by condition's names with AND and OR keywords. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the availalbe choice."},
     aggregate_rule_last_eval   =>  {pattern       => '^(0|1)$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
@@ -133,8 +134,8 @@ sub toString(){
             $element = AggregateCondition->get('id'=>substr($element,2))->toString();
         }
      }
-     #return "@array";
-     return List::Util::reduce {$a.$b} @array;
+     return "@array";
+     #return List::Util::reduce {$a.$b} @array;
 }
 
 
@@ -167,7 +168,7 @@ sub eval {
     eval $arrayString;
     
     if (defined $res){
-        my $store = ($res)?1:0;    
+        my $store = ($res)?1:0;
         $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
         $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
         $self->save();

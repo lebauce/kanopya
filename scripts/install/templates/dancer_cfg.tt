@@ -1,9 +1,13 @@
 # This is the main configuration file of your Dancer app
-# env-related settings should go to environments/$env.yml
+# env-related settings should go to environments/
 # all the settings in this file will be loaded at Dancer's startup.
 
 # Your application's name
 appname: "Frontend"
+
+# Select for wich product we want ui (KIM/KIO)
+kanopya_product: "KIO"
+
 
 # The default layout to use for your application (located in
 # views/layouts/main.tt)
@@ -34,14 +38,10 @@ template: "template_toolkit"
 engines:
   template_toolkit:
     encoding:  'utf8'
-#     start_tag: '[%'
-#     end_tag:   '%]'
+#     start_tag: '
+#     end_tag:   '
 
 plugins:
-  "Preprocess::Sass":
-    save: 1
-    paths:
-      - css
   FormValidator:
     profil_file: 'profiles.pl'
     msg:

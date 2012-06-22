@@ -47,10 +47,11 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "name", "size", "filesystem" ]);
+                         required => [ "name", "size", "filesystem", "aggregate_id" ]);
 
+    my $aggregate = Entity->get(id => $args{aggregate_id});
     my $api = $self->_getEntity();
-    $api->volume_create("containing-aggr-name" => "aggr0",
+    $api->volume_create("containing-aggr-name" => $aggregate->getAttr(name => 'name'),
                         volume => "/" . $args{name},
                         size   => $args{size});
 
@@ -63,7 +64,7 @@ sub createDisk {
                      container_filesystem => $args{filesystem},
                      container_freespace  => 0,
                      container_device     => $args{name},
-                     aggregate_id         => "aggr0"
+                     aggregate_id         => $args{aggregate_id}
                  );
     my $container = EFactory::newEEntity(data => $entity);
 
@@ -94,7 +95,7 @@ sub removeDisk {
               );
     }
 
-    my $container_name = $args{container}->getAttr(name => 'name');
+    my $container_name = $args{container}->getAttr(name => 'container_name');
 
     $self->_getEntity()->volume_offline(name => $container_name);
     $self->_getEntity()->volume_destroy(name  => $container_name,

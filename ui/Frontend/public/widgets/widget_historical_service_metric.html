@@ -1,0 +1,21 @@
+<script>
+    require('widgets/widget_historical_service_metric.js');
+</script>
+
+<div class="clustermetric_options">
+    <div class="field">
+        <span style='white-space:nowrap'>Start: <input type="text" class="combination_start_time" /></span>
+        <span style='white-space:nowrap'>End: <input type="text" class="combination_end_time" /></span>
+        <button class='refresh_button hidden'>Refresh</button>
+    </div>
+    <div class="dropdown_container">
+        <select class="combination_list">
+            <option selected="selected" id="default">Select a combination</option>
+        </select>
+        
+    </div>
+    <br/>
+    <!--input id="trendlineinput" type="checkbox" onclick="toggleTrendLine()" value="show"> Trend line</input-->
+</div>
+
+<div class="clusterCombinationView"></div>
