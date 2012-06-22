@@ -21,7 +21,11 @@ var mainmenu_def = {
     'Services'          : getServiceMenuDefinition('cluster'),
     'Administration'    : {
         'Kanopya'          : [],
-        'Right Management' : [],
+        'Right Management' :  [
+                               {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('KIO/users.js'); usersList(cid, eid); }},
+                               {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('KIO/users.js'); groupsList(cid, eid); }},
+                               {label : 'Permissions', id : 'permissions', onLoad : function(cid, eid) { require('KIO/users.js'); permissions(cid, eid); }}
+                               ],
         'Monitoring'       : []
     },
 };
