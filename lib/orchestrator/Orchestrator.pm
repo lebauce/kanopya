@@ -171,8 +171,6 @@ sub manage_aggregates {
                 }
             };
             if($@){
-                
-                
                 $log->info('*** Orchestrator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***');
             }
             else{
@@ -497,6 +495,7 @@ sub _evalRule {
 
     my $service_provider_id = $service_provider->getId();
 
+    my $rule_id          = $rule->getAttr(name => 'nodemetric_rule_id');
     my $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
     my $workflow_def_id  = $rule->getAttr(name => 'workflow_def_id');
     my $rep = 0;
@@ -538,12 +537,36 @@ sub _evalRule {
             }else {
                 #print ' OK'."\n";
                 $rep++;
-                $rule->setVerifiedRule(
-                    hostname => $host_name,
-                    cluster_id => $service_provider_id,
-                    state      => 'verified'
-                );
-                $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, host_name => $host_name);
+
+                    $rule->setVerifiedRule(
+                        hostname   => $host_name,
+                        cluster_id => $service_provider_id,
+                        state      => 'verified',
+                    );
+#                my $wf_def_id = $rule->getVerifiedRuleWfDefId (
+#                                    service_provider_id => $service_provider_id,
+#                                    hostname            => $host_name,
+#                                );
+
+#                if ($wf_def_id != 0) {
+#                    $rule->setVerifiedRule(
+#                        hostname   => $host_name,
+#                        cluster_id => $service_provider_id,
+#                        state      => 'verified',
+#                    );
+#                } else {
+#                    $rule->setVerifiedRule(
+#                        hostname   => $host_name,
+#                        cluster_id => $service_provider_id,
+#                        state      => 'verified',
+#                        wf_def_id  => $workflow_def_id,
+#                    );
+#                    $workflow_manager->runWorkflow(
+#                        workflow_def_id => $workflow_def_id, 
+#                        host_name => $host_name, 
+#                        rule_id => $rule_id
+#                    );
+#                }
             }
         }else{
             #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
@@ -607,7 +630,7 @@ sub clustermetricManagement{
     my $cluster_evaluation = {};
     my $service_provider_id = $service_provider->getId();
 
-    my $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+    my $workflow_manager;
 
     #GET RULES RELATIVE TO A CLUSTER
     my @rules = AggregateRule->search(hash=>{
@@ -616,18 +639,22 @@ sub clustermetricManagement{
     });
 
     for my $aggregate_rule (@rules){
+        my $workflow_def_id  = $aggregate_rule->getAttr(name => 'workflow_def_id');
+        my $rule_id          = $aggregate_rule->getAttr(name => 'aggregate_rule_id');
+
         $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
 
             $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
             
             my $result = $aggregate_rule->eval();
             
-             # LOOP USED TO TRIGGER ACTIONS
+             # LOOP USED TO TRIGGER WORKFLOWS
 
             if(defined $result){
-                if($result == 1){
-                    my $workflow_def_id  = $aggregate_rule->getAttr(name => 'workflow_def_id');
-                    $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id);
+                if($result == 1 && ($workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager'))) {
+#                    $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, rule_id => $rule_id);
+#                    $aggregate_rule->setAttr(aggregate_rule_state =>'disabled');
+#                    $aggregate_rule->save();
                 }
             }
         } # for my $aggregate_rule 

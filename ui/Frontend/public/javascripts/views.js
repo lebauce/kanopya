@@ -66,7 +66,8 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     
     // Not defined details menu
     if (details_info === undefined) {
-        alert('Details not defined yet ( menu.conf.js -> details_def["' + grid_class + '"] )');
+        //alert('Details not defined yet ( menu.conf.js -> details_def["' + grid_class + '"] )');
+        console.log('No details for grid ' +  grid_class);
         return;
     }
     
@@ -101,15 +102,14 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
         title: title,
         width: 800,
         height: 500,
-        resizable: true,
-        draggable: false,
+        resizable: false,
+        draggable: true,
         close: function(event, ui) {
             $('.last_content').addClass('current_content').removeClass('last_content');
             $(this).remove(); // detail modals are never closed, they are destroyed
         },
         buttons: {
             Ok: function() {
-                //$(this).find('#target').submit();
                 //loading_start();
                 $(this).dialog('close');
                 
@@ -179,6 +179,7 @@ function create_grid(options) {
     // Add delete action column (by default)
     var actions_col_idx = options.colNames.length;
     if (options.action_delete === undefined || options.action_delete != 'no') {
+        var delete_url_base = (options.action_delete && options.action_delete.url) || options.url;
         options.colNames.push('');
         options.colModel.push({index:'action_remove', width : '40px', formatter:
             function(cell, formatopts, row) {
@@ -188,7 +189,7 @@ function create_grid(options) {
                 remove_action += '<div class="ui-pg-div ui-inline-del"';
                 remove_action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
                 remove_action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
-                remove_action += 'onclick="removeGridEntry(\''+  options.grid_id + '\',' +row.pk + ',\'' + options.url + '\')" style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
+                remove_action += 'onclick="removeGridEntry(\''+  options.grid_id + '\',' +row.pk + ',\'' + delete_url_base + '\')" style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
                 remove_action += '<span class="ui-icon ui-icon-trash"></span>';
                 remove_action += '</div>';
                 return remove_action;
@@ -206,6 +207,7 @@ function create_grid(options) {
 
         afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(this, rowid, rowdata, rowelem); },
 
+        caption : options.caption || '',
         height: options.height || 'auto',
         //width: options.width || 'auto',
         autowidth   : true,
@@ -277,6 +279,11 @@ function create_grid(options) {
     $('#' + options.grid_id).jqGrid('navGrid', '#' + pager_id, { edit: false, add: false, del: false }); 
 
    //$('#' + options.grid_id).jqGrid('setGridWidth', $('#' + options.grid_id).closest('.current_content').width() - 20, true);
+
+    // If exists details conf then we set row as selectable
+    if (options.details || details_def[grid_class]) {
+       grid.addClass('selectable_rows');
+    }
 
     return grid;
 }

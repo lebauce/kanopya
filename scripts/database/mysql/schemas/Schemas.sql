@@ -923,6 +923,41 @@ CREATE TABLE `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `user_extension`
+
+CREATE TABLE `user_extension` (
+  `user_extension_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(8) unsigned NOT NULL,
+  `user_extension_key` char(32) NOT NULL,
+  `user_extension_value` char(255) NULL DEFAULT NULL,
+  PRIMARY KEY (`user_extension_id`),
+  UNIQUE KEY (`user_id`,`user_extension_key`),
+  FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `profile`
+
+CREATE TABLE `profile` (
+  `profile_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `profile_name` char(32) NOT NULL,
+  `profile_desc` char(255) NULL DEFAULT NULL,
+  PRIMARY KEY (`profile_id`),
+  UNIQUE KEY (`profile_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `user_profile`
+
+CREATE TABLE `user_profile` (
+  `user_id` int(8) unsigned NOT NULL,
+  `profile_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`profile_id`,`user_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`profile_id`) REFERENCES `profile` (`profile_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `gp`
 -- Entity::Gp class
 
@@ -1394,7 +1429,9 @@ CREATE TABLE `verified_noderule` (
   `verified_noderule_externalnode_id` int(8) unsigned NOT NULL,
   `verified_noderule_nodemetric_rule_id` int(8) unsigned NOT NULL,
   `verified_noderule_state` char(8) NOT NULL,
+  `workflow_def_id` int(8) unsigned default null,
   PRIMARY KEY (`verified_noderule_externalnode_id`,`verified_noderule_nodemetric_rule_id`),
+  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`verified_noderule_nodemetric_rule_id`),
   FOREIGN KEY (`verified_noderule_nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`verified_noderule_externalnode_id`),

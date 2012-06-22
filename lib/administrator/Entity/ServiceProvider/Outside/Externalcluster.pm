@@ -460,78 +460,36 @@ sub generateClustermetricAndCombination{
 sub insertCollectorIndicators {
     my ($self,%args) = @_;
 
+    # erk
+    my $scom_indicatorset_id = 5;
+
+    # Retrieve scom indicator from indicator table
+    my @indicators = Indicator->search (
+        hash => {
+            indicatorset_id => $scom_indicatorset_id
+        }
+    );
+
     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
     my $params;
 
-    $params = { scom_indicator_name => 'RAM Free',
-                scom_indicator_oid  => 'Memory/Available MBytes',
-                scom_indicator_unit => 'MBytes',
-                service_provider_id => $service_provider_id,
-    };
-    ScomIndicator->new(%$params);
-
-    $params = { scom_indicator_name => 'RAM pool paged',
-                scom_indicator_oid  => 'Memory/Pool Paged Bytes',
-                scom_indicator_unit => 'Bytes',
-                service_provider_id => $service_provider_id,
-    };
-    ScomIndicator->new(%$params);
-
-    $params = { scom_indicator_name => 'RAM used',
-                scom_indicator_oid  => 'Memory/PercentMemoryUsed',
-                scom_indicator_unit => '%',
-                service_provider_id => $service_provider_id,
-    };
-    ScomIndicator->new(%$params);
-
-    $params = { scom_indicator_name => 'CPU used',
-                scom_indicator_oid  => 'Processor/% Processor Time',
-                scom_indicator_unit => '%',
-                service_provider_id => $service_provider_id,
-    };
-    ScomIndicator->new(%$params);
-
-    $params = { scom_indicator_name => 'CPU Queue Length',
-                scom_indicator_oid  => 'System/Processor Queue Length',
-                scom_indicator_unit => 'process',
-                service_provider_id => $service_provider_id,
-    };
-    ScomIndicator->new(%$params);
-
-    $params = { scom_indicator_name => 'Disk idle time',
-                scom_indicator_oid  => 'LogicalDisk/% Idle Time',
-                scom_indicator_unit => '%',
-                service_provider_id => $service_provider_id,
-    };
-    ScomIndicator->new(%$params);
-
-    $params = { scom_indicator_name => 'Disk free space',
-                scom_indicator_oid  => 'LogicalDisk/% Free Space',
-                scom_indicator_unit => '%',
-                service_provider_id => $service_provider_id,
-    };
-    ScomIndicator->new(%$params);
-
-    $params = { scom_indicator_name => 'Network used',
-                scom_indicator_oid  => 'Network Adapter/PercentBandwidthUsedTotal',
-                scom_indicator_unit => '%',
-                service_provider_id => $service_provider_id,
-    };
-    ScomIndicator->new(%$params);
-
-    $params = { scom_indicator_name => 'Active Sessions',
-                scom_indicator_oid  => 'Terminal Services/Active Sessions',
-                scom_indicator_unit => 'sessions',
-                service_provider_id => $service_provider_id,
-    };
-    ScomIndicator->new(%$params);
-
-    $params = { scom_indicator_name => 'RAM I/O',
-                scom_indicator_oid  => 'Memory/Pages/sec',
-                scom_indicator_unit => 'pages/sec',
-                service_provider_id => $service_provider_id,
-    };
-    ScomIndicator->new(%$params);
+    # Create a scom indicator for each indicator from scom set (sic)
+    for my $indicator (@indicators) {
+        # worth and worth
+        # use indicator_color to know if it's a default indicator or a user created (oh yeah)
+        if (
+            (($args{'default'} == 1) && defined $indicator->getAttr(name => 'indicator_color'))
+            ||
+            (($args{'default'} == 0) && not defined $indicator->getAttr(name => 'indicator_color'))
+            ) {
+            $params = { scom_indicator_name => $indicator->getAttr(name => 'indicator_name'),
+                        scom_indicator_oid  => $indicator->getAttr(name => 'indicator_oid'),
+                        scom_indicator_unit => $indicator->getAttr(name => 'indicator_unit'),
+                        service_provider_id => $service_provider_id,
+            };
+            ScomIndicator->new(%$params);
+        }
+    }
 }
 
 =head2 monitoringDefaultInit
@@ -549,8 +507,8 @@ sub monitoringDefaultInit {
 
     my $adm = Administrator->new();
 
-    #generate the scom indicators
-    $self->insertCollectorIndicators();
+    #generate the scom indicators (only default)
+    $self->insertCollectorIndicators(default => 1);
 
     my $indicators_ids = $self->getIndicatorsIds();
     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
@@ -615,6 +573,9 @@ sub monitoringDefaultInit {
         aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
     };
     my $aggregate_combination = AggregateCombination->new(%$acf_params);
+
+    # Insert new indicator created by user
+    $self->insertCollectorIndicators(default => 0);
 }
 
 sub ruleGeneration{

@@ -21,4 +21,4 @@ window.setInterval(function(){
     		});
   		}
 	});
-}, 5000);
+}, 50000000);

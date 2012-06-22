@@ -6,41 +6,45 @@ var mainmenu_def = {
     'Services'   : {
         //onLoad : load_services,
         masterView : [
-                      {label : 'Overview', id : 'services_overview', onLoad : function(cid) { require('KIO/services.js'); servicesList(cid); }, info : { url : 'doc/services.html'}}
+                      {label : 'Overview', id : 'services_overview', onLoad : function(cid) { require('KIO/services.js'); servicesList(cid); }}
                       ],
         json : {url         : '/api/externalcluster',
                 label_key   : 'externalcluster_name',
                 id_key      : 'pk',
                 submenu     : [
-                               {label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesOverview(cid, eid);}, info : { url : 'doc/widget_dash_info.html'}},
+                               {label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesOverview(cid, eid);}},
                                {label : 'Configuration', id : 'service_configuration', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesConfig(cid, eid);}},
                                {label : 'Ressources', id : 'service_ressources', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRessources(cid, eid);}},
                                {label : 'Monitoring', id : 'service_monitoring', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesMonitoring(cid, eid);}},
                                {label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRules(cid, eid);}},
+                               {label : 'Workflows', id : 'workflows', onLoad : workflowslist}
                                ]
                 }
     },
     'Administration'    : {
-        'Kanopya'          : [],
+        //'Kanopya'          : [],
+        'Monitoring'       : [{label : 'Scom', id : 'scommanagement',onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }}],
         'Right Management' :  [
                                {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('KIO/users.js'); usersList(cid, eid); }},
                                {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('KIO/users.js'); groupsList(cid, eid); }},
-                               {label : 'Permissions', id : 'permissions'}
+                               {label : 'Permissions', id : 'permissions', onLoad : function(cid, eid) { require('KIO/users.js'); permissions(cid, eid); }}
                                ],
-        'Monitoring'       : [],
-        'Workflows'        : [{ label : 'Workflow Management' , id : 'workflowmanagement', onLoad : sco_workflow }]
+        'Workflows'        : [
+            { label : 'Overview', id : 'workflows_overview', onLoad : workflowsoverview },
+            { label : 'Workflow Management' , id : 'workflowmanagement', onLoad : sco_workflow },
+        ],
     },
 };
 
 var details_def = {
         'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
-        'service_ressources_list' : {
+        /*'service_ressources_list' : {
             tabs : [
                         { label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },
                         { label : 'Rules', id : 'rules', onLoad : node_rules_tab },
                     ],
             title : { from_column : 'externalnode_hostname' }
-        },
+        },*/
         'workflowmanagement' : { onSelectRow : workflowdetails },
 };
 
@@ -52,44 +56,7 @@ function rule_detail_tab(cid, eid) {
 
 }
 
-// This function load grid with list of rules for verified state corelation with the the selected node :
-function node_rules_tab(cid, eid) {
 
-    function verifiedNodeRuleStateFormatter(cell, options, row) {
-    
-        var VerifiedRuleFormat;
-        // Where rowid = rule_id
-        $.ajax({
-             url: '/api/externalnode/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
-             async: false,
-             success: function(answer) {
-                if (answer.length == 0) {
-                    VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
-                } else if (answer[0].verified_noderule_state == 'verified') {
-                    VerifiedRuleFormat = "<img src='/images/icons/broken.png' title='broken' />"
-                } else if (answer[0].verified_noderule_state == 'undef') {
-                    VerifiedRuleFormat = "<img src='/images/icons/down.png' title='down' />";
-                }
-              }
-        });
-        return VerifiedRuleFormat;
-    }
-
-    var loadNodeRulesTabGridId = 'node_rules_tabs';
-    create_grid( {
-        url: '/api/nodemetricrule',
-        content_container_id: cid,
-        grid_id: loadNodeRulesTabGridId,
-        grid_class: 'node_rules_tab',
-        colNames: [ 'id', 'rule', 'state' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 90,},
-            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 200, formatter: verifiedNodeRuleStateFormatter },
-        ],
-        action_delete : 'no',
-    } );
-}
 
 // This function load a grid with the list of current service's nodes for state corelation with rules
 function rule_nodes_tab(cid, eid) {
@@ -97,8 +64,12 @@ function rule_nodes_tab(cid, eid) {
     function verifiedRuleNodesStateFormatter(cell, options, row) {
         var VerifiedRuleFormat;
             // Where rowid = rule_id
+            
+            console.log(row.pk);
+            console.log(eid);
+            
             $.ajax({
-                 url: '/api/externalnode/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
+                 url: '/api/externalnode/' + row.pk + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + eid,
                  async: false,
                  success: function(answer) {
                     if (answer.length == 0) {
@@ -125,6 +96,7 @@ function rule_nodes_tab(cid, eid) {
             });
     
     var loadNodeRulesTabGridId = 'rule_nodes_tabs';
+    console.log(oid);
     create_grid( {
         url: '/api/externalnode?outside_id=' + oid,
         content_container_id: cid,

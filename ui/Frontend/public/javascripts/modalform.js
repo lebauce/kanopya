@@ -253,7 +253,7 @@ var ModalForm = (function() {
         if (help !== undefined) {
             var helpElem        = $("<span>", { class : 'ui-icon ui-icon-info' });
             $(helpElem).css({
-                cursor  : 'pointer',
+                cursor  : 'help',
                 margin  : '2px 0 0 2px',
                 float   : 'right'
             });
@@ -328,7 +328,7 @@ var ModalForm = (function() {
     }
     
     ModalForm.prototype.handleBeforeSubmit = function(arr, $form, opts) {
-        var b   = this.beforeSubmit(arr, $form, opts, this) || true;
+        var b   = this.beforeSubmit(arr, $form, opts, this);
         if (b) {
             var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
             buttonsdiv.find('button').each(function() {

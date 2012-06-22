@@ -1,20 +1,44 @@
+/*
+    This css file is used for style overriding some jquery-ui styl 
+    For generic element styling see global.css
+*/
 
 /* Allow scroll inside view (tab content) */
-
 .view div {
     height:100%;
     overflow:auto;
 }
 
+.ui-layout-north {
+  background-image: url("/images/background_header02.png") !important;
+  background-repeat: repeat !important;
+}
 
 /* format the text inside the toggler (layout) */
 .ui-layout-toggler .content {
    font-size: 12px; /* IMPORTANT: default = 1px */
-   font-weight: bold;
    text-align: center;
+   color: #FFFFFF;
 }
 
 /* Restore jqgrid style overriden by .ui-widget .ui-widget */
 .ui-widget .ui-jqgrid {
     font-size: 11px;
+}
+
+/* Action buttons */
+.ui-button {
+    margin-top: 15px;
+}
+
+.ui-button.no-margin {
+    margin: 0px;
+}
+
+.headerlinks .ui-button {
+    margin-top: 0;
+}
+
+.ui-accordion .ui-accordion-header {
+    margin-top: 7px;
 }

@@ -40,8 +40,8 @@ use Kanopya::Exceptions;
 use EFactory;
 
 use Template;
-#use Entity::ServiceProvider::Inside::Cluster;
-#use Entity::Host;
+use AggregateRule;
+use NodemetricRule;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -60,6 +60,7 @@ sub prepare {
         'output_directory',
         'output_file',
         'workflow_values',
+        'template_content',
     ]);
     
 }
@@ -87,9 +88,50 @@ sub execute{
     $tt->process(\$template_content, $wf_values, $output_path) or throw Kanopya::Exception::Internal(
                      error => "Error when processing template $template_content in $output_path : ".$tt->error()
                  );
+    #append the return file to the generated file
+    my $return_file = $output_path.'_return';
+    open (my $FILE, ">>", $output_path)
+        or die "an error occured while opening $output_path: $!";
+    print $FILE "\n".$return_file;
+    close($FILE);
+
+    #put the return file into operation params
+    $self->{params}->{return_file} = $return_file;
 }
 
+sub postrequisites {
+    my $self = shift;
 
+    #define check period in case of unexisting return file
+    my $period = 600;
+
+    #get absolute return file path (on local machine)
+    if (-e $self->{params}->{return_file}) {
+        return 0;
+    }
+    else {
+        return $period;
+    }
+}
+
+sub finish {
+    my $self = shift;
+
+    #reactive the linked rule
+    my $rule_id = $self->{params}->{rule_id};
+
+    if ($self->{params}->{scope_name} eq 'node') {
+        my $rule = NodemetricRule->find(hash => {rule_id => $rule_id});
+        $rule->deleteVerifiedRuleWfDefId(
+            hostname => $self->{params}->{workflow_values}->{node_hostname}, 
+            service_provider_id => $self->{params}->{sp_id},
+        );
+    }
+    elsif ($self->{params}->{scope_name} eq 'service_provider') {
+        my $rule = AggregateRule->find(hash => {rule_id => $rule_id});
+        $rule->enable();
+    }
+}
 
 =head1 DIAGNOSTICS
 

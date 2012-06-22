@@ -66,13 +66,11 @@ __PACKAGE__->table("user");
 =head2 user_creationdate
 
   data_type: 'date'
-  datetime_undef_if_invalid: 1
   is_nullable: 1
 
 =head2 user_lastaccess
 
   data_type: 'datetime'
-  datetime_undef_if_invalid: 1
   is_nullable: 1
 
 =head2 user_desc
@@ -110,13 +108,9 @@ __PACKAGE__->add_columns(
   "user_email",
   { data_type => "char", is_nullable => 1, size => 255 },
   "user_creationdate",
-  { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
+  { data_type => "date", is_nullable => 1 },
   "user_lastaccess",
-  {
-    data_type => "datetime",
-    datetime_undef_if_invalid => 1,
-    is_nullable => 1,
-  },
+  { data_type => "datetime", is_nullable => 1 },
   "user_desc",
   {
     data_type => "char",
@@ -205,16 +199,44 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 user_extensions
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:B7rCXxr6F2uRZ3QK0fKVSQ
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::UserExtension>
+
+=cut
+
+__PACKAGE__->has_many(
+  "user_extensions",
+  "AdministratorDB::Schema::Result::UserExtension",
+  { "foreign.user_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 user_profiles
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::UserProfile>
+
+=cut
+
+__PACKAGE__->has_many(
+  "user_profiles",
+  "AdministratorDB::Schema::Result::UserProfile",
+  { "foreign.user_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-06-06 18:14:10
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:C784XTsBimwwIIl6CnVclQ
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.user_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
-
+  { entity_id => "user_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 1;

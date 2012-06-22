@@ -1,5 +1,6 @@
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
 <script src="/javascripts/KIM/iaas.js"></script>
+<script src="/javascripts/KIM/customers.js"></script>
 <script src="/javascripts/KIM/menu.conf.js"></script>
 <script src='/javascripts/gritter.js'></script>
 
@@ -10,13 +11,8 @@
 <div class="ui-layout-north">
     <div id='header'>
         <span id='product-name'>Kanopya Infrastructure Manager</span>
-        <div id="infologin">
-            logged as <span id="username"><% username %></span>
-        </div>
-        
-        <div class="logout">
-            <a href="/logout">Logout</a>
-        </div>
+        <span class="logout"><span class='ui-icon ui-icon-power'></span><a href="/logout">Logout</a></span>
+        <span id="infologin">logged as <span id="username"><% username %></span></span>
     </div>
 </div>
 <div class="ui-layout-south">
