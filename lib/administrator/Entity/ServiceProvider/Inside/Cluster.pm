@@ -206,6 +206,10 @@ sub methods {
         'configureComponents'    => {'description' => 'configure components of this cluster',
                         'perm_holder' => 'entity',
         },
+        'getIndicatorNameFromId' => {
+            'description'   => 'getIndicatorNameFromId',
+            'perm_holder'   => 'entity'
+        }
     };
 }
 

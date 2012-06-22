@@ -1,26 +1,10 @@
 // each link will show the div with id "view_<link_name>" and hide all div in "#view-container"
 
 require('KIO/workflows.js');
+require('servicemenudefinition.js');
 
 var mainmenu_def = {
-    'Services'   : {
-        //onLoad : load_services,
-        masterView : [
-                      {label : 'Overview', id : 'services_overview', onLoad : function(cid) { require('KIO/services.js'); servicesList(cid); }}
-                      ],
-        json : {url         : '/api/externalcluster',
-                label_key   : 'externalcluster_name',
-                id_key      : 'pk',
-                submenu     : [
-                               {label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesOverview(cid, eid);}},
-                               {label : 'Configuration', id : 'service_configuration', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesConfig(cid, eid);}},
-                               {label : 'Ressources', id : 'service_ressources', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRessources(cid, eid);}},
-                               {label : 'Monitoring', id : 'service_monitoring', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesMonitoring(cid, eid);}},
-                               {label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRules(cid, eid);}},
-                               {label : 'Workflows', id : 'workflows', onLoad : workflowslist}
-                               ]
-                }
-    },
+    'Services'          : getServiceMenuDefinition('externalcluster'),
     'Administration'    : {
         //'Kanopya'          : [],
         'Monitoring'       : [{label : 'Scom', id : 'scommanagement',onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }}],

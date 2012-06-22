@@ -1,5 +1,6 @@
 require('KIM/iaas.js');
 require('KIM/customers.js');
+require('servicemenudefinition.js');
 // each link will show the div with id "view_<id>" and hide all div in "#view-container"
 // onLoad handlers are called with params (content_container_id)
 var mainmenu_def = {
@@ -17,9 +18,7 @@ var mainmenu_def = {
         'Services Templates' : [],
         'Customers'  : [{label: 'Customers', id: 'customers', onLoad: customers.load_content }]
     },
-    'Services'           : {
-    
-    },
+    'Services'          : getServiceMenuDefinition('cluster'),
     'Administration'    : {
         'Kanopya'          : [],
         'Right Management' : [],
@@ -51,3 +50,7 @@ var details_def = {
                   },
 };
 
+function reloadServices () {
+    // Trigger click callback wich relaod grid content and dynamic menu
+    $('#menuhead_Services').click();
+}
