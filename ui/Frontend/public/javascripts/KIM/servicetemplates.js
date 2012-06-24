@@ -117,13 +117,8 @@ function load_service_template_details (elem_id, row_data, grid_id) {
         }, this)
     });
 
-    service_template_simple_def['service_template_id'] = {
-        label        : 'Service template id',
-        type         : 'hidden',
-        value        : values.service_template_id,
-    };
-
-    var policy_opts = {
+    var service_tempate_opts = {
+        id          : values.service_template_id,
         title       : 'Edit the service template: ' + values.service_name,
         name        : 'servicetemplate',
         fields      : service_template_simple_def,
@@ -131,5 +126,5 @@ function load_service_template_details (elem_id, row_data, grid_id) {
         callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
     };
 
-    new PolicyForm(policy_opts).start();
+    new PolicyForm(service_tempate_opts).start();
 }
