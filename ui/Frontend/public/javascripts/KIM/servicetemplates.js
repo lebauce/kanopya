@@ -19,8 +19,11 @@ var service_template = {
 }
 
 function load_service_template_content (container_id) {
-    var service_template_def = jQuery.extend({}, service_template);
+    var service_template_def = jQuery.extend(true, {}, service_template);
+
     for (var policy in policies) {
+        var policy_def = jQuery.extend(true, {}, policies[policy]);
+
         var step = policy.substring(0, 1).toUpperCase() + policy.substring(1);
 
         // Add the policy selection input
@@ -41,23 +44,24 @@ function load_service_template_content (container_id) {
             pattern      : '^[1-9][0-9]*$',
         };
 
-        for (var field in policies[policy]) {
-            policies[policy][field].policy = policy;
-            policies[policy][field].step = step;
-            policies[policy][field].triggered = policy + '_policy_id';
-            policies[policy][field].disable_filled = true;
+        for (var field in policy_def) {
+            policy_def[field].policy = policy;
+            policy_def[field].step = step;
+            policy_def[field].triggered = policy + '_policy_id';
+            policy_def[field].disable_filled = true;
 
             var policy_field;
             if (field === 'policy_name' || field === 'policy_desc') {
                 policy_field = policy + '_' + field;
             } else {
                 policy_field = field;
-                policies[policy][field].prefix = policy + '_';
+                policy_def[field].prefix = policy + '_';
             }
-            service_template_def[policy_field] = policies[policy][field];
+            service_template_def[policy_field] = policy_def[field];
         }
     }
 
+    console.log(policies);
     function createAddServiceTemplateButton(cid, grid) {
         var service_template_opts = {
             title       : 'Add a service template',
@@ -88,8 +92,10 @@ function load_service_template_content (container_id) {
 }
 
 function load_service_template_details (elem_id, row_data, grid_id) {
-    var service_template_simple_def = jQuery.extend({}, service_template);
-    for (var policy in policies) {
+    var service_template_simple_def = jQuery.extend(true, {}, service_template);
+    var policies_for_service = jQuery.extend(true, {}, policies);
+
+    for (var policy in policies_for_service) {
         var step = policy.substring(0, 1).toUpperCase() + policy.substring(1);
 
         // Add the policy selection input
