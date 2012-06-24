@@ -261,7 +261,6 @@ var PolicyForm = (function() {
         }
         // Check if the field must be validated by a regular expression
         if ($(input).attr('type') !== 'checkbox' && this.fields[elementName].pattern !== undefined) {
-            console.log(this.fields[elementName].pattern);
             this.validateRules[elementName].regex = this.fields[elementName].pattern;
         }
 
