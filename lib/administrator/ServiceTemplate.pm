@@ -73,6 +73,7 @@ sub new {
     my %args = @_;
     my $self;
 
+    $log->info('___________' . Dumper(%args));
     # Firstly pop the service template atrributes
     my $attrs = {
         service_name => delete $args{service_name},
