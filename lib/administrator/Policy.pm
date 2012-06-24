@@ -78,8 +78,6 @@ sub new {
         policy_desc => delete $args{policy_desc},
     };
 
-    $log->info(Dumper($attrs));
-
     # Pop the policy id if defined
     my $policy_id = delete $args{policy_id};
 
