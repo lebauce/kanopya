@@ -37,9 +37,11 @@ function load_service_template_content (container_id) {
             },
             is_mandatory : true,
             trigger      : true,
+            pattern      : '^[1-9][0-9]*$',
         };
 
         for (var field in policies[policy]) {
+            policies[policy][field].policy = policy;
             policies[policy][field].step = step;
             policies[policy][field].triggered = policy + '_policy_id';
             policies[policy][field].disable_filled = true;
@@ -49,6 +51,7 @@ function load_service_template_content (container_id) {
                 policy_field = policy + '_' + field;
             } else {
                 policy_field = field;
+                policies[policy][field].prefix = policy + '_';
             }
             service_template_def[policy_field] = policies[policy][field];
         }
