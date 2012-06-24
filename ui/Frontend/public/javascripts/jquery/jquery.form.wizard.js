@@ -152,16 +152,16 @@
 			/* Validate the current step inputs only */
 			var that = this;
 			var isValid = true;
-			if (this.options.validationEnabled){
+			if (this.options.validationEnabled) {
 				if (this.currentStep) {
-					if (! that.element.validate().element($(this))){
-						this.steps.filter("#" + this.currentStep).find(":input").not(".wizard-ignore").each(function(index) {
+					this.steps.filter("#" + this.currentStep).find(":input").not(".wizard-ignore").each(function(index) {
+						if (! that.element.validate().element($(this))) {
 							isValid = false;
 							return false;
 						}
 					});
 				} else {
-					if (! this.element.valid()){
+					if (! this.element.valid()) {
 						isValid = false;
 					}
 				}
