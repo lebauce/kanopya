@@ -11,7 +11,7 @@ function load_policy_content (container_id) {
         var policy_opts = {
             title       : 'Add a ' + policy_type + ' policy',
             name        : 'policy',
-            fields      : policies[policy_type],
+            fields      : jQuery.extend({}, policies[policy_type]),
             callback    : function () { grid.trigger("reloadGrid"); }
         };
 
@@ -61,7 +61,7 @@ function load_policy_details (elem_id, row_data, grid_id) {
 
     jQuery.extend(flattened_policy, policy);
 
-    var fields = policies[policy.policy_type];
+    var fields = jQuery.extend({}, policies[policy.policy_type]);
     fields['policy_id'] = {
         label        : 'Policy id',
         type         : 'hidden',
@@ -71,7 +71,7 @@ function load_policy_details (elem_id, row_data, grid_id) {
     var policy_opts = {
         title       : 'Edit the ' + policy.policy_type + ' policy: ' + policy.policy_name,
         name        : 'policy',
-        fields      : policies[policy.policy_type],
+        fields      : fields,
         values      : flattened_policy,
         callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
     };
