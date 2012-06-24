@@ -2,6 +2,11 @@ require('jquery/jquery.form.js');
 require('jquery/jquery.validate.js');
 // require('jquery/jquery.form.wizard.js');
 
+$.validator.addMethod("regex", function(value, element, regexp) {
+    var re = new RegExp(regexp);
+    return this.optional(element) || re.test(value);
+}, "Please check your input");
+
 var PolicyForm = (function() {
     function PolicyForm(args) {
         this.handleArgs(args);
@@ -28,16 +33,19 @@ var PolicyForm = (function() {
         // For each element in fields, add an input to the form
         for (var elem in this.fields) {
             // If this is a set, add a button to allow to add elements to the set
-            if (this.fields[elem].set) {
-                var add_button = $("<input type=\"button\"/>", { html : this.fields[elem].add_label, class : 'wizard-ignore' });
-                var element = elem;
-                var that = this;
-                add_button.bind('click', function() {
-                    that.newElement(element);
-                });
 
-                this.findContainer(this.fields[elem].step).append(add_button);
-                add_button.val(this.fields[elem].add_label);
+            if (this.fields[elem].set) {
+                if (! this.fields[elem].policy) {
+                    var add_button = $("<input type=\"button\"/>", { html : this.fields[elem].add_label, class : 'wizard-ignore' });
+                    var element = elem;
+                    var that = this;
+                    add_button.bind('click', function() {
+                        that.newElement(element);
+                    });
+
+                    this.findContainer(this.fields[elem].step).append(add_button);
+                    add_button.val(this.fields[elem].add_label);
+                }
 
                 // If we have values for a set element, add the elements with
                 // values.
@@ -160,7 +168,7 @@ var PolicyForm = (function() {
             var input   = $("<select>");
             var isArray = options instanceof Array;
             if (! this.fields[elementName].is_mandatory) {
-                var option = $("<option>", { value : '' , text : '-' });
+                var option = $("<option>", { value : 0, text : '-' });
                 input.append(option);
             }
             for (var i in options) if (options.hasOwnProperty(i)) {
@@ -243,14 +251,19 @@ var PolicyForm = (function() {
             $(label).text(this.fields[elementName].label);
         }
 
+        var input = $("<select>", { name : input_name, id : 'input_' + elementName });
+
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
         if (this.fields[elementName].is_mandatory == true) {
             $(label).append(' *');
             this.validateRules[elementName].required = true;
         }
-
-        var input = $("<select>", { name : input_name, id : 'input_' + elementName });
+        // Check if the field must be validated by a regular expression
+        if ($(input).attr('type') !== 'checkbox' && this.fields[elementName].pattern !== undefined) {
+            console.log(this.fields[elementName].pattern);
+            this.validateRules[elementName].regex = this.fields[elementName].pattern;
+        }
 
         /* Ugly hard coded hack to fill the service provider value, if the
          * depending fields are filled. If we are in policy edition context, we
@@ -263,16 +276,7 @@ var PolicyForm = (function() {
                 var depend = this.fields[elementName].depends[depend_index];
 
                 if (this.values[depend]) {
-                    var depend_obj;
-                    $.ajax({
-                        type        : 'GET',
-                        async       : false,
-                        url         : '/api/' + this.fields[depend].entity + '/' + this.values[depend],
-                        dataTYpe    : 'json',
-                        success     : $.proxy(function(d) {
-                            depend_obj = d;
-                        }, this)
-                    });
+                    var depend_obj = this.ajaxCall('GET', '/api/' + this.fields[depend].entity + '/' + this.values[depend]);
 
                     /* Another hard coded name here (service_provider_id) */
                     if (depend_obj.service_provider_id) {
@@ -307,15 +311,7 @@ var PolicyForm = (function() {
                     delimiter = '&';
                 }
             }
-            $.ajax({
-                type        : 'GET',
-                async       : false,
-                url         : route,
-                dataTYpe    : 'json',
-                success     : $.proxy(function(d) {
-                    datavalues = d;
-                }, this)
-            });
+            datavalues = this.ajaxCall('GET', route);
 
             /*
              * We do not have a master class for component and connector, so we
@@ -323,16 +319,7 @@ var PolicyForm = (function() {
              * here...
              */
             if (entity === 'componenttype') {
-                var connector_values;
-                $.ajax({
-                    type        : 'GET',
-                    async       : false,
-                    url         : '/api/connectortype',
-                    dataTYpe    : 'json',
-                    success     : $.proxy(function(d) {
-                        connector_values = d;
-                    }, this)
-                });
+                var connector_values = this.ajaxCall('GET', '/api/connectortype');
 
                 /*
                  * Add all connector types to the component types list, and
@@ -346,10 +333,11 @@ var PolicyForm = (function() {
         }
 
         if (! this.fields[elementName].is_mandatory) {
-            var option = $("<option>", { value : '' , text : '-' });
+            var option = $("<option>", { value : 0, text : '-' });
             input.append(option);
+
         } else if (this.fields[elementName].welcome_value) {
-            var option = $("<option>", { value : '', text : this.fields[elementName].welcome_value, id : 'welcome_' + elementName});
+            var option = $("<option>", { value : 0, text : this.fields[elementName].welcome_value, id : 'welcome_' + elementName});
             input.append(option);
 
             test = options;
@@ -369,15 +357,8 @@ var PolicyForm = (function() {
                 var display = 'pk';
 
                 if (this.fields[elementName].display_func && this.fields[elementName].entity) {
-                    $.ajax({
-                        type     : 'POST',
-                        async    : false,
-                        url      : '/api/' +  this.fields[elementName].entity + '/' + key + '/' + this.fields[elementName].display_func,
-                        dataTYpe : 'json',
-                        success  : $.proxy(function(d) {
-                            text = d;
-                        }, this)
-                    });
+                    text = this.ajaxCall('POST', '/api/' +  this.fields[elementName].entity + '/' + key + '/' + this.fields[elementName].display_func);
+
                 } else {
 
                     /*
@@ -409,6 +390,10 @@ var PolicyForm = (function() {
                     input.attr('disabled', 'disabled');
                 }
             }
+        }
+
+        if (this.mustDisableField(elementName, this.fields[elementName]) === true) {
+            $(input).attr('disabled', 'disabled');
         }
 
         /*
@@ -460,32 +445,25 @@ var PolicyForm = (function() {
     PolicyForm.prototype.updateValues = function (element, selected_id) {
         var datavalues = undefined;
         var name = element.attr('name');
+        var step = this.fields[name].step;
 
         if (! name) { return; }
 
-        /* Call the given function on the entity to get a values hash */
-        $.ajax({
-            type     : 'POST',
-            async    : false,
-            url      : '/api/' + this.fields[name].entity + '/' + selected_id + '/' + this.fields[name].values_provider.func,
-            data     : this.fields[name].values_provider.args,
-            dataTYpe : 'json',
-            success  : $.proxy(function(d) {
-                datavalues = d;
-            }, this)
+        element.removeClass('disabled_policy_id');
+
+        /* Unset any callback on change event handle policies update */
+        var that = this;
+        this.findContainer(step).find(':input').each(function() {
+            $(this).unbind('.resetPolicy');
         });
 
-        /* ... */
-        var policy;
-        $.ajax({
-            type     : 'GET',
-            async    : false,
-            url      : '/api/' + this.fields[name].entity + '/' + selected_id,
-            dataTYpe : 'json',
-            success  : $.proxy(function(d) {
-                policy = d;
-            }, this)
-        });
+        /* Call the given function on the entity to get a values hash */
+        datavalues = this.ajaxCall('POST',
+                                   '/api/' + this.fields[name].entity + '/' + selected_id + '/' + this.fields[name].values_provider.func,
+                                   this.fields[name].values_provider.args);
+
+        /* Complete the values hash with policy attributes */
+        var policy = this.ajaxCall('GET', '/api/' + this.fields[name].entity + '/' + selected_id);
 
         for (var policy_attr in policy) {
             datavalues[policy['policy_type'] + '_policy_name'] = policy['policy_name'];
@@ -495,7 +473,7 @@ var PolicyForm = (function() {
         this.values = datavalues;
 
         var that = this;
-        this.form.find('select').each(function() {
+        this.findContainer(step).find('select').each(function() {
             var select_name = $(this).attr('name');
             if (that.fields[select_name] && select_name !== name) {
                 var reset_value;
@@ -504,7 +482,7 @@ var PolicyForm = (function() {
                     var options = $(this).find('option');
                     reset_value = options[0].value;
                 } else {
-                    reset_value = '';
+                    reset_value = 0;
                 }
 
                 $(this).val(reset_value);
@@ -525,16 +503,7 @@ var PolicyForm = (function() {
                          * Ugly hard coded hack to fill the service provider
                          * value, if the depending fields are filled.
                          */
-                        var manager;
-                        $.ajax({
-                            type        : 'GET',
-                            async       : false,
-                            url         : '/api/' + that.fields[select_name].entity + '/' + datavalues[select_name],
-                            dataTYpe    : 'json',
-                            success     : $.proxy(function(d) {
-                                manager = d;
-                            }, this)
-                        });
+                        var manager = that.ajaxCall('GET', '/api/' + that.fields[select_name].entity + '/' + datavalues[select_name]);
 
                         // Another hard coded name here (service_provider_id)
                         if (manager.service_provider_id) {
@@ -549,8 +518,9 @@ var PolicyForm = (function() {
                     $(this).attr('disabled', 'disabled');
                 }
             }
+
         });
-        this.form.find('input').each(function() {
+        this.findContainer(step).find('input').each(function() {
             $(this).val('');
             $(this).removeAttr('disabled');
             if (datavalues[$(this).attr('name')]) {
@@ -558,7 +528,7 @@ var PolicyForm = (function() {
                 $(this).attr('disabled', 'disabled');
             }
         });
-        this.form.find('textarea').each(function() {
+        this.findContainer(step).find('textarea').each(function() {
             $(this).val('');
             $(this).removeAttr('disabled');
             if (datavalues[$(this).attr('name')]) {
@@ -566,6 +536,28 @@ var PolicyForm = (function() {
                 $(this).attr('disabled', 'disabled');
             }
         });
+
+        /* Ugly third loop to set a callback on change, because
+         * the first loop could raise this callback on some fileds.
+         * We really need to review the mecanism that fill values in fields.
+         *
+         * Set a callback on change event handle policies update.
+         */
+        var that = this;
+        this.findContainer(step).find(':input').each(function() {
+            var elementName = $(this).attr('name')
+
+            if (that.fields[elementName].policy) {
+                function resetPolicyIdOnChange (event) {
+                    that.resetPolicyId(elementName);
+                }
+                $(this).bind('change.resetPolicy', resetPolicyIdOnChange);
+            }
+        });
+    }
+
+    PolicyForm.prototype.resetPolicyId = function (elementName) {
+        this.form.find('#input_' + this.fields[elementName].policy + '_policy_id').addClass('disabled_policy_id');
     }
 
     PolicyForm.prototype.updateFromParent = function (element, selected_id) {
@@ -574,22 +566,14 @@ var PolicyForm = (function() {
 
         if (! name) { return; }
 
-        /*
-         * Arg... Can not call the route according to
+        /* Arg... Can not call the route according to
          * this.fields[elementName].entity, as we do not have a common parent
          * class for component and connector. So use the findManager workaround
          * method for instance.
          */
-        $.ajax({
-            type     : 'POST',
-            async    : false,
-            url      : '/api/serviceprovider/' + selected_id + '/findManager',
-            data     : { category: this.fields[name].category, service_provider_id: selected_id },
-            dataTYpe : 'json',
-            success  : $.proxy(function(d) {
-                datavalues = d;
-            }, this)
-        });
+        datavalues = this.ajaxCall('POST',
+                                     '/api/serviceprovider/' + selected_id + '/findManager',
+                                   { category: this.fields[name].category, service_provider_id: selected_id });
 
         // Inject all values in the select
         element.empty();
@@ -597,15 +581,8 @@ var PolicyForm = (function() {
             var display = datavalues[value]['name'];
 
             if (this.fields[name].display_func && this.fields[name].entity) {
-                $.ajax({
-                    type     : 'POST',
-                    async    : false,
-                    url      : '/api/' +  this.fields[name].entity + '/' + datavalues[value].id + '/' + this.fields[name].display_func,
-                    dataTYpe : 'json',
-                    success  : $.proxy(function(d) {
-                        display = d;
-                    }, this)
-                });
+                var ressource_name = this.ajaxCall('POST', '/api/' +  this.fields[name].entity + '/' + datavalues[value].id + '/' + this.fields[name].display_func);
+                if (ressource_name) display = ressource_name;
             }
 
             var option  = $("<option>", { value : datavalues[value].id , text : display });
@@ -627,23 +604,17 @@ var PolicyForm = (function() {
 
         if (! selected_id) { return; }
 
-        var datavalues = undefined;
-        $.ajax({
-            type        : 'POST',
-            async       : false,
-            url         : '/api/' + this.fields[name].entity + '/' + selected_id + '/' + this.fields[name].params.func,
-            data        : this.fields[name].params.args,
-            dataType    : 'json',
-            success     : $.proxy(function(d) {
-                datavalues = d;
-            }, this)
-        });
+        var datavalues = this.ajaxCall('POST',
+                                       '/api/' + this.fields[name].entity + '/' + selected_id + '/' + this.fields[name].params.func,
+                                       this.fields[name].params.args);
 
         for (var value in datavalues) {
             this.fields[datavalues[value].name] = {
-                label : datavalues[value].label,
-                step  : this.fields[name].step,
-                disable_filled : this.fields[name].step
+                label   : datavalues[value].label,
+                step    : this.fields[name].step,
+                policy  : this.fields[name].policy,
+                prefix  : this.fields[name].prefix,
+                disable_filled : true,
             }
 
             var tr = undefined;
@@ -670,10 +641,6 @@ var PolicyForm = (function() {
         }
 
         var that = this;
-        $("." + classtoremove).each(function  () {
-            $(this).remove();
-            delete that.fields[$(this).find(':input').attr('name')];
-        });
         this.form.find("." + classtoremove).each(function  () {
             $(this).remove();
             delete that.fields[$(this).find(':input').attr('name')];
@@ -686,6 +653,7 @@ var PolicyForm = (function() {
                 this.fields[this.triggeredFields[name][field]].triggered = undefined;
 
                 this.newElement(this.triggeredFields[name][field]);
+
                 this.triggeredFields[name][field] = undefined;
             }
             this.triggeredFields[name] = new Array();
@@ -780,6 +748,15 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.beforeSerialize = function(form, options) {
+        var that = this;
+        this.form.find(':input').each(function () {
+            if (that.fields[$(this).attr('name')].prefix) {
+                $(this).attr('name', that.fields[$(this).attr('name')].prefix + $(this).attr('name'));
+            }
+        });
+        this.form.find(".disabled_policy_id").each(function  () {
+            $(this).attr('value', '0');
+        });
     }
 
     PolicyForm.prototype.changeStep = function(event, data) {
@@ -788,7 +765,7 @@ var PolicyForm = (function() {
         var i       = 1;
 
         var that = this;
-        debugger;
+
         $(steps).each(function() {
             var prepend = "";
             var append  = "";
@@ -816,9 +793,6 @@ var PolicyForm = (function() {
                 $(this).attr('disabled', 'disabled');
             });
         }
-        this.form.find(':input').each(function () {
-            $(this).removeAttr('disabled');
-        });
         return b;
     }
 
@@ -902,14 +876,8 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.cancel = function() {
-        var state = $(this.form).formwizard("state");
-        if (state.isFirstStep) {
-            this.cancelCallback();
-            this.closeDialog();
-
-        } else {
-            $(this.form).formwizard("back");
-        }
+        this.cancelCallback();
+        this.closeDialog();
     }
 
     PolicyForm.prototype.closeDialog = function() {
@@ -923,9 +891,33 @@ var PolicyForm = (function() {
 
     PolicyForm.prototype.validateForm = function () {
         this.form.find(':input').each(function () {
-            $(this).attr('disabled', 'disabled');
+            $(this).removeAttr('disabled');
         });
+
         $(this.form).formwizard("next");
+    }
+
+    PolicyForm.prototype.ajaxCall = function (method, route, data) {
+        var response;
+        try {
+            $.ajax({
+                type        : method,
+                async       : false,
+                url         : route,
+                data        : data,
+                dataTYpe    : 'json',
+                error       : function(xhr, status, error) {
+                    console.log('Ajax call failled: ' + xhr.status);
+                },
+                success     : $.proxy(function(d) {
+                    response = d;
+                }, this)
+            });
+        }
+        catch (error) {
+            console.log('Ajax call failled: ' + error.message);
+        }
+        return response;
     }
 
     return PolicyForm;
