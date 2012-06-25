@@ -140,6 +140,9 @@ var PolicyForm = (function() {
         if (field.type === 'checkbox') {
             type = 'select';
             options = [ 'yes', 'no' ];
+            if (value) {
+                value = parseInt(value) + 1;
+            }
         } else {
             type = field.type;
             options = field.options;
@@ -172,10 +175,10 @@ var PolicyForm = (function() {
                 input.append(option);
             }
             for (var i in options) if (options.hasOwnProperty(i)) {
-                var optionvalue = i;
+                var optionvalue = parseInt(i) + 1;
                 var optiontext  = (isArray != true) ? i : options[i];
                 var option  = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
-                if (optionvalue === value) {
+                if (optionvalue == value) {
                     option.attr('selected', 'selected');
                     if (this.fields[elementName].disable_filled) {
                         input.attr('disabled', 'disabled');
@@ -749,8 +752,13 @@ var PolicyForm = (function() {
     PolicyForm.prototype.beforeSerialize = function(form, options) {
         var that = this;
         this.form.find(':input').each(function () {
-            if (that.fields[$(this).attr('name')].prefix) {
-                $(this).attr('name', that.fields[$(this).attr('name')].prefix + $(this).attr('name'));
+            if (that.fields[$(this).attr('name')]){
+                if (that.fields[$(this).attr('name')].prefix) {
+                    $(this).attr('name', that.fields[$(this).attr('name')].prefix + $(this).attr('name'));
+                }
+                if (that.fields[$(this).attr('name')].type === 'checkbox' && parseInt($(this).attr('value'))) {
+                    $(this).attr('value', parseInt($(this).attr('value')) - 1);
+                }
             }
         });
         this.form.find(".disabled_policy_id").each(function  () {

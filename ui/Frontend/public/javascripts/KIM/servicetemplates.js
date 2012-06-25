@@ -106,10 +106,8 @@ function load_service_template_details (elem_id, row_data, grid_id) {
             entity          : 'policy',
             filters         : { policy_type : policy },
             display         : 'policy_name',
+            is_mandatory    : true,
         };
-        if (policy === 'hosting') {
-            service_template_simple_def[policy + '_policy_id'].is_mandatory = true;
-        }
     }
 
     var values;
