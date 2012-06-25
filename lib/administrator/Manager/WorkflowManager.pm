@@ -125,9 +125,10 @@ sub createWorkflow {
     Desc: create a new instance of WorkflowDef that has defined specific
           parameters. This instance will be used for future runs
     
-    Args: $origin_workflow_name (string), 
+    Args: $new_workflow_name (string), 
           $origin_workflow_def_id,
-          \%specific_params
+          \%specific_params,
+          $rule_id
 
     Return: created workflow object (get by calling createWorkflow())
 =cut
