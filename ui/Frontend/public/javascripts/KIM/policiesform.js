@@ -1,5 +1,6 @@
 require('jquery/jquery.form.js');
 require('jquery/jquery.validate.js');
+require('jquery/jquery-ui-timepicker-addon.js');
 // require('jquery/jquery.form.wizard.js');
 
 $.validator.addMethod("regex", function(value, element, regexp) {
@@ -170,11 +171,12 @@ var PolicyForm = (function() {
             var input   = $("<select>");
             var isArray = options instanceof Array;
             if (! this.fields[elementName].is_mandatory) {
-                var option = $("<option>", { value : 0, text : '-' });
+                var option  = $("<option>", { value : 0, text : '-' });
+                value_shift = 1;
                 input.append(option);
             }
             for (var i in options) if (options.hasOwnProperty(i)) {
-                var optionvalue = parseInt(i) + value_shift;
+                var optionvalue = (isArray != true) ? options[i] : parseInt(i) + value_shift;
                 var optiontext  = (isArray != true) ? i : options[i];
                 var option  = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
                 if (optionvalue == value) {
@@ -233,6 +235,18 @@ var PolicyForm = (function() {
 
         if ($(input).attr('type') === 'date') {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
+        } else if ($(input).attr('type') === 'datetime') {
+            $(input).datetimepicker({
+                hourGrid    : 4,
+                minuteGrid  : 10,
+                closeText   : 'Close'
+            });
+        } else if ($(input).attr('type') === 'time') {
+            $(input).timepicker({
+                hourGrid    : 4,
+                minuteGrid  : 10,
+                closeText   : 'Close'
+            });
         }
 
         return tr;
@@ -751,12 +765,19 @@ var PolicyForm = (function() {
     PolicyForm.prototype.beforeSerialize = function(form, options) {
         var that = this;
         this.form.find(':input').each(function () {
-            if (that.fields[$(this).attr('name')]){
-                if (that.fields[$(this).attr('name')].prefix) {
-                    $(this).attr('name', that.fields[$(this).attr('name')].prefix + $(this).attr('name'));
+            var id  = "";
+            if ($(this).attr('id') != null) {
+                id  = $(this).attr('id').replace('input_', '');
+            }
+            if (that.fields[id]){
+                if (that.fields[id].prefix) {
+                    $(this).attr('name', that.fields[id].prefix + $(this).attr('name'));
                 }
-                if (that.fields[$(this).attr('name')].type === 'checkbox' && parseInt($(this).attr('value'))) {
+                if (that.fields[id].type === 'checkbox' && parseInt($(this).attr('value'))) {
                     $(this).attr('value', parseInt($(this).attr('value')) - 1);
+                }
+                if (that.fields[id].serialize != null) {
+                    $(this).val(that.fields[id].serialize($(this).val()));
                 }
             }
         });

@@ -20,7 +20,8 @@ var mainmenu_def = {
                                 { label : 'Storage',     id : 'storage_policy',     onLoad : load_policy_content },
                                 { label : 'Network',     id : 'network_policy',     onLoad : load_policy_content },
                                 { label : 'System',      id : 'system_policy',      onLoad : load_policy_content },
-                                { label : 'Scalability', id : 'scalability_policy', onLoad : load_policy_content } ],
+                                { label : 'Scalability', id : 'scalability_policy', onLoad : load_policy_content },
+                                { label : 'Billing',     id : 'billing_policy',     onLoad : load_policy_content }],
         'Service templates' : [ { label : 'Service templates', id : 'service_template', onLoad : load_service_template_content } ],
         'Customers'         : [ { label : 'Customers', id : 'customers', onLoad: customers.load_content }]
     },
