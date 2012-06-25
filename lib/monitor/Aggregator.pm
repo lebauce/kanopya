@@ -198,8 +198,8 @@ sub _computeCombinationAndFeedTimeDB {
     my $cluster_id = $args{cluster_id};
 
     my $service_provider = Entity::ServiceProvider->get('id' => $cluster_id);
-    my @clustermetrics = $service_provider->clustermetrics;
-    my $collector = $service_provider->getManager(manager_type => "collector_manager");
+    my @clustermetrics   = $service_provider->clustermetrics;
+    my $collector        = $service_provider->getManager(manager_type => "collector_manager");
 
     my $clustermetric_indicator;
     my $indicator_oid;
@@ -213,9 +213,9 @@ sub _computeCombinationAndFeedTimeDB {
         # Loop on all the host_name of the $clustermetric
         for my $host_name (keys %$values) {
             $clustermetric_indicator = $collector->getIndicator(id => $clustermetric->clustermetric_indicator_id);
-            $indicator_oid = $clustermetric_indicator->indicator_oid;
+            $indicator_oid           = $clustermetric_indicator->indicator_oid;
 
-            # If indicator value is undef, do not store it in the array
+            #if indicator value is undef, do not store it in the array
             if (defined $values->{$host_name}->{$indicator_oid}) {
                 push @dataStored, $values->{$host_name}->{$indicator_oid};
             } else {

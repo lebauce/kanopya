@@ -88,7 +88,10 @@ sub getAttrDef { return ATTR_DEF; }
 =head2 retrieveData
 
     Desc: Call kanopya native monitoring API to retrieve indicators data 
-    return \%monitored_values;
+
+    Args: \%indicators, \@nodelist, $time_span
+
+    return \%monitored_values
 
 =cut
 
