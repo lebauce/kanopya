@@ -42,6 +42,7 @@ var PolicyForm = (function() {
                     var that = this;
                     add_button.bind('click', function() {
                         that.newElement(element);
+                        $(that.content).dialog('option', 'position', $(that.content).dialog('option', 'position'));
                     });
 
                     this.findContainer(this.fields[elem].step).append(add_button);
