@@ -242,95 +242,95 @@ var policies = {
             type         : 'text',
         },
     },
-    billing: {
-        policy_name     : {
-            step        : 'Policy',
-            label       : 'Policy name',
-            type        : 'text',
-            is_mandatory: 1
-        },
-        policy_desc     : {
-            step        : 'Policy',
-            label       : 'Policy description',
-            type        : 'textarea',
-            is_mandatory: 0
-        },
-        policy_type     : {
-            step        : 'Policy',
-            label       : 'Policy type',
-            type        : 'hidden',
-            value       : 'billing',
-            is_mandatory: 1
-        },
-        billing_limits  : {
-            step        : 'Limits',
-            type        : 'composite',
-            set         : 'limits',
-            add_label   : 'Add a limit',
-            is_mandatory: 1
-        },
-        limit_start     : {
-            step        : 'Limits',
-            composite   : 'billing_limits',
-            type        : 'datetime',
-            label       : 'Start',
-            is_mandatory: 1,
-            serialize   : serializeDateTime
-        },
-        limit_end       : {
-            step        : 'Limits',
-            composite   : 'billing_limits',
-            type        : 'datetime',
-            label       : 'End',
-            is_mandatory: 1,
-            serialize   : serializeDateTime
-        },
-        limit_type      : {
-            step        : 'Limits',
-            composite   : 'billing_limits',
-            type        : 'select',
-            label       : 'Type',
-            options     : {
-                'cpu' : 'cpu',
-                'ram' : 'ram'
-            },
-            is_mandatory: 1
-        },
-        limit_soft      : {
-            step        : 'Limits',
-            composite   : 'billing_limits',
-            type        : 'checkbox',
-            label       : 'Soft limit ?',
-            is_mandatory: 1
-        },
-        limit_value     : {
-            step        : 'Limits',
-            composite   : 'billing_limits',
-            type        : 'text',
-            label       : 'Value',
-            is_mandatory: 1
-        },
-        limit_repeat    : {
-            step        : 'Limits',
-            composite   : 'billing_limits',
-            type        : 'select',
-            label       : 'Repeat',
-            options     : ['Daily'],
-            is_mandatory: 0
-        },
-        limit_repeat_start  : {
-            step        : 'Limits',
-            composite   : 'billing_limits',
-            type        : 'time',
-            label       : 'Repeat Start',
-            is_mandatory: 0
-        },
-        limit_repeat_end    : {
-            step        : 'Limits',
-            composite   : 'billing_limits',
-            type        : 'time',
-            label       : 'Repeat End',
-            is_mandatory: 0
-        }
-    }
+//    billing: {
+//        policy_name     : {
+//            step        : 'Policy',
+//            label       : 'Policy name',
+//            type        : 'text',
+//            is_mandatory: 1
+//        },
+//        policy_desc     : {
+//            step        : 'Policy',
+//            label       : 'Policy description',
+//            type        : 'textarea',
+//            is_mandatory: 0
+//        },
+//        policy_type     : {
+//            step        : 'Policy',
+//            label       : 'Policy type',
+//            type        : 'hidden',
+//            value       : 'billing',
+//            is_mandatory: 1
+//        },
+//        billing_limits  : {
+//            step        : 'Limits',
+//            type        : 'composite',
+//            set         : 'limits',
+//            add_label   : 'Add a limit',
+//            is_mandatory: 1
+//        },
+//        limit_start     : {
+//            step        : 'Limits',
+//            composite   : 'billing_limits',
+//            type        : 'datetime',
+//            label       : 'Start',
+//            is_mandatory: 1,
+//            serialize   : serializeDateTime
+//        },
+//        limit_end       : {
+//            step        : 'Limits',
+//            composite   : 'billing_limits',
+//            type        : 'datetime',
+//            label       : 'End',
+//            is_mandatory: 1,
+//            serialize   : serializeDateTime
+//        },
+//        limit_type      : {
+//            step        : 'Limits',
+//            composite   : 'billing_limits',
+//            type        : 'select',
+//            label       : 'Type',
+//            options     : {
+//                'cpu' : 'cpu',
+//                'ram' : 'ram'
+//            },
+//            is_mandatory: 1
+//        },
+//        limit_soft      : {
+//            step        : 'Limits',
+//            composite   : 'billing_limits',
+//            type        : 'checkbox',
+//            label       : 'Soft limit ?',
+//            is_mandatory: 1
+//        },
+//        limit_value     : {
+//            step        : 'Limits',
+//            composite   : 'billing_limits',
+//            type        : 'text',
+//            label       : 'Value',
+//            is_mandatory: 1
+//        },
+//        limit_repeat    : {
+//            step        : 'Limits',
+//            composite   : 'billing_limits',
+//            type        : 'select',
+//            label       : 'Repeat',
+//            options     : ['Daily'],
+//            is_mandatory: 0
+//        },
+//        limit_repeat_start  : {
+//            step        : 'Limits',
+//            composite   : 'billing_limits',
+//            type        : 'time',
+//            label       : 'Repeat Start',
+//            is_mandatory: 0
+//        },
+//        limit_repeat_end    : {
+//            step        : 'Limits',
+//            composite   : 'billing_limits',
+//            type        : 'time',
+//            label       : 'Repeat End',
+//            is_mandatory: 0
+//        }
+//    }
 }
