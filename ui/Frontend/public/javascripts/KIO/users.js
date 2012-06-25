@@ -1,56 +1,133 @@
-function usersList (container_id, elem_id) {
-    function createAddUserButton(cid) {
-        var user_fields = {
-            user_firstname: {
-                label: 'First Name',
-                type: 'text'
-            },
-            user_lastname: {
-                label: 'Last Name'
-            },
-            user_email: {
-                label: 'Email'
-            },
-            user_desc: {
-                label: 'Description',
-                type: 'textarea'
-            },
-            user_login: {
-                label: 'Login'
-            },
-            user_password: {
-                label: 'Password'
-            },
-        };
-        var user_opts = {
-            title: 'Add a user',
-            name: 'user',
-            fields: user_fields,
-        };
-                    
-        var button = $("<button>", {html : 'Add a user'}).button({
-            icons   : { primary : 'ui-icon-plusthick' }
-        });
-        button.bind('click', function() {
-            new ModalForm(user_opts).start();
-        });   
-        $('#' + cid).append(button);
+require('modalform.js');
+
+/* users functions */
+
+function createAddUserButton(container) {
+    var user_fields = {
+        user_firstname: {
+            label: 'First Name',
+            type: 'text'
+        },
+        user_lastname: {
+            label: 'Last Name'
+        },
+        user_email: {
+            label: 'Email'
+        },
+        user_desc: {
+            label: 'Description',
+            type: 'textarea'
+        },
+        user_login: {
+            label: 'Login'
+        },
+        user_password: {
+            label: 'Password',
+            type: 'password'
+        },
     };
+    var user_opts = {
+        title: 'Add a user',
+        name: 'user',
+        fields: user_fields,
+        callback    : function(data) {
+            createAddProfileForm(data.pk);
+        },
+    };
+                    
+    var button = $("<button>", {html : 'Add a user'}).button({
+        icons   : { primary : 'ui-icon-plusthick' }
+    });
+    button.bind('click', function() {
+        new ModalForm(user_opts).start();
+    });   
+    $(container).append(button);
+}
+
+function createAddProfileForm(user_id) {
     
+    /* retrieve profiles list  */
+    var profiles_data = [];
+    var container = $('<div>', {id: 'profiles_list'});
+    var table = $('<table>',  {id: 'profiles_table'});
+    table.appendTo(container);
+    
+    var grid = table.jqGrid({
+        datatype: 'local',
+        colNames:['profile','description'],
+        colModel :[ 
+          {name:'profile_name', index:'profile_name', width:150, align:'left'}, 
+          {name:'profile_desc', index:'profile_desc', width:300, sortable:false} 
+        ],
+        multiselect: true,
+        rowNum:10,
+        sortname: 'profile_name',
+        sortorder: 'desc',
+        viewrecords: true,
+        gridview: true,
+    }); 
+
+    
+    $.getJSON('/api/profile', {}, function(data) { 
+        for(var i=0;i<=data.length;i++) grid.jqGrid('addRowData',i+1,data[i]);
+        grid.trigger("reloadGrid");
+    });
+    
+    container.dialog({
+        title : "Select user's profile(s)",
+        modal : true,
+        resizable       : false,
+        draggable       : false,
+        width           : 500,
+        closeOnEscape   : false,
+        buttons: [
+            {
+                text: "Ok",
+                click: function() { 
+                    var selRowIds = table.getGridParam('selarrrow');
+                    if(selRowIds.length) { 
+                        var profile_names = [];
+                        for(index in selRowIds) {
+                            profile_names.push(grid.getRowData(selRowIds[index]).profile_name);
+                        }
+                        $.ajax({
+                          type: 'POST', 
+                            async: false, 
+                            url: '/api/user/'+ user_id +'/setProfiles', 
+                            data: JSON.stringify( { profile_names: profile_names } ), 
+                            contentType: 'application/json',
+                            dataType: 'json', 
+                        });
+                    }
+                    
+                    $(this).dialog("close"); 
+                    $(this).dialog("destroy");
+                    reload_grid('users_list', '/api/user');
+                }
+            }
+        ]
+    });
+}
+
+function usersList (container_id, elem_id) {
     var container = $('#' + container_id);
     create_grid({
         url: '/api/user',
         content_container_id: container_id,
         grid_id: 'users_list',
-        colNames: [ 'user id', 'user login', 'user email' ],
+        colNames: [ 'user id', 'first name', 'last name', 'login', 'email' ],
         colModel: [
             { name: 'user_id', index: 'user_id', width: 60, sorttype: "int", hidden: true, key: true },
-            { name: 'user_login', index: 'user_login', width: 90, sorttype: "date" },
+            { name: 'user_firstname', index: 'user_firstname', width: 90, sorttype: "text" },
+            { name: 'user_lastname', index: 'user_lastname', width: 90, sorttype: "text" },
+            { name: 'user_login', index: 'user_login', width: 90, sorttype: "text" },
             { name: 'user_email', index: 'user_email', width: 200}
         ]
     });
-    createAddUserButton(container_id);
+    createAddUserButton(container);
 }
+
+/* groups functions */
 
 function loadGroups (container_id, elem_id) {
     create_grid({
@@ -119,6 +196,8 @@ function groupsList (container_id, elem_id) {
     
     createAddGroupButton(container_id);
 }
+
+/* permissions functions */
 
 function _generatePermissionsSelect(container, condition, changeCallback, callback) {
     changeCallback  = changeCallback || $.noop;
