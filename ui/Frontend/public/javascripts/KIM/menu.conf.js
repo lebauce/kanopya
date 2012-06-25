@@ -56,6 +56,9 @@ var details_def = {
             { label  : 'Services',
                id     : 'customer_detail_services',
                onLoad : customers.load_services },
+            { label  : 'Infos',
+               id    : 'customer_detail_infos',
+               onLoad : customers.load_infos },
              
         ],
      },
