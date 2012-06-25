@@ -274,35 +274,26 @@ sub setupREST {
                 for my $attr (keys %$params) {
                     $hash->{$attr} = params->{$attr};
                 }
-                eval {
-                    my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
-                    $location =~ s/\:\:/\//g;
-                    require $location;
-                    $obj = Operation->enqueue(
-                        priority => 200,
-                        type     => 'Add' . ucfirst($resource),
-                        params   => $hash
-                    );
-                    $obj = Operation->get(id => $obj->getId)->toJSON;
-                };
-                if ($@) {
+
+                if ($class->can('create')) {
+                    $obj = $class->create(params)->toJSON();
+                }
+                else {
                     eval {
-                        if ($class->can('create')) {
-                            $obj = $class->create(params)->toJSON();
-                        }
-                        else {
-                            $obj = $class->new(params)->toJSON();
-                        }
+                        my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
+                        $location =~ s/\:\:/\//g;
+                        require $location;
+                        $obj = Operation->enqueue(
+                            priority => 200,
+                            type     => 'Add' . ucfirst($resource),
+                            params   => $hash
+                        );
+                        $obj = Operation->get(id => $obj->getId)->toJSON;
                     };
+
                     if ($@) {
-                        my $exception = $@;
-                        if (Kanopya::Exception::Permission::Denied->caught()) {
-                           redirect '/permission_denied';
-                        }
-                        else {
-                            $exception->rethrow();
-                        }
-                    }
+                        $obj = $class->new(params)->toJSON();
+                    };
                 }
 
                 return to_json($obj);
