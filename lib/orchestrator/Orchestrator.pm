@@ -650,7 +650,8 @@ sub clustermetricManagement{
     #GET RULES RELATIVE TO A CLUSTER
     my @rules = AggregateRule->search(hash=>{
         aggregate_rule_service_provider_id => $service_provider_id,
-        aggregate_rule_state               => 'enabled'
+        aggregate_rule_state               => 'enabled',
+        aggregate_rule_state               => 'triggered'
     });
 
     for my $aggregate_rule (@rules){
@@ -663,13 +664,22 @@ sub clustermetricManagement{
             
             my $result = $aggregate_rule->eval();
             
-             # LOOP USED TO TRIGGER WORKFLOWS
+            # LOOP USED TO TRIGGER WORKFLOWS
+            #get the state of the rule
+            my $rule_state = $aggregate_rule->getAttr (name => 'aggregate_rule_state');
 
             if(defined $result){
-                if($result == 1 && ($workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager'))) {
-#                    $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, rule_id => $rule_id);
-#                    $aggregate_rule->setAttr(aggregate_rule_state =>'disabled');
-#                    $aggregate_rule->save();
+                if ($result == 1 && ($workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager'))) {
+                    if ($rule_state eq 'enabled') { 
+                        $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, rule_id => $rule_id, service_provider_id => $service_provider_id);
+                        $aggregate_rule->setAttr(aggregate_rule_state => 'triggered');
+                        $aggregate_rule->save();
+                    }
+                } elsif ($result == 0) {
+                    if ($rule_state eq 'triggered') {
+                        $aggregate_rule->setAttr(aggregate_rule_state => 'enabled');
+                        $aggregate_rule->save();
+                    }
                 }
             }
         } # for my $aggregate_rule 
