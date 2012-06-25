@@ -70,7 +70,7 @@ var PolicyForm = (function() {
             return 0;
         }
 
-        if (this.fields[elem].type === 'select') {
+        if (this.fields[elem].type === 'select' && !this.fields[elem].options) {
             this.newDropdownElement(elem, undefined, value);
 
         } else if (this.fields[elem].type === 'composite') {
@@ -135,17 +135,16 @@ var PolicyForm = (function() {
         /* Use select for checkboxes because non checked checkboxes are handled as
          * non filled inputs. So fill the select with yes/no vlaues.
          */
-        var type;
-        var options;
+        var type = field.type;
+        var options = field.options;
+        var value_shift = 0;
         if (field.type === 'checkbox') {
             type = 'select';
             options = [ 'yes', 'no' ];
+            value_shift = 1;
             if (value) {
-                value = parseInt(value) + 1;
+                value = parseInt(value) + value_shift;
             }
-        } else {
-            type = field.type;
-            options = field.options;
         }
 
         // If type is 'set', post fix the element name with the current index
@@ -175,7 +174,7 @@ var PolicyForm = (function() {
                 input.append(option);
             }
             for (var i in options) if (options.hasOwnProperty(i)) {
-                var optionvalue = parseInt(i) + 1;
+                var optionvalue = parseInt(i) + value_shift;
                 var optiontext  = (isArray != true) ? i : options[i];
                 var option  = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
                 if (optionvalue == value) {
