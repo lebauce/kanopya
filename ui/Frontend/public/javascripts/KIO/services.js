@@ -249,58 +249,30 @@ function scoConfigurationDialog(elem_id, sco_id) {
   console.log(sco_id);
 }
 
-function loadServicesRessources (container_id, elem_id, external) {
+function loadServicesRessources (container_id, elem_id) {
     var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
-    var serviceressources;
-    var ext     = external || '';
-    var outin   = (ext === '') ? 'inside' : 'outside';
+    var nodemetricrules;
+
     $.ajax({
         url     : '/api/nodemetricrule?nodemetric_rule_service_provider_id=' + elem_id,
         success : function(data) {
-            serviceressources   = data;
+            nodemetricrules   = data;
         }
     });
     create_grid( {
-        url: '/api/' + ext + 'node?' + outin + '_id=' + elem_id,
+        url: '/api/externalnode?outside_id=' + elem_id,
         content_container_id: container_id,
         grid_id: loadServicesRessourcesGridId,
         grid_class: 'service_ressources_list',
         rowNum : 25,
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
-            for (var i in serviceressources) if (serviceressources.hasOwnProperty(i)) {
-                var     ok          = $('<span>', { text : 0, rel : 'ok', css : {'padding-right' : '10px'} });
-                var     notok       = $('<span>', { text : 0, rel : 'notok', css : {'padding-right' : '10px'} });
-                var     undef       = $('<span>', { text : 0, rel : 'undef', css : {'padding-right' : '10px'} });
-                var     cellContent = $('<div>');
-                $(cellContent).append($('<img>', { rel : 'ok', src : '/images/icons/up.png' })).append(ok);
-                $(cellContent).append($('<img>', { rel : 'notok', src : '/images/icons/broken.png' })).append(notok);
-                $(cellContent).append($('<img>', { rel : 'undef', src : '/images/icons/down.png' })).append(undef);
-                $.ajax({
-                    url         : '/api/nodemetricrule/' + serviceressources[i].pk + '/isVerifiedForANode',
-                    type        : 'POST',
-                    contentType : 'application/json',
-                    data        : JSON.stringify({ 'externalcluster_id' : elem_id, 'externalnode_id' : rowdata.pk }),
-                    success     : function(data) {
-                        if (parseInt(data) === 0) {
-                            $(ok).text(parseInt($(ok).text()) + 1);
-                        } else if (parseInt(data) === 1) {
-                            $(notok).text(parseInt($(notok).text()) + 1);
-                        } else if (data === null) {
-                            $(undef).text(parseInt($(undef).text()) + 1);
-                        }
-                        if (parseInt($(ok).text()) <= 0) { $(cellContent).find('*[rel="ok"]').css('display', 'none'); } else { $(cellContent).find('*[rel="ok"]').css('display', 'inline'); }
-                        if (parseInt($(notok).text()) <= 0) { $(cellContent).find('*[rel="notok"]').css('display', 'none'); } else { $(cellContent).find('*[rel="notok"]').css('display', 'inline'); }
-                        if (parseInt($(undef).text()) <= 0) { $(cellContent).find('*[rel="undef"]').css('display', 'none'); } else { $(cellContent).find('*[rel="undef"]').css('display', 'inline'); }
-                        $(grid).setCell(rowid, 'rulesstate', $(cellContent).html());
-                    }
-                });
-            }
+            addRessourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, 'external');
         },
         colNames: [ 'id', 'State', 'Hostname', 'Rules State' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: ext + 'node_state', index: ext + 'node_state', width: 90, formatter: StateFormatter },
-            { name: 'externalnode_hostname', index: ext + 'node_hostname', width: 200 },
+            { name: 'externalnode_state', index: 'externalnode_state', width: 90, formatter: StateFormatter },
+            { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 200 },
             { name: 'rulesstate', index: 'rulestate' }
         ],
         details : {
@@ -314,48 +286,6 @@ function loadServicesRessources (container_id, elem_id, external) {
     createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesRessourcesGridId));
     //reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
-}
-
-// This function load grid with list of rules for verified state corelation with the the selected node :
-function node_rules_tab(cid, eid, service_provider_id) {
-    
-
-    function verifiedNodeRuleStateFormatter(cell, options, row) {
-    
-    //console.log(eid);
-    
-        var VerifiedRuleFormat;
-        // Where rowid = rule_id
-        $.ajax({
-             url: '/api/externalnode/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
-             async: false,
-             success: function(answer) {
-                if (answer.length == 0) {
-                    VerifiedRuleFormat = "<img src='/images/icons/up.png' title='up' />";
-                } else if (answer[0].verified_noderule_state == 'verified') {
-                    VerifiedRuleFormat = "<img src='/images/icons/broken.png' title='broken' />"
-                } else if (answer[0].verified_noderule_state == 'undef') {
-                    VerifiedRuleFormat = "<img src='/images/icons/down.png' title='down' />";
-                }
-              }
-        });
-        return VerifiedRuleFormat;
-    }
-
-    var loadNodeRulesTabGridId = 'node_rules_tabs';
-    create_grid( {
-        url: '/api/nodemetricrule?nodemetric_rule_service_provider_id=' + service_provider_id,
-        content_container_id: cid,
-        grid_id: loadNodeRulesTabGridId,
-        grid_class: 'node_rules_tab',
-        colNames: [ 'id', 'rule', 'state' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 90,},
-            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 200, formatter: verifiedNodeRuleStateFormatter },
-        ],
-        action_delete : 'no',
-    } );
 }
 
 function setCellWithCallMethod(url, grid, rowid, colName, data) {
