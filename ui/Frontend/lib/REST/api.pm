@@ -293,7 +293,12 @@ sub setupREST {
                 };
                 if ($@) {
                     eval {
-                        $obj = $class->new(params)->toJSON();
+                        if ($class->can('create')) {
+                            $obj = $class->create(params)->toJSON();
+                        }
+                        else {
+                            $obj = $class->new(params)->toJSON();
+                        }
                     };
                     if ($@) {
                         my $exception = $@;
