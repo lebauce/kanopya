@@ -499,7 +499,7 @@ sub _evalRule {
 
     NODE:
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
-        # Warning, not all the monitored values are required but we transmit 
+        # Warning, not all the monitored values are required but we transmit
         # all of them
         #        if (0 ==  keys %$monitored_values_for_one_node) {
         #            $cluster->updateNodeState( hostname => $host_name, state => 'down' );
@@ -510,7 +510,7 @@ sub _evalRule {
         my $nodeEval;
 
         if($node_state eq 'disabled'){
-            $log->info("Node <$host_name> has just been disabled, rule not evaluated"); 
+            $log->info("Node <$host_name> has just been disabled, rule not evaluated");
             next NODE;
         }
         else {
@@ -545,6 +545,18 @@ sub _evalRule {
                             hostname   => $host_name,
                             cluster_id => $service_provider_id,
                             state      => 'verified',
+                    );
+
+                    my $wf_def_id = $rule->getVerifiedRuleWfDefId (
+                                    service_provider_id => $service_provider_id,
+                                    hostname            => $host_name,
+                    );
+
+                    $workflow_manager->runWorkflow(
+                        workflow_def_id => $workflow_def_id,
+                        host_name => $host_name,
+                        service_provider_id => $service_provider_id,
+                        rule_id => $rule_id
                     );
                 }
             }
