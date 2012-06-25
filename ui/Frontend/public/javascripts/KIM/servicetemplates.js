@@ -19,46 +19,49 @@ var service_template = {
 }
 
 function load_service_template_content (container_id) {
-    var service_template_def = jQuery.extend(true, {}, service_template);
+    function createServiceTemplateDef() {
+      var service_template_def = jQuery.extend(true, {}, service_template);
 
-    for (var policy in policies) {
+      for (var policy in policies) {
         var policy_def = jQuery.extend(true, {}, policies[policy]);
 
         var step = policy.substring(0, 1).toUpperCase() + policy.substring(1);
 
         // Add the policy selection input
         service_template_def[policy + '_policy_id'] = {
-            label           : step + ' policy',
-            step            : step,
-            type            : 'select',
-            welcome_value   : 'Select a ' + policy + ' policy',
-            entity          : 'policy',
-            filters         : { policy_type : policy },
-            display         : 'policy_name',
-            values_provider : {
-                func : 'getFlattenedHash',
-                args : { },
-            },
-            is_mandatory : true,
-            trigger      : true,
-            pattern      : '^[1-9][0-9]*$',
+          label           : step + ' policy',
+          step            : step,
+          type            : 'select',
+          welcome_value   : 'Select a ' + policy + ' policy',
+          entity          : 'policy',
+          filters         : { policy_type : policy },
+          display         : 'policy_name',
+          values_provider : {
+            func : 'getFlattenedHash',
+            args : { },
+          },
+          is_mandatory : true,
+          trigger      : true,
+          pattern      : '^[1-9][0-9]*$',
         };
 
         for (var field in policy_def) {
-            policy_def[field].policy = policy;
-            policy_def[field].step = step;
-            policy_def[field].triggered = policy + '_policy_id';
-            policy_def[field].disable_filled = true;
+          policy_def[field].policy = policy;
+          policy_def[field].step = step;
+          policy_def[field].triggered = policy + '_policy_id';
+          policy_def[field].disable_filled = true;
 
-            var policy_field;
-            if (field === 'policy_name' || field === 'policy_desc') {
-                policy_field = policy + '_' + field;
-            } else {
-                policy_field = field;
-                policy_def[field].prefix = policy + '_';
-            }
-            service_template_def[policy_field] = policy_def[field];
+          var policy_field;
+          if (field === 'policy_name' || field === 'policy_desc') {
+            policy_field = policy + '_' + field;
+          } else {
+            policy_field = field;
+            policy_def[field].prefix = policy + '_';
+          }
+          service_template_def[policy_field] = policy_def[field];
         }
+      }
+      return service_template_def;
     }
 
     console.log(policies);
@@ -66,12 +69,12 @@ function load_service_template_content (container_id) {
         var service_template_opts = {
             title       : 'Add a service template',
             name        : 'servicetemplate',
-            fields      : service_template_def,
             callback    : function () { grid.trigger("reloadGrid"); }
         };
 
         var button = $("<button>", { html : 'Add a service template'} );
         button.bind('click', function() {
+            service_template_opts.fields    = createServiceTemplateDef();
             new PolicyForm(service_template_opts).start();
         });
         $('#' + cid).append(button);

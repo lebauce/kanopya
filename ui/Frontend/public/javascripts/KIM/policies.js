@@ -7,18 +7,16 @@ require('KIM/policiesform.js');
 function load_policy_content (container_id) {
     var policy_type = container_id.split('_')[1];
 
-    var fields = jQuery.extend(true, {}, policies[policy_type]);
-    console.log(fields);
     function createAddPolicyButton(cid, grid) {
         var policy_opts = {
             title       : 'Add a ' + policy_type + ' policy',
             name        : 'policy',
-            fields      : fields,
             callback    : function () { grid.trigger("reloadGrid"); }
         };
 
         var button = $("<button>", {html : 'Add a ' + policy_type + ' policy'});
         button.bind('click', function() {
+            policy_opts.fields  = jQuery.extend(true, {}, policies[policy_type]);
             new PolicyForm(policy_opts).start();
         });
         $('#' + cid).append(button);
