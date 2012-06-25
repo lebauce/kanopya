@@ -287,17 +287,3 @@ function loadServicesRessources (container_id, elem_id) {
     //reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
 }
-
-function setCellWithCallMethod(url, grid, rowid, colName, data) {
-    $.ajax({
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify(data || {}),
-        url         : url,
-        complete    : function(jqXHR, status) {
-            if (status === 'success') {
-                $(grid).setCell(rowid, colName, jqXHR.responseText);
-            }
-        }
-    });
-}

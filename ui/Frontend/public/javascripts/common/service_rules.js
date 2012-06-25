@@ -1,3 +1,5 @@
+require('common/grid.js');
+
 var rulestates = ['enabled','disabled'];
 var comparators = ['<','>'];
 

@@ -1,3 +1,5 @@
+require('common/grid.js');
+
 var statistics_function_name = ['mean','variance','std','max','min','kurtosis','skewness','dataOut','sum'];
 
 ////////////////////////MONITORING MODALS//////////////////////////////////
