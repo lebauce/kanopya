@@ -1,6 +1,5 @@
 require('KIM/iaas.js');
 require('KIM/customers.js');
-require('servicemenudefinition.js');
 require('KIM/servicetemplates.js');
 require('KIM/policies.js');
 
@@ -25,8 +24,24 @@ var mainmenu_def = {
         'Service templates' : [ { label : 'Service templates', id : 'service_template', onLoad : load_service_template_content } ],
         'Customers'         : [ { label : 'Customers', id : 'customers', onLoad: customers.load_content }]
     },
-    'Services' : getServiceMenuDefinition('cluster'),
-    'Administration' : {
+    'Services'          : {
+        masterView : [
+                      {label : 'Overview', id : 'services_overview', onLoad : function(cid) { require('KIM/services.js'); servicesList(cid); }}
+                      ],
+        json : {url         : '/api/serviceprovider',
+                label_key   : 'cluster_name',
+                id_key      : 'pk',
+                submenu     : [
+                               {label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid);}},
+                               {label : 'Configuration', id : 'service_configuration', onLoad : function(cid, eid) { require('common/service_common.js'); loadServicesConfig(cid, eid);}},
+                               {label : 'Ressources', id : 'service_ressources', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRessources(cid, eid);}},
+                               {label : 'Monitoring', id : 'service_monitoring', onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid);}},
+                               {label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid);}},
+                               {label : 'Workflows', id : 'workflows', onLoad : function(cid, eid) { require('KIO/workflows.js'); workflowslist(cid, eid); } }
+                               ]
+                }
+    },
+    'Administration'    : {
         'Kanopya'          : [],
         'Right Management' :  [
                                {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('KIO/users.js'); usersList(cid, eid); }},

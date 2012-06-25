@@ -1,10 +1,25 @@
 // each link will show the div with id "view_<link_name>" and hide all div in "#view-container"
 
 require('KIO/workflows.js');
-require('servicemenudefinition.js');
 
 var mainmenu_def = {
-    'Services'          : getServiceMenuDefinition('externalcluster'),
+    'Services'          : {
+        masterView : [
+                      {label : 'Overview', id : 'services_overview', onLoad : function(cid) { require('KIO/services.js'); servicesList(cid); }}
+                      ],
+        json : {url         : '/api/serviceprovider',
+                label_key   : 'externalcluster_name',
+                id_key      : 'pk',
+                submenu     : [
+                               {label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid);}},
+                               {label : 'Configuration', id : 'service_configuration', onLoad : function(cid, eid) { require('common/service_common.js'); loadServicesConfig(cid, eid);}},
+                               {label : 'Ressources', id : 'service_ressources', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRessources(cid, eid, 'external');}},
+                               {label : 'Monitoring', id : 'service_monitoring', onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid, 'external');}},
+                               {label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid, 'external');}},
+                               {label : 'Workflows', id : 'workflows', onLoad : function(cid, eid) { require('KIO/workflows.js'); workflowslist(cid, eid); } }
+                               ]
+                }
+    },
     'Administration'    : {
         //'Kanopya'          : [],
         'Monitoring'       : [{label : 'Scom', id : 'scommanagement',onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }}],
@@ -21,7 +36,7 @@ var mainmenu_def = {
 };
 
 var details_def = {
-        'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
+        //'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
         /*'service_ressources_list' : {
             tabs : [
                         { label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },

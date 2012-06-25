@@ -23,6 +23,19 @@
 
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
 
+<script src="/javascripts/jquery/jquery.dashboard.kanopya.js"></script>
+<script src="/javascripts/jquery/jqplot/jquery.jqplot.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.barRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.canvasAxisTickRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.canvasTextRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.canvasAxisLabelRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.categoryAxisRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.dateAxisRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.highlighter.min.js"></script>
+
+<script src="/javascripts/jquery/jquery-ui-timepicker-addon.js"></script>
+
+
 <script src='/javascripts/require.js'></script>
 
 <script src="/javascripts/kanopya.ui.js"></script>
