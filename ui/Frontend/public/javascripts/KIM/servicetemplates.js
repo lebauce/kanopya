@@ -4,17 +4,52 @@ require('KIM/policiesform.js');
 var service_template = {
     service_name : {
         step         : 'Service',
-        label        : 'Service name',
+        label        : 'Service template name',
         type         : 'text',
-        is_mandatory : 1,
+        is_mandatory : true,
         pattern      : '.*'
     },
     service_desc : {
         step         : 'Service',
+        label        : 'Service template description',
+        type         : 'textarea',
+        is_mandatory : false,
+    },
+}
+
+var service = {
+    cluster_name : {
+        step         : 'Service',
+        label        : 'Service name',
+        type         : 'text',
+        is_mandatory : true,
+        pattern      : '.*',
+    },
+    cluster_desc : {
+        step         : 'Service',
         label        : 'Service description',
         type         : 'textarea',
-        is_mandatory : 0,
-        pattern      : '.*'
+        is_mandatory : false,
+    },
+    user_id : {
+        step         : 'Service',
+        label        : 'Customer',
+        type         : 'select',
+        entity       : 'user',
+        display      : 'user_login',
+        is_mandatory : true,
+    },
+    service_template_id : {
+        step         : 'Service',
+        label        : 'Service type',
+        type         : 'select',
+        entity       : 'servicetemplate',
+        display      : 'service_name',
+        welcome_value   : 'Select a service type',
+        is_mandatory    : true,
+        values_provider : true,
+        fields_provided  : [],
+        disable_filled  : true,
     },
 }
 
@@ -64,7 +99,6 @@ function load_service_template_content (container_id) {
       return service_template_def;
     }
 
-    console.log(policies);
     function createAddServiceTemplateButton(cid, grid) {
         var service_template_opts = {
             title       : 'Add a service template',
@@ -74,8 +108,64 @@ function load_service_template_content (container_id) {
 
         var button = $("<button>", { html : 'Add a service template'} );
         button.bind('click', function() {
-            service_template_opts.fields    = createServiceTemplateDef();
+            service_template_opts.fields = createServiceTemplateDef();
             new PolicyForm(service_template_opts).start();
+        });
+        $('#' + cid).append(button);
+    };
+
+    function createServiceDef () {
+        var service_def = jQuery.extend(true, {}, service);
+
+        for (var policy in policies) {
+            var policy_def = jQuery.extend(true, {}, policies[policy]);
+
+            var step = policy.substring(0, 1).toUpperCase() + policy.substring(1);
+
+            // Add the policy selection input
+            service_def[policy + '_policy_id'] = {
+                label           : step + ' policy',
+                step            : step,
+                type            : 'select',
+                entity          : 'policy',
+                filters         : { policy_type : policy },
+                display         : 'policy_name',
+                values_provider : {
+                    func : 'getFlattenedHash',
+                    args : { },
+                },
+                is_mandatory    : true,
+                pattern         : '^[1-9][0-9]*$',
+                disable_filled  : true,
+            };
+            service_def.service_template_id.fields_provided.push(policy + '_policy_id');
+            
+            for (var field in policy_def) {
+                if (field !== 'policy_name' && field !== 'policy_desc') {
+                    policy_def[field].policy         = policy;
+                    policy_def[field].step           = step;
+                    policy_def[field].disable_filled = true;
+                    policy_def[field].hide_filled    = true;
+                    policy_def[field].is_mandatory   = true;
+
+                    service_def[field] = policy_def[field];
+                }
+            }
+        }
+        return service_def;
+    }
+    
+    function createAddServiceButton(cid, grid) {
+        var service_opts = {
+            title       : 'Create a service',
+            name        : 'cluster',
+            callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
+        };
+
+        var button = $("<button>", { html : 'Add a service'} );
+        button.bind('click', function() {
+            service_opts.fields = createServiceDef();
+            new PolicyForm(service_opts).start();
         });
         $('#' + cid).append(button);
     };
@@ -92,6 +182,7 @@ function load_service_template_content (container_id) {
     } );
 
     createAddServiceTemplateButton(container_id, grid);
+    createAddServiceButton(container_id, grid);
 }
 
 function load_service_template_details (elem_id, row_data, grid_id) {

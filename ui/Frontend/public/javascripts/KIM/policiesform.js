@@ -134,6 +134,13 @@ var PolicyForm = (function() {
         var element = field;
         var input_name = elementName;
 
+        /* Arg */
+        if (! value) value = this.values[elementName];
+
+        if (this.fields[elementName].hide_filled && value) {
+            this.fields[elementName].type = 'hidden';
+        }
+
         /* Use select for checkboxes because non checked checkboxes are handled as
          * non filled inputs. So fill the select with yes/no vlaues.
          */
@@ -257,6 +264,22 @@ var PolicyForm = (function() {
     PolicyForm.prototype.newDropdownElement = function(elementName, options, current, after) {
         var container = this.findContainer(this.fields[elementName].step);
         var input_name = elementName;
+
+        /* Arg */
+        if (! current) {
+            current = this.values[elementName];
+        }
+
+        if (this.fields[elementName].hide_filled && current) {
+            
+            this.fields[elementName].type = 'hidden';
+            if (this.fields[elementName].parent) {
+                /* @ @ You never had seen the following line @ @ */
+                this.form.find('#input_' + this.fields[elementName].parent).parent().parent().hide();
+
+                this.fields[this.fields[elementName].parent].type = 'hidden';
+            }
+        }
 
         // If type is 'set', post fix the element name with the current index
         if (this.fields[elementName].set) {
@@ -403,8 +426,10 @@ var PolicyForm = (function() {
             $(input).append(option);
             if (current !== undefined && current == key) {
                 option.attr('selected', 'selected');
+
                 if (this.fields[elementName].disable_filled) {
                     input.attr('disabled', 'disabled');
+                    //input.addClass('wizard-ignore');
                 }
             }
         }
@@ -464,7 +489,7 @@ var PolicyForm = (function() {
         var name = element.attr('name');
         var step = this.fields[name].step;
 
-        if (! name) { return; }
+        if (! (name && parseInt(selected_id))) { return; }
 
         element.removeClass('disabled_policy_id');
 
@@ -474,30 +499,36 @@ var PolicyForm = (function() {
             $(this).unbind('.resetPolicy');
         });
 
-        /* Call the given function on the entity to get a values hash */
-        datavalues = this.ajaxCall('POST',
-                                   '/api/' + this.fields[name].entity + '/' + selected_id + '/' + this.fields[name].values_provider.func,
-                                   this.fields[name].values_provider.args);
+        if (this.fields[name].values_provider.func) {
+            /* Call the given function on the entity to get a values hash */
+            datavalues = this.ajaxCall('POST',
+                                       '/api/' + this.fields[name].entity + '/' + selected_id + '/' + this.fields[name].values_provider.func,
+                                       this.fields[name].values_provider.args);
+        }
+        
+        /* Complete the values hash with the entity attributes */
+        var datavalues = jQuery.extend(datavalues, this.ajaxCall('GET', '/api/' + this.fields[name].entity + '/' + selected_id));
 
-        /* Complete the values hash with policy attributes */
-        var policy = this.ajaxCall('GET', '/api/' + this.fields[name].entity + '/' + selected_id);
-
-        for (var policy_attr in policy) {
-            datavalues[policy['policy_type'] + '_policy_name'] = policy['policy_name'];
-            datavalues[policy['policy_type'] + '_policy_desc'] = policy['policy_desc'];
+        /* TODO: Do not hard code this :) */
+        if (this.fields[name].entity === 'policy') {
+            datavalues[datavalues['policy_type'] + '_policy_name'] = datavalues['policy_name'];
+            datavalues[datavalues['policy_type'] + '_policy_desc'] = datavalues['policy_desc'];
         }
 
         this.values = datavalues;
 
         var that = this;
-        this.findContainer(step).find('select').each(function() {
+        var update_select = function() {
+        //this.form.find('select').each(function() {
             var select_name = $(this).attr('name');
             if (that.fields[select_name] && select_name !== name) {
                 var reset_value;
 
                 if (that.fields[select_name].is_mandatory) {
                     var options = $(this).find('option');
-                    reset_value = options[0].value;
+                    if (options[0]) {
+                        reset_value = options[0].value;
+                    }
                 } else {
                     reset_value = 0;
                 }
@@ -507,7 +538,9 @@ var PolicyForm = (function() {
                     $(this).change();
                 }
 
-                $(this).removeAttr('disabled');
+                if (! (that.fields[select_name].disabled || that.fields[select_name].disable_filled)) {
+                    $(this).removeAttr('disabled');    
+                }
                 if (datavalues[select_name]) {
                     /*
                      * Firstly set the value of the the parent field if exist,
@@ -532,27 +565,63 @@ var PolicyForm = (function() {
                     }
 
                     $(this).val(datavalues[select_name]);
-                    $(this).attr('disabled', 'disabled');
+                    if (that.fields[select_name].values_provider) {
+                        $(this).change();
+                    }
+                    if (that.fields[select_name].disable_filled) {
+                        $(this).addClass('wizard-ignore');
+                        $(this).attr('disabled', 'disabled');
+                    }
+
+                    if (that.fields[select_name].hide_filled) {
+                        $(this).parent().parent().hide();
+                        if (that.fields[select_name].parent) {
+                            var parent = that.form.find('#input_' + that.fields[select_name].parent);
+                            parent.parent().parent().hide();
+                        }
+                    }
                 }
             }
-
-        });
-        this.findContainer(step).find('input').each(function() {
-            $(this).val('');
-            $(this).removeAttr('disabled');
-            if (datavalues[$(this).attr('name')]) {
-                $(this).val(datavalues[$(this).attr('name')]);
-                $(this).attr('disabled', 'disabled');
+        };
+        
+        if (this.fields[name].fields_provided) {
+            for (var provided in this.fields[name].fields_provided) {
+                this.form.find('#input_' + this.fields[name].fields_provided[provided]).each(update_select);
             }
-        });
-        this.findContainer(step).find('textarea').each(function() {
-            $(this).val('');
-            $(this).removeAttr('disabled');
-            if (datavalues[$(this).attr('name')]) {
-                $(this).val(datavalues[$(this).attr('name')]);
-                $(this).attr('disabled', 'disabled');
-            }
-        });
+        } else {
+            this.findContainer(step).find('select').each(update_select);
+            
+            this.findContainer(step).find('input').each(function() {
+                $(this).val('');
+                if (! (that.fields[$(this).attr('name')].disabled || that.fields[$(this).attr('name')].disable_filled)) {
+                    $(this).removeAttr('disabled');    
+                }
+                if (datavalues[$(this).attr('name')]) {
+                    $(this).val(datavalues[$(this).attr('name')]);
+                    if (that.fields[$(this).attr('name')].disable_filled) {
+                        $(this).attr('disabled', 'disabled');
+                    }
+                    if (that.fields[$(this).attr('name')].hide_filled) {
+                        $(this).parent().parent().hide();
+                    }
+                }
+            });
+            this.findContainer(step).find('textarea').each(function() {
+                $(this).val('');
+                if (! (that.fields[$(this).attr('name')].disabled || that.fields[$(this).attr('name')].disable_filled)) {
+                    $(this).removeAttr('disabled');    
+                }
+                if (datavalues[$(this).attr('name')]) {
+                    $(this).val(datavalues[$(this).attr('name')]);
+                    if (that.fields[$(this).attr('name')].disable_filled) {
+                        $(this).attr('disabled', 'disabled');
+                    }
+                    if (that.fields[$(this).attr('name')].hide_filled) {
+                        $(this).parent().parent().hide();
+                    }
+                }
+            });
+        }
 
         /* Ugly third loop to set a callback on change, because
          * the first loop could raise this callback on some fileds.
@@ -571,6 +640,9 @@ var PolicyForm = (function() {
                 $(this).bind('change.resetPolicy', resetPolicyIdOnChange);
             }
         });
+        
+       //element.addClass('wizard-ignore');
+       // element.attr('disabled', 'diabled');
     }
 
     PolicyForm.prototype.resetPolicyId = function (elementName) {
@@ -631,7 +703,9 @@ var PolicyForm = (function() {
                 step    : this.fields[name].step,
                 policy  : this.fields[name].policy,
                 prefix  : this.fields[name].prefix,
-                disable_filled : true,
+                disable_filled : this.fields[name].disable_filled,
+                hide_filled    : this.fields[name].hide_filled,
+                is_mandatory   : this.fields[name].is_mandatory,
             }
 
             var tr = undefined;
@@ -919,10 +993,6 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.validateForm = function () {
-        this.form.find(':input').each(function () {
-            $(this).removeAttr('disabled');
-        });
-
         $(this.form).formwizard("next");
     }
 
