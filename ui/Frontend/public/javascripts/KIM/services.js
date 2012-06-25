@@ -14,7 +14,7 @@ function servicesList (container_id, elem_id) {
             addServiceExtraData(grid, rowid, rowdata, rowelem, '');
         },
         rowNum : 25,
-        colNames: [ 'ID', 'Name', 'State', 'Rules State', 'Node Number', 'other' ],
+        colNames: [ 'ID', 'Name', 'State', 'Rules State', 'Node Number' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
             { name: 'cluster_name', index: 'service_name', width: 200 },
