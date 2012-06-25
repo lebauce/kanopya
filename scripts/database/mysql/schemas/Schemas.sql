@@ -1557,6 +1557,28 @@ CREATE TABLE `masterimage` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `billinglimit`
+-- Entity::Billinglimit class
+--
+
+CREATE TABLE `billinglimit` (
+  `id` int(8) unsigned NOT NULL,
+  `start` int(16) NOT NULL,
+  `end` int(16) NOT NULL,
+  `type` CHAR(32) NOT NULL,
+  `soft` BOOLEAN NOT NULL,
+  `value` int(8),
+  `service_provider_id` int(8) unsigned NOT NULL,
+  `repeat` int(16) NOT NULL,
+  `repeat_day` int(16) NOT NULL,
+  `repeat_start_time` int(16) NOT NULL,
+  `repeat_end_time` int(16) NOT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `service_template`
 --
 

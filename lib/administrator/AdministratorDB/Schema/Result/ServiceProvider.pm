@@ -92,6 +92,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 billinglimits
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Billinglimit>
+
+=cut
+
+__PACKAGE__->has_many(
+  "billinglimits",
+  "AdministratorDB::Schema::Result::Billinglimit",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 clustermetrics
 
 Type: has_many
@@ -239,7 +254,12 @@ __PACKAGE__->belongs_to(
 
 Type: has_many
 
+<<<<<<< HEAD
 Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
+=======
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-01 13:39:57
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sTr9fruYiAtq0Te7ID7Idg
+>>>>>>> origin/billing
 
 =cut
 
