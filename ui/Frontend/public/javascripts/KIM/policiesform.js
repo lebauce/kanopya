@@ -238,6 +238,7 @@ var PolicyForm = (function() {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
         } else if ($(input).attr('type') === 'datetime') {
             $(input).datetimepicker({
+                timeOnly    : false,
                 hourGrid    : 4,
                 minuteGrid  : 10,
                 closeText   : 'Close'
