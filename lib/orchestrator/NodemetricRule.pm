@@ -296,7 +296,7 @@ sub getVerifiedRuleWfDefId {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     else {
-        my $verified_noderule = VerifiedNodeRule->find(hash => {
+        my $verified_noderule = VerifiedNoderule->find(hash => {
                                     verified_noderule_externalnode_id    => $node_id,
                                     verified_noderule_nodemetric_rule_id => $rule_id
                                 });
@@ -344,7 +344,7 @@ sub deleteVerifiedRuleWfDefId {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     else {
-        my $verified_noderule = VerifiedNodeRule->find(hash => {
+        my $verified_noderule = VerifiedNoderule->find(hash => {
                                     verified_noderule_externalnode_id    => $node_id,
                                     verified_noderule_nodemetric_rule_id => $rule_id
                                 });
