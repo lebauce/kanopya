@@ -26,6 +26,7 @@ my %resources = (
     "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
     "clustermetric"            => "Clustermetric",
     "component"                => "Entity::Component",
+    "componenttype"            => "ComponentType",
     "connector"                => "Entity::Connector",
     "connectortype"            => "ConnectorType",
     "container"                => "Entity::Container",
@@ -76,7 +77,7 @@ my %resources = (
     "nodemetriccombination"    => "NodemetricCombination",
     "nodemetriccondition"      => "NodemetricCondition",
     "nodemetricrule"           => "NodemetricRule",
-    "node"                     => "Node",
+    "node"                     => "Externalnode::Node",
     "nodemetriccombination"    => "NodemetricCombination",
     "openiscsi2"               => "Entity::Component::Openiscsi2",
     "opennebula3"              => "Entity::Component::Opennebula3",
@@ -85,6 +86,7 @@ my %resources = (
     "php5"                     => "Entity::Component::Php5",
     "physicalhoster0"          => "Entity::Component::Physicalhoster0",
     "pleskpanel10"             => "Entity::ParallelsProduct::Pleskpanel10",
+    "policy"                   => "Policy",
     "poolip"                   => "Entity::Poolip",
     "powersupplycard"          => "Entity::Powersupplycard",
     "powersupplycardmodel"     => "Entity::Powersupplycardmodel",
@@ -104,6 +106,7 @@ my %resources = (
     "snmpd5"                   => "Entity::Component::Snmpd5",
     "serviceprovider"          => "Entity::ServiceProvider",
     "serviceprovidermanager"   => "ServiceProviderManager",
+    "servicetemplate"          => "ServiceTemplate",
     "syslogng3"                => "Entity::Component::Syslogng3",
     "systemimage"              => "Entity::Systemimage",
     "tier"                     => "Entity::Tier",
@@ -271,30 +274,26 @@ sub setupREST {
                 for my $attr (keys %$params) {
                     $hash->{$attr} = params->{$attr};
                 }
-                eval {
-                    my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
-                    $location =~ s/\:\:/\//g;
-                    require $location;
-                    $obj = Operation->enqueue(
-                        priority => 200,
-                        type     => 'Add' . ucfirst($resource),
-                        params   => $hash
-                    );
-                    $obj = Operation->get(id => $obj->getId)->toJSON;
-                };
-                if ($@) {
+
+                if ($class->can('create')) {
+                    $obj = $class->create(params)->toJSON();
+                }
+                else {
                     eval {
+                        my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
+                        $location =~ s/\:\:/\//g;
+                        require $location;
+                        $obj = Operation->enqueue(
+                            priority => 200,
+                            type     => 'Add' . ucfirst($resource),
+                            params   => $hash
+                        );
+                        $obj = Operation->get(id => $obj->getId)->toJSON;
+                    };
+
+                    if ($@) {
                         $obj = $class->new(params)->toJSON();
                     };
-                    if ($@) {
-                        my $exception = $@;
-                        if (Kanopya::Exception::Permission::Denied->caught()) {
-                           redirect '/permission_denied';
-                        }
-                        else {
-                            $exception->rethrow();
-                        }
-                    }
                 }
 
                 return to_json($obj);

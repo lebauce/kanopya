@@ -37,6 +37,27 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        'getExportType' => {
+            'description' => 'Return the type of managed exports.',
+            'perm_holder' => 'entity',
+        },
+        'getDiskType' => {
+            'description' => 'Return the type of managed disks.',
+            'perm_holder' => 'entity',
+        },
+    }
+}
+
+sub getExportType {
+    return "ISCSI target";
+}
+
+sub getDiskType {
+    return "NetApp lun";
+}
+
 =head2 checkDiskManagerParams
 
 =cut

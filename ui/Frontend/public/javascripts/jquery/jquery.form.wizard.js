@@ -142,8 +142,30 @@
 		},
 
 		_next : function(){
-			if(this.options.validationEnabled){
-				if(!this.element.valid()){
+//			if(this.options.validationEnabled){
+//				if(!this.element.valid()){
+//					this.element.validate().focusInvalid();
+//					return false;
+//				}
+//			}
+
+			/* Validate the current step inputs only */
+			var that = this;
+			var isValid = true;
+			if (this.options.validationEnabled) {
+				if (this.currentStep) {
+					this.steps.filter("#" + this.currentStep).find(":input").not(".wizard-ignore").each(function(index) {
+						if (! that.element.validate().element($(this))) {
+							isValid = false;
+							return false;
+						}
+					});
+				} else {
+					if (! this.element.valid()) {
+						isValid = false;
+					}
+				}
+				if (! isValid) {
 					this.element.validate().focusInvalid();
 					return false;
 				}

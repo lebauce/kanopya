@@ -206,6 +206,10 @@ sub methods {
         'configureComponents'    => {'description' => 'configure components of this cluster',
                         'perm_holder' => 'entity',
         },
+        'getIndicatorNameFromId' => {
+            'description'   => 'getIndicatorNameFromId',
+            'perm_holder'   => 'entity'
+        }
     };
 }
 
@@ -230,6 +234,34 @@ sub getCluster {
 
     my @clusters = $class->search(%args);
     return pop @clusters;
+}
+
+sub checkConfigurationPattern {
+    my $self = shift;
+    my $class = ref($self) || $self;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'attrs' ]);
+
+    # Firstly, check the cluster attrs
+    $class->checkAttrs(attrs => $args{attrs});
+
+    # Then check the configuration if required
+    if (defined $args{composite}) {
+
+        # For now, only check the manaher paramters only
+        for my $manager_def (values %{ $args{composite}->{managers} }) {
+            if (defined $manager_def->{manager_id}) {
+                my $manager = Entity->get(id => $manager_def->{manager_id});
+
+                $manager->checkManagerParams(manager_type   => $manager_def->{manager_type},
+                                             manager_params => $manager_def->{manager_params});
+            }
+        }
+
+        # TODO: Check cross managers dependencies. For example, the list of
+        #       disk managers depend on the host manager.
+    }
 }
 
 =head2 create
@@ -272,34 +304,6 @@ sub getCluster {
     };
 
 =cut
-
-sub checkConfigurationPattern {
-    my $self = shift;
-    my $class = ref($self) || $self;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'attrs' ]);
-
-    # Firstly, check the cluster attrs
-    $class->checkAttrs(attrs => $args{attrs});
-
-    # Then check the configuration if required
-    if (defined $args{composite}) {
-
-        # For now, only check the manaher paramters only
-        for my $manager_def (values %{ $args{composite}->{managers} }) {
-            if (defined $manager_def->{manager_id}) {
-                my $manager = Entity->get(id => $manager_def->{manager_id});
-
-                $manager->checkManagerParams(manager_type   => $manager_def->{manager_type},
-                                             manager_params => $manager_def->{manager_params});
-            }
-        }
-
-        # TODO: Check cross managers dependencies. For example, the list of
-        #       disk managers depend on the host manager.
-    }
-}
 
 sub create {
     my ($class, %params) = @_;
@@ -449,7 +453,7 @@ sub configureInterfaces {
 
     if (defined $args{interfaces}) {
         for my $interface_pattern (values %{ $args{interfaces} }) {
-            my $role = Entity::InterfaceRole->find(hash => { interface_role_name => $interface_pattern->{interface_role} });
+            my $role = Entity::InterfaceRole->get(id => $interface_pattern->{interface_role});
 
             # TODO: This mechanism do not allows to define many interfaces
             #       with the same role within policies.

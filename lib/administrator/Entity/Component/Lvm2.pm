@@ -73,6 +73,19 @@ my $errmsg;
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        'getDiskType' => {
+            'description' => 'Return the type of managed disks.',
+            'perm_holder' => 'entity',
+        },
+    }
+}
+
+sub getDiskType {
+    return "LVM logical volume";
+}
+
 =head2 checkDiskManagerParams
 
 =cut
@@ -82,6 +95,24 @@ sub checkDiskManagerParams {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ "vg_id", "systemimage_size" ]);
+}
+
+=head2 getHostingPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    my @vg_list = map { $_->{lvm2_vg_name} } @{ $self->getConf->{lvm2_vgs} };
+
+    if ($args{policy_type} eq 'storage') {
+        return [ { name => 'vg_id', label => 'Volume group to use', values => \@vg_list } ];
+    }
+    return [];
 }
 
 sub getMainVg {

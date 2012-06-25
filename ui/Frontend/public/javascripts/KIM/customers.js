@@ -124,7 +124,56 @@ function Customers() {
             ]
         });
     }
-}
+    
+
+    
+    Customers.prototype.load_infos = function(container_id, elem_id) {
+        
+     function createAddCustomerInfoButton(cid) {
+        var container = $('#' + cid);
+        var user_fields  = {
+        user_extension_key    : {
+            label   : 'Field name',
+            type    : 'text',
+        },
+        user_extension_value    : {
+            label   : 'Value',
+            type    : 'textarea'
+        },
+        user_id : {
+            type    : 'hidden',
+            value   : elem_id,
+        },
+            };
+        var user_opts = {
+                title    : 'New customer info',
+                name     : 'userextension',
+                fields   : user_fields,
+            };
+                        
+            $('<hr/>').appendTo(container);
+            var button = $("<button>", {html : 'new customer info'});
+            button.bind('click', function() {
+                new ModalForm(user_opts).start();
+            });   
+            container.append(button);
+        };        
+        create_grid({
+            url: '/api/userextension?user_id='+elem_id,
+            content_container_id: container_id,
+            grid_id: 'cutomer_infos_list',
+            colNames: ['pk', 'field name', 'value'],
+            colModel: [
+                {name:'pk',index:'pk',width:100,sorttype:'int',hidden:true,key:true},
+                {name:'user_extension_key',index:'user_extension_key',width:100,},
+                {name:'user_extension_value',index:'user_extension_value',width:100,},
+            ],
+        });
+        createAddCustomerInfoButton(container_id);
+    }
+    }
+
+
 
 var customers = new Customers();
 

@@ -158,11 +158,13 @@ function loadMenuFromJSON(event) {
     $.getJSON(menu_info.url, function (data) {
         // Add menu entry and associated view
         for (var elem in data) {
-            add_menu(   container,
+            if (data[elem][menu_info.label_key] != null) {
+                add_menu(   container,
                         data[elem][menu_info.label_key],
                         menu_info.submenu,
                         data[elem][menu_info.id_key]
-            );
+                );
+            }
         }
         
         // Remove old links and view

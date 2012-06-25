@@ -21,6 +21,8 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
+use Policy;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -65,5 +67,40 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+    my $self;
+
+    $log->info('___________' . Dumper(%args));
+    # Firstly pop the service template atrributes
+    my $attrs = {
+        service_name => delete $args{service_name},
+        service_desc => delete $args{service_desc},
+    };
+
+    for my $policy_type ('hosting', 'storage', 'network', 'scalability', 'system') {
+        if (not $args{$policy_type . '_policy_id'}) {
+            my $policy_args = {};
+            my $pattern = $policy_type . '_';
+
+            for my $arg (grep /$pattern/, keys %args) {
+                $arg =~ s/^$pattern//g;
+                if ($arg eq 'policy_name') {
+                    $args{$pattern . $arg} .= ' (for service "' . $attrs->{service_name} .  '")';
+                }
+                $policy_args->{$arg} = $args{$pattern . $arg};
+            }
+            $policy_args->{policy_type} = $policy_type;
+
+            my $policy = Policy->new(%$policy_args);
+            $args{$policy_type . '_policy_id'} = $policy->getAttr(name => 'policy_id');
+        }
+        $attrs->{$policy_type . '_policy_id'} = $args{$policy_type . '_policy_id'};
+    }
+
+    return $class->SUPER::new(%$attrs);
+}
 
 1;

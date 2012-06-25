@@ -45,6 +45,12 @@ __PACKAGE__->table("policy");
   is_nullable: 1
   size: 255
 
+=head2 policy_type
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 64
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -66,6 +72,8 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 64 },
   "policy_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
+  "policy_type",
+  { data_type => "char", is_nullable => 1, size => 64 },
 );
 __PACKAGE__->set_primary_key("policy_id");
 
@@ -162,8 +170,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-29 12:09:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7O1HoZTYX4tlNTasiIeYAA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-06-12 10:46:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xD4u90MCM08kCzYF4PvuJg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

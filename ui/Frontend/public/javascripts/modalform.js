@@ -416,7 +416,7 @@ var ModalForm = (function() {
         });
         $('.ui-dialog-titlebar-close').remove();
     }
- 
+
     ModalForm.prototype.cancel = function() {
         var state = $(this.form).formwizard("state");
         if (state.isFirstStep) {

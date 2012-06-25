@@ -77,6 +77,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        'getPolicyParams' => {
+            'description' => 'Return the params required for policies definition.',
+            'perm_holder' => 'entity',
+        }
+    }
+};
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -110,6 +119,19 @@ sub new {
     my $self = $class->SUPER::new(%$config);
     bless $self, $class;
     return $self;
+}
+
+=head2 getHostingPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    return [];
 }
 
 sub getComponentId {
