@@ -15,7 +15,10 @@
 
 <div id='view-container' class="ui-layout-center">
 </div>
-<div id='mainmenu-container' class="ui-layout-west">
+<div class="ui-layout-west">
+    <img id='menu_logo' src='/images/logo_kanopya.png'/><br/><br/>
+    <div id='mainmenu-container'>
+    </div>
 </div>
 <div class="ui-layout-north">
     <div id='header'>
