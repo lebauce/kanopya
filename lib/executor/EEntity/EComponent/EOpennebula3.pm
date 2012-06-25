@@ -157,7 +157,7 @@ sub checkMigration{
         $hypervisor_migr = $history->{HOSTNAME};
     }
     else { # ref $history eq 'ARRAY'
-        $hypervisor_migr =  $history->[0]->{HOSTNAME};
+        $hypervisor_migr =  $history->[-1]->{HOSTNAME};
     }
 
     my $state = $hxml->{LCM_STATE};
@@ -539,7 +539,7 @@ sub postStart {
         $hypervisor_hostname = $history->{HOSTNAME};
     }
     else { # ref $history eq 'ARRAY'
-        $hypervisor_hostname =  $history->[0]->{HOSTNAME};
+        $hypervisor_hostname =  $history->[-1]->{HOSTNAME};
     }
 
     my $vnc_port = $hxml->{TEMPLATE}->{GRAPHICS}->{PORT};
