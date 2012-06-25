@@ -24,6 +24,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Entity::Component;
 use Entity::Host;
+use Externalnode::Node;
 use Entity::Systemimage;
 use Entity::Tier;
 use Operation;
@@ -206,10 +207,6 @@ sub methods {
         'configureComponents'    => {'description' => 'configure components of this cluster',
                         'perm_holder' => 'entity',
         },
-        'getIndicatorNameFromId' => {
-            'description'   => 'getIndicatorNameFromId',
-            'perm_holder'   => 'entity'
-        }
     };
 }
 
@@ -882,15 +879,14 @@ sub getHosts {
 
     my %hosts;
     eval {
-#        my $host_rs = $self->{_dbix}->parent->parent->nodes;
-        my $host_rs = $self->getAttr(name => 'nodes');
-        while (my $node_row = $host_rs->next) {
-            my $host_row = $node_row->host;
-            $log->debug("Nodes found");
-            my $host_id = $host_row->get_column('host_id');
+        my @nodes = Externalnode::Node->search(hash => { inside_id => $self->getId });
+        for my $node (@nodes) {
+            my $host = $node->host;
+            my $host_id = $host->getId;
             eval {
-                $hosts{$host_id} = Entity::Host->get(id => $host_id);
+                $hosts{$host_id} = $host;
             };
+            $log->debug("Host $host_id found in cluster " . $self->getId);
         }
     };
     if ($@) {
@@ -1138,101 +1134,6 @@ sub getNewNodeNumber {
 	return $counter;
 }
 
-=head2 getIndicatorsIds
-
-    Desc: call collector manager to retrieve indicators ids available for the service provider
-    return \@indicators_ids;
-
-=cut
-
-sub getIndicatorsIds {
-    my ($self, %args) = @_;
-
-    my $collector_manager   = $self->getCollectorManager();
-
-    #return the name
-    my $indicators_ids      = $collector_manager->getIndicatorsIds ();
-    return $indicators_ids;
-}
-
-=head2 getIndicatorOidFromId
-
-    Desc: call collector manager to retrieve an indicator oid from it's id
-    return $indicators_oid;
-
-=cut
-
-sub getIndicatorOidFromId {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['indicator_id']);
-
-    my $collector_manager = $self->getCollectorManager();
-
-    #return the name
-    my $indicator_oid = $collector_manager->getIndicatorOidFromId ( indicator_id => $args{'indicator_id'} );
-    return $indicator_oid;
-}
-
-=head2 getIndicatorNameFromId
-
-    Desc: call collector manager to retrieve an indicator name from it's id
-    return $indicator_name;
-
-=cut
-
-sub getIndicatorNameFromId {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['indicator_id']);
-
-    my $collector_manager = $self->getCollectorManager();
-
-    #return the name
-    my $indicator_name = $collector_manager->getIndicatorNameFromId ( indicator_id => $args{'indicator_id'} );
-    return $indicator_name;
-}
-
-=head2 getIndicatorUnitFromId
-
-    Desc: call collector manager to retrieve an indicator unit from it's id
-    return $indicator_unit;
-
-=cut
-
-sub getIndicatorUnitFromId {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['indicator_id']);
-
-    my $collector_manager = $self->getCollectorManager();
-
-    #return the unit
-    my $indicator_unit = $collector_manager->getIndicatorUnitFromId ( indicator_id => $args{'indicator_id'} );
-    return $indicator_unit;
-}
-
-
-=head2 getIndicatorInst
-
-    Desc: call collector manager to retrieve an indicator instance from it's id
-    return $indicator_inst;
-
-=cut
-
-sub getIndicatorInst {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['indicator_id']);
-
-    my $indicator_id = $args{'indicator_id'};
-    my $collector_manager = $self->getCollectorManager();
-
-    #retrieve instance of the collector
-    my $indicator_inst = $collector_manager->getIndicatorInst(indicator_id => $indicator_id);
-    return $indicator_inst;
-}
-
 =head2 getNodeState
 
 
@@ -1282,20 +1183,22 @@ sub getNodes {
 sub getNodesMetrics {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['time_span', 'indicators']);
+    General::checkParams(args => \%args, required => [ 'time_span', 'indicators' ]);
 
-    my $collector_manager = $self->getCollectorManager();
+    my $collector_manager = $self->getManager(manager_type => "collector_manager");
 
     my $nodes = $self->getHosts();
     my @nodelist;
 
-    while (my ($host_id,$host_object) = each(%$nodes)) {
-        push @nodelist, $host_object->getAttr (name => 'host_hostname');
+    while (my ($host_id, $host_object) = each(%$nodes)) {
+        push @nodelist, $host_object->getAttr(name => 'host_hostname');
     }
-
-    #return the data
-    my $monitored_values = $collector_manager->retrieveData ( nodelist => \@nodelist, time_span => $args{'time_span'}, indicators_ids => $args{'indicators'} );
-    return $monitored_values;
+ 
+    return $collector_manager->retrieveData(
+               nodelist   => \@nodelist,
+               time_span  => $args{'time_span'},
+               indicators => $args{'indicators'}
+           );
 }
 
 =head2 generateDefaultMonitoringConfiguration
@@ -1308,15 +1211,16 @@ sub getNodesMetrics {
 sub generateDefaultMonitoringConfiguration {
     my ($self, %args) = @_;
 
-    my $indicators_ids = $self->getIndicatorsIds();
-    my $service_provider_id = $self->getAttr( name => 'cluster_id' );
+    my $collector = $self->getManager(manager_type => "collector_manager");
+    my $indicators = $collector->getIndicators();
+    my $service_provider_id = $self->getId;
 
-    #We create a nodemetric combination for each indicator
-    foreach my $indicator (@$indicators_ids) {
+    # We create a nodemetric combination for each indicator
+    foreach my $indicator (@$indicators) {
         my $combination_param = {
-            nodemetric_combination_formula => 'id'.$indicator,
+            nodemetric_combination_formula => 'id' . $indicator->getId,
             nodemetric_combination_service_provider_id => $service_provider_id,
-         };
+        };
         NodemetricCombination->new(%$combination_param);
     }
 
@@ -1324,11 +1228,11 @@ sub generateDefaultMonitoringConfiguration {
     my @funcs = qw(mean max min std dataOut);
 
     #we create the clustermetric and associate combination
-    foreach my $indicator (@$indicators_ids) {
+    foreach my $indicator (@$indicators) {
         foreach my $func (@funcs) {
             my $cm_params = {
                 clustermetric_service_provider_id      => $service_provider_id,
-                clustermetric_indicator_id             => $indicator,
+                clustermetric_indicator_id             => $indicator->getId,
                 clustermetric_statistics_function_name => $func,
                 clustermetric_window_time              => '1200',
             };
@@ -1336,7 +1240,7 @@ sub generateDefaultMonitoringConfiguration {
 
             my $acf_params = {
                 aggregate_combination_service_provider_id   => $service_provider_id,
-                aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+                aggregate_combination_formula               => 'id' . $cm->getId
             };
             my $clustermetric_combination = AggregateCombination->new(%$acf_params);
         }
@@ -1358,16 +1262,5 @@ sub getManager {
                                                          service_provider_id   => $self->getId });
     return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
 }
-=head2 getCollectorManager
 
-    Desc: retrieve collector manager object for this service provider.
-    return $collector_manager;
-
-=cut
-
-sub getCollectorManager {
-    my $self = shift;
-
-    return $self->getManager(manager_type => 'collector_manager' );
-}
 1;

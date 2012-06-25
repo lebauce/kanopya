@@ -15,7 +15,7 @@ package ScomIndicator;
 
 use strict;
 use warnings;
-use base 'BaseDB';
+use base 'Indicator';
 
 use constant ATTR_DEF => {
     scom_indicator_name             =>  {pattern       => '^.*$',
@@ -45,4 +45,5 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
 1;
