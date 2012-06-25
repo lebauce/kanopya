@@ -35,6 +35,7 @@ use Policy;
 use Administrator;
 use General;
 use ServiceProviderManager;
+use ServiceTemplate;
 
 use Hash::Merge;
 
@@ -308,9 +309,6 @@ sub checkConfigurationPattern {
 sub create {
     my ($class, %params) = @_;
 
-    General::checkParams(args => \%params, required => [ 'managers' ]);
-    General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
-
     my $admin = Administrator->new();
     my $mastergroup_eid = $class->getMasterGroupEid();
     my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
@@ -318,10 +316,29 @@ sub create {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
     }
 
-    # TODO: If a service_template_id is defined, check policies consistency or skip policies ids.
-
     # Override params with poliies param presets
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
+    # Prepare the configuration pattern from the service template
+    if (defined $params{service_template_id}) {
+        # ui related, we get the completed values as flatened values from the form
+        # so we need to transform all the flatened params to a configuration pattern.
+        my %flatened_params = %params;
+        %params = ();
+
+        my $service_template = ServiceTemplate->get(id => $flatened_params{service_template_id});
+        for my $policy (@{ $service_template->getPolicies }) {
+            # Register policy ids in the params
+            push @{ $params{policies} }, $policy->getAttr(name => 'policy_id');
+
+            # Rebuild params as a configuration pattern
+            my $pattern = Policy->buildPatternFromHash(policy_type => $policy->getAttr(name => 'policy_type'), hash => \%flatened_params);
+            %params = %{ $merge->merge(\%params, \%$pattern) };
+        }
+    }
+
+    General::checkParams(args => \%params, required => [ 'managers' ]);
+    General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
     # Firstly apply the policies presets on the cluster creation paramters.
     for my $policy_id (@{ $params{policies} }) {
