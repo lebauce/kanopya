@@ -540,24 +540,24 @@ sub _evalRule {
                     $log->info("Rule has been verifieds for node <$host_name> : do not trigger Workflow");
                 }
                 else{
-                    $log->info("RULE IS VERIFIED has been verifieds for node <$host_name> : TRIGGER Workflow");
+
                     $rule->setVerifiedRule(
                             hostname   => $host_name,
                             cluster_id => $service_provider_id,
                             state      => 'verified',
                     );
+                        
+                    my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
 
-                    my $wf_def_id = $rule->getVerifiedRuleWfDefId (
-                                    service_provider_id => $service_provider_id,
-                                    hostname            => $host_name,
-                    );
-
-                    $workflow_manager->runWorkflow(
-                        workflow_def_id => $workflow_def_id,
-                        host_name => $host_name,
-                        service_provider_id => $service_provider_id,
-                        rule_id => $rule_id
-                    );
+                    if (defined $wf_def_id){
+                        $log->info("TRIGGER Workflow <$wf_def_id>");
+                        $workflow_manager->runWorkflow(
+                            workflow_def_id => $workflow_def_id,
+                            host_name => $host_name,
+                            service_provider_id => $service_provider_id,
+                            rule_id => $rule_id
+                        );
+                    } # ELSE => NO WORKFLOW TO TRIGGER
                 }
             }
         }
