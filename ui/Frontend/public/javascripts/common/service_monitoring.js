@@ -349,8 +349,10 @@ function loadServicesMonitoring (container_id, elem_id, ext) {
         grid_id: loadServicesMonitoringGridId,
         afterInsertRow: function(grid, rowid) {
             var current = $(grid).getCell(rowid, 'clustermetric_indicator_id');
-            var url     = '/api/serviceprovider/' + elem_id + '/getIndicatorNameFromId';
-            setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id', { 'indicator_id' : current });
+            var url     = '/api/indicator/' + current;
+            $.getJSON(url, function (data) {
+                $(grid).setCell(rowid, 'clustermetric_indicator_id', data.indicator_name);
+            });
         },
         colNames: [ 'id', 'name', 'indicator' ],
         colModel: [

@@ -26,6 +26,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use General;
+use Indicator;
 
 my $log = get_logger("administrator");
 
@@ -33,14 +34,50 @@ my $log = get_logger("administrator");
 
 =cut
 
-sub checkCollectorManagerParams {}
+sub checkCollectorManagerParams {
+}
 
-sub retrieveData { }
-sub getIndicatorsIds { }
-sub getIndicatorOidFromId { }
-sub getIndicatorNameFromId { }
-sub getIndicatorUnitFromId { }
-sub getIndicatorInst { }
+=head2
+
+    Desc: Call kanopya native monitoring API to retrieve indicators data 
+    return \%monitored_values;
+
+=cut
+
+sub retrieveData {
+}
+
+=head2 getIndicators
+
+    Desc: call collector manager to retrieve indicators available for the service provider
+    return \@indicators;
+        
+=cut
+
+sub getIndicators {
+}
+
+=head2 getIndicator
+
+    Desc: Return the indicator with the specified id
+    Return an indicator instance
+
+=cut
+
+sub getIndicator {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['id']);
+
+    return Indicator->get(id => $args{id});
+}
+
+=head2
+
+    Desc: Return an information string about the component 
+
+=cut
+
 sub getCollectorType { }
 
 1;

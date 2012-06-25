@@ -45,12 +45,12 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
-  return {
-    'toString'  => {
-      'description' => 'toString',
-      'perm_holder' => 'entity'
+    return {
+        'toString'  => {
+            'description' => 'toString',
+            'perm_holder' => 'entity'
+        }
     }
-  }
 }
 
 
@@ -76,10 +76,9 @@ sub toString {
 
     my $formula             = $self->getAttr(name => 'nodemetric_combination_formula');
     my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
-    my $service_provider    = Entity::ServiceProvider->find (
-        hash => { service_provider_id => $service_provider_id
-        }
-    );
+    my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
+    my $collector           = $service_provider->getManager(manager_type => "collector_manager");
+
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
@@ -87,7 +86,8 @@ sub toString {
         if( $element =~ m/id\d+/)
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = $service_provider->getIndicatorNameFromId (indicator_id => substr($element,2));
+            
+            $element = $collector->getIndicator(id => substr($element,2))->indicator_name;
         }
     }
     return "@array";
@@ -113,13 +113,12 @@ sub getDependantIndicatorIds{
      return @indicator_ids;
 }
 
-
-
 =head2 computeValueFromMonitoredValues
 
     desc: Compute Node Combination Value with the formula from given Indicator values 
 
 =cut
+
 sub computeValueFromMonitoredValues {
     my $self = shift;
     my %args = @_;
@@ -127,10 +126,8 @@ sub computeValueFromMonitoredValues {
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
     my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
 
-    my $service_provider = Entity::ServiceProvider->find (
-        hash => { service_provider_id => $service_provider_id
-        }
-    );
+    my $service_provider = Entity->ServiceProvider->get(id => $service_provider_id);
+    my $collector = $service_provider->getManager(manager_type => "collector_manager");
 
     my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
 
@@ -143,7 +140,7 @@ sub computeValueFromMonitoredValues {
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
             my $indicator_id  = substr($element,2);
-            my $indicator_oid = $service_provider->getIndicatorOidFromId(indicator_id => $indicator_id);
+            my $indicator_oid = $collector->getIndicator(id => $indicator_id)->indicator_oid;
 
             # Replace $element by its value
             $element          = $monitored_values_for_one_node->{$indicator_oid};
@@ -165,40 +162,31 @@ sub computeValueFromMonitoredValues {
     return $res;
 }
 
-
-
-sub checkFormula{
+sub checkFormula {
     my ($class, %args) = @_;
 
     my $formula = $args{formula};
     my $service_provider_id = $args{service_provider_id};
 
-    my $service_provider = Entity::ServiceProvider->find (
-        hash => { service_provider_id => $service_provider_id
-        }
-    );
-    my $indicators_ids = $service_provider->getIndicatorsIds();
+    my $service_provider = Entity::ServiceProvider->get(id => $service_provider_id);
+    my $indicators = $service_provider->getIndicators();
 
-    #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
+    # Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/, $formula);
     
     my @unkownIds;
     #replace each rule id by its evaluation
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {   
-            #Check if element is a SCOM indicator
-            my $indicator_id = substr($element,2);
-            if (not (grep {$_ eq $indicator_id} @$indicators_ids)) {
+        if ($element =~ m/id\d+/) {   
+            # Check if element is a SCOM indicator
+            my $indicator_id = substr($element, 2);
+            if (not (grep {$_->getId eq $indicator_id} @$indicators)) {
                 push @unkownIds, $indicator_id;
             }
         }
     }
+
     return @unkownIds;
 }
+
 1;
-
-
-
-
-

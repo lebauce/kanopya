@@ -68,9 +68,6 @@ sub retrieveData {
         push @{$counters{$object_name}}, $counter_name;
     }
     
-    #use Data::Dumper;
-    #print Dumper \%counters;
-    
     my $global_time_laps = 7200;
     my $time_zone = 'UTC';
     my $end_dt   = DateTime->now->set_time_zone($time_zone);

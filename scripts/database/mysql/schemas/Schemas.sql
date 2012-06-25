@@ -1260,9 +1260,11 @@ CREATE TABLE `indicator` (
   `indicator_color` char(8),
   `indicatorset_id` int(8) unsigned DEFAULT NULL,
   `indicator_unit` char(32) DEFAULT NULL,
+  `service_provider_id` int(8) unsigned,
   PRIMARY KEY (`indicator_id`),
   KEY (`indicatorset_id`),
-  FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
