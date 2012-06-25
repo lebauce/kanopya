@@ -200,7 +200,7 @@ sub oneRun {
 
             # If the operation has been processed, check its postrequisite
             if ($op->getAttr(name => 'state') eq 'processing' or
-                $op->getAttr(name => 'state') eq 'portreported') {
+                $op->getAttr(name => 'state') eq 'postreported') {
 
                 $log->debug("Calling postrequisite of operation $opclass.");
                 $delay = $op->postrequisites();
