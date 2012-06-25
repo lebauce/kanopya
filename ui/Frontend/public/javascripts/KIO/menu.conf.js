@@ -16,7 +16,7 @@ var mainmenu_def = {
                                {label : 'Ressources', id : 'service_ressources', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRessources(cid, eid, 'external');}},
                                {label : 'Monitoring', id : 'service_monitoring', onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid, 'external');}},
                                {label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid, 'external');}},
-                               {label : 'Workflows', id : 'workflows', onLoad : function(cid, eid) { require('KIO/workflows.js'); workflowslist(cid, eid); } }
+                               {label : 'Workflows', id : 'workflows', onLoad : function(cid, eid) { require('common/workflows.js'); workflowslist(cid, eid); } }
                                ]
                 }
     },
