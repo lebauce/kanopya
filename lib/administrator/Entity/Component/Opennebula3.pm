@@ -82,6 +82,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        'getHostType' => {
+            'description' => 'Return the type of managed hosts.',
+            'perm_holder' => 'entity',
+        },
+    }
+}
+
 =head2 checkHostManagerParams
 
 =cut

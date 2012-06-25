@@ -1,8 +1,17 @@
 <script src='/javascripts/jquery/jquery.gritter.min.js'></script>
+<script src='/javascripts/jquery/jquery.tmpl.min.js'></script>
+<script src='/javascripts/jquery/jquery.form.wizard.js'></script>
 <script src="/javascripts/KIM/iaas.js"></script>
 <script src="/javascripts/KIM/customers.js"></script>
+<script src="/javascripts/KIM/policies.js"></script>
+<script src="/javascripts/KIM/policiesform.js"></script>
 <script src="/javascripts/KIM/menu.conf.js"></script>
 <script src='/javascripts/gritter.js'></script>
+<script id="policyTemplate" type="text/x-jquery-tmpl">
+    <li>
+        <b>${Name}</b> (${ReleaseYear})
+    </li>
+</script>
 
 <div id='view-container' class="ui-layout-center">
 </div>

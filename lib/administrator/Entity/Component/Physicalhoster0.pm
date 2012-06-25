@@ -37,6 +37,15 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        'getHostType' => {
+            'description' => 'Return the type of managed hosts.',
+            'perm_holder' => 'entity',
+        },
+    }
+}
+
 sub getBootPolicies {
     return (Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
             Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
@@ -44,6 +53,24 @@ sub getBootPolicies {
 
 sub getHostType {
     return "Physical host";
+}
+
+=head2 getHostingPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    if ($args{policy_type} eq 'hosting') {
+        return [ { name => 'cpu', label => 'CPU number' },
+                 { name => 'ram', label => 'RAM amount' },
+                 { name => 'ram_unit', label => 'RAM unit', values => [ 'M', 'G' ] } ];
+    }
+    return [];
 }
 
 sub getConf {
