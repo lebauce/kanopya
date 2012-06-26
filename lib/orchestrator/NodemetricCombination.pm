@@ -86,11 +86,11 @@ sub toString {
         if( $element =~ m/id\d+/)
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            
-            $element = $collector->getIndicator(id => substr($element,2))->indicator_name;
+            #$element = $collector->getIndicator(id => substr($element,2))->indicator_name;
+            $element = $collector->getIndicator(id => substr($element,2))->toString();
         }
     }
-    return "@array";
+    return join('',@array);
 }
 
 # C/P of homonym method of AggregateCombination

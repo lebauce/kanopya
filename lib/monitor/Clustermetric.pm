@@ -129,7 +129,7 @@ sub toString {
     my $indicator = $collector->getIndicator(id => $self->clustermetric_indicator_id);
 
     return $self->clustermetric_statistics_function_name .
-           '(' . $indicator->indicator_name . ')';
+           '(' . $indicator->toString() . ')';
 }
 
 1;
