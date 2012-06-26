@@ -980,7 +980,7 @@ INSERT INTO `policy` VALUES (3, 18, 'Default network configuration', "Default ne
 INSERT INTO `policy` VALUES (4, 29, 'Cluster manual scalability', "Manual scalability.", 'scalability');
 INSERT INTO `policy` VALUES (5, 33, 'Debian squeeze', "Hosting policy for standard physical hosts.", 'system');
 
-INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5);
+INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5, NULL, NULL);
 
 
 

@@ -64,11 +64,21 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    billing_policy_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    orchestration_policy_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-our $POLICY_TYPES = ['hosting', 'storage', 'network', 'scalability', 'system'];
+our $POLICY_TYPES = ['hosting', 'storage', 'network', 'scalability', 'system', 'billing', 'orchestration'];
 
 
 sub new {
@@ -113,7 +123,9 @@ sub getPolicies () {
 
     # The service template known the type of policies
     for my $policy_type (@$POLICY_TYPES) {
-        push @$policies, Policy->get(id => $self->getAttr(name => $policy_type . '_policy_id'));
+        if ($self->getAttr(name => $policy_type . '_policy_id')) {
+            push @$policies, Policy->get(id => $self->getAttr(name => $policy_type . '_policy_id'));
+        }
     }
     return $policies;
 }

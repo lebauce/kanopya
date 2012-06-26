@@ -355,7 +355,7 @@ sub create {
     $log->debug("Final parameters after applying policies:\n" . Dumper(%params));
 
     my %composite_params;
-    for my $name ('managers', 'interfaces', 'components') {
+    for my $name ('managers', 'interfaces', 'components', 'billing_limits') {
         if ($params{$name}) {
             $composite_params{$name} = delete $params{$name};
         }
@@ -510,7 +510,7 @@ sub configureBillingLimits {
         my $value                       = $args{billing_limits}->{$name};
         Entity::Billinglimit->new(
             start               => $value->{start},
-            endind              => $value->{ending},
+            ending              => $value->{ending},
             type                => $value->{type},
             soft                => $value->{soft},
             service_provider_id => $self->getAttr(name => 'entity_id'),
