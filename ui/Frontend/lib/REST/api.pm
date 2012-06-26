@@ -383,12 +383,22 @@ sub setupREST {
             return to_json($obj->toJSON);
         };
 
-        post qr{ /api/$resource/(\d*)/(.*) }x => sub {
+        post qr{ /api/$resource/(.*) }x => sub {
             content_type 'application/json';
             require (General::getLocFromClass(entityclass => $class));
 
-            my ($id, $method) = splat;
-            my $obj = $class->get(id => $id);
+            my ($id, $obj, $method);
+            my @query = split('/', (splat)[0]);
+
+            if (scalar @query > 1) {
+                ($id, $method) =  @query;
+                $obj = $class->get(id => $id);
+            }
+            else {
+                $method = $query[0];
+                $obj = $class;
+            }
+
             my $methods = $obj->getMethods();
 
             if (not defined $methods->{$method}) {
