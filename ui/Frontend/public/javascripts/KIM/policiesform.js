@@ -160,8 +160,10 @@ var PolicyForm = (function() {
         }
 
         // If type is 'set', post fix the element name with the current index
+        var inputid = 'input_' + elementName;
         if (field.set) {
-            input_name = elementName + '_' + this.form.find("#input_" + elementName).length;
+            input_name = elementName + '_' + this.form.find(".input_" + elementName).length;
+            inputid += '_' + this.form.find(".input_" + elementName).length;
         }
 
         var set_element
@@ -198,7 +200,7 @@ var PolicyForm = (function() {
                 }
             }
         }
-        $(input).attr({ name : input_name, id : 'input_' + elementName });
+        $(input).attr({ name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
 
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
@@ -285,8 +287,11 @@ var PolicyForm = (function() {
         }
 
         // If type is 'set', post fix the element name with the current index
+        var inputid = 'input_' + elementName;
         if (this.fields[elementName].set) {
-            input_name = elementName + '_' + this.form.find("#input_" + elementName).length;
+            input_name = elementName + '_' + this.form.find(".input_" + elementName).length;
+            inputid     += '_' + this.form.find(".input_" + elementName).length;
+            console.log(">> " + this.form.find(".input_" + elementName).length);
         }
 
         // Create input and label DOM elements
@@ -295,7 +300,7 @@ var PolicyForm = (function() {
             $(label).text(this.fields[elementName].label);
         }
 
-        var input = $("<select>", { name : input_name, id : 'input_' + elementName });
+        var input = $("<select>", { name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
 
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
@@ -829,7 +834,7 @@ var PolicyForm = (function() {
         $("<td>", { align : 'left' }).append(label).appendTo(linecontainer);
         $("<td>", { align : 'right' }).append(input).append(this.createHelpElem(help)).appendTo(linecontainer);
 
-        if (this.fields[$(input).attr('id').substring(6)].type === 'hidden') {
+        if (this.fields[$(input).attr('rel')].type === 'hidden') {
             $(linecontainer).css('display', 'none');
         }
 
