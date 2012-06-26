@@ -143,7 +143,8 @@ sub update() {
                         values     => $monitored_values,
                         cluster_id => $service_provider_id
                     );
-                } 
+                }
+                1;
             }
         } or do {
             $log->error("An error occurred : " . $@);
@@ -163,13 +164,13 @@ sub _checkNodesMetrics{
 
     my $asked_indicators = $args{asked_indicators};
     my $received         = $args{received};
-    
+
     my $num_of_nodes     = scalar (keys %$received);
-   
+
     foreach my $indicator (values %$asked_indicators) {
         while ( my ($node_name, $metrics) = each(%$received) ) {
-            if (! defined $metrics->{$indicator->indicator_name}) {
-                $log->debug("Indicator " . $indicator->indicator_name .
+            if (! defined $metrics->{$indicator->indicator_oid}) {
+                $log->debug("Indicator " . $indicator->indicator_name . '(' . $indicator->indicator_oid . ')' .
                             " was not retrieved by collector for node $node_name");
             }
         }
