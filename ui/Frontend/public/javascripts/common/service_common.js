@@ -205,7 +205,7 @@ function loadServicesConfig (container_id, elem_id) {
                 });
             }
     });
-
+/*
     $.ajax({
         url: '/api/connector?dataType=jqGrid&service_provider_id=' + elem_id,
         success: function(data) {
@@ -272,6 +272,8 @@ function loadServicesConfig (container_id, elem_id) {
             }
         }
     });
+*/
+    servicesConfig(container_id, elem_id);
 
     $.ajax({
         url     : '/api/serviceprovidermanager?service_provider_id=' + elem_id,

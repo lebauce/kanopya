@@ -143,6 +143,12 @@ sub create {
     return $self;
 }
 
+sub new {
+    my $self = shift;
+    my $admin = Administrator->new();
+    $self->create();
+}
+
 =head2 update
 
 =cut

@@ -183,7 +183,7 @@ function createNodemetricCombination(container_id, elem_id, ext) {
         mod.start();
             ////////////////////////////////////// Node Combination Forumla Construction ///////////////////////////////////////////
 
-        $(function() {
+    $(function() {
     var availableTags = new Array();
     var url;
     if (ext) {

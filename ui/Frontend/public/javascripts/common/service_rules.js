@@ -103,7 +103,7 @@ function createNodemetricRule(container_id, elem_id) {
         $(function() {
     var availableTags = new Array();
     $.ajax({
-        url: '/api/nodemetriccondition?dataType=jqGrid',
+        url: '/api/nodemetriccondition?nodemetric_condition_service_provider_id=' + elem_id + '&dataType=jqGrid',
         async   : false,
         success: function(answer) {
                     $(answer.rows).each(function(row) {
