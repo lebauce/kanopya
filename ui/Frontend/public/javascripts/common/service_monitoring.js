@@ -95,12 +95,12 @@ function createServiceConbination(container_id, elem_id) {
         $(function() {
     var availableTags = new Array();
     $.ajax({
-        url: '/api/aggregatecombination?dataType=jqGrid',
+        url: '/api/clustermetric?clustermetric_service_provider_id=' + elem_id + '&dataType=jqGrid',
         async   : false,
         success: function(answer) {
                     $(answer.rows).each(function(row) {
                     var pk = answer.rows[row].pk;
-                    availableTags.push({label : answer.rows[row].aggregate_combination_label, value : answer.rows[row].aggregate_combination_id});
+                    availableTags.push({label : answer.rows[row].clustermetric_label, value : answer.rows[row].clustermetric_id});
 
                 });
             }
