@@ -276,7 +276,8 @@ sub setupREST {
                 }
 
                 if ($class->can('create')) {
-                    $obj = $class->create(params)->toJSON();
+                    #$obj = $class->create(params)->toJSON();
+                    $obj = jsonify($class->create(params));
                 }
                 else {
                     eval {
