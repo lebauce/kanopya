@@ -35,6 +35,10 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'serviceprovider',
+            filters      : {
+                func : 'getServiceProviders',
+                args : { category: 'Cloudmanager' },
+            },
             depends      : [ 'host_manager_id' ],
         },
         host_manager_id : {
@@ -75,6 +79,10 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'serviceprovider',
+            filters      : {
+                func : 'getServiceProviders',
+                args : { category: 'Storage' },
+            },
             depends      : [ 'disk_manager_id', 'export_manager_id' ],
         },
         disk_manager_id : {

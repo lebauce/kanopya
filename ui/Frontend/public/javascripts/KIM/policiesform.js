@@ -345,13 +345,25 @@ var PolicyForm = (function() {
 
             var route = '/api/' + entity;
             var delimiter = '?';
-            for (var filter in this.fields[elementName].filters) {
-                route += delimiter + filter + '=' + this.fields[elementName].filters[filter];
-                if (delimiter === '?') {
-                    delimiter = '&';
+            var method = 'GET';
+            var args;
+
+            if (this.fields[elementName].filters) {
+                if (this.fields[elementName].filters.func) {
+                    var method = 'POST';
+                    route += '/' + this.fields[elementName].filters.func;
+                    args = this.fields[elementName].filters.args;
+                }
+            } else {
+                for (var filter in this.fields[elementName].filters) {
+                    route += delimiter + filter + '=' + this.fields[elementName].filters[filter];
+                    if (delimiter === '?') {
+                        delimiter = '&';
+                    }
                 }
             }
-            datavalues = this.ajaxCall('GET', route);
+
+            datavalues = this.ajaxCall(method, route, args);
 
             /*
              * We do not have a master class for component and connector, so we
@@ -665,8 +677,10 @@ var PolicyForm = (function() {
          * method for instance.
          */
         datavalues = this.ajaxCall('POST',
-                                     '/api/serviceprovider/' + selected_id + '/findManager',
+                                   '/api/serviceprovider/' + selected_id + '/findManager',
                                    { category: this.fields[name].category, service_provider_id: selected_id });
+
+        console.log(datavalues);
 
         // Inject all values in the select
         element.empty();
@@ -998,11 +1012,17 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.validateForm = function () {
-        var step_preffix = this.name + '_step';
-        var step = $(this.form).formwizard("state").currentStep.substring(step_preffix.length);
-        this.findContainer(step).find('.wizard-ignore').each(function() {
+        var remove_wizard_ignore = function() {
             $(this).removeClass('wizard-ignore');
-        });
+        }
+        if ($(this.form).formwizard("state").currentStep) {
+            var step_preffix = this.name + '_step';
+            var step = $(this.form).formwizard("state").currentStep.substring(step_preffix.length);
+            this.findContainer(step).find('.wizard-ignore').each(remove_wizard_ignore);
+
+        } else {
+            $(this.form).find('.wizard-ignore').each(remove_wizard_ignore);
+        }
 
         $(this.form).formwizard("next");
     }
