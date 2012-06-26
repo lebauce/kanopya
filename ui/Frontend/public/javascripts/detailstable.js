@@ -61,7 +61,6 @@ function DetailsTable(container_id, elem_id, opts) {
     this.url = '/api/' + opts.name + '/' + elem_id;
     this.fields = opts.fields;
     this.actions = [];
-    console.log(this);
     this._buildTable();
     
 }
