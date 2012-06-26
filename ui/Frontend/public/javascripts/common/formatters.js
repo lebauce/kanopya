@@ -18,13 +18,20 @@ function fromIdToComponentType(cell, options, row) {
 
 // Set the correct state icon for each element :
 function StateFormatter(cell, options, row) {
-    if ( cell.indexOf('up') != -1 ) {
-        return "<img src='/images/icons/up.png' title='up' />";
-    } else if ( cell.indexOf('broken') != -1 ) {
-        return "<img src='/images/icons/broken.png' title='broken' />";
-    } else {
-        return "<img src='/images/icons/down.png' title='down' />";
+    // map state : icon
+    var state_map = {
+            'up'        : 'up',
+            'in'        : 'up',
+            'broken'    : 'broken',
+            'down'      : 'down',
+    };
+
+    for (var state in state_map) {
+        if ( cell.indexOf(state) != -1 ) {
+            return "<img src='/images/icons/" + state_map[state] + ".png' title='" + state + "' />";
+        }
     }
+    return "<img src='/images/icons/down.png' title='unknown' />";
 }
 
 function serviceStateFormatter(cell, options, row) {
