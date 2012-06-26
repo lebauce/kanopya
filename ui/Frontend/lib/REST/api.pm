@@ -44,6 +44,7 @@ my %resources = (
     "hostmodel"                => "Entity::Hostmodel",
     "iface"                    => "Entity::Iface",
     "indicator"                => "Indicator",
+    "indicatorset"             => "Indicatorset",
     "infrastructure"           => "Entity::Infrastructure",
     "interface"                => "Entity::Interface",
     "interfacerole"            => "Entity::InterfaceRole",
