@@ -49,12 +49,26 @@ function loadServicesRessources (container_id, elem_id) {
         rowNum : 25,
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             addRessourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, '');
+
+            // Core and ram info
+            var host_id  = $(grid).getCell(rowid, 'host_id');
+            $.ajax({
+                url     : '/api/host/' + host_id,
+                type    : 'GET',
+                success : function(data) {
+                    $(grid).setCell(rowid, 'host_core', data.host_core);
+                    $(grid).setCell(rowid, 'host_ram', data.host_ram + 'B');
+                }
+            });
         },
-        colNames: [ 'id', 'State', 'Hostname', 'Rules State' ],
+        colNames: [ 'id', 'host id', 'State', 'Hostname', 'Core', 'Ram', 'Rules State' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'host_id', index: 'host_id', hidden: true},
             { name: 'node_state', index: 'node_state', width: 90, formatter: StateFormatter },
             { name: 'externalnode_hostname', index: 'node_hostname', width: 200 },
+            { name: 'host_core', index: 'host_core' },
+            { name: 'host_ram', index: 'host_ram' },
             { name: 'rulesstate', index: 'rulestate' }
         ],
         details : {
