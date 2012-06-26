@@ -1,4 +1,7 @@
-var lastMsgId = '';
+require('messages.js');
+require('gritter.js');
+
+var lastMsgId = 0;
 
 $(document).ready(function () {
 
@@ -114,15 +117,20 @@ $(document).ready(function () {
                }
     );
 
+    initMessages();
+
+    // TODO maybe we can do this in initMessages
     $.ajax({
         url: '/api/message?order_by=message_id%20DESC&rows=1&dataType=jqGrid',
         success: function(data) {
             $(data.rows).each(function(row) {
-                lastMsgId = data.rows[row].pk;
+                if (parseInt(data.rows[row].pk) > lastMsgId) {
+                    lastMsgId = parseInt(data.rows[row].pk);
+                }
             });
         }
     });
-                
+
     // call for the themeswitcher
     //$('#switcher').themeswitcher();
 });
