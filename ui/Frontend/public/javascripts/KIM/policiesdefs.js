@@ -6,6 +6,11 @@ function serializeDateTime(datetime) {
     return d.getTime();
 }
 
+function serializeTime(time) {
+    // Ugly !
+    return serializeDateTime('06/26/2012 ' + time);
+}
+
 var policies = {
     hosting: {
         policy_name : {
@@ -328,6 +333,7 @@ var policies = {
             composite   : 'billing_limits',
             type        : 'time',
             label       : 'Repeat Start',
+            serialize   : serializeTime,
             is_mandatory: 0
         },
         limit_repeat_end    : {
@@ -335,6 +341,7 @@ var policies = {
             composite   : 'billing_limits',
             type        : 'time',
             label       : 'Repeat End',
+            serialize   : serializeTime,
             is_mandatory: 0
         }
     }
