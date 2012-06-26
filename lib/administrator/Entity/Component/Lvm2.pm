@@ -101,7 +101,7 @@ sub checkDiskManagerParams {
     General::checkParams(args => \%args, required => [ "vg_id", "systemimage_size" ]);
 }
 
-=head2 getHostingPolicyParams
+=head2 getPolicyParams
 
 =cut
 
@@ -113,8 +113,12 @@ sub getPolicyParams {
 
     my @vg_list = map { $_->{lvm2_vg_name} } @{ $self->getConf->{lvm2_vgs} };
 
+    my $vgs = {};
     if ($args{policy_type} eq 'storage') {
-        return [ { name => 'vg_id', label => 'Volume group to use', values => \@vg_list } ];
+        for my $vg (@{ $self->getConf->{lvm2_vgs} }) {
+            $vgs->{$vg->{lvm2_vg_id}} = $vg->{lvm2_vg_name};
+        }
+        return [ { name => 'vg_id', label => 'Volume group to use', values => $vgs } ];
     }
     return [];
 }

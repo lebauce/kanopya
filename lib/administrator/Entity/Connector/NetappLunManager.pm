@@ -73,6 +73,28 @@ sub checkDiskManagerParams {
     General::checkParams(args => \%args, required => [ "volume_id", "systemimage_size" ]);
 }
 
+=head2 getPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    my $volumes = {};
+    if ($args{policy_type} eq 'storage') {
+        for my $aggr (@{ $self->getConf->{aggregates} }) {
+            for my $volume (@{ $aggr->{aggregates_volumes} }) {
+                $volumes->{$volume->{volume_id}} = '(' . $aggr->{aggregate_name} . ') ' . $volume->{volume_name};
+            }
+        }
+        return [ { name => 'volume_id', label => 'Volume to use', values => $volumes } ];
+    }
+    return [];
+}
+
 sub getExportManagerFromBootPolicy {
     my $self = shift;
     my %args = @_;

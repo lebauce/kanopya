@@ -69,8 +69,27 @@ sub checkDiskManagerParams {
     my $self = shift;
     my %args = @_;
 
-    #General::checkParams(args => \%args, required => [ "aggr_id", "systemimage_size" ]);
-    General::checkParams(args => \%args, required => [ "systemimage_size" ]);
+    General::checkParams(args => \%args, required => [ "aggregate_id", "systemimage_size" ]);
+}
+
+=head2 getPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    my $aggregates = {};
+    if ($args{policy_type} eq 'storage') {
+        for my $aggr (@{ $self->getConf->{aggregates} }) {
+            $aggregates->{$aggr->{aggregate_id}} = $aggr->{aggregate_name};
+        }
+        return [ { name => 'aggregate_id', label => 'Aggregate to use', values => $aggregates } ];
+    }
+    return [];
 }
 
 sub getExportManagerFromBootPolicy {
@@ -134,18 +153,18 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "name", "size", "filesystem" ]);
+                         required => [ "name", "size", "filesystem", "aggregate_id" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
     Operation->enqueue(
         priority => 200,
         type     => 'CreateDisk',
         params   => {
-            name       => $args{name},
-            size       => $args{size},
-            filesystem => $args{filesystem},
-            volume_id  => $args{volume_id},
-            context    => {
+            name         => $args{name},
+            size         => $args{size},
+            filesystem   => $args{filesystem},
+            aggregate_id => $args{aggregate_id},
+            context      => {
                 disk_manager => $self,
             }
         },

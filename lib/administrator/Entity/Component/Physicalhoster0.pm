@@ -55,7 +55,7 @@ sub getHostType {
     return "Physical host";
 }
 
-=head2 getHostingPolicyParams
+=head2 getPolicyParams
 
 =cut
 

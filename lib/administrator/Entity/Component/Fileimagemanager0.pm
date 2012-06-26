@@ -77,6 +77,26 @@ sub checkDiskManagerParams {
     General::checkParams(args => \%args, required => [ "container_access_id", "systemimage_size" ]);
 }
 
+=head2 getPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    my $accesses = {};
+    if ($args{policy_type} eq 'storage') {
+        for my $access (@{ $self->getConf->{container_accesses} }) {
+            $accesses->{$access->{container_access_id}} = $access->{container_access_name};
+        }
+        return [ { name   => 'container_access_id', label  => 'Volume group to use', values => $accesses } ];
+    }
+    return [];
+}
+
 sub getConf {
     my $self = shift;
     my $conf = {};
