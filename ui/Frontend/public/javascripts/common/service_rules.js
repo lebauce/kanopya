@@ -417,7 +417,7 @@ function loadServicesRules (container_id, elem_id, ext) {
                                     }
                                 }
                             });
-                            require('KIO/workflows.js');
+                            require('common/workflows.js');
                             createWorkflowRuleAssociationButton(cid, eid, 1, elem_id);
                         }},
                         { label : 'Nodes', id : 'nodes', onLoad : function(cid, eid) { rule_nodes_tab(cid, eid, elem_id); } },
