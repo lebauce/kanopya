@@ -51,6 +51,10 @@ sub methods {
             'description' => 'Return the type of managed disks.',
             'perm_holder' => 'entity',
         },
+        'getExportManagers' => {
+            'description' => 'Return the availables export managers for this disk manager.',
+            'perm_holder' => 'entity',
+        },
     }
 }
 
@@ -131,6 +135,13 @@ sub getBootPolicyFromExportManager {
     throw Kanopya::Exception::Internal::UnknownCategory(
               error => "Unsupported export manager:" . $args{export_manager}
           );
+}
+
+sub getExportManagers {
+    my $self = shift;
+    my %args = @_;
+
+    return [ $self ];
 }
 
 sub getReadOnlyParameter {
