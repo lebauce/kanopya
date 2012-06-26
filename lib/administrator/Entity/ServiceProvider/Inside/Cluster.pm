@@ -39,6 +39,7 @@ use General;
 use ServiceProviderManager;
 use ServiceTemplate;
 use VerifiedNoderule;
+use Entity::Billinglimit;
 
 use Hash::Merge;
 
@@ -398,6 +399,9 @@ sub applyPolicies {
         elsif ($name eq 'interfaces') {
             $self->configureInterfaces(interfaces => $value);
         }
+        elsif ($name eq 'billing_limits') {
+            $self->configureBillingLimits(billing_limits => $value);
+        }
         else {
             $self->setAttr(name => $name, value => $value);
         }
@@ -493,6 +497,28 @@ sub configureInterfaces {
                 }
             }
         }
+    }
+}
+
+sub configureBillingLimits {
+    my $self    = shift;
+    my %args    = @_;
+
+    General::checkParams(args => \%args, required => [ 'billing_limits' ]);
+
+    foreach my $name (keys %{$args{billing_limits}}) {
+        my $value                       = $args{billing_limits}->{$name};
+        Entity::Billinglimit->new(
+            start               => $value->{start},
+            endind              => $value->{ending},
+            type                => $value->{type},
+            soft                => $value->{soft},
+            service_provider_id => $self->getAttr(name => 'entity_id'),
+            repeats             => $value->{repeats},
+            repeat_start_time   => $value->{repeat_start_time},
+            repeat_end_time     => $value->{repeat_end_time},
+            value               => $value->{value}
+        );
     }
 }
 

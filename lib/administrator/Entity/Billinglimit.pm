@@ -35,13 +35,13 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
-    end => {
+    ending => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0
     },
     type => {
-        pattern      => '^\d*$',
+        pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0
     },
@@ -55,7 +55,7 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
-    repeat => {
+    repeats => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
