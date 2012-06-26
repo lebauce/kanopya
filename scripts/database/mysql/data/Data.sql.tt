@@ -414,7 +414,6 @@ INSERT INTO `workflow_step` VALUES
 (8, 3, 50),
 (9, 4, 49);
 
-
 --
 -- components type list
 --
