@@ -504,21 +504,21 @@ sub configureBillingLimits {
     my $self    = shift;
     my %args    = @_;
 
-    General::checkParams(args => \%args, required => [ 'billing_limits' ]);
-
-    foreach my $name (keys %{$args{billing_limits}}) {
-        my $value                       = $args{billing_limits}->{$name};
-        Entity::Billinglimit->new(
-            start               => $value->{start},
-            ending              => $value->{ending},
-            type                => $value->{type},
-            soft                => $value->{soft},
-            service_provider_id => $self->getAttr(name => 'entity_id'),
-            repeats             => $value->{repeats},
-            repeat_start_time   => $value->{repeat_start_time},
-            repeat_end_time     => $value->{repeat_end_time},
-            value               => $value->{value}
-        );
+    if (defined($args{billing_limits})) {
+        foreach my $name (keys %{$args{billing_limits}}) {
+            my $value                       = $args{billing_limits}->{$name};
+            Entity::Billinglimit->new(
+                start               => $value->{start},
+                ending              => $value->{ending},
+                type                => $value->{type},
+                soft                => $value->{soft},
+                service_provider_id => $self->getAttr(name => 'entity_id'),
+                repeats             => $value->{repeats},
+                repeat_start_time   => $value->{repeat_start_time},
+                repeat_end_time     => $value->{repeat_end_time},
+                value               => $value->{value}
+            );
+        }
     }
 }
 

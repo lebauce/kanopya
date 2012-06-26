@@ -970,6 +970,9 @@ INSERT INTO `param_preset` values (53, "host", NULL, 51 );
 INSERT INTO `param_preset` values (54, "internal", NULL, 46 );
 INSERT INTO `param_preset` values (55, "scope_id", 1, 54 );
 
+-- Default billing policy
+INSERT INTO `param_preset` VALUES (56, "billing_policy", NULL, NULL);
+
 UPDATE `kanopya`.`workflow_def` SET `param_preset_id` = '46' WHERE `workflow_def`.`workflow_def_name` = 'ScaleInWorkflow';
 
 
@@ -979,8 +982,9 @@ INSERT INTO `policy` VALUES (2, 10, 'Kanopya LVM disk exported via ISCSI', "Data
 INSERT INTO `policy` VALUES (3, 18, 'Default network configuration', "Default network configuration, with admin and public interfaces.", 'network');
 INSERT INTO `policy` VALUES (4, 29, 'Cluster manual scalability', "Manual scalability.", 'scalability');
 INSERT INTO `policy` VALUES (5, 33, 'Debian squeeze', "Hosting policy for standard physical hosts.", 'system');
+INSERT INTO `policy` VALUES (6, 56, 'Empty billing configuration', "Empty billing configuration", 'billing');
 
-INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5, NULL, NULL);
+INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5, 6, NULL);
 
 
 
