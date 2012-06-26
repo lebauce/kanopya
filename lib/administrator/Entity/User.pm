@@ -23,6 +23,7 @@ use strict;
 use warnings;
 use Administrator;
 use Digest::MD5 "md5_hex";
+use DateTime;
 use Kanopya::Exceptions;
 use General;
 use Log::Log4perl "get_logger";
@@ -120,23 +121,26 @@ sub getUsers {
     return $class->search(%args);
 }
 
-=head2 create
+=head2 create 
 
 =cut
 
 sub create {
-    my $self = shift;
+    my ($class, %args) = @_;
     my $admin = Administrator->new();
-    my $mastergroup_eid = $self->getMasterGroupEid();
+    my $mastergroup_eid = $class->getMasterGroupEid();
     my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
     if(not $granted) {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
     }
 
+    my $self = $class->SUPER::new(%args);
     $self->{_dbix}->user_password( md5_hex($self->{_dbix}->user_password) );
-    $self->{_dbix}->user_creationdate(\'NOW()');
+    my $dt = DateTime->now->set_time_zone('local');
+    $self->{_dbix}->user_creationdate("$dt");
     $self->{_dbix}->user_lastaccess(undef);
     $self->save();
+    return $self;
 }
 
 =head2 update
