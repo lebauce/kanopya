@@ -413,6 +413,8 @@ INSERT INTO `workflow_step` VALUES
 (7, 2, 26),
 (8, 3, 50),
 (9, 4, 49);
+
+
 --
 -- components type list
 --
@@ -970,22 +972,32 @@ INSERT INTO `param_preset` values (53, "host", NULL, 51 );
 INSERT INTO `param_preset` values (54, "internal", NULL, 46 );
 INSERT INTO `param_preset` values (55, "scope_id", 1, 54 );
 
--- Default billing policy
-INSERT INTO `param_preset` VALUES (56, "billing_policy", NULL, NULL);
-
 UPDATE `kanopya`.`workflow_def` SET `param_preset_id` = '46' WHERE `workflow_def`.`workflow_def_name` = 'ScaleInWorkflow';
 
+-- workflow AddNode param preset
+INSERT INTO `param_preset` VALUES (56, 'workflow_def_params', NULL, NULL);
+INSERT INTO `param_preset` VALUES (57, 'automatic', NULL, 56);
+INSERT INTO `param_preset` VALUES (58, "context", NULL, 57 );
+INSERT INTO `param_preset` VALUES (59, "cluster", NULL, 58 );
+INSERT INTO `param_preset` VALUES (60, "internal", NULL, 56 );
+INSERT INTO `param_preset` VALUES (61, "scope_id", 2, 60 );
 
+UPDATE `kanopya`.`workflow_def` SET `param_preset_id` = '56' WHERE `workflow_def`.`workflow_def_name` = 'AddNode';
+
+-- associate native kanopya workflows to native kanopya workflow manager
+SELECT @wf_manager_id:= component_id FROM `component` where component_type_id='21' and service_provider_id=@admin_cluster;
+
+INSERT INTO `workflow_def_manager` VALUES (1,@wf_manager_id,1); 
+INSERT INTO `workflow_def_manager` VALUES (2,@wf_manager_id,4); 
+
+-- Default billing policy
+INSERT INTO `param_preset` VALUES (62, "billing_policy", NULL, NULL);
 
 INSERT INTO `policy` VALUES (1, 1, 'Default physical host', "Hosting policy for default physical hosts.", 'hosting');
 INSERT INTO `policy` VALUES (2, 10, 'Kanopya LVM disk exported via ISCSI', "Datastore on Kanopya cluster for PXE boot via ISCSI.", 'storage');
 INSERT INTO `policy` VALUES (3, 18, 'Default network configuration', "Default network configuration, with admin and public interfaces.", 'network');
 INSERT INTO `policy` VALUES (4, 29, 'Cluster manual scalability', "Manual scalability.", 'scalability');
 INSERT INTO `policy` VALUES (5, 33, 'Debian squeeze', "Hosting policy for standard physical hosts.", 'system');
-INSERT INTO `policy` VALUES (6, 56, 'Empty billing configuration', "Empty billing configuration", 'billing');
+INSERT INTO `policy` VALUES (6, 62, 'Empty billing configuration', "Empty billing configuration", 'billing');
 
 INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5, 6, NULL);
-
-
-
-

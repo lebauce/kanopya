@@ -75,6 +75,10 @@ sub _getAutomaticValues{
         my $cloudmanager_comp = Entity->get(id => $cloudmanager_id);
         $automatic_params->{context}->{cloudmanager_comp} = $cloudmanager_comp;
     }
+    if (exists $automatic_params->{context}->{cluster}) {
+        my $service_provider = Entity->get(id => $args{service_provider_id});
+        $automatic_params->{context}->{cluster} = $service_provider;
+    }
 
     return $automatic_params;
 }
