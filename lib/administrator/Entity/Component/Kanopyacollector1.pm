@@ -138,7 +138,7 @@ sub retrieveData {
         foreach my $indicator_name (keys %$set) {
             my $indicator = (grep { $_->getAttr(name => "indicator_name") eq $indicator_name } values %$indicators)[0];
             next if not defined $indicator;
-            $res{$node_name}{$indicator->getAttr(name => 'indicator_oid')} = $set->{$indicator_name}[0];
+            $res{$node_name}{$indicator->getAttr(name => 'indicator_oid')} = $set->{$indicator_name}[-1]; # take the last value retrieved during time laps
         }
     }
 
