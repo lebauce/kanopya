@@ -150,7 +150,10 @@ var PolicyForm = (function() {
         if (field.type === 'checkbox') {
             type = 'select';
             options = [ 'no', 'yes' ];
-            this.fields[elementName].value_shift = 1;
+            if (this.fields[elementName].is_mandatory == null ||
+                this.fields[elementName].is_mandatory == false) {
+                this.fields[elementName].value_shift = 1;
+            }
             if (value) {
                 value = parseInt(value) + this.fields[elementName].value_shift;
             }
@@ -867,8 +870,8 @@ var PolicyForm = (function() {
                 if (that.fields[id].prefix) {
                     $(this).attr('name', that.fields[id].prefix + $(this).attr('name'));
                 }
-                if (that.fields[id].type === 'checkbox' && parseInt($(this).attr('value'))) {
-                    $(this).attr('value', parseInt($(this).attr('value')) - 1);
+                if (that.fields[id].type === 'checkbox' && parseInt($(this).val())) {
+                    $(this).val(parseInt($(this).val()) - that.fields[id].value_shift);
                 }
                 if (that.fields[id].serialize != null) {
                     $(this).val(that.fields[id].serialize($(this).val()));

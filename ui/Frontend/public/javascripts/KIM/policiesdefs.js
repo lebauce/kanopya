@@ -7,8 +7,12 @@ function serializeDateTime(datetime) {
 }
 
 function serializeTime(time) {
-    // Ugly !
-    return serializeDateTime('06/26/2012 ' + time);
+    if (time != null && time !== '') {
+        // Ugly !
+        return serializeDateTime('06/26/2012 ' + time);
+    } else {
+        return time;
+    }
 }
 
 var policies = {
