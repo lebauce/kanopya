@@ -50,7 +50,7 @@ my $log = get_logger("monitor");
     Desc : Instanciate VirtualProvider instance to provide Virtual stat from a specific host
     
     Args :
-        host: string: ip of host
+        host: Entity::Host: host object
     
     Return : VirtualProvider instance
     
@@ -64,6 +64,7 @@ sub new {
     bless $self, $class;
 
     $self->{_host} = $args{host};
+    $self->{_ip} = $args{host}->getAdminIp;
     
     return $self;
 }
@@ -91,7 +92,7 @@ sub retrieveData {
     my $var_map = $args{var_map};
 
     my @OID_list = values( %$var_map );
-    my $time =time();
+    my $time = time();
 
     my %values = ();
     
@@ -100,7 +101,7 @@ sub retrieveData {
         my $line = $_;
         chomp($line);
         my ($ip, $data) = split " ", $line;
-        if ($ip eq $self->{_host}) {
+        if ($ip eq $self->{_ip}) {
             
             my $load;
             if ($data =~ /LOAD:([\d\.]+)/) {

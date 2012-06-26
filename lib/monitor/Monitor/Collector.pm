@@ -56,11 +56,12 @@ sub updateHostData {
     my %args = @_;
 
     my $start_time = time();
-    my $host_name = $args{host_name};
-    my $host_ip = $args{host_ip};
+    my $host = $args{host};
+    my $host_name = $host->host_hostname;
+    my $host_ip = $host->getAdminIp;
+    my $host_state = $host->host_state;
     my $host_reachable = 1;
     my %all_values = ();
-
     my $error_happened = 0;
     my %providers = ();
 
@@ -98,7 +99,7 @@ sub updateHostData {
                 if (not defined $data_provider) {
                     require "DataProvider/$provider_class.pm";
                     $data_provider = $provider_class->new(
-                        host      => $host_ip,
+                        host      => $host,
                         component => $args{'components'}->{ $set->{'component'} } || undef
                     );
                     $providers{$provider_class} = $data_provider;
@@ -133,7 +134,7 @@ sub updateHostData {
                     $provider_class =~ /(.*)Provider/;
                     my $comp = $1;
                     my $mess = "Can not reach component '$comp' on $host_name ($host_ip)";
-                    if ( $args{host_state} =~ "up" ) {
+                    if ( $host_state =~ "up" ) {
                         $log->info( "Unreachable host '$host_name' (IP $host_ip, component '$comp') => we stop collecting data.");
                         Message->send(from => 'Monitor', level => "warning", content => $mess );
                     }
@@ -376,11 +377,9 @@ sub update {
             # Collect data for nodes in the cluster
             foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
                 if ( $mb->getNodeState() =~ '^in' ) {
-                    my $host_name = $mb->getAttr( name => "host_state" );
+                    my $host_name = $mb->getAttr( name => "host_hostname");
                     my %params = (
-                        host_name  => $mb->getAttr(name => "host_hostname"),
-                        host_ip    => $mb->getAdminIp,
-                        host_state => $host_name,
+                        host       => $mb,
                         components => \%components_by_name,
                         sets       => $monitored_sets,
                     );
