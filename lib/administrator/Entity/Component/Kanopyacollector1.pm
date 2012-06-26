@@ -130,6 +130,15 @@ sub retrieveData {
         }
     }
 
+    my %res;
+    while (my ($node_name, $set) = each %monitored_values) {
+        foreach my $indicator_name (keys %$set) {
+            my $indicator = (grep { $_->getAttr(name => "indicator_name") eq $indicator_name } values %$indicators)[0];
+            next if not defined $indicator;
+            $res{$node_name}{$indicator->getAttr(name => 'indicator_oid')} = $set->{$indicator_name}[0];
+        }
+    }
+
     # my $monitored_values = {
     #     'tge1' => {
     #         '.1.3.6.1.4.1.2021.4.5.0' => '12.34',
@@ -141,7 +150,7 @@ sub retrieveData {
     #     },
     # };
 
-    return \%monitored_values;
+    return \%res;
 }
 
 
