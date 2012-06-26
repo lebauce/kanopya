@@ -416,8 +416,8 @@ sub configureManagers {
             # and set manager parameters if defined.
             my $cluster_manager;
             eval {
-                $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $manager->{manager_type},
-                                                                  service_provider_id   => $self->getId });
+                $cluster_manager = ServiceProviderManager->find(hash => { manager_type        => $manager->{manager_type},
+                                                                          service_provider_id => $self->getId });
             };
             if ($@) {
                 next if not $manager->{manager_id};
