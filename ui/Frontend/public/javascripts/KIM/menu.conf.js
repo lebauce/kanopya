@@ -1,4 +1,5 @@
 require('KIM/iaas.js');
+require('common/users.js');
 require('KIM/customers.js');
 require('KIM/servicetemplates.js');
 require('KIM/policies.js');
@@ -45,7 +46,7 @@ var mainmenu_def = {
     'Administration'    : {
         'Kanopya'          : [],
         'Right Management' :  [
-                               {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('common/users.js'); usersList(cid, eid); }},
+                               {label : 'Users', id : 'users', onLoad : users.load_content },
                                {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); }},
                                {label : 'Permissions', id : 'permissions', onLoad : function(cid, eid) { require('common/users.js'); permissions(cid, eid); }}
                                ],
@@ -76,6 +77,15 @@ var details_def = {
                id    : 'customer_detail_infos',
                onLoad : customers.load_infos },
              
+        ],
+     },
+     'users_list' : { tabs: 
+        [ { label  : 'Overview',
+               id  : 'user_detail_overview',
+               onLoad : users.load_details },
+            { label  : 'Profiles',
+               id     : 'user_detail_profiles',
+               onLoad : users.load_profiles },
         ],
      },
     'service_template_list'   : { onSelectRow : load_service_template_details },
