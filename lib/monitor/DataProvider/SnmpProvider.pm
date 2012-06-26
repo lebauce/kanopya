@@ -65,8 +65,8 @@ sub new {
     # Create snmp session
     my $host = $args{host};
     my ($session, $error) = Net::SNMP->session(
-      -hostname  => $host,
-      -community => 'my_comnt',
+        -hostname  => $host,
+        -community => 'my_comnt',
     );
 
     if (!defined $session) {

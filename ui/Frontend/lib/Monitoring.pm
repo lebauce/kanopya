@@ -229,16 +229,18 @@ sub _computeNodemetricCombination {
     
     # we retrieve the nodemetric values
     eval {
+        my %indicators;
         foreach my $indicator_id (@indicator_ids) {
-            #my $indicator_inst = Indicator->get('id' => $indicator_id);
-            #my $indicator_oid = $indicator_inst->getAttr('name'=> 'indicator_oid');
-            my $indicator_oid = $service_provider->getIndicatorOidFromId( indicator_id => $indicator_id );
-            push @indicator_oids, $indicator_oid;
+            my $collector = $service_provider->getManager(manager_type => "collector_manager");
+            my $indicator = $collector->getIndicator(id => $indicator_id);
+            my $indicator_oid = $indicator->indicator_oid;
+            $indicators{$indicator_oid} = $indicator;
         }
+
         $nodes_metrics = $service_provider->getNodesMetrics(
-            indicators => \@indicator_oids,
-            time_span => 1200,
-            shortname => 1
+            indicators => \%indicators,
+            time_span  => 1200,
+            shortname  => 1
         );
 
         $log->debug('[Cluster id '.$cluster_id.']: The indicators have the following values :'.Dumper $nodes_metrics);

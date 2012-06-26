@@ -162,15 +162,10 @@ sub manage_aggregates {
         eval{
             my $service_provider_id = $service_provider->getAttr(name => 'service_provider_id');
 
-            #FILTER CLUSTERS WITH MONITORING PROVIDER
-            eval{
-                if ($^O eq 'MSWin32') {
-                    $service_provider->getConnector(category => 'MonitoringService');
-                } elsif ($^O eq 'linux') {
-                    $service_provider->getCollectorManager();
-                }
+            eval {
+                $service_provider->getManager(manager_type => "collector_manager");
             };
-            if($@){
+            if ($@){
                 $log->info('*** Orchestrator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***');
             }
             else{
@@ -608,10 +603,11 @@ sub _contructRetrieverOutput {
             my $combination = NodemetricCombination->get('id' => $combination_id);
             # get the indicator ids used in combination formula
             my @indicator_ids = $combination->getDependantIndicatorIds();
+            my $collector = $service_provider->getManager(manager_type => 'collector_manager');
 
-            for my $indicator_id (@indicator_ids){
-                my $indicator_oid = $service_provider->getIndicatorOidFromId (indicator_id => $indicator_id);
-                $indicators_name->{$indicator_oid} = undef;
+            for my $indicator_id (@indicator_ids) {
+                my $indicator = $collector->getIndicator(id => $indicator_id);
+                $indicators_name->{$indicator->indicator_oid} = undef;
             }
         }
     }

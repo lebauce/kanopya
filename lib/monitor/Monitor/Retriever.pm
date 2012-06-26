@@ -63,8 +63,6 @@ sub getData {
     my $self = shift;
     my %args = @_;
     
-    Monitor::logArgs( "getData", %args );
-    
     my $rrd_name = $args{rrd_name};
 
     # rrd constructor     
@@ -134,9 +132,6 @@ sub getData {
         }
     }
 
-    #print "\n###############   ", "getData res data   # $args{rrd_name} #", "   ##########\n";
-    #print Dumper \%res_data;
-
     ######################################################
     # Build resulting hash : ( ds_name => f(v1,v2,...) ) #
     ######################################################
@@ -159,12 +154,6 @@ sub getData {
         }
     }
 
-    # debug
-    #print "\n###############   ", "getData res", "   ##########\n";
-    #print Dumper \%res;
-    
-    Monitor::logRet( %res );
-    
     return %res;
 }
 
@@ -172,8 +161,6 @@ sub getData {
 sub getHostData {
     my $self = shift;
     my %args = @_;
-    
-    Monitor::logArgs( "getHostData", %args );
     
     my $rrd_name = $self->rrdName( set_name => $args{set}, host_name => $args{host} );
     
@@ -184,10 +171,10 @@ sub getHostData {
         $log->warn("No max definition to compute percent for '$args{set}'");
     }
     
-    my %host_data = $self->getData( rrd_name => $rrd_name,
-                                    time_laps => $args{time_laps},
-                                    max_def => (scalar @max_def) ? \@max_def : undef,
-                                    percent => $args{percent} );
+    my %host_data = $self->getData(rrd_name => $rrd_name,
+                                   time_laps => $args{time_laps},
+                                   max_def => (scalar @max_def) ? \@max_def : undef,
+                                   percent => $args{percent} );
     
     return \%host_data;
 }
@@ -196,7 +183,6 @@ sub getClusterData {
     my $self = shift;
     my %args = @_;
     
-    #Monitor::logArgs( "getClusterData", %args );
     my $rrd_name = $self->rrdName( set_name => $args{set}, host_name => $args{cluster} );
     
     # Unable the monitoring of _total based and stay compatible with existant code 
@@ -215,12 +201,6 @@ sub getClusterData {
         $rrd_name .= "_raw";
     }
     
-# TODO : A TESTER    
-#    my %corresponding_table = (total   => 'total',
-#                               average => 'avg',
-#    );
-#    $rrd_name .= "_".($corresponding_table{$args{aggregation} || 'avg'});
-    
     my $set_def = $self->getSetDesc(set_label => $args{set});
     my @max_def;
     if ( $set_def->{max} ) { @max_def = split( /\+/, $set_def->{max} ) };
@@ -238,83 +218,22 @@ sub getClusterData {
     return \%cluster_data;
 }
 
-#DEPRECATED now we store cluster data, so retrieve this data directly from rrd (see getClusterData)
-sub getClusterData_OLD {
-    my $self = shift;
-    my %args = @_;
-    
-    my $aggregate = $args{aggregate};
-    
-    my $res;
-    my %hosts_data = ();
-    my $hosts = $self->getClusterHostsInfo( cluster => $args{cluster} );
-    
-    my $up;
-    #foreach my $host (@$hosts) { 
-    while ( my ($hostname, $host_info) = each %$hosts ) {
-        if ( $host_info->{state} =~ "up" ) {
-            my $host_data = $self->getHostData( host => $host_info->{ip}, set => $args{set}, time_laps => $args{time_laps}, percent => $args{percent} );
-            $hosts_data{ $hostname } = $host_data;
-            $up = 1;
-        }
-        else {
-            $hosts_data{ $hostname } = $host_info->{state};
-        }
-    }
-    
-    die "No node 'up' in cluster '$args{cluster}'" if ( not defined $up );
-    
-    if ( defined $aggregate ) {
-        my @data_list = values %hosts_data;
-        my %aggregate_data = $self->aggregate( hash_list => \@data_list, f => $aggregate );
-        $res = \%aggregate_data;
-    } else {
-        $res = \%hosts_data;
-    }
-
-    return $res;
-}
-
 sub getClustersData {
     my $self = shift;
     my %args = @_;
-    
-    #$log->debug("##########################################################");
-    Monitor::logArgs( "getClusterData", %args );
-    
+
     my %clusters_data = ();
     my @clusters = $self->getClustersName();
+
     for my $cluster (@clusters) {
-        $clusters_data{ $cluster } = $self->getClusterData( cluster => $cluster,
-                                                     set => $args{set},
-                                                     time_laps => $args{time_laps},
-                                                     percent => $args{percent},
-                                                     aggregate => $args{aggregate});
+        $clusters_data{ $cluster } = $self->getClusterData(cluster   => $cluster,
+                                                           set       => $args{set},
+                                                           time_laps => $args{time_laps},
+                                                           percent   => $args{percent},
+                                                           aggregate => $args{aggregate});
     }
+
     return \%clusters_data;
-}
-
-
-#TODO amélioration
-sub fetch {
-    my $self = shift;
-    my %args = @_;
-
-    my $rrd_name = $args{rrd_name};
-
-    # rrd constructor     
-    my $rrd = $self->getRRD(file => "$rrd_name.rrd" );
-
-    # Start fetching values from one day back, 
-    # but skip undefined ones first
-    $rrd->fetch_start( start => time() - 60);
-    $rrd->fetch_skip_undef();
-
-    # Fetch stored values
-    while(my($time, @values) = $rrd->fetch_next()) {
-        print "$time: ", ( map { (defined $_ ? $_ : "[undef]") . " | " } @values ), "\n";
-        print ("SUM = ", sum(@values), "\n") if defined $values[0];
-    }
 }
 
 1;

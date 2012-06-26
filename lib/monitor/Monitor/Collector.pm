@@ -45,7 +45,7 @@ sub new {
     Desc : For a host, retrieve value of all monitored data (var defined in conf) and store them in corresponding rrd
     
     Args :
-        host_ip : the host ip adress
+        host_name : the host name
         components : array ref of components name on this host.
         host_state : current state of the host
 
@@ -55,16 +55,15 @@ sub updateHostData {
     my $self = shift;
     my %args = @_;
 
-
-
     my $start_time = time();
-
-    my $host = $args{host_ip};
-
-    my %all_values = ();
+    my $host_name = $args{host_name};
+    my $host_ip = $args{host_ip};
     my $host_reachable = 1;
+    my %all_values = ();
+
     my $error_happened = 0;
     my %providers = ();
+
     eval {
         #For each required set of indicators
         SET:
@@ -74,22 +73,19 @@ sub updateHostData {
             # Skip this set if associated component is not on this host #
             #############################################################
             if (defined $set->{'component'} && $set->{'component'} ne 'base' &&    
-                #0 == grep { $_ eq $set->{'component'} } @{$args{components}} 
-                ! exists $args{components}->{ $set->{'component'} }
-                ) {
-                $log->info("[$host] No component '$set->{'component'}' to monitor on this host");
+                ! exists $args{components}->{ $set->{'component'} }) {
+                $log->info("[$host_name] No component '$set->{'component'}' to monitor on this host");
                 next SET;
             }
 
-			# Skip set if collect is done by an external process
-			next SET if ($set->{'data_provider'} eq 'extern');
+            # Skip set if collect is done by an external process
+            next SET if ($set->{'data_provider'} eq 'extern');
 
             ###################################################
             # Build the required var map: ( var_name => oid ) #
             ###################################################
             my %var_map = map { $_->{label} => $_->{oid} } @{ General::getAsArrayRef( data => $set, tag => 'ds') };
             
-
             my ($time, $update_values);
             my $retrieve_set_time;
             my $provider_class;
@@ -101,7 +97,10 @@ sub updateHostData {
                 my $data_provider = $providers{$provider_class};
                 if (not defined $data_provider) {
                     require "DataProvider/$provider_class.pm";
-                    $data_provider = $provider_class->new( host => $host, component =>  $args{'components'}->{ $set->{'component'} } );
+                    $data_provider = $provider_class->new(
+                        host      => $host_ip,
+                        component => $args{'components'}->{ $set->{'component'} } || undef
+                    );
                     $providers{$provider_class} = $data_provider;
                 }
                 
@@ -110,11 +109,17 @@ sub updateHostData {
                 ############################################################################################################
                 my $retrieve_set_start_time = time();
                 if ( defined $set->{table_oid} ) {
-                    ($time, $update_values) = $data_provider->retrieveTableData( table_oid => $set->{table_oid}, index_oid => $set->{index_oid}, var_map => \%var_map );
+                    ($time, $update_values) = $data_provider->retrieveTableData(
+                                                  table_oid => $set->{table_oid},
+                                                  index_oid => $set->{index_oid},
+                                                  var_map => \%var_map
+                                              );
                 } else {
-                    ($time, $update_values->{"0"}) = $data_provider->retrieveData( var_map => \%var_map );
+                    ($time, $update_values->{"0"}) = $data_provider->retrieveData(
+                                                         var_map => \%var_map
+                                                     );
                 }
-                #$log->info("[$host] ##### Collect '$set->{label}' time : " .  (time() - $retrieve_time));
+
                 $retrieve_set_time = time() - $retrieve_set_start_time;
             };
             if ($@) {
@@ -122,20 +127,20 @@ sub updateHostData {
                 # Handle exceptions #
                 #####################
                 my $error = $@;
-                $log->warn( "[" . threads->tid() . "][$host] Collecting data set '$set->{label}' => $provider_class : $error" );
+                $log->warn( "[" . threads->tid() . "][$host_name] Collecting data set '$set->{label}' => $provider_class : $error" );
                 #TODO find a better way to detect unreachable host (grep error string is not very safe)
                 if ( "$error" =~ "No response" || "$error" =~ "Can't connect") {
                     $provider_class =~ /(.*)Provider/;
                     my $comp = $1;
-                    my $mess = "Can not reach component '$comp' on $host";
+                    my $mess = "Can not reach component '$comp' on $host_name ($host_ip)";
                     if ( $args{host_state} =~ "up" ) {
-                        $log->info( "Unreachable host '$host' (component '$comp') => we stop collecting data.");
+                        $log->info( "Unreachable host '$host_name' (IP $host_ip, component '$comp') => we stop collecting data.");
                         Message->send(from => 'Monitor', level => "warning", content => $mess );
                     }
                     $host_reachable = 0;
                     last SET; # we stop collecting data sets
                 } else {
-                    my $mess = "[$host] Error while collecting data set '$set->{label}' => $error";
+                    my $mess = "[$host_name] Error while collecting data set '$set->{label}' => $error";
                     $log->warn($mess);
                     Message->send(from => 'Monitor', level => "warning", content => $mess );
                     $error_happened = 1;
@@ -149,33 +154,33 @@ sub updateHostData {
             # we loop because updates_values can be rows of table
             while ( my ($index, $values) = each %$update_values) { 
                 # Log value of indicators
-                $log->debug( "[" . threads->tid() . "][$host](" . $retrieve_set_time . "s) '$set->{label}' => "
+                $log->debug( "[" . threads->tid() . "][$host_name](" . $retrieve_set_time . "s) '$set->{label}' => "
                              . join( " | ", map { "$_" . ($index eq "0" ? "" : ".$index") . ":$values->{$_}" } keys %$values )
                            );
                 
                 my $set_name = $set->{label} . ( $index eq "0" ? "" : ".$index" );
-                my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
-                my %stored_values = $self->updateRRD( rrd_name => $rrd_name, set_name => $set_name, ds_type => $set->{ds_type}, time => $time, data => $values );
+                my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host_name );
+                my %stored_values = $self->updateRRD(
+                                        rrd_name => $rrd_name,
+                                        set_name => $set_name,
+                                        ds_type  => $set->{ds_type},
+                                        time     => $time,
+                                        data     => $values
+                                    );
                 
                 $all_values{ $set_name } = \%stored_values;
             }
-            
-        } #END FOREACH SET
-        
-        # Update host state
-        #$self->_manageHostState( host => $host, reachable => $host_reachable );
+        }
     };
     if ($@) {
         my $error = $@;
         $log->error( $error );
         $error_happened = 1;
         #TODO manage $host_state in this case (error)
-        
     }
     
-    $log->warn("[$host] => some errors happened collecting data") if ($error_happened);
-    
-    $log->info("[$host] Collect time : " . (time() - $start_time));
+    $log->warn("[$host_name] => some errors happened collecting data") if ($error_happened);
+    $log->info("[$host_name] Collect time : " . (time() - $start_time));
     
     return \%all_values;
 }
@@ -203,24 +208,16 @@ sub updateClusterNodeCount {
     my $rrd = RRDTool::OO->new( file =>  $rrd_file );
     if ( not -e $rrd_file ) {    
         $log->info("Info: create nodes rrd for '$cluster_name'");
-        $rrd->create(     'step' => $self->{_time_step},
-                        'archive' => { rows => $self->{_period} / $self->{_time_step} },
-                        'archive' => {     rows => $self->{_period} / $self->{_time_step},
-                                        cpoints => 10,
-                                        cfunc => "AVERAGE" },
-                        # nodes
-                        'data_source' => {     name => 'up', type => 'GAUGE' },
-                        'data_source' => {     name => 'starting', type => 'GAUGE' },
-                        'data_source' => {     name => 'stopping', type => 'GAUGE' },
-                        'data_source' => {     name => 'broken', type => 'GAUGE' },
-                        
-                        # hosts
-#                        'data_source' => {     name => 'host_up', type => 'GAUGE' },
-#                        'data_source' => {     name => 'host_starting', type => 'GAUGE' },
-#                        'data_source' => {     name => 'host_stopping', type => 'GAUGE' },
-#                        'data_source' => {     name => 'host_broken', type => 'GAUGE' },
-                    );
-        
+        $rrd->create('step'    => $self->{_time_step},
+                     'archive' => { rows => $self->{_period} / $self->{_time_step} },
+                     'archive' => { rows => $self->{_period} / $self->{_time_step},
+                                    cpoints => 10,
+                                    cfunc => "AVERAGE" },
+                     'data_source' => { name => 'up', type => 'GAUGE' },
+                     'data_source' => { name => 'starting', type => 'GAUGE' },
+                     'data_source' => { name => 'stopping', type => 'GAUGE' },
+                     'data_source' => { name => 'broken', type => 'GAUGE' },
+        );
     }
     
     my %count;
@@ -230,12 +227,6 @@ sub updateClusterNodeCount {
     $count{starting} = scalar grep { $_ =~ 'goingin' } @$nodes_state;
     $count{stopping} = scalar grep { $_ =~ 'goingout' } @$nodes_state;
     $count{broken} = scalar grep { $_ =~ 'broken' } @$nodes_state;
-
-    # hosts
-#    $count{host_up} = scalar grep { $_ =~ '^up' } @$hosts_state;
-#    $count{host_starting} = scalar grep { $_ =~ 'starting' } @$hosts_state;
-#    $count{host_stopping} = scalar grep { $_ =~ 'stopping' } @$hosts_state;
-#    $count{host_broken} = scalar grep { $_ =~ 'broken' } @$hosts_state;
 
     # we want update the rrd at time multiple of time_step (to avoid rrd extrapolation)
     my $time = time();
@@ -268,24 +259,23 @@ sub updateClusterNodeCount {
     
 =cut
 
-sub updateClusterData{
+sub updateClusterData {
     my $self = shift;
     my %args = @_;
-    
+
     my ($cluster, $hosts_values, $collect_time ) = ($args{cluster}, $args{hosts_values}, $args{collect_time});
     my $cluster_name = $cluster->getAttr( name => "cluster_name" );
     
     my @mbs = values %{ $cluster->getHosts( ) };
     my @in_node_mb = grep { $_->getNodeState() =~ '^in' } @mbs; 
     
-    
     # Group indicators values by set
     my %sets;
     foreach my $mb (@in_node_mb) {
-        my $host_ip = $mb->getAdminIp;
-        my @sets_name = keys %{ $hosts_values->{ $host_ip } };
+        my $host_name = $mb->getAttr(name => "host_hostname");
+        my @sets_name = keys %{ $hosts_values->{ $host_name } };
         foreach my $set_name ( @sets_name ) {    
-            push @{$sets{$set_name}}, $hosts_values->{ $host_ip }{$set_name};
+            push @{$sets{$set_name}}, $hosts_values->{ $host_name }{$set_name};
         }
     }
     
@@ -306,9 +296,20 @@ sub updateClusterData{
         my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
         my $mean_rrd_name = $base_rrd_name . "_avg";
         my $sum_rrd_name = $base_rrd_name . "_total";
+
         eval {
-            $self->updateRRD( rrd_name => $mean_rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => $collect_time, data => \%aggreg_mean);
-            $self->updateRRD( rrd_name => $sum_rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => $collect_time, data => \%aggreg_sum);
+            $self->updateRRD(rrd_name => $mean_rrd_name,
+                             set_name => $set_name,
+                             ds_type => 'GAUGE',
+                             time => $collect_time,
+                             data => \%aggreg_mean
+            );
+
+            $self->updateRRD(rrd_name => $sum_rrd_name,
+                             set_name => $set_name,
+                             ds_type  => 'GAUGE',
+                             time     => $collect_time,
+                             data     => \%aggreg_sum);
         };
         if ($@){
             my $error = $@;
@@ -317,16 +318,22 @@ sub updateClusterData{
     }
     
     # log cluster nodes state
-    my @state_log = map {     $_->getAdminIp .
-                            " (" . $_->getAttr( name => "host_state" ) .
-                            ", node:" .  $_->getNodeState() . ")"
+    my @state_log = map { $_->getAttr(name => "host_hostname") .
+                          " (" . $_->getAttr( name => "host_state" ) .
+                          ", node:" .  $_->getNodeState() . ")"
                         } @mbs;
+
     $log->debug( "# '$cluster_name' nodes : " . join " | ", @state_log );
     
     # update cluster node count
     my @hosts_state = map { $_->getState() } @mbs;
     my @nodes_state = map { $_->getNodeState() } @mbs;
-    $self->updateClusterNodeCount( cluster_name => $cluster_name, nodes_state => \@nodes_state, hosts_state => \@hosts_state )    
+
+    $self->updateClusterNodeCount(
+        cluster_name => $cluster_name,
+        nodes_state  => \@nodes_state,
+        hosts_state  => \@hosts_state
+    );
 }
 
 =head2 udpate
@@ -348,7 +355,6 @@ sub update {
     my $start_time = time();
     
     eval {
-
         my $monitor_manager = $self->{_admin}->{manager}{monitor};
 
         ############################
@@ -359,28 +365,31 @@ sub update {
         my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
         foreach my $cluster (@clusters) {
             $log->info("# Update nodes data of cluster " . $cluster->getAttr( name => "cluster_name"));
+
             # Get set to monitor for this cluster
-            my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster->getAttr( name => "cluster_id") );
+            my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster->getId );
+
             # Get components of this cluster
             my $components = $cluster->getComponents(category => 'all');
-            #my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
             my %components_by_name = map { $_->getComponentAttr()->{component_name} => $_ } values %$components;
+
             # Collect data for nodes in the cluster
             foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
                 if ( $mb->getNodeState() =~ '^in' ) {
-                    my $host_ip = $mb->getAdminIp;
+                    my $host_name = $mb->getAttr( name => "host_state" );
                     my %params = (
-                        host_ip => $host_ip,
-                        host_state => $mb->getAttr( name => "host_state" ),
+                        host_name  => $mb->getAttr(name => "host_hostname"),
+                        host_ip    => $mb->getAdminIp,
+                        host_state => $host_name,
                         components => \%components_by_name,
-                        sets => $monitored_sets,
+                        sets       => $monitored_sets,
                     );
                     if ($THREADED) {
                         my $thr = threads->create( 'updateHostData', $self, %params    );
-                        $threads{$host_ip} = $thr;
+                        $threads{$host_name} = $thr;
                     } else {
                         my $ret = $self->updateHostData( %params );
-                        $hosts_values{ $host_ip } = $ret;
+                        $hosts_values{ $host_name } = $ret;
                     }
                 }
             }
@@ -390,9 +399,9 @@ sub update {
         # Wait end of all threads  #
         ############################
         if ($THREADED) {
-            while ( my ($host_ip, $thr) = each %threads ) {
+            while ( my ($host_name, $thr) = each %threads ) {
                 my $ret = $thr->join();
-                $hosts_values{ $host_ip } = $ret;
+                $hosts_values{ $host_name } = $ret;
             }
         }
         
@@ -401,11 +410,11 @@ sub update {
         #################################################################    
         my $time = time();
         foreach my $cluster (@clusters) {
-                $self->updateClusterData(     
-                                            cluster => $cluster,
-                                              hosts_values => \%hosts_values,
-                                              collect_time => $start_time, 
-                                          );
+            $self->updateClusterData(
+                cluster      => $cluster,
+                hosts_values => \%hosts_values,
+                collect_time => $start_time,
+            );
         }
         
         # Update total consumption
@@ -418,10 +427,7 @@ sub update {
             $log->error( $error->trace->as_string );
         }
     }
-
-    #find_cycle($self);    
 }
-
 
 sub updateConsumption {
     my $self = shift;
@@ -431,23 +437,31 @@ sub updateConsumption {
     my $rrd = RRDTool::OO->new( file =>  $rrd_file );
     if ( not -e $rrd_file ) {    
         $log->info("Info: create total consumption rrd");
-        $rrd->create(     'step' => $self->{_time_step},
-                        'archive' => { rows => $self->{_period} / $self->{_time_step} },
-                        'archive' => {     rows => $self->{_period} / $self->{_time_step},
-                                        cpoints => 10,
-                                        cfunc => "AVERAGE" },
-                        'data_source' => {     name => 'consumption', type => 'GAUGE' },
-                    );
+        $rrd->create('step' => $self->{_time_step},
+                     'archive' => {
+                         rows => $self->{_period} / $self->{_time_step}
+                     },
+                     'archive' => {
+                         rows    => $self->{_period} / $self->{_time_step},
+                         cpoints => 10,
+                         cfunc   => "AVERAGE"
+                     },
+                     'data_source' => {
+                         name => 'consumption',
+                         type => 'GAUGE'
+                     },
+        );
     }
     
     my $consumption = 0;
     my @up_hosts = Entity::Host->getHosts( hash => { host_state => { -like => 'up:%'}} );
     for (@up_hosts) {
         my %model = $_->getModel();
-        $consumption += $model{hostmodel_consumption};
+        $consumption += $model{hostmodel_consumption} || 0;
     }
     
-    $rrd->update( time => time(), values => { 'consumption' => $consumption } );
+    $rrd->update(time   => time(),
+                 values => { 'consumption' => $consumption } );
 }
 
 =head2 run
@@ -499,48 +513,10 @@ sub run {
         } else {
             sleep( $self->{_time_step} - $update_duration );
         }
-        
-        # Restart this service (bad trick for avoid memory growth (due to leaks))
-        #`/etc/init.d/kanopya-collector restart`;
     }
     
     Message->send(from => 'Monitor', level => 'warning', content => "Kanopya Collector stopped");
 }
-
-sub getMem {
-    
-    my $process_name = "kanopya-collector";
-    
-    my $process = `ps aux | grep $process_name | grep -v grep`;
-    #$log->debug("PROCESS: $process");
-    if ( $process =~ /root[\s\t]+[\d\.]+[\s\t]+[\d\.]+[\s\t]+[\d\.]+[\s\t]+([\d\.]+)[\s\t]+([\d\.]+)[\s\t]+[a-zA-Z\?\s\t]+[\s\t]+[\d: ]+[\s\t]+(.*)/ )
-    {
-        #$log->debug("####### VSZ: $1 ### RSS: $2 ########## $3");
-        return ($1, $2)
-    }
-    return;
-}
-
-sub logMemBefore {
-    my $self = shift;
-    my $id = shift;
-
-    my ($vsz, $rss) = getMem();
-    $log->debug("BEFORE $id #### VSZ: $vsz ### RSS: $rss");
-    $self->{$id}{vsz} = $vsz;
-    $self->{$id}{rss} = $rss;
-}
-
-sub logMemAfter {
-    my $self = shift;
-    my $id = shift;
-
-    my ($vsz, $rss) = getMem();
-    my $vsz_diff = $vsz - $self->{$id}{vsz};
-    my $rss_diff = $rss - $self->{$id}{rss};
-    $log->debug("AFTER $id #### VSZ: $vsz ($vsz_diff) ### RSS: $rss ($rss_diff)");
-}
-
 
 1;
 

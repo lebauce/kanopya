@@ -37,25 +37,26 @@ sub new {
     
     my $self = $class->SUPER::new( %args );
     
-    #$self->{_graph_color} = { back => "#69B033" };
-    $self->{_graph_color} = {   back    => "#FFFFFF",
-                                font    => "#444444",
-                                canvas  => "#FFFFFF",   # graph background
-                                frame   => "#000000",   # line around color spot
-                                #mgrid  => "#AAAAAA",
-                                shadea  => "#FFFFFF",   # left and top border
-                                shadeb  => "#FFFFFF",   # right and bottom border
-                            };
+    $self->{_graph_color} = {
+        back    => "#FFFFFF",
+        font    => "#444444",
+        canvas  => "#FFFFFF",   # graph background
+        frame   => "#000000",   # line around color spot
+        shadea  => "#FFFFFF",   # left and top border
+        shadeb  => "#FFFFFF",   # right and bottom border
+    };
     
-    $self->{_graph_title_font} = { name => "Times", element => "title", size => 15 };
+    $self->{_graph_title_font} = {
+        name    => "Times",
+        element => "title",
+        size    => 15
+    };
     
     $self->{_graph_width} = 600;
     $self->{_graph_height} = 100;
     
     return $self;
 }
-
-
 
 sub _timeLaps {
     my $self = shift;
@@ -119,15 +120,15 @@ sub graphTable {
     if ( (not defined $options->{all_in_one}) || ($options->{all_in_one} ne 'yes') ) {
         while ( my ($index, $rrd_file) = each %rrds ) {
             my $graph_filename = $self->graphNode(
-                                    host => $args{host},
-                                    time_laps => $args{time_laps},
-                                    time_range => $args{time_range},
-                                    set_label => "$args{set_label}.$index",
-                                    ds_def_list => $args{ds_def_list},
-                                    graph_type => $args{graph_type},
-                                    type => $args{type},
-                                    aggreg_ext => $args{aggreg_ext},
-                                    with_total => $args{with_total});
+                                     host        => $args{host},
+                                     time_laps   => $args{time_laps},
+                                     time_range  => $args{time_range},
+                                     set_label   => $args{set_label} . '.' . $index,
+                                     ds_def_list => $args{ds_def_list},
+                                     graph_type  => $args{graph_type},
+                                     type        => $args{type},
+                                     aggreg_ext  => $args{aggreg_ext},
+                                     with_total  => $args{with_total});
         }
         return;
     }
@@ -141,44 +142,36 @@ sub graphTable {
     my $graph_name = "graph_$host" . "_$set_name";
     $graph_name .= "_$args{aggreg_ext}" if (defined $args{aggreg_ext});
     $graph_name .= ( defined $time_suffix ? "_$time_suffix" : "");
+
     my $graph_filename = "$graph_name.png";
-    
-#    my $graph_title = (defined $args{type} && $args{type} eq 'cluster') ?
-#                    "$set_name for cluster $host " . ( defined $cluster_total ? "(total)" : "(average)" )
-#                    : "$set_name for $host";
     my $graph_title = "$set_name for $host";
-
-
     my $graph_type = $args{graph_type} || "line";
         
     my @graph_params = (
-                    'image' => "$self->{_graph_dir}/tmp/$graph_filename",
-                    #'vertical_label', 'ticks',
-                    'start' => $time_start,
-                    'end' => $time_end,
-                    color => $self->{_graph_color},                
-                    font => $self->{_graph_title_font},
-                    title => $graph_title,
-                    width => $self->{_graph_width},
-                    height => $self->{_graph_height},
-                    lower_limit => 0,
-                    slope_mode => undef,    # smooth
-                
-                    );
+        image       => "$self->{_graph_dir}/tmp/$graph_filename",
+        start       => $time_start,
+        end         => $time_end,
+        color       => $self->{_graph_color},
+        font        => $self->{_graph_title_font},
+        title       => $graph_title,
+        width       => $self->{_graph_width},
+        height      => $self->{_graph_height},
+        lower_limit => 0,
+        slope_mode  => undef,
+    );
     
     my $file;                
     while ( my ($index, $rrd_file) = each %rrds ) {
         $file = $rrd_file;
         foreach my $ds (@{ $args{ds_def_list} }) {        
             push @graph_params, (
-                                    'draw', {
-                                        file => "$self->{_rrd_base_dir}/$rrd_file",
-                                        type => $graph_type,
-                                        dsname => $ds->{label},# . "_P",
-                                        color => $ds->{color} || "FFFFFF",
-                                        legend => $ds->{label} . " ($index)",
-                                      },
-                                );
+                'draw', { file   => "$self->{_rrd_base_dir}/$rrd_file",
+                          type   => $graph_type,
+                          dsname => $ds->{label},
+                          color  => $ds->{color} || "FFFFFF",
+                          legend => $ds->{label} . " ($index)",
+                        },
+            );
         }
     }
     
@@ -546,7 +539,7 @@ sub graphCluster {
     
     Args :
         time_laps : int : laps in seconds
-        nodes_ip : array ref of string : list of ip of nodes we want graph
+        nodes : array ref of string : list of host names we want to graph
         (optional) graph_type: "stack" or "line"
         (optional) required_set : string : the name of the set we want graph (else graph all the set)
         (optional) required_indicators : array ref : names of indicators (ds) we want for the required set (else graph all ds of the set)
@@ -569,8 +562,7 @@ sub graphNodes {
     
     my %res; #the hash containing filename of all generated graph (host => { set_label => "file.png" })
     
-    #my @hosts = $self->retrieveHostsIp();
-    my @hosts = @{ $args{nodes_ip} };
+    my @hosts = @{ $args{nodes} };
     
     foreach my $set_def ( @$sets ) {
 
@@ -584,14 +576,15 @@ sub graphNodes {
             eval {
                 my $graph_sub = defined $args{percent} && $args{percent} ne "no" ? \&graphPercent : \&graphNode;
                 $graph_sub = \&graphTable if defined $set_def->{'table_oid'};
-                my $graph_filename = $graph_sub->(     $self,
-                                                    host => $host,
-                                                    time_laps => $time_laps,
-                                                    time_range => $args{time_range},
-                                                    set_label => $set_def->{label},
-                                                    ds_def_list => \@required_ds_def_list,
-                                                    graph_type => $args{graph_type},
-                                                    options => $args{options} );
+                my $graph_filename = $graph_sub->($self,
+                                                  host        => $host,
+                                                  time_laps   => $time_laps,
+                                                  time_range  => $args{time_range},
+                                                  set_label   => $set_def->{label},
+                                                  ds_def_list => \@required_ds_def_list,
+                                                  graph_type  => $args{graph_type},
+                                                  options     => $args{options});
+
                 $res{$host}{$set_def->{label}} = $graph_filename;
             };
             if ($@) {
@@ -631,8 +624,7 @@ sub graphFromConf {
         
             my $graphs_settings = $self->{_admin}->{manager}{monitor}->getClusterGraphSettings( cluster_id => $cluster_id );
             
-            #my @nodes_ip = map { $_->{ip} } values %$cluster_nodes;
-            my @nodes_ip = map { $_->getAdminIp } values %{ $cluster->getHosts( ) };
+            my @nodes = map { $_->getAttr(name => "host_hostname") } values %{ $cluster->getHosts( ) };
             
             # Graph Node Count
             foreach my $laps (@time_laps) {
@@ -641,27 +633,30 @@ sub graphFromConf {
                                         cluster => $cluster_name );
             }
             
-            next CLUSTER if (0 == scalar @nodes_ip);
+            next CLUSTER if (0 == scalar @nodes);
             
             # Graph metrics
             foreach my $graph_def ( @$graphs_settings ) {
                 my @required_indicators = split ",", $graph_def->{ds_label};
                 my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;            
                 foreach my $laps (@time_laps) {
-                    my %params = (     time_laps => $laps,
-                                    time_range => $time_range,
-                                    required_set => $graph_def->{set_label},
-                                    required_indicators => $required,
-                                    percent => $graph_def->{percent},
-                                    graph_type => $graph_def->{graph_type} || 'line',
-                                    options => $graph_def,
-                                );
+                    my %params = (
+                        time_laps           => $laps,
+                        time_range          => $time_range,
+                        required_set        => $graph_def->{set_label},
+                        required_indicators => $required,
+                        percent             => $graph_def->{percent},
+                        graph_type          => $graph_def->{graph_type} || 'line',
+                        options             => $graph_def,
+                    );
+
                     # Graph cluster
-                    $self->graphCluster( cluster => $cluster_name,    
-                                         with_total => $graph_def->{with_total},
-                                         %params );
+                    $self->graphCluster(cluster    => $cluster_name,
+                                        with_total => $graph_def->{with_total},
+                                        %params );
+
                     # Graph cluster Nodes
-                    $self->graphNodes(     nodes_ip => \@nodes_ip, %params );
+                    $self->graphNodes(nodes => \@nodes, %params);
                     
                 } # foreach time_laps
                 
