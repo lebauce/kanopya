@@ -867,9 +867,13 @@ var PolicyForm = (function() {
     PolicyForm.prototype.beforeSerialize = function(form, options) {
         var that = this;
         this.form.find(':input').each(function () {
-            var id  = "";
-            if ($(this).attr('id') != null) {
-                id  = $(this).attr('id').replace('input_', '');
+            var id      = "";
+            var classes = $(this).attr('class').split(' ');
+            for (var i in classes) if (classes.hasOwnProperty(i)) {
+                if ((new RegExp('^input_')).test(classes[i])) {
+                    id  = (classes[i]).replace('input_', '');
+                    break;
+                }
             }
             if (that.fields[id]){
                 if (that.fields[id].prefix) {
