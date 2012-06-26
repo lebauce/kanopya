@@ -1,8 +1,23 @@
 // jqgrid cell formatters
 
+function fromIdToComponentType(cell, options, row) {
+    
+    var componentId = cell;
+    var toReturn;
+    
+    $.ajax({
+        async   : false,
+        url     : '/api/componenttype?component_type_id=' + componentId,
+        type    : 'GET',
+        success : function(data) {
+            toReturn = data[0].component_name;
+        }
+    });
+    return toReturn;
+}
+
 // Set the correct state icon for each element :
 function StateFormatter(cell, options, row) {
-    //if (cell == 'up') {
     if ( cell.indexOf('up') != -1 ) {
         return "<img src='/images/icons/up.png' title='up' />";
     } else if ( cell.indexOf('broken') != -1 ) {
@@ -21,7 +36,6 @@ function serviceStateFormatter(cell, options, row) {
 }
 
 function lastevalStateFormatter(cell, options, row) {
-    //if (cell == 'up') {
     if ( cell == 0 ) {
         return "<img src='/images/icons/up.png' title='up' />";
     } else if ( cell == 1 ) {
