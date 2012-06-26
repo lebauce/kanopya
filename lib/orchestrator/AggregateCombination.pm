@@ -43,7 +43,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1,
-                                 description    => "Construct a formula by metric's names with all mathematical operators. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the available choice."},
+                                 description    => "Construct a formula by service metric's names with all mathematical operators. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the available choice."},
 };
 
 sub getAttrDef { return ATTR_DEF; }
