@@ -932,9 +932,6 @@ INSERT INTO `param_preset` VALUES (23, "admin", NULL, 22);
 INSERT INTO `param_preset` VALUES (24, "interface_role", "admin", 23);
 INSERT INTO `param_preset` VALUES (25, "interface_networks", NULL, 23);
 INSERT INTO `param_preset` VALUES (26, NULL, @admin_network, 25);
--- interface 'public'
-INSERT INTO `param_preset` VALUES (27, "public", NULL, 22);
-INSERT INTO `param_preset` VALUES (28, "interface_role", "public", 27);
 
 -- Presets for policy: Cluster manual scalability
 INSERT INTO `param_preset` VALUES (29, "scalability_policy", NULL, NULL);
