@@ -35,6 +35,7 @@ use NodemetricRule;
 use WorkflowDef;
 use WorkflowDefManager;
 use ParamPreset;
+use Scope;
 
 sub methods {
   return {
