@@ -155,7 +155,7 @@ function load_service_template_content (container_id) {
         }
         return service_def;
     }
-    
+
     function createAddServiceButton(cid, grid) {
         var service_opts = {
             title       : 'Create a service',

@@ -291,7 +291,6 @@ var PolicyForm = (function() {
         if (this.fields[elementName].set) {
             input_name = elementName + '_' + this.form.find(".input_" + elementName).length;
             inputid     += '_' + this.form.find(".input_" + elementName).length;
-            console.log(">> " + this.form.find(".input_" + elementName).length);
         }
 
         // Create input and label DOM elements
@@ -436,8 +435,12 @@ var PolicyForm = (function() {
                     }
                     text = datavalues[value][display];
                 }
+            } else if (datavalues instanceof Array) {
+                key  = datavalues[value];
+                text = datavalues[value];
+
             } else {
-                key = datavalues[value];
+                key  = value;
                 text = datavalues[value];
             }
 

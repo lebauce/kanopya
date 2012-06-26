@@ -90,7 +90,6 @@ var policies = {
                 func : 'getServiceProviders',
                 args : { category: 'Storage' },
             },
-            //depends      : [ 'disk_manager_id', 'export_manager_id' ],
             depends      : [ 'disk_manager_id' ],
         },
         disk_manager_id : {
@@ -325,7 +324,7 @@ var policies = {
             label       : 'Type',
             options     : {
                 'cpu' : 'cpu',
-                'ram' : 'ram'
+                'ram' : 'ram',
             },
             is_mandatory: 1
         },
