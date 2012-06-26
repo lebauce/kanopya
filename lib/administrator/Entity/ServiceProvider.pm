@@ -59,7 +59,11 @@ sub methods {
         'getManager'    => {
             'description'   => 'getManager',
             'perm_holder'   => 'entity'
-        }
+        },
+        'getServiceProviders' => {
+            'description'   => 'getServiceProviders',
+            'perm_holder'   => 'entity'
+        },
     };
 }
 
@@ -135,6 +139,29 @@ sub findManager {
     return wantarray ? @managers : \@managers;
 }
 
+sub getServiceProviders {
+    my ($class, %args) = @_;
+    my @providers;
+
+    if (defined $args{category}) {
+        my @managers = $class->findManager(category => $args{category});
+
+        my $service_providers = {};
+        for my $manager (@managers) {
+            my $provider = Entity::ServiceProvider->get(id => $manager->{service_provider_id});
+            if (not exists $service_providers->{$provider->getId}) {
+                $service_providers->{$provider->getId} = $provider;
+            }
+
+            @service_providers = values %$service_providers;
+        }
+    }
+    else {
+        @service_providers = Entity::ServiceProvider->search(hash => {});
+    }
+
+    return wantarray ? @service_providers : \@service_providers;
+}
 
 =head2 addManager
 
