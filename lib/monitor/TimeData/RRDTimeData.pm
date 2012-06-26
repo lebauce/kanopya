@@ -72,8 +72,9 @@ sub createTimeDataStore{
 
     #get collect frequency from configuration file
     my $monitor_configuration = Kanopya::Config::get('monitor');
-    my $frequency             = $monitor_configuration->{rrd_step}->{step};
-	my $heartbeat = $monitor_configuration->{time_step};
+    #my $frequency             = $monitor_configuration->{rrd_step}->{step};
+    my $frequency             = $monitor_configuration->{time_step};
+	my $heartbeat = $frequency * 2;
 
     #definition of the options. If unset, default rrd start time is (now -10s)
     if (defined $args{'options'}) {
@@ -259,7 +260,7 @@ sub fetchTimeDataStore {
     
 	#we replace the '-1.#IND000000e+000' values for "undef"
 	while (my ($timestamp, $value) = each %values) {
-		if ($value eq '-1.#IND000000e+000'){
+		if (($value eq '-1.#IND000000e+000') or ($value eq '-nan')){
 			$values{$timestamp} = undef;
 			}
 	}	
