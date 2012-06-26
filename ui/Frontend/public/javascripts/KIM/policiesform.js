@@ -353,13 +353,13 @@ var PolicyForm = (function() {
                     var method = 'POST';
                     route += '/' + this.fields[elementName].filters.func;
                     args = this.fields[elementName].filters.args;
-                }
-            } else {
-                for (var filter in this.fields[elementName].filters) {
-                    route += delimiter + filter + '=' + this.fields[elementName].filters[filter];
-                    if (delimiter === '?') {
-                        delimiter = '&';
-                    }
+                } else {
+	                for (var filter in this.fields[elementName].filters) {
+	                    route += delimiter + filter + '=' + this.fields[elementName].filters[filter];
+	                    if (delimiter === '?') {
+	                        delimiter = '&';
+	                    }
+	                }
                 }
             }
 
