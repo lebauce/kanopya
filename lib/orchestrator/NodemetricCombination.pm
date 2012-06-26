@@ -126,7 +126,7 @@ sub computeValueFromMonitoredValues {
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
     my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
 
-    my $service_provider = Entity->ServiceProvider->get(id => $service_provider_id);
+    my $service_provider = Entity::ServiceProvider->get(id => $service_provider_id);
     my $collector = $service_provider->getManager(manager_type => "collector_manager");
 
     my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
