@@ -39,6 +39,7 @@ use Entity::Connector;
 use Entity::Interface;
 use Administrator;
 use ServiceProviderManager;
+use Entity::Component::Fileimagemanager0;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -136,6 +137,21 @@ sub findManager {
                 "host_type"           => $connector->can("getHostType") ? $connector->getHostType() : "",
             }
         }
+    }
+    # Workaround to get the Fileimagemanager0 in the disk manager list of an external equipment.
+    # We really need to fix this.
+    if ($args{service_provider_id} != 1 and $args{category} eq 'Storage') {
+        eval {
+            $fileimagemanager = Entity::Component::Fileimagemanager0->find(hash => { service_provider_id => 1 });
+            push @managers, {
+                 "category"            => 'Storage',
+                 "name"                => 'Fileimagemanager',
+                 "id"                  => $fileimagemanager->getAttr(name => "component_id"),
+                 "pk"                  => $fileimagemanager->getAttr(name => "component_id"),
+                 "service_provider_id" => $fileimagemanager->getAttr(name => "service_provider_id"),
+                 "host_type"           => $fileimagemanager->can("getHostType") ? $fileimagemanager->getHostType() : "",
+            };
+        };
     }
 
     return wantarray ? @managers : \@managers;
