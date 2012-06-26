@@ -445,14 +445,14 @@ INSERT INTO `component_type` VALUES
 
 INSERT INTO `connector_type` VALUES
 (1,'ActiveDirectory','1','DirectoryService'),
-(2,'Scom','1','MonitoringService'),
+(2,'Scom','1','Collectormanager'),
 (3,'UcsManager','1','Cloudmanager'),
 (4,'NetappLunManager','1','Storage'),
 (5,'NetappVolumeManager','1','Storage'),
 (6,'NetappLunManager','1','Export'),
 (7,'NetappVolumeManager','1','Export'),
 (8,'Sco',1,'WorkflowManager'),
-(9,'MockMonitor','1','MonitoringService');
+(9,'MockMonitor','1','Collectormanager');
 
 --
 -- interace role list
@@ -728,7 +728,8 @@ INSERT INTO `indicatorset` VALUES
 (2,'cpu','SnmpProvider','COUNTER', null, 'User+Idle+Wait+Nice+Syst+Kernel+Interrupt', null),
 (3,'apache_stats','ApacheProvider','DERIVE', 'Apache', null, null),
 (4,'apache_workers','ApacheProvider','GAUGE', 'Apache', null, null),
-(5,'scom','External','GAUGE',null,null,null);
+(5,'scom','External','GAUGE', null, null, null),
+(6,'billing', 'KanopyaDatabaseProvider','GAUGE', null, null, null);
 
 INSERT INTO `indicator` VALUES
 (1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1, null),
@@ -754,7 +755,9 @@ INSERT INTO `indicator` VALUES
 (21,'Disk free space','LogicalDisk/% Free Space',null,null,'FF000099', 5, '%'),
 (22,'Network used','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5, '%'),
 (23,'Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions'),
-(24,'RAM I/O','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec');
+(24,'RAM I/O','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec'),
+(25,'Cores', 'Number of charged cores', null, null, 'FF000099', 6, null),
+(26,'Memory', 'Charged memory', null, null, 'FF000099', 6, null);
 
 --
 -- initial permissions for user guest

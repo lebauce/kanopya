@@ -47,6 +47,7 @@ var service = {
         display      : 'service_name',
         welcome_value   : 'Select a service type',
         is_mandatory    : true,
+        pattern         : '^[1-9][0-9]*',
         values_provider : true,
         fields_provided  : [],
         disable_filled  : true,

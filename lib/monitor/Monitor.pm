@@ -40,7 +40,6 @@ package Monitor;
 
 #TODO Modulariser: Collector, DataProvider (snmp, generator,...), DataStorage (rrd, ...), DataManipulator, Grapher, ...
 #TODO use Kanopya::Exception
-#TODO renommer correctement ex: $host représente des fois $host_name ou $host_ip
 
 use strict;
 use warnings;
@@ -132,7 +131,7 @@ sub _mbState {
     
     Desc : Retrieve the list of monitored hosts
     
-    Return : Hash with key the cluster name and value an array ref of host ip address for this cluster
+    Return : Hash with key the cluster name and value an array ref of hosts for this cluster
     
 =cut
 
@@ -149,12 +148,13 @@ sub retrieveHostsByCluster {
 
         my %mb_info;
         foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
-            my $mb_name = $mb->getAttr( name => "host_hostname" );
-            my $mb_ip = $mb->getAdminIp;
-            my $mb_state = $mb->getAttr( name => "host_state" );
-
-            $mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, components => \@components_name };
+            $mb_info{ $mb->getAttr( name => "host_hostname" ) } = {
+                ip         => $mb->getAdminIp,
+                state      => $mb->getAttr( name => "host_state" ),
+                components => \@components_name
+            };
         }
+
         $hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \%mb_info;
     }    
 
@@ -168,51 +168,6 @@ sub getClustersName {
     my @clustersName = map { $_->getAttr( name => "cluster_name" ) } @clusters;
     
     return @clustersName;    
-}
-
-
-
-=head2 retrieveHosts DEPRECATED
-    
-    Class : Public
-    
-    Desc : Retrieve the list of monitored hosts
-    
-    Return : Array of host ip address
-    
-=cut
-
-sub retrieveHosts {
-    my $self = shift;
-    
-    my %hosts_by_cluster = $self->retrieveHostsByCluster();
-    my @hosts = map { @$_ } values( %hosts_by_cluster );
-    
-    return @hosts;
-}
-
-=head2 retrieveHostsIp
-    
-    Class : Public
-    
-    Desc : Retrieve the list of monitored hosts
-    
-    Return : Array of host ip address
-    
-=cut
-
-sub retrieveHostsIp {
-    my $self = shift;
-    
-    my @hosts;
-    my %hosts_by_cluster = $self->retrieveHostsByCluster();
-    foreach my $cluster (values %hosts_by_cluster) {
-        foreach my $host (values %$cluster) {
-            push @hosts, $host->{'ip'};
-        }
-    }
-    
-    return @hosts;
 }
 
 sub getClusterHostsInfo {
@@ -245,8 +200,6 @@ sub getClusterHostsInfo {
 sub aggregate {
     my $self = shift;
     my %args = @_;
-    
-    #Monitor::logArgs( "aggregate", %args );
     
     my %res = ();
     my $nb_keys;
@@ -372,12 +325,8 @@ sub createRRD {
 
     my $raws = $self->{_period} / $time_step;
 
-    my @rrd_params = (  'step',     $time_step,
-                        'archive',  { rows    => $raws },
-#                        'archive', { rows => $raws,
-#                                     cpoints => 10,
-#                                     cfunc => "AVERAGE" },
-                     );
+    my @rrd_params = ('step', $time_step,
+                      'archive',  { rows    => $raws });
     for my $name ( @$dsname_list ) {
         push @rrd_params, (
                             'data_source' => {
@@ -393,15 +342,6 @@ sub createRRD {
     $rrd->create( @rrd_params );
     
     return $rrd;
-}
-
-#TODO test this sub (call by manageStoppingHosts())
-sub _cleanRRDs {
-    my $self = shift;
-    my %args = @_;
-
-    my $ip = $args{ip};
-    `rm $self->{_rrd_base_dir}/*_$ip.rrd`;
 }
 
 =head2 rebuild
@@ -424,10 +364,18 @@ sub rebuild {
     my ($set_def) = grep { $_->{label} eq $set_label} @{ $self->{_monitored_data} };
     my @dsname_list = map { $_->{label} } @{ General::getAsArrayRef( data => $set_def, tag => 'ds') };
     
-    my @hosts = $self->retrieveHostsIp();
-    for my $host (@hosts) {
-        my $rrd_name = $self->rrdName( set_name => $set_label, host_name => $host );
-        $self->createRRD( file => "$rrd_name.rrd", dsname_list => \@dsname_list, ds_type => $set_def->{ds_type}, set_name => $args{set_name} );
+    my %hosts = $self->retrieveHostsByCluster();
+
+    foreach my $cluster (values %hosts) {
+        foreach my $host (keys %$cluster) {
+            my $rrd_name = $self->rrdName(set_name  => $set_label,
+                                          host_name => $host);
+
+            $self->createRRD(file        => "$rrd_name.rrd",
+                             dsname_list => \@dsname_list,
+                             ds_type     => $set_def->{ds_type},
+                             set_name    => $args{set_name});
+        }
     }
 }
 
@@ -498,22 +446,6 @@ sub updateRRD {
         }
     }
     return %stored_values;
-}
-
-
-
-sub logArgs {
-    my $sub_name = shift;
-    my %args = @_;
-    
-    #$log->debug( "$sub_name( ".join(', ', map( { "$_ => $args{$_}" if defined $args{$_} } keys(%args) )). ");" );
-    
-}
-
-sub logRet {
-    my %args = @_;
-    
-    #$log->debug( "        => ( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
 }
 
 1;

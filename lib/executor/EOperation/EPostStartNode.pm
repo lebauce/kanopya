@@ -174,6 +174,12 @@ sub execute {
         }
     }
 
+    if(defined $self->{context}->{puppetagent}) {
+        for my $ehost (@ehosts) {
+            $self->{context}->{puppetagent}->applyManifest(host => $ehost);
+        }
+    }
+
     my $components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Processing cluster components configuration for this node');
     foreach my $i (keys %$components) {

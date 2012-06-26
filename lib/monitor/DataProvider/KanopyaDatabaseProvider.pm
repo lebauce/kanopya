@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,36 +14,33 @@
 
 =head1 NAME
 
-MySqlProvider - MySqlProvider object
+KanopyaDatabaseProvider - KanopyaDatabaseProvider object
 
 =head1 SYNOPSIS
 
-    use MySqlProvider;
+    use KanopyaDatabaseProvider
     
     # Creates provider
-    my $provider = MySqlProvider->new( $host );
+    my $provider = KanopyaDatabaseProvider->new( $host );
     
     # Retrieve data
-    my $var_map = { 'var_name' => '<MySql status var name>', ... };
+    my $var_map = { 'var_name' => '<Virtual status var name>', ... };
     $provider->retrieveData( var_map => $var_map );
 
 =head1 DESCRIPTION
 
-MySqlProvider is used to retrieve MySql status values from a specific host.
-
-All var name: '> mysqladmin extented-status' or 'mysql> show status;'
-For more details see http://dev.mysql.com/doc/refman/5.0/en/server-status-variables.html
+KanopyaDatabaseProvider is used to retrieve and archive a value from the Kanopya database.
+This is used for billing : we keep track of the number of used cores and the amount
+of memory dedicated to a service.
 
 =head1 METHODS
 
 =cut
 
-package MySqlProvider;
+package KanopyaDatabaseProvider;
 
 use strict;
 use warnings;
-use DBI;
-
 use Log::Log4perl "get_logger";
 my $log = get_logger("monitor");
 
@@ -51,12 +48,12 @@ my $log = get_logger("monitor");
     
     Class : Public
     
-    Desc : Instanciate MySqlProvider instance to provide MySql stat from a specific host
+    Desc : Instanciate KanopyaDatabaseProvider instance to provide Virtual stat from a specific host
     
     Args :
         host: string: ip of host
     
-    Return : MySqlProvider instance
+    Return : KanopyaDatabaseProvider instance
     
 =cut
 
@@ -67,14 +64,7 @@ sub new {
     my $self = {};
     bless $self, $class;
 
-    my $host = $args{host};
-    
-    # TODO user/pwd management to connect to a component providing informations
-    my $dbh = DBI->connect("dbi:mysql:mysql:" . $host->getAdminIp . ":3306",
-                           'root', 'Hedera@123') or die DBI::errstr();
-            
-    $self->{_dbh} = $dbh;
-    $self->{_host} = $host;
+    $self->{host} = $args{host};
     
     return $self;
 }
@@ -84,7 +74,7 @@ sub new {
     
     Class : Public
     
-    Desc : Retrieve a set of mysql status var value
+    Desc : Retrieve a set of monitor var value
     
     Args :
         var_map : hash ref : required  var { var_name => oid }
@@ -99,29 +89,28 @@ sub retrieveData {
     my $self = shift;
     my %args = @_;
 
+    my $host = $self->{host};
     my $var_map = $args{var_map};
 
-    my $sth  = $self->{_dbh}->prepare("SHOW GLOBAL STATUS;");
-    $sth->execute();
-    my $time =time();
+    my @OID_list = values( %$var_map );
+    my $time = time();
 
-
-    my %status;
-    while( my ($key, $val) = $sth->fetchrow_array()) {
-        $status{$key} = $val;
-    }
-
-    my %values = ();
-    while ( my ($name, $oid) = each %$var_map ) {
-        if (exists $status{$oid}) {
-            $values{$name} = $status{$oid};
-        } else {
-            $log->warn("oid '$oid' not found in MySql status.");
-            $values{$name} = undef;
-        }
-    }
+    my %values = (
+        "Cores"  => $host->host_core,
+        "Memory" => $host->host_ram
+    );
 
     return ($time, \%values);
+}
+
+sub compute {
+    my $self = shift;
+    my %args = @_;
+    
+    my $var = $args{var};
+    my $load = $args{load};
+    
+    die "Error: no definition to compute virtual var '$args{var}'";
 }
 
 # destructor

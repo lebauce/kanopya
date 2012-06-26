@@ -76,10 +76,6 @@ sub methods {
         'setperm'    => {'description' => 'set permissions on this cluster',
                         'perm_holder' => 'entity',
         },
-        'getIndicatorNameFromId'    => {
-          'description' => 'getIndicatorNameFromId',
-          'perm_holder' => 'entity'
-        }
     };
 }
 
@@ -301,7 +297,7 @@ sub updateNodes {
      # TODO remove dead nodes from db
 }
 
-sub getIndicatorsIds {
+sub getIndicators {
     my ($self, %args) = @_;
 
     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
@@ -310,77 +306,8 @@ sub getIndicatorsIds {
             service_provider_id => $service_provider_id
         }
     );
-    my @indicators_ids;
-    my $indicator_id;
 
-    foreach my $indicator (@indicators) {
-        $indicator_id = $indicator->getAttr( name => 'scom_indicator_id' );
-        push @indicators_ids, $indicator_id;
-    }
-
-    return \@indicators_ids;
-}
-
-sub getIndicatorNameFromId {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['indicator_id']);
-
-     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
-     my $indicator_id        = $args{indicator_id};
-     my $indicator           = ScomIndicator->find (
-        hash => {
-            scom_indicator_id => $indicator_id, service_provider_id => $service_provider_id
-        }
-    );
-    my $indicator_name      = $indicator->getAttr (name => 'scom_indicator_name' );
-
-    return $indicator_name;
-}
-
-sub getIndicatorUnitFromId {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['indicator_id']);
-
-     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
-     my $indicator_id        = $args{indicator_id};
-     my $indicator           = ScomIndicator->find (
-        hash => {
-            scom_indicator_id => $indicator_id, service_provider_id => $service_provider_id
-        }
-    );
-    my $indicator_unit      = $indicator->getAttr (name => 'scom_indicator_unit' );
-
-    return $indicator_unit;
-}
-
-sub getIndicatorOidFromId {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['indicator_id']);
-
-    my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
-    my $indicator_id        = $args{indicator_id};
-    my $indicator           = ScomIndicator->find (
-        hash => {
-            scom_indicator_id => $indicator_id, service_provider_id => $service_provider_id
-        }
-    );
-    my $indicator_oid   = $indicator->getAttr(name => 'scom_indicator_oid');
-
-    return $indicator_oid;
-}
-
-sub getIndicatorInst () {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['indicator_id']);
-
-    my $indicator_id   = $args{indicator_id};
-    my $indicator = ScomIndicator->get('id' => $indicator_id);
-
-    return $indicator;
+    return @indicators;
 }
 
 sub getCollectorManager {
@@ -400,22 +327,22 @@ sub getCollectorManager {
 =cut
 
 sub getNodesMetrics {
-     my $self = shift;
-     my %args = @_;
+    my $self = shift;
+    my %args = @_;
 
-     General::checkParams(args => \%args, required => ['indicators', 'time_span']);
+    General::checkParams(args => \%args, required => ['indicators', 'time_span']);
      
-     my $shortname = defined $args{shortname};
+    my $shortname = defined $args{shortname};
      
-     my $ms_connector = $self->getConnector( category => 'MonitoringService' );
-     my $nodes = $self->getNodes();
+    my $ms_connector = $self->getManager(manager_type => 'collector_manager');
+    my $nodes = $self->getNodes();
      
-     my @hostnames = map { $_->{hostname} } @$nodes;
+    my @hostnames = map { $_->{hostname} } @$nodes;
      
-     my $data = $ms_connector->retrieveData(
+    my $data = $ms_connector->retrieveData(
         nodes => \@hostnames,
         %args,
-     );
+    );
 
     if ($shortname) {
         my %data_shortnodename;
@@ -425,6 +352,7 @@ sub getNodesMetrics {
         }
         return \%data_shortnodename;
     }
+
     return $data;
 }
 
@@ -510,14 +438,16 @@ sub monitoringDefaultInit {
     #generate the scom indicators (only default)
     $self->insertCollectorIndicators(default => 1);
 
-    my $indicators_ids = $self->getIndicatorsIds();
-    my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
+    my $indicators = $self->getIndicators();
+    my $service_provider_id = $self->getId();
+    my $collector = $self->getManager(manager_type => "collector_manager");
     my $active_session_indicator_id; 
     my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
     my @funcs = qw(mean max min std dataOut);
 
-    foreach my $indicator_id (@$indicators_ids) {
-        my $indicator_oid = $self->getIndicatorOidFromId (indicator_id => $indicator_id);
+    foreach my $indicator (@$indicators) {
+        my $indicator_id  = $indicator->getId;
+        my $indicator_oid = $indicator->indicator_oid;
 
         if ($indicator_oid eq 'Terminal Services/Active Sessions') {
             $active_session_indicator_id = $indicator_id;

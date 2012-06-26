@@ -202,6 +202,11 @@ var policies = {
             label        : 'Persistent system images',
             type         : 'checkbox',
         },
+        cluster_basehostname : {
+            step         : 'Policy',
+            label        : 'Cluster base hostname',
+            type         : 'text',
+        },
         component_type : {
             step         : 'Components',
             label        : 'Component type',

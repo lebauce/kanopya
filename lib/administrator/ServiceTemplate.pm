@@ -68,19 +68,21 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+our $POLICY_TYPES = ['hosting', 'storage', 'network', 'scalability', 'system'];
+
+
 sub new {
     my $class = shift;
     my %args = @_;
     my $self;
 
-    $log->info('___________' . Dumper(%args));
     # Firstly pop the service template atrributes
     my $attrs = {
         service_name => delete $args{service_name},
         service_desc => delete $args{service_desc},
     };
 
-    for my $policy_type ('hosting', 'storage', 'network', 'scalability', 'system') {
+    for my $policy_type (@$POLICY_TYPES) {
         if (not $args{$policy_type . '_policy_id'}) {
             my $policy_args = {};
             my $pattern = $policy_type . '_';
@@ -101,6 +103,19 @@ sub new {
     }
 
     return $class->SUPER::new(%$attrs);
+}
+
+sub getPolicies () {
+    my $self = shift;
+    my %args = @_;
+
+    my $policies = [];
+
+    # The service template known the type of policies
+    for my $policy_type (@$POLICY_TYPES) {
+        push @$policies, Policy->get(id => $self->getAttr(name => $policy_type . '_policy_id'));
+    }
+    return $policies;
 }
 
 1;

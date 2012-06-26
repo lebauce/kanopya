@@ -146,13 +146,13 @@ var PolicyForm = (function() {
          */
         var type = field.type;
         var options = field.options;
-        var value_shift = 0;
+        this.fields[elementName].value_shift = 0;
         if (field.type === 'checkbox') {
             type = 'select';
-            options = [ 'yes', 'no' ];
-            value_shift = 1;
+            options = [ 'no', 'yes' ];
+            this.fields[elementName].value_shift = 1;
             if (value) {
-                value = parseInt(value) + value_shift;
+                value = parseInt(value) + this.fields[elementName].value_shift;
             }
         }
 
@@ -180,11 +180,11 @@ var PolicyForm = (function() {
             var isArray = options instanceof Array;
             if (! this.fields[elementName].is_mandatory) {
                 var option  = $("<option>", { value : 0, text : '-' });
-                value_shift = 1;
+                this.fields[elementName].value_shift = 1;
                 input.append(option);
             }
             for (var i in options) if (options.hasOwnProperty(i)) {
-                var optionvalue = (isArray != true) ? options[i] : parseInt(i) + value_shift;
+                var optionvalue = (isArray != true) ? options[i] : parseInt(i) + this.fields[elementName].value_shift;
                 var optiontext  = (isArray != true) ? i : options[i];
                 var option  = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
                 if (optionvalue == value) {
@@ -564,7 +564,11 @@ var PolicyForm = (function() {
                         }
                     }
 
+                    if (that.fields[select_name].value_shift) {
+                        datavalues[select_name] = parseInt(datavalues[select_name]) + parseInt(that.fields[select_name].value_shift);
+                    }
                     $(this).val(datavalues[select_name]);
+
                     if (that.fields[select_name].values_provider) {
                         $(this).change();
                     }
@@ -856,6 +860,7 @@ var PolicyForm = (function() {
                     $(this).val(that.fields[id].serialize($(this).val()));
                 }
             }
+            $(this).removeClass('wizard-ignore');
         });
         this.form.find(".disabled_policy_id").each(function  () {
             $(this).attr('value', '0');
@@ -993,6 +998,12 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.validateForm = function () {
+        var step_preffix = this.name + '_step';
+        var step = $(this.form).formwizard("state").currentStep.substring(step_preffix.length);
+        this.findContainer(step).find('.wizard-ignore').each(function() {
+            $(this).removeClass('wizard-ignore');
+        });
+
         $(this.form).formwizard("next");
     }
 

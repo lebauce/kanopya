@@ -124,16 +124,12 @@ sub new {
 sub toString {
     my $self = shift;
 
-    my $service_provider_id = $self->getAttr(name => 'clustermetric_service_provider_id');
-    my $service_provider    = Entity::ServiceProvider->find (
-        hash => { service_provider_id => $service_provider_id 
-        }
-    );
-    my $indicator_id   = $self->getAttr(name => 'clustermetric_indicator_id');
-    my $indicator_name = $service_provider->getIndicatorNameFromId(indicator_id => $indicator_id);
-    my $sfn            = $self->getAttr(name => 'clustermetric_statistics_function_name');
+    my $service_provider = $self->clustermetric_service_provider;
+    my $collector = $service_provider->getManager(manager_type => "collector_manager");
+    my $indicator = $collector->getIndicator(id => $self->clustermetric_indicator_id);
 
-    return $sfn.'('.$indicator_name.')';
+    return $self->clustermetric_statistics_function_name .
+           '(' . $indicator->indicator_name . ')';
 }
 
 1;
