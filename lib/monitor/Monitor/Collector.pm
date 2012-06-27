@@ -272,8 +272,9 @@ sub updateClusterData {
     my @in_node_mb = grep { $_->getNodeState() =~ '^in' } @mbs; 
     
     # No more aggregating cluster values here since it's handled by cluster metrics mecanism (aggregator)
+    # Update: we still aggregate values for billing purpose (TODO use aggregate clustermetric for billing)
     # TODO clean
-    my $aggregate = 0;
+    my $aggregate = 1;
     if ( $aggregate ) {
         # Group indicators values by set
         my %sets;
