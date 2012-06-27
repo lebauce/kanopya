@@ -142,7 +142,7 @@ sub findManager {
     }
     # Workaround to get the Fileimagemanager0 in the disk manager list of an external equipment.
     # We really need to fix this.
-    if ($args{service_provider_id} != 1) {
+    if (defined $args{service_provider_id} and $args{service_provider_id} != 1) {
         if ($args{category} eq 'Storage') {
             eval {
                 $fileimagemanager = Entity::Component::Fileimagemanager0->find(hash => { service_provider_id => 1 });

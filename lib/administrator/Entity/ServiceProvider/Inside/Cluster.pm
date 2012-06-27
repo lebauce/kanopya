@@ -414,6 +414,21 @@ sub configureManagers {
     my $self = shift;
     my %args = @_;
 
+    # Workaround to handle connectors that have btoh category.
+    # We need to fix this when we willmerge inside/outside.
+    my ($wok_disk_manager, $wok_export_manager);
+    eval {
+        $wok_disk_manager   = $args{managers}->{disk_manager}->{manager_id};
+        $wok_export_manager = $args{managers}->{export_manager}->{manager_id};
+    };
+    if ($wok_disk_manager and $wok_export_manager) {
+        my $kanopya = Entity->get(id => 1);
+        # FileImagaemanager0 -> FileImagaemanager0
+        if ($wok_disk_manager != $kanopya->getComponent(name => "Lvm", version => "2")->getAttr(name => 'component_id')) {
+            $args{managers}->{export_manager}->{manager_id} = $wok_disk_manager;
+        }
+    }
+
     # Install new managers or/and new managers params if required
     if (defined $args{managers}) {
         for my $manager (values %{$args{managers}}) {
