@@ -77,6 +77,7 @@ function loadServicesRessources (container_id, elem_id) {
                     ],
             title : { from_column : 'externalnode_hostname' }
         },
+        action_delete: 'no',
     } );
 
     //createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesRessourcesGridId));
