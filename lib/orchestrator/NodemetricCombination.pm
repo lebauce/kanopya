@@ -97,12 +97,12 @@ sub toString {
 sub getDependantIndicatorIds{
     my $self = shift;
     my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
-    
+
     my @indicator_ids;
-    
+
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
-    
+
     #replace each rule id by its evaluation
     for my $element (@array) {
         if( $element =~ m/id\d+/)
@@ -115,7 +115,7 @@ sub getDependantIndicatorIds{
 
 =head2 computeValueFromMonitoredValues
 
-    desc: Compute Node Combination Value with the formula from given Indicator values 
+    desc: Compute Node Combination Value with the formula from given Indicator values
 
 =cut
 
@@ -152,7 +152,7 @@ sub computeValueFromMonitoredValues {
      }
 
     my $res = -1;
-    my $arrayString = '$res = '."@array"; 
+    my $arrayString = '$res = '."@array";
     #print $arrayString."\n";
 
     #Evaluate the logic formula
@@ -173,11 +173,11 @@ sub checkFormula {
 
     # Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/, $formula);
-    
+
     my @unkownIds;
     #replace each rule id by its evaluation
     for my $element (@array) {
-        if ($element =~ m/id\d+/) {   
+        if ($element =~ m/id\d+/) {
             # Check if element is a SCOM indicator
             my $indicator_id = substr($element, 2);
             if (not (grep {$_->getId eq $indicator_id} @$indicators)) {
@@ -188,5 +188,33 @@ sub checkFormula {
 
     return @unkownIds;
 }
+
+=head2 getUnit
+
+    desc: Return the formula of the combination in which the indicator id is
+          replaced by its Unit or by '?' when unit is not specified in database
+
+=cut
+
+sub getUnit {
+    my ($self, %args) = @_;
+
+    my $formula             = $self->getAttr(name => 'nodemetric_combination_formula');
+    my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
+    my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
+    my $collector           = $service_provider->getManager(manager_type => "collector_manager");
+
+    #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            $element = $collector->getIndicator(id => substr($element,2))->getAttr(name => 'indicator_unit') || '?';
+        }
+    }
+    return join('',@array);
+}
+
 
 1;
