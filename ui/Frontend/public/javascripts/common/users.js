@@ -7,6 +7,12 @@ function Users() {
     Users.prototype.load_content = function(container_id, elem_id) {
         function createAddUserButton(container) {
             var user_fields = {
+                // By default users are sytem users (no right check)
+                // TODO remove after right management review/check
+                user_system: {
+                    type: 'hidden',
+                    value: 1
+                },
                 user_firstname: {
                     label: 'First Name',
                     type: 'text'
