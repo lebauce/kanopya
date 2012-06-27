@@ -692,7 +692,7 @@ var PolicyForm = (function() {
         var route;
         var method = 'GET';
         var args;
-        console.log(name + ': ' + selected_id);
+
         if (this.fields[name].filters) {
             method = 'POST';
             route = '/api/' + this.fields[this.fields[name].parent].entity + '/' + selected_id;
