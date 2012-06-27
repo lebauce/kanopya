@@ -1282,6 +1282,56 @@ sub getNodesMetrics {
            );
 }
 
+sub generateOverLoadNodemetricRules {
+    my ($self, %args) = @_;
+    my $service_provider_id = $self->getId();
+
+    my $creation_conf = {
+        'memory' => {
+             formula         => 'id2 / id1',
+             comparator      => '>',
+             threshold       => 70,
+             rule_label      => '%MEM used too high',
+             rule_description => 'Percentage memory used is too high',
+        },
+        'cpu' => {
+            #User+Idle+Wait+Nice+Syst+Kernel+Interrupt
+             formula         => '(id5 + id6 + id7 + id8 + id9 + id10) / (id5 + id6 + id7 + id8 + id9 + id10 + id11)',
+             comparator      => '>',
+             threshold       => 70,
+             rule_label      => '%CPU used too high',
+             rule_description => 'Percentage processor used is too high',
+        },
+    };
+
+    while (  my ($key, $value) = each(%$creation_conf) ) {
+        my $combination_param = {
+            nodemetric_combination_formula             => $value->{formula},
+            nodemetric_combination_service_provider_id => $service_provider_id,
+        };
+
+        my $comb  = NodemetricCombination->new(%$combination_param);
+
+        my $condition_param = {
+            nodemetric_condition_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
+            nodemetric_condition_comparator          => $value->{comparator},
+            nodemetric_condition_threshold           => $value->{threshold},
+            nodemetric_condition_service_provider_id => $service_provider_id,
+        };
+
+        my $condition = NodemetricCondition->new(%$condition_param);
+        my $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
+        my $prule = {
+            nodemetric_rule_formula             => 'id'.$conditionid,
+            nodemetric_rule_label               => $value->{rule_label},
+            nodemetric_rule_description         => $value->{rule_description},
+            nodemetric_rule_state               => 'enabled',
+            nodemetric_rule_service_provider_id => $service_provider_id,
+        };
+        my $rule = NodemetricRule->new(%$prule);
+    }
+}
+
 =head2 generateDefaultMonitoringConfiguration
 
     Desc: create default nodemetric combination and clustermetric for the service provider
