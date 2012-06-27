@@ -100,10 +100,10 @@ INSERT INTO `entity_comment` VALUES
 
 INSERT INTO `profile` VALUES
 (1, 'Super Admin', 'God profile : full access to the user interface.'),
-(2, 'Administrator', 'blablabla administrator description'),
-(3, 'Services Developer', 'blablabla services dev description'),
-(4, 'Sale', 'blablabla sale description'),
-(5, 'Customer', 'blablabla customer description');
+(2, 'Administrator', 'administrator profile'),
+(3, 'Services Developer', 'services dev profile'),
+(4, 'Sale', 'sale profile'),
+(5, 'Customer', 'customer profile');
 
 --
 -- system groups
