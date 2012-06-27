@@ -65,7 +65,7 @@ sub getData {
     
     my $rrd_name = $args{rrd_name};
 
-    # rrd constructor     
+    # rrd constructor
     my $rrd = $self->getRRD(file => "$rrd_name.rrd" );
 
     # Start fetching values
@@ -121,7 +121,7 @@ sub getData {
         # compute max value for this row
         if (defined $values[0]) {
             my $max = 0;
-            foreach my $idx (@max_idx) { $max += $values[$idx] };            
+            foreach my $idx (@max_idx) { $max += $values[$idx] };
             push @{ $res_data{ "_MAX_"} }, $max;
         }
         # add values in res_data
@@ -146,7 +146,7 @@ sub getData {
                 $res{ $ds_name } = defined $max ? $sum * 100 / $max : undef;
             }
             else { # mean
-                $res{ $ds_name } = $values; # $sum / scalar @$values;
+                $res{ $ds_name } = $sum / scalar @$values; # $values;
             }
         };
         if ($@) {

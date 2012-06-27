@@ -98,9 +98,10 @@ sub updateHostData {
                 my $data_provider = $providers{$provider_class};
                 if (not defined $data_provider) {
                     require "DataProvider/$provider_class.pm";
+                    my $comp =  $set->{'component'} ? ($args{'components'}->{ $set->{'component'} } || undef) : undef;
                     $data_provider = $provider_class->new(
                         host      => $host,
-                        component => $args{'components'}->{ $set->{'component'} } || undef
+                        component => $comp
                     );
                     $providers{$provider_class} = $data_provider;
                 }

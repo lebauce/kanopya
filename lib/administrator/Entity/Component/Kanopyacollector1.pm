@@ -100,6 +100,9 @@ sub retrieveData {
 
     General::checkParams(args => \%args, required => [ 'nodelist', 'time_span', 'indicators' ]);
 
+    # WARNING time span hardcoded here!!
+    my $time_span = 300;
+
     my $nodelist       = $args{'nodelist'};
     my $indicators     = $args{'indicators'};
     my @sets_to_fetch;
@@ -124,7 +127,7 @@ sub retrieveData {
             my $rrd = $set . '_' . $node;
             eval {
                 my %data = $retriever->getData(rrd_name  => $rrd,
-                                               time_laps => $args{time_span});
+                                               time_laps => $time_span);
                 $monitored_values{$node} = \%data;
             };
             if ($@) {
@@ -138,20 +141,9 @@ sub retrieveData {
         foreach my $indicator_name (keys %$set) {
             my $indicator = (grep { $_->getAttr(name => "indicator_name") eq $indicator_name } values %$indicators)[0];
             next if not defined $indicator;
-            $res{$node_name}{$indicator->getAttr(name => 'indicator_oid')} = $set->{$indicator_name}[-1]; # take the last value retrieved during time laps
+            $res{$node_name}{$indicator->getAttr(name => 'indicator_oid')} = $set->{$indicator_name};
         }
     }
-
-    # my $monitored_values = {
-    #     'tge1' => {
-    #         '.1.3.6.1.4.1.2021.4.5.0' => '12.34',
-    #         '.1.3.6.1.4.1.2021.4.6.0'   => '43.21', 
-    #     },
-    #     'tge2' => {
-    #         '.1.3.6.1.4.1.2021.4.5.0' => '111111',
-    #         '.1.3.6.1.4.1.2021.4.6.0'   => '222222', 
-    #     },
-    # };
 
     return \%res;
 }
