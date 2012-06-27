@@ -13,7 +13,7 @@ function initMessages() {
                 { name: 'message_content', index: 'message_content', width: 130 }
             ],
             sortname: 'message_id',
-            sortorder: "desc",
+            //sortorder: "desc",
             height: '200px',
             rowNum: 10,
             rowList: [5, 10, 20, 50, 100],
@@ -40,6 +40,8 @@ function initMessages() {
 
 
     $('#grid-message').jqGrid('setGridWidth', $('#view-container').parent().width() - 20);
+    $("#grid-message").setGridParam({sortname:'message_id', sortorder: 'desc'})
+   .trigger('reloadGrid');
 
     // Needed to fix bad panels resizing when opening Messages pane (south) for the first time
     // Layout will take in account the message grid size fill with data 
