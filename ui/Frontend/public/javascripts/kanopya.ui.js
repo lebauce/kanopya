@@ -98,7 +98,8 @@ $(document).ready(function () {
                        closable : false
                    },
                    west : {
-                       closable : false,
+                       minSize   : 220,
+                       closable  : false,
                        resizable : true
                    },
                    east : {
