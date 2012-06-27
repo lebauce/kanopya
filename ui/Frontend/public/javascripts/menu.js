@@ -1,3 +1,4 @@
+
 // mainmenu_def is set in product specific menu.conf.js
 function add_menu(container, label, submenu_links, elem_id) {
     var id_suffix = elem_id ? elem_id : 'static';
@@ -21,6 +22,27 @@ function add_menu(container, label, submenu_links, elem_id) {
     link_li.find('.view_link').click( {view_id: view_id, elem_id: elem_id}, onViewLinkSelect);
 }
 
+function add_menutree(container, label, menu_info, elem_id) {
+    
+    var link_li = $('<li>');
+    var link_a = $('<a class="view_link" style="white-space: nowrap">' + label + '</a>');
+    link_a.bind('click', function() {
+        $(this).next().toggle();
+    });
+    var sublevel = $('<ul>');
+    sublevel.hide();
+    $.getJSON(menu_info.level2_url+'?service_template_id='+elem_id, function (data) {
+        for(index in data) {
+            add_menu(sublevel,data[index].cluster_name,menu_info.submenu,data[index].pk);
+            //sublevel.append($('<li>'+data[index].cluster_name+'</li>'));
+        }
+    });
+    
+    link_li.append(link_a);
+    link_li.append(sublevel);
+    container.append(link_li);
+}
+
 // Create and link all generic menu elements based on mainmenu_def from conf
 function build_mainmenu() {
     
@@ -40,6 +62,8 @@ function build_mainmenu() {
         } else if (menu_def['json']) {
             // Dynamic load from json
             menu_head.click(menu_def['json'], loadMenuFromJSON);
+        } else if(menu_def['jsontree']) {
+            menu_head.click(menu_def['jsontree'], loadTreeMenuFromJSON);
         } else {
             // Static menu
             for (var sublabel in menu_def) {
@@ -177,6 +201,36 @@ function loadMenuFromJSON(event) {
     });
 
 }
+
+function loadTreeMenuFromJSON(event) {
+    var menu_info = event.data;
+    var container = $(this).next();
+
+    container.empty();
+
+    $.getJSON(menu_info.level1_url, function (data) {
+        // Add menu entry and associated view
+        for (var elem in data) {
+            if (data[elem][menu_info.level1_label_key] != null) {
+                add_menutree(   container,
+                        data[elem][menu_info.level1_label_key],
+                        menu_info,
+                        data[elem][menu_info.id_key]
+                );
+            }
+        }
+        
+        // Remove old links and view
+        //~ var dead_links = container.find('.view_link_cont:not(.alive_link)').each(function () {
+            //~ var view = $($(this).find('.view_link').attr('href'));
+            //~ view.remove();
+            //~ $(this).remove();
+        //~ });
+        //~ container.find('.alive_link').removeClass('alive_link');
+    }); 
+    
+}
+
 
 $(document).ready(function () {
     build_mainmenu();

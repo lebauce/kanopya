@@ -30,8 +30,11 @@ var mainmenu_def = {
         masterView : [
                       {label : 'Overview', id : 'services_overview', onLoad : function(cid) { require('KIM/services.js'); servicesList(cid); }}
                       ],
-        json : {url         : '/api/serviceprovider',
-                label_key   : 'cluster_name',
+        jsontree : {
+                level1_url         : '/api/servicetemplate',
+                level1_label_key   : 'service_name',
+                level2_url         : '/api/cluster',
+                level2_label_key   : 'cluster_name',
                 id_key      : 'pk',
                 submenu     : [
                                {label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid);}},
