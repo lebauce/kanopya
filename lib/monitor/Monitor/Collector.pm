@@ -271,54 +271,58 @@ sub updateClusterData {
     my @mbs = values %{ $cluster->getHosts( ) };
     my @in_node_mb = grep { $_->getNodeState() =~ '^in' } @mbs; 
     
-    # Group indicators values by set
-    my %sets;
-    foreach my $mb (@in_node_mb) {
-        my $host_name = $mb->getAttr(name => "host_hostname");
-        my @sets_name = keys %{ $hosts_values->{ $host_name } };
-        foreach my $set_name ( @sets_name ) {    
-            push @{$sets{$set_name}}, $hosts_values->{ $host_name }{$set_name};
+    # No more aggregating cluster values here since it's handled by cluster metrics mecanism (aggregator)
+    # TODO clean
+    my $aggregate = 0;
+    if ( $aggregate ) {
+        # Group indicators values by set
+        my %sets;
+        foreach my $mb (@in_node_mb) {
+            my $host_name = $mb->getAttr(name => "host_hostname");
+            my @sets_name = keys %{ $hosts_values->{ $host_name } };
+            foreach my $set_name ( @sets_name ) {
+                push @{$sets{$set_name}}, $hosts_values->{ $host_name }{$set_name};
+            }
+        }
+
+        # For each sets, aggregate values and store
+        SET:
+        while ( my ($set_name, $sets_list) = each %sets ) {
+            if ( scalar @in_node_mb != scalar @$sets_list ) {
+                $log->warn("During aggregation => missing set '$set_name' for one node of cluster '$cluster_name'. Cluster aggregated values for this set as considered undef.");
+                next SET;
+            }
+
+            my %aggreg_mean = $self->aggregate( hash_list => $sets_list, f => 'mean' );
+            my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
+
+            next SET if ( scalar grep { not defined $_ } values %aggreg_sum );
+
+            my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
+            my $mean_rrd_name = $base_rrd_name . "_avg";
+            my $sum_rrd_name = $base_rrd_name . "_total";
+
+            eval {
+                $self->updateRRD(rrd_name => $mean_rrd_name,
+                                 set_name => $set_name,
+                                 ds_type => 'GAUGE',
+                                 time => $collect_time,
+                                 data => \%aggreg_mean
+                );
+
+                $self->updateRRD(rrd_name => $sum_rrd_name,
+                                 set_name => $set_name,
+                                 ds_type  => 'GAUGE',
+                                 time     => $collect_time,
+                                 data     => \%aggreg_sum);
+            };
+            if ($@){
+                my $error = $@;
+                $log->error("Update cluster rrd error => $error");
+            }
         }
     }
-    
-    # For each sets, aggregate values and store 
-    SET:
-    while ( my ($set_name, $sets_list) = each %sets ) {
-                
-        if ( scalar @in_node_mb != scalar @$sets_list ) {
-            $log->warn("During aggregation => missing set '$set_name' for one node of cluster '$cluster_name'. Cluster aggregated values for this set as considered undef.");
-            next SET;
-        }
-                    
-        my %aggreg_mean = $self->aggregate( hash_list => $sets_list, f => 'mean' );
-        my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
-    
-        next SET if ( scalar grep { not defined $_ } values %aggreg_sum );
-                
-        my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
-        my $mean_rrd_name = $base_rrd_name . "_avg";
-        my $sum_rrd_name = $base_rrd_name . "_total";
 
-        eval {
-            $self->updateRRD(rrd_name => $mean_rrd_name,
-                             set_name => $set_name,
-                             ds_type => 'GAUGE',
-                             time => $collect_time,
-                             data => \%aggreg_mean
-            );
-
-            $self->updateRRD(rrd_name => $sum_rrd_name,
-                             set_name => $set_name,
-                             ds_type  => 'GAUGE',
-                             time     => $collect_time,
-                             data     => \%aggreg_sum);
-        };
-        if ($@){
-            my $error = $@;
-            $log->error("Update cluster rrd error => $error");
-        }
-    }
-    
     # log cluster nodes state
     my @state_log = map { $_->getAttr(name => "host_hostname") .
                           " (" . $_->getAttr( name => "host_state" ) .
