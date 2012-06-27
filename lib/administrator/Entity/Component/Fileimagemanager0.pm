@@ -92,7 +92,7 @@ sub getPolicyParams {
         for my $access (@{ $self->getConf->{container_accesses} }) {
             $accesses->{$access->{container_access_id}} = $access->{container_access_name};
         }
-        return [ { name   => 'container_access_id', label  => 'Volume group to use', values => $accesses } ];
+        return [ { name   => 'container_access_id', label  => 'NFS export to use', values => $accesses } ];
     }
     return [];
 }
