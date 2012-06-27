@@ -12,11 +12,24 @@ function servicesList (container_id, elem_id) {
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
             addServiceExtraData(grid, rowid, rowdata, rowelem, '');
+
+            // Service name
+            $.ajax({
+                url     : '/api/cluster/' + rowid + '/service_template',
+                type    : 'GET',
+                success : function(serv_template) {
+                    $(grid).setCell(rowid, 'service_template_name', serv_template.service_name);
+                },
+                error : function ()  {
+                    $(grid).setCell(rowid, 'service_template_name', 'internal');
+                }
+            });
         },
         rowNum : 25,
-        colNames: [ 'ID', 'Name', 'State', 'Rules State', 'Node Number' ],
+        colNames: [ 'ID', 'Service', 'Instance Name', 'State', 'Rules State', 'Node Number' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
+            { name: 'service_template_name', index: 'service_template_name', width: 200 },
             { name: 'cluster_name', index: 'service_name', width: 200 },
             { name: 'cluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
             { name: 'rulesstate', index : 'rulesstate' },

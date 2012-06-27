@@ -28,7 +28,7 @@ var mainmenu_def = {
     },
     'Services'          : {
         masterView : [
-                      {label : 'Overview', id : 'services_overview', onLoad : function(cid) { require('KIM/services.js'); servicesList(cid); }}
+                      {label : 'Service instances', id : 'services_overview', onLoad : function(cid) { require('KIM/services.js'); servicesList(cid); }}
                       ],
         jsontree : {
                 level1_url         : '/api/servicetemplate',
