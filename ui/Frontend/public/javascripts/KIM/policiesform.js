@@ -680,7 +680,7 @@ var PolicyForm = (function() {
         var datavalues = undefined;
         var name = element.attr('name');
 
-        if (! name) { return; }
+        if (! (name && selected_id)) { return; }
 
         /* Arg... Can not call the route according to
          * this.fields[elementName].entity, as we do not have a common parent
@@ -692,7 +692,7 @@ var PolicyForm = (function() {
         var route;
         var method = 'GET';
         var args;
-
+        console.log(name + ': ' + selected_id);
         if (this.fields[name].filters) {
             method = 'POST';
             route = '/api/' + this.fields[this.fields[name].parent].entity + '/' + selected_id;
@@ -710,7 +710,12 @@ var PolicyForm = (function() {
             }
 
         } else {
-            route = '/api/' + this.fields[name].entity + '/' + this.fields[name].parent + '?' + selected_id;
+            var parent = this.fields[name].parent;
+            var reg = new RegExp("^.*_provider_id", "g");
+            if (this.fields[name].parent.match(reg)) {
+                parent = 'service_provider_id';
+            }
+            route = '/api/' + this.fields[name].entity + '/' + parent + '=' + selected_id;
         }
         datavalues = this.ajaxCall('POST', route, args);
 
@@ -757,7 +762,7 @@ var PolicyForm = (function() {
                 prefix  : this.fields[name].prefix,
                 disable_filled : this.fields[name].disable_filled,
                 hide_filled    : this.fields[name].hide_filled,
-                is_mandatory   : this.fields[name].is_mandatory,
+                is_mandatory   : (this.fields[name].is_mandatory && this.fields[name].disable_filled),
             }
 
             var tr = undefined;

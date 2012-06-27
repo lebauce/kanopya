@@ -98,7 +98,6 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'component',
-            category     : 'Storage',
             parent       : 'storage_provider_id',
             filters      : {
                 func : 'findManager',
@@ -109,7 +108,7 @@ var policies = {
                 func : 'getPolicyParams',
                 args : { policy_type: 'storage' },
             },
-            depends      : [ 'export_manager_id' ],
+//            depends      : [ 'export_manager_id' ],
         },
         export_manager_id : {
             label        : "Export protocol",
@@ -117,10 +116,15 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'component',
-            parent       : 'disk_manager_id',
+            parent       : 'storage_provider_id',
             filters      : {
-                func : 'getExportManagers',
+                func : 'findManager',
+                args : { category: 'Export' },
             },
+//            parent       : 'disk_manager_id',
+//            filters      : {
+//                func : 'getExportManagers',
+//            },
             display_func : 'getExportType',
         },
     },
@@ -171,6 +175,7 @@ var policies = {
             entity       : 'interfacerole',
             display      : 'interface_role_name',
             composite    : 'network_interface',
+            is_mandatory : 1,
         },
         interface_networks : {
             label        : 'Network',
