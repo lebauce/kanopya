@@ -78,7 +78,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-our $POLICY_TYPES = ['hosting', 'storage', 'network', 'scalability', 'system', 'billing', 'orchestration'];
+our $POLICY_TYPES = ['hosting', 'storage', 'network', 'scalability', 'system', 'billing'];
 
 
 sub new {
@@ -123,6 +123,7 @@ sub getPolicies () {
 
     # The service template known the type of policies
     for my $policy_type (@$POLICY_TYPES) {
+        # For instance do not handle orchestration policy
         if ($self->getAttr(name => $policy_type . '_policy_id')) {
             push @$policies, Policy->get(id => $self->getAttr(name => $policy_type . '_policy_id'));
         }
