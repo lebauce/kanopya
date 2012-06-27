@@ -337,6 +337,7 @@ sub create {
         }
     }
 
+    $log->info(\%params);
     General::checkParams(args => \%params, required => [ 'managers' ]);
     General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
@@ -473,27 +474,29 @@ sub configureInterfaces {
 
     if (defined $args{interfaces}) {
         for my $interface_pattern (values %{ $args{interfaces} }) {
-            my $role = Entity::InterfaceRole->get(id => $interface_pattern->{interface_role});
-
-            # TODO: This mechanism do not allows to define many interfaces
-            #       with the same role within policies.
-
-            # Check if an interface with the same role already set, add it otherwise,
-            # Add networks to the interrface if not exists.
-            my $interface;
-            eval {
-                $interface = Entity::Interface->find(
-                                 hash => { service_provider_id => $self->getAttr(name => 'entity_id'),
-                                           interface_role_id   => $role->getAttr(name => 'entity_id') }
-                             );
-            };
-            if ($@) {
-                $interface = $self->addNetworkInterface(interface_role => $role);
-            }
-
-            if ($interface_pattern->{interface_networks}) {
-                for my $network_id (@{ $interface_pattern->{interface_networks} }) {
-                    $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
+            if ($interface_pattern->{interface_role}) {
+                my $role = Entity::InterfaceRole->get(id => $interface_pattern->{interface_role});
+    
+                # TODO: This mechanism do not allows to define many interfaces
+                #       with the same role within policies.
+    
+                # Check if an interface with the same role already set, add it otherwise,
+                # Add networks to the interrface if not exists.
+                my $interface;
+                eval {
+                    $interface = Entity::Interface->find(
+                                     hash => { service_provider_id => $self->getAttr(name => 'entity_id'),
+                                               interface_role_id   => $role->getAttr(name => 'entity_id') }
+                                 );
+                };
+                if ($@) {
+                    $interface = $self->addNetworkInterface(interface_role => $role);
+                }
+    
+                if ($interface_pattern->{interface_networks}) {
+                    for my $network_id (@{ $interface_pattern->{interface_networks} }) {
+                        $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
+                    }
                 }
             }
         }
