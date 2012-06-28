@@ -6,7 +6,7 @@ require('common/formatters.js');
 function addServiceExtraData(grid, rowid, rowdata, rowelem, ext) {
     var id  = $(grid).getCell(rowid, 'pk');
     $.ajax({
-        url     : '/api/' + ext + 'cluster/' + id + '/externalnodes',
+        url     : '/api/externalnode?service_provider_id=' + id,
         type    : 'GET',
         success : function(data) {
             var i   = 0;
