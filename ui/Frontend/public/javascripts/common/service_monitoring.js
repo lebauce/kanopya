@@ -143,6 +143,9 @@ function createServiceConbination(container_id, elem_id) {
         title       : 'Create a Combination',
         name        : 'aggregatecombination',
         fields      : service_fields,
+        callback    : function() {
+            $('#service_ressources_aggregate_combinations_' + elem_id).trigger('reloadGrid');
+        },
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
         }
@@ -236,7 +239,10 @@ function createNodemetricCombination(container_id, elem_id, ext) {
         fields      : service_fields,
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
-        }
+        },
+        callback    : function() {
+            $('#service_ressources_nodemetric_combination_' + elem_id).trigger('reloadGrid');
+        },
     };
 
     var button = $("<button>", {html : 'Add a combination'});
