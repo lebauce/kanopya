@@ -99,7 +99,7 @@ sub checkHostManagerParams {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'ram', 'core', 'ifaces' ]);
+    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
 }
 
 =head2 getPolicyParams
@@ -294,7 +294,8 @@ sub createVirtualHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'ram', 'core', 'ifaces' ]);
+    General::checkParams(args => \%args, required => [ 'ram', 'core' ],
+                                         defaults => { 'ifaces' => 0 });
 
     # Use the first kernel found...
     my $kernel = Entity::Kernel->find(hash => {});
