@@ -220,12 +220,28 @@ function serviceconditionmodal(elem_id, editid) {
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
         },
-        callback    : function() {
+        callback    : function(elem, form) {
             if (editid !== undefined) {
                 $.ajax({
                     url     : '/api/aggregatecondition/' + editid + '/updateName',
                     type    : 'POST'
                 });
+            } else {
+                if ($(form).find('#input_create_rule').val() === 'on') {
+                    $.ajax({
+                        url     : '/api/aggregaterule',
+                        type    : 'POST',
+                        data    : {
+                            aggregate_rule_label                : elem.aggregate_condition_label,
+                            aggregate_rule_service_provider_id  : elem_id,
+                            aggregate_rule_formula              : 'id' + elem.pk,
+                            aggregate_rule_state                : elem.state
+                        },
+                        success : function() {
+                            $('#service_ressources_aggregate_rules_' + elem_id).trigger('reloadGrid');
+                        }
+                    });
+                }
             }
             $('#service_ressources_aggregate_conditions_' + elem_id).trigger('reloadGrid');
         }
@@ -233,6 +249,12 @@ function serviceconditionmodal(elem_id, editid) {
     if (editid !== undefined) {
         service_opts.id = editid;
         service_opts.fields.aggregate_condition_label.type  = 'hidden';
+    } else {
+        service_opts.fields.create_rule = {
+            type    : 'checkbox',
+            skip    : true,
+            label   : 'Create associated rule ?'
+        };
     }
     (new ModalForm(service_opts)).start();
 }
