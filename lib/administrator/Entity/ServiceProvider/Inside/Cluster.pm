@@ -395,7 +395,10 @@ sub applyPolicies {
         elsif ($name eq 'components') {
             for my $component (values %$value) {
                 # TODO: Check if the component is already installed
-                $self->addComponentFromType(component_type_id => $component->{component_type});
+                my $instance = $self->addComponentFromType(component_type_id => $component->{component_type});
+                if (defined $component->{component_configuration}) {
+                    $instance->setConf($component->{component_configuration});
+                }
             }
         }
         # Handle network interfaces cluster config
@@ -899,7 +902,7 @@ sub addComponent {
                         value => $self->getAttr(name => 'cluster_id'));
     $component->save();
 
-    return $component->{_dbix}->id;
+    return $component;
 }
 
 =head2 addComponentFromType
@@ -914,17 +917,17 @@ sub addComponentFromType {
 
     General::checkParams(args => \%args, required => ['component_type_id']);
 
-	my $type_id = $args{component_type_id};
-	my $adm = Administrator->new();
-	my $row = $adm->{db}->resultset('ComponentType')->find($type_id);
-	my $comp_name = $row->get_column('component_name');
-	my $comp_version = $row->get_column('component_version');
-	my $comp_class = 'Entity::Component::'.$comp_name.$comp_version;
-	my $location = General::getLocFromClass(entityclass => $comp_class);
-	eval {require $location };
-	my $component = $comp_class->new();
+    my $type_id = $args{component_type_id};
+    my $adm = Administrator->new();
+    my $row = $adm->{db}->resultset('ComponentType')->find($type_id);
+    my $comp_name = $row->get_column('component_name');
+    my $comp_version = $row->get_column('component_version');
+    my $comp_class = 'Entity::Component::'.$comp_name.$comp_version;
+    my $location = General::getLocFromClass(entityclass => $comp_class);
+    eval {require $location };
+    my $component = $comp_class->new();
 
-	return $self->addComponent(component => $component);
+    return $self->addComponent(component => $component);
 }
 
 =head2 removeComponent

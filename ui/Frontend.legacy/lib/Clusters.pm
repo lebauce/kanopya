@@ -1032,7 +1032,7 @@ post '/clusters/:clusterid/components/add' => sub {
     my $component_id;
     eval {
         my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
-        $component_id = $ecluster->addComponentFromType(component_type_id => param('component_type_id'));
+        $component_id = $ecluster->addComponentFromType(component_type_id => param('component_type_id'))->getId;
     };
     if($@) {
         my $exception = $@;
