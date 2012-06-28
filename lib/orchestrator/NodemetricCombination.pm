@@ -35,7 +35,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    nodemetric_combination_formula =>  {pattern       => '^([id\d]|[ .+*()-/]|[\d])+$',
+    nodemetric_combination_formula =>  {pattern       => '^((id\d)|[ .+*()-/]|[\d])+$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1,

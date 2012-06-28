@@ -40,7 +40,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    aggregate_rule_formula     =>  {pattern       => '^.*$',
+    aggregate_rule_formula     =>  {pattern       => '^((id\d)|and|or|not|[ ()!&|])+$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1,

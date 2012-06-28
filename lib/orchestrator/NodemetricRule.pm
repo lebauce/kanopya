@@ -35,7 +35,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    nodemetric_rule_formula   =>  {pattern       => '^.*$',
+    nodemetric_rule_formula   =>  {pattern       => '^((id\d)|and|or|not|[ ()!&|])+$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1,
