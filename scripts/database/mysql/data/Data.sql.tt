@@ -471,6 +471,10 @@ INSERT INTO `entity` VALUES (@eid, 72, 4);
 INSERT INTO `interface_role` VALUES (@eid, 'vms');
 SET @eid := @eid +1;
 
+INSERT INTO `entity` VALUES (@eid, 72, 5);
+INSERT INTO `interface_role` VALUES (@eid, 'private');
+SET @eid := @eid +1;
+
 --
 -- kernels
 --
