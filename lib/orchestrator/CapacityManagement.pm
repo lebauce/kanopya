@@ -244,6 +244,7 @@ sub optimIaas{
     my $step = 1;
     do{
         $log->info("**STEP $step**\n");
+
         $optim = $self->_optimStep(
             infra           => $infra,
             hv_selected_ids => \@hv_selected_ids,
@@ -358,7 +359,7 @@ sub scaleMemoryHost{
     }
 
     # Compute absolute memory instead of relative
-    my $memory;   
+    my $memory;
     if($sign eq '+'){
         $memory = $self->{_infra}->{vms}->{$args{host_id}}->{ram} + $mem_input;
     } elsif ($sign eq '-') {

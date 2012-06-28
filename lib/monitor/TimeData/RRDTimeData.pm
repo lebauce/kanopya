@@ -62,7 +62,7 @@ sub createTimeDataStore{
     my %args = @_;
     $log->debug(Dumper(\%args));
 
-    General::checkParams(args => \%args, required => ['name']); 
+    General::checkParams(args => \%args, required => ['name']);
 
 	my $name = _formatName(name => $args{'name'});
 
@@ -74,7 +74,7 @@ sub createTimeDataStore{
     my $monitor_configuration = Kanopya::Config::get('monitor');
     #my $frequency             = $monitor_configuration->{rrd_step}->{step};
     my $frequency             = $monitor_configuration->{time_step};
-	my $heartbeat = $frequency * 2;
+    my $heartbeat = $frequency * 2;
 
     #definition of the options. If unset, default rrd start time is (now -10s)
     if (defined $args{'options'}) {
@@ -101,7 +101,7 @@ sub createTimeDataStore{
         my $finalTime = $time - $moduloTime;
         $opts .= '-b '.$finalTime.' ';
     }
-	
+
     #default parameter for Round Robin Archive
     my %RRA_params = (function => 'LAST', XFF => '0', PDPnb => '1', CDPnb => '10080');
 
@@ -112,9 +112,9 @@ sub createTimeDataStore{
         if (defined $RRA->{$param_name}){
             $RRA_params{$param_name} = $RRA->{$param_name};
             }
-        }		
+        }
     }
-	
+
     #definition of the RRA
     $RRA_chain = 'RRA:'.$RRA_params{'function'}.':'.$RRA_params{'XFF'}.':'.$RRA_params{'PDPnb'}.':'.$RRA_params{'CDPnb'};
 
@@ -129,7 +129,7 @@ sub createTimeDataStore{
         if (defined $DS->{$param_name}){
             $DS_params{$param_name} = $DS->{$param_name};
             }
-        }			
+        }
         ############################################
         #COMPUTE TYPE IS NOT HANDLED BY THIS MODULE#
         ############################################
@@ -139,9 +139,9 @@ sub createTimeDataStore{
         #	$DSchain = 'DS'.$DSname.':'.$type.':'.$heartbeat.':'.$min.':'.$max;
         #}elsif ($type eq 'COMPUTE'){
         #	$DSchain = 'DS:'.$DSname.':'.$type.':'.$rpn;
-        #}	
+        #}
     }
-	
+
     #definition of the DS
     $DS_chain = 'DS:'.$DS_params{'DSname'}.':'.$DS_params{'type'}.':'.$DS_params{'heartbeat'}.':'.$DS_params{'min'}.':'.$DS_params{'max'};
 
@@ -155,7 +155,7 @@ sub createTimeDataStore{
     my $exec = `$cmd 2>&1`;
     if ($exec =~ m/^ERROR.*/){
         throw Kanopya::Exception::Internal(error => 'RRD creation failed: '.$exec);
-    }		
+    }
 }
 
 =head2 deleteTimeDataStore
@@ -172,9 +172,9 @@ B<throws>  : None
 sub deleteTimeDataStore{
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['name']); 
+    General::checkParams(args => \%args, required => ['name']);
 
-    my $name = _formatName(name => $args{'name'}); 
+    my $name = _formatName(name => $args{'name'});
     my $cmd = 'del '.$dir.$name;
 
     system ($cmd);
@@ -194,12 +194,12 @@ B<throws>  : None
 sub getTimeDataStoreInfo {
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['name']); 
+    General::checkParams(args => \%args, required => ['name']);
 
 	my $name = _formatName(name => $args{'name'});
     my $cmd = $rrd.' info '.$dir.$name;
 
-    system ($cmd);	
+    system ($cmd);
 }
 
 =head2 fetchTimeDataStore
@@ -215,7 +215,7 @@ B<throws>  : 'RRD fetch failed' if the fetch is a failure §WARNING§: the code 
 
 sub fetchTimeDataStore {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['name']); 
+    General::checkParams(args => \%args, required => ['name']);
 
     my $name = _formatName(name => $args{'name'});
     my $CF    = 'LAST';
@@ -224,13 +224,13 @@ sub fetchTimeDataStore {
     my $cmd   = $rrd.' fetch '.$dir.$name.' '.$CF;
 
     #if not defined, start is (end - 1 day), and end is (now)
-    if (defined $start){ 
+    if (defined $start){
         $cmd .= ' -s '.$start;
     }
-    if (defined $end){ 
+    if (defined $end){
         $cmd .= ' -e '.$end;
     }
-	
+
     $log->info($cmd);
 
     #we store the ouput of the command into a string
@@ -240,7 +240,7 @@ sub fetchTimeDataStore {
     if ($exec =~ m/^ERROR.*/){
         throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
     }
-	
+
     #clean the string of unwanted ":"
     $exec =~ s/://g;
 	#replace the ',' by '.'
@@ -253,19 +253,19 @@ sub fetchTimeDataStore {
     #print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
-    
+
     if (scalar(keys %values) == 0) {
     	throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
     }
-    
+
 	#we replace the '-1.#IND000000e+000' values for "undef"
 	while (my ($timestamp, $value) = each %values) {
 		if (($value eq '-1.#IND000000e+000') or ($value eq '-nan')){
 			$values{$timestamp} = undef;
 			}
-	}	
+	}
     #$log->debug(Dumper(\%values));
-    return %values;   
+    return %values;
 }
 
 =head2 updateTimeDataStore
@@ -303,7 +303,7 @@ sub updateTimeDataStore {
 
     if ($exec =~ m/^ERROR.*/){
         throw Kanopya::Exception::Internal(error => 'RRD update failed: '.$exec);
-    }	
+    }
 }
 
 =head2 getLastUpdatedValue
@@ -323,17 +323,17 @@ sub getLastUpdatedValue {
     General::checkParams(args => \%args, required => ['clustermetric_id']);
 
     my $name = _formatName(name => $args{'clustermetric_id'});
-    
+
     my $cmd = $rrd.' lastupdate '.$dir.$name;
     $log->info($cmd);
-    
+
     my $exec =`$cmd 2>&1`;
     #print $exec."\n";
 
     if ($exec =~ m/^ERROR.*/) {
         throw Kanopya::Exception::Internal(error => 'RRD fetch failed for last updated value: '.$exec);
-    }	  
-    
+    }
+
     #clean the string of unwanted ":"
     $exec =~ s/://g;
 	#replace the ',' by '.'
@@ -346,18 +346,18 @@ sub getLastUpdatedValue {
     # print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
-	
+
     if (scalar(keys %values) == 0) {
     	throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
     }
-	
+
 	#we replace the '-1.#IND000000e+000' values for "undef"
 	while (my ($timestamp, $value) = each %values) {
 		if ($value eq '-1.#IND000000e+000'){
 			$values{$timestamp} = undef;
 			}
 	}
-	
+
     #print Dumper(\%values);
     $log->debug(Dumper(\%values));
     return %values;
