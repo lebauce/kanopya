@@ -491,10 +491,10 @@ sub configureInterfaces {
         for my $interface_pattern (values %{ $args{interfaces} }) {
             if ($interface_pattern->{interface_role}) {
                 my $role = Entity::InterfaceRole->get(id => $interface_pattern->{interface_role});
-    
+
                 # TODO: This mechanism do not allows to define many interfaces
                 #       with the same role within policies.
-    
+
                 # Check if an interface with the same role already set, add it otherwise,
                 # Add networks to the interrface if not exists.
                 my $interface;
@@ -507,7 +507,7 @@ sub configureInterfaces {
                 if ($@) {
                     $interface = $self->addNetworkInterface(interface_role => $role);
                 }
-    
+
                 if ($interface_pattern->{interface_networks}) {
                     for my $network_id (@{ $interface_pattern->{interface_networks} }) {
                         $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
@@ -1215,44 +1215,7 @@ sub getNodeState {
     return $node_state;
 }
 
-sub getNodes {
 
-    my ($self, %args) = @_;
-    
-    my @nodes = Externalnode::Node->search(
-                    hash => {
-                        inside_id => $self->getId(),
-                    }
-    );
-
-    my @node_hashs;
-
-    for my $node (@nodes){
-
-        my @verified_rules = VerifiedNoderule->search(
-                                                   hash => {
-                                                       verified_noderule_state => 'verified'
-                                                   }
-                                               );
-        my @undef_rules    = VerifiedNoderule->search(
-                                                   hash => {
-                                                       verified_noderule_state => 'undef'
-                                                   }
-                                               );
-
-        push @node_hashs, {
-            state              => $node->getAttr(name => 'externalnode_state'),            
-            id                 => $node->getAttr(name => 'externalnode_id'),
-            hostname           => $node->getAttr(name => 'externalnode_hostname'),
-            num_verified_rules => scalar @verified_rules,
-            num_undef_rules    => scalar @undef_rules,
-        };
-
-    }
-        
-
-    return \@node_hashs;
-}
 
 =head2 getNodesMetrics
 
@@ -1274,7 +1237,7 @@ sub getNodesMetrics {
     while (my ($host_id, $host_object) = each(%$nodes)) {
         push @nodelist, $host_object->getAttr(name => 'host_hostname');
     }
- 
+
     return $collector_manager->retrieveData(
                nodelist   => \@nodelist,
                time_span  => $args{'time_span'},

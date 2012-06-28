@@ -104,6 +104,42 @@ sub getNodeState {
     $log->info("Service provider must be specified as a cluster or an externacluster");
 }
 
+sub getNodes {
+
+    my ($self, %args) = @_;
+
+    my @nodes = Externalnode::Node->search(
+                    hash => {
+                        inside_id => $self->getId(),
+                    }
+    );
+
+    my @node_hashs;
+
+    for my $node (@nodes){
+
+        my @verified_rules = VerifiedNoderule->search(
+                                                   hash => {
+                                                       verified_noderule_state => 'verified'
+                                                   }
+                                               );
+        my @undef_rules    = VerifiedNoderule->search(
+                                                   hash => {
+                                                       verified_noderule_state => 'undef'
+                                                   }
+                                               );
+
+        push @node_hashs, {
+            state              => $node->getAttr(name => 'externalnode_state'),
+            id                 => $node->getAttr(name => 'externalnode_id'),
+            hostname           => $node->getAttr(name => 'externalnode_hostname'),
+            num_verified_rules => scalar @verified_rules,
+            num_undef_rules    => scalar @undef_rules,
+        };
+    }
+    return \@node_hashs;
+}
+
 sub findManager {
     my $key;
     my ($class, %args) = @_;
