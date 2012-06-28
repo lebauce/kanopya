@@ -16,7 +16,7 @@
     </tr>
     <tr>
         <td class="label">Pool size:</td>
-        <td><input type="text" name="mask" maxlength=2" size="2" /></td>
+        <td><input type="text" name="mask" maxlength=8" size="8" /></td>
     </tr>
     <tr>
         <td class="label">Netmask :</td>
