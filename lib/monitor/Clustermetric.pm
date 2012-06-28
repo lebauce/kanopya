@@ -96,22 +96,24 @@ sub getLastValueFromDB{
 sub new {
     my $class = shift;
     my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    
-    $log->info("Warning when creating ClusterMetric it is useful to create a 
-                corresponding ClusterMetricCombination");
-                
 
-    
-    #Create RRD DB
+    my $self = $class->SUPER::new(%args);
+
+    # Create RRD DB
     my $clustermetric_id = $self->getAttr(name=>'clustermetric_id');
     RRDTimeData::createTimeDataStore(name => $clustermetric_id);
-    
+
+    # Ask the collector manager to collect the related indicator
+    my $service_provider = $self->clustermetric_service_provider;
+    my $collector = $service_provider->getManager(manager_type => "collector_manager");
+    $collector->collectIndicator(indicator_id        => $self->clustermetric_indicator_id,
+                                 service_provider_id => $service_provider->getId);
+
     if(!defined $args{clustermetric_label} || $args{clustermetric_label} eq ''){
         $self->setAttr(name=>'clustermetric_label', value=>$self->toString());
         $self->save();
     }
+
     return $self;
 }
 

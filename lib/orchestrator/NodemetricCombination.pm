@@ -58,10 +58,19 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = $class->SUPER::new(%args);
+
     if(!defined $args{nodemetric_combination_label} || $args{nodemetric_combination_label} eq ''){
         $self->setAttr(name=>'nodemetric_combination_label', value => $self->toString());
         $self->save();
     }
+
+    # Ask the collector manager to collect the related indicator
+    my $service_provider = $self->nodemetric_combination_service_provider;
+    my $collector = $service_provider->getManager(manager_type => "collector_manager");
+    my $indicator_id = (split('id', $self->nodemetric_combination_formula))[1];
+    $collector->collectIndicator(indicator_id        => $indicator_id,
+                                 service_provider_id => $service_provider->getId);
+
     return $self;
 }
 
