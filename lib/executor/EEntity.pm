@@ -74,6 +74,7 @@ sub new {
     my $self = {
         _entity   => $args{data},
         _executor => Entity->get(id => $config->{cluster}->{executor}),
+        config    => $config
     };
 
     bless $self, $class;
