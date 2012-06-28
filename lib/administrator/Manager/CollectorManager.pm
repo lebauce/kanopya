@@ -60,21 +60,17 @@ sub getIndicators {
 =head2 getIndicator
 
     Desc: Return the indicator with the specified id
+    Args: indicator id
     Return an indicator instance
 
 =cut
 
 sub getIndicator {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-    return Indicator->get(id => $args{id});
 }
 
 =head2
 
-    Desc: Return an information string about the component 
+    Desc: Return an information string about the collector manager 
 
 =cut
 

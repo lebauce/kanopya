@@ -175,11 +175,12 @@ sub computeValueFromMonitoredValues {
 sub checkFormula {
     my ($class, %args) = @_;
 
-    my $formula = $args{formula};
+    my $formula             = $args{formula};
     my $service_provider_id = $args{service_provider_id};
 
-    my $service_provider = Entity::ServiceProvider->get(id => $service_provider_id);
-    my $indicators = $service_provider->getIndicators();
+    my $service_provider  = Entity::ServiceProvider->get(id => $service_provider_id);
+    my $collector_manager = $service_provider->getManager(manager_type => 'collector_manager');
+    my $indicators = $collector_manager->getIndicators();
 
     # Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/, $formula);

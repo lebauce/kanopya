@@ -297,25 +297,6 @@ sub updateNodes {
      # TODO remove dead nodes from db
 }
 
-sub getIndicators {
-    my ($self, %args) = @_;
-
-    my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
-    my @indicators          = ScomIndicator->search (
-        hash => {
-            service_provider_id => $service_provider_id
-        }
-    );
-
-    return @indicators;
-}
-
-sub getCollectorManager {
-    my $self = shift;
-
-    my $collector_manager_id = $self->getAttr ( name=>'collector_manager_id' );
-}
-
 =head2 getNodesMetrics
 
     Retrieve cluster nodes metrics values using the linked MonitoringService connector
@@ -438,9 +419,9 @@ sub monitoringDefaultInit {
     #generate the scom indicators (only default)
     $self->insertCollectorIndicators(default => 1);
 
-    my $indicators = $self->getIndicators();
     my $service_provider_id = $self->getId();
-    my $collector = $self->getManager(manager_type => "collector_manager");
+    my $collector           = $self->getManager(manager_type => "collector_manager");
+    my $indicators          = $collector->getIndicators();
     my $active_session_indicator_id; 
     my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
     my @funcs = qw(mean max min std dataOut);

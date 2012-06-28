@@ -1378,20 +1378,4 @@ sub generateDefaultMonitoringConfiguration {
     }
 }
 
-sub getManager {
-    my $self = shift;
-    my %args = @_;
-
-    # The parent method getManager should disappeared
-     if (defined $args{id}) {
-        return $self->SUPER::getManager(%args);
-    }
-
-    General::checkParams(args => \%args, required => [ 'manager_type' ]);
-
-    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
-                                                         service_provider_id   => $self->getId });
-    return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
-}
-
 1;
