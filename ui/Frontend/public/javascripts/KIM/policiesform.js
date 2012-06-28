@@ -150,15 +150,20 @@ var PolicyForm = (function() {
         if (field.type === 'checkbox') {
             type = 'select';
             options = [ 'no', 'yes' ];
-            this.fields[elementName].value_shift = 1;
+            if (this.fields[elementName].is_mandatory == null ||
+                this.fields[elementName].is_mandatory == false) {
+                this.fields[elementName].value_shift = 1;
+            }
             if (value) {
                 value = parseInt(value) + this.fields[elementName].value_shift;
             }
         }
 
         // If type is 'set', post fix the element name with the current index
+        var inputid = 'input_' + elementName;
         if (field.set) {
-            input_name = elementName + '_' + this.form.find("#input_" + elementName).length;
+            input_name = elementName + '_' + this.form.find(".input_" + elementName).length;
+            inputid += '_' + this.form.find(".input_" + elementName).length;
         }
 
         var set_element
@@ -195,7 +200,7 @@ var PolicyForm = (function() {
                 }
             }
         }
-        $(input).attr({ name : input_name, id : 'input_' + elementName });
+        $(input).attr({ name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
 
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
@@ -204,7 +209,7 @@ var PolicyForm = (function() {
             this.validateRules[elementName].required = true;
         }
         // Check if the field must be validated by a regular expression
-        if ($(input).attr('type') !== 'checkbox' && element.pattern !== undefined) {
+        if ($(input).attr('type') !== 'checkbox' && element.pattern !== undefined && element.is_mandatory) {
             this.validateRules[elementName].regex = element.pattern;
         }
 
@@ -282,8 +287,10 @@ var PolicyForm = (function() {
         }
 
         // If type is 'set', post fix the element name with the current index
+        var inputid = 'input_' + elementName;
         if (this.fields[elementName].set) {
-            input_name = elementName + '_' + this.form.find("#input_" + elementName).length;
+            input_name = elementName + '_' + this.form.find(".input_" + elementName).length;
+            inputid     += '_' + this.form.find(".input_" + elementName).length;
         }
 
         // Create input and label DOM elements
@@ -292,7 +299,7 @@ var PolicyForm = (function() {
             $(label).text(this.fields[elementName].label);
         }
 
-        var input = $("<select>", { name : input_name, id : 'input_' + elementName });
+        var input = $("<select>", { name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
 
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
@@ -301,7 +308,7 @@ var PolicyForm = (function() {
             this.validateRules[elementName].required = true;
         }
         // Check if the field must be validated by a regular expression
-        if ($(input).attr('type') !== 'checkbox' && this.fields[elementName].pattern !== undefined) {
+        if ($(input).attr('type') !== 'checkbox' && this.fields[elementName].pattern !== undefined && this.fields[elementName].is_mandatory) {
             this.validateRules[elementName].regex = this.fields[elementName].pattern;
         }
 
@@ -345,13 +352,25 @@ var PolicyForm = (function() {
 
             var route = '/api/' + entity;
             var delimiter = '?';
-            for (var filter in this.fields[elementName].filters) {
-                route += delimiter + filter + '=' + this.fields[elementName].filters[filter];
-                if (delimiter === '?') {
-                    delimiter = '&';
+            var method = 'GET';
+            var args;
+
+            if (this.fields[elementName].filters) {
+                if (this.fields[elementName].filters.func) {
+                    method = 'POST';
+                    route += '/' + this.fields[elementName].filters.func;
+                    args = this.fields[elementName].filters.args;
+                } else {
+                    for (var filter in this.fields[elementName].filters) {
+                        route += delimiter + filter + '=' + this.fields[elementName].filters[filter];
+                        if (delimiter === '?') {
+                            delimiter = '&';
+                        }
+                    }
                 }
             }
-            datavalues = this.ajaxCall('GET', route);
+
+            datavalues = this.ajaxCall(method, route, args);
 
             /*
              * We do not have a master class for component and connector, so we
@@ -416,8 +435,12 @@ var PolicyForm = (function() {
                     }
                     text = datavalues[value][display];
                 }
+            } else if (datavalues instanceof Array) {
+                key  = datavalues[value];
+                text = datavalues[value];
+
             } else {
-                key = datavalues[value];
+                key  = value;
                 text = datavalues[value];
             }
 
@@ -657,31 +680,61 @@ var PolicyForm = (function() {
         var datavalues = undefined;
         var name = element.attr('name');
 
-        if (! name) { return; }
+        if (! (name && selected_id)) { return; }
 
         /* Arg... Can not call the route according to
          * this.fields[elementName].entity, as we do not have a common parent
          * class for component and connector. So use the findManager workaround
          * method for instance.
          */
-        datavalues = this.ajaxCall('POST',
-                                     '/api/serviceprovider/' + selected_id + '/findManager',
-                                   { category: this.fields[name].category, service_provider_id: selected_id });
+        var entity = this.fields[name].parent;
+
+        var route;
+        var method = 'GET';
+        var args;
+
+        if (this.fields[name].filters) {
+            method = 'POST';
+            route = '/api/' + this.fields[this.fields[name].parent].entity + '/' + selected_id;
+            route += '/' + this.fields[name].filters.func;
+            args = this.fields[name].filters.args ? this.fields[name].filters.args : {};
+
+            // Arrgg, the parent field name is not 'service_provider_id', but 'storage_provider_id'...
+            //args[this.fields[name].parent] = selected_id;
+            var reg = new RegExp("^.*_provider_id", "g");
+            if (this.fields[name].parent.match(reg)) {
+                args['service_provider_id'] = selected_id;
+            }
+            else {
+                args[this.fields[name].parent] = selected_id;
+            }
+
+        } else {
+            var parent = this.fields[name].parent;
+            var reg = new RegExp("^.*_provider_id", "g");
+            if (this.fields[name].parent.match(reg)) {
+                parent = 'service_provider_id';
+            }
+            route = '/api/' + this.fields[name].entity + '/' + parent + '=' + selected_id;
+        }
+        datavalues = this.ajaxCall('POST', route, args);
 
         // Inject all values in the select
         element.empty();
         for (var value in datavalues) {
-            var display = datavalues[value]['name'];
+            var display = datavalues[value].pk;
 
             if (this.fields[name].display_func && this.fields[name].entity) {
-                var ressource_name = this.ajaxCall('POST', '/api/' +  this.fields[name].entity + '/' + datavalues[value].id + '/' + this.fields[name].display_func);
+                var ressource_name = this.ajaxCall('POST', '/api/' +  this.fields[name].entity + '/' + datavalues[value].pk + '/' + this.fields[name].display_func);
                 if (ressource_name) display = ressource_name;
+            } else if (datavalues[value].name) {
+                display = datavalues[value].name;
             }
 
-            var option  = $("<option>", { value : datavalues[value].id , text : display });
+            var option  = $("<option>", { value : datavalues[value].pk , text : display });
 
             element.append(option);
-            if (datavalues[value].id == this.values[name]) {
+            if (datavalues[value].pk == this.values[name]) {
                 option.attr('selected', 'selected');
                 if (this.fields[name].disable_filled) {
                     element.attr('disabled', 'disabled');
@@ -709,7 +762,7 @@ var PolicyForm = (function() {
                 prefix  : this.fields[name].prefix,
                 disable_filled : this.fields[name].disable_filled,
                 hide_filled    : this.fields[name].hide_filled,
-                is_mandatory   : this.fields[name].is_mandatory,
+                is_mandatory   : (this.fields[name].is_mandatory && this.fields[name].disable_filled),
             }
 
             var tr = undefined;
@@ -812,7 +865,7 @@ var PolicyForm = (function() {
         $("<td>", { align : 'left' }).append(label).appendTo(linecontainer);
         $("<td>", { align : 'right' }).append(input).append(this.createHelpElem(help)).appendTo(linecontainer);
 
-        if (this.fields[$(input).attr('id').substring(6)].type === 'hidden') {
+        if (this.fields[$(input).attr('rel')].type === 'hidden') {
             $(linecontainer).css('display', 'none');
         }
 
@@ -845,16 +898,20 @@ var PolicyForm = (function() {
     PolicyForm.prototype.beforeSerialize = function(form, options) {
         var that = this;
         this.form.find(':input').each(function () {
-            var id  = "";
-            if ($(this).attr('id') != null) {
-                id  = $(this).attr('id').replace('input_', '');
+            var id      = "";
+            var classes = $(this).attr('class').split(' ');
+            for (var i in classes) if (classes.hasOwnProperty(i)) {
+                if ((new RegExp('^input_')).test(classes[i])) {
+                    id  = (classes[i]).replace('input_', '');
+                    break;
+                }
             }
             if (that.fields[id]){
                 if (that.fields[id].prefix) {
                     $(this).attr('name', that.fields[id].prefix + $(this).attr('name'));
                 }
-                if (that.fields[id].type === 'checkbox' && parseInt($(this).attr('value'))) {
-                    $(this).attr('value', parseInt($(this).attr('value')) - 1);
+                if (that.fields[id].type === 'checkbox' && parseInt($(this).val())) {
+                    $(this).val(parseInt($(this).val()) - that.fields[id].value_shift);
                 }
                 if (that.fields[id].serialize != null) {
                     $(this).val(that.fields[id].serialize($(this).val()));
@@ -998,11 +1055,17 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.validateForm = function () {
-        var step_preffix = this.name + '_step';
-        var step = $(this.form).formwizard("state").currentStep.substring(step_preffix.length);
-        this.findContainer(step).find('.wizard-ignore').each(function() {
+        var remove_wizard_ignore = function() {
             $(this).removeClass('wizard-ignore');
-        });
+        }
+        if ($(this.form).formwizard("state").currentStep) {
+            var step_preffix = this.name + '_step';
+            var step = $(this.form).formwizard("state").currentStep.substring(step_preffix.length);
+            this.findContainer(step).find('.wizard-ignore').each(remove_wizard_ignore);
+
+        } else {
+            $(this.form).find('.wizard-ignore').each(remove_wizard_ignore);
+        }
 
         $(this.form).formwizard("next");
     }

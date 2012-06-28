@@ -51,6 +51,10 @@ sub methods {
             'description' => 'Return the type of managed disks.',
             'perm_holder' => 'entity',
         },
+        'getExportManagers' => {
+            'description' => 'Return the availables export managers for this disk manager.',
+            'perm_holder' => 'entity',
+        },
     }
 }
 
@@ -73,22 +77,58 @@ sub checkDiskManagerParams {
     General::checkParams(args => \%args, required => [ "container_access_id", "systemimage_size" ]);
 }
 
+=head2 getPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    my $accesses = {};
+    if ($args{policy_type} eq 'storage') {
+        for my $access (@{ $self->getConf->{container_accesses} }) {
+            $accesses->{$access->{container_access_id}} = $access->{container_access_name};
+        }
+        return [ { name   => 'container_access_id', label  => 'NFS export to use', values => $accesses } ];
+    }
+    return [];
+}
+
 sub getConf {
     my $self = shift;
     my $conf = {};
     my @access_hashes = ();
 
-    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
-    my $opennebula = $cluster->getComponent(name => "Opennebula", version => "3");
-    
-    my $repo_rs = $opennebula->{_dbix}->opennebula3_repositories;
-    while (my $repo_row = $repo_rs->next) {
-        my $container_access = Entity::ContainerAccess->get(
-                                   id => $repo_row->get_column('container_access_id')
-                               );
-        push @access_hashes, {
-            container_access_id   => $container_access->getAttr(name => 'container_access_id'),
-            container_access_name => $container_access->getAttr(name => 'container_access_export'),
+    # Workaround to use a fileimage manager installed on a different service provider
+    # than the component opennebula.
+    my $opennebula;
+    eval {
+        my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+        $opennebula = $cluster->getComponent(name => "Opennebula", version => "3");
+    };
+    if ($@) {
+        # Tyr to find the first clutsre with opennebula3 installed
+        my @services = Entity::ServiceProvider->search(hash => {});
+        for my $serviceprovider (@services) {
+            eval {
+                $opennebula = $serviceprovider->getComponent(name => "Opennebula", version => "3");
+            }
+        }
+    }
+
+    if ($opennebula) {
+        my $repo_rs = $opennebula->{_dbix}->opennebula3_repositories;
+        while (my $repo_row = $repo_rs->next) {
+            my $container_access = Entity::ContainerAccess->get(
+                                      id => $repo_row->get_column('container_access_id')
+                                   );
+            push @access_hashes, {
+                container_access_id   => $container_access->getAttr(name => 'container_access_id'),
+                container_access_name => $container_access->getAttr(name => 'container_access_export'),
+            }
         }
     }
 
@@ -131,6 +171,13 @@ sub getBootPolicyFromExportManager {
     throw Kanopya::Exception::Internal::UnknownCategory(
               error => "Unsupported export manager:" . $args{export_manager}
           );
+}
+
+sub getExportManagers {
+    my $self = shift;
+    my %args = @_;
+
+    return [ $self ];
 }
 
 sub getReadOnlyParameter {

@@ -2,25 +2,64 @@ require('common/grid.js');
 
 var statistics_function_name = ['mean','variance','std','max','min','kurtosis','skewness','dataOut','sum'];
 
-////////////////////////MONITORING MODALS//////////////////////////////////
-function createServiceMetric(container_id, elem_id, ext) {
+// return a map {indic_name => indic_id}
+function getIndicators(sp_id, ext) {
+    // We are not supposed to directly access indicatorset and indicator
+    // TODO use associated CollectorManager to retrieve indicators info (one request)
+    //      or indicators toString() (one request/indicator)
+    var indicatorsets = {};
+    $.ajax({
+        async   : false,
+        url: '/api/indicatorset',
+        success: function(rows) {
+            $(rows).each(function(row) {
+                indicatorsets[rows[row].indicatorset_id] = rows[row];
+            });
+        }
+    });
 
-    ext = ext || false;
     var indicators = {};
     $.ajax({
         async   : false,
-        url: (ext) ? '/api/scomindicator?service_provider_id=' + elem_id : '/api/indicator',
+        url: (ext) ? '/api/scomindicator?service_provider_id=' + sp_id : '/api/indicator',
         success: function(rows) {
             $(rows).each(function(row) {
                 if (ext) {
                     indicators[rows[row].scom_indicator_name]   = rows[row].scom_indicator_id;
                 } else {
-                    indicators[rows[row].indicator_name]        = rows[row].indicator_id;
+                    var indicatorset_name = indicatorsets[rows[row].indicatorset_id].indicatorset_name;
+                    var indic_fullname =  indicatorset_name + '/' + rows[row].indicator_name;
+                    indicators[indic_fullname] = rows[row].indicator_id;
+
+                    // THis version use indicator toString but is slow (and indicators name are quoted)
+//                    $.ajax({
+//                        async       : false,
+//                        type        : 'POST',
+//                        data        : JSON.stringify({}),
+//                        contentType : 'application/json',
+//                        url         : '/api/indicator/' + rows[row].indicator_id + '/toString',
+//                        complete    : function(jqXHR, status) {
+//                            if (status === 'success') {
+//                                indicators[jqXHR.responseText] = rows[row].indicator_id;
+//                            }
+//                        }
+//                    });
+
                 }
             });
         }
     });
 
+    return indicators;
+};
+
+////////////////////////MONITORING MODALS//////////////////////////////////
+function createServiceMetric(container_id, elem_id, ext) {
+
+    ext = ext || false;
+    
+    var indicators = getIndicators(elem_id, ext);
+    
     var service_fields  = {
         clustermetric_label    : {
             label   : 'Name',
@@ -43,7 +82,12 @@ function createServiceMetric(container_id, elem_id, ext) {
         clustermetric_service_provider_id   :{
             type    : 'hidden',
             value   : elem_id,  
-        }
+        },
+        createcombination  :{
+            label   : 'Create the associate combination',
+            type    : 'checkbox',
+            skip    : true,
+        },
     };
     var service_opts    = {
         title       : 'Create a Service Metric',
@@ -51,7 +95,25 @@ function createServiceMetric(container_id, elem_id, ext) {
         fields      : service_fields,
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
-        }
+        },
+        callback    : function(elem, form) {
+                $("#service_ressources_clustermetrics_"  + elem_id).trigger('reloadGrid');
+                if ($(form).find('#input_createcombination').val() === 'on') {
+                    $.ajax({
+                        url     : '/api/aggregatecombination',
+                        type    : 'POST',
+                        data    : {
+                            aggregate_combination_label               : elem.clustermetric_label,
+                            aggregate_combination_service_provider_id : elem_id,
+                            aggregate_combination_formula             : 'id' + elem.pk,
+                        },
+                        success : function() {
+                            $("#service_ressources_aggregate_combinations_" + elem_id).trigger('reloadGrid');
+                        }
+                    });
+                }
+            
+        }      
     };
 
     var button = $("<button>", {html : 'Add a service metric'});
@@ -81,6 +143,9 @@ function createServiceConbination(container_id, elem_id) {
         title       : 'Create a Combination',
         name        : 'aggregatecombination',
         fields      : service_fields,
+        callback    : function() {
+            $('#service_ressources_aggregate_combinations_' + elem_id).trigger('reloadGrid');
+        },
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
         }
@@ -95,12 +160,12 @@ function createServiceConbination(container_id, elem_id) {
         $(function() {
     var availableTags = new Array();
     $.ajax({
-        url: '/api/aggregatecombination?dataType=jqGrid',
+        url: '/api/clustermetric?clustermetric_service_provider_id=' + elem_id + '&dataType=jqGrid',
         async   : false,
         success: function(answer) {
                     $(answer.rows).each(function(row) {
                     var pk = answer.rows[row].pk;
-                    availableTags.push({label : answer.rows[row].aggregate_combination_label, value : answer.rows[row].aggregate_combination_id});
+                    availableTags.push({label : answer.rows[row].clustermetric_label, value : answer.rows[row].clustermetric_id});
 
                 });
             }
@@ -174,7 +239,10 @@ function createNodemetricCombination(container_id, elem_id, ext) {
         fields      : service_fields,
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
-        }
+        },
+        callback    : function() {
+            $('#service_ressources_nodemetric_combination_' + elem_id).trigger('reloadGrid');
+        },
     };
 
     var button = $("<button>", {html : 'Add a combination'});
@@ -183,30 +251,13 @@ function createNodemetricCombination(container_id, elem_id, ext) {
         mod.start();
             ////////////////////////////////////// Node Combination Forumla Construction ///////////////////////////////////////////
 
-        $(function() {
-    var availableTags = new Array();
-    var url;
-    if (ext) {
-        url = '/api/scomindicator?service_provider_id=' + elem_id + '&dataType=jqGrid';
-    } else {
-        url = '/api/indicator?dataType=jqGrid';
-    }
-    $.ajax({
-        url: url,
-        async   : false,
-        success: function(answer) {
-                    $(answer.rows).each(function(row) {
-                    var pk = answer.rows[row].pk;
-                    if (ext) {
-                        availableTags.push({label : answer.rows[row].scom_indicator_name, value : answer.rows[row].scom_indicator_id});
-                    } else {
-                        availableTags.push({label : answer.rows[row].indicator_name, value : answer.rows[row].indicator_id});
-                    }
-                });
-            }
-    });
+        var availableTags = new Array();
+        var indicators = getIndicators(elem_id, ext);
+        for (var indic in indicators) {
+            availableTags.push({label : indic, value : indicators[indic]});
+        }
 
-    function split( val ) {
+        function split( val ) {
             return val.split( / \s*/ );
         }
         function extractLast( term ) {
@@ -245,14 +296,14 @@ function createNodemetricCombination(container_id, elem_id, ext) {
                     return false;
                 }
             });
-    });
+
     ////////////////////////////////////// END OF : Node Combination Forumla Construciton ///////////////////////////////////////////
 
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
 
-function loadServicesMonitoring (container_id, elem_id, ext) {
+function loadServicesMonitoring(container_id, elem_id, ext) {
 
     var container   = $("#" + container_id);
 
@@ -348,16 +399,16 @@ function loadServicesMonitoring (container_id, elem_id, ext) {
         content_container_id: 'service_monitoring_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         afterInsertRow: function(grid, rowid) {
-            var current = $(grid).getCell(rowid, 'clustermetric_indicator_id');
-            var url     = '/api/indicator/' + current;
-            $.getJSON(url, function (data) {
-                $(grid).setCell(rowid, 'clustermetric_indicator_id', data.indicator_name);
-            });
+            var id  = $(grid).getCell(rowid, 'clustermetric_indicator_id');
+            var url = '/api/indicator/' + id + '/toString';
+            setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id');
+            
         },
-        colNames: [ 'id', 'name', 'indicator' ],
+        colNames: [ 'id', 'name', 'function', 'indicator' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
             { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
+            { name: 'clustermetric_statistics_function_name', index: 'clustermetric_statistics_function_name', width: 90 },
             { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
         ],
         action_delete: {
@@ -404,4 +455,4 @@ function loadServicesMonitoring (container_id, elem_id, ext) {
             ui.newContent.find('.ui-jqgrid-btable').jqGrid('setGridWidth', ui.newContent.width());
         }
     });
-}
+};

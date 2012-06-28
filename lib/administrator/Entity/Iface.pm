@@ -149,7 +149,7 @@ sub getIPAddr {
     return $ip->getAttr(name => 'ip_addr');
 }
 
-sub getNetMask {
+sub getPoolip {
     my $self = shift;
     my %args = @_;
 
@@ -165,8 +165,7 @@ sub getNetMask {
               );
     }
 
-    my $poolip = Entity::Poolip->get(id => $ip->getAttr(name => 'poolip_id'));
-    return $poolip->getAttr(name => 'poolip_netmask');
+    return Entity::Poolip->get(id => $ip->getAttr(name => 'poolip_id'));
 }
 
 sub getInterface {

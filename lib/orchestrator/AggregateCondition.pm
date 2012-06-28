@@ -105,12 +105,25 @@ sub updateName {
 =cut
 
 sub toString {
-    my $self = shift;
-    my $aggregate_combination_id   = $self->getAttr(name => 'aggregate_combination_id');
-    my $comparator                 = $self->getAttr(name => 'comparator');
-    my $threshold                  = $self->getAttr(name => 'threshold');
+    my ($self, %args) = @_;
+    my $depth;
+    if(defined $args{depth}) {
+        $depth = $args{depth};
+    }
+    else {
+        $depth = -1;
+    }
+
+    if($depth == 0) {
+        return $self->getAttr(name => 'aggregate_condition_label');
+    }
+    else{
+        my $aggregate_combination_id   = $self->getAttr(name => 'aggregate_combination_id');
+        my $comparator                 = $self->getAttr(name => 'comparator');
+        my $threshold                  = $self->getAttr(name => 'threshold');
     
-    return AggregateCombination->get('id'=>$aggregate_combination_id)->toString().$comparator.$threshold;
+        return AggregateCombination->get('id'=>$aggregate_combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
+    }
 }
 
 sub eval{

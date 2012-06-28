@@ -15,7 +15,7 @@ my $log = get_logger('webui');
 
 sub _users {
 
-    my @eusers = Entity::User->getUsers(hash => { user_system => 0 });
+    my @eusers = Entity::User->getUsers(hash => { user_system => 1 });
     my $users = [];
 
     foreach my $user (@eusers) {

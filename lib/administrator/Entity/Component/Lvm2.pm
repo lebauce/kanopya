@@ -79,6 +79,10 @@ sub methods {
             'description' => 'Return the type of managed disks.',
             'perm_holder' => 'entity',
         },
+        'getExportManagers' => {
+            'description' => 'Return the availables export managers for this disk manager.',
+            'perm_holder' => 'entity',
+        },
     }
 }
 
@@ -97,7 +101,7 @@ sub checkDiskManagerParams {
     General::checkParams(args => \%args, required => [ "vg_id", "systemimage_size" ]);
 }
 
-=head2 getHostingPolicyParams
+=head2 getPolicyParams
 
 =cut
 
@@ -109,8 +113,12 @@ sub getPolicyParams {
 
     my @vg_list = map { $_->{lvm2_vg_name} } @{ $self->getConf->{lvm2_vgs} };
 
+    my $vgs = {};
     if ($args{policy_type} eq 'storage') {
-        return [ { name => 'vg_id', label => 'Volume group to use', values => \@vg_list } ];
+        for my $vg (@{ $self->getConf->{lvm2_vgs} }) {
+            $vgs->{$vg->{lvm2_vg_id}} = $vg->{lvm2_vg_name};
+        }
+        return [ { name => 'vg_id', label => 'Volume group to use', values => $vgs } ];
     }
     return [];
 }
@@ -283,6 +291,16 @@ sub getBootPolicyFromExportManager {
     throw Kanopya::Exception::Internal::UnknownCategory(
               error => "Unsupported export manager:" . $args{export_manager}
           );
+}
+
+sub getExportManagers {
+    my $self = shift;
+    my %args = @_;
+
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+
+    return [ $cluster->getComponent(name => "Iscsitarget", version => "1"),
+             $cluster->getComponent(name => "Nfsd", version => "3") ];
 }
 
 =head2 createDisk

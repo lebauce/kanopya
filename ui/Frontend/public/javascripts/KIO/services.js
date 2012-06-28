@@ -1,6 +1,7 @@
 
 require('modalform.js');
 require('common/service_common.js');
+require('common/formatters.js');
 
 function getAllConnectorFields() {
     return {
@@ -54,7 +55,7 @@ function createSpecServDialog(provider_id, name, first, category, elem, editid) 
         var step            = 3;
         if (category === 'DirectoryService') {
             ad_opts.callback    = function() {
-                createMonDirDialog(provider_id, 'MonitoringService', first).start();
+                createMonDirDialog(provider_id, 'Collectormanager', first).start();
             };
             step    = 2;
         }
@@ -260,7 +261,7 @@ function loadServicesRessources (container_id, elem_id) {
         }
     });
     create_grid( {
-        url: '/api/externalnode?outside_id=' + elem_id,
+        url: '/api/externalnode?service_provider_id=' + elem_id,
         content_container_id: container_id,
         grid_id: loadServicesRessourcesGridId,
         grid_class: 'service_ressources_list',

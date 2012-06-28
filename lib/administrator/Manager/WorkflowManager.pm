@@ -125,9 +125,10 @@ sub createWorkflow {
     Desc: create a new instance of WorkflowDef that has defined specific
           parameters. This instance will be used for future runs
     
-    Args: $origin_workflow_name (string), 
+    Args: $new_workflow_name (string), 
           $origin_workflow_def_id,
-          \%specific_params
+          \%specific_params,
+          $rule_id
 
     Return: created workflow object (get by calling createWorkflow())
 =cut
@@ -155,16 +156,18 @@ sub associateWorkflow {
     #initiate a counter to recense existing workflows
     my $existing_origin_workflows = 0;
 
-    foreach my $workflow_def (@$workflow_defs) {
-        if((grep {$_->getAttr(name => 'workflow_def_name')
-        eq $origin_workflow_name} $workflow_def) == 1) {
-            $existing_origin_workflows++;
-        } 
-    }
-    if ($existing_origin_workflows == 0) {
-        my $errmsg = 'Unknown workflow_def name '.$origin_workflow_name;
-        throw Kanopya::Exception(error => $errmsg);
-    }
+    #TODO fix algo issue: use only grep on @$workflow_defs to match good name
+    #use: check that the to-associate workflow is a managed one
+#    foreach my $workflow_def (@$workflow_defs) {
+#        if((grep {$_->getAttr(name => 'workflow_def_name')
+#        eq $origin_workflow_name} $workflow_def) == 1) {
+#            $existing_origin_workflows++;
+#        } 
+#    }
+#    if ($existing_origin_workflows == 0) {
+#        my $errmsg = 'Unknown workflow_def name '.$origin_workflow_name;
+#        throw Kanopya::Exception(error => $errmsg);
+#    }
     
     #get the original workflow's params and replace undefined specific params
     #with the now defined specific params

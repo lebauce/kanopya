@@ -20,7 +20,7 @@ charset: "UTF-8"
 
 session: "YAML"
 session_dir: "/tmp/kanopya-sessions"
-session_expires: "1800"
+session_expires: "86400"
 
 # Log dir
 log_path: "[% log_directory %]"

@@ -33,7 +33,7 @@ use AggregateCondition;
 use AggregateRule;
 use Clustermetric;
 use ScomIndicator;
-
+use Externalnode::Node;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -158,19 +158,6 @@ sub getNode {
     return $repNode;
 }
 
-sub getNodeState {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hostname']);
-    my $repNode;
-    my $node = $self->{_dbix}->parent->externalnodes->find({
-        externalnode_hostname   => $args{hostname},
-    });
-    
-    return $node->get_column('externalnode_state');
-}
-
 sub getNodeId {
     my $self = shift;
     my %args = @_;
@@ -182,6 +169,23 @@ sub getNodeId {
     });
     
     return $node->get_column('externalnode_id');
+}
+
+
+=head2 getNodeState
+
+
+=cut
+
+sub getNodeState {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['hostname']);
+
+    my $node       = Externalnode->find(hash => {externalnode_hostname => $args{hostname}});
+    my $node_state = $node->getAttr(name => 'externalnode_state');
+
+    return $node_state;
 }
 
 sub updateNodeState {
@@ -226,37 +230,7 @@ sub getDisabledNodes {
 
     return \@nodes;
 }
-sub getNodes {
-    my ($self, %args) = @_;
-    
-    my $shortname = defined $args{shortname};
-    
-    my $node_rs = $self->{_dbix}->parent->externalnodes;
-    
-    my $domain_name;
-    my @nodes;
-    while (my $node_row = $node_rs->next) {
-        if($node_row->get_column('externalnode_state') ne 'disabled'){
-            my $hostname = $node_row->get_column('externalnode_hostname');
-            $hostname =~ s/\..*// if ($shortname);
-            push @nodes, {
-                hostname           => $hostname,
-                state              => $node_row->get_column('externalnode_state'),
-                id                 => $node_row->get_column('externalnode_id'),
-                num_verified_rules => $node_row->verified_noderules
-                                               ->search({
-                                                 verified_noderule_state => 'verified'})
-                                               ->count(),
-                num_undef_rules    => $node_row->verified_noderules
-                                               ->search({
-                                                 verified_noderule_state => 'undef'})
-                                               ->count(),
-            };
-        }
-    }
 
-    return \@nodes;
-}
 
 =head2 updateNodes
 
@@ -297,25 +271,6 @@ sub updateNodes {
      # TODO remove dead nodes from db
 }
 
-sub getIndicators {
-    my ($self, %args) = @_;
-
-    my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
-    my @indicators          = ScomIndicator->search (
-        hash => {
-            service_provider_id => $service_provider_id
-        }
-    );
-
-    return @indicators;
-}
-
-sub getCollectorManager {
-    my $self = shift;
-
-    my $collector_manager_id = $self->getAttr ( name=>'collector_manager_id' );
-}
-
 =head2 getNodesMetrics
 
     Retrieve cluster nodes metrics values using the linked MonitoringService connector
@@ -340,7 +295,7 @@ sub getNodesMetrics {
     my @hostnames = map { $_->{hostname} } @$nodes;
      
     my $data = $ms_connector->retrieveData(
-        nodes => \@hostnames,
+        nodelist => \@hostnames,
         %args,
     );
 
@@ -438,9 +393,9 @@ sub monitoringDefaultInit {
     #generate the scom indicators (only default)
     $self->insertCollectorIndicators(default => 1);
 
-    my $indicators = $self->getIndicators();
     my $service_provider_id = $self->getId();
-    my $collector = $self->getManager(manager_type => "collector_manager");
+    my $collector           = $self->getManager(manager_type => "collector_manager");
+    my $indicators          = $collector->getIndicators();
     my $active_session_indicator_id; 
     my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
     my @funcs = qw(mean max min std dataOut);

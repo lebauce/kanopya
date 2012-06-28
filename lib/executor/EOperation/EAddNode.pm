@@ -121,7 +121,7 @@ sub prepare {
     # Check if a host is specified.
     if (defined $self->{context}->{host}) {
         my $host_manager_id = $self->{context}->{host}->getAttr(name => 'host_manager_id');
-        my $cluster_host_manager_id = $self->{context}->{cluster}->getManager(manager_type => 'disk_manager')->getId;
+        my $cluster_host_manager_id = $self->{context}->{cluster}->getManager(manager_type => 'host_manager')->getId;
 
         # Check if the specified host is managed by the cluster host manager
         if ($host_manager_id != $cluster_host_manager_id) {

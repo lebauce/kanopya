@@ -174,20 +174,23 @@ sub buildPatternFromHash {
                 $limit_index    =~ s/^limit_start_//g;
 
                 if (defined($args{hash}->{'limit_end_' . $limit_index}) and defined($args{hash}->{'limit_value_' . $limit_index}) and
-                    defined($args{hash}->{'limit_type_' . $limit_index})) {
+                    defined($args{hash}->{'limit_type_' . $limit_index}) and defined($args{hash}->{'limit_soft_' . $limit_index})) {
                     my $limit   = {
                         start   => $args{hash}->{'limit_start_' . $limit_index},
-                        end     => $args{hash}->{'limit_end_' . $limit_index},
+                        ending  => $args{hash}->{'limit_end_'   . $limit_index},
                         value   => $args{hash}->{'limit_value_' . $limit_index},
-                        type    => $args{hash}->{'limit_type_' . $limit_index}
+                        type    => $args{hash}->{'limit_type_'  . $limit_index},
+                        soft    => $args{hash}->{'limit_soft_'  . $limit_index}
                     };
                     if ($args{hash}->{'limit_repeat_' . $limit_index} and $args{hash}->{'limit_repeat_start_' . $limit_index} and
                         $args{hash}->{'limit_repeat_end_' . $limit_index}) {
-                        $limit->{repeat}        = $args{hash}->{'limit_repeat_' . $limit_index};
-                        $limit->{repeat_start}  = $args{hash}->{'limit_repeat_start_' . $limit_index};
-                        $limit->{repeat_end}    = $args{hash}->{'limit_repeat_end_' . $limit_index};
+                        $limit->{repeats}           = $args{hash}->{'limit_repeat_' . $limit_index};
+                        $limit->{repeat_start_time} = $args{hash}->{'limit_repeat_start_' . $limit_index};
+                        $limit->{repeat_end_time}   = $args{hash}->{'limit_repeat_end_' . $limit_index};
                     } else {
-                        $limit->{repeat}        = 0;
+                        $limit->{repeats}           = 0;
+                        $limit->{repeat_start_time} = 0;
+                        $limit->{repeat_end_time}   = 0;
                     }
                     $pattern{billing_limits}->{$limit_index}    = $limit;
                   }

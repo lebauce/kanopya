@@ -499,20 +499,18 @@ sub _evalRule {
 
     NODE:
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
-        # Warning, not all the monitored values are required but we transmit 
+        # Warning, not all the monitored values are required but we transmit
         # all of them
-        
         #        if (0 ==  keys %$monitored_values_for_one_node) {
         #            $cluster->updateNodeState( hostname => $host_name, state => 'down' );
         #            next NODE;
         #        }
         #        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
-
         my $node_state = $service_provider->getNodeState(hostname=> $host_name);
-
         my $nodeEval;
+
         if($node_state eq 'disabled'){
-            print "Node $host_name has just been disabled, rule not evaluated\n"; 
+            $log->info("Node <$host_name> has just been disabled, rule not evaluated");
             next NODE;
         }
         else {
@@ -521,61 +519,55 @@ sub _evalRule {
                 monitored_values_for_one_node => $monitored_values_for_one_node
             );
         }
-        
-        if(defined $nodeEval){
-            #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name;
-            
-            if($nodeEval eq 0){
-                #print ' WARNING'."\n";
-#                $rule->deleteVerifiedRule(
-#                    hostname   => $host_name,
-#                    cluster_id => $service_provider_id,
-#                );
-            }else {
-                #print ' OK'."\n";
-                $rep++;
 
-                    $rule->setVerifiedRule(
+        if(defined $nodeEval){
+            if($nodeEval eq 0){
+                $log->info('Rule not verified for node <'.($host_name).'>');
+
+                if ($rule->isVerifiedForANode(externalnode_hostname => $host_name)){
+
+                    $log->info("REMOVE RULE FROM VERIFIED RULES");
+                    $rule->deleteVerifiedRule(
                         hostname   => $host_name,
                         cluster_id => $service_provider_id,
-                        state      => 'verified',
                     );
-#                my $wf_def_id = $rule->getVerifiedRuleWfDefId (
-#                                    service_provider_id => $service_provider_id,
-#                                    hostname            => $host_name,
-#                                );
-
-#                if ($wf_def_id != 0) {
-#                    $rule->setVerifiedRule(
-#                        hostname   => $host_name,
-#                        cluster_id => $service_provider_id,
-#                        state      => 'verified',
-#                    );
-#                } else {
-#                    $rule->setVerifiedRule(
-#                        hostname   => $host_name,
-#                        cluster_id => $service_provider_id,
-#                        state      => 'verified',
-#                        wf_def_id  => $workflow_def_id,
-#                    );
-#                    $workflow_manager->runWorkflow(
-#                        workflow_def_id => $workflow_def_id, 
-#                        host_name => $host_name, 
-#                        rule_id => $rule_id
-#                    );
-#                }
+                }
             }
-        }else{
-            #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
-            #           $rule->setVerifiedRule(
-            #    hostname => $host_name,
-            #   cluster_id => $service_provider_id,
-            #    state      => 'undef'
-            #);
+            else {
+                $rep++;
+
+                if ($rule->isVerifiedForANode(externalnode_hostname => $host_name)){
+                    $log->info("Rule has been verifieds for node <$host_name> : do not trigger Workflow");
+                }
+                else{
+
+                    $rule->setVerifiedRule(
+                            hostname   => $host_name,
+                            cluster_id => $service_provider_id,
+                            state      => 'verified',
+                    );
+                        
+                    my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
+
+                    if (defined $wf_def_id){
+                        $log->info("TRIGGER Workflow <$wf_def_id>");
+                        $workflow_manager->runWorkflow(
+                            workflow_def_id => $workflow_def_id,
+                            host_name => $host_name,
+                            service_provider_id => $service_provider_id,
+                            rule_id => $rule_id
+                        );
+                    } # ELSE => NO WORKFLOW TO TRIGGER
+                }
+            }
         }
-    }
+        else { #NOT DEFINED
+            $log->info('RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF');
+        }
+    } #END LOOP ON NODES
     return $rep;
 }
+
 # Construct hash table for the service provider.
 # Inspired by eponyme aggregator method 
 
@@ -633,7 +625,8 @@ sub clustermetricManagement{
     #GET RULES RELATIVE TO A CLUSTER
     my @rules = AggregateRule->search(hash=>{
         aggregate_rule_service_provider_id => $service_provider_id,
-        aggregate_rule_state               => 'enabled'
+        aggregate_rule_state               => 'enabled',
+        aggregate_rule_state               => 'triggered'
     });
 
     for my $aggregate_rule (@rules){
@@ -646,13 +639,22 @@ sub clustermetricManagement{
             
             my $result = $aggregate_rule->eval();
             
-             # LOOP USED TO TRIGGER WORKFLOWS
+            # LOOP USED TO TRIGGER WORKFLOWS
+            #get the state of the rule
+            my $rule_state = $aggregate_rule->getAttr (name => 'aggregate_rule_state');
 
             if(defined $result){
-                if($result == 1 && ($workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager'))) {
-#                    $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, rule_id => $rule_id);
-#                    $aggregate_rule->setAttr(aggregate_rule_state =>'disabled');
-#                    $aggregate_rule->save();
+                if ($result == 1 && ($workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager'))) {
+                    if ($rule_state eq 'enabled') { 
+                        $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, rule_id => $rule_id, service_provider_id => $service_provider_id);
+                        $aggregate_rule->setAttr(aggregate_rule_state => 'triggered');
+                        $aggregate_rule->save();
+                    }
+                } elsif ($result == 0) {
+                    if ($rule_state eq 'triggered') {
+                        $aggregate_rule->setAttr(aggregate_rule_state => 'enabled');
+                        $aggregate_rule->save();
+                    }
                 }
             }
         } # for my $aggregate_rule 

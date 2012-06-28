@@ -39,11 +39,11 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    aggregate_combination_formula =>  {pattern       => '^.*$',
+    aggregate_combination_formula =>  {pattern       => '^((id\d+)|[ .+*()-/]|\d)+$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1,
-                                 description    => "Construct a formula by metric's names with all mathematical operators. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the available choice."},
+                                 description    => "Construct a formula by service metric's names with all mathematical operators. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the available choice."},
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -99,24 +99,33 @@ sub _verify {
 =cut
 
 sub toString {
-    my $self = shift;
-    #my $aggregate_combination_id       = $self->getAttr(name => 'aggregate_combination_id');
-    #my $aggregate_combination_formula  = $self->getAttr(name => 'aggregate_combination_formula');
-
-    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
-    
-    #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = Clustermetric->get('id'=>substr($element,2))->toString();
-        }
+    my ($self, %args) = @_;
+    my $depth;
+    if(defined $args{depth}) {
+        $depth = $args{depth};
+    }
+    else {
+        $depth = -1;
     }
     
-    return List::Util::reduce {$a.$b} @array;
+    if($depth == 0) {
+        return $self->getAttr(name => 'aggregate_combination_label');
+    }
+    else{
+        my $formula = $self->getAttr(name => 'aggregate_combination_formula');
+
+        #Split aggregate_rule id from $formula
+        my @array = split(/(id\d+)/,$formula);
+        #replace each rule id by its evaluation
+        for my $element (@array) {
+            if( $element =~ m/id\d+/)
+            {
+                #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
+                $element = Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1);
+            }
+        }
+        return List::Util::reduce {$a.$b} @array;
+    }
 }
 
 sub computeValues{

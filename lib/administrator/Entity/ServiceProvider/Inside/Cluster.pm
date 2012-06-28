@@ -27,6 +27,7 @@ use Entity::Host;
 use Externalnode::Node;
 use Entity::Systemimage;
 use Entity::Tier;
+use Externalnode::Node;
 use Operation;
 use Workflow;
 use NodemetricCombination;
@@ -37,6 +38,10 @@ use Administrator;
 use General;
 use ServiceProviderManager;
 use ServiceTemplate;
+use VerifiedNoderule;
+use Entity::Billinglimit;
+use Entity::Component::Kanopyaworkflow0;
+use Entity::Component::Kanopyacollector1;
 
 use Hash::Merge;
 
@@ -334,6 +339,7 @@ sub create {
         }
     }
 
+    $log->info(\%params);
     General::checkParams(args => \%params, required => [ 'managers' ]);
     General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
@@ -352,7 +358,7 @@ sub create {
     $log->debug("Final parameters after applying policies:\n" . Dumper(%params));
 
     my %composite_params;
-    for my $name ('managers', 'interfaces', 'components') {
+    for my $name ('managers', 'interfaces', 'components', 'billing_limits') {
         if ($params{$name}) {
             $composite_params{$name} = delete $params{$name};
         }
@@ -396,6 +402,9 @@ sub applyPolicies {
         elsif ($name eq 'interfaces') {
             $self->configureInterfaces(interfaces => $value);
         }
+        elsif ($name eq 'billing_limits') {
+            $self->configureBillingLimits(billing_limits => $value);
+        }
         else {
             $self->setAttr(name => $name, value => $value);
         }
@@ -407,15 +416,44 @@ sub configureManagers {
     my $self = shift;
     my %args = @_;
 
+    # Workaround to handle connectors that have btoh category.
+    # We need to fix this when we willmerge inside/outside.
+    my ($wok_disk_manager, $wok_export_manager);
+    eval {
+        $wok_disk_manager   = $args{managers}->{disk_manager}->{manager_id};
+        $wok_export_manager = $args{managers}->{export_manager}->{manager_id};
+    };
+    if ($wok_disk_manager and $wok_export_manager) {
+        my $kanopya = Entity->get(id => 1);
+        # FileImagaemanager0 -> FileImagaemanager0
+        if ($wok_disk_manager != $kanopya->getComponent(name => "Lvm", version => "2")->getAttr(name => 'component_id')) {
+            $args{managers}->{export_manager}->{manager_id} = $wok_disk_manager;
+        }
+    }
+
     # Install new managers or/and new managers params if required
     if (defined $args{managers}) {
+        # Add default workflow manager
+        my $workflow_manager = Entity::Component::Kanopyaworkflow0->find(hash => { service_provider_id => 1 });
+        $args{managers}->{workflow_manager} = {
+            manager_id   => $workflow_manager->getId,
+            manager_type => "workflow_manager"
+        };
+
+        # Add default collector manager
+        my $collector_manager = Entity::Component::Kanopyacollector1->find(hash => { service_provider_id => 1 });
+        $args{managers}->{collector_manager} = {
+            manager_id   => $collector_manager->getId,
+            manager_type => "collector_manager"
+        };
+
         for my $manager (values %{$args{managers}}) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.
             my $cluster_manager;
             eval {
-                $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $manager->{manager_type},
-                                                                  service_provider_id   => $self->getId });
+                $cluster_manager = ServiceProviderManager->find(hash => { manager_type        => $manager->{manager_type},
+                                                                          service_provider_id => $self->getId });
             };
             if ($@) {
                 next if not $manager->{manager_id};
@@ -467,29 +505,53 @@ sub configureInterfaces {
 
     if (defined $args{interfaces}) {
         for my $interface_pattern (values %{ $args{interfaces} }) {
-            my $role = Entity::InterfaceRole->get(id => $interface_pattern->{interface_role});
+            if ($interface_pattern->{interface_role}) {
+                my $role = Entity::InterfaceRole->get(id => $interface_pattern->{interface_role});
 
-            # TODO: This mechanism do not allows to define many interfaces
-            #       with the same role within policies.
+                # TODO: This mechanism do not allows to define many interfaces
+                #       with the same role within policies.
 
-            # Check if an interface with the same role already set, add it otherwise,
-            # Add networks to the interrface if not exists.
-            my $interface;
-            eval {
-                $interface = Entity::Interface->find(
-                                 hash => { service_provider_id => $self->getAttr(name => 'entity_id'),
-                                           interface_role_id   => $role->getAttr(name => 'entity_id') }
-                             );
-            };
-            if ($@) {
-                $interface = $self->addNetworkInterface(interface_role => $role);
-            }
+                # Check if an interface with the same role already set, add it otherwise,
+                # Add networks to the interrface if not exists.
+                my $interface;
+                eval {
+                    $interface = Entity::Interface->find(
+                                     hash => { service_provider_id => $self->getAttr(name => 'entity_id'),
+                                               interface_role_id   => $role->getAttr(name => 'entity_id') }
+                                 );
+                };
+                if ($@) {
+                    $interface = $self->addNetworkInterface(interface_role => $role);
+                }
 
-            if ($interface_pattern->{interface_networks}) {
-                for my $network_id (@{ $interface_pattern->{interface_networks} }) {
-                    $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
+                if ($interface_pattern->{interface_networks}) {
+                    for my $network_id (@{ $interface_pattern->{interface_networks} }) {
+                        $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
+                    }
                 }
             }
+        }
+    }
+}
+
+sub configureBillingLimits {
+    my $self    = shift;
+    my %args    = @_;
+
+    if (defined($args{billing_limits})) {
+        foreach my $name (keys %{$args{billing_limits}}) {
+            my $value                       = $args{billing_limits}->{$name};
+            Entity::Billinglimit->new(
+                start               => $value->{start},
+                ending              => $value->{ending},
+                type                => $value->{type},
+                soft                => $value->{soft},
+                service_provider_id => $self->getAttr(name => 'entity_id'),
+                repeats             => $value->{repeats},
+                repeat_start_time   => $value->{repeat_start_time},
+                repeat_end_time     => $value->{repeat_end_time},
+                value               => $value->{value}
+            );
         }
     }
 }
@@ -1163,32 +1225,11 @@ sub getNodeState {
 
     my $host       = Entity::Host->find(hash => {host_hostname => $args{hostname}});
     my $host_id    = $host->getId();
-    my $node       = Node->find(hash => {host_id => $host_id});
+    my $node       = Externalnode::Node->find(hash => {host_id => $host_id});
     my $node_state = $node->getAttr(name => 'node_state');
 
     return $node_state;
 }
-
-sub getNodes {
-    my ($self, %args) = @_;
-
-    my $node_rs = $self->{_dbix}->parent->nodes;
-
-    my $domain_name;
-    my @nodes;
-    while (my $node_row = $node_rs->next) {
-        if($node_row->get_column('node_state') ne 'disabled'){
-            push @nodes, {
-                state              => $node_row->get_column('node_state'),
-                id                 => $node_row->get_column('node_id'),
-            };
-        }
-    }
-
-    return \@nodes;
-}
-
-
 
 =head2 getNodesMetrics
 
@@ -1210,12 +1251,62 @@ sub getNodesMetrics {
     while (my ($host_id, $host_object) = each(%$nodes)) {
         push @nodelist, $host_object->getAttr(name => 'host_hostname');
     }
- 
+
     return $collector_manager->retrieveData(
                nodelist   => \@nodelist,
                time_span  => $args{'time_span'},
                indicators => $args{'indicators'}
            );
+}
+
+sub generateOverLoadNodemetricRules {
+    my ($self, %args) = @_;
+    my $service_provider_id = $self->getId();
+
+    my $creation_conf = {
+        'memory' => {
+             formula         => 'id2 / id1',
+             comparator      => '>',
+             threshold       => 70,
+             rule_label      => '%MEM used too high',
+             rule_description => 'Percentage memory used is too high',
+        },
+        'cpu' => {
+            #User+Idle+Wait+Nice+Syst+Kernel+Interrupt
+             formula         => '(id5 + id6 + id7 + id8 + id9 + id10) / (id5 + id6 + id7 + id8 + id9 + id10 + id11)',
+             comparator      => '>',
+             threshold       => 70,
+             rule_label      => '%CPU used too high',
+             rule_description => 'Percentage processor used is too high',
+        },
+    };
+
+    while (  my ($key, $value) = each(%$creation_conf) ) {
+        my $combination_param = {
+            nodemetric_combination_formula             => $value->{formula},
+            nodemetric_combination_service_provider_id => $service_provider_id,
+        };
+
+        my $comb  = NodemetricCombination->new(%$combination_param);
+
+        my $condition_param = {
+            nodemetric_condition_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
+            nodemetric_condition_comparator          => $value->{comparator},
+            nodemetric_condition_threshold           => $value->{threshold},
+            nodemetric_condition_service_provider_id => $service_provider_id,
+        };
+
+        my $condition = NodemetricCondition->new(%$condition_param);
+        my $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
+        my $prule = {
+            nodemetric_rule_formula             => 'id'.$conditionid,
+            nodemetric_rule_label               => $value->{rule_label},
+            nodemetric_rule_description         => $value->{rule_description},
+            nodemetric_rule_state               => 'enabled',
+            nodemetric_rule_service_provider_id => $service_provider_id,
+        };
+        my $rule = NodemetricRule->new(%$prule);
+    }
 }
 
 =head2 generateDefaultMonitoringConfiguration
@@ -1262,22 +1353,6 @@ sub generateDefaultMonitoringConfiguration {
             my $clustermetric_combination = AggregateCombination->new(%$acf_params);
         }
     }
-}
-
-sub getManager {
-    my $self = shift;
-    my %args = @_;
-
-    # The parent method getManager should disappeared
-     if (defined $args{id}) {
-        return $self->SUPER::getManager(%args);
-    }
-
-    General::checkParams(args => \%args, required => [ 'manager_type' ]);
-
-    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
-                                                         service_provider_id   => $self->getId });
-    return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
 }
 
 1;

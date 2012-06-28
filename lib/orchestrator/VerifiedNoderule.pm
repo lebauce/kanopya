@@ -13,7 +13,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # Created 20 june 2012
 
-package VerifiedNodeRule;
+package VerifiedNoderule;
 
 use strict;
 use warnings;

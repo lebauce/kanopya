@@ -107,10 +107,11 @@ sub prepare {
 sub execute {
     my $self = shift;
 
-    $self->{context}->{cluster}->create(managers   => $self->{params}->{managers},
-                                        components => $self->{params}->{components},
-                                        interfaces => $self->{params}->{interfaces},
-                                        erollback  => $self->{erollback});
+    $self->{context}->{cluster}->create(managers        => $self->{params}->{managers},
+                                        components      => $self->{params}->{components},
+                                        interfaces      => $self->{params}->{interfaces},
+                                        billing_limits  => $self->{params}->{billing_limits},
+                                        erollback       => $self->{erollback});
 
     $log->info("Cluster <" . $self->{context}->{cluster}->getAttr(name => "cluster_name") . "> is now added");
 }

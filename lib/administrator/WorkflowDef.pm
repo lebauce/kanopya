@@ -27,6 +27,7 @@ use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger('administrator');
+my $errmsg;
 
 use constant ATTR_DEF => {
     workflow_def_name => {
@@ -95,8 +96,17 @@ sub setParamPreset {
 
 sub getParamPreset{
     my ($self,%args) = @_;
-    my $preset = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
-    return $preset->load();
+
+    my $preset;
+    eval {
+        $preset = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
+    };
+    if ($@) {
+        $errmsg = 'could not retrieve any param preset for workflow: '.$@;
+        $log->error($errmsg);
+    } else {
+        return $preset->load();
+    }
 }
 
 1;

@@ -53,4 +53,20 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        'toString'  => {
+            'description' => 'toString',
+            'perm_holder' => 'entity'
+        }
+    };
+}
+
+sub toString {
+    my $self = shift;
+
+    return $self->indicatorset->indicatorset_name . '/' . $self->indicator_name;
+}
+
 1;

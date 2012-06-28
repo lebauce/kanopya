@@ -144,6 +144,21 @@ __PACKAGE__->belongs_to(
   { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 billinglimit
+ 
+Type: might_have
+ 
+Related object: L<AdministratorDB::Schema::Result::Billinglimit>
+ 
+=cut
+ 
+__PACKAGE__->might_have(
+    "billinglimit",
+    "AdministratorDB::Schema::Result::Billinglimit",
+    { "foreign.id" => "self.entity_id" },
+    { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 class_type
 
 Type: belongs_to

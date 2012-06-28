@@ -93,12 +93,24 @@ sub updateName {
 =cut
 
 sub toString {
-    my $self = shift;
-    my $combination_id = $self->getAttr(name => 'nodemetric_condition_combination_id');
-    my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
-    my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
-    
-    return NodemetricCombination->get('id'=>$combination_id)->toString().$comparator.$threshold;
+    my ($self, %args) = @_;
+    my $depth;
+    if(defined $args{depth}) {
+        $depth = $args{depth};
+    }
+    else {
+        $depth = -1;
+    }
+    if($depth == 0) {
+        return $self->getAttr(name => 'nodemetric_condition_label');
+    }
+    else{
+        my $combination_id = $self->getAttr(name => 'nodemetric_condition_combination_id');
+        my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
+        my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
+
+        return NodemetricCombination->get('id'=>$combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
+    }
 };
 
 sub evalOnOneNode{

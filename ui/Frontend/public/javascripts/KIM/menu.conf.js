@@ -1,4 +1,5 @@
 require('KIM/iaas.js');
+require('common/users.js');
 require('KIM/customers.js');
 require('KIM/servicetemplates.js');
 require('KIM/policies.js');
@@ -27,14 +28,18 @@ var mainmenu_def = {
     },
     'Services'          : {
         masterView : [
-                      {label : 'Overview', id : 'services_overview', onLoad : function(cid) { require('KIM/services.js'); servicesList(cid); }}
+                      {label : 'Service instances', id : 'services_overview', onLoad : function(cid) { require('KIM/services.js'); servicesList(cid); }}
                       ],
-        json : {url         : '/api/serviceprovider',
-                label_key   : 'cluster_name',
+        jsontree : {
+                level1_url         : '/api/servicetemplate',
+                level1_label_key   : 'service_name',
+                level2_url         : '/api/cluster',
+                level2_label_key   : 'cluster_name',
                 id_key      : 'pk',
                 submenu     : [
                                {label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid);}},
-                               {label : 'Configuration', id : 'service_configuration', onLoad : function(cid, eid) { require('common/service_common.js'); loadServicesConfig(cid, eid);}},
+                               {label : 'Details', id : 'service_details', onLoad : function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid);}},
+                               {label : 'Configuration', id : 'service_configuration', onLoad : function(cid, eid) { require('KIM/services_config.js'); loadServicesConfig(cid, eid);}},
                                {label : 'Ressources', id : 'service_ressources', onLoad : function(cid, eid) { require('KIM/services.js'); loadServicesRessources(cid, eid);}},
                                {label : 'Monitoring', id : 'service_monitoring', onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid);}},
                                {label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid);}},
@@ -45,7 +50,7 @@ var mainmenu_def = {
     'Administration'    : {
         'Kanopya'          : [],
         'Right Management' :  [
-                               {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('common/users.js'); usersList(cid, eid); }},
+                               {label : 'Users', id : 'users', onLoad : users.load_content },
                                {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); }},
                                {label : 'Permissions', id : 'permissions', onLoad : function(cid, eid) { require('common/users.js'); permissions(cid, eid); }}
                                ],
@@ -76,6 +81,15 @@ var details_def = {
                id    : 'customer_detail_infos',
                onLoad : customers.load_infos },
              
+        ],
+     },
+     'users_list' : { tabs: 
+        [ { label  : 'Overview',
+               id  : 'user_detail_overview',
+               onLoad : users.load_details },
+            { label  : 'Profiles',
+               id     : 'user_detail_profiles',
+               onLoad : users.load_profiles },
         ],
      },
     'service_template_list'   : { onSelectRow : load_service_template_details },

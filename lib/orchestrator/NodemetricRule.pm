@@ -19,8 +19,7 @@ use base 'BaseDB';
 use Data::Dumper;
 use NodemetricCondition;
 use Entity::ServiceProvider;
-use Entity::ServiceProvider::Outside::Externalcluster;
-use VerifiedNodeRule;
+use VerifiedNoderule;
 use List::MoreUtils qw {any} ;
 use Switch;
 # logger
@@ -36,11 +35,11 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    nodemetric_rule_formula   =>  {pattern       => '^.*$',
+    nodemetric_rule_formula   =>  {pattern       => '^((id\d+)|AND|and|OR|or|NOT|not|[ ()!&|])+$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1,
-                                 description    => "Construct a formula by condition's names with AND and OR operators. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the available choice."},
+                                 description    => "Construct a formula by condition's names with AND, OR and NOT operators. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the available choice."},
     nodemetric_rule_last_eval =>  {pattern       => '^(0|1)$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
@@ -101,34 +100,49 @@ sub new {
 sub setUndefForEachNode{
     my ($self) = @_;
     #ADD A ROW IN VERIFIED_NODERULE TABLE indicating undef data
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(
+#    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(
+#                        'id' => $self->getAttr(name => 'nodemetric_rule_service_provider_id'),
+#                     );
+    my $service_provider = Entity::ServiceProvider->get(
                         'id' => $self->getAttr(name => 'nodemetric_rule_service_provider_id'),
                      );
-    
-    my $extnodes = $extcluster->getNodes();
-    
-    foreach my $extnode (@$extnodes) {
+
+    my $nodes = $service_provider->getNodes();
+
+    foreach my $node (@$nodes) {
         $self->{_dbix}
         ->verified_noderules
         ->update_or_create({
-            verified_noderule_externalnode_id    =>  $extnode->{'id'},
+            verified_noderule_externalnode_id    =>  $node->{'id'},
             verified_noderule_state              => 'undef',
         });
     }
 }
 
 sub toString{
-    my $self = shift;
-    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
-    my @array = split(/(id\d+)/,$formula);
-    for my $element (@array) {
-        
-        if( $element =~ m/id(\d+)/)
-        {
-            $element = NodemetricCondition->get('id'=>substr($element,2))->toString();
-        }
-     }
-     return "@array";
+    my ($self, %args) = @_;
+    my $depth;
+    if(defined $args{depth}) {
+        $depth = $args{depth};
+    }
+    else {
+        $depth = -1;
+    }
+
+    if($depth == 0) {
+        return $self->getAttr(name => 'nodemetric_rule_label');
+    }
+    else{
+        my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
+        my @array = split(/(id\d+)/,$formula);
+        for my $element (@array) {
+            if( $element =~ m/id(\d+)/)
+            {
+                $element = NodemetricCondition->get('id'=>substr($element,2))->toString(depth => $depth - 1);
+            }
+         }
+         return "@array";
+    }
 };
 
 #C/P of homonym method in AggregateRulePackage 
@@ -175,7 +189,7 @@ sub evalOnOneNode{
     }
     my $res = undef;
     my $arrayString = '$res = '."@array"; 
-    
+
     $log->info("NM rule evaluation: $arrayString");
     #Evaluate the logic formula
     eval $arrayString;
@@ -187,8 +201,15 @@ sub isVerifiedForANode{
     my $self = shift;
     my %args = @_;
 
-    my $externalcluster_id  = $args{externalcluster_id};
-    my $externalnode_id     = $args{externalnode_id};
+    my $externalnode_id;
+    if(defined $args{externalnode_hostname}){
+        my $node = Externalnode->find(hash => {externalnode_hostname => $args{externalnode_hostname}});
+       $externalnode_id = $node->getId(); 
+   }
+    else {
+        $externalnode_id = $args{externalnode_id};
+    }
+
 
     my $row = $self->{_dbix}
         ->verified_noderules
@@ -223,9 +244,8 @@ sub deleteVerifiedRule  {
     # GET THE EXTERNAL NODE ID    
     # note : externalcluster_name is UNIQUE !
     
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
-    
-    my $extnodes = $extcluster->getNodes();
+    my $service_provider = Entity->get('id' => $cluster_id);    
+    my $extnodes = $service_provider->getNodes();
     
     my $externalnode_id;
     
@@ -240,7 +260,7 @@ sub deleteVerifiedRule  {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }else{
-        #print "** try to delete $externalnode_id **\n";
+        $log->info("Try to delete $externalnode_id ");
             my $verified_rule_dbix = 
                     $self->{_dbix}
                 ->verified_noderules
@@ -248,60 +268,12 @@ sub deleteVerifiedRule  {
                     verified_noderule_externalnode_id    => $externalnode_id,
                 });
             if(defined $verified_rule_dbix){
-                #print "** delete $externalnode_id **\n";
+                $log->info("Delete $externalnode_id");
                 $verified_rule_dbix->delete();
             } else {
-                #print "** not here $externalnode_id **\n";
+                $log->info("Not here $externalnode_id");
             }
     }
-}
-
-=head2 getVerifiedRuleWfDefId
-    Desc: Check if a workflow def has been triggered for a verified rule
-
-    Args: $hostname, $service_provider_id
-
-    Return: $workflow_def_id or 0
-
-=cut
-
-sub getVerifiedRuleWfDefId {
-    my ($self,%args) = @_;
-
-    my $hostname            = $args{hostname};
-    my $service_provider_id = $args{service_provider_id};
-    my $service_provider    = Entity::ServiceProvider->get('id' => $service_provider_id);
-
-    my $nodes               = $service_provider->getNodes();
-    my $rule_id             = $self->getAttr(name => 'nodemetric_rule_id');
-    my $node_id;
-
-    foreach my $node (@$nodes) {
-        if($node->{hostname} eq $hostname) {
-            $node_id = $node->{id};
-        }
-    }
-
-    if(not defined $node_id){
-        my $errmsg = "unknown node $hostname in service provider $service_provider_id";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    else {
-        my $verified_noderule = VerifiedNodeRule->find(hash => {
-                                    verified_noderule_externalnode_id    => $node_id,
-                                    verified_noderule_nodemetric_rule_id => $rule_id
-                                });
-        my $workflow_def_id   = $verified_noderule->getAttr(name => 'workflow_def_id');
-
-        if (defined $workflow_def_id) {
-            return $workflow_def_id;
-        }
-        else {
-            return 0;
-        }
-    }
-
 }
 
 =head2 deleteVerifiedRuleWfDefId
@@ -336,7 +308,7 @@ sub deleteVerifiedRuleWfDefId {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     else {
-        my $verified_noderule = VerifiedNodeRule->find(hash => {
+        my $verified_noderule = VerifiedNoderule->find(hash => {
                                     verified_noderule_externalnode_id    => $node_id,
                                     verified_noderule_nodemetric_rule_id => $rule_id
                                 });
@@ -356,9 +328,10 @@ sub setVerifiedRule{
     # GET THE EXTERNAL NODE ID    
     # note : externalcluster_name is UNIQUE !
     
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+    # my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
     
-    my $extnodes = $extcluster->getNodes();
+    my $service_provider = Entity->get('id' => $cluster_id);    
+    my $extnodes = $service_provider->getNodes();
     
     my $externalnode_id;
     
@@ -371,7 +344,9 @@ sub setVerifiedRule{
     if(not defined $externalnode_id){
         my $errmsg = "UNKOWN node $hostname in cluster $cluster_id";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);    }else{
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+    else{
        # print "** $externalnode_id **\n";
         $self->{_dbix}
                 ->verified_noderules

@@ -102,6 +102,24 @@ sub checkHostManagerParams {
     General::checkParams(args => \%args, required => [ 'ram', 'core', 'ifaces' ]);
 }
 
+=head2 getPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    if ($args{policy_type} eq 'hosting') {
+        return [ { name => 'cpu', label => 'CPU number' },
+                 { name => 'ram', label => 'RAM amount' },
+                 { name => 'ram_unit', label => 'RAM unit', values => [ 'M', 'G' ] } ];
+    }
+    return [];
+}
+
 =head2 getBootPolicies
 
     Desc: return a list containing boot policies available

@@ -1,5 +1,4 @@
 <script src="/javascripts/KIO/menu.conf.js"></script>
-<script src='/javascripts/messages.js'></script>
 
 <div id='view-container' class="ui-layout-center">
     <!--div id='bread-scrumbs' >Salut</div-->

@@ -6,6 +6,15 @@ function serializeDateTime(datetime) {
     return d.getTime();
 }
 
+function serializeTime(time) {
+    if (time != null && time !== '') {
+        // Ugly !
+        return serializeDateTime('06/26/2012 ' + time);
+    } else {
+        return time;
+    }
+}
+
 var policies = {
     hosting: {
         policy_name : {
@@ -30,6 +39,10 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'serviceprovider',
+            filters      : {
+                func : 'getServiceProviders',
+                args : { category: 'Cloudmanager' },
+            },
             depends      : [ 'host_manager_id' ],
         },
         host_manager_id : {
@@ -38,8 +51,11 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'component',
-            category     : 'Cloudmanager',
             parent       : 'host_provider_id',
+            filters      : {
+                func : 'findManager',
+                args : { category: 'Cloudmanager' },
+            },
             display_func : 'getHostType',
             params       : {
                 func : 'getPolicyParams',
@@ -70,7 +86,11 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'serviceprovider',
-            depends      : [ 'disk_manager_id', 'export_manager_id' ],
+            filters      : {
+                func : 'getServiceProviders',
+                args : { category: 'Storage' },
+            },
+            depends      : [ 'disk_manager_id' ],
         },
         disk_manager_id : {
             label        : "Storage format",
@@ -78,13 +98,17 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'component',
-            category     : 'Storage',
             parent       : 'storage_provider_id',
+            filters      : {
+                func : 'findManager',
+                args : { category: 'Storage' },
+            },
             display_func : 'getDiskType',
             params       : {
                 func : 'getPolicyParams',
                 args : { policy_type: 'storage' },
             },
+//            depends      : [ 'export_manager_id' ],
         },
         export_manager_id : {
             label        : "Export protocol",
@@ -92,8 +116,15 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'component',
-            category     : 'Export',
             parent       : 'storage_provider_id',
+            filters      : {
+                func : 'findManager',
+                args : { category: 'Export' },
+            },
+//            parent       : 'disk_manager_id',
+//            filters      : {
+//                func : 'getExportManagers',
+//            },
             display_func : 'getExportType',
         },
     },
@@ -144,6 +175,7 @@ var policies = {
             entity       : 'interfacerole',
             display      : 'interface_role_name',
             composite    : 'network_interface',
+            is_mandatory : 1,
         },
         interface_networks : {
             label        : 'Network',
@@ -297,7 +329,7 @@ var policies = {
             label       : 'Type',
             options     : {
                 'cpu' : 'cpu',
-                'ram' : 'ram'
+                'ram' : 'ram',
             },
             is_mandatory: 1
         },
@@ -328,6 +360,7 @@ var policies = {
             composite   : 'billing_limits',
             type        : 'time',
             label       : 'Repeat Start',
+            serialize   : serializeTime,
             is_mandatory: 0
         },
         limit_repeat_end    : {
@@ -335,6 +368,7 @@ var policies = {
             composite   : 'billing_limits',
             type        : 'time',
             label       : 'Repeat End',
+            serialize   : serializeTime,
             is_mandatory: 0
         }
     }

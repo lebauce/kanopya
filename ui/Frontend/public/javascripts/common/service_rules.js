@@ -1,4 +1,5 @@
 require('common/grid.js');
+require('common/workflows.js');
 
 var rulestates = ['enabled','disabled'];
 var comparators = ['<','>'];
@@ -13,6 +14,7 @@ function nodemetricconditionmodal(elem_id, editid) {
         nodemetric_condition_combination_id :{
             label   : 'Combination',
             display : 'nodemetric_combination_label',
+            cond    : '?nodemetric_combination_service_provider_id=' + elem_id
         },
         nodemetric_condition_comparator    : {
             label   : 'Comparator',
@@ -35,19 +37,41 @@ function nodemetricconditionmodal(elem_id, editid) {
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
         },
-        callback    : function() {
+        callback    : function(elem, form) {
             if (editid !== undefined) {
                 $.ajax({
                     url     : '/api/nodemetriccondition/' + editid + '/updateName',
                     type    : 'POST'
                 });
+            } else {
+                if ($(form).find('#input_create_rule').val() === 'on') {
+                    $.ajax({
+                        url     : '/api/nodemetricrule',
+                        type    : 'POST',
+                        data    : {
+                            nodemetric_rule_label               : elem.nodemetric_condition_label,
+                            nodemetric_rule_service_provider_id : elem_id,
+                            nodemetric_rule_formula             : 'id' + elem.pk,
+                            nodemetric_rule_state               : 'enabled'
+                        },
+                        success : function() {
+                            $('#service_ressources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
+                        }
+                    });
+                }
             }
-            $('#service_ressources_nodemetric_conditions_' + elem_id).trigger('reloadGrid');
+            $('#service_ressources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
         }
     };
     if (editid !== undefined) {
         service_opts.id = editid;
         service_opts.fields.nodemetric_condition_label.type = 'hidden';
+    } else {
+        service_opts.fields.create_rule = {
+            type    : 'checkbox',
+            skip    : true,
+            label   : 'Create associated rule ?'
+        };
     }
     (new ModalForm(service_opts)).start();
 }
@@ -102,7 +126,7 @@ function createNodemetricRule(container_id, elem_id) {
         $(function() {
     var availableTags = new Array();
     $.ajax({
-        url: '/api/nodemetriccondition?dataType=jqGrid',
+        url: '/api/nodemetriccondition?nodemetric_condition_service_provider_id=' + elem_id + '&dataType=jqGrid',
         async   : false,
         success: function(answer) {
                     $(answer.rows).each(function(row) {
@@ -168,6 +192,7 @@ function serviceconditionmodal(elem_id, editid) {
         aggregate_combination_id    :{
             label   : 'Combination',
             display : 'aggregate_combination_label',
+            cond    : '?aggregate_combination_service_provider_id=' + elem_id
         },
         comparator  : {
             label   : 'Comparator',
@@ -195,12 +220,28 @@ function serviceconditionmodal(elem_id, editid) {
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
         },
-        callback    : function() {
+        callback    : function(elem, form) {
             if (editid !== undefined) {
                 $.ajax({
                     url     : '/api/aggregatecondition/' + editid + '/updateName',
                     type    : 'POST'
                 });
+            } else {
+                if ($(form).find('#input_create_rule').val() === 'on') {
+                    $.ajax({
+                        url     : '/api/aggregaterule',
+                        type    : 'POST',
+                        data    : {
+                            aggregate_rule_label                : elem.aggregate_condition_label,
+                            aggregate_rule_service_provider_id  : elem_id,
+                            aggregate_rule_formula              : 'id' + elem.pk,
+                            aggregate_rule_state                : elem.state
+                        },
+                        success : function() {
+                            $('#service_ressources_aggregate_rules_' + elem_id).trigger('reloadGrid');
+                        }
+                    });
+                }
             }
             $('#service_ressources_aggregate_conditions_' + elem_id).trigger('reloadGrid');
         }
@@ -208,6 +249,12 @@ function serviceconditionmodal(elem_id, editid) {
     if (editid !== undefined) {
         service_opts.id = editid;
         service_opts.fields.aggregate_condition_label.type  = 'hidden';
+    } else {
+        service_opts.fields.create_rule = {
+            type    : 'checkbox',
+            skip    : true,
+            label   : 'Create associated rule ?'
+        };
     }
     (new ModalForm(service_opts)).start();
 }
@@ -416,7 +463,7 @@ function loadServicesRules (container_id, elem_id, ext) {
                                     }
                                 }
                             });
-                            require('KIO/workflows.js');
+                            require('common/workflows.js');
                             createWorkflowRuleAssociationButton(cid, eid, 1, elem_id);
                         }},
                         { label : 'Nodes', id : 'nodes', onLoad : function(cid, eid) { rule_nodes_tab(cid, eid, elem_id); } },
@@ -554,7 +601,7 @@ function rule_nodes_tab(cid, rule_id, service_provider_id) {
     
     var loadNodeRulesTabGridId = 'rule_nodes_tabs';
     create_grid( {
-        url: '/api/externalnode?outside_id=' + service_provider_id,
+        url: '/api/externalnode?service_provider_id=' + service_provider_id,
         content_container_id: cid,
         grid_id: loadNodeRulesTabGridId,
         grid_class: 'rule_nodes_grid',

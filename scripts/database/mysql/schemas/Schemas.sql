@@ -1566,12 +1566,12 @@ CREATE TABLE `masterimage` (
 CREATE TABLE `billinglimit` (
   `id` int(8) unsigned NOT NULL,
   `start` int(16) NOT NULL,
-  `end` int(16) NOT NULL,
+  `ending` int(16) NOT NULL,
   `type` CHAR(32) NOT NULL,
   `soft` BOOLEAN NOT NULL,
   `value` int(8),
   `service_provider_id` int(8) unsigned NOT NULL,
-  `repeat` int(16) NOT NULL,
+  `repeats` int(16) NOT NULL,
   `repeat_day` int(16) NOT NULL,
   `repeat_start_time` int(16) NOT NULL,
   `repeat_end_time` int(16) NOT NULL,
@@ -1593,6 +1593,8 @@ CREATE TABLE `service_template` (
   `network_policy_id` int(8) unsigned DEFAULT NULL,
   `scalability_policy_id` int(8) unsigned DEFAULT NULL,
   `system_policy_id` int(8) unsigned DEFAULT NULL,
+  `billing_policy_id` int(8) unsigned DEFAULT NULL,
+  `orchestration_policy_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_template_id`),
   KEY (`hosting_policy_id`),
   FOREIGN KEY (`hosting_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -1602,8 +1604,10 @@ CREATE TABLE `service_template` (
   FOREIGN KEY (`network_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`scalability_policy_id`),
   FOREIGN KEY (`scalability_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`system_policy_id`),
-  FOREIGN KEY (`system_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY (`billing_policy_id`),
+  FOREIGN KEY (`billing_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`orchestration_policy_id`),
+  FOREIGN KEY (`orchestration_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

@@ -39,6 +39,9 @@ use Entity::Connector;
 use Entity::Interface;
 use Administrator;
 use ServiceProviderManager;
+use Entity::Component::Fileimagemanager0;
+use Entity::Connector::NetappVolumeManager;
+use Entity::Connector::NetappLunManager;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -59,7 +62,11 @@ sub methods {
         'getManager'    => {
             'description'   => 'getManager',
             'perm_holder'   => 'entity'
-        }
+        },
+        'getServiceProviders' => {
+            'description'   => 'getServiceProviders',
+            'perm_holder'   => 'entity'
+        },
     };
 }
 
@@ -82,8 +89,9 @@ sub getManager {
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
-    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
-                                                         service_provider_id   => $self->getId });
+    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type        => $args{manager_type},
+                                                                 service_provider_id => $self->getId }
+                                                  );
     return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
 }
 
@@ -91,9 +99,42 @@ sub getState {
     throw Kanopya::Exception::NotImplemented();
 }
 
-sub getNodeState {
+
+
+sub getNodes {
+
     my ($self, %args) = @_;
-    $log->info("Service provider must be specified as a cluster or an externacluster");
+
+    my @nodes = Externalnode::Node->search(
+                    hash => {
+                        inside_id => $self->getId(),
+                    }
+    );
+
+    my @node_hashs;
+
+    for my $node (@nodes){
+
+        my @verified_rules = VerifiedNoderule->search(
+                                                   hash => {
+                                                       verified_noderule_state => 'verified'
+                                                   }
+                                               );
+        my @undef_rules    = VerifiedNoderule->search(
+                                                   hash => {
+                                                       verified_noderule_state => 'undef'
+                                                   }
+                                               );
+
+        push @node_hashs, {
+            state              => $node->getAttr(name => 'externalnode_state'),
+            id                 => $node->getAttr(name => 'externalnode_id'),
+            hostname           => $node->getAttr(name => 'externalnode_hostname'),
+            num_verified_rules => scalar @verified_rules,
+            num_undef_rules    => scalar @undef_rules,
+        };
+    }
+    return \@node_hashs;
 }
 
 sub findManager {
@@ -110,6 +151,7 @@ sub findManager {
                 "category"            => $obj->{component_category},
                 "name"                => $obj->{component_name},
                 "id"                  => $component->getAttr(name => "component_id"),
+                "pk"                  => $component->getAttr(name => "component_id"),
                 "service_provider_id" => $component->getAttr(name => "service_provider_id"),
                 "host_type"           => $component->can("getHostType") ? $component->getHostType() : "",
             }
@@ -126,15 +168,75 @@ sub findManager {
                 "category"            => $obj->{connector_category},
                 "name"                => $obj->{connector_name},
                 "id"                  => $connector->getAttr(name => "connector_id"),
+                "pk"                  => $connector->getAttr(name => "connector_id"),
                 "service_provider_id" => $connector->getAttr(name => "service_provider_id"),
                 "host_type"           => $connector->can("getHostType") ? $connector->getHostType() : "",
             }
+        }
+    }
+    # Workaround to get the Fileimagemanager0 in the disk manager list of an external equipment.
+    # We really need to fix this.
+    if (defined $args{service_provider_id} and $args{service_provider_id} != 1) {
+        if ($args{category} eq 'Storage') {
+            eval {
+                $fileimagemanager = Entity::Component::Fileimagemanager0->find(hash => { service_provider_id => 1 });
+                push @managers, {
+                     "category"            => 'Storage',
+                     "name"                => 'Fileimagemanager',
+                     "id"                  => $fileimagemanager->getAttr(name => "component_id"),
+                     "pk"                  => $fileimagemanager->getAttr(name => "component_id"),
+                     "service_provider_id" => $fileimagemanager->getAttr(name => "service_provider_id"),
+                     "host_type"           => $fileimagemanager->can("getHostType") ? $fileimagemanager->getHostType() : "",
+                };
+            };
+        } elsif ($args{category} eq 'Export') {
+                $netappvolume = Entity::Connector::NetappVolumeManager->find(hash => {});
+                push @managers, {
+                     "category"            => 'Export',
+                     "name"                => 'NetappVolumeManager',
+                     "id"                  => $netappvolume->getAttr(name => "connector_id"),
+                     "pk"                  => $netappvolume->getAttr(name => "connector_id"),
+                     "service_provider_id" => $netappvolume->getAttr(name => "service_provider_id"),
+                     "host_type"           => $netappvolume->can("getHostType") ? $netappvolume->getHostType() : "",
+                };
+                $netapplun = Entity::Connector::NetappLunManager->find(hash => {});
+                push @managers, {
+                     "category"            => 'Export',
+                     "name"                => 'NetappVolumeManager',
+                     "id"                  => $netapplun->getAttr(name => "connector_id"),
+                     "pk"                  => $netapplun->getAttr(name => "connector_id"),
+                     "service_provider_id" => $netapplun->getAttr(name => "service_provider_id"),
+                     "host_type"           => $netapplun->can("getHostType") ? $netapplun->getHostType() : "",
+                };
         }
     }
 
     return wantarray ? @managers : \@managers;
 }
 
+sub getServiceProviders {
+    my ($class, %args) = @_;
+    my @providers;
+
+    if (defined $args{category}) {
+        my @managers = $class->findManager(category => $args{category});
+
+        my $service_providers = {};
+        for my $manager (@managers) {
+            my $provider = Entity::ServiceProvider->get(id => $manager->{service_provider_id});
+            if (not exists $service_providers->{$provider->getId}) {
+                $service_providers->{$provider->getId} = $provider;
+            }
+
+            @service_providers = values %$service_providers;
+        }
+    }
+    else {
+        @service_providers = Entity::ServiceProvider->search(hash => {});
+    }
+
+    return wantarray ? @service_providers : \@service_providers;
+}
 
 =head2 addManager
 

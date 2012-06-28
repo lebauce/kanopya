@@ -40,11 +40,11 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    aggregate_rule_formula     =>  {pattern       => '^.*$',
+    aggregate_rule_formula     =>  {pattern       => '^((id\d+)|and|AND|or|OR|not|NOT|[ ()!&|])+$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1,
-                                 description    => "Construct a formula by condition's names with AND and OR keywords. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the availalbe choice."},
+                                 description    => "Construct a formula by condition's names with AND, OR and NOT keywords. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the availalbe choice."},
     aggregate_rule_last_eval   =>  {pattern       => '^(0|1)$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
@@ -53,7 +53,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    aggregate_rule_state       =>  {pattern       => '(enabled|disabled|disabled_temp)$',
+    aggregate_rule_state       =>  {pattern       => '(enabled|disabled|disabled_temp|triggered)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -123,19 +123,31 @@ sub _verify {
 }
 
 sub toString(){
-    my $self = shift;
-    
-    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
-    my @array = split(/(id\d+)/,$formula);
-    for my $element (@array) {
-        
-        if( $element =~ m/id(\d+)/)
-        {
-            $element = AggregateCondition->get('id'=>substr($element,2))->toString();
-        }
-     }
-     return "@array";
-     #return List::Util::reduce {$a.$b} @array;
+    my ($self, %args) = @_;
+    my $depth;
+    if(defined $args{depth}) {
+        $depth = $args{depth};
+    }
+    else {
+        $depth = -1;
+    }
+
+    if($depth == 0) {
+        return $self->getAttr(name => 'aggregate_rule_label');
+    }
+    else{
+
+       my $formula = $self->getAttr(name => 'aggregate_rule_formula');
+        my @array = split(/(id\d+)/,$formula);
+        for my $element (@array) {
+
+            if( $element =~ m/id(\d+)/)
+            {
+                $element = AggregateCondition->get('id'=>substr($element,2))->toString(depth => $depth - 1);
+            }
+         }
+         return "@array";
+    }     #return List::Util::reduce {$a.$b} @array;
 }
 
 

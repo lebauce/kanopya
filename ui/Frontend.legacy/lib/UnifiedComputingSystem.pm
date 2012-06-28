@@ -97,9 +97,13 @@ get '/ucs/:ucsid' => sub {
     my $eucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->get(id => $ucs_id);
     my $eeucs = $eucs->getConnector(category => 'Cloudmanager');
     my @sps = $eeucs->get_service_profiles();
-    my @templates = $eeucs->get_service_profile_templates(
-                        dn => $eucs->getAttr('name' => 'ucs_ou')
-                    );
+    my @templates;
+    # Catched for demo, need to fix this.
+    eval {
+         @templates = $eeucs->get_service_profile_templates(
+                          dn => $eucs->getAttr('name' => 'ucs_ou')
+                      );
+    };
     my @blades = $eeucs->get_blades();
 
     template 'ucs_details', {

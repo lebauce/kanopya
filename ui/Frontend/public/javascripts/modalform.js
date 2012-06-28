@@ -58,6 +58,8 @@ var ModalForm = (function() {
                         var val = values[elem] || this.fields[elem].value;
                         if (elem in data.attributes) { // Whether just an input
                             this.newFormElement(elem, data.attributes[elem], val);
+                        } else if (this.fields[elem].skip == true) {
+                            this.newFormElement(elem, {}, val);
                         } else { // Or retrieve all possibles values and create a select element
                             var datavalues = this.getForeignValues(data, elem);
                             this.newDropdownElement(elem, data.attributes[elem], val, datavalues);
@@ -170,7 +172,11 @@ var ModalForm = (function() {
                 }
             }
         }
-        $(input).attr({ name : elementName, id : 'input_' + elementName });
+        $(input).attr({ name : elementName, id : 'input_' + elementName, rel : elementName });
+        if (this.fields[elem].skip == true) {
+            $(input).addClass('wizard-ignore');
+            $(input).attr('name', '');
+        }
         
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
@@ -217,7 +223,7 @@ var ModalForm = (function() {
         if (this.fields[elementName].label !== undefined) {
             $(label).text(this.fields[elementName].label);
         }
-        var input   = $("<select>", { name : elementName, id : 'input_' + elementName });
+        var input   = $("<select>", { name : elementName, id : 'input_' + elementName, rel : elementName });
 
         // Inject all values in the select
         for (value in values) {
@@ -279,7 +285,7 @@ var ModalForm = (function() {
         var linecontainer   = $("<tr>").css('position', 'relative').appendTo(container);
         $("<td>", { align : 'left' }).append(label).appendTo(linecontainer);
         $("<td>", { align : 'right' }).append(input).append(this.createHelpElem(help)).appendTo(linecontainer);
-        if (this.fields[$(input).attr('name')].type === 'hidden') {
+        if (this.fields[$(input).attr('rel')].type === 'hidden') {
             $(linecontainer).css('display', 'none');
         }
     }
@@ -359,7 +365,7 @@ var ModalForm = (function() {
                     // but formwizard is using the element after this
                     // callback, so we delay the deletion
                     setTimeout($.proxy(function() { this.closeDialog(); }, this), 10);
-                    this.callback(data);
+                    this.callback(data, this.form);
                 }, this),
                 error           : $.proxy(function(data) {
                     var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
