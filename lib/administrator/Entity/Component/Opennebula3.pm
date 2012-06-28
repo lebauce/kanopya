@@ -113,7 +113,7 @@ sub getPolicyParams {
     General::checkParams(args => \%args, required => [ 'policy_type' ]);
 
     if ($args{policy_type} eq 'hosting') {
-        return [ { name => 'cpu', label => 'CPU number' },
+        return [ { name => 'core', label => 'CPU number' },
                  { name => 'ram', label => 'RAM amount' },
                  { name => 'ram_unit', label => 'RAM unit', values => [ 'M', 'G' ] } ];
     }

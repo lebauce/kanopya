@@ -562,7 +562,7 @@ sub getFreeHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "ram", "cpu", "ifaces" ]);
+    General::checkParams(args => \%args, required => [ "ram", "core", "ifaces" ]);
 
     if ($args{ram_unit}) {
         $args{ram} = General::convertToBytes(value => $args{ram}, units => $args{ram_unit});
@@ -572,7 +572,7 @@ sub getFreeHost {
     $log->info("Looking for a virtual host");
     my $host = eval{
         return $self->_getEntity->createVirtualHost(
-                   core   => $args{cpu},
+                   core   => $args{core},
                    ram    => $args{ram},
                    ifaces => $args{ifaces},
                );

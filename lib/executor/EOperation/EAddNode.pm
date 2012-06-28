@@ -73,7 +73,7 @@ sub prerequisites {
        my $hypervisor_id = $cm->getHypervisorIdForVM(
                                  wanted_values => {
                                      ram => $host_manager_params->{ram},
-                                     cpu => $host_manager_params->{cpu},
+                                     cpu => $host_manager_params->{core},
                                  }
        );
        if(defined $hypervisor_id){
