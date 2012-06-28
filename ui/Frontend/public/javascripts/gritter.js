@@ -11,7 +11,9 @@ window.setInterval(function(){
             $(rows).each(function(row) {
                 // Get the ID of last emmited message :
                 if ( rows[row].pk > lastMsgId ) {
-                    var content = rows[row].message_content;
+                    //var content = rows[row].message_content;
+                    // Get message level :
+                    var content = "From : " + rows[row].message_from + " <br /> " + rows[row].message_content;
                     newMsg = true;
                     // Display the notification :
                     $.gritter.add({
@@ -27,4 +29,7 @@ window.setInterval(function(){
             lastMsgId = maxID;
          }
     });
+    
+   
+    
 }, 5000);
