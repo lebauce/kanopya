@@ -2,7 +2,7 @@ package Login;
 
 use Dancer ':syntax';
 use Dancer::Plugin::FormValidator;
-
+use Dancer::Plugin::EscapeHTML;
 use Log::Log4perl "get_logger";
 use Administrator;
 
@@ -32,8 +32,8 @@ get '/login' => sub {
 };
 
 post '/login' => sub {
-    my $user     = param('login');
-    my $password = param('password');
+    my $user     = escape_html( param('login') );
+    my $password = escape_html( param('password') );
     my $redirect = session->{login_redirect_url} || '/';
     #$redirect = '/dashboard/status' if $redirect eq '/';
 
