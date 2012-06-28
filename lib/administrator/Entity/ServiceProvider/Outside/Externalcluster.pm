@@ -291,7 +291,7 @@ sub getNodesMetrics {
     my @hostnames = map { $_->{hostname} } @$nodes;
      
     my $data = $ms_connector->retrieveData(
-        nodes => \@hostnames,
+        nodelist => \@hostnames,
         %args,
     );
 

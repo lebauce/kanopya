@@ -54,7 +54,7 @@ sub retrieveData {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['nodes', 'indicators', 'time_span']);
+    General::checkParams(args => \%args, required => ['nodelist', 'indicators', 'time_span']);
     
     my $management_server_name = $self->getAttr(name => 'scom_ms_name');
     my $use_ssl = $self->getAttr(name => 'scom_usessl');
@@ -81,7 +81,7 @@ sub retrieveData {
 
     my $all_perfs = $scom->getPerformance(
         counters            => \%counters,
-        monitoring_object   => $args{nodes},
+        monitoring_object   => $args{nodelist},
         start_time          => _format_dt(dt => $start_dt),
         end_time            => _format_dt(dt => $end_dt),
     );
@@ -93,7 +93,7 @@ sub retrieveData {
         time_zone   => $time_zone,
     );
     
-    _consolidateName( data => $res, nodes => $args{nodes});
+    _consolidateName( data => $res, nodes => $args{nodelist});
     
     return $res;
 }
