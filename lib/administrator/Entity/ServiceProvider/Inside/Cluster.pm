@@ -40,6 +40,8 @@ use ServiceProviderManager;
 use ServiceTemplate;
 use VerifiedNoderule;
 use Entity::Billinglimit;
+use Entity::Component::Kanopyaworkflow0;
+use Entity::Component::Kanopyacollector1;
 
 use Hash::Merge;
 
@@ -431,6 +433,20 @@ sub configureManagers {
 
     # Install new managers or/and new managers params if required
     if (defined $args{managers}) {
+        # Add default workflow manager
+        my $workflow_manager = Entity::Component::Kanopyaworkflow0->find(hash => { service_provider_id => 1 });
+        $args{managers}->{workflow_manager} = {
+            manager_id   => $workflow_manager->getId,
+            manager_type => "workflow_manager"
+        };
+
+        # Add default collector manager
+        my $collector_manager = Entity::Component::Kanopyacollector1->find(hash => { service_provider_id => 1 });
+        $args{managers}->{collector_manager} = {
+            manager_id   => $collector_manager->getId,
+            manager_type => "collector_manager"
+        };
+
         for my $manager (values %{$args{managers}}) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.
