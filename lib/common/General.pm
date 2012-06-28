@@ -40,10 +40,11 @@ Executor is the main object use to create execution objects
 =cut
 package General;
 
-use Kanopya::Exceptions;
-use Log::Log4perl "get_logger";
 use strict;
 use warnings;
+
+use Kanopya::Exceptions;
+use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("executor");
@@ -102,6 +103,14 @@ sub checkParams {
             
             throw Kanopya::Exception::Internal::MissingParam(sub_name   => $caller_sub_name,
                                                              param_name => $param );
+        }
+    }
+
+    if (defined $args{defaults}) {
+        while (my ($key, $value) = each %{$args{defaults}}) {
+            if (not exists $caller_args->{$key}) {
+                $caller_args->{$key} = $value;
+            }
         }
     }
 }
