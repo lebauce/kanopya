@@ -320,6 +320,28 @@ sub _generateNetConf {
 
     # Disable network deconfiguration during halt
     unlink "$args{mount_point}/etc/rc0.d/S35networking";
+
+    # Update kanopya etc hosts
+    my @data = ();
+    for my $host (Entity::Host->getHosts(hash => {})) {
+        my $hostname = $host->getAttr(name => 'host_hostname');
+        next if (not $hostname or $hostname eq '');
+        push @data, {
+            ip         => $host->getAdminIp,
+            hostname   => $hostname,
+            domainname => $self->{params}->{kanopya_domainname},
+        };
+    }
+
+    my $template = Template->new( {
+        INCLUDE_PATH => '/templates/components/linux',
+        INTERPOLATE  => 0,
+        POST_CHOMP   => 0,
+        EVAL_PERL    => 1,
+        RELATIVE     => 1,
+    } );
+
+    $template->process('hosts.tt', { hosts => \@data }, '/etc/hosts');
 }
 
 sub _generateBootConf {
