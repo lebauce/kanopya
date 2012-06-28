@@ -41,21 +41,32 @@ var PolicyForm = (function() {
                     var element = elem;
                     var that = this;
                     add_button.bind('click', function() {
-                        that.newElement(element);
+                        var added = that.newElement(element);
+
+                        var remove_button = $("<input type=\"button\"/>", { html : 'Remove', class : 'wizard-ignore' });
+                        var container = that.findContainer(that.fields[elem].step);
+                        var linecontainer = $("<tr>").css('position', 'relative');
+
+                        $("<td>", { align : 'left' }).append($('<hr>')).appendTo(linecontainer);
+                        $("<td>", { align : 'right' }).append(remove_button).appendTo(linecontainer);
+
+                        container.append(linecontainer);
+                        remove_button.val('Remove');
+                        remove_button.bind('click', function() {
+                            if (! added instanceof Array) {
+                                added = [added];
+                            }
+                            for (var to_remove in added) {
+                                added[to_remove].remove();
+                            }
+                            linecontainer.remove();
+                        });
+
                         $(that.content).dialog('option', 'position', $(that.content).dialog('option', 'position'));
                     });
 
                     this.findContainer(this.fields[elem].step).append(add_button);
                     add_button.val(this.fields[elem].add_label);
-                }
-
-                // If we have values for a set element, add the elements with
-                // values.
-                if (this.values[elem]) {
-                    // this.newSeparator(this.fields[elem].step);
-                    for (var set_element in this.values[elem]) {
-                        this.newElement(elem, this.values[elem][set_element]);
-                    }
                 }
             } else if (! this.fields[elem].composite) {
                 this.newElement(elem, this.values[elem] || this.fields[elem].value);
@@ -73,9 +84,10 @@ var PolicyForm = (function() {
         }
 
         if (this.fields[elem].type === 'select' && !this.fields[elem].options) {
-            this.newDropdownElement(elem, undefined, value);
+            return this.newDropdownElement(elem, undefined, value);
 
         } else if (this.fields[elem].type === 'composite') {
+            var inserted = new Array();
             for (var composite_field in this.fields) {
                 if (this.fields[composite_field].composite === elem) {
                     this.fields[composite_field].step = this.fields[elem].step;
@@ -85,11 +97,12 @@ var PolicyForm = (function() {
                     if (value) {
                         composite_value = value[composite_field];
                     }
-                    this.newElement(composite_field, composite_value);
+                    inserted.push(this.newElement(composite_field, composite_value));
                 }
             }
+            return inserted;
         } else {
-            this.newFormElement(elem, value);
+            return this.newFormElement(elem, value);
         }
     }
 
