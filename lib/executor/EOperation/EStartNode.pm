@@ -262,9 +262,11 @@ sub _generateNetConf {
 
         # Only add non pxe iface to /etc/network/interfaces
         if ($iface->hasIp and not $iface->getAttr(name => 'iface_pxe')) {
-            push @net_ifaces, { name    => $iface->getAttr(name => 'iface_name'),
+            my $pool = $iface->getPoolip;
+            push @net_ifaces, { name    => $iface->iface_name,
                                 address => $iface->getIPAddr,
-                                netmask => $iface->getNetMask };
+                                netmask => $pool->poolip_netmask,
+                                gateway => $pool->poolip_gateway };
         }
 
         # Apply VLAN's
