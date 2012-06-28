@@ -218,7 +218,7 @@ function create_grid(options) {
         altRows: true,
         rowNum: options.rowNum || 10,
         rowList: options.rowList || undefined,
-
+        autoencode: true,
 //        onSelectRow: function (id) {
 //            var row_data = $('#' + options.grid_id).getRowData(id);
 //            show_detail(options.grid_id, id, row_data);

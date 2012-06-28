@@ -73,6 +73,7 @@ function Users() {
                 sortorder: 'desc',
                 viewrecords: true,
                 gridview: true,
+                autoencode: true,
             }); 
 
             $.getJSON('/api/profile', {}, function(data) { 
@@ -191,6 +192,7 @@ function Users() {
             sortorder: 'desc',
             viewrecords: true,
             gridview: true,
+            autoencode: true,
         }); 
 
         $.ajax({
