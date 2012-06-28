@@ -33,45 +33,46 @@ my $log = get_logger("monitor");
 sub new {
     my $class = shift;
     my %args = @_;
-    
+
     my $self = $class->SUPER::new( %args );
-    
+
     return $self;
 }
 
 
 =head2 getData
-    
+
     Class : Public
-    
+
     Desc :     Retrieve from storage (rrd) values for required var (ds).
             For each ds can compute mean value on a time laps or percent value, using all values for the ds collected during the time laps.
-    
+
     Args :
         rrd_name: string: the name of the rrd where data are stored.
         time_laps: int: time laps to consider.
         (optionnal) required_ds: array ref: list of ds name to retrieve. If not defined, get all ds. WARNING: don't use it if 'percent'.
         (optionnal) percent: if defined compute percent else compute mean for each ds. See 'max_def'.
         (optionnal) max_def: array: list of ds name to add to obtain max value (used to compute percent). If not defined, use all ds.
-    
+
     Return : A hash ( ds_name => computed_value )
-    
+
 =cut
 
 #TODO gérer le cas où les ds dans max_def ne sont pas toutes dans les required_ds
 sub getData {
     my $self = shift;
     my %args = @_;
-    
+
     my $rrd_name = $args{rrd_name};
 
+    $log->info('REQUESTED RRD: '.Dumper $rrd_name);
     # rrd constructor
     my $rrd = $self->getRRD(file => "$rrd_name.rrd" );
 
     # Start fetching values
     my $start = defined $args{start} ? $args{start} : time() - $args{time_laps};
     my $end;
-       
+
     if ((not defined $args{end}) && $args{time_laps}) {
         $end = $start + $args{time_laps};
     }
@@ -83,14 +84,15 @@ sub getData {
     # retrieve array of ds name ordered like in rrd (db column)
     # WARN we directly access class hash, breaking encapsulation
     my $ds_names = $rrd->{fetch_ds_names};
-    
-    my @max_def = $args{max_def} ? @{ $args{max_def} } : @$ds_names; 
+
+    $log->info('DS NAMES FOR REQUESTED RRD : '.Dumper $ds_names);
+    my @max_def = $args{max_def} ? @{ $args{max_def} } : @$ds_names;
     my %res_data = ( "_MAX_" => [] );
 
-    ############################################# 
+    #############################################
     # Build ds index map : (ds_name => rrd_idx) #
     #############################################
-    
+
     my $required_ds = $args{required_ds} || $ds_names;
     my %required_ds_idx = ();
     my @max_idx = ();
@@ -99,19 +101,19 @@ sub getData {
         my $ds_idx = 0;
         ++$ds_idx until ( ($ds_idx == scalar @$ds_names) or ($ds_names->[$ds_idx] eq $ds_name) );
         if ($ds_idx == scalar @$ds_names) {
-            die "Invalid ds_name for this RRD : '$args{ds_name}'";    
+            die "Invalid ds_name for this RRD : '$args{ds_name}'";
         }
         $required_ds_idx{ $ds_name } = $ds_idx;
         $res_data{ $ds_name } = [];
-        
+
         if ( 0 < grep { $_ eq $ds_name } @max_def ) {
             push @max_idx, $ds_idx;
         }
-    } 
-    
+    }
+
     # Check error in max definition
     if ( scalar @max_idx != scalar @max_def) {
-        $log->warn("bad ds name in max definition: [ ", join(", ", @max_def), " ]"); 
+        $log->warn("bad ds name in max definition: [ ", join(", ", @max_def), " ]");
     }
 
     ################################################
@@ -135,7 +137,7 @@ sub getData {
     ######################################################
     # Build resulting hash : ( ds_name => f(v1,v2,...) ) #
     ######################################################
-    
+
     my %res = ();
     my $max = sum @{ $res_data{"_MAX_"} };
     delete $res_data{"_MAX_"};
@@ -161,31 +163,31 @@ sub getData {
 sub getHostData {
     my $self = shift;
     my %args = @_;
-    
+
     my $rrd_name = $self->rrdName( set_name => $args{set}, host_name => $args{host} );
-    
+
     my $set_def = $self->getSetDesc(set_label => $args{set});
     my @max_def;
     if ( $set_def->{max} ) { @max_def = split( /\+/, $set_def->{max} ) };
     if (defined $args{percent} && 0 == scalar @max_def ) {
         $log->warn("No max definition to compute percent for '$args{set}'");
     }
-    
+
     my %host_data = $self->getData(rrd_name => $rrd_name,
                                    time_laps => $args{time_laps},
                                    max_def => (scalar @max_def) ? \@max_def : undef,
                                    percent => $args{percent} );
-    
+
     return \%host_data;
 }
 
 sub getClusterData {
     my $self = shift;
     my %args = @_;
-    
+
     my $rrd_name = $self->rrdName( set_name => $args{set}, host_name => $args{cluster} );
-    
-    # Unable the monitoring of _total based and stay compatible with existant code 
+
+    # Unable the monitoring of _total based and stay compatible with existant code
     if(exists $args{aggregation} and defined $args{aggregation}){
         if($args{aggregation} eq 'total'){
             $rrd_name .= "_total";
@@ -200,21 +202,21 @@ sub getClusterData {
     else{
         $rrd_name .= "_raw";
     }
-    
+
     my $set_def = $self->getSetDesc(set_label => $args{set});
     my @max_def;
     if ( $set_def->{max} ) { @max_def = split( /\+/, $set_def->{max} ) };
     if (defined $args{percent} && 0 == scalar @max_def ) {
         $log->warn("No max definition to compute percent for '$args{set}'");
     }
-    
+
     my %cluster_data = $self->getData(rrd_name  => $rrd_name,
                                       start     => $args{start},
                                       end       => $args{end},
                                       time_laps => $args{time_laps},
                                       max_def   => (scalar @max_def) ? \@max_def : undef,
                                       percent   => $args{percent} );
-    
+
     return \%cluster_data;
 }
 

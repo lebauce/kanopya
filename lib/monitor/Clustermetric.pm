@@ -58,12 +58,12 @@ sub compute{
     General::checkParams args => \%args, required => [
         'values',
     ];
-    
+
     my $values  = $args{values};
     #my $stat = Statistics::Descriptive::Full->new();
     my $stat = DescriptiveStatisticsFunction->new();
     $stat->add_data($values);
-    
+
     my $funcname = $self->getAttr(name => 'clustermetric_statistics_function_name');
     my $mean = $stat->$funcname();
     return $mean;

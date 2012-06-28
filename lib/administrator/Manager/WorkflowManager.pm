@@ -62,7 +62,7 @@ sub methods {
 
 =cut
 
-sub checkWorkflowManagerParams { 
+sub checkWorkflowManagerParams {
     throw Kanopya::Exception::NotImplemented();
 }
 
@@ -76,7 +76,7 @@ sub checkWorkflowManagerParams {
     Return: created workflow (object)
 =cut
 
-sub createWorkflow { 
+sub createWorkflow {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'workflow_name' ]);
@@ -91,7 +91,7 @@ sub createWorkflow {
     if (defined $args{params}) {
         %workflow_def_params = %{$args{params}};
 
-        if ((!exists $workflow_def_params{automatic}) && (!exists $workflow_def_params{specific})) { 
+        if ((!exists $workflow_def_params{automatic}) && (!exists $workflow_def_params{specific})) {
             #sort the specific params from the automatic params
             my $params = $self->_getSortedParams(
                              params => \%workflow_def_params
@@ -106,7 +106,7 @@ sub createWorkflow {
                         workflow_def_name => $workflow_def_name,
                         params            => \%workflow_def_params,
                     );
-    } else { 
+    } else {
         $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name);
     }
 
@@ -124,8 +124,8 @@ sub createWorkflow {
 =head2 associateWorkflow
     Desc: create a new instance of WorkflowDef that has defined specific
           parameters. This instance will be used for future runs
-    
-    Args: $new_workflow_name (string), 
+
+    Args: $new_workflow_name (string),
           $origin_workflow_def_id,
           \%specific_params,
           $rule_id
@@ -133,7 +133,7 @@ sub createWorkflow {
     Return: created workflow object (get by calling createWorkflow())
 =cut
 
-sub associateWorkflow { 
+sub associateWorkflow {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'new_workflow_name',
@@ -158,17 +158,18 @@ sub associateWorkflow {
 
     #TODO fix algo issue: use only grep on @$workflow_defs to match good name
     #use: check that the to-associate workflow is a managed one
+
 #    foreach my $workflow_def (@$workflow_defs) {
 #        if((grep {$_->getAttr(name => 'workflow_def_name')
 #        eq $origin_workflow_name} $workflow_def) == 1) {
 #            $existing_origin_workflows++;
-#        } 
+#        }
 #    }
 #    if ($existing_origin_workflows == 0) {
 #        my $errmsg = 'Unknown workflow_def name '.$origin_workflow_name;
 #        throw Kanopya::Exception(error => $errmsg);
 #    }
-    
+
     #get the original workflow's params and replace undefined specific params
     #with the now defined specific params
     my $workflow_params = $self->_getAllParams(
@@ -187,8 +188,8 @@ sub associateWorkflow {
 
     #Then we finally link the workflow to the rule
     $self->_linkWorkflowToRule(
-               workflow => $workflow, 
-               rule_id  => $args{rule_id}, 
+               workflow => $workflow,
+               rule_id  => $args{rule_id},
                scope_id => $workflow_params->{internal}->{scope_id}
            );
 
@@ -200,14 +201,14 @@ sub associateWorkflow {
 
     Args: $workflow (object), $rule_id, $scope_id
 
-    Return: 
+    Return:
 =cut
 
 sub _linkWorkflowToRule {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'workflow', 'rule_id', 'scope_id' ]);
-   
+
     my $workflow = $args{workflow};
     my $rule_id  = $args{rule_id};
     my $scope_id = $args{scope_id};
@@ -216,7 +217,7 @@ sub _linkWorkflowToRule {
     #get workflow def id
     my $workflow_def_id = $workflow->getAttr(name => 'workflow_def_id');
 
-    #we get the scope name  
+    #we get the scope name
     my $scope      = Scope->find(hash => {scope_id => $scope_id});
     my $scope_name = $scope->getAttr(name => 'scope_name');
 
@@ -233,11 +234,11 @@ sub _linkWorkflowToRule {
 }
 
 =head2 runWorkflow
-    Desc: run a workflow 
+    Desc: run a workflow
 
     Args:
 
-    Return: 
+    Return:
 =cut
 
 sub runWorkflow {
@@ -273,7 +274,7 @@ sub runWorkflow {
 
     #replace the undefined automatic params with the defined ones
     $all_params->{automatic} = $automatic_values;
-   
+
     #prepare final workflow params hash
     my $workflow_params = $self->_defineFinalParams(
                               all_params    => $all_params,
@@ -301,8 +302,8 @@ sub getWorkflowDefs {
     my @manager_workflow_defs = WorkflowDefManager->search (
                             hash => {manager_id => $self->getId}
                         );
-   
-    #then we create a list of workflow_def from the workflow_def_id accessible 
+
+    #then we create a list of workflow_def from the workflow_def_id accessible
     #through the previously gathered list of objects
     my @workflow_defs;
 
@@ -349,7 +350,7 @@ sub getWorkflowDef {
 
 sub _getAutomaticParams {
     my ($self,%args) = @_;
-    
+
     General::checkParams(args => \%args, required => ['data_params','scope_id']);
 
     my $data_params          = $args{data_params};
@@ -375,7 +376,7 @@ sub _getAutomaticParams {
 
     Args: $workflow_def_id
 
-    Return: \%params ($params{automatic}, $params{specific}) 
+    Return: \%params ($params{automatic}, $params{specific})
 =cut
 
 sub getParams {
@@ -387,10 +388,10 @@ sub getParams {
     my %params;
     $params{automatic} = undef;
     $params{specific}  = undef;
-    
+
     #retrieve all workflow params
     my $all_params = $self->_getAllParams(workflow_def_id => $workflow_def_id);
-    
+
     $params{automatic} = $all_params->{automatic};
     $params{specific}  = $all_params->{specific};
 
@@ -398,13 +399,13 @@ sub getParams {
 }
 
 =head2 _getSortedParams
-    Desc: With the given params for a workflow def, extract the "data" params, 
+    Desc: With the given params for a workflow def, extract the "data" params,
     and then differenciate between them the automatic and specific
     parameters.
 
     Args: \%params
 
-    Return: \%sorted_params ($sorted_params{automatic}, $sorted_params{specific}) 
+    Return: \%sorted_params ($sorted_params{automatic}, $sorted_params{specific})
 =cut
 
 sub _getSortedParams {
@@ -412,7 +413,7 @@ sub _getSortedParams {
 
     General::checkParams(args => \%args, required => [ 'params' ]);
 
-    #get all workflow params        
+    #get all workflow params
     my $all_params         = $args{params};
 
     my $brut_data_params   = $all_params->{data};
@@ -420,7 +421,7 @@ sub _getSortedParams {
     #extract the parameter from the raw data given as parameter to the workflow
     my $prepared_data_params = $self->_prepareParams(
                                 data_params => $brut_data_params
-                             );  
+                             );
     my $scope_id           = $all_params->{internal}->{scope_id};
 
     #now differenciate automatic params from specific ones
@@ -432,7 +433,7 @@ sub _getSortedParams {
     $sorted_params{automatic} = $self->_getAutomaticParams(
                                     data_params => $prepared_data_params,
                                     scope_id    => $scope_id
-                                );  
+                                );
     #get specific params
     $sorted_params{specific} = $self->getSpecificParams(
                                 data_params => $prepared_data_params,
@@ -487,14 +488,14 @@ sub getWorkflowDefsIds() {
 
     Args: workflow_def_id
 
-    Return: \%all_params 
+    Return: \%all_params
 =cut
 
 sub _getAllParams {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'workflow_def_id' ]);
-    
+
     my $workflow_def_id = $args{workflow_def_id};
 
     #get the param preset id from the workflow def
@@ -505,11 +506,11 @@ sub _getAllParams {
 }
 
 =head2 getScopeParameterNameList
-    Desc: Get a params list for a scope 
+    Desc: Get a params list for a scope
 
     Args: scope_id
 
-    Return: \@scope_params 
+    Return: \@scope_params
 =cut
 
 sub getScopeParameterNameList {
@@ -520,19 +521,19 @@ sub getScopeParameterNameList {
     my @scopeParameterList = ScopeParameter->search(
                                 hash=>{scope_id => $args{scope_id}}
                              );
-    my @scope_params = map {$_->getAttr(name => 'scope_parameter_name')} 
-                            @scopeParameterList; 
+    my @scope_params = map {$_->getAttr(name => 'scope_parameter_name')}
+                            @scopeParameterList;
 
     return \@scope_params;
 }
 
 =head2 _prepareParams
     Desc: Retrieve the list of effective parameters desired by the user in the
-          final file 
+          final file
 
     Args: \%brut_data_params
- 
-    Return: \%prepared_data_params 
+
+    Return: \%prepared_data_params
 =cut
 
 sub _prepareParams { };

@@ -1,6 +1,6 @@
 package Monitoring;
 
-use Dancer ':syntax'; 
+use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 use Data::Dumper;
 
@@ -16,7 +16,7 @@ prefix '/monitoring';
 
 =head2 ajax '/extclusters/:extclusterid/monitoring/clustersview'
 
-    Desc: Get the values corresponding to the selected combination for the currently monitored cluster, 
+    Desc: Get the values corresponding to the selected combination for the currently monitored cluster,
     return to the monitor.js an 2D array containing the timestamped values for the combination, plus a start time and a stop time
 
 =cut
@@ -27,7 +27,7 @@ ajax '/serviceprovider/:spid/clustersview' => sub {
     my $start = params->{'start'};
     my $start_timestamp;
     my $stop = params->{'stop'};
-    my $stop_timestamp; 
+    my $stop_timestamp;
     my $date_parser = DateTime::Format::Strptime->new( pattern => '%m-%d-%Y %H:%M' );
 
     content_type('application/json');
@@ -36,7 +36,7 @@ ajax '/serviceprovider/:spid/clustersview' => sub {
     if ($start eq '') {
         $start = DateTime->now->set_time_zone('local');
         $start->subtract( days => 1 );
-        $start_timestamp = $start->epoch(); 
+        $start_timestamp = $start->epoch();
         $start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
     } else {
         my $start_dt = $date_parser->parse_datetime($start);
@@ -46,7 +46,7 @@ ajax '/serviceprovider/:spid/clustersview' => sub {
 
     if ($stop eq '') {
         $stop = DateTime->now->set_time_zone('local');
-        $stop_timestamp = $stop->epoch(); 
+        $stop_timestamp = $stop->epoch();
         $stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
     } else {
         my $stop_dt = $date_parser->parse_datetime($stop);
@@ -67,10 +67,10 @@ ajax '/serviceprovider/:spid/clustersview' => sub {
 
 =head2 ajax '/serviceprovider/:spid/nodesview/bargraph'
 
-    Desc: Get the values corresponding to the selected nodemetric combination for the currently monitored cluster, 
+    Desc: Get the values corresponding to the selected nodemetric combination for the currently monitored cluster,
     return to the monitor.js an array containing the nodes names for the combination, and another one containing the values for the nodes, plus the label of the node combination unit
 
-=cut  
+=cut
 
 get '/serviceprovider/:spid/nodesview/bargraph' => sub {
     my $cluster_id    = params->{spid} || 0;
@@ -92,13 +92,13 @@ get '/serviceprovider/:spid/nodesview/bargraph' => sub {
 =head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram'
 
     Desc: Create a frequency distribution from the values computed to the selected nodemetric combination
-    return to the monitor.js a scalar containing the quantity of nodes, an array containing the number of nodes per partitions and another array containing the partitions (interval) of values 
+    return to the monitor.js a scalar containing the quantity of nodes, an array containing the number of nodes per partitions and another array containing the partitions (interval) of values
 
-=cut  
+=cut
 
 ajax '/serviceprovider/:spid/nodesview/histogram' => sub {
     my $cluster_id    = params->{spid} || 0;
-    my $nodemetric_combination_id = params->{'id'}; 
+    my $nodemetric_combination_id = params->{'id'};
     my $part_number = params->{'pn'};
 
     content_type('application/json');
@@ -109,7 +109,7 @@ ajax '/serviceprovider/:spid/nodesview/histogram' => sub {
     if ($compute_result->{'error'}) {
         return to_json {error => $compute_result->{'error'}};
     }
-    
+
     #we define the number of nodes
     my $nodes_quantity = scalar(@{$compute_result->{'nodes'}}) + scalar(@{$compute_result->{'undef'}});
     my $values_number = scalar(@{$compute_result->{'values'}});
@@ -207,7 +207,7 @@ sub _computeClustermetricCombination () {
 
 =head2 sub _computeNodemetricCombination
 
-    Desc: Compute the nodemetric combination for each node of the cluster and return a reference to a hash containing references to 2 arrays, the first containing the node list, the second containing the corresponding values 
+    Desc: Compute the nodemetric combination for each node of the cluster and return a reference to a hash containing references to 2 arrays, the first containing the node list, the second containing the corresponding values
     return: \%rep;
 
 =cut
@@ -222,11 +222,11 @@ sub _computeNodemetricCombination {
     my @indicator_oids;
     $log->debug('[Cluster id '.$cluster_id.']: The requested combination: '.$nodemetric_combination_id.' is built on the top of the following indicators: '."@indicator_ids");
 
-    my $nodes_metrics; 
+    my $nodes_metrics;
     my $error;
     my %nodeEvals;
     my %rep;
-    
+
     # we retrieve the nodemetric values
     eval {
         my %indicators;
@@ -287,7 +287,7 @@ sub _computeNodemetricCombination {
         my @sorted_nodes_values =  sort { $b->{value} <=> $a->{value} } @nodes_values_to_sort;
         # we split the array into 2 distincts one, that will be returned to the monitor.js
         my @nodes = map { $_->{node} } @sorted_nodes_values;
-        my @values = map { $_->{value} } @sorted_nodes_values;  
+        my @values = map { $_->{value} } @sorted_nodes_values;
 
         $rep{'nodes'} = \@nodes;
         $rep{'values'} = \@values;

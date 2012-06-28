@@ -61,9 +61,9 @@ sub methods {
 sub new {
     my $class = shift;
     my %args = @_;
-    
+
     my $formula = (\%args)->{aggregate_combination_formula};
-    
+
     _verify($formula);
     my $self = $class->SUPER::new(%args);
     if(!defined $args{aggregate_combination_label} || $args{aggregate_combination_label} eq ''){
@@ -76,7 +76,7 @@ sub new {
 sub _verify {
 
     my $formula = shift;
-    
+
     my @array = split(/(id\d+)/,$formula);
 
     for my $element (@array) {
@@ -108,23 +108,23 @@ sub toString {
         $depth = -1;
     }
     
-    if($depth == 0) {
+    if ($depth == 0) {
         return $self->getAttr(name => 'aggregate_combination_label');
     }
-    else{
+    else {
         my $formula = $self->getAttr(name => 'aggregate_combination_formula');
 
-        #Split aggregate_rule id from $formula
-        my @array = split(/(id\d+)/,$formula);
-        #replace each rule id by its evaluation
+        # Split aggregate_rule id from $formula
+        my @array = split(/(id\d+)/, $formula);
+        # replace each rule id by its evaluation
         for my $element (@array) {
             if( $element =~ m/id\d+/)
             {
-                #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
+                # Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
                 $element = Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1);
             }
         }
-        return List::Util::reduce {$a.$b} @array;
+        return List::Util::reduce { $a . $b } @array;
     }
 }
 
@@ -133,7 +133,7 @@ sub computeValues{
     my %args = @_;
 
     General::checkParams args => \%args, required => ['start_time','stop_time'];
-    
+
     my @cm_ids = $self->dependantClusterMetricIds();
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
@@ -145,9 +145,9 @@ sub computeValues{
 
 sub computeLastValue{
     my $self = shift;
-    
+
     my $formula = $self->getAttr(name => 'aggregate_combination_formula');
-    
+
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
@@ -161,11 +161,11 @@ sub computeLastValue{
             }
         }
      }
-     
+
     my $res = undef;
-    my $arrayString = '$res = '."@array"; 
-    
-    
+    my $arrayString = '$res = '."@array";
+
+
     #Evaluate the logic formula
     #print 'Evaluate combination :'.($self->toString())."\n";
     #$log->info('Evaluate combination :'.($self->toString()));
@@ -178,21 +178,21 @@ sub computeLastValue{
 sub compute{
     my $self = shift;
     my %args = @_;
- 
+
     my @requiredArgs = $self->dependantClusterMetricIds();
-    
+
     checkMissingParams(args => \%args, required => \@requiredArgs);
-    
+
     foreach my $cm_id (@requiredArgs){
         if( ! defined $args{$cm_id}){
             return undef;
         }
     }
-    
+
     my $formula = $self->getAttr(name => 'aggregate_combination_formula');
-    
+
     # print Dumper \%args;
-    
+
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
@@ -205,10 +205,10 @@ sub compute{
             }
         }
      }
-     
+
     my $res = undef;
-    my $arrayString = '$res = '."@array"; 
-    
+    my $arrayString = '$res = '."@array";
+
     #Evaluate the logic formula
     #print 'Evaluate combination :'.($self->toString())."\n";
     #$log->info('Evaluate combination :'.($self->toString()));
@@ -222,7 +222,7 @@ sub compute{
 #   my @ids = dependantClusterMetricIds();
 #   my @rep;
 #   foreach my $id (@ids){
-#       push @rep,Clustermetric->get('id' => $id); 
+#       push @rep,Clustermetric->get('id' => $id);
 #   }
 #   return @rep;
 #};
@@ -231,12 +231,12 @@ sub compute{
 sub dependantClusterMetricIds() {
     my $self = shift;
     my $formula = $self->getAttr(name => 'aggregate_combination_formula');
-    
+
     my @clusterMetricsList;
-    
+
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
-    
+
     #replace each rule id by its evaluation
     for my $element (@array) {
         if( $element =~ m/id\d+/)
@@ -247,7 +247,7 @@ sub dependantClusterMetricIds() {
      return @clusterMetricsList;
 }
 
-# Remove duplicate from an array, return array without doublons 
+# Remove duplicate from an array, return array without doublons
 sub uniq {
     return keys %{{ map { $_ => 1 } @_ }};
 }
@@ -255,24 +255,24 @@ sub uniq {
 sub computeFromArrays{
     my $self = shift;
     my %args = @_;
-    
+
     # print Dumper \%args;
-    
+
     my @requiredArgs = $self->dependantClusterMetricIds();
-    
+
 #    print "******* @requiredArgs \n";
 #    print Dumper \%args;
-    
+
     General::checkParams args => \%args, required => \@requiredArgs;
-    
+
     #Merge all the timestamps keys in one arrays
-    
+
     my @timestamps;
     foreach my $cm_id (@requiredArgs){
        @timestamps = (@timestamps, (keys %{$args{$cm_id}}));
     }
     @timestamps = uniq @timestamps;
-    
+
     # print " @timestamps \n";
     my %rep;
     foreach my $timestamp (@timestamps){
@@ -285,19 +285,19 @@ sub computeFromArrays{
     }
     # print Dumper \%rep;
     return %rep;
-} 
+}
 
 sub checkMissingParams {
     my %args = @_;
-    
+
     my $caller_args = $args{args};
     my $required = $args{required};
     my $caller_sub_name = (caller(1))[3];
-        
+
     for my $param (@$required) {
         if (! exists $caller_args->{$param} ) {
             my $errmsg = "$caller_sub_name needs a '$param' named argument!";
-            
+
             # Log in general logger
             # TODO log in the logger corresponding to caller package;
             $log->error($errmsg);
@@ -310,7 +310,7 @@ sub checkMissingParams {
 sub useClusterMetric {
     my $self = shift;
     my $clustermetric_id = shift;
-    
+
     my @dep_cm = $self->dependantClusterMetricIds();
     my $rep = any {$_ eq $clustermetric_id} @dep_cm;
     return $rep;
@@ -319,14 +319,14 @@ sub useClusterMetric {
 sub getAllTheCombinationsRelativeToAClusterId{
     my $class      = shift;
     my $cluster_id = shift;
-    
+
     my @combinations = $class->search(hash => {});
     my @rep;
-    
+
     COMBINATION:
     foreach my $combination (@combinations) {
         my @dependantClusterMetricIds = $combination->dependantClusterMetricIds();
-        
+
         foreach my $cm_id (@dependantClusterMetricIds){
             my $clustermetric = Clustermetric->get('id' => $cm_id);
             if($clustermetric->getAttr(name => 'clustermetric_service_provider_id') eq $cluster_id)
@@ -336,8 +336,8 @@ sub getAllTheCombinationsRelativeToAClusterId{
             }
         }
     }
-    
-    return @rep; 
+
+    return @rep;
 }
 
 1;

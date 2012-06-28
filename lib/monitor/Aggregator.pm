@@ -50,7 +50,7 @@ sub new {
 =head2 _contructRetrieverOutput
 
     Desc : This function build the variable to be given to a Data Collector
-    args: cluster_id, 
+    args: cluster_id,
     return : \%rep (containing the indicator list and the timespan requested)
 
 =cut
@@ -74,7 +74,7 @@ sub _contructRetrieverOutput {
         $indicators->{$indicator_oid} = $clustermetric_indicator;
 
         if (! defined $time_span) {
-            $time_span = $clustermetric_time_span
+            $time_span = $clustermetric_time_span;
         } else {
             if ($time_span != $clustermetric_time_span) {
                 $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
@@ -97,7 +97,7 @@ sub _contructRetrieverOutput {
            provider that has a collector manager,  it build a valid input,
            retrieve the data, check them, and then store them in a TimeDB after
            having compute the clustermetric combinations.
-    args: service_provider_id, 
+    args: service_provider_id,
     return : \%rep (containing the indicator list and the timespan requested)
 
 =cut
@@ -176,16 +176,16 @@ sub _checkNodesMetrics{
         }
     }
 
-    return 1; 
+    return 1;
 }
 
 =head2 _computeCombinationAndFeedTimeDB
 
     Class : Public
 
-    Desc : Parse the hash table received from Retriever (input), compute 
+    Desc : Parse the hash table received from Retriever (input), compute
     clustermetric values and store them in DB
-    
+
     Args : values : hash table from the Retriever
 
 =cut
@@ -209,7 +209,7 @@ sub _computeCombinationAndFeedTimeDB {
     for my $clustermetric (@clustermetrics) {
 
         # Array that will store all the values needed to compute $clustermetric val
-        my @dataStored = (); 
+        my @dataStored = ();
 
         # Loop on all the host_name of the $clustermetric
         for my $host_name (keys %$values) {
@@ -249,8 +249,8 @@ sub _computeCombinationAndFeedTimeDB {
 
     Class : Public
 
-    Desc : Retrieve indicator values for all the clustermetrics, compute the 
-    aggregation statistics function and store them in TimeDb 
+    Desc : Retrieve indicator values for all the clustermetrics, compute the
+    aggregation statistics function and store them in TimeDb
     every time_step (configuration)
 
 =cut
@@ -259,8 +259,8 @@ sub run {
     my $self = shift;
     my $running = shift;
 
-    $self->{_admin}->addMessage(from    => 'Aggregator', 
-                                level   => 'info', 
+    $self->{_admin}->addMessage(from    => 'Aggregator',
+                                level   => 'info',
                                 content => "Kanopya Aggregator started."
     );
 
@@ -278,8 +278,8 @@ sub run {
     }
 
     $self->{_admin}->addMessage(
-        from    => 'Aggregator', 
-        level   => 'warning', 
+        from    => 'Aggregator',
+        level   => 'warning',
         content => "Kanopya Aggregator stopped"
     );
 }
