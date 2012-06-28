@@ -25,6 +25,7 @@ use XML::Simple;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
+use File::Copy;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -598,17 +599,23 @@ sub _generateVmTemplate {
         units => 'M'
     );
 
+    my $tftp_conf = $self->{config}->{tftp}->{directory};
     my $cluster = Entity->get(id => $args{host}->getClusterId());
-    my $tmp = $cluster->getManagerParameters(manager_type => 'disk_manager');
-    my %repo = $self->_getEntity()->getImageRepository(container_access_id => $tmp->{container_access_id});
-    my $repository_name = $repo{repository_name};
-    my $repository_path = $self->_getEntity()->getAttr(name => 'image_repository_path');
-    $repository_path .= '/' . $repository_name;
-    my $image = $args{host}->getNodeSystemimage();
-    my $image_name = $image->getAttr(name => 'systemimage_name').'.img';
 
+    my $kernel = Entity->get(id => $cluster->getAttr(name => "kernel_id"));
+    my $kernel_version = $kernel->getAttr(name => "kernel_version");
+
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
+    my $image = $args{host}->getNodeSystemimage();
+    my $image_name = $image->getAttr(name => 'systemimage_name') . '.img';
     my $hostname = $args{host}->getAttr(name => 'host_hostname');
-    my $path = $repository_path . '/' . $hostname;
+
+    my %repo = $self->_getEntity()->getImageRepository(
+                   container_access_id => $disk_params->{container_access_id}
+               );
+
+    my $repository_path = $self->_getEntity()->getAttr(name => 'image_repository_path') .
+                          '/' . $repo{repository_name};
 
     my $interfaces = [];
     my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
@@ -627,17 +634,20 @@ sub _generateVmTemplate {
         };
     }
 
+    my $kernel_filename = 'vmlinuz-' . $kernel_version;
+    my $initrd_filename = 'initrd_' . $kernel_version;
+
     my $data = {
         name            => $hostname,
         memory          => $ram,
-        cpu             => $args{host}->getAttr(name => 'host_core'),
-        kernelpath      => $repository_path . '/vmlinuz-3.2.6-xenvm',
-        initrdpath      => $repository_path . '/initrd.img-3.2.6-xenvm',
+        cpu             => $args{host}->host_core,
+        kernelpath      => $repository_path . '/' . $kernel_filename,
+        initrdpath      => $repository_path . '/' . $initrd_filename,
         imagepath       => $repository_path . '/' . $image_name,
-        bridge_iface    => ($args{hypervisor}->getIfaces(role => "vms"))[0]->getAttr(name => "iface_name"),
-        hypervisor_type => $self->_getEntity->getAttr(name => "hypervisor"),
-        hypervisor_name => $args{hypervisor}->getAttr(name => "host_hostname"),
-        interfaces      => $interfaces
+        bridge_iface    => ($args{hypervisor}->getIfaces(role => "vms"))[0]->iface_name,
+        hypervisor_type => $self->_getEntity->hypervisor,
+        hypervisor_name => $args{hypervisor}->host_hostname,
+        interfaces      => $interfaces,
     };
 
     my $file = $self->generateNodeFile(
@@ -653,6 +663,31 @@ sub _generateVmTemplate {
         src  => $file,
         dest => '/tmp'
     );
+
+    # If the kernel and the initramfs are not present in the
+    # image repository, copy them into it
+
+    my $container_access = Entity->get(id => $disk_params->{container_access_id});
+    my $econtainer_access = EFactory::newEEntity(data => $container_access);
+    my $mountpoint = $container_access->getContainer->getMountPoint . "_copy_kernel_$kernel_version";
+
+    $econtainer_access->mount(mountpoint => $mountpoint,
+                              econtext    => $self->getExecutorEContext);
+
+    if (not -e "$mountpoint/$kernel_filename") {
+        $log->info("Copying " . $tftp_conf . "/vmlinuz-" . $kernel_version . " to " . $mountpoint);
+        copy($tftp_conf . "/vmlinuz-" . $kernel_version,
+             $mountpoint);
+    }
+
+    if (not -e "$mountpoint/$initrd_filename") {
+        $log->info("Copying " . $tftp_conf . "/initrd_" . $kernel_version . " to " . $mountpoint);
+        copy($tftp_conf . "/initrd_" . $kernel_version,
+             $mountpoint);
+    }
+
+    $econtainer_access->umount(mountpoint => $mountpoint,
+                               econtext    => $self->getExecutorEContext);
 
     return '/tmp/vm.template';
 }
