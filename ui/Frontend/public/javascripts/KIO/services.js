@@ -1,6 +1,7 @@
 
 require('modalform.js');
 require('common/service_common.js');
+require('common/formatters.js');
 
 function getAllConnectorFields() {
     return {
