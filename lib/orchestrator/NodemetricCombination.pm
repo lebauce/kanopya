@@ -72,25 +72,35 @@ sub new {
 =cut
 
 sub toString {
-    my $self = shift;
-
-    my $formula             = $self->getAttr(name => 'nodemetric_combination_formula');
-    my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
-    my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
-    my $collector           = $service_provider->getManager(manager_type => "collector_manager");
-
-    #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            #$element = $collector->getIndicator(id => substr($element,2))->indicator_name;
-            $element = $collector->getIndicator(id => substr($element,2))->toString();
-        }
+    my ($self, %args) = @_;
+    my $depth;
+    if(defined $args{depth}) {
+        $depth = $args{depth};
     }
-    return join('',@array);
+    else {
+        $depth = -1;
+    }
+    if($depth == 0) {
+        return $self->getAttr(name => 'nodemetric_combination_label');
+    }
+    else{
+        my $formula             = $self->getAttr(name => 'nodemetric_combination_formula');
+        my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
+        my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
+        my $collector           = $service_provider->getManager(manager_type => "collector_manager");
+
+        #Split aggregate_rule id from $formula
+        my @array = split(/(id\d+)/,$formula);
+        #replace each rule id by its evaluation
+        for my $element (@array) {
+            if( $element =~ m/id\d+/)
+            {
+                #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
+                $element = $collector->getIndicator(id => substr($element,2))->toString();
+            }
+        }
+        return join('',@array);
+    }
 }
 
 # C/P of homonym method of AggregateCombination
