@@ -68,6 +68,15 @@ sub getIndicators {
 sub getIndicator {
 }
 
+=head2 collectIndicator
+
+    Desc: Ensure the specified indicator is collected
+
+=cut
+
+sub collectIndicator {
+}
+
 =head2
 
     Desc: Return an information string about the collector manager 
