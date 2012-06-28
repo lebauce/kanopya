@@ -38,7 +38,7 @@ my $cluster_id = 3;
 
 # Component id are fixed, please refer to component id table
 
-my $component_id =2 
+my $component_id =2
 
 Entity::Component::Kanopya-collector->new(component_id=>$component_id, cluster_id=>$cluster_id);
 
@@ -62,6 +62,7 @@ use Kanopya::Exceptions;
 use Monitor::Retriever;
 use Indicator;
 use Indicatorset;
+use Collect;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -87,7 +88,7 @@ sub getAttrDef { return ATTR_DEF; }
 
 =head2 retrieveData
 
-    Desc: Call kanopya native monitoring API to retrieve indicators data 
+    Desc: Call kanopya native monitoring API to retrieve indicators data
 
     Args: \%indicators, \@nodelist, $time_span
 
@@ -106,11 +107,11 @@ sub retrieveData {
     my $nodelist       = $args{'nodelist'};
     my $indicators     = $args{'indicators'};
     my @sets_to_fetch;
-   
+
     foreach my $indicator (values %$indicators) {
         # We fetch the indicator set related to the indicator
         my $set       = $indicator->indicatorset->indicatorset_name;
-        
+
         # Then we check if it was already inserted into the array of sets to fetch
         my %sets = map { $_ => 1 } @sets_to_fetch;
         if (! exists($sets{$set})) {
@@ -120,7 +121,7 @@ sub retrieveData {
 
     # Now we fetch the requested RRD
     my $retriever = Monitor::Retriever->new();
-    my %monitored_values;   
+    my %monitored_values;
 
     foreach my $set (@sets_to_fetch) {
         foreach my $node (@$nodelist) {
@@ -145,13 +146,21 @@ sub retrieveData {
         }
     }
 
+    # Return values of the form :
+    # {
+    #     {hostname} => {
+    #         {oid} => {value},
+    #         ...
+    #     }
+    # }
+
     return \%res;
 }
 
 
 =head2 getIndicators
 
-    Desc: call collector manager to retrieve indicators available for the service provider 
+    Desc: call collector manager to retrieve indicators available for the service provider
     return \@indicators;
 
 =cut
@@ -178,9 +187,28 @@ sub getIndicator {
     return Indicator->get(id => $args{id});
 }
 
+=head2 collectIndicator
+
+    Desc: Start collecting the specified indicator
+
+=cut
+
+sub collectIndicator {
+    my ($self, %args) = @_;
+
+    my $indicator = Indicator->get(id => $args{indicator_id});
+
+    eval {
+        Collect->new(
+            cluster_id      => $args{service_provider_id},
+            indicatorset_id => $indicator->indicatorset_id
+        );
+    };
+}   
+        
 =head2 getCollectorType
 
-    Desc: Usefull to give information about this component 
+    Desc: Usefull to give information about this component
     return 'Native Kanopya collector tool';
 
 =cut
