@@ -122,14 +122,27 @@ sub new {
 =cut
 
 sub toString {
-    my $self = shift;
+    my ($self, %args) = @_;
+    my $depth;
+    if(defined $args{depth}) {
+        $depth = $args{depth};
+    }
+    else {
+        $depth = -1;
+    }
 
-    my $service_provider = $self->clustermetric_service_provider;
-    my $collector = $service_provider->getManager(manager_type => "collector_manager");
-    my $indicator = $collector->getIndicator(id => $self->clustermetric_indicator_id);
+    if($depth == 0) {
+        return $self->getAttr(name => 'clustermetric_label');
+    }
+    else{
 
-    return $self->clustermetric_statistics_function_name .
-           '(' . $indicator->toString() . ')';
+        my $service_provider = $self->clustermetric_service_provider;
+        my $collector = $service_provider->getManager(manager_type => "collector_manager");
+        my $indicator = $collector->getIndicator(id => $self->clustermetric_indicator_id);
+
+        return $self->clustermetric_statistics_function_name .
+               '(' . $indicator->toString() . ')';
+    }
 }
 
 1;

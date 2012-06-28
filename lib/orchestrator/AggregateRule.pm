@@ -123,19 +123,31 @@ sub _verify {
 }
 
 sub toString(){
-    my $self = shift;
-    
-    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
-    my @array = split(/(id\d+)/,$formula);
-    for my $element (@array) {
-        
-        if( $element =~ m/id(\d+)/)
-        {
-            $element = AggregateCondition->get('id'=>substr($element,2))->toString();
-        }
-     }
-     return "@array";
-     #return List::Util::reduce {$a.$b} @array;
+    my ($self, %args) = @_;
+    my $depth;
+    if(defined $args{depth}) {
+        $depth = $args{depth};
+    }
+    else {
+        $depth = -1;
+    }
+
+    if($depth == 0) {
+        return $self->getAttr(name => 'aggregate_rule_label');
+    }
+    else{
+
+       my $formula = $self->getAttr(name => 'aggregate_rule_formula');
+        my @array = split(/(id\d+)/,$formula);
+        for my $element (@array) {
+
+            if( $element =~ m/id(\d+)/)
+            {
+                $element = AggregateCondition->get('id'=>substr($element,2))->toString(depth => $depth - 1);
+            }
+         }
+         return "@array";
+    }     #return List::Util::reduce {$a.$b} @array;
 }
 
 
