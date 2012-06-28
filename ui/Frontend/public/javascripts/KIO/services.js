@@ -55,7 +55,7 @@ function createSpecServDialog(provider_id, name, first, category, elem, editid) 
         var step            = 3;
         if (category === 'DirectoryService') {
             ad_opts.callback    = function() {
-                createMonDirDialog(provider_id, 'MonitoringService', first).start();
+                createMonDirDialog(provider_id, 'Collectormanager', first).start();
             };
             step    = 2;
         }
