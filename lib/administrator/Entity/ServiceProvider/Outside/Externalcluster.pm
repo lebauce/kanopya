@@ -33,7 +33,7 @@ use AggregateCondition;
 use AggregateRule;
 use Clustermetric;
 use ScomIndicator;
-
+use Externalnode::Node;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -169,6 +169,23 @@ sub getNodeId {
     });
     
     return $node->get_column('externalnode_id');
+}
+
+
+=head2 getNodeState
+
+
+=cut
+
+sub getNodeState {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['hostname']);
+
+    my $node       = Externalnode->find(hash => {externalnode_hostname => $args{hostname}});
+    my $node_state = $node->getAttr(name => 'externalnode_state');
+
+    return $node_state;
 }
 
 sub updateNodeState {
