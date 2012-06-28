@@ -157,6 +157,7 @@ sub getConf {
         push @repositories, {
             repository_name         => $repo_row->get_column('repository_name'),
             container_access_export => $container_access->getAttr(name => 'container_access_export'),
+            container_access_id     => $repo_row->get_column('container_access_id')
         }
     }
 
