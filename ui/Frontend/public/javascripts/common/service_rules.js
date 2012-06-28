@@ -37,12 +37,28 @@ function nodemetricconditionmodal(elem_id, editid) {
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
         },
-        callback    : function() {
+        callback    : function(elem, form) {
             if (editid !== undefined) {
                 $.ajax({
                     url     : '/api/nodemetriccondition/' + editid + '/updateName',
                     type    : 'POST'
                 });
+            } else {
+                if ($(form).find('#input_create_rule').val() === 'on') {
+                    $.ajax({
+                        url     : '/api/nodemetricrule',
+                        type    : 'POST',
+                        data    : {
+                            nodemetric_rule_label               : elem.nodemetric_condition_label,
+                            nodemetric_rule_service_provider_id : elem_id,
+                            nodemetric_rule_formula             : 'id' + elem.pk,
+                            nodemetric_rule_state               : 'enabled'
+                        },
+                        success : function() {
+                            $('#service_ressources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
+                        }
+                    });
+                }
             }
             $('#service_ressources_nodemetric_conditions_' + elem_id).trigger('reloadGrid');
         }
@@ -50,6 +66,12 @@ function nodemetricconditionmodal(elem_id, editid) {
     if (editid !== undefined) {
         service_opts.id = editid;
         service_opts.fields.nodemetric_condition_label.type = 'hidden';
+    } else {
+        service_opts.fields.create_rule = {
+            type    : 'checkbox',
+            skip    : true,
+            label   : 'Create associated rule ?'
+        };
     }
     (new ModalForm(service_opts)).start();
 }
