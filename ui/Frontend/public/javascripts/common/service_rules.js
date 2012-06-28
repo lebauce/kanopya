@@ -60,7 +60,7 @@ function nodemetricconditionmodal(elem_id, editid) {
                     });
                 }
             }
-            $('#service_ressources_nodemetric_conditions_' + elem_id).trigger('reloadGrid');
+            $('#service_ressources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
         }
     };
     if (editid !== undefined) {

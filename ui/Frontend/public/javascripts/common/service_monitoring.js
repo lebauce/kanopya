@@ -51,7 +51,7 @@ function getIndicators(sp_id, ext) {
     });
 
     return indicators;
-}
+};
 
 ////////////////////////MONITORING MODALS//////////////////////////////////
 function createServiceMetric(container_id, elem_id, ext) {
@@ -82,7 +82,12 @@ function createServiceMetric(container_id, elem_id, ext) {
         clustermetric_service_provider_id   :{
             type    : 'hidden',
             value   : elem_id,  
-        }
+        },
+        createcombination  :{
+            label   : 'Create the associate combination',
+            type    : 'checkbox',
+            skip    : true,
+        },
     };
     var service_opts    = {
         title       : 'Create a Service Metric',
@@ -90,7 +95,25 @@ function createServiceMetric(container_id, elem_id, ext) {
         fields      : service_fields,
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
-        }
+        },
+        callback    : function(elem, form) {
+                $("#service_ressources_clustermetrics_"  + elem_id).trigger('reloadGrid');
+                if ($(form).find('#input_createcombination').val() === 'on') {
+                    $.ajax({
+                        url     : '/api/aggregatecombination',
+                        type    : 'POST',
+                        data    : {
+                            aggregate_combination_label               : elem.clustermetric_label,
+                            aggregate_combination_service_provider_id : elem_id,
+                            aggregate_combination_formula             : 'id' + elem.pk,
+                        },
+                        success : function() {
+                            $("#service_ressources_aggregate_combinations_" + elem_id).trigger('reloadGrid');
+                        }
+                    });
+                }
+            
+        }      
     };
 
     var button = $("<button>", {html : 'Add a service metric'});
@@ -274,7 +297,7 @@ function createNodemetricCombination(container_id, elem_id, ext) {
     $('#' + container_id).append(button);
 };
 
-function loadServicesMonitoring (container_id, elem_id, ext) {
+function loadServicesMonitoring(container_id, elem_id, ext) {
 
     var container   = $("#" + container_id);
 
@@ -426,4 +449,4 @@ function loadServicesMonitoring (container_id, elem_id, ext) {
             ui.newContent.find('.ui-jqgrid-btable').jqGrid('setGridWidth', ui.newContent.width());
         }
     });
-}
+};
