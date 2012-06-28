@@ -27,6 +27,9 @@ fixed-address [% node.ip_address %];
 option domain-name-servers [% node.domain_name_server %];
 option domain-name "[% node.domain_name %]";
 option ntp-servers [% node.ntp_server %];
+[% IF subnet.gateway %]
+option routers [% subnet.gateway %];
+[% END %]
 #server-name [% server_name %];
 option host-name "[% node.hostname %]";
 #option pxelinux.configfile "pxelinux.cfg/[% node.kernel_version %].cfg";
