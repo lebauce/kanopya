@@ -387,7 +387,7 @@ sub scaleMemoryHost{
                              from    => 'Capacity Management',
                              level   => 'info',
                              content => "Scale in memory value must be strictly positive (typed : $args{memory}");
-        $log->warn("*** CANNOT SCALE RAM TO A NEGATIVE VALUE (typed : $args{memory})*** ");
+        $log->warn("*** Cannot Scale Ram to a negative value (typed : $args{memory})*** ");
     }
     elsif ($memory > 4096*1024*1024 ) { # WARNING TODO : UNHARCODE 4096 which corresponds to the maximum defined in the VM Template
             $self->{_admin}->addMessage(
@@ -395,7 +395,7 @@ sub scaleMemoryHost{
                                 level   => 'info',
                                 content => "Cannot scale to more than 4096 MB (typed : $args{memory})",
                              );
-        $log->warn("*** CANNOT SCALE RAM TO MORE THAN 4096 MB (typed : $args{memory})*** ");
+        $log->warn("*** Cannot scale ram to more than 4096 MB (typed : $args{memory})*** ");
     }
     else {
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
@@ -403,7 +403,7 @@ sub scaleMemoryHost{
         $self->_scaleMetric(
             infra            => $self->{_infra},
             vm_id            => $args{host_id},
-            new_value        => $memory, 
+            new_value        => $memory,
             hv_selection_ids => \@hv_selection_ids,
             scale_metric     => 'ram',
         );
@@ -477,7 +477,7 @@ sub scaleCpuHost{
                              level   => 'info',
                              content => "Scale in cpu value must be strictly positive (typed : $args{vcpu_number})",
                          );
-        $log->warn("*** CANNOT SCALE CPU TO A NEGATIVE VALUE (typed : $args{vcpu_number}) *** ");
+        $log->warn("*** Cannot scale CPU to a negative value (typed : $args{vcpu_number}) *** ");
     }
     elsif ($cpu > 4 ) { # WARNING TODO : UNHARCODE 4 which corresponds to the maximum defined in the VM Template
             $self->{_admin}->addMessage(
@@ -485,7 +485,7 @@ sub scaleCpuHost{
                                 level   => 'info',
                                 content => "Cannot scale to more than 4 CPU (typed : $args{vcpu_number})",
                              );
-        $log->warn("*** CANNOT SCALE CPU TO MORE THAN 4 (typed : $args{vcpu_number} => $cpu) *** ");
+        $log->warn("*** Cannot scale CPU to more than 4 (typed : $args{vcpu_number} => $cpu) *** ");
     }
     else {
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
