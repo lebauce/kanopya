@@ -297,7 +297,7 @@ sub getConf {
                 container_state         => $vol->state,
                 container_size          => General::bytesToHuman(value => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_size'), precision => 5),
                 container_device        => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_device'),
-                container_filesystem    => General::bytesToHuman(value => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_filesystem'), precision => 5),
+                container_filesystem    => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_filesystem'),
                 container_freespace     => General::bytesToHuman(value => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_freespace'), precision => 5),
                 disk_manager_id         => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'disk_manager_id'),
                 entity_comment          => EntityComment->find( hash => {entity_comment_id => $entity_comment_id})->getAttr(name => 'entity_comment'),
