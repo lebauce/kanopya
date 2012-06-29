@@ -53,7 +53,7 @@ function createSpecServDialog(provider_id, name, first, category, elem, editid) 
     if (first) {
         ad_opts.skippable   = true;
         var step            = 3;
-        if (category === 'DirectoryService') {
+        if (category === 'DirectoryServiceManager') {
             ad_opts.callback    = function() {
                 createMonDirDialog(provider_id, 'Collectormanager', first).start();
             };
@@ -132,7 +132,7 @@ function createAddServiceButton(container) {
         callback    : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
             reloadServices();
-            createMonDirDialog(data.pk, 'DirectoryService', true).start();
+            createMonDirDialog(data.pk, 'DirectoryServiceManager', true).start();
         },
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
@@ -178,7 +178,7 @@ function servicesList (container_id, elem_id) {
 function createUpdateNodeButton(container, elem_id, grid) {
     var button = $("<button>", { text : 'Update Nodes' }).button({ icons : { primary : 'ui-icon-refresh' } });
     // Check if there is a configured directory service
-    if (isThereAConnector(elem_id, 'DirectoryService') === true) {
+    if (isThereAConnector(elem_id, 'DirectoryServiceManager') === true) {
         $(button).bind('click', function(event) {
             var dialog = $("<div>", { css : { 'text-align' : 'center' } });
             dialog.append($("<label>", { for : 'adpassword', text : 'Please enter your password :' }));

@@ -242,8 +242,8 @@ sub updateNodes {
      my $self = shift;
      my %args = @_;
      
-     my $ds_connector = $self->getConnector( category => 'DirectoryService' );
-     my $nodes = $ds_connector->getNodes(%args);
+     my $ds_manager = $self->getManager( manager_type => 'directory_service_manager' );
+     my $nodes      = $ds_manager->getNodes(%args);
      
      my @created_nodes;
      

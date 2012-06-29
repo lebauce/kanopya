@@ -127,9 +127,9 @@ function loadServicesConfig (container_id, elem_id) {
                 }).button({ icons : { primary : 'ui-icon-trash' } });
             });
 
-            if (isThereAConnector(elem_id, 'DirectoryService') === false) {
+            if (isThereAConnector(elem_id, 'DirectoryServiceManager') === false) {
                 var b   = $("<a>", { text : 'Add a Directory Service', id : 'adddirectory' });
-                b.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryService').start(); });
+                b.bind('click', function() { createMonDirDialog(elem_id, 'DirectoryServiceManager').start(); });
                 b.appendTo($(ctnr)).button({ icons : { primary : 'ui-icon-plusthick' } });
             }
             

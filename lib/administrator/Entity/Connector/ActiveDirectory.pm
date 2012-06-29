@@ -18,6 +18,7 @@
 
 package Entity::Connector::ActiveDirectory;
 use base "Entity::Connector";
+use base "Manager::DirectoryServiceManager";
 
 use strict;
 use warnings;
