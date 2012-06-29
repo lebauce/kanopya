@@ -92,6 +92,7 @@ sub getManager {
     my $cluster_manager = ServiceProviderManager->find(hash => { manager_type        => $args{manager_type},
                                                                  service_provider_id => $self->getId }
                                                   );
+
     return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
 }
 
@@ -102,12 +103,11 @@ sub getState {
 
 
 sub getNodes {
-
     my ($self, %args) = @_;
 
-    my @nodes = Externalnode::Node->search(
+    my @nodes = Externalnode->search(
                     hash => {
-                        inside_id => $self->getId(),
+                        service_provider_id => $self->getId(),
                     }
     );
 

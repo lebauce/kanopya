@@ -495,7 +495,16 @@ sub _evalRule {
     my $service_provider_id = $service_provider->getId();
 
     my $rule_id          = $rule->getAttr(name => 'nodemetric_rule_id');
-    my $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+
+    my $workflow_manager;
+
+    eval{ # Avoid the reinstantiation for each node
+        my $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+    };
+    if($@){
+        $log->info('No workflow manager in service provider <'.($service_provider->getId()).'>')
+    }
+
     my $workflow_def_id  = $rule->getAttr(name => 'workflow_def_id');
     my $rep = 0;
     #Eval the rule for each node
@@ -509,7 +518,9 @@ sub _evalRule {
         #            next NODE;
         #        }
         #        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
+
         my $node_state = $service_provider->getNodeState(hostname=> $host_name);
+
         my $nodeEval;
 
         if($node_state eq 'disabled'){
@@ -540,19 +551,25 @@ sub _evalRule {
                 $rep++;
                 my $isVerified = $rule->isVerifiedForANode(externalnode_hostname => $host_name);
                 if ($isVerified == 1){
-                    $log->info("Rule has been verifieds for node <$host_name> : do not trigger Workflow");
+                    $log->info("Rule has been verified for node <$host_name> : do not trigger Workflow");
                 }
                 else{
                     my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
-                    if (defined $wf_def_id){
 
+                   $rule->setVerifiedRule(
+                        hostname   => $host_name,
+                        cluster_id => $service_provider_id,
+                        state      => 'verified',
+                    );
+
+                    if(not defined $workflow_manager){
+                        $log->info('Rule is verified, but service provider has no workflow manager');
+                    }
+                    elsif (not defined $wf_def_id){
+                        $log->info('Rule is verified, but rule has no workflow_def attached');
+                    }
+                    else {
                        $log->info("Trigger Workflow <$wf_def_id>");
-
-                       $rule->setVerifiedRule(
-                            hostname   => $host_name,
-                            cluster_id => $service_provider_id,
-                            state      => 'verified',
-                        );
 
                         $workflow_manager->runWorkflow(
                             workflow_def_id => $workflow_def_id,
@@ -560,7 +577,7 @@ sub _evalRule {
                             service_provider_id => $service_provider_id,
                             rule_id => $rule_id
                         );
-                    } # ELSE => NO WORKFLOW TO TRIGGER
+                    }
                 }
             }
         }
