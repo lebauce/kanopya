@@ -432,8 +432,38 @@ sub scaleCpuHost{
 
     General::checkParams(args => \%args, required => ['host_id','vcpu_number']);
 
-    my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
-    if($args{vcpu_number} =~ /\D/){
+
+     my $sign = substr($args{vcpu_number},0,1); # get the first value
+     my $vcpu_input;
+
+     if($sign eq '+' || $sign eq '-'){
+         $vcpu_input = substr $args{vcpu_number},1; # remove sign
+     } else {
+         $vcpu_input = $args{vcpu_number};
+     }
+
+
+     # Compute absolute memory instead of relative
+    my $cpu;
+    if($sign eq '+'){
+        $cpu = $self->{_infra}->{vms}->{$args{host_id}}->{cpu} + $vcpu_input;
+    } elsif ($sign eq '-') {
+        $cpu = $self->{_infra}->{vms}->{$args{host_id}}->{cpu} - $vcpu_input;
+    } elsif ($sign =~ /\d/) {
+        $cpu = $vcpu_input;
+    }else{
+        $self->{_admin}->addMessage(
+                            from    => 'Capacity Management',
+                            level   => 'info',
+                            content => "Wrong format for scale in memory value (typed : $args{vcpu_number})",
+                         );
+        $log->warn("*** Wrong format for scale in cpu value (typed : $args{vcpu_number})*** ");
+        return $self->{_operationPlan};
+    }
+
+
+
+    if($cpu =~ /\D/){
         $self->{_admin}->addMessage(
                             from    => 'Capacity Management',
                             level   => 'info',
@@ -441,7 +471,7 @@ sub scaleCpuHost{
                          );
         $log->warn("*** WRONG FORMAT FOR CPU VALUE (typed : $args{vcpu_number}) *** ");
     }
-    elsif($args{vcpu_number} <= 0 ){
+    elsif($cpu <= 0 ){
         $self->{_admin}->addMessage(
                              from    => 'Capacity Management',
                              level   => 'info',
@@ -449,20 +479,21 @@ sub scaleCpuHost{
                          );
         $log->warn("*** CANNOT SCALE CPU TO A NEGATIVE VALUE (typed : $args{vcpu_number}) *** ");
     }
-    elsif ($args{vcpu_number} > 4 ) { # WARNING TODO : UNHARCODE 4 which corresponds to the maximum defined in the VM Template
+    elsif ($cpu > 4 ) { # WARNING TODO : UNHARCODE 4 which corresponds to the maximum defined in the VM Template
             $self->{_admin}->addMessage(
                                 from    => 'Capacity Management',
                                 level   => 'info',
                                 content => "Cannot scale to more than 4 CPU (typed : $args{vcpu_number})",
                              );
-        $log->warn("*** CANNOT SCALE CPU TO MORE THAN 4 (typed : $args{vcpu_number}) *** ");
+        $log->warn("*** CANNOT SCALE CPU TO MORE THAN 4 (typed : $args{vcpu_number} => $cpu) *** ");
     }
     else {
-        $log->info("Call scaleCpuMetric for host $args{host_id} and new value = $args{vcpu_number}");
+        my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
+        $log->info("Call scaleCpuMetric for host $args{host_id} and new value = $cpu");
         $self->_scaleMetric(
             infra            => $self->{_infra},
             vm_id            => $args{host_id},
-            new_value        => $args{vcpu_number},
+            new_value        => $cpu,
             hv_selection_ids => \@hv_selection_ids,
             scale_metric     => 'cpu',
         );
