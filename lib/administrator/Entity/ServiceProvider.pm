@@ -142,6 +142,10 @@ sub findManager {
     my ($class, %args) = @_;
     my @managers = ();
 
+    if (defined $args{service_provider_id} and $args{service_provider_id} != 1 and $args{category} eq 'Export') {
+        $args{category} = 'Storage';
+    }
+
     $key = defined $args{id} ? { component_id => $args{id} } : {};
     $key->{service_provider_id} = $args{service_provider_id} if defined $args{service_provider_id};
     foreach my $component (Entity::Component->search(hash => $key)) {
@@ -174,42 +178,24 @@ sub findManager {
             }
         }
     }
+
     # Workaround to get the Fileimagemanager0 in the disk manager list of an external equipment.
     # We really need to fix this.
-    if (defined $args{service_provider_id} and $args{service_provider_id} != 1) {
-        if ($args{category} eq 'Storage') {
-            eval {
-                $fileimagemanager = Entity::Component::Fileimagemanager0->find(hash => { service_provider_id => 1 });
-                push @managers, {
-                     "category"            => 'Storage',
-                     "name"                => 'Fileimagemanager',
-                     "id"                  => $fileimagemanager->getAttr(name => "component_id"),
-                     "pk"                  => $fileimagemanager->getAttr(name => "component_id"),
-                     "service_provider_id" => $fileimagemanager->getAttr(name => "service_provider_id"),
-                     "host_type"           => $fileimagemanager->can("getHostType") ? $fileimagemanager->getHostType() : "",
-                };
-            };
-        } elsif ($args{category} eq 'Export') {
-                $netappvolume = Entity::Connector::NetappVolumeManager->find(hash => {});
-                push @managers, {
-                     "category"            => 'Export',
-                     "name"                => 'NetappVolumeManager',
-                     "id"                  => $netappvolume->getAttr(name => "connector_id"),
-                     "pk"                  => $netappvolume->getAttr(name => "connector_id"),
-                     "service_provider_id" => $netappvolume->getAttr(name => "service_provider_id"),
-                     "host_type"           => $netappvolume->can("getHostType") ? $netappvolume->getHostType() : "",
-                };
-                $netapplun = Entity::Connector::NetappLunManager->find(hash => {});
-                push @managers, {
-                     "category"            => 'Export',
-                     "name"                => 'NetappVolumeManager',
-                     "id"                  => $netapplun->getAttr(name => "connector_id"),
-                     "pk"                  => $netapplun->getAttr(name => "connector_id"),
-                     "service_provider_id" => $netapplun->getAttr(name => "service_provider_id"),
-                     "host_type"           => $netapplun->can("getHostType") ? $netapplun->getHostType() : "",
-                };
-        }
-    }
+#    if (defined $args{service_provider_id} and $args{service_provider_id} != 1) {
+#        if ($args{category} eq 'Storage') {
+#            eval {
+#                $fileimagemanager = Entity::Component::Fileimagemanager0->find(hash => { service_provider_id => 1 });
+#                push @managers, {
+#                     "category"            => 'Storage',
+#                     "name"                => 'Fileimagemanager',
+#                     "id"                  => $fileimagemanager->getAttr(name => "component_id"),
+#                     "pk"                  => $fileimagemanager->getAttr(name => "component_id"),
+#                     "service_provider_id" => $fileimagemanager->getAttr(name => "service_provider_id"),
+#                     "host_type"           => $fileimagemanager->can("getHostType") ? $fileimagemanager->getHostType() : "",
+#                };
+#            };
+#        }
+#    }
 
     return wantarray ? @managers : \@managers;
 }
