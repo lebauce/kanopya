@@ -365,9 +365,9 @@ sub insertCollectorIndicators {
             ||
             (($args{'default'} == 0) && not defined $indicator->getAttr(name => 'indicator_color'))
             ) {
-            $params = { scom_indicator_name => $indicator->getAttr(name => 'indicator_name'),
-                        scom_indicator_oid  => $indicator->getAttr(name => 'indicator_oid'),
-                        scom_indicator_unit => $indicator->getAttr(name => 'indicator_unit'),
+            $params = { indicator_name => $indicator->getAttr(name => 'indicator_name'),
+                        indicator_oid  => $indicator->getAttr(name => 'indicator_oid'),
+                        indicator_unit => $indicator->getAttr(name => 'indicator_unit'),
                         service_provider_id => $service_provider_id,
             };
             ScomIndicator->new(%$params);

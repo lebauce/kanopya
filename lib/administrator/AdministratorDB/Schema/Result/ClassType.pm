@@ -78,22 +78,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 scom_indicators
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::ScomIndicator>
-
-=cut
-
-__PACKAGE__->has_many(
-  "scom_indicators",
-  "AdministratorDB::Schema::Result::ScomIndicator",
-  { "foreign.class_type_id" => "self.class_type_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
 # Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 16:20:32
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Rq7T16gi53Qrg52j9W555w
 

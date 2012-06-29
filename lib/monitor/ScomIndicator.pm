@@ -18,27 +18,27 @@ use warnings;
 use base 'Indicator';
 
 use constant ATTR_DEF => {
-    scom_indicator_name             =>  {pattern       => '^.*$',
+    indicator_name             =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    scom_indicator_oid              =>  {pattern       => '^.*$',
+    indicator_oid              =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    scom_indicator_min              =>  {pattern       => '^.*$',
+    indicator_min              =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    scom_indicator_max              =>  {pattern       => '^.*$',
+    indicator_max              =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    scom_indicator_unit             =>  {pattern       => '^.*$',
+    indicator_unit             =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    service_provider_id            =>  {pattern       => '^.*$',
+    service_provider_id        =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -46,19 +46,10 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        'toString'  => {
-            'description' => 'toString',
-            'perm_holder' => 'entity'
-        }
-    };
-}
-
 sub toString {
     my $self = shift;
 
-    return $self->scom_indicator_name;
+    return $self->indicator_name;
 }
 
 1;
