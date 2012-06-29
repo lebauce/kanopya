@@ -572,7 +572,7 @@ sub _evalRule {
 }
 
 # Construct hash table for the service provider.
-# Inspired by eponyme aggregator method 
+# Inspired by eponyme aggregator method
 
 sub _contructRetrieverOutput {
     my ($self,%args) = @_;
@@ -625,64 +625,72 @@ sub clustermetricManagement{
 
     my $workflow_manager;
 
-    #GET RULES RELATIVE TO A CLUSTER
-    my @rules = AggregateRule->search(hash=>{
-        aggregate_rule_service_provider_id => $service_provider_id,
-        aggregate_rule_state               => 'enabled',
-        aggregate_rule_state               => 'triggered'
-    });
+    # Get rules relative to a cluster
+    my @rules_enabled   = AggregateRule->search(
+                              hash => {
+                                  aggregate_rule_service_provider_id => $service_provider_id,
+                                  aggregate_rule_state               => 'enabled',
+                              }
+                          );
 
-    for my $aggregate_rule (@rules){
-        my $workflow_def_id  = $aggregate_rule->getAttr(name => 'workflow_def_id');
-        my $rule_id          = $aggregate_rule->getAttr(name => 'aggregate_rule_id');
+    my @rules_triggered = AggregateRule->search(
+                              hash => {
+                                  aggregate_rule_service_provider_id => $service_provider_id,
+                               C   aggregate_rule_state               => 'triggered'
+                              }
+                          );
 
-        $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
+    my @rules = (@rules_enabled, @rules_triggered);
 
-            $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
-            
-            my $result = $aggregate_rule->eval();
-            
-            # LOOP USED TO TRIGGER WORKFLOWS
-            #get the state of the rule
-            my $rule_state = $aggregate_rule->getAttr (name => 'aggregate_rule_state');
+    for my $aggregate_rule (@rules) {
+        my $rule_id = $aggregate_rule->getAttr(name => 'aggregate_rule_id');
 
-            if(defined $result){
-                if ($result == 1 && ($workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager'))) {
-                    if ($rule_state eq 'enabled') { 
-                        $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, rule_id => $rule_id, service_provider_id => $service_provider_id);
-                        $aggregate_rule->setAttr(aggregate_rule_state => 'triggered');
-                        $aggregate_rule->save();
-                    }
-                } elsif ($result == 0) {
-                    if ($rule_state eq 'triggered') {
-                        $aggregate_rule->setAttr(aggregate_rule_state => 'enabled');
-                        $aggregate_rule->save();
-                    }
+        $log->info('CM Rule ' . $aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
+
+        my $result = $aggregate_rule->eval();
+
+        # Now trigger the workflow
+        my $rule_state = $aggregate_rule->getAttr (name => 'aggregate_rule_state');
+        my $workflow_def_id;
+
+        if (defined $result) {
+            if ($result == 1 && ($workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager'))) {
+                if ($rule_state eq 'enabled' && ($workflow_def_id = $aggregate_rule->getAttr(name => 'workflow_def_id'))) {
+                    $log->info('Rule '. $rule_id. ' has launched a new workflow (' . $workflow_def_id . ') and was defined as triggered');
+                    $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, rule_id => $rule_id, service_provider_id => $service_provider_id);
+                    $aggregate_rule->setAttr(name => 'aggregate_rule_state', value => 'triggered');
+                    $aggregate_rule->save();
+                } else {
+                    $log->info('Rule: '. $rule_id. ' was verified but has no workflow associated or has already a workflow triggered');
+                }
+            } elsif ($result == 0) {
+                if ($rule_state eq 'triggered') {
+                    $aggregate_rule->setAttr(name => 'aggregate_rule_state', value => 'enabled');
+                    $aggregate_rule->save();
                 }
             }
-        } # for my $aggregate_rule 
-
-#return $clusters_state_cm;
+        }
+    }
 }
 
 =head2 manage
-    
+
     Class : Public
-    
+
     Desc :     Check mc state and manage clusters.
             For each cluster, detect traps (for adding node) and check conditions for removing node
-    
+
 =cut
 
 sub manage {
     my $self = shift;
-    
+
     my $monitor = $self->{_monitor};
-    
+
     my @skip_clusters = (); #('adm');
-    
+
     my @all_clusters_name = $monitor->getClustersName();
-    
+
     CLUSTER:
     for my $cluster (@all_clusters_name) {
         if ( scalar grep { $_ eq $cluster } @skip_clusters ) {
