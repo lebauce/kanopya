@@ -128,6 +128,7 @@ sub _constructInfra{
         hvs => $hvs,
     };
 
+    $log->info(Dumper $current_infra);
     return $current_infra;
 }
 
@@ -264,17 +265,19 @@ sub optimIaas{
 }
 
 sub _applyMigrationPlan{
+    # Keep only one migration per VM
+
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['plan']);
 
     my $plan = $args{plan};
 
-    my @simplified_plan_order;
-    my $simplified_plan_dest;
+    my @simplified_plan_order; # The order of VM migration
+    my $simplified_plan_dest;  # The destination of the VM
 
+    #Check each operation and keep the last one for each VM
     for my $operation (@$plan){
         if(!defined $simplified_plan_dest->{$operation->{vm_id}}){
-            $log->debug("xxx $operation->{vm_id} xxx");
             push @simplified_plan_order, $operation->{vm_id};
         }
         $simplified_plan_dest->{$operation->{vm_id}} = $operation->{hv_id};
@@ -285,6 +288,8 @@ sub _applyMigrationPlan{
     $log->info("*** SIMPLIFIED PLAN MIGRATION ORDER @simplified_plan_order");
     $log->info(Dumper $simplified_plan_dest);
 
+    # TODO : avoid migrating in origin HV
+    # but must remember origin before !
     for my $vm_id (@simplified_plan_order){
         $self->_migrateVmOrder(
             vm_id      => $vm_id,
@@ -306,6 +311,7 @@ sub _applyMigrationPlan{
 sub getHypervisorIdForVM{
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['wanted_values']);
+    $log->info('Wanted values'. Dumper $args{wanted_values});
     my $wanted_values = $args{wanted_values};
     my $infra = $self->{_infra};
     my @all_hv = keys %{$infra->{hvs}};
@@ -315,7 +321,7 @@ sub getHypervisorIdForVM{
         wanted_metrics   => $wanted_values,
         infra            => $infra,
     );
-    $log->info(Dumper $hv);
+    $log->info('Found HV : '.(Dumper $hv));
     return $hv->{hv_id};
 }
 
@@ -917,7 +923,11 @@ sub _findMinHVidRespectCapa{
 
         my $total_score = $size_remaining->{cpu_p} + $size_remaining->{ram_p};
 
-        if(
+        $log->info(Dumper $size_remaining);
+        $log->info('HV <'.$hv_id.'> RAM wanted <'.($wanted_metrics->{ram}).'> got '.($size_remaining->{ram}));
+        $log->info('HV <'.$hv_id.'> CPU wanted <'.($wanted_metrics->{cpu}).'> got '.($size_remaining->{cpu}));
+
+         if(
                $wanted_metrics->{ram} <= $size_remaining->{ram}
             && $wanted_metrics->{cpu} <= $size_remaining->{cpu}
         ){
