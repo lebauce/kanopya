@@ -38,28 +38,33 @@ var PolicyForm = (function() {
             if (this.fields[elem].set) {
                 if (! this.fields[elem].policy) {
                     var add_button = $("<input type=\"button\"/>", { html : this.fields[elem].add_label, class : 'wizard-ignore' });
+
                     var element = elem;
                     var that = this;
                     add_button.bind('click', function() {
                         var added = that.newElement(element);
+                        if (! (added instanceof Array)) {
+                            added = [added];
+                        }
 
                         var remove_button = $("<input type=\"button\"/>", { html : 'Remove', class : 'wizard-ignore' });
                         var container = that.findContainer(that.fields[elem].step);
-                        var linecontainer = $("<tr>").css('position', 'relative');
+                        var removebuttonline = $("<tr>").css('position', 'relative');
+                        var hrseprationline  = $("<tr>").css('position', 'relative');
 
-                        $("<td>", { align : 'left' }).append($('<hr>')).appendTo(linecontainer);
-                        $("<td>", { align : 'right' }).append(remove_button).appendTo(linecontainer);
+                        $("<td>", { colspan : 2 }).append(remove_button).appendTo(removebuttonline);
+                        container.append(removebuttonline);
 
-                        container.append(linecontainer);
+                        $("<td>", { colspan : 2 }).append($('<hr>')).appendTo(hrseprationline);
+                        container.append(hrseprationline);
+
                         remove_button.val('Remove');
                         remove_button.bind('click', function() {
-                            if (! added instanceof Array) {
-                                added = [added];
-                            }
                             for (var to_remove in added) {
-                                added[to_remove].remove();
+                                $(added[to_remove]).remove();
                             }
-                            linecontainer.remove();
+                            removebuttonline.remove();
+                            hrseprationline.remove();
                         });
 
                         $(that.content).dialog('option', 'position', $(that.content).dialog('option', 'position'));
@@ -289,7 +294,6 @@ var PolicyForm = (function() {
         }
 
         if (this.fields[elementName].hide_filled && current) {
-            
             this.fields[elementName].type = 'hidden';
             if (this.fields[elementName].parent) {
                 /* @ @ You never had seen the following line @ @ */
