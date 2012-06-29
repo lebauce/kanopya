@@ -166,17 +166,19 @@ function loadServicesConfig (container_id, elem_id) {
                             url     : '/api/serviceprovider/' + mangr.service_provider_id,
                             async   : false,
                             success : function(sp) {
-                                var l   = $("<tr>", { text : data[i].manager_type + " : " + sp.externalcluster_name });
+                                var l   = $("<tr>", { text : data[i].manager_type + " : " + ((sp.externalcluster_name != null) ? sp.externalcluster_name : sp.cluster_name) });
                                 $(table).append(l);
                                 $.ajax({
                                     url     : '/api/connector/' + mangr.pk,
                                     success : function(conn) {
-                                        $.ajax({
-                                            url     : '/api/connectortype/' + conn.connector_type_id,
-                                            success : function(conntype) {
-                                                $(l).text($(l).text() + ' - ' + conntype.connector_name);
-                                            }
-                                        });
+                                        if (conn.connector_type_id != null) {
+                                            $.ajax({
+                                                url     : '/api/connectortype/' + conn.connector_type_id,
+                                                success : function(conntype) {
+                                                    $(l).text($(l).text() + ' - ' + conntype.connector_name);
+                                                }
+                                            });
+                                        }
                                     }
                                 });
                             }
