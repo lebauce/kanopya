@@ -603,17 +603,16 @@ sub _contructRetrieverOutput {
 
             for my $indicator_id (@indicator_ids) {
                 my $indicator = $collector->getIndicator(id => $indicator_id);
-                $indicators_name->{$indicator->indicator_oid} = undef;
+                $indicators->{$indicator->indicator_oid} = $indicator;
             }
         }
     }
-    my @indicators_array = keys(%$indicators_name);
-    
+
     my $rep = {
-        indicators => \@indicators_array,
+        indicators => $indicators,
         time_span  => 1200,
     };
-    #print Dumper $rep;
+
     return $rep;
 };
 
