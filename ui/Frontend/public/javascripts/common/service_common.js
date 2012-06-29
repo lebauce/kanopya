@@ -126,3 +126,19 @@ function node_rules_tab(cid, eid, service_provider_id) {
     } );
 }
 
+function isThereAManager(elem_id, category) {
+    var is  = false;
+
+    $.ajax({
+        url         : '/api/serviceprovider/' + elem_id + '/getManager',
+        type        : 'POST',
+        contentType : 'application/json',
+        data        : JSON.stringify({ 'manager_type' : category }),
+        async       : false,
+        success     : function(data) {
+            is  = true;
+        }
+    });
+    return is;
+}
+
