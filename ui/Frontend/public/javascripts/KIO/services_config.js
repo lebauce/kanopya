@@ -211,6 +211,7 @@ function createManagerButton(connectortype, managertype, ctnr, sp_id, container_
             contentType : 'application/json',
             data        : JSON.stringify({ 'category' : connectortype }),
             success     : function(data) {
+                if (data.length <= 0) return;
                 var select  = $("<select>", { name : 'managerselection' })
                 for (var i in data) if (data.hasOwnProperty(i)) {
                     var theName     = data[i].name;
