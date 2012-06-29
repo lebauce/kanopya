@@ -377,18 +377,18 @@ var PolicyForm = (function() {
              * cannot search among both type in one query. Another workaround
              * here...
              */
-            if (entity === 'componenttype') {
-                var connector_values = this.ajaxCall('GET', '/api/connectortype');
-
+            //if (entity === 'componenttype') {
+            //    var connector_values = this.ajaxCall('GET', '/api/connectortype');
+            //
                 /*
                  * Add all connector types to the component types list, and
                  * change the name of the attr to display (component_name).
                  */
-                for (var connector in connector_values) {
-                    connector_values[connector][this.fields[elementName].display] = connector_values[connector].connector_name;
-                    datavalues.push(connector_values[connector]);
-                }
-            }
+            //    for (var connector in connector_values) {
+            //        connector_values[connector][this.fields[elementName].display] = connector_values[connector].connector_name;
+            //        datavalues.push(connector_values[connector]);
+            //    }
+            //}
         }
 
         if (! this.fields[elementName].is_mandatory) {
