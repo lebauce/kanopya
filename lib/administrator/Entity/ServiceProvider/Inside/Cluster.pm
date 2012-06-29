@@ -55,7 +55,7 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     cluster_name => {
-        pattern      => '^\w*$',
+        pattern      => '^\w+$',
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 0
@@ -133,7 +133,7 @@ use constant ATTR_DEF => {
         is_editable  => 0
     },
     cluster_basehostname => {
-        pattern      => '^[a-z_]+$',
+        pattern      => '^[a-z_0-9]+$',
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 1
@@ -339,7 +339,6 @@ sub create {
         }
     }
 
-    $log->info(\%params);
     General::checkParams(args => \%params, required => [ 'managers' ]);
     General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
@@ -353,6 +352,7 @@ sub create {
         # Merge current polciy preset with others
         %params = %{ $merge->merge(\%params, \%$policy_presets) };
     }
+
     delete $params{policies};
 
     $log->debug("Final parameters after applying policies:\n" . Dumper(%params));
