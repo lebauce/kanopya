@@ -43,7 +43,9 @@ function addServiceExtraData(grid, rowid, rowdata, rowelem, ext) {
                 if (undef > 0) {
                     $(cellContent).append($('<img>', { src : '/images/icons/down.png' })).append(undef);
                 }
+                $(grid).setGridParam({ autoencode : false });
                 $(grid).setCell(rowid, 'rulesstate', cellContent.html());
+                $(grid).setGridParam({ autoencode : true });
             }
         }
     });
