@@ -538,22 +538,22 @@ sub _evalRule {
             }
             else {
                 $rep++;
-
-                if ($rule->isVerifiedForANode(externalnode_hostname => $host_name)){
+                my $isVerified = $rule->isVerifiedForANode(externalnode_hostname => $host_name);
+                if ($isVerified == 1){
                     $log->info("Rule has been verifieds for node <$host_name> : do not trigger Workflow");
                 }
                 else{
+                    my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
+                    if (defined $wf_def_id){
 
-                    $rule->setVerifiedRule(
+                       $log->info("TRIGGER Workflow <$wf_def_id>");
+
+                       $rule->setVerifiedRule(
                             hostname   => $host_name,
                             cluster_id => $service_provider_id,
                             state      => 'verified',
-                    );
-                        
-                    my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
+                        );
 
-                    if (defined $wf_def_id){
-                        $log->info("TRIGGER Workflow <$wf_def_id>");
                         $workflow_manager->runWorkflow(
                             workflow_def_id => $workflow_def_id,
                             host_name => $host_name,
