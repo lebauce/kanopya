@@ -178,7 +178,7 @@ function servicesList (container_id, elem_id) {
 function createUpdateNodeButton(container, elem_id, grid) {
     var button = $("<button>", { text : 'Update Nodes' }).button({ icons : { primary : 'ui-icon-refresh' } });
     // Check if there is a configured directory service
-    if (isThereAConnector(elem_id, 'DirectoryServiceManager') === true) {
+    if (isThereAManager(elem_id, 'directory_service_manager') === true) {
         $(button).bind('click', function(event) {
             var dialog = $("<div>", { css : { 'text-align' : 'center' } });
             dialog.append($("<label>", { for : 'adpassword', text : 'Please enter your password :' }));
