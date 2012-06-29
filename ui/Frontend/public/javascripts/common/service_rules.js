@@ -506,7 +506,10 @@ function loadServicesRules (container_id, elem_id, ext) {
              {name:'comparator',index:'comparator', width:160,},
              {name:'threshold',index:'threshold', width:60,},
            ],
-        details: { onSelectRow : function(eid) { serviceconditionmodal(elem_id, eid); } }
+        details: { onSelectRow : function(eid) { serviceconditionmodal(elem_id, eid); } },
+        action_delete: {
+            url : '/api/aggregatecondition'
+        },
     } );
     createServiceCondition('service_accordion_container', elem_id);
     // Display services rules :
