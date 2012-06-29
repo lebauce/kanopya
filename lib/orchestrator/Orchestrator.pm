@@ -529,7 +529,7 @@ sub _evalRule {
 
                 if ($rule->isVerifiedForANode(externalnode_hostname => $host_name)){
 
-                    $log->info("REMOVE RULE FROM VERIFIED RULES");
+                    $log->info("Remove rule from verified rules");
                     $rule->deleteVerifiedRule(
                         hostname   => $host_name,
                         cluster_id => $service_provider_id,
@@ -546,7 +546,7 @@ sub _evalRule {
                     my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
                     if (defined $wf_def_id){
 
-                       $log->info("TRIGGER Workflow <$wf_def_id>");
+                       $log->info("Trigger Workflow <$wf_def_id>");
 
                        $rule->setVerifiedRule(
                             hostname   => $host_name,
