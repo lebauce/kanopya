@@ -636,7 +636,7 @@ sub clustermetricManagement{
     my @rules_triggered = AggregateRule->search(
                               hash => {
                                   aggregate_rule_service_provider_id => $service_provider_id,
-                               C   aggregate_rule_state               => 'triggered'
+                                  aggregate_rule_state               => 'triggered'
                               }
                           );
 
