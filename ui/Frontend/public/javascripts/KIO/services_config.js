@@ -195,6 +195,10 @@ function loadServicesConfig (container_id, elem_id) {
                 createManagerButton('Collectormanager', 'collector_manager', ctnr, elem_id, container_id);
             }
 
+            if (isThereAManager(elem_id, 'directory_service_manager') === false) {
+                createManagerButton('DirectoryServiceManager', 'directory_service_manager', ctnr, elem_id, container_id);
+            }
+
         }
     });
 }
