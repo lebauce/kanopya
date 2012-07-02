@@ -125,4 +125,3 @@ function node_rules_tab(cid, eid, service_provider_id) {
         action_delete : 'no',
     } );
 }
-
