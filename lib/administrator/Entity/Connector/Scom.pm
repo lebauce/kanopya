@@ -17,6 +17,7 @@
 # Created 3 july 2010
 package Entity::Connector::Scom;
 use base 'Entity::Connector';
+use base 'Manager::CollectorManager';
 
 use strict;
 use warnings;
