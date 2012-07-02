@@ -167,6 +167,9 @@ sub buildPatternFromHash {
                 if ($args{hash}->{'interface_networks_' . $interface_index}) {
                     $pattern{interfaces}->{$role_name}->{interface_networks} = [ $args{hash}->{'interface_networks_' . $interface_index} ];
                 }
+                if ($args{hash}->{'interface_default_gateway_' . $interface_index}) {
+                    $pattern{interfaces}->{$role_name}->{default_gateway} = $args{hash}->{'interface_default_gateway_' . $interface_index};
+                }
             }
             # Handle billing limit
             elsif ($name =~ m/^limit_start_/) {

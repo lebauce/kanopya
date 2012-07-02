@@ -111,13 +111,14 @@ sub create {
 
         my $kanopya   = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
         my $interface = Entity::Interface->find(
-                             hash => { service_provider_id => $kanopya->getAttr(name => 'entity_id'),
-                                       interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
-                         );
+                            hash => { service_provider_id => $kanopya->getAttr(name => 'entity_id'),
+                                      interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
+                        );
 
         $self->addNetworkInterface(
-            interface_role => $adminrole,
-            networks       => $interface->getNetworks
+            interface_role  => $adminrole,
+            networks        => $interface->getNetworks,
+            default_gateway => 1
         );
     }
 }

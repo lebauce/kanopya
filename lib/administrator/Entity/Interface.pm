@@ -40,6 +40,10 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 1,
     },
+    default_gateway => {
+        pattern      => '^(0|1)$',
+        is_mandatory => 0,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

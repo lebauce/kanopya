@@ -285,8 +285,11 @@ sub getManagerParameters {
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
-    my $cluster_manager = ServiceProviderManager->find(hash => { manager_type => $args{manager_type},
-                                                         service_provider_id   => $self->getId });
+    my $cluster_manager = ServiceProviderManager->find(hash => {
+                              manager_type        => $args{manager_type},
+                              service_provider_id => $self->getId
+                          });
+
     return $cluster_manager->getParams();
 }
 
@@ -301,10 +304,14 @@ sub addNetworkInterface {
 
     General::checkParams(args => \%args, required => [ 'interface_role' ]);
 
-    my $interface = Entity::Interface->new(
-                        interface_role_id   => $args{interface_role}->getAttr(name => 'entity_id'),
-                        service_provider_id => $self->getAttr(name => 'entity_id')
-                    );
+    my $params = {
+        interface_role_id   => $args{interface_role}->getAttr(name => 'entity_id'),
+        service_provider_id => $self->getAttr(name => 'entity_id')
+    };
+    if (defined $args{default_gateway}) {
+        $params->{default_gateway} = $args{default_gateway};
+    }
+    my $interface = Entity::Interface->new(\$params);
 
     # Associate to networks if defined
     if (defined $args{networks}) {

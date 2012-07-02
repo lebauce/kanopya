@@ -524,7 +524,9 @@ sub configureInterfaces {
                                  );
                 };
                 if ($@) {
-                    $interface = $self->addNetworkInterface(interface_role => $role);
+                    my $default_gateway = (defined $interface_pattern->{default_gateway} && $interface_pattern->{default_gateway} == 1) ? 1 : 0;
+                    $interface = $self->addNetworkInterface(interface_role  => $role,
+                                                            default_gateway => $default_gateway);
                 }
 
                 if ($interface_pattern->{interface_networks}) {
@@ -543,7 +545,7 @@ sub configureBillingLimits {
 
     if (defined($args{billing_limits})) {
         foreach my $name (keys %{$args{billing_limits}}) {
-            my $value                       = $args{billing_limits}->{$name};
+            my $value = $args{billing_limits}->{$name};
             Entity::Billinglimit->new(
                 start               => $value->{start},
                 ending              => $value->{ending},
