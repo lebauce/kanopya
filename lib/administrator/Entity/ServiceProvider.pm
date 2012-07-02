@@ -67,6 +67,10 @@ sub methods {
             'description'   => 'getServiceProviders',
             'perm_holder'   => 'entity'
         },
+        'addManager'    => {
+            'description'   => 'addManager',
+            'perm_holder'   => 'entity'
+        }
     };
 }
 
@@ -237,12 +241,12 @@ sub addManager {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'manager', "manager_type" ]);
+    General::checkParams(args => \%args, required => [ 'manager_id', "manager_type" ]);
 
     my $manager = ServiceProviderManager->new(
                       service_provider_id   => $self->getAttr(name => 'entity_id'),
                       manager_type => $args{manager_type},
-                      manager_id   => $args{manager}->getAttr(name => 'entity_id')
+                      manager_id   => $args{manager_id}
                   );
 
     if ($args{manager_params}) {
