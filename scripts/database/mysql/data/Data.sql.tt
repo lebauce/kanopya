@@ -502,7 +502,7 @@ INSERT INTO `cluster` VALUES (@admin_cluster, 'Kanopya','Main Cluster hosting Ad
 -- kanopya cluster interface
 --
 INSERT INTO `entity` VALUES (@eid, 73, NULL);
-INSERT INTO `interface` VALUES (@eid, @adminrole, @admin_cluster);
+INSERT INTO `interface` VALUES (@eid, @adminrole, @admin_cluster, 1);
 SET @kanopya_cluster_interface = @eid;
 SET @eid := @eid +1;
 

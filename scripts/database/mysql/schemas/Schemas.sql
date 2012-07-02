@@ -792,6 +792,7 @@ CREATE TABLE `interface` (
   `interface_id`        int(8) unsigned,
   `interface_role_id`   int(8) unsigned NOT NULL,
   `service_provider_id` int(8) unsigned NOT NULL,
+  `default_gateway`     int(8) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`interface_id`),
   FOREIGN KEY (`interface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`interface_role_id`),
