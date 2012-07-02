@@ -43,7 +43,7 @@ __PACKAGE__->table("verified_noderule");
   is_nullable: 0
   size: 8
 
-=head2 workflow_def_id
+=head2 workflow_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -69,7 +69,7 @@ __PACKAGE__->add_columns(
   },
   "verified_noderule_state",
   { data_type => "char", is_nullable => 0, size => 8 },
-  "workflow_def_id",
+  "workflow_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -127,7 +127,7 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 workflow_def
+=head2 workflow
 
 Type: belongs_to
 
@@ -136,9 +136,9 @@ Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
 =cut
 
 __PACKAGE__->belongs_to(
-  "workflow_def",
-  "AdministratorDB::Schema::Result::WorkflowDef",
-  { workflow_def_id => "workflow_def_id" },
+  "workflow",
+  "AdministratorDB::Schema::Result::Workflow",
+  { workflow_id => "workflow_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
