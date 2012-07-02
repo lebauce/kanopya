@@ -47,48 +47,52 @@ my $log = get_logger("webui");
 my $errmsg;
 
 use constant ATTR_DEF => {
-            gp_name            => {pattern            => '^\w*$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 1},
-            gp_desc            => {pattern            => '^[\w\s]*$', 
-                                        is_mandatory    => 0,
-                                        is_extended     => 0,
-                                        is_editable        => 1},
-            gp_system        => {pattern            => '^\d$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 0},    
-            gp_type            =>     {pattern            => '^\w*$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 0},
+    gp_name     => {pattern      => '^\w*$',
+                    is_mandatory => 1,
+                    is_extended  => 0,
+                    is_editable  => 1
+                },
+    gp_desc     => {pattern      => '^[\w\s]*$', 
+                    is_mandatory => 0,
+                    is_extended  => 0,
+                    is_editable  => 1
+                },
+    gp_system   => {pattern      => '^\d$',
+                    is_mandatory => 1,
+                    is_extended  => 0,
+                    is_editable  => 0
+                },    
+    gp_type     => {pattern      => '^\w*$',
+                    is_mandatory => 1,
+                    is_extended  => 0,
+                    is_editable  => 0
+                },
 };
 
-sub primarykey { return 'gp_id' }
+sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new group', 
-                        'perm_holder' => 'mastergroup',
+        'create'       => {'description' => 'create a new group', 
+                           'perm_holder' => 'mastergroup',
         },
-        'get'        => {'description' => 'view this group', 
-                        'perm_holder' => 'entity',
+        'get'          => {'description' => 'view this group', 
+                           'perm_holder' => 'entity',
         },
-        'update'    => {'description' => 'save changes applied on this group', 
-                        'perm_holder' => 'entity',
+        'update'       => {'description' => 'save changes applied on this group', 
+                           'perm_holder' => 'entity',
         },
-        'remove'    => {'description' => 'delete this group', 
-                        'perm_holder' => 'entity',
+        'remove'       => {'description' => 'delete this group', 
+                           'perm_holder' => 'entity',
         },
-        'setperm'    => {'description' => 'set permission on this group', 
-                        'perm_holder' => 'entity',
+        'setperm'      => {'description' => 'set permission on this group', 
+                           'perm_holder' => 'entity',
         },
         'appendEntity' => {'description' => 'add an element to group',
-                            'perm_holder' => 'entity',
+                           'perm_holder' => 'entity',
         },                    
         'removeEntity' => {'description' => 'remove an element from a group',
-                            'perm_holder' => 'entity',
+                           'perm_holder' => 'entity',
         }, 
     };
 }
@@ -104,11 +108,8 @@ sub methods {
 =cut
 
 sub getGroups {
-    my $class = shift;
-    my %args = @_;
-
+    my ($class, %args) = @_;
     General::checkParams(args => \%args, required => ['hash']);
-
     return $class->search(%args);
 }
 
@@ -117,14 +118,15 @@ sub getGroups {
 =cut
 
 sub create {
-    my $self = shift;
+    my ($class, %args) = @_;
     my $admin = Administrator->new();
-    my $mastergroup_eid = $self->getMasterGroupEid();
+    my $mastergroup_eid = $class->getMasterGroupEid();
        my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new group");
        }
-     $self->save();      
+    my $self = $class->SUPER::new(%args);
+    return $self;
 }
 
 =head2 update
@@ -137,7 +139,18 @@ sub update {}
 
 =cut
 
-sub remove {}
+sub remove {
+    my ($self) = @_;
+    my $adm = Administrator->new();
+    # delete method concerns an existing entity so we use his entity_id
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(
+            error => "Permission denied to delete group with id ".$self->getAttr(name =>'group_id')
+        );
+    }
+    $self->SUPER::delete();
+}
 
 =head2 getSize
 
@@ -148,7 +161,7 @@ sub remove {}
 =cut
 
 sub getSize {
-    my $self = shift;
+    my ($self) = @_;
     return $self->{_dbix}->ingroups->count();
 }
 
@@ -163,10 +176,8 @@ sub getSize {
 =cut
 
 sub getGroupsFromEntity {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
     my @groups = ();
-    
     General::checkParams(args => \%args, required => ['entity']);
     
     if(not $args{entity}->{_dbix}->in_storage ) { return @groups; } 
@@ -209,15 +220,14 @@ sub getGroupsFromEntity {
 =cut
 
 sub appendEntity {
-    my $self = shift;
-    my %args = @_;
-    
+    my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['entity']);
-    
-#    my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
+
  	my $entity_id = $args{entity}->{_dbix}->id;
-    $self->{_dbix}->ingroups->create({gp_id => $self->getAttr(name => 'gp_id'), entity_id => $entity_id} );
-    return;
+    $self->{_dbix}->ingroups->create({
+        gp_id     => $self->getAttr(name => 'gp_id'), 
+        entity_id => $entity_id
+    });
 }
 
 =head2 removeEntity
@@ -232,14 +242,11 @@ sub appendEntity {
 =cut
 
 sub removeEntity {
-    my $self = shift;
-    my %args = @_;
-    
+    my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['entity']);
     
     my $entity_id = $args{entity}->{_dbix}->id;
     $self->{_dbix}->ingroups->find({entity_id => $entity_id})->delete();
-    return;
 }
 
 =head2 getEntities
@@ -251,7 +258,7 @@ sub removeEntity {
 =cut
 
 sub getEntities {
-    my $self = shift;
+    my ($self) = @_;
     my $adm = Administrator->new();    
     my $type = $self->{_dbix}->get_column('gp_type');
     my $entity_class = 'Entity::'.$type;
@@ -291,7 +298,7 @@ sub getEntities {
 =cut
 
 sub getExcludedEntities {
-    my $self = shift;
+    my ($self) = @_;
     my $adm = Administrator->new();    
     my $type = $self->{_dbix}->get_column('gp_type');
     my $entity_class = 'Entity::'.$type;
@@ -334,9 +341,6 @@ sub getExcludedEntities {
     return @objs;
 }
 
-sub getAttrDef{
-    return ATTR_DEF;
-}
 =head2 toString
 
     desc: return a string representation of the entity
@@ -344,7 +348,7 @@ sub getAttrDef{
 =cut
 
 sub toString {
-    my $self = shift;
+    my ($self) = @_;
     my $string = $self->{_dbix}->get_column('gp_name');
     return $string;
 }

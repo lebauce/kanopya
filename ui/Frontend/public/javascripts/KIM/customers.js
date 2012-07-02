@@ -48,8 +48,9 @@ function Customers() {
                 }
             };
                         
-            $('<hr/>').appendTo(container);
-            var button = $("<button>", {html : 'new customer'});
+            var button = $("<button>", {html : 'Add a customer'}).button({
+                icons   : { primary : 'ui-icon-plusthick' }
+            });
             button.bind('click', function() {
                 new ModalForm(user_opts).start();
             });   
