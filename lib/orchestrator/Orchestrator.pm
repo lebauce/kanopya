@@ -190,7 +190,7 @@ sub manage_aggregates {
                     $log->error($@);
                 };
 
-                #my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id, extcluster => $externalCluster);#
+                my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id, extcluster => $externalCluster);
             }
         1;
         }or do {

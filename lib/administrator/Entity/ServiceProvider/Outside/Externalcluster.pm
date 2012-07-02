@@ -189,11 +189,20 @@ sub getNodeState {
 sub updateNodeState {
     my $self = shift;
     my %args = @_;
-    
-     $self->{_dbix}->parent->externalnodes->update_or_create({
-                externalnode_hostname   => $args{hostname},
-                externalnode_state      => $args{state},
+   
+    my $hostname = $args{hostname};
+    my $state    = $args{state};
+    my $host;
+
+    $host = Externalnode->find(hash => {
+                externalnode_hostname => $hostname,
+                service_provider_id   => $self->getId,
             });
+
+    if (defined $host) {
+        $host->setAttr(name => 'externalnode_state', value => $state);
+        $host->save();
+    }
 }
 
 
