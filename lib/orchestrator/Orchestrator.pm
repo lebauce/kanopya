@@ -499,7 +499,7 @@ sub _evalRule {
     my $workflow_manager;
 
     eval{ # Avoid the reinstantiation for each node
-        my $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+        $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
     };
     if($@){
         $log->info('No workflow manager in service provider <'.($service_provider->getId()).'>')
