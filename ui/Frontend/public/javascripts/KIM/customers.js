@@ -86,8 +86,7 @@ function Customers() {
         
         var details = new DetailsTable(container_id, elem_id, customer_opts);
        
-        
-        details.addAction({label: 'update', action: function() {
+        details.addAction({label: 'Update', action: function() {
             var form = new ModalForm({
                 id       : elem_id,
                 title    : 'Update customer',
@@ -97,7 +96,7 @@ function Customers() {
             }).start();
         }});
         
-        details.addAction({label: 'detele', action: function() {
+        details.addAction({label: 'Detele', action: function() {
             $.ajax({ 
                 type: 'delete', 
                 async: false, 
@@ -106,7 +105,6 @@ function Customers() {
                 error: function(jqXHR, textStatus, errorThrown) { 
                     alert(jqXHR.responseText); } 
             });
-            
             
         }});
         details.show();
@@ -126,39 +124,38 @@ function Customers() {
         });
     }
     
-
-    
     Customers.prototype.load_infos = function(container_id, elem_id) {
-        
-     function createAddCustomerInfoButton(cid) {
-        var container = $('#' + cid);
-        var user_fields  = {
-        user_extension_key    : {
-            label   : 'Field name',
-            type    : 'text',
-        },
-        user_extension_value    : {
-            label   : 'Value',
-            type    : 'textarea'
-        },
-        user_id : {
-            type    : 'hidden',
-            value   : elem_id,
-        },
+        function createAddCustomerInfoButton(cid) {
+            var container = $('#' + cid);
+            var user_fields  = {
+                user_extension_key : {
+                    label   : 'Field name',
+                    type    : 'text',
+                },
+                user_extension_value : {
+                    label   : 'Value',
+                    type    : 'textarea'
+                },
+                user_id : {
+                    type    : 'hidden',
+                    value   : elem_id,
+                },
             };
-        var user_opts = {
+            var user_opts = {
                 title    : 'New customer info',
                 name     : 'userextension',
                 fields   : user_fields,
             };
-                        
-            $('<hr/>').appendTo(container);
-            var button = $("<button>", {html : 'new customer info'});
+                            
+            var button = $("<button>", {html : 'Add customer info'}).button({
+                icons : { primary : 'ui-icon-plusthick' }
+            });
             button.bind('click', function() {
                 new ModalForm(user_opts).start();
             });   
             container.append(button);
         };        
+
         create_grid({
             url: '/api/userextension?user_id='+elem_id,
             content_container_id: container_id,
@@ -172,7 +169,7 @@ function Customers() {
         });
         createAddCustomerInfoButton(container_id);
     }
-    }
+}
 
 
 
