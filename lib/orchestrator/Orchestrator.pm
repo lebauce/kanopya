@@ -529,14 +529,20 @@ sub _evalRule {
             }
             else {
                 $rep++;
-                my $isVerified = $rule->isVerifiedForANode(externalnode_hostname => $host_name);
-                if ($isVerified == 1){
-                    $log->info("Rule has been verifieds for node <$host_name> : do not trigger Workflow");
-                }
-                else{
-                    my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
-                    if (defined $wf_def_id){
+                my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
 
+                if (defined $wf_def_id){
+
+                    my $externalnode_id = Externalnode->find(hash => {
+                        externalnode_hostname => $host_name,
+                        service_provider_id   => $service_provider->getId(),
+                    })->getId();
+
+                    my $isWorkflowRunning = $rule->isWorkflowRunning(
+                        externalnode_id => $externalnode_id,
+                    );
+
+                    if ($isWorkflowRunning == 0) {
                         $log->info("Trigger Workflow <$wf_def_id>");
 
                         my $workflow = $workflow_manager->runWorkflow(
@@ -547,13 +553,11 @@ sub _evalRule {
                         );
 
                         $rule->setVerifiedRule(
-                            hostname            => $host_name,
-                            service_provider_id => $service_provider_id,
+                            externalnode_id     => $externalnode_id,
                             state               => 'verified',
                             workflow_id         => $workflow->getId(),
                         );
-
-                    } # ELSE => NO WORKFLOW TO TRIGGER
+                    }
                 }
             }
         }

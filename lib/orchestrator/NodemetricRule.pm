@@ -21,6 +21,7 @@ use Externalnode;
 use NodemetricCondition;
 use Entity::ServiceProvider;
 use VerifiedNoderule;
+use Workflow;
 use List::MoreUtils qw {any} ;
 use Switch;
 # logger
@@ -206,7 +207,7 @@ sub isVerifiedForANode{
     if(defined $args{externalnode_hostname}){
         my $node = Externalnode->find(hash => {externalnode_hostname => $args{externalnode_hostname}});
        $externalnode_id = $node->getId(); 
-   }
+    }
     else {
         $externalnode_id = $args{externalnode_id};
     }
@@ -321,38 +322,53 @@ sub deleteVerifiedRuleWfDefId {
 sub setVerifiedRule{
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'hostname', 
-                                                       'service_provider_id',
+    General::checkParams(args => \%args, required => [ 'externalnode_id',
                                                        'state',
                                                        'workflow_id',
     ]);
 
-    my $hostname             = $args{hostname};
-    my $service_provider_id  = $args{service_provider_id};
-
-    # GET THE EXTERNAL NODE ID    
-    # note : externalcluster_name is UNIQUE !
-
-    my $service_provider = Entity->get('id' => $service_provider_id);
-    my $externalnode;
-    eval{
-        $externalnode = Externalnode->find(hash => {
-            externalnode_hostname => $hostname,
-            service_provider_id   => $service_provider->getId(),
-        });
-    };
-    if($@){
-        $log->error($@);
-        $log->info("Could not find externalnode hostname <$hostname> in service_provider <$service_provider->getId()>");
-    }
-
     $self->{_dbix}
          ->verified_noderules
          ->update_or_create({
-               verified_noderule_externalnode_id  => $externalnode->getId(),
+               verified_noderule_externalnode_id  => $args{externalnode_id},
                verified_noderule_state            => $args{state},
                workflow_id                        => $args{workflow_id},
     });
+}
+
+=head2 isWorkflowInProcess
+
+    Class : Public
+
+    Desc : Check if a workflow is in process for a node
+
+    Args :
+        node_id : the node
+
+=cut
+
+sub isWorkflowRunning{
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'externalnode_id' ]);
+
+    my $row = $self->{_dbix}
+        ->verified_noderules
+        ->find({
+            verified_noderule_externalnode_id    => $args{externalnode_id},
+        });
+
+    if(not defined $row){
+        return 0;
+    }
+
+    my $workflow_id = $row->workflow_id;
+    my $state = Workflow->get(id => $workflow_id)->state;
+    if ($state eq 'running') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 sub isCombinationDependant{
