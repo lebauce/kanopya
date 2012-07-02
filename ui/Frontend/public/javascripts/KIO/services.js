@@ -3,105 +3,6 @@ require('modalform.js');
 require('common/service_common.js');
 require('common/formatters.js');
 
-function getAllConnectorFields() {
-    return {
-        'activedirectory'   : {
-            ad_host             : {
-                label   : 'Domain controller',
-                help    : 'May be the Domain Controller name or the Domain Name'
-            },
-            ad_nodes_base_dn    : {
-                label   : 'Nodes container DN',
-                help    : 'The Distinguished Name of either:<br/> - OU<br/>- Group<br/>- Container'
-            },
-            ad_user             : {
-                label   : 'User@domain'
-            },
-            ad_usessl           : {
-                label   : 'Use SSL ?',
-                type    : 'checkbox'
-            }
-        },
-        'scom'              : {
-            scom_ms_name        : {
-                label   : 'Root Management Server FQDN'
-            },
-            scom_usessl         : {
-                label   : 'Use SSL ?',
-                type    : 'checkbox'
-            },
-        },
-        'sco'               : {},
-        'mockmonitor'       : {}
-    };
-}
-
-function createSpecServDialog(provider_id, name, first, category, elem, editid) {
-    var allFields   = getAllConnectorFields();
-    var ad_opts     = {
-        title           : ((editid === undefined) ? 'Add a ' + category : 'Edit ' + name),
-        name            : name,
-        fields          : allFields[name],
-        prependElement  : elem,
-        id              : editid
-    };
-    ad_opts.fields.service_provider_id = {
-        label   : '',
-        type    : 'hidden',
-        value   : provider_id
-    };
-    if (first) {
-        ad_opts.skippable   = true;
-        var step            = 3;
-        if (category === 'DirectoryServiceManager') {
-            ad_opts.callback    = function() {
-                createMonDirDialog(provider_id, 'Collectormanager', first).start();
-            };
-            step    = 2;
-        }
-        ad_opts.title       = 'Step ' + step + ' of 3 : ' + ad_opts.title;
-    } else {
-        ad_opts.callback    = function() {
-            var container = $('div#content_service_configuration_' + provider_id);
-            container.empty();
-            loadServicesConfig(container.attr('id'), provider_id);
-        };
-    }
-    return new ModalForm(ad_opts);
-}
-
-function createMonDirDialog(elem_id, category, firstDialog) {
-    var ADMod;
-    select          = $("<select>");
-    var options;
-    $.ajax({
-        async   : false,
-        type    : 'get',
-        url     : '/api/connectortype?connector_category=' + category,
-        success : function(data) {
-            options = data;
-        }
-    });
-    var fields      = getAllConnectorFields();
-    for (option in options) {
-        option = options[option];
-        if (fields.hasOwnProperty(option.connector_name.toLowerCase())) {
-            $(select).append($("<option>", { value : option.connector_name.toLowerCase(), text : option.connector_name }));
-        }
-    }
-    $(select).bind('change', function(event) {
-        var name    = event.currentTarget.value;
-        var newMod  = createSpecServDialog(elem_id, name, firstDialog, category);
-        $(ADMod.form).remove();
-        ADMod.form  = newMod.form;
-        ADMod.handleArgs(newMod.exportArgs());
-        $(ADMod.content).append(ADMod.form);
-        ADMod.startWizard();
-    });
-    ADMod   = createSpecServDialog(elem_id, $(select).attr('value'), firstDialog, category, select);
-    return ADMod;
-}
-
 function createAddServiceButton(container) {
     var service_fields  = {
         externalcluster_name    : {
@@ -132,7 +33,6 @@ function createAddServiceButton(container) {
         callback    : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
             reloadServices();
-            createMonDirDialog(data.pk, 'DirectoryServiceManager', true).start();
         },
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");

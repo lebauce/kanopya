@@ -2,6 +2,39 @@ require('modalform.js');
 require('KIO/services.js');
 require('KIO/services_config.js');
 
+function getAllConnectorFields() {
+    return {
+        'activedirectory'   : {
+            ad_host             : {
+                label   : 'Domain controller',
+                help    : 'May be the Domain Controller name or the Domain Name'
+            },
+            ad_nodes_base_dn    : {
+                label   : 'Nodes container DN',
+                help    : 'The Distinguished Name of either:<br/> - OU<br/>- Group<br/>- Container'
+            },
+            ad_user             : {
+                label   : 'User@domain'
+            },
+            ad_usessl           : {
+                label   : 'Use SSL ?',
+                type    : 'checkbox'
+            }
+        },
+        'scom'              : {
+            scom_ms_name        : {
+                label   : 'Root Management Server FQDN'
+            },
+            scom_usessl         : {
+                label   : 'Use SSL ?',
+                type    : 'checkbox'
+            },
+        },
+        'sco'               : {},
+        'mockmonitor'       : {}
+    };
+}
+
 function deleteService(eid) {
     $.ajax({
         url     : '/api/connector?service_provider_id=' + eid,
