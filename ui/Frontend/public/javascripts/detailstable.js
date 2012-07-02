@@ -44,7 +44,7 @@ function DetailsTable(container_id, elem_id, opts) {
     }
     
     DetailsTable.prototype.addAction = function(opts) {
-        var button = $('<button>', { text: opts.label });            
+        var button = $('<button>', { text: opts.label }).button();            
         button.bind('click', function() {
                 opts.action();
         });
