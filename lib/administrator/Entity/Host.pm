@@ -170,7 +170,12 @@ sub methods {
         'addIface'=> {'description' => 'add one or more interface to  this host',
                         'perm_holder' => 'entity',
         },
-
+        'getAdminIp'=> {'description' => 'get ip address for administration interface',
+                        'perm_holder' => 'entity',
+        },
+        'getIfaces'=> {'description' => 'get network interfaces',
+                        'perm_holder' => 'entity',
+        },
         'setperm'    => {'description' => 'set permissions on this host',
                         'perm_holder' => 'entity',
         },
