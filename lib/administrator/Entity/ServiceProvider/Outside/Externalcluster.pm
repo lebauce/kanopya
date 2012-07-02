@@ -249,9 +249,10 @@ sub updateNodes {
      for my $node (@$nodes) {
          if (defined $node->{hostname}) {
             $new_node_count++;
-       
+
+            my $row;
             eval {
-                my $row = Externalnode->find( hash => {
+                $row = Externalnode->find( hash => {
                               externalnode_hostname   => $node->{hostname},
                           });
             };
