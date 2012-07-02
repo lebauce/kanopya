@@ -33,7 +33,7 @@ use AggregateCondition;
 use AggregateRule;
 use Clustermetric;
 use ScomIndicator;
-use Externalnode::Node;
+use Externalnode;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -249,17 +249,17 @@ sub updateNodes {
      for my $node (@$nodes) {
          if (defined $node->{hostname}) {
             $new_node_count++;
-            
-            my $row = $self->{_dbix}->parent->externalnodes->find({
-                externalnode_hostname   => $node->{hostname},
-            });
-            
+       
+            my $row = Externalnode->find({
+                     externalnode_hostname   => $node->{hostname},
+                   });
+
             if(! defined $row){
-                my $node_row = $self->{_dbix}->parent->externalnodes->create({
+                my $node_row = Externalnode->new({
                     externalnode_hostname   => $node->{hostname},
                     externalnode_state      => 'down',
                 });
-                $node->{id} =  $node_row->id;
+                $node->{id} =  $node_row->externalnode_id;
                 push @created_nodes, $node;
             }
          }
