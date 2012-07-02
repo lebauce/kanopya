@@ -284,7 +284,7 @@ sub runWorkflow {
                           );
 
     #run the workflow with the fully defined params
-    Workflow->run(name => $workflow_name, params => $workflow_params);
+    return Workflow->run(name => $workflow_name, params => $workflow_params);
 }
 
 =head2 getWorkflowDefs
