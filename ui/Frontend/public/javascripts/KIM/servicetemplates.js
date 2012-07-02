@@ -23,7 +23,7 @@ var service = {
         label        : 'Service name',
         type         : 'text',
         is_mandatory : true,
-        pattern      : '.*',
+        pattern      : '^[a-z_0-9]+$',
     },
     cluster_desc : {
         step         : 'Service',

@@ -311,7 +311,7 @@ sub addNetworkInterface {
     if (defined $args{default_gateway}) {
         $params->{default_gateway} = $args{default_gateway};
     }
-    my $interface = Entity::Interface->new(\$params);
+    my $interface = Entity::Interface->new(%$params);
 
     # Associate to networks if defined
     if (defined $args{networks}) {

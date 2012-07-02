@@ -651,7 +651,7 @@ var PolicyForm = (function() {
             }
         } else {
             this.findContainer(step).find('select').each(update_select);
-            
+
             this.findContainer(step).find('input').each(function() {
                 $(this).val('');
                 if (! (that.fields[$(this).attr('name')].disabled || that.fields[$(this).attr('name')].disable_filled)) {
@@ -948,7 +948,6 @@ var PolicyForm = (function() {
                     $(this).val(parseInt($(this).val()) - that.fields[id].value_shift);
                 }
                 if (that.fields[id].type === 'radio' && $(this).val() === 'on') {
-                    alert(id)
                     $(this).val(1);
                 }
                 if (that.fields[id].serialize != null) {

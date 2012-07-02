@@ -41,6 +41,13 @@ __PACKAGE__->table("interface");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 default_gateway
+
+  data_type: 'integer'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -64,6 +71,13 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
+    is_nullable => 0,
+  },
+  "default_gateway",
+  {
+    data_type => "integer",
+    default_value => 0,
+    extra => { unsigned => 1 },
     is_nullable => 0,
   },
 );
@@ -147,8 +161,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-24 11:28:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8J+znHg1tcDUiFNjf/GCXA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-02 17:46:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:aSZ49tq8SNRVJ2xqjCggLw
 
 __PACKAGE__->belongs_to(
   "parent",
