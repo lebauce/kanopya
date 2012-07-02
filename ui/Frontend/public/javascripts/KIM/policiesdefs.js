@@ -177,6 +177,11 @@ var policies = {
             composite    : 'network_interface',
             is_mandatory : 1,
         },
+        default_gateway : {
+            label        : 'Default gateway',
+            type         : 'radio',
+            composite    : 'network_interface',
+        },
         interface_networks : {
             label        : 'Network',
             type         : 'select',

@@ -194,6 +194,14 @@ var PolicyForm = (function() {
             (type !== 'textarea' && type !== 'select')) {
             var type    = type || 'text';
             var input   = $("<input>", { type : type });
+
+            if (type === 'radio') {
+                input.change(this.radioButtonChecked);
+
+                if ($('*[rel="' + elementName + '"]').length == 0) {
+                    input.attr('checked', 'checked');
+                }
+            }
         } else if (type === 'textarea') {
             var type    = 'textarea';
             var input   = $("<textarea>");
@@ -522,6 +530,15 @@ var PolicyForm = (function() {
         }
 
         return inserted;
+    }
+
+    PolicyForm.prototype.radioButtonChecked = function (event, toto) {
+        var clicked = $('#' + event.target.id);
+
+        /* As we can have exclusive radio that hjace different input names,
+         * we manually uncheck other radio belonging to the same radio group.
+         */
+        $('*[rel="' + clicked.attr('rel') + '"]').not('#' + event.target.id).removeAttr('checked');
     }
 
     PolicyForm.prototype.updateValues = function (element, selected_id) {
@@ -930,6 +947,10 @@ var PolicyForm = (function() {
                 if (that.fields[id].type === 'checkbox' && parseInt($(this).val())) {
                     $(this).val(parseInt($(this).val()) - that.fields[id].value_shift);
                 }
+                if (that.fields[id].type === 'radio' && $(this).val() === 'on') {
+                    alert(id)
+                    $(this).val(1);
+                }
                 if (that.fields[id].serialize != null) {
                     $(this).val(that.fields[id].serialize($(this).val()));
                 }
@@ -1041,7 +1062,7 @@ var PolicyForm = (function() {
         }
 
         buttons['Cancel'] = $.proxy(this.cancel, this);
-        buttons['Ok']     = $.proxy(this.back, this);
+        buttons['Ok']     = $.proxy(this.validateForm, this);
 
         if (this.skippable) {
             buttons['Skip'] = $.proxy(function() {
@@ -1087,6 +1108,7 @@ var PolicyForm = (function() {
         var remove_wizard_ignore = function() {
             $(this).removeClass('wizard-ignore');
         }
+
         if ($(this.form).formwizard("state").currentStep) {
             var step_preffix = this.name + '_step';
             var step = $(this.form).formwizard("state").currentStep.substring(step_preffix.length);
