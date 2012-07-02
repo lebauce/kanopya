@@ -17,6 +17,7 @@ use strict;
 use warnings;
 use base 'BaseDB';
 use Data::Dumper;
+use Externalnode;
 use NodemetricCondition;
 use Entity::ServiceProvider;
 use VerifiedNoderule;
@@ -318,43 +319,40 @@ sub deleteVerifiedRuleWfDefId {
 }
 
 sub setVerifiedRule{
-    my $self = shift;
-    my %args = @_;
-    
-    my $hostname   = $args{hostname};
-    my $cluster_id = $args{cluster_id};
-    my $state      = $args{state};
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'hostname', 
+                                                       'service_provider_id',
+                                                       'state',
+                                                       'workflow_id',
+    ]);
+
+    my $hostname             = $args{hostname};
+    my $service_provider_id  = $args{service_provider_id};
 
     # GET THE EXTERNAL NODE ID    
     # note : externalcluster_name is UNIQUE !
-    
-    # my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
-    
-    my $service_provider = Entity->get('id' => $cluster_id);    
-    my $extnodes = $service_provider->getNodes();
-    
-    my $externalnode_id;
-    
-    foreach my $extnode (@$extnodes) {
-        if($extnode->{hostname} eq $hostname) {
-            $externalnode_id = $extnode->{id};
-        }
+
+    my $service_provider = Entity->get('id' => $service_provider_id);
+    my $externalnode;
+    eval{
+        $externalnode = Externalnode->find(hash => {
+            externalnode_hostname => $hostname,
+            service_provider_id   => $service_provider->getId(),
+        });
+    };
+    if($@){
+        $log->error($@);
+        $log->info("Could not find externalnode hostname <$hostname> in service_provider <$service_provider->getId()>");
     }
-    
-    if(not defined $externalnode_id){
-        my $errmsg = "UNKOWN node $hostname in cluster $cluster_id";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    else{
-       # print "** $externalnode_id **\n";
-        $self->{_dbix}
-                ->verified_noderules
-                ->update_or_create({
-                    verified_noderule_externalnode_id    => $externalnode_id,
-                    verified_noderule_state              => $state,
-                });
-    }
+
+    $self->{_dbix}
+         ->verified_noderules
+         ->update_or_create({
+               verified_noderule_externalnode_id  => $externalnode->getId(),
+               verified_noderule_state            => $args{state},
+               workflow_id                        => $args{workflow_id},
+    });
 }
 
 sub isCombinationDependant{

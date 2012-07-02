@@ -526,15 +526,6 @@ sub _evalRule {
         if(defined $nodeEval){
             if($nodeEval eq 0){
                 $log->info('Rule not verified for node <'.($host_name).'>');
-
-                if ($rule->isVerifiedForANode(externalnode_hostname => $host_name)){
-
-                    $log->info("Remove rule from verified rules");
-                    $rule->deleteVerifiedRule(
-                        hostname   => $host_name,
-                        cluster_id => $service_provider_id,
-                    );
-                }
             }
             else {
                 $rep++;
@@ -546,20 +537,22 @@ sub _evalRule {
                     my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
                     if (defined $wf_def_id){
 
-                       $log->info("Trigger Workflow <$wf_def_id>");
+                        $log->info("Trigger Workflow <$wf_def_id>");
 
-                       $rule->setVerifiedRule(
-                            hostname   => $host_name,
-                            cluster_id => $service_provider_id,
-                            state      => 'verified',
-                        );
-
-                        $workflow_manager->runWorkflow(
-                            workflow_def_id => $workflow_def_id,
-                            host_name => $host_name,
+                        my $workflow = $workflow_manager->runWorkflow(
+                            workflow_def_id     => $workflow_def_id,
+                            host_name           => $host_name,
                             service_provider_id => $service_provider_id,
-                            rule_id => $rule_id
+                            rule_id             => $rule_id
                         );
+
+                        $rule->setVerifiedRule(
+                            hostname            => $host_name,
+                            service_provider_id => $service_provider_id,
+                            state               => 'verified',
+                            workflow_id         => $workflow->getId(),
+                        );
+
                     } # ELSE => NO WORKFLOW TO TRIGGER
                 }
             }
