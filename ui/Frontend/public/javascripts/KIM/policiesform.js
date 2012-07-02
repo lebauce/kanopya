@@ -944,6 +944,9 @@ var PolicyForm = (function() {
                 if (that.fields[id].prefix) {
                     $(this).attr('name', that.fields[id].prefix + $(this).attr('name'));
                 }
+                if ((that.fields[id].type === 'select' || that.fields[id].type === 'checkbox') && parseInt($(this).val()) == 0 ) {
+                    $(this).attr('disabled', 'disabled');
+                }
                 if (that.fields[id].type === 'checkbox' && parseInt($(this).val())) {
                     $(this).val(parseInt($(this).val()) - that.fields[id].value_shift);
                 }
