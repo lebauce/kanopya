@@ -97,6 +97,25 @@ sub new {
     return $self;
 }
 
+=head2 addManager
+
+    overload ServiceProvider::addManager to insert initial monitoring configuration when adding a collector manager
+
+=cut
+
+sub addManager {
+    my $self = shift;
+    my %args = @_;
+
+    my $manager = $self->SUPER::addManager( %args );
+
+    if ($args{"manager_type"} eq 'collector_manager') {
+        $self->monitoringDefaultInit();
+    }
+
+    return $manager;
+}
+
 =head2 getState
 
 =cut
