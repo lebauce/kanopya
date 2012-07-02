@@ -92,7 +92,8 @@ INSERT INTO `entity_comment` VALUES
 (1, 'Used when no vlan are required'),
 (2, 'Network used for system administration'),
 (3, 'Network used for public access'),
-(4, 'Network used for virtual machines');
+(4, 'Network used for virtual machines'),
+(5, 'Private network');
 
 --
 -- profile
