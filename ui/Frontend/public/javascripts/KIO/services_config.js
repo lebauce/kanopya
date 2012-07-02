@@ -174,13 +174,13 @@ function createManagerButton(connectortype, managertype, ctnr, sp_id, container_
                         'Ok'        : function() {
                             var dial    = this;
                             $.ajax({
-                                url         : '/api/serviceprovidermanager',
+                                url         : '/api/serviceprovider/' + sp_id + '/addManager',
                                 type        : 'POST',
-                                data        : {
+                                data        : JSON.stringify({
                                     manager_type        : managertype,
-                                    manager_id          : $(select).attr('value'),
-                                    service_provider_id : sp_id,
-                                },
+                                    manager_id          : $(select).attr('value')
+                                }),
+                                contentType : 'application/json',
                                 success     : function() {
                                     $(dial).dialog("destroy");
                                     $(container).empty();
