@@ -250,9 +250,15 @@ sub updateNodes {
          if (defined $node->{hostname}) {
             $new_node_count++;
        
-            my $row = Externalnode->find( hash => {
-                     externalnode_hostname   => $node->{hostname},
-                   });
+            eval {
+                my $row = Externalnode->find( hash => {
+                              externalnode_hostname   => $node->{hostname},
+                          });
+            };
+            if ($@) {
+                $errmsg = 'could not find '.$node->{hostname}.' while updating nodes';
+                $log->info($errmsg);
+            }
 
             if(! defined $row){
                 my $node_row = Externalnode->new( hash => {
