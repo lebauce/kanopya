@@ -779,7 +779,7 @@ var PolicyForm = (function() {
                 prefix  : this.fields[name].prefix,
                 disable_filled : this.fields[name].disable_filled,
                 hide_filled    : this.fields[name].hide_filled,
-                is_mandatory   : (this.fields[name].is_mandatory && this.fields[name].disable_filled),
+                is_mandatory   : (this.fields[name].is_mandatory && this.fields[name].hide_filled),
             }
 
             var tr = undefined;
@@ -1035,10 +1035,14 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.openDialog = function() {
-        var buttons = {
-            'Cancel'    : $.proxy(this.cancel, this),
-            'Ok'        : $.proxy(this.validateForm, this)
-        };
+        var buttons = {};
+        if($(this.form).children("table").length > 1) {
+            buttons['Back'] = $.proxy(this.back, this);
+        }
+
+        buttons['Cancel'] = $.proxy(this.cancel, this);
+        buttons['Ok']     = $.proxy(this.back, this);
+
         if (this.skippable) {
             buttons['Skip'] = $.proxy(function() {
                 this.closeDialog();
@@ -1060,6 +1064,14 @@ var PolicyForm = (function() {
     PolicyForm.prototype.cancel = function() {
         this.cancelCallback();
         this.closeDialog();
+    }
+
+    PolicyForm.prototype.back = function() {
+        var state = $(this.form).formwizard("state");
+        if (state.isFirstStep) {
+            this.cancel();
+        }
+        $(this.form).formwizard("back");
     }
 
     PolicyForm.prototype.closeDialog = function() {
