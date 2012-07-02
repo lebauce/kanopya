@@ -47,7 +47,7 @@ function servicesList (container_id, elem_id) {
 function loadServicesRessources (container_id, elem_id) {
     var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
     var nodemetricrules;
-
+    var container = $('#'+container_id);
     $.ajax({
         url     : '/api/nodemetricrule?nodemetric_rule_service_provider_id=' + elem_id,
         success : function(data) {
@@ -103,8 +103,31 @@ function loadServicesRessources (container_id, elem_id) {
         },
         action_delete: 'no',
     } );
-
-    //createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesRessourcesGridId));
+    var button1 = $("<button>", { html: 'Start service' }).button();
+    button1.bind('click', function() {
+        $.ajax({
+            url     : '/api/cluster/' + elem_id + '/start',
+            type    : 'post',
+            success : function(data) {
+                // ?
+            }
+        });
+    });
+    
+    var button2 = $("<button>", { html: 'Stop service' }).button();
+    button2.bind('click', function() {
+        $.ajax({
+            url     : '/api/cluster/' + elem_id + '/stop',
+            type    : 'post',
+            success : function(data) {
+                // ?
+            }
+        });
+    });
+    
+    container.append(button1);
+    container.append(button2);
+    
 }
 
 // load network interfaces details grid for a node
