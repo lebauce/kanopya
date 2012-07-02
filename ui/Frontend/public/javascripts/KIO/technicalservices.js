@@ -30,6 +30,7 @@ function getPossibleConnectorTypes(eid) {
 function connectConnectorForm(eid, type, id, cb) {
     if (type != null && id == null)
         return;
+    cb  = cb || $.noop;
     var modal;
     if (type == null) {
         var selectType  = $('<select>');
@@ -61,7 +62,7 @@ function connectConnectorForm(eid, type, id, cb) {
             var tmpmod  = new ModalForm({
                 name    : tmp,
                 fields  : fields,
-                cancel  : function() { deleteService(eid); cb(); },
+                cancel  : function() { deleteService(eid); },
                 callback: function() { $('#technicalserviceslistgrid').trigger('reloadGrid'); cb(); }
             });
             $(modal.form).remove();
@@ -80,7 +81,7 @@ function connectConnectorForm(eid, type, id, cb) {
         fields          : fields,
         prependElement  : prependel,
         id              : id,
-        cancel          : function() { deleteService(eid); cb(); },
+        cancel          : function() { deleteService(eid); },
         callback        : function() { $('#technicalserviceslistgrid').trigger('reloadGrid'); cb(); }
     });
     modal.start();
