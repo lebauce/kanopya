@@ -94,8 +94,6 @@ sub new {
 
     my $self = $class->SUPER::new( %args );
 
-    $self->monitoringDefaultInit();
-
     return $self;
 }
 
