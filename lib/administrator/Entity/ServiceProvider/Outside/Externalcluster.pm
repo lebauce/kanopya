@@ -250,12 +250,12 @@ sub updateNodes {
          if (defined $node->{hostname}) {
             $new_node_count++;
        
-            my $row = Externalnode->find({
+            my $row = Externalnode->find( hash => {
                      externalnode_hostname   => $node->{hostname},
                    });
 
             if(! defined $row){
-                my $node_row = Externalnode->new({
+                my $node_row = Externalnode->new( hash => {
                     externalnode_hostname   => $node->{hostname},
                     externalnode_state      => 'down',
                 });
