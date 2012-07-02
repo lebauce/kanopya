@@ -262,10 +262,11 @@ sub updateNodes {
             }
 
             if(! defined $row){
-                my $node_row = Externalnode->new( hash => {
+                my $node_row = Externalnode->new(
                     externalnode_hostname   => $node->{hostname},
                     externalnode_state      => 'down',
-                });
+                    service_provider_id     => $self->getId(),
+                );
                 $node->{id} =  $node_row->externalnode_id;
                 push @created_nodes, $node;
             }
