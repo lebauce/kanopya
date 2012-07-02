@@ -32,6 +32,9 @@ var mainmenu_def = {
             { label : 'Overview', id : 'workflows_overview', onLoad : workflowsoverview },
             { label : 'Workflow Management' , id : 'workflowmanagement', onLoad : sco_workflow },
         ],
+        'Technical Services' : [
+            { label : 'Technical Services', id : 'technicalservices', onLoad : function(cid) { require('KIO/technicalservices.js'); technicalserviceslist(cid); } }
+        ]
     },
 };
 

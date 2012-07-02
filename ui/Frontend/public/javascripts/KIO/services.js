@@ -155,7 +155,16 @@ function servicesList (container_id, elem_id) {
         content_container_id: container_id,
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
-            addServiceExtraData(grid, rowid, rowdata, rowelem, 'external');
+            $.ajax({
+                url     : '/api/connector?service_provider_id=' + rowdata.pk,
+                success : function(data) {
+                    if (data.length <= 0) {
+                        addServiceExtraData(grid, rowid, rowdata, rowelem, 'external');
+                    } else {
+                        $(grid).delRowData(rowid);
+                    }
+                }
+            });
         },
         rowNum : 25,
         colNames: [ 'ID', 'Name', 'State', 'Rules State', 'Node Number' ],

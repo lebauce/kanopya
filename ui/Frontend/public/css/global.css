@@ -73,6 +73,10 @@ td {
   vertical-align: top;
 }
 
+td .ui-button {
+    margin-top: 0;
+}
+
 td.helpCell {
   text-align      : justify;
   color           : #828282;
