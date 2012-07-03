@@ -389,6 +389,7 @@ sub insertCollectorIndicators {
 
     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
     my $params;
+    my @scom_indicators;
 
     # Create a scom indicator for each indicator from scom set (sic)
     for my $indicator (@indicators) {
@@ -404,9 +405,12 @@ sub insertCollectorIndicators {
                         indicator_unit => $indicator->getAttr(name => 'indicator_unit'),
                         service_provider_id => $service_provider_id,
             };
-            ScomIndicator->new(%$params);
+            my $scom_indicator = ScomIndicator->new(%$params);
+            push @scom_indicators, $scom_indicator;
         }
     }
+
+    return \@scom_indicators;
 }
 
 =head2 monitoringDefaultInit
@@ -425,11 +429,11 @@ sub monitoringDefaultInit {
     my $adm = Administrator->new();
 
     #generate the scom indicators (only default)
-    $self->insertCollectorIndicators(default => 1);
+    my $indicators = $self->insertCollectorIndicators(default => 1);
 
     my $service_provider_id = $self->getId();
     my $collector           = $self->getManager(manager_type => "collector_manager");
-    my $indicators          = $collector->getIndicators();
+    #my $indicators          = $collector->getIndicators();
     my $active_session_indicator_id; 
     my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
     my @funcs = qw(mean max min std dataOut);
