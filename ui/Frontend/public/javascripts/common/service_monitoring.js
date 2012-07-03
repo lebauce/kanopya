@@ -102,7 +102,7 @@ function createServiceMetric(container_id, elem_id, ext) {
         },
         callback    : function(elem, form) {
                 $("#service_ressources_clustermetrics_"  + elem_id).trigger('reloadGrid');
-                if ($(form).find('#input_createcombination').val() === 'on') {
+                if ($(form).find('#input_createcombination').attr('checked')) {
                     $.ajax({
                         url     : '/api/aggregatecombination',
                         type    : 'POST',
