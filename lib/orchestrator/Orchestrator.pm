@@ -540,7 +540,7 @@ sub _evalRule {
 
                 my $is_verified = $rule->isVerifiedForANode(externalnode_hostname => $host_name);
 
-                if ($is_verified || (!defined $is_verified))){
+                if ($is_verified || (!defined $is_verified)){
                     $log->info("Remove rule from verified rules");
                     $rule->deleteVerifiedRule(
                         hostname   => $host_name,
