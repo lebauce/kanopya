@@ -197,6 +197,7 @@ function createmanagerDialog(connectortype, managertype, sp_id, callback, skippa
                 closeOnEscape   : false,
                 draggable       : false,
                 resizable       : false,
+                modal           : true,
                 buttons         : {
                     'Cancel'    : function() { $(this).dialog("destroy"); if (skippable) callback(); },
                     'Ok'        : function() {
@@ -239,6 +240,9 @@ function createmanagerDialog(connectortype, managertype, sp_id, callback, skippa
                                 },
                                 complete      : function() {
                                     $("div#waiting_default_insert").dialog("destroy");
+                                },
+                                error         : function() {
+                                    if (skippable) callback();
                                 }
                             });
                         }

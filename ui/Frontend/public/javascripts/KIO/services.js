@@ -32,10 +32,11 @@ function createAddServiceButton(container) {
         },
         callback    : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
-            reloadServices();
             require('KIO/services_config.js');
             createmanagerDialog('DirectoryServiceManager', 'directory_service_manager', data.pk, function() {
-                createmanagerDialog('Collectormanager', 'collector_manager', data.pk);
+                createmanagerDialog('Collectormanager', 'collector_manager', data.pk, function() {
+                    reloadServices();
+                }, true);
             }, true);
         },
         error       : function(data) {
