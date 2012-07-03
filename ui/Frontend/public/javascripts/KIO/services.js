@@ -72,11 +72,10 @@ function servicesList (container_id, elem_id) {
             });
         },
         rowNum : 25,
-        colNames: [ 'ID', 'Name', 'State', 'Rules State', 'Node Number' ],
+        colNames: [ 'ID', 'Name', 'Rules State', 'Node Number' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
             { name: 'externalcluster_name', index: 'service_name', width: 200 },
-            { name: 'externalcluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
             { name: 'rulesstate', index : 'rulesstate' },
             { name: 'node_number', index: 'node_number', width: 150 }
         ],
@@ -132,6 +131,7 @@ function createUpdateNodeButton(container, elem_id, grid) {
                                         $("input#adpassword").val("");
                                         $("div#adpassworderror").text(data.msg).addClass('ui-state-error');
                                     } else {
+                                        alert(data.msg);
                                         ok  = true;
                                     }
                                 }
