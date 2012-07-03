@@ -99,7 +99,9 @@ function loadServicesConfig (container_id, elem_id) {
                             url     : '/api/serviceprovider/' + mangr.service_provider_id,
                             async   : false,
                             success : function(sp) {
-                                var l   = $("<tr>", { text : data[i].manager_type + " : " + ((sp.externalcluster_name != null) ? sp.externalcluster_name : sp.cluster_name) });
+                                var l   = $("<tr>");
+                                $("<td>", { text : data[i].manager_type + ' : ' }).appendTo(l);
+                                var std = $("<td>", { text : (sp.externalcluster_name != null) ? sp.externalcluster_name : sp.cluster_name }).appendTo(l);
                                 $(table).append(l);
                                 $.ajax({
                                     url     : '/api/connector/' + mangr.pk,
@@ -108,7 +110,7 @@ function loadServicesConfig (container_id, elem_id) {
                                             $.ajax({
                                                 url     : '/api/connectortype/' + conn.connector_type_id,
                                                 success : function(conntype) {
-                                                    $(l).text($(l).text() + ' - ' + conntype.connector_name);
+                                                    $(std).text($(std).text() + ' - ' + conntype.connector_name);
                                                 }
                                             });
                                         }
@@ -120,15 +122,15 @@ function loadServicesConfig (container_id, elem_id) {
                 });
             }
 
-            if (isThereAManager(elem_id, 'workflow_manager') === false) {
+            if (isThereAManager(elem_id, 'workflow_manager') === null) {
                 createManagerButton('WorkflowManager', 'workflow_manager', ctnr, elem_id, container_id);
             }
 
-            if (isThereAManager(elem_id, 'collector_manager') === false) {
+            if (isThereAManager(elem_id, 'collector_manager') === null) {
                 createManagerButton('Collectormanager', 'collector_manager', ctnr, elem_id, container_id);
             }
 
-            if (isThereAManager(elem_id, 'directory_service_manager') === false) {
+            if (isThereAManager(elem_id, 'directory_service_manager') === null) {
                 createManagerButton('DirectoryServiceManager', 'directory_service_manager', ctnr, elem_id, container_id);
             }
 

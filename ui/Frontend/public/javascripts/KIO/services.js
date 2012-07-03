@@ -120,13 +120,14 @@ function createUpdateNodeButton(container, elem_id, grid) {
                         // If a password was typen, then we can submit the form
                         if (passwd !== "" && passwd !== undefined) {
                             $.ajax({
-                                url     : '/kio/services/' + elem_id + '/nodes/update',
-                                type    : 'post',
-                                async   : false,
-                                data    : {
+                                url         : '/api/externalcluster/' + elem_id + '/updateNodes',
+                                type        : 'POST',
+                                async       : false,
+                                data        : JSON.stringify({
                                     password    : passwd
-                                },
-                                success : function(data) {
+                                }),
+                                contentType : 'application/json',
+                                success     : function(data) {
                                     $(waitingPopup).dialog('close');
                                     // Ugly but there is no other way to differentiate error from confirm messages for now
                                     if ((new RegExp("^## EXCEPTION")).test(data.msg)) {

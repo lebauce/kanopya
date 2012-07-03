@@ -76,6 +76,10 @@ sub methods {
         'setperm'    => {'description' => 'set permissions on this cluster',
                         'perm_holder' => 'entity',
         },
+        'updateNodes'=> {
+            'description'   => 'update nodes',
+            'entity'        => 'perm_holder'
+        }
     };
 }
 
