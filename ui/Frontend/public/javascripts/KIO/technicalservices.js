@@ -9,10 +9,6 @@ function getAllConnectorFields() {
                 label   : 'Domain controller',
                 help    : 'May be the Domain Controller name or the Domain Name'
             },
-            ad_nodes_base_dn    : {
-                label   : 'Nodes container DN',
-                help    : 'The Distinguished Name of either:<br/> - OU<br/>- Group<br/>- Container'
-            },
             ad_user             : {
                 label   : 'User@domain'
             },

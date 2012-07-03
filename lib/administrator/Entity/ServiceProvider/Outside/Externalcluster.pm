@@ -269,6 +269,8 @@ sub updateNodes {
      my %args = @_;
      
      my $ds_manager = $self->getManager( manager_type => 'directory_service_manager' );
+     my $mparams    = $self->getManagerParameters( manager_type => 'directory_service_manager' );
+     $args{ad_nodes_base_dn}    = $mparams->{ad_nodes_base_dn};
      my $nodes      = $ds_manager->getNodes(%args);
      
      my @created_nodes;

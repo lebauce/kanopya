@@ -35,6 +35,16 @@ sub methods {
     };
 }
 
+=head2
+
+=cut
+
+sub getManagerParamsDef {
+    return [
+        'ad_nodes_base_dn'
+      ];
+}
+
 sub getNodes {
     throw Kanopya::Exceptions::NotImplemented();
 }
