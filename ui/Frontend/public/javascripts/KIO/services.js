@@ -129,14 +129,12 @@ function createUpdateNodeButton(container, elem_id, grid) {
                                 contentType : 'application/json',
                                 success     : function(data) {
                                     $(waitingPopup).dialog('close');
-                                    // Ugly but there is no other way to differentiate error from confirm messages for now
-                                    if ((new RegExp("^## EXCEPTION")).test(data.msg)) {
-                                        $("input#adpassword").val("");
-                                        $("div#adpassworderror").text(data.msg).addClass('ui-state-error');
-                                    } else {
-                                        alert(data.msg);
-                                        ok  = true;
-                                    }
+                                    ok  = true;
+                                },
+                                error       : function(data) {
+                                    $(waitingPopup).dialog('close');
+                                    $("input#adpassword").val("");
+                                    $("div#adpassworderror").text(JSON.parse(data.responseText).reason).addClass('ui-state-error');
                                 }
                             });
                             // If the form succeed, then we can close the dialog
