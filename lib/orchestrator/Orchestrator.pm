@@ -538,8 +538,9 @@ sub _evalRule {
             if($nodeEval eq 0){
                 $log->info('Rule not verified for node <'.($host_name).'>');
 
-                if ($rule->isVerifiedForANode(externalnode_hostname => $host_name)){
+                my $is_verified = $rule->isVerifiedForANode(externalnode_hostname => $host_name);
 
+                if ($is_verified || (!defined $is_verified))){
                     $log->info("Remove rule from verified rules");
                     $rule->deleteVerifiedRule(
                         hostname   => $host_name,
