@@ -44,7 +44,7 @@ function nodemetricconditionmodal(elem_id, editid) {
                     type    : 'POST'
                 });
             } else {
-                if ($(form).find('#input_create_rule').val() === 'on') {
+                if ($(form).find('#input_create_rule').attr('checked')) {
                     $.ajax({
                         url     : '/api/nodemetricrule',
                         type    : 'POST',
@@ -230,7 +230,7 @@ function serviceconditionmodal(elem_id, editid) {
                     type    : 'POST'
                 });
             } else {
-                if ($(form).find('#input_create_rule').val() === 'on') {
+                if ($(form).find('#input_create_rule').attr('checked')) {
                     $.ajax({
                         url     : '/api/aggregaterule',
                         type    : 'POST',
