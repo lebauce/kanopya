@@ -129,7 +129,7 @@ function node_rules_tab(cid, eid, service_provider_id) {
 }
 
 function isThereAManager(elem_id, category) {
-    var is  = false;
+    var is  = null;
 
     $.ajax({
         url         : '/api/serviceprovider/' + elem_id + '/getManager',
@@ -138,7 +138,7 @@ function isThereAManager(elem_id, category) {
         data        : JSON.stringify({ 'manager_type' : category }),
         async       : false,
         success     : function(data) {
-            is  = true;
+            is  = data;
         }
     });
     return is;

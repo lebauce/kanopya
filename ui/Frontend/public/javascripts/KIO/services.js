@@ -91,10 +91,12 @@ function servicesList (container_id, elem_id) {
 function createUpdateNodeButton(container, elem_id, grid) {
     var button = $("<button>", { text : 'Update Nodes' }).button({ icons : { primary : 'ui-icon-refresh' } });
     // Check if there is a configured directory service
-    if (isThereAManager(elem_id, 'directory_service_manager') === true) {
+    var manager = isThereAManager(elem_id, 'directory_service_manager');
+    if (manager) {
         $(button).bind('click', function(event) {
             var dialog = $("<div>", { css : { 'text-align' : 'center' } });
-            dialog.append($("<label>", { for : 'adpassword', text : 'Please enter your password :' }));
+            // Ugly cause specific for ActiveDirectory (access ad_user field)
+            dialog.append($("<label>", { for : 'adpassword', text : 'Please enter ' + manager.ad_user + ' password :' }));
             dialog.append($("<input>", { id : 'adpassword', name : 'adpassword', type : 'password' }));
             dialog.append($("<div>", { id : "adpassworderror", class : 'ui-corner-all' }));
             // Create the modal dialog
