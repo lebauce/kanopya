@@ -44,15 +44,18 @@ sub new {
 
     Class : Public
 
-    Desc :     Retrieve from storage (rrd) values for required var (ds).
+    Desc :  Retrieve from storage (rrd) values for required var (ds).
             For each ds can compute mean value on a time laps or percent value, using all values for the ds collected during the time laps.
+            Can also directly return raw data or timestamped data.
 
     Args :
-        rrd_name: string: the name of the rrd where data are stored.
-        time_laps: int: time laps to consider.
-        (optionnal) required_ds: array ref: list of ds name to retrieve. If not defined, get all ds. WARNING: don't use it if 'percent'.
-        (optionnal) percent: if defined compute percent else compute mean for each ds. See 'max_def'.
-        (optionnal) max_def: array: list of ds name to add to obtain max value (used to compute percent). If not defined, use all ds.
+        rrd_name                : string : the name of the rrd where data are stored.
+        time_laps               : int : time laps to consider.
+        (optionnal) required_ds : array ref : list of ds name to retrieve. If not defined, get all ds. WARNING: don't use it if 'percent'.
+        (optionnal) percent     : if defined compute percent else compute mean for each ds. See 'max_def'.
+        (optionnal) max_def     : array : list of ds name to add to obtain max value (used to compute percent). If not defined, use all ds.
+        (optionnal) raw         : if defined return raw data (no aggregation of data (percent, mean) during time step).
+        (optionnal) historical  : if defined return timestamped raw data. Win on options raw and percent.
 
     Return : A hash ( ds_name => computed_value )
 
@@ -116,9 +119,11 @@ sub getData {
         $log->warn("bad ds name in max definition: [ ", join(", ", @max_def), " ]");
     }
 
-    ################################################
-    # Build res data : ( ds_name => [v1, v2, ..] ) #
-    ################################################
+    #####################################################
+    # Build res data : ( ds_name => [v1, v2, ..] )      #
+    # and histo data : ( ds_name => { time => v1 , ..}) #
+    #####################################################
+    my %historical_data;
     while(my($time, @values) = $rrd->fetch_next()) {
         # compute max value for this row
         if (defined $values[0]) {
@@ -131,8 +136,11 @@ sub getData {
             if (defined $values[$ds_idx]) {
                 push @{ $res_data{ $ds_name } }, $values[$ds_idx];
             }
+            $historical_data{$ds_name}{$time} = $values[$ds_idx];
         }
     }
+
+    return %historical_data if (defined $args{historical});
 
     ######################################################
     # Build resulting hash : ( ds_name => f(v1,v2,...) ) #
@@ -162,6 +170,15 @@ sub getData {
     return %res;
 }
 
+=head2 getData
+
+    Class : Public
+
+    Desc  : Retrieve from storage (rrd) values for required indicatorset for a node.
+
+    See getData() for args info
+
+=cut
 
 sub getHostData {
     my $self = shift;
@@ -176,10 +193,12 @@ sub getHostData {
         $log->warn("No max definition to compute percent for '$args{set}'");
     }
 
-    my %host_data = $self->getData(rrd_name => $rrd_name,
-                                   time_laps => $args{time_laps},
-                                   max_def => (scalar @max_def) ? \@max_def : undef,
-                                   percent => $args{percent} );
+    my %host_data = $self->getData(rrd_name     => $rrd_name,
+                                   time_laps    => $args{time_laps},
+                                   max_def      => (scalar @max_def) ? \@max_def : undef,
+                                   percent      => $args{percent},
+                                   raw          => $args{raw},
+                                   historical   => $args{historical} );
 
     return \%host_data;
 }
