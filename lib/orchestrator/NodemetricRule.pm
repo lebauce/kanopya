@@ -17,6 +17,7 @@ use strict;
 use warnings;
 use base 'BaseDB';
 use Data::Dumper;
+use Externalnode;
 use NodemetricCondition;
 use Entity::ServiceProvider;
 use VerifiedNoderule;
@@ -205,7 +206,7 @@ sub isVerifiedForANode{
     if(defined $args{externalnode_hostname}){
         my $node = Externalnode->find(hash => {externalnode_hostname => $args{externalnode_hostname}});
        $externalnode_id = $node->getId(); 
-   }
+    }
     else {
         $externalnode_id = $args{externalnode_id};
     }
@@ -235,44 +236,21 @@ sub isVerifiedForANode{
 };
 
 sub deleteVerifiedRule  {
-    my $self = shift;
-    my %args = @_;
-    
-    my $hostname   = $args{hostname};
-    my $cluster_id = $args{cluster_id};
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'externalnode_id' ]);
 
-    # GET THE EXTERNAL NODE ID    
-    # note : externalcluster_name is UNIQUE !
-    
-    my $service_provider = Entity->get('id' => $cluster_id);    
-    my $extnodes = $service_provider->getNodes();
-    
-    my $externalnode_id;
-    
-    foreach my $extnode (@$extnodes) {
-        if($extnode->{hostname} eq $hostname) {
-            $externalnode_id = $extnode->{id};
-        }
-    }
-    
-    if(not defined $externalnode_id){
-        my $errmsg = "UNKOWN node $hostname in cluster $cluster_id";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }else{
-        $log->info("Try to delete $externalnode_id ");
-            my $verified_rule_dbix = 
-                    $self->{_dbix}
-                ->verified_noderules
-                ->find({
-                    verified_noderule_externalnode_id    => $externalnode_id,
-                });
-            if(defined $verified_rule_dbix){
-                $log->info("Delete $externalnode_id");
-                $verified_rule_dbix->delete();
-            } else {
-                $log->info("Not here $externalnode_id");
-            }
+    my $externalnode_id = $args{externalnode_id};
+
+    my $verified_noderule;
+    eval{
+        $verified_noderule = VerifiedNoderule->find(hash=>{
+            verified_noderule_externalnode_id    => $args{externalnode_id},
+            verified_noderule_nodemetric_rule_id => $self->getId(),
+        });
+    };
+
+    if (defined $verified_noderule) {
+        $verified_noderule->delete();
     }
 }
 
@@ -318,43 +296,18 @@ sub deleteVerifiedRuleWfDefId {
 }
 
 sub setVerifiedRule{
-    my $self = shift;
-    my %args = @_;
-    
-    my $hostname   = $args{hostname};
-    my $cluster_id = $args{cluster_id};
-    my $state      = $args{state};
+    my ($self, %args) = @_;
 
-    # GET THE EXTERNAL NODE ID    
-    # note : externalcluster_name is UNIQUE !
-    
-    # my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
-    
-    my $service_provider = Entity->get('id' => $cluster_id);    
-    my $extnodes = $service_provider->getNodes();
-    
-    my $externalnode_id;
-    
-    foreach my $extnode (@$extnodes) {
-        if($extnode->{hostname} eq $hostname) {
-            $externalnode_id = $extnode->{id};
-        }
-    }
-    
-    if(not defined $externalnode_id){
-        my $errmsg = "UNKOWN node $hostname in cluster $cluster_id";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    else{
-       # print "** $externalnode_id **\n";
-        $self->{_dbix}
-                ->verified_noderules
-                ->update_or_create({
-                    verified_noderule_externalnode_id    => $externalnode_id,
-                    verified_noderule_state              => $state,
-                });
-    }
+    General::checkParams(args => \%args, required => [ 'externalnode_id',
+                                                       'state',
+    ]);
+
+    $self->{_dbix}
+         ->verified_noderules
+         ->update_or_create({
+               verified_noderule_externalnode_id  => $args{externalnode_id},
+               verified_noderule_state            => $args{state},
+    });
 }
 
 sub isCombinationDependant{

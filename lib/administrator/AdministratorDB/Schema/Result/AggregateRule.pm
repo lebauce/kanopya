@@ -111,6 +111,13 @@ __PACKAGE__->add_columns(
   },
   "aggregate_rule_description",
   { data_type => "text", is_nullable => 1 },
+  "workflow_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 __PACKAGE__->set_primary_key("aggregate_rule_id");
 

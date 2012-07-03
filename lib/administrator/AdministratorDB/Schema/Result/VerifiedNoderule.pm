@@ -43,13 +43,6 @@ __PACKAGE__->table("verified_noderule");
   is_nullable: 0
   size: 8
 
-=head2 workflow_def_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -69,13 +62,6 @@ __PACKAGE__->add_columns(
   },
   "verified_noderule_state",
   { data_type => "char", is_nullable => 0, size => 8 },
-  "workflow_def_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
 );
 
 =head1 PRIMARY KEY
@@ -125,26 +111,6 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::NodemetricRule",
   { nodemetric_rule_id => "verified_noderule_nodemetric_rule_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 workflow_def
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "workflow_def",
-  "AdministratorDB::Schema::Result::WorkflowDef",
-  { workflow_def_id => "workflow_def_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
 );
 
 

@@ -60,7 +60,7 @@ sub _contructRetrieverOutput {
     my %args = @_;
 
     my $indicators = { };
-    my $time_span;
+    my $time_span = 0;
 
     my $service_provider = Entity::ServiceProvider->get(id => $args{service_provider_id});
     my @clustermetrics = $service_provider->clustermetrics;
