@@ -136,6 +136,17 @@ function loadServicesConfig (container_id, elem_id) {
     });
 }
 
+function _managerParams() {
+    var params  = {
+        'ad_nodes_base_dn'  : 'Nodes container DN'
+    };
+
+    return (function(name) {
+        return params[name];
+    });
+}
+var managerParams = _managerParams();
+
 function createManagerButton(connectortype, managertype, ctnr, sp_id, container_id) {
     var that = this;
     var container = $('#' + container_id);
@@ -172,7 +183,10 @@ function createManagerButton(connectortype, managertype, ctnr, sp_id, container_
                         type    : 'POST',
                         success : function(data) {
                             for (var i in data) if (data.hasOwnProperty(i)) {
-                                $(fieldset).append($('<label>', { text : data[i], for : data[i] })).append($("<input>", { name : data[i], id : data[i] }));
+                                $(fieldset).append($('<label>', {
+                                  text : managerParams(data[i]) + " : ",
+                                  for : data[i]
+                                })).append($("<input>", { name : data[i], id : data[i] }));
                             }
                         }
                     });
