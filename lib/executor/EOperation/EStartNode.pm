@@ -266,7 +266,7 @@ sub _generateNetConf {
             push @net_ifaces, { name    => $iface->iface_name,
                                 address => $iface->getIPAddr,
                                 netmask => $pool->poolip_netmask,
-                                gateway => $pool->poolip_gateway };
+                                gateway => $interface->hasDefaultGateway() ? $pool->poolip_gateway : undef };
         }
 
         # Apply VLAN's
@@ -530,6 +530,11 @@ sub _generatePXEConf {
     $self->getEContext->execute(command => $cmd);
 
     my $pxeiface = $args{host}->getPXEIface;
+    my $interface = $pxeiface->getInterface;
+    my $gateway = undef;
+    if($interface->hasDefaultGateway) {
+        $gateway = $pxeiface->getPoolip()->getAttr(name => 'poolip_gateway');
+    }
 
     # Add host in the dhcp
     my $subnet = $self->{context}->{dhcpd_component}->getInternalSubNetId();
@@ -549,6 +554,7 @@ sub _generatePXEConf {
         dhcpd3_hosts_ntp_server         => $self->{context}->{bootserver}->getMasterNodeIp(),
         dhcpd3_hosts_domain_name        => $self->{context}->{cluster}->getAttr(name => "cluster_domainname"),
         dhcpd3_hosts_domain_name_server => $self->{context}->{cluster}->getAttr(name => "cluster_nameserver1"),
+        dhcpd3_hosts_gateway            => $gateway,
         kernel_id                       => $host_kernel_id,
         erollback                       => $self->{erollback}
     );
