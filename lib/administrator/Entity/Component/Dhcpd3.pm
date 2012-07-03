@@ -142,6 +142,7 @@ sub getConf {
                 ntp_server         => $host->get_column('dhcpd3_hosts_ntp_server'),
                 mac_address        => $host->get_column('dhcpd3_hosts_mac_address'),
                 hostname           => $host->get_column('dhcpd3_hosts_hostname'),
+                gateway            => $host->get_column('dhcpd3_hosts_gateway'),
             };
         }
         push @data_subnets, {
@@ -175,11 +176,18 @@ sub addHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args,
-                         required => ['dhcpd3_subnet_id','dhcpd3_hosts_ipaddr',
-                                      'dhcpd3_hosts_mac_address', 'dhcpd3_hosts_hostname',
-                                      'kernel_id', "dhcpd3_hosts_ntp_server",
-                                      'dhcpd3_hosts_domain_name', 'dhcpd3_hosts_domain_name_server']);
+    General::checkParams(
+        args => \%args,
+        required => [   'dhcpd3_subnet_id',
+                        'dhcpd3_hosts_ipaddr',
+                        'dhcpd3_hosts_mac_address', 
+                        'dhcpd3_hosts_hostname',
+                        'kernel_id', 
+                        'dhcpd3_hosts_ntp_server',
+                        'dhcpd3_hosts_domain_name', 
+                        'dhcpd3_hosts_domain_name_server',
+                    ]
+    );
 
     my $dhcpd3_hosts_rs = $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts;
     my $res = $dhcpd3_hosts_rs->update_or_create(\%args);

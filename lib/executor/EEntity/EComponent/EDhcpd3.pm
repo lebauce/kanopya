@@ -28,11 +28,19 @@ sub addHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args,
-                         required => ['dhcpd3_subnet_id','dhcpd3_hosts_ipaddr',
-                                      'dhcpd3_hosts_mac_address', 'dhcpd3_hosts_hostname',
-                                      'kernel_id', "dhcpd3_hosts_ntp_server",
-                                      'dhcpd3_hosts_domain_name', 'dhcpd3_hosts_domain_name_server']);
+    General::checkParams(
+        args => \%args,
+        required => [   'dhcpd3_subnet_id',
+                        'dhcpd3_hosts_ipaddr',
+                        'dhcpd3_hosts_mac_address',
+                        'dhcpd3_hosts_hostname',
+                        'kernel_id', 
+                        'dhcpd3_hosts_ntp_server',
+                        'dhcpd3_hosts_domain_name',
+                        'dhcpd3_hosts_domain_name_server',
+                    ]
+    );
+    
     my $erollback = $args{erollback};
     delete $args{erollback};
 
@@ -63,16 +71,20 @@ sub removeHost {
     my $ret = $self->_getEntity()->removeHost(%args);
     
     if(exists $args{erollback}) {
-        $args{erollback}->add(function   =>$self->can('addHost'),
-                              parameters => [$self,
-                                            'dhcpd3_subnet_id', $host->{dhcpd3_subnet_id},
-                                            'dhcpd3_hosts_ipaddr', $host->{dhcpd3_hosts_ipaddr},
-                                            'dhcpd3_hosts_mac_address', $host->{dhcpd3_hosts_mac_address}, 
-                                            'dhcpd3_hosts_hostname', $host->{dhcpd3_hosts_hostname},
-                                            'kernel_id', $host->{kernel_id},
-                                            "dhcpd3_hosts_ntp_server", $host->{dhcpd3_hosts_ntp_server},
-                                            'dhcpd3_hosts_domain_name', $host->{dhcpd3_hosts_domain_name},
-                                            'dhcpd3_hosts_domain_name_server', $host->{dhcpd3_hosts_domain_name_server}]);
+        $args{erollback}->add(
+            function   => $self->can('addHost'),
+            parameters => [ $self,
+                            'dhcpd3_subnet_id', $host->{dhcpd3_subnet_id},
+                            'dhcpd3_hosts_ipaddr', $host->{dhcpd3_hosts_ipaddr},
+                            'dhcpd3_hosts_mac_address', $host->{dhcpd3_hosts_mac_address}, 
+                            'dhcpd3_hosts_hostname', $host->{dhcpd3_hosts_hostname},
+                            'kernel_id', $host->{kernel_id},
+                            'dhcpd3_hosts_ntp_server', $host->{dhcpd3_hosts_ntp_server},
+                            'dhcpd3_hosts_domain_name', $host->{dhcpd3_hosts_domain_name},
+                            'dhcpd3_hosts_domain_name_server', $host->{dhcpd3_hosts_domain_name_server},
+                            'dhcpd3_hosts_gateway', $host->{dhcpd3_hosts_gateway},
+                            ]
+        );
     }
 
     return $ret;
