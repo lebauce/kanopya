@@ -129,4 +129,9 @@ sub getAssociatedIface {
                                          host_id      => $args{host}->getAttr(name => 'entity_id') });
 }
 
+sub hasDefaultGateway {
+    my ($self) = @_;
+    return $self->{_dbix}->get_column('default_gateway');
+}
+
 1;
