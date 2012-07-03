@@ -50,82 +50,82 @@ function scomManagement(cid, eid) {
     $('scom_indicators_list').jqGrid('setGridWidth', $(cid).parent().width()-20);
     
     function createIndicator(cid, eid) {
-    var service_fields  = {
-        indicator_name    : {
-            label   : 'Name',
-            type	: 'text',
-        },
-        indicator_oid	:{
-        	label	: 'OID',
-        	type	: 'text',
-        },
-        indicator_min    : {
-            label	: 'Min',
-        	type	: 'text',
-        },
-        indicator_max	: {
-        	label	: 'Max',
-        	type	: 'text',	
-        },
-        indicator_unit	:{
-        	label	: 'Unit',
-        	type	: 'text',	
-        },
-    };
-    var service_opts    = {
-        title       : 'Create an indicator',
-        name        : 'scomindicator',
-        fields      : service_fields,
-        beforeSubmit: function(Fdata, FjQuery, FAjaxOptions, FModalForm) {
-            
-            var beforeSubmitJSONData = {};
-            $(Fdata).each( function() {
-               beforeSubmitJSONData[ this.name ] = this.value;
-            } );
-            
-            ServiceProviderListSize = ServiceProviderList.length;
-            for (var j=0; j < ServiceProviderListSize; j++) {
-                    beforeSubmitJSONData.service_provider_id = ServiceProviderList[j];
-                    $.ajax({
-                        async: false,
-                        url: '/api/scomindicator',
-                        type: 'POST',
-                        data: beforeSubmitJSONData,
-                    });
-            }
-            
-            // Insert the new indicator in 'indicator' table linked to scom_indicator_set :
-            // WARNING : This is dutty fix for customer deadline compliance, SHOULD BE CHANGE BY REAL CODE :
-            var indicatorFromScom = {};
-            var indicator_min = beforeSubmitJSONData.indicator_min;
-            var indicator_max = beforeSubmitJSONData.indicator_max;
-            var indicator_name = beforeSubmitJSONData.indicator_name;
-            var indicator_unit = beforeSubmitJSONData.indicator_unit;
-            var indicator_oid = beforeSubmitJSONData.indicator_oid;
-            indicatorFromScom = {"indicator_min": indicator_min, "indicator_name": indicator_name, "indicatorset_id": scom_indicatorset_id, "indicator_max": indicator_max, "indicator_unit": indicator_unit, "indicator_oid": indicator_oid };
-            
-            console.log(indicatorFromScom);
-            
-            $.ajax({
-                async: false,
-                url: 'api/indicator',
-                type: 'POST',
-                data: indicatorFromScom,
-            });
-            
-            FModalForm.closeDialog();
-            return false;
-        },
+        var service_fields  = {
+            indicator_name    : {
+                label   : 'Name',
+                type	: 'text',
+            },
+            indicator_oid	:{
+                label	: 'OID',
+                type	: 'text',
+            },
+            indicator_min    : {
+                label	: 'Min',
+                type	: 'text',
+            },
+            indicator_max	: {
+                label	: 'Max',
+                type	: 'text',
+            },
+            indicator_unit	:{
+                label	: 'Unit',
+                type	: 'text',
+            },
+        };
+        var service_opts    = {
+            title       : 'Create an indicator',
+            name        : 'scomindicator',
+            fields      : service_fields,
+            beforeSubmit: function(Fdata, FjQuery, FAjaxOptions, FModalForm) {
+
+                var beforeSubmitJSONData = {};
+                $(Fdata).each( function() {
+                   if (this.value) {
+                       beforeSubmitJSONData[ this.name ] = this.value;
+                   }
+                } );
+
+                ServiceProviderListSize = ServiceProviderList.length;
+                for (var j=0; j < ServiceProviderListSize; j++) {
+                        beforeSubmitJSONData.service_provider_id = ServiceProviderList[j];
+                        $.ajax({
+                            async: false,
+                            url: '/api/scomindicator',
+                            type: 'POST',
+                            data: beforeSubmitJSONData,
+                        });
+                }
+
+                // Insert the new indicator in 'indicator' table linked to scom_indicator_set :
+                // WARNING : This is dutty fix for customer deadline compliance, SHOULD BE CHANGE BY REAL CODE :
+                var indicatorFromScom = {};
+                var indicator_min = beforeSubmitJSONData.indicator_min;
+                var indicator_max = beforeSubmitJSONData.indicator_max;
+                var indicator_name = beforeSubmitJSONData.indicator_name;
+                var indicator_unit = beforeSubmitJSONData.indicator_unit;
+                var indicator_oid = beforeSubmitJSONData.indicator_oid;
+                indicatorFromScom = {"indicator_min": indicator_min, "indicator_name": indicator_name, "indicatorset_id": scom_indicatorset_id, "indicator_max": indicator_max, "indicator_unit": indicator_unit, "indicator_oid": indicator_oid };
+
+                $.ajax({
+                    async: false,
+                    url: 'api/indicator',
+                    type: 'POST',
+                    data: indicatorFromScom,
+                });
+
+                FModalForm.closeDialog();
+                return false;
+            },
+        };
+
+        var button = $("<button>", {html : 'Add indicator'});
+        button.bind('click', function() {
+            mod = new ModalForm(service_opts);
+            mod.start();
+        }).button({ icons : { primary : 'ui-icon-plusthick' } });
+        $('#' + cid).append(button);
     };
 
-    var button = $("<button>", {html : 'Add indicator'});
-  	button.bind('click', function() {
-        mod = new ModalForm(service_opts);
-        mod.start();
-    }).button({ icons : { primary : 'ui-icon-plusthick' } });
-    $('#' + cid).append(button);
-    };
-    
     createIndicator(cid, eid);
 
 }
