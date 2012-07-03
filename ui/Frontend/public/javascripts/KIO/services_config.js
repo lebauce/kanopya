@@ -217,16 +217,29 @@ function createManagerButton(connectortype, managertype, ctnr, sp_id, container_
                             if (ok === true) {
                               if (Object.keys(params).length > 0)
                                 data.manager_params = params;
-                              $.ajax({
-                                  url         : '/api/serviceprovider/' + sp_id + '/addManager',
-                                  type        : 'POST',
-                                  contentType : 'application/json',
-                                  data        : JSON.stringify(data),
-                                  success     : function() {
-                                      $(dial).dialog("destroy");
-                                      $(container).empty();
-                                      that.loadServicesConfig(container_id, sp_id);
-                                  }
+                                setTimeout(function() { 
+                                    var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
+                                    dialog.css('text-align', 'center');
+                                    dialog.appendTo("body").dialog({
+                                        draggable   : false,
+                                        resizable   : false,
+                                        title       : ""
+                                    });
+                                    $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
+                                }, 10);
+                                $.ajax({
+                                    url           : '/api/serviceprovider/' + sp_id + '/addManager',
+                                    type          : 'POST',
+                                    contentType   : 'application/json',
+                                    data          : JSON.stringify(data),
+                                    success       : function() {
+                                        $(dial).dialog("destroy");
+                                        $(container).empty();
+                                        that.loadServicesConfig(container_id, sp_id);
+                                    },
+                                    complete      : function() {
+                                        $("div#waiting_default_insert").dialog("destroy");
+                                    }
                               });
                             }
                         }
