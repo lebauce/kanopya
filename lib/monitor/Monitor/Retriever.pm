@@ -147,8 +147,11 @@ sub getData {
             if (defined $args{percent}) {
                 $res{ $ds_name } = defined $max ? $sum * 100 / $max : undef;
             }
+            elsif (defined $args{raw}) {
+                $res{ $ds_name } = $values;
+            }
             else { # mean
-                $res{ $ds_name } = $sum / scalar @$values; # $values;
+                $res{ $ds_name } = $sum / scalar @$values;
             }
         };
         if ($@) {
@@ -214,6 +217,7 @@ sub getClusterData {
                                       start     => $args{start},
                                       end       => $args{end},
                                       time_laps => $args{time_laps},
+                                      raw       => $args{raw},
                                       max_def   => (scalar @max_def) ? \@max_def : undef,
                                       percent   => $args{percent} );
 

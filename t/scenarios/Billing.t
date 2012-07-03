@@ -20,8 +20,8 @@ my $log = get_logger('billing');
 Administrator::authenticate(login => 'admin', password => 'K4n0pY4');
 
 for my $user (Entity::User->search(hash => {})) {
-    my $from = DateTime::Format::ISO8601->parse_datetime("2011-10-31T08:45:30");
-    my $to = DateTime::Format::ISO8601->parse_datetime("2011-10-31T18:02:30");
+    my $from = DateTime::Format::ISO8601->parse_datetime("2012-06-26T00:00:00");
+    my $to = DateTime::Format::ISO8601->parse_datetime("2012-06-28T00:00:00");
 
     BillingManager::userBilling($user, $from, $to);
 }

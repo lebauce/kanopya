@@ -77,12 +77,13 @@ sub clusterBilling {
 
         my $data = $retriever->getClusterData(
                        cluster     => $cluster_name,
-                       set         => $metric,
+                       set         => 'billing',
                        start       => $from->epoch(),
                        end         => $to->epoch(),
-                       aggregation => "raw",
+                       aggregation => "total",
+                       raw         => 1,
                        required_ds => [ $metric ],
-                   )->{'Nice'};
+                   )->{$metric};
 
         $metrics{$metric} = {
             data   => $data,
@@ -100,14 +101,16 @@ sub clusterBilling {
 
     for my $limit (@cluster_limits) {
         my $start = $limit->getAttr(name => "start");
-        my $end = $limit->getAttr(name => "end");
+        my $end = $limit->getAttr(name => "ending");
         my $type = $limit->getAttr(name => "type");
         my $tree = $metrics{$type}->{tree};
-        my $repeat = $limit->getAttr(name => "repeat");
+        my $repeat = $limit->getAttr(name => "repeats");
 
         if ($repeat eq $EVERY_DAY) {
             my $repeat_start_time = $limit->getAttr(name => "repeat_start_time");
+            $repeat_start_time = (split(' ', (localtime($repeat_start_time / 1000))))[3];
             my $repeat_end_time = $limit->getAttr(name => "repeat_end_time");
+            $repeat_end_time = (split(' ', (localtime($repeat_end_time / 1000))))[3];
             my $day = int($from->epoch / (24 * 60 * 60)) * (24 * 60 * 60);
 
             my @repeat_start_time = split(':', "$repeat_start_time");
