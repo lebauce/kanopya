@@ -166,7 +166,7 @@ sub manage_aggregates {
                 $service_provider->getManager(manager_type => "collector_manager");
             };
             if ($@){
-                $log->info('*** Orchestrator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***');
+                $log->info('*** Orchestrator skip service provider '.$service_provider_id.' because it has no collector manager ***');
             }
             else{
                 $log->info('*** Orchestrator running for service provider '.$service_provider_id.' ***');
@@ -176,7 +176,7 @@ sub manage_aggregates {
                     $log->info( '</CM '.$service_provider_id.'>');
                     1;
                 }or do {
-                    print "Error in clustermetricManagement of cluster $service_provider : $@\n";
+                    print "Error in clustermetricManagement of cluster $service_provider->getId : $@\n";
                     $log->error($@);
                 };
 
@@ -640,8 +640,6 @@ sub clustermetricManagement{
     my $cluster_evaluation = {};
     my $service_provider_id = $service_provider->getId();
 
-    my $workflow_manager;
-
     # Get rules relative to a cluster
     my @rules_enabled   = AggregateRule->search(
                               hash => {
@@ -668,13 +666,25 @@ sub clustermetricManagement{
 
         # Now trigger the workflow
         my $rule_state = $aggregate_rule->getAttr (name => 'aggregate_rule_state');
-        my $workflow_def_id;
 
         if (defined $result) {
-            if ($result == 1 && ($workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager'))) {
-                if ($rule_state eq 'enabled' && ($workflow_def_id = $aggregate_rule->getAttr(name => 'workflow_def_id'))) {
+
+            my $workflow_def_id;
+            my $workflow_manager;
+
+            eval {
+                $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+                $workflow_def_id = $aggregate_rule->getAttr(name => 'workflow_def_id');
+            };
+
+            if ($result == 1 && defined $workflow_manager ) {
+                if ($rule_state eq 'enabled' && defined $workflow_def_id) {
                     $log->info('Rule '. $rule_id. ' has launched a new workflow (' . $workflow_def_id . ') and was defined as triggered');
-                    $workflow_manager->runWorkflow(workflow_def_id => $workflow_def_id, rule_id => $rule_id, service_provider_id => $service_provider_id);
+                    $workflow_manager->runWorkflow(
+                        workflow_def_id => $workflow_def_id, 
+                        rule_id => $rule_id, 
+                        service_provider_id => $service_provider_id,
+                    );
                     $aggregate_rule->setAttr(name => 'aggregate_rule_state', value => 'triggered');
                     $aggregate_rule->save();
                 } else {
