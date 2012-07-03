@@ -15,7 +15,7 @@ function createAddServiceButton(container) {
         }
     };
     var service_opts    = {
-        title       : 'Step 1 of 3 : Add a Service',
+        title       : 'Add a Service',
         name        : 'externalcluster',
         fields      : service_fields,
         beforeSubmit: function() {
@@ -33,6 +33,10 @@ function createAddServiceButton(container) {
         callback    : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
             reloadServices();
+            require('KIO/services_config.js');
+            createmanagerDialog('DirectoryServiceManager', 'directory_service_manager', data.pk, function() {
+                createmanagerDialog('Collectormanager', 'collector_manager', data.pk);
+            }, true);
         },
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
