@@ -81,7 +81,9 @@ function addRessourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, s
                 if (parseInt($(ok).text()) <= 0) { $(cellContent).find('*[rel="ok"]').css('display', 'none'); } else { $(cellContent).find('*[rel="ok"]').css('display', 'inline'); }
                 if (parseInt($(notok).text()) <= 0) { $(cellContent).find('*[rel="notok"]').css('display', 'none'); } else { $(cellContent).find('*[rel="notok"]').css('display', 'inline'); }
                 if (parseInt($(undef).text()) <= 0) { $(cellContent).find('*[rel="undef"]').css('display', 'none'); } else { $(cellContent).find('*[rel="undef"]').css('display', 'inline'); }
+                $(grid).setGridParam({ autoencode : false });
                 $(grid).setCell(rowid, 'rulesstate', $(cellContent).html());
+                $(grid).setGridParam({ autoencode : true });
             }
         });
     }
