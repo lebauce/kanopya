@@ -199,13 +199,14 @@ sub collectIndicator {
     my $indicator = Indicator->get(id => $args{indicator_id});
 
     eval {
-        Collect->new(
+        my $adm = Administrator->new();
+        $adm->{db}->resultset('Collect')->create({
             cluster_id      => $args{service_provider_id},
             indicatorset_id => $indicator->indicatorset_id
-        );
+        });
     };
-}   
-        
+}
+
 =head2 getCollectorType
 
     Desc: Usefull to give information about this component
