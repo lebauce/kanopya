@@ -1345,9 +1345,12 @@ CREATE TABLE `aggregate_rule` (
   `aggregate_rule_state` char(32) NOT NULL ,
   `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,
   `aggregate_rule_description` TEXT,
+  `workflow_id` int(8) unsigned NULL DEFAULT NULL,
   FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`aggregate_rule_service_provider_id`),
   FOREIGN KEY (`aggregate_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY (`workflow_id`),
+  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
@@ -1432,13 +1435,31 @@ CREATE TABLE `verified_noderule` (
   `verified_noderule_externalnode_id` int(8) unsigned NOT NULL,
   `verified_noderule_nodemetric_rule_id` int(8) unsigned NOT NULL,
   `verified_noderule_state` char(8) NOT NULL,
-  `workflow_def_id` int(8) unsigned default null,
   PRIMARY KEY (`verified_noderule_externalnode_id`,`verified_noderule_nodemetric_rule_id`),
-  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`verified_noderule_nodemetric_rule_id`),
   FOREIGN KEY (`verified_noderule_nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`verified_noderule_externalnode_id`),
   FOREIGN KEY (`verified_noderule_externalnode_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `workflow_noderule`
+--
+
+CREATE TABLE `workflow_noderule` (
+  `workflow_noderule_id` int(8) unsigned NOT NULL,
+  `externalnode_id` int(8) unsigned NOT NULL,
+  `nodemetric_rule_id` int(8) unsigned NOT NULL,
+  `workflow_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`workflow_noderule_id`),
+  UNIQUE KEY (`externalnode_id`, `nodemetric_rule_id`, `workflow_id`),
+  KEY (`nodemetric_rule_id`),
+  FOREIGN KEY (`nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY(`externalnode_id`),
+  FOREIGN KEY (`externalnode_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY(`workflow_id`),
+  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
