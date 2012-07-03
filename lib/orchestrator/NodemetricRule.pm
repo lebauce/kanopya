@@ -21,7 +21,6 @@ use Externalnode;
 use NodemetricCondition;
 use Entity::ServiceProvider;
 use VerifiedNoderule;
-use Workflow;
 use List::MoreUtils qw {any} ;
 use Switch;
 # logger
@@ -237,44 +236,21 @@ sub isVerifiedForANode{
 };
 
 sub deleteVerifiedRule  {
-    my $self = shift;
-    my %args = @_;
-    
-    my $hostname   = $args{hostname};
-    my $cluster_id = $args{cluster_id};
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'externalnode_id' ]);
 
-    # GET THE EXTERNAL NODE ID    
-    # note : externalcluster_name is UNIQUE !
-    
-    my $service_provider = Entity->get('id' => $cluster_id);    
-    my $extnodes = $service_provider->getNodes();
-    
-    my $externalnode_id;
-    
-    foreach my $extnode (@$extnodes) {
-        if($extnode->{hostname} eq $hostname) {
-            $externalnode_id = $extnode->{id};
-        }
-    }
-    
-    if(not defined $externalnode_id){
-        my $errmsg = "UNKOWN node $hostname in cluster $cluster_id";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }else{
-        $log->info("Try to delete $externalnode_id ");
-            my $verified_rule_dbix = 
-                    $self->{_dbix}
-                ->verified_noderules
-                ->find({
-                    verified_noderule_externalnode_id    => $externalnode_id,
-                });
-            if(defined $verified_rule_dbix){
-                $log->info("Delete $externalnode_id");
-                $verified_rule_dbix->delete();
-            } else {
-                $log->info("Not here $externalnode_id");
-            }
+    my $externalnode_id = $args{externalnode_id};
+
+    my $verified_noderule;
+    eval{
+        $verified_noderule = VerifiedNoderule->find(hash=>{
+            verified_noderule_externalnode_id    => $args{externalnode_id},
+            verified_noderule_nodemetric_rule_id => $self->getId(),
+        });
+    };
+
+    if (defined $verified_noderule) {
+        $verified_noderule->delete();
     }
 }
 
@@ -324,7 +300,6 @@ sub setVerifiedRule{
 
     General::checkParams(args => \%args, required => [ 'externalnode_id',
                                                        'state',
-                                                       'workflow_id',
     ]);
 
     $self->{_dbix}
@@ -332,43 +307,7 @@ sub setVerifiedRule{
          ->update_or_create({
                verified_noderule_externalnode_id  => $args{externalnode_id},
                verified_noderule_state            => $args{state},
-               workflow_id                        => $args{workflow_id},
     });
-}
-
-=head2 isWorkflowInProcess
-
-    Class : Public
-
-    Desc : Check if a workflow is in process for a node
-
-    Args :
-        node_id : the node
-
-=cut
-
-sub isWorkflowRunning{
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'externalnode_id' ]);
-
-    my $row = $self->{_dbix}
-        ->verified_noderules
-        ->find({
-            verified_noderule_externalnode_id    => $args{externalnode_id},
-        });
-
-    if(not defined $row){
-        return 0;
-    }
-
-    my $workflow_id = $row->workflow_id;
-    my $state = Workflow->get(id => $workflow_id)->state;
-    if ($state eq 'running') {
-        return 1;
-    }
-    else {
-        return 0;
-    }
 }
 
 sub isCombinationDependant{
