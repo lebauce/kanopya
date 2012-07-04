@@ -718,7 +718,7 @@ var PolicyForm = (function() {
 
             if (that.fields[fieldName].policy) {
                 function resetPolicyIdOnChange (event) {
-                    that.resetPolicyId(realName);
+                    that.resetPolicyId(fieldName);
                 }
                 $(this).bind('change.resetPolicy', resetPolicyIdOnChange);
             }

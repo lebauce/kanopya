@@ -228,6 +228,7 @@ var policies = {
             step         : 'Policy',
             label        : 'System image size',
             type         : 'text',
+            pattern      : '^[0-9]*$'
         },
         cluster_si_shared : {
             step         : 'Policy',
