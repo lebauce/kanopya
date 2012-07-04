@@ -90,7 +90,8 @@ sub getAttrDef { return ATTR_DEF; }
 
     Desc: Call kanopya native monitoring API to retrieve indicators data
 
-    Args: \%indicators, \@nodelist, $time_span
+    Args:   (required) \%indicators, \@nodelist, $time_span
+            (optional) historical
 
     return \%monitored_values
 
@@ -127,9 +128,11 @@ sub retrieveData {
         foreach my $node (@$nodelist) {
             my $rrd = $set . '_' . $node;
             eval {
-                my %data = $retriever->getData(rrd_name  => $rrd,
-                                               time_laps => $time_span);
-                $monitored_values{$node} = \%data;
+                my %data = $retriever->getData(rrd_name     => $rrd,
+                                               time_laps    => $time_span,
+                                               historical   => $args{historical},
+                                               );
+                $monitored_values{$node} = $monitored_values{$node} ? { %{$monitored_values{$node}}, %data } :  \%data;
             };
             if ($@) {
                 $log->warn("Error while retrieving data for RRD '$rrd'");
