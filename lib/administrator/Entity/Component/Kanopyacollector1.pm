@@ -168,7 +168,9 @@ sub retrieveData {
 sub getIndicators {
     my ($self, %args) = @_;
 
-    return Indicator->search(hash => {});
+    return Indicator->search(
+        hash => { "indicatorset.indicatorset_provider" => 'SnmpProvider' }
+    );
 }
 
 =head2 getIndicator

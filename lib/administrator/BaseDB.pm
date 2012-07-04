@@ -633,7 +633,7 @@ sub search {
 
     my $table = _buildClassNameFromString($class);
     my $adm = Administrator->new();
-    my $join = $class->getJoin();
+    my $join = $class->getJoin() || {};
 
     for my $filter (keys %{$args{hash}}) {
         my @comps = split('\.', $filter);
