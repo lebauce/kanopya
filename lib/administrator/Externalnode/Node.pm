@@ -87,4 +87,11 @@ sub getServiceProvider(){
     return Entity->get(id => $self->getAttr(name => 'service_provider_id'));
 }
 
+sub remove(){
+    my $self = shift;
+    
+    my $serviceProvider = $self->getServiceProvider();
+    $serviceProvider->removeNode('host_id' => $self->getAttr(name => 'host_id'));
+}
+
 1;

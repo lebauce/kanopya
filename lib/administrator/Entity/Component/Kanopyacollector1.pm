@@ -86,6 +86,13 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        'getIndicators' => { 'description' => 'create a new cluster',
+                             'perm_holder' => 'entity',
+    },
+}
+
 =head2 retrieveData
 
     Desc: Call kanopya native monitoring API to retrieve indicators data
