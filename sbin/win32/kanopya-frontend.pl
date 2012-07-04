@@ -3,11 +3,12 @@ use warnings;
 use Win32;
 use Win32::Daemon;
 use Term::ReadKey;
-
+   
 main();
 
 use constant SERVICE_NAME => 'kanopya-frontend';
 use constant SERVICE_DESC => 'Frontend service for Kanopya';
+
 
 sub main
 {
@@ -34,6 +35,7 @@ sub main
       # Redirect STDOUT and STDERR to log file
       open(STDOUT, ">> $log") or die "Couldn't open $log for appending: $!\n";
       open(STDERR, ">&STDOUT");
+
       # Autoflush, no buffering
       $|=1;
 
@@ -49,12 +51,32 @@ sub main
          last_state => SERVICE_STOPPED,
          start_time => time(),
       );
+	  # Win32::Daemon::AcceptedControls (
+								# &SERVICE_CONTROL_STOP        |
+                                # &SERVICE_CONTROL_PAUSE        |
+                                # &SERVICE_CONTROL_CONTINUE    |
+                                # &SERVICE_CONTROL_INTERROGATE|
+                                # &SERVICE_CONTROL_SHUTDOWN    |
+                                # &SERVICE_CONTROL_PARAMCHANGE|
+                                # &SERVICE_CONTROL_NETBINDADD |
+                                # &SERVICE_CONTROL_NETBINDREMOVE |
+                                # &SERVICE_CONTROL_NETBINDENABLE | 
+                                # &SERVICE_CONTROL_NETBINDDISABLE|
+                                # &SERVICE_CONTROL_DEVICEEVENT   |
+                                # &SERVICE_CONTROL_HARDWAREPROFILECHANGE |
+                                # &SERVICE_CONTROL_POWEREVENT        |
+                                # &SERVICE_CONTROL_SESSIONCHANGE  |
+                                # &SERVICE_CONTROL_PRESHUTDOWN    |
+                                # &SERVICE_CONTROL_TIMECHANGE        |
+                                # &SERVICE_CONTROL_TGIGGEREVENT 
+	# );
+								
       # Start the service passing in a context and indicating to callback
       # using the "Running" event every 2000 milliseconds (2 seconds).
       # NOTE: the StartService method with in 'callback mode' will block, in other
       # words it won't return until the service has stopped, but the callbacks below
       # will respond to the various events - START, STOP, PAUSE etc...
-      Win32::Daemon::StartService( \%Context, 2000 );
+      Win32::Daemon::StartService( \%Context, 10000 );
 
       # Here the service has stopped
       close STDERR; close STDOUT;
@@ -70,6 +92,11 @@ sub Callback_Running
 {
    my( $Event, $Context ) = @_;
 
+      
+   # if (SERVICE_CONTROL_INTERROGATE == Win32::Daemon::QueryLastMessage() ){
+		# Win32::Daemon::State(SERVICE_RUNNING);
+   # }
+   
    # Note that here you want to check that the state
    # is indeed SERVICE_RUNNING. Even though the Running
    # callback is called it could have done so before
@@ -81,6 +108,7 @@ sub Callback_Running
 	print $cmd."\n";
 	system($cmd);
    }
+   
 }   
 
 sub Callback_Start
