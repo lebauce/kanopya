@@ -33,8 +33,8 @@ function createAddServiceButton(container) {
         callback    : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
             require('KIO/services_config.js');
-            createmanagerDialog('DirectoryServiceManager', 'directory_service_manager', data.pk, function() {
-                createmanagerDialog('Collectormanager', 'collector_manager', data.pk, function() {
+            createmanagerDialog('directory_service_manager', data.pk, function() {
+                createmanagerDialog('collector_manager', data.pk, function() {
                     reloadServices();
                 }, true);
             }, true);
@@ -127,12 +127,9 @@ function createUpdateNodeButton(container, elem_id, grid) {
                                     password    : passwd
                                 }),
                                 contentType : 'application/json',
-                                success     : function(data) {
-                                    $(waitingPopup).dialog('close');
-                                    ok  = true;
-                                },
+                                complete    : function(data) { $(waitingPopup).dialog('close'); },
+                                success     : function(data) { ok  = true; },
                                 error       : function(data) {
-                                    $(waitingPopup).dialog('close');
                                     $("input#adpassword").val("");
                                     $("div#adpassworderror").text(JSON.parse(data.responseText).reason).addClass('ui-state-error');
                                 }
