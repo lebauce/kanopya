@@ -96,6 +96,7 @@ function loadServicesRessources (container_id, elem_id) {
         ],
         details : {
             tabs : [
+                        { label : 'General', id : 'generalnodedetails', onLoad : nodedetailsaction },
                         { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid, elem_id); } },
                         { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
                     ],
@@ -103,6 +104,65 @@ function loadServicesRessources (container_id, elem_id) {
         },
         action_delete: 'no',
     } );
+}
+
+function nodedetailsaction(cid, eid) {
+    $.ajax({
+        url     : '/api/node/' + eid + '?expand=host',
+        success : function(data) {
+            var remoteUrl   = null;
+            var isVirtual   = false;
+            $.ajax({
+                url         : '/api/host/' + data.host.pk + '/getRemoteSessionURL',
+                type        : 'POST',
+                success     : function(ret) {
+                    remoteUrl   = ret;
+                }
+            });
+            $.ajax({    
+                url     : '/api/host/' + data.host.pk + '/getHostType',
+                type    : 'POST',
+                async   : false,
+                success : function(ret) {
+                    if (ret === 'Virtual Machine') isVirtual = true;
+                }
+            });
+            var buttons   = [
+                {
+                    label   : 'Stop node',
+                    icon    : 'stop',
+                    action  : '/api/serviceprovider/' + eid + '/removeNode',
+                    data    : { host_id : data.host.pk }
+                },
+                {
+                    label       : 'Scale Cpu',
+                    icon        : 'arrowthick-2-n-s',
+                    condition   : isVirtual,
+                    action      : $.noop
+                },
+                {
+                    label       : 'Scale Memory',
+                    icon        : 'arrowthick-2-n-s',
+                    condition   : isVirtual,
+                    action      : $.noop
+                },
+                {
+                    label       : 'Migrate',
+                    icon        : 'extlink',
+                    condition   : isVirtual,
+                    action      : $.noop
+                },
+                {
+                    label       : 'Remote session',
+                    icon        : 'image',
+                    condition   : (remoteUrl && remoteUrl !== ''),
+                    action      : function() { window.open(remoteUrl); }
+                }
+            ]
+            require('KIM/services_details.js');
+            createallbuttons(buttons, $('#' + cid));
+        }
+    });
 }
 
 // load network interfaces details grid for a node

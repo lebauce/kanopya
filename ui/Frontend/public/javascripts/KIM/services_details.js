@@ -66,14 +66,18 @@ function loadServicesDetails(cid, eid) {
                     action      : '/api/cluster/' + eid + '/addNode'
                 }
             ];
-            for (var i in buttons) if (buttons.hasOwnProperty(i)) {
-                if (buttons[i].condition === undefined || buttons[i].condition) {
-                    $(actioncell).append(createbutton(buttons[i]));
-                    $(actioncell).append($('<br />'));
-                }
-            }
+            createallbuttons(buttons, actioncell);
         }
     });
+}
+
+function createallbuttons(buttons, container) {
+    for (var i in buttons) if (buttons.hasOwnProperty(i)) {
+        if (buttons[i].condition === undefined || buttons[i].condition) {
+            $(container).append(createbutton(buttons[i]));
+            $(container).append($('<br />'));
+        }
+    }
 }
 
 function createbutton(button) {
@@ -81,36 +85,11 @@ function createbutton(button) {
         icons : { primary : 'ui-icon-' + button.icon }
     }).bind('click', ((typeof(button.action) === 'string') ? function() {
         $.ajax({
-            url     : button.action,
-            type    : 'POST'
+            url         : button.action,
+            type        : 'POST',
+            contentType : 'application/json',
+            data        : JSON.parse((button.data !== undefined) ? button.data : {})
         });
     } : button.action));
 }
 
-/*
-
-$('').appendTo(div);
-            
-            var cluster_state =         data.cluster_state;
-            var cluster_prev_state =    data.cluster_prev_state;
-            var active =                data.active;
-            var user_id =               data.user_id;
-            var cluster_priority =      data.cluster_priority;
-            var cluster_type =          data.cluster_type;
-            var class_type_id =         data.class_type_id;
-            var cluster_desc =          data.cluster_desc;
-            var entity_comment_id =     data.entity_comment_id;
-            var cluster_basehostname =  data.cluster_basehostname;
-            var service_template_id =   data.service_template_id;
-            var cluster_boot_policy =   data.cluster_boot_policy;
-            var cluster_min_node =      data.cluster_min_node;
-            var cluster_max_node =      data.cluster_max_node;
-            var masterimage_id =        data.masterimage_id;
-            var kernel_id =             data.kernel_id;
-            var cluster_domainname =    data.cluster_domainname;
-            var cluster_nameserver1 =   data.cluster_nameserver1;
-            var cluster_nameserver2 =   data.cluster_nameserver2;
-            var cluster_si_persistent = data.cluster_si_persistent;
-            var cluster_si_shared =     data.cluster_si_shared;
-            
-*/

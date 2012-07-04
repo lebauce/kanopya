@@ -179,6 +179,14 @@ sub methods {
         'setperm'    => {'description' => 'set permissions on this host',
                         'perm_holder' => 'entity',
         },
+        'getRemoteSessionURL'   => {
+            'description'   => 'get the url for remote session',
+            'perm_holder'   => 'entity'
+        },
+        'getHostType'           => {
+            'description'   => 'get the host type from host manager',
+            'perm_holder'   => 'entity'
+        }
     };
 }
 
@@ -813,6 +821,18 @@ sub getRemoteSessionURL {
     my $self = shift;
 
    return $self->getHostManager->getRemoteSessionURL(host => $self);
+}
+
+=head2
+    
+    desc: return the host type from hostmanager
+
+=cut
+
+sub getHostType {
+    my $self    = shift;
+
+    return $self->getHostManager->getHostType;
 }
 
 1;
