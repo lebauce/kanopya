@@ -98,6 +98,7 @@ var details_def = {
     'network_policy_list'     : { onSelectRow : load_policy_details },
     'system_policy_list'      : { onSelectRow : load_policy_details },
     'scalability_policy_list' : { onSelectRow : load_policy_details },
+    'billing_policy_list'     : { onSelectRow : load_policy_details },
 };
 
 function reloadServices () {
