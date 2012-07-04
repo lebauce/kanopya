@@ -248,7 +248,7 @@ var PolicyForm = (function() {
             var input   = $("<textarea>", { type : type });
         }
         else if (type === 'select') {
-            var input   = $("<select>", { size: 10, type : type });
+            var input   = $("<select>", { width: 300, type : type });
             var isArray = options instanceof Array;
             if (! this.fields[elementName].is_mandatory) {
                 var option  = $("<option>", { value : 0, text : '-' });
