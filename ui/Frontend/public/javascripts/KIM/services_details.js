@@ -4,7 +4,8 @@ function loadServicesDetails(cid, eid) {
         
     var divId = 'service_details';
     var container = $('#'+ cid);
-    var div = $('<div>', { id: divId}).appendTo(container);
+    var table       = $("<tr>").appendTo($("<table>").css('width', '100%').appendTo(container));
+    var div = $('<div>', { id: divId}).appendTo($("<td>").appendTo(table));
      $('<h4>Details</h4>').appendTo(div);
         
     var service_opts = {
@@ -32,11 +33,59 @@ function loadServicesDetails(cid, eid) {
         },
     };   
     var details = new DetailsTable(divId, eid, service_opts);
-    
+
     details.show();
-    
+ 
+    var actioncell  = $('<td>').css('text-align', 'right').appendTo(table);
+    $(actioncell).append($('<div>').append($('<h4>', { text : 'Actions' })));
+    $.ajax({
+        url     : '/api/serviceprovider/' + eid,
+        success : function(data) {
+            var buttons     = [
+                {
+                    label       : 'Start service',
+                    icon        : 'play',
+                    action      : '/api/cluster/' + eid + '/start',
+                    condition   : (new RegExp('^down')).test(data.cluster_state)
+                },
+                {
+                    label       : 'Stop service',
+                    icon        : 'stop',
+                    action      : '/api/cluster/' + eid + '/stop',
+                    condition   : (new RegExp('^up')).test(data.cluster_state)
+                },
+                {
+                    label       : 'Force stop service',
+                    icon        : 'stop',
+                    action      : '/api/cluster/' + eid + '/forceStop',
+                    condition   : (!(new RegExp('^down')).test(data.cluster_state))
+                },
+                {
+                    label       : 'Scale out',
+                    icon        : 'arrowthick-2-e-w',
+                    action      : '/api/cluster/' + eid + '/addNode'
+                }
+            ];
+            for (var i in buttons) if (buttons.hasOwnProperty(i)) {
+                if (buttons[i].condition === undefined || buttons[i].condition) {
+                    $(actioncell).append(createbutton(buttons[i]));
+                    $(actioncell).append($('<br />'));
+                }
+            }
+        }
+    });
 }
 
+function createbutton(button) {
+    return $('<a>', { text : button.label }).button({
+        icons : { primary : 'ui-icon-' + button.icon }
+    }).bind('click', ((typeof(button.action) === 'string') ? function() {
+        $.ajax({
+            url     : button.action,
+            type    : 'POST'
+        });
+    } : button.action));
+}
 
 /*
 

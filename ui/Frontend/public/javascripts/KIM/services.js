@@ -103,31 +103,6 @@ function loadServicesRessources (container_id, elem_id) {
         },
         action_delete: 'no',
     } );
-    var button1 = $("<button>", { html: 'Start service' }).button();
-    button1.bind('click', function() {
-        $.ajax({
-            url     : '/api/cluster/' + elem_id + '/start',
-            type    : 'post',
-            success : function(data) {
-                // ?
-            }
-        });
-    });
-    
-    var button2 = $("<button>", { html: 'Stop service' }).button();
-    button2.bind('click', function() {
-        $.ajax({
-            url     : '/api/cluster/' + elem_id + '/stop',
-            type    : 'post',
-            success : function(data) {
-                // ?
-            }
-        });
-    });
-    
-    container.append(button1);
-    container.append(button2);
-    
 }
 
 // load network interfaces details grid for a node
