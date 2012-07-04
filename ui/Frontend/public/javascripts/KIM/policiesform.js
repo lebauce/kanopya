@@ -44,7 +44,19 @@ var PolicyForm = (function() {
 
             var that = this;
             add_button.bind('click', { elem: elem }, function(event) {
-                that.newElement(event.data.elem);
+                var added = that.newElement(event.data.elem);
+
+                that.findContainer(that.fields[event.data.elem].step).find(':input').not(':button').each(function() {
+                    var fieldName = $(this).attr('rel')
+                    if (! that.fields[fieldName]) return 0;
+
+                    if (that.fields[fieldName].policy) {
+                        function resetPolicyIdOnChange (event) {
+                            that.resetPolicyId(fieldName);
+                        }
+                        $(this).bind('change.resetPolicy', resetPolicyIdOnChange);
+                    }
+                });
             });
 
             this.findContainer(this.fields[elem].step).append(add_button);
@@ -58,7 +70,7 @@ var PolicyForm = (function() {
                         classes = this.fields[elem].policy + '_policy_id_dynamic_field dynamic_field';
                         add_button.addClass(classes);
                     }
-                    var added = this.newElement(elem, this.values[elem][set_element], undefined, classes);
+                    this.newElement(elem, this.values[elem][set_element], undefined, classes);
                 }
             }
         } else if (! this.fields[elem].composite) {
@@ -101,25 +113,29 @@ var PolicyForm = (function() {
         }
 
         if (this.fields[elem].set && !noset) {
-            var remove_button = $("<input>", { text : 'Remove', class : 'wizard-ignore ', type: 'button' });
             var container = this.findContainer(this.fields[elem].step);
-            var removebuttonline = $("<tr>", { class : classes }).css('position', 'relative');
+
+            if (! this.fields[elem].disable_filled) {
+	            var remove_button = $("<input>", { text : 'Remove', class : 'wizard-ignore ', type: 'button' });
+	            var removebuttonline = $("<tr>", { class : classes }).css('position', 'relative');
+
+	            $("<td>", { colspan : 2 }).append(remove_button).appendTo(removebuttonline);
+	            container.append(removebuttonline);
+
+	            remove_button.val('Remove');
+	            remove_button.bind('click', function() {
+	                for (var to_remove in added) {
+	                    $(added[to_remove]).remove();
+	                }
+	                removebuttonline.remove();
+	                hrseprationline.remove();
+	            });
+            }
+
             var hrseprationline  = $("<tr>", { class : classes }).css('position', 'relative');
-
-            $("<td>", { colspan : 2 }).append(remove_button).appendTo(removebuttonline);
-            container.append(removebuttonline);
-
             $("<td>", { colspan : 2 }).append($('<hr>')).appendTo(hrseprationline);
             container.append(hrseprationline);
 
-            remove_button.val('Remove');
-            remove_button.bind('click', function() {
-                for (var to_remove in added) {
-                    $(added[to_remove]).remove();
-                }
-                removebuttonline.remove();
-                hrseprationline.remove();
-            });
             $(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
         }
         return added;
@@ -222,7 +238,7 @@ var PolicyForm = (function() {
                         that.form.find('*[rel="' + event.data.rel + '"]').removeAttr('checked');
                     }
                 });
-                if (parseInt(value) === 1 || this.form.find('*[rel="' + elementName + '"]').length == 0) {
+                if (parseInt(value) === 1 || (this.form.find('*[rel="' + elementName + '"]').length == 0 && ! this.fields[elementName].policy)) {
                     input.attr('checked', 'checked');
                     input.change();
                 }
@@ -232,7 +248,7 @@ var PolicyForm = (function() {
             var input   = $("<textarea>", { type : type });
         }
         else if (type === 'select') {
-            var input   = $("<select>", { type : type });
+            var input   = $("<select>", { size: 10, type : type });
             var isArray = options instanceof Array;
             if (! this.fields[elementName].is_mandatory) {
                 var option  = $("<option>", { value : 0, text : '-' });
@@ -351,7 +367,7 @@ var PolicyForm = (function() {
             $(label).text(this.fields[elementName].label);
         }
 
-        var input = $("<select>", { name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
+        var input = $("<select>", { name : input_name, width: 300, id : inputid, class : 'input_' + elementName, rel : elementName });
 
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
@@ -540,15 +556,6 @@ var PolicyForm = (function() {
         return inserted;
     }
 
-    PolicyForm.prototype.radioButtonChecked = function (event) {
-        var clicked = this.form.find('#' + event.target.id);
-
-        /* As we can have exclusive radio that hjace different input names,
-         * we manually uncheck other radio belonging to the same radio group.
-         */
-        this.form.find('*[rel="' + clicked.attr('rel') + '"]').not('#' + event.target.id).removeAttr('checked');
-    }
-
     PolicyForm.prototype.updateValues = function (element, selected_id) {
         var datavalues = undefined;
         var name = element.attr('name');
@@ -704,20 +711,16 @@ var PolicyForm = (function() {
          */
         var that = this;
         this.findContainer(step).find(':input').not(':button').each(function() {
-            var elementName = $(this).attr('name')
+            var fieldName = $(this).attr('rel')
+            if (! that.fields[fieldName]) return 0;
 
-            if (! that.fields[$(this).attr('name')]) return 0;
-
-            if (that.fields[elementName].policy) {
+            if (that.fields[fieldName].policy) {
                 function resetPolicyIdOnChange (event) {
-                    that.resetPolicyId(elementName);
+                    that.resetPolicyId(realName);
                 }
                 $(this).bind('change.resetPolicy', resetPolicyIdOnChange);
             }
         });
-        
-       //element.addClass('wizard-ignore');
-       // element.attr('disabled', 'diabled');
     }
 
     PolicyForm.prototype.resetPolicyId = function (elementName) {
@@ -872,6 +875,20 @@ var PolicyForm = (function() {
             }
            this.triggeredFields[name] = new Array();
         }
+
+        /* This block is a hugly copy from updateValues method for quick fix. */
+        var that = this;
+        this.findContainer(this.fields[name].step).find(':input').not(':button').each(function() {
+            var fieldName = $(this).attr('rel');
+            if (! that.fields[fieldName]) return 0;
+
+            if (that.fields[fieldName].policy) {
+                function resetPolicyIdOnChange (event) {
+                    that.resetPolicyId(fieldName);
+                }
+                $(this).bind('change.resetPolicy', resetPolicyIdOnChange);
+            }
+        });
     }
 
     PolicyForm.prototype.findContainer = function(step) {
@@ -980,8 +997,8 @@ var PolicyForm = (function() {
             }
             $(this).removeClass('wizard-ignore');
         });
-        this.form.find(".disabled_policy_id").each(function  () {
-            $(this).attr('value', '0');
+        this.form.find(".disabled_policy_id").each(function () {
+            $(this).attr('disabled', 'disabled');
         });
     }
 
