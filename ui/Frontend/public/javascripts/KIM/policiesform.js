@@ -436,6 +436,8 @@ var PolicyForm = (function() {
                         }
                     }
                 }
+            } else if (this.fields[elementName].rawfilter) {
+                route += this.fields[elementName].rawfilter;
             }
             datavalues = this.ajaxCall(method, route, args);
         }

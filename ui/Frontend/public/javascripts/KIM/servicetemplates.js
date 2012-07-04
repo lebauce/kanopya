@@ -36,6 +36,7 @@ var service = {
         label        : 'Customer',
         type         : 'select',
         entity       : 'user',
+        rawfilter    : '?user_profiles.profile.profile_name=Customer',
         display      : 'user_login',
         is_mandatory : true,
     },
