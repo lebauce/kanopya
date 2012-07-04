@@ -33,54 +33,42 @@ var PolicyForm = (function() {
 
         // For each element in fields, add an input to the form
         for (var elem in this.fields) {
-            // If this is a set, add a button to allow to add elements to the set
-
-            if (this.fields[elem].set) {
-                if (! this.fields[elem].policy) {
-                    var add_button = $("<input type=\"button\"/>", { html : this.fields[elem].add_label, class : 'wizard-ignore' });
-
-                    var element = elem;
-                    var that = this;
-                    add_button.bind('click', function() {
-                        var added = that.newElement(element);
-                        if (! (added instanceof Array)) {
-                            added = [added];
-                        }
-
-                        var remove_button = $("<input type=\"button\"/>", { html : 'Remove', class : 'wizard-ignore' });
-                        var container = that.findContainer(that.fields[elem].step);
-                        var removebuttonline = $("<tr>").css('position', 'relative');
-                        var hrseprationline  = $("<tr>").css('position', 'relative');
-
-                        $("<td>", { colspan : 2 }).append(remove_button).appendTo(removebuttonline);
-                        container.append(removebuttonline);
-
-                        $("<td>", { colspan : 2 }).append($('<hr>')).appendTo(hrseprationline);
-                        container.append(hrseprationline);
-
-                        remove_button.val('Remove');
-                        remove_button.bind('click', function() {
-                            for (var to_remove in added) {
-                                $(added[to_remove]).remove();
-                            }
-                            removebuttonline.remove();
-                            hrseprationline.remove();
-                        });
-
-                        $(that.content).dialog('option', 'position', $(that.content).dialog('option', 'position'));
-                    });
-
-                    this.findContainer(this.fields[elem].step).append(add_button);
-                    add_button.val(this.fields[elem].add_label);
-                }
-            } else if (! this.fields[elem].composite) {
-                this.newElement(elem, this.values[elem] || this.fields[elem].value);
-            }
+            this.handleField(elem);
         }
     }
 
-    PolicyForm.prototype.newElement = function(elem, value) {
-        if (this.fields[elem].triggered) {
+    PolicyForm.prototype.handleField = function(elem) {
+        // If this is a set, add a button to allow to add elements to the set
+        if (this.fields[elem].set && !this.fields[elem].composite && !this.fields[elem].triggered) {
+            var add_button = $("<input>", { text : this.fields[elem].add_label, id : 'add_button_' + elem, type: 'button', class : 'wizard-ignore' });
+
+            var that = this;
+            add_button.bind('click', { elem: elem }, function(event) {
+                that.newElement(event.data.elem);
+            });
+
+            this.findContainer(this.fields[elem].step).append(add_button);
+            add_button.val(this.fields[elem].add_label);
+
+            // If we have values for a set element, add the elements with values.
+            if (this.values[elem]) {
+                for (var set_element in this.values[elem]) {
+                    var classes;
+                    if (this.fields[elem].policy) {
+                        classes = this.fields[elem].policy + '_policy_id_dynamic_field dynamic_field';
+                        add_button.addClass(classes);
+                    }
+                    var added = this.newElement(elem, this.values[elem][set_element], undefined, classes);
+                }
+            }
+        } else if (! this.fields[elem].composite) {
+            this.newElement(elem, this.values[elem] || this.fields[elem].value);
+        }
+    }
+
+    PolicyForm.prototype.newElement = function(elem, value, noset, classes) {
+        var added = new Array();
+        if (this.fields[elem].triggered && !this.fields[elem].composite) {
             if (! this.triggeredFields[this.fields[elem].triggered]) {
                 this.triggeredFields[this.fields[elem].triggered] = new Array();
             }
@@ -89,26 +77,52 @@ var PolicyForm = (function() {
         }
 
         if (this.fields[elem].type === 'select' && !this.fields[elem].options) {
-            return this.newDropdownElement(elem, undefined, value);
+            added.push(this.newDropdownElement(elem, undefined, value));
 
         } else if (this.fields[elem].type === 'composite') {
-            var inserted = new Array();
             for (var composite_field in this.fields) {
                 if (this.fields[composite_field].composite === elem) {
                     this.fields[composite_field].step = this.fields[elem].step;
                     this.fields[composite_field].set = this.fields[elem].set;
 
                     var composite_value;
-                    if (value) {
-                        composite_value = value[composite_field];
-                    }
-                    inserted.push(this.newElement(composite_field, composite_value));
+                    if (value) composite_value = value[composite_field];
+                    added = added.concat(this.newElement(composite_field, composite_value, true));
                 }
             }
-            return inserted;
         } else {
-            return this.newFormElement(elem, value);
+            added.push(this.newFormElement(elem, value));
         }
+
+        if (classes) {
+            for (var element in added) {
+                added[element].addClass(classes);
+            }
+        }
+
+        if (this.fields[elem].set && !noset) {
+            var remove_button = $("<input>", { text : 'Remove', class : 'wizard-ignore ', type: 'button' });
+            var container = this.findContainer(this.fields[elem].step);
+            var removebuttonline = $("<tr>", { class : classes }).css('position', 'relative');
+            var hrseprationline  = $("<tr>", { class : classes }).css('position', 'relative');
+
+            $("<td>", { colspan : 2 }).append(remove_button).appendTo(removebuttonline);
+            container.append(removebuttonline);
+
+            $("<td>", { colspan : 2 }).append($('<hr>')).appendTo(hrseprationline);
+            container.append(hrseprationline);
+
+            remove_button.val('Remove');
+            remove_button.bind('click', function() {
+                for (var to_remove in added) {
+                    $(added[to_remove]).remove();
+                }
+                removebuttonline.remove();
+                hrseprationline.remove();
+            });
+            $(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
+        }
+        return added;
     }
 
     PolicyForm.prototype.start = function() {
@@ -196,18 +210,29 @@ var PolicyForm = (function() {
             var input   = $("<input>", { type : type });
 
             if (type === 'radio') {
-                input.change(this.radioButtonChecked);
+                var that = this;
+                input.bind('change', { rel: elementName }, function (event) {
+                    /* As we can have exclusive radio that hjace different input names,
+                     * we manually uncheck other radio belonging to the same radio group.
+                     */
+                    if (event.target.id) {
+                        that.form.find('*[rel="' + event.data.rel + '"]').not('#' + event.target.id).removeAttr('checked');
 
-                if ($('*[rel="' + elementName + '"]').length == 0) {
+                    } else {
+                        that.form.find('*[rel="' + event.data.rel + '"]').removeAttr('checked');
+                    }
+                });
+                if (parseInt(value) === 1 || this.form.find('*[rel="' + elementName + '"]').length == 0) {
                     input.attr('checked', 'checked');
+                    input.change();
                 }
             }
         } else if (type === 'textarea') {
             var type    = 'textarea';
-            var input   = $("<textarea>");
+            var input   = $("<textarea>", { type : type });
         }
         else if (type === 'select') {
-            var input   = $("<select>");
+            var input   = $("<select>", { type : type });
             var isArray = options instanceof Array;
             if (! this.fields[elementName].is_mandatory) {
                 var option  = $("<option>", { value : 0, text : '-' });
@@ -242,7 +267,7 @@ var PolicyForm = (function() {
         // Insert value if any
         if (value !== undefined) {
             if (type === 'text' || type === 'textarea' || type === 'hidden') {
-                $(input).attr('value', value);
+                $(input).val(value);
                 if (type !== 'hidden') {
                     if (this.fields[elementName].disable_filled) {
                         input.attr('disabled', 'disabled');
@@ -250,7 +275,7 @@ var PolicyForm = (function() {
                 }
             } else if (type === 'checkbox' && value == true) {
                 //$(input).attr('checked', 'checked');
-                $(input).attr('value', '1');
+                $(input).val('1');
                 if (this.fields[elementName].disable_filled) {
                     input.attr('disabled', 'disabled');
                 }
@@ -274,6 +299,7 @@ var PolicyForm = (function() {
 
         if ($(input).attr('type') === 'date') {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
+
         } else if ($(input).attr('type') === 'datetime') {
             $(input).datetimepicker({
                 timeOnly    : false,
@@ -281,6 +307,7 @@ var PolicyForm = (function() {
                 minuteGrid  : 10,
                 closeText   : 'Close'
             });
+
         } else if ($(input).attr('type') === 'time') {
             $(input).timepicker({
                 hourGrid    : 4,
@@ -315,7 +342,7 @@ var PolicyForm = (function() {
         var inputid = 'input_' + elementName;
         if (this.fields[elementName].set) {
             input_name = elementName + '_' + this.form.find(".input_" + elementName).length;
-            inputid     += '_' + this.form.find(".input_" + elementName).length;
+            inputid += '_' + this.form.find(".input_" + elementName).length;
         }
 
         // Create input and label DOM elements
@@ -394,26 +421,7 @@ var PolicyForm = (function() {
                     }
                 }
             }
-
             datavalues = this.ajaxCall(method, route, args);
-
-            /*
-             * We do not have a master class for component and connector, so we
-             * cannot search among both type in one query. Another workaround
-             * here...
-             */
-            //if (entity === 'componenttype') {
-            //    var connector_values = this.ajaxCall('GET', '/api/connectortype');
-            //
-                /*
-                 * Add all connector types to the component types list, and
-                 * change the name of the attr to display (component_name).
-                 */
-            //    for (var connector in connector_values) {
-            //        connector_values[connector][this.fields[elementName].display] = connector_values[connector].connector_name;
-            //        datavalues.push(connector_values[connector]);
-            //    }
-            //}
         }
 
         if (! this.fields[elementName].is_mandatory) {
@@ -532,13 +540,13 @@ var PolicyForm = (function() {
         return inserted;
     }
 
-    PolicyForm.prototype.radioButtonChecked = function (event, toto) {
-        var clicked = $('#' + event.target.id);
+    PolicyForm.prototype.radioButtonChecked = function (event) {
+        var clicked = this.form.find('#' + event.target.id);
 
         /* As we can have exclusive radio that hjace different input names,
          * we manually uncheck other radio belonging to the same radio group.
          */
-        $('*[rel="' + clicked.attr('rel') + '"]').not('#' + event.target.id).removeAttr('checked');
+        this.form.find('*[rel="' + clicked.attr('rel') + '"]').not('#' + event.target.id).removeAttr('checked');
     }
 
     PolicyForm.prototype.updateValues = function (element, selected_id) {
@@ -549,6 +557,7 @@ var PolicyForm = (function() {
         if (! (name && parseInt(selected_id))) { return; }
 
         element.removeClass('disabled_policy_id');
+        this.removeDynamicFields(name);
 
         /* Unset any callback on change event handle policies update */
         var that = this;
@@ -595,7 +604,7 @@ var PolicyForm = (function() {
                     $(this).change();
                 }
 
-                if (! (that.fields[select_name].disabled || that.fields[select_name].disable_filled)) {
+                if (! (that.fields[select_name].disabled)) {// || that.fields[select_name].disable_filled)) {
                     $(this).removeAttr('disabled');    
                 }
                 if (datavalues[select_name]) {
@@ -644,7 +653,7 @@ var PolicyForm = (function() {
                 }
             }
         };
-        
+
         if (this.fields[name].fields_provided) {
             for (var provided in this.fields[name].fields_provided) {
                 this.form.find('#input_' + this.fields[name].fields_provided[provided]).each(update_select);
@@ -652,10 +661,13 @@ var PolicyForm = (function() {
         } else {
             this.findContainer(step).find('select').each(update_select);
 
-            this.findContainer(step).find('input').each(function() {
+            this.findContainer(step).find('input').not(':button').each(function() {
                 $(this).val('');
-                if (! (that.fields[$(this).attr('name')].disabled || that.fields[$(this).attr('name')].disable_filled)) {
-                    $(this).removeAttr('disabled');    
+
+                if (! that.fields[$(this).attr('name')]) return 0;
+
+                if (! (that.fields[$(this).attr('name')].disabled)) {
+                    $(this).removeAttr('disabled');
                 }
                 if (datavalues[$(this).attr('name')]) {
                     $(this).val(datavalues[$(this).attr('name')]);
@@ -669,7 +681,7 @@ var PolicyForm = (function() {
             });
             this.findContainer(step).find('textarea').each(function() {
                 $(this).val('');
-                if (! (that.fields[$(this).attr('name')].disabled || that.fields[$(this).attr('name')].disable_filled)) {
+                if (! (that.fields[$(this).attr('name')].disabled)) {
                     $(this).removeAttr('disabled');    
                 }
                 if (datavalues[$(this).attr('name')]) {
@@ -691,8 +703,10 @@ var PolicyForm = (function() {
          * Set a callback on change event handle policies update.
          */
         var that = this;
-        this.findContainer(step).find(':input').each(function() {
+        this.findContainer(step).find(':input').not(':button').each(function() {
             var elementName = $(this).attr('name')
+
+            if (! that.fields[$(this).attr('name')]) return 0;
 
             if (that.fields[elementName].policy) {
                 function resetPolicyIdOnChange (event) {
@@ -809,17 +823,17 @@ var PolicyForm = (function() {
                 tr = this.newFormElement(datavalues[value].name, this.values[datavalues[value].name], name);
             }
 
-            tr.addClass(name + '_policy_params');
-            tr.addClass('policy_params');
+            tr.addClass(name + '_dynamic_field');
+            tr.addClass('dynamic_field');
         }
     }
 
     PolicyForm.prototype.removeDynamicFields = function (name) {
         var classtoremove;
         if (name) {
-            classtoremove = name + '_policy_params';
+            classtoremove = name + '_dynamic_field';
         } else {
-            classtoremove = 'policy_params';
+            classtoremove = 'dynamic_field';
         }
 
         var that = this;
@@ -830,18 +844,9 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.insertTriggeredElements = function (input, name) {
+        var that = this;
         if (this.fields[name].trigger) {
-            for (var field in this.triggeredFields[name]) {
-                this.fields[this.triggeredFields[name][field]].triggered = undefined;
-
-                this.newElement(this.triggeredFields[name][field]);
-
-                this.triggeredFields[name][field] = undefined;
-            }
-            this.triggeredFields[name] = new Array();
-
             if (this.fields[name].values_provider) {
-                var that = this;
                 function updateValuesOnChange (event) {
                     that.updateValues(input, event.target.value);
                 }
@@ -850,6 +855,22 @@ var PolicyForm = (function() {
             this.fields[name].trigger = undefined;
 
             input.change();
+
+            for (var field in this.triggeredFields[name]) {
+                var elem = this.triggeredFields[name][field]
+                this.fields[elem].triggered = undefined;
+
+                this.handleField(elem);
+
+                if (this.fields[elem].set) {
+                    input.bind('change', { elem: elem }, function (event) {
+                        that.handleField(event.data.elem);
+                    });
+                }
+
+                this.triggeredFields[name][field] = undefined;
+            }
+           this.triggeredFields[name] = new Array();
         }
     }
 

@@ -23,7 +23,7 @@ var service = {
         label        : 'Service name',
         type         : 'text',
         is_mandatory : true,
-        pattern      : '^[a-z_0-9]+$',
+        pattern      : '^[a-zA-Z_0-9]+$',
     },
     cluster_desc : {
         step         : 'Service',
@@ -84,9 +84,11 @@ function load_service_template_content (container_id) {
         for (var field in policy_def) {
           policy_def[field].policy = policy;
           policy_def[field].step = step;
-          policy_def[field].triggered = policy + '_policy_id';
           policy_def[field].disable_filled = true;
 
+          if (! (policy_def[field].composite && policy_def[policy_def[field].composite].set)) {
+              policy_def[field].triggered = policy + '_policy_id';
+          }
           var policy_field;
           if (field === 'policy_name' || field === 'policy_desc') {
             policy_field = policy + '_' + field;
@@ -107,7 +109,7 @@ function load_service_template_content (container_id) {
             callback    : function () { grid.trigger("reloadGrid"); }
         };
 
-        var button = $("<button>", { html : 'Add a service template'} );
+        var button = $("<button>", { html : 'Add a service'} );
         button.bind('click', function() {
             service_template_opts.fields = createServiceTemplateDef();
             new PolicyForm(service_template_opts).start();
@@ -163,7 +165,7 @@ function load_service_template_content (container_id) {
             callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
         };
 
-        var button = $("<button>", { html : 'Add a service'} );
+        var button = $("<button>", { html : 'Instantiate a service'} );
         button.bind('click', function() {
             service_opts.fields = createServiceDef();
             new PolicyForm(service_opts).start();
