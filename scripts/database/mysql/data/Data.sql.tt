@@ -1006,6 +1006,9 @@ INSERT INTO `workflow_def_manager` VALUES (2,@wf_manager_id,4);
 -- Default billing policy
 INSERT INTO `param_preset` VALUES (62, "billing_policy", NULL, NULL);
 
+-- Network policy update
+INSERT INTO `param_preset` VALUES (63, "default_gateway", 1, 23);
+
 INSERT INTO `policy` VALUES (1, 1, 'Default physical host', "Hosting policy for default physical hosts.", 'hosting');
 INSERT INTO `policy` VALUES (2, 10, 'Kanopya LVM disk exported via ISCSI', "Datastore on Kanopya cluster for PXE boot via ISCSI.", 'storage');
 INSERT INTO `policy` VALUES (3, 18, 'Default network configuration', "Default network configuration, with admin and public interfaces.", 'network');
