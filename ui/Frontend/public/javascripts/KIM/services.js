@@ -86,7 +86,7 @@ function loadServicesRessources (container_id, elem_id) {
                 type    : 'GET',
                 success : function(data) {
                     $(grid).setCell(rowid, 'host_core', data.host_core);
-                    $(grid).setCell(rowid, 'host_ram', data.host_ram + 'B');
+                    $(grid).setCell(rowid, 'host_ram', (data.host_ram / (1024*1024)) + 'MB');
                 }
             });
             // admin ip 
