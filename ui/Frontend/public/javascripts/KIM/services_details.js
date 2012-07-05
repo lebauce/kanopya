@@ -32,10 +32,10 @@ function loadServicesDetails(cid, eid) {
 
         },
     };   
+
     var details = new DetailsTable(divId, eid, service_opts);
 
     details.show();
-<<<<<<< HEAD
  
     var actioncell  = $('<td>').css('text-align', 'right').appendTo(table);
     $(actioncell).append($('<div>').append($('<h4>', { text : 'Actions' })));
@@ -93,8 +93,3 @@ function createbutton(button) {
         });
     } : button.action));
 }
-
-=======
-    
-}
->>>>>>> [UI] [Ressources] add "trash" to remove node
