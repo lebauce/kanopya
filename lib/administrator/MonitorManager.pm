@@ -93,13 +93,14 @@ sub getIndicatorSets {
                 'unit' => $indicator->get_column( 'indicator_unit' ),
             };
         }
-        
+
         push @sets, {   'label' => $set->get_column( 'indicatorset_name' ),
                         'ds_type' => $set->get_column( 'indicatorset_type' ),
                         'data_provider' => $set->get_column( 'indicatorset_provider' ),
                         'component' => $set->get_column( 'indicatorset_component' ),
                         'max' => $set->get_column( 'indicatorset_max' ),
                         'table_oid' => $set->get_column( 'indicatorset_tableoid' ),
+                        'index_oid' => $set->get_column( 'indicatorset_indexoid' ),
                         'ds' => \@indicators
                     };    
     }
