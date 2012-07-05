@@ -45,7 +45,7 @@ use Data::Dumper;
 use Clone qw(clone);
 use List::Util;
 use Administrator;
-
+use Entity::ServiceProvider::Inside::Cluster;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -107,19 +107,44 @@ sub _constructInfra{
         $hvs->{$hv_id}->{'vm_ids'} = [];
     }
 
-    my $current_hosts   = $cluster->getHosts(administrator => Administrator->new);
+    my $opennebula3_vms = $opennebula->{_dbix}->opennebula3_vms;
     my $vms;
+    while (my $row = $opennebula3_vms->next) {
 
-    $log->info("***INFRA OF".$self->{_cluster_id}."***");
+        my $hv_dbix = $row->opennebula3_hypervisor;
 
-    while( my ($id, $vm) = each %$current_hosts) {
-        $vms->{$id}->{ram} = $vm->getHostRAM();
-        $vms->{$id}->{cpu} = $vm->getHostCORE();
-        $log->info("**** VM ID =***".$vm->getId()."******");
-        my $hvid      = $vm->getHyperVisorHostId();
+        my $vm_id = $row->get_column('vm_host_id');
+        if(defined $hv_dbix){
+            my $hvid = $hv_dbix->get_column('hypervisor_host_id');
 
-        if(defined $hvs->{$hvid}){
-            push @{$hvs->{$hvid}->{'vm_ids'}}, $id;
+            my $vm_id = $row->get_column('vm_host_id');
+            my $opennebula3_vm_host = Entity::Host->get(id => $vm_id);
+
+            $vms->{$vm_id}->{ram} = $opennebula3_vm_host->getHostRAM();
+            $vms->{$vm_id}->{cpu} = $opennebula3_vm_host->getHostCORE();
+
+            if(defined $hvs->{$hvid}){
+                push @{$hvs->{$hvid}->{'vm_ids'}}, $vm_id;
+            }
+            else {
+                my $msg = "Warning capacity management detect an inconcistency in DB VM <$vm_id> in hypervisor <$hvid>";
+                $self->{_admin}->addMessage(
+                   from    => 'Capacity Management',
+                   level   => 'info',
+                   content =>$msg,
+                );
+                $log->warn($msg);
+		$log->warn(Dumper $hvs);
+            }
+        }
+        else {
+            my $msg = "Warning capacity management detect an inconcistency in DB VM <$vm_id> has no hypervisor";
+            $self->{_admin}->addMessage(
+                from    => 'Capacity Management',
+                level   => 'info',
+                content => $msg,
+            );
+            $log->warn($msg)
         }
     }
 
