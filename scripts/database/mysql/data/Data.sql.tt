@@ -744,7 +744,8 @@ INSERT INTO `indicatorset` VALUES
 (3,'apache_stats','ApacheProvider','DERIVE', 'Apache', null, null),
 (4,'apache_workers','ApacheProvider','GAUGE', 'Apache', null, null),
 (5,'scom','External','GAUGE', null, null, null),
-(6,'billing', 'KanopyaDatabaseProvider','GAUGE', null, null, null);
+(6,'billing', 'KanopyaDatabaseProvider','GAUGE', null, null, null),
+(7,'diskIOTable', 'SnmpProvider','COUNTER', null, '1.3.6.1.4.1.2021.13.15.1', 2);
 
 INSERT INTO `indicator` VALUES
 (1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1, 'KBytes', null),
@@ -772,7 +773,9 @@ INSERT INTO `indicator` VALUES
 (23,'Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions', null),
 (24,'RAM I/O','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec', null),
 (25,'Cores', 'Number of charged cores', null, null, 'FF000099', 6, null, null),
-(26,'Memory', 'Charged memory', null, null, 'FF000099', 6, null, null);
+(26,'Memory', 'Charged memory', null, null, 'FF000099', 6, null, null),
+(27,'bytesRead', 3, null, null, 'FF000099', 7, null, null),
+(28,'bytesWritten', 4, null, null, 'FF000099', 7, null, null);
 
 --
 -- initial permissions for user guest

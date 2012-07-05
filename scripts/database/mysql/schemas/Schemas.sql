@@ -1243,6 +1243,7 @@ CREATE TABLE `indicatorset` (
   `indicatorset_component` char(32),
   `indicatorset_max` char(128),
   `indicatorset_tableoid` char(64),
+  `indicatorset_indexoid` char(64),
   PRIMARY KEY (`indicatorset_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
