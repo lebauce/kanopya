@@ -184,9 +184,14 @@ sub buildPatternFromHash {
                         start   => $args{hash}->{'limit_start_' . $limit_index},
                         ending  => $args{hash}->{'limit_ending_'   . $limit_index},
                         value   => $args{hash}->{'limit_value_' . $limit_index},
-                        type    => $args{hash}->{'limit_type_'  . $limit_index},
-                        soft    => $args{hash}->{'limit_soft_'  . $limit_index}
+                        type    => $args{hash}->{'limit_type_'  . $limit_index}
                     };
+                    if (defined($args{hash}->{'limit_soft_' . $limit_index}) and "$args{hash}->{'limit_soft_' . $limit_index}" eq "1") {
+                        $limit->{soft}  = "1";
+                    }
+                    else {
+                        $limit->{soft}  = "0";
+                    }
                     if ($args{hash}->{'limit_repeats_' . $limit_index} and $args{hash}->{'limit_repeat_start_time_' . $limit_index} and
                         $args{hash}->{'limit_repeat_end_time_' . $limit_index}) {
                         $limit->{repeats}           = $args{hash}->{'limit_repeats_' . $limit_index};
