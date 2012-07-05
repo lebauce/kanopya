@@ -193,31 +193,32 @@ sub getHostData {
 
     my $set_name  = $args{set};
     my $host_name = $args{host};
-    my $time_laps = $args{time_laps};
     my $set_def   = $self->getSetDesc(set_label => $set_name);
 
+    delete $args{host};
+    delete $args{set};
+
     if (defined $set_def->{table_oid}) {
-        my $host_name = $self->getTableData(
+        my $host_data = $self->getTableData(
                             set_name  => $set_name, 
                             host_name => $host_name,
-                            time_laps => $time_laps,
+                            %args
                         ); 
 
-        return $host_name;
+        return $host_data;
     }
     else {
         my $rrd_name  = $self->rrdName( set_name => $set_name, host_name => $host_name );
         my @max_def;
         if ( $set_def->{max} ) { @max_def = split( /\+/, $set_def->{max} ) };
         if (defined $args{percent} && 0 == scalar @max_def ) {
-            $log->warn("No max definition to compute percent for '$args{set}'");
+            $log->warn("No max definition to compute percent for '$set_name'");
         }
 
         my %host_data = $self->getData(
                             rrd_name  => $rrd_name,
-                            time_laps => $time_laps,
                             max_def   => (scalar @max_def) ? \@max_def : undef,
-                            percent   => $args{percent}
+                            %args
                         );
 
         return \%host_data;
@@ -229,7 +230,9 @@ sub getTableData {
 
     my $set_name  = $args{set_name};
     my $host_name = $args{host_name};
-    my $time_laps = $args{time_laps};
+
+    delete $args{host_name};
+    delete $args{set_name};
 
     # Retrieve list of rrd files corresponding of each raw for the table
     my %rrds = ();
@@ -247,7 +250,7 @@ sub getTableData {
     while (my ($index_oid, $rrd) =  each %rrds) {
         $host_data{$index_oid} = {$self->getData(
         rrd_name  => $rrd,
-        time_laps => $time_laps )};
+        %args )};
     }
     
     return \%host_data;

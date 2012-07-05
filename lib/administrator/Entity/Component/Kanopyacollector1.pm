@@ -140,18 +140,19 @@ sub retrieveData {
 
     foreach my $set (@sets_to_fetch) {
         foreach my $node (@$nodelist) {
-            my $rrd = $set . '_' . $node;
             eval {
-                my %data = $retriever->getData(rrd_name     => $rrd,
-                                               time_laps    => $time_span,
-                                               start        => $args{start},
-                                               end          => $args{end},
-                                               historical   => $args{historical},
-                                               );
-                $monitored_values{$node} = $monitored_values{$node} ? { %{$monitored_values{$node}}, %data } :  \%data;
+                my $data = $retriever->getHostData(
+                                                set         => $set,
+                                                host        => $node,
+                                                time_laps   => $time_span,
+                                                start       => $args{start},
+                                                end         => $args{end},
+                                                historical  => $args{historical},
+                                                );
+                $monitored_values{$node} = $monitored_values{$node} ? { %{$monitored_values{$node}}, %{$data} } :  $data;
             };
             if ($@) {
-                $log->warn("Error while retrieving data for RRD '$rrd'");
+                $log->warn("Error while retrieving data from kanopya collector : $@");
             }
         }
     }
