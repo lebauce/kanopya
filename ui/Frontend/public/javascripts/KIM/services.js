@@ -54,16 +54,12 @@ function loadServicesRessources (container_id, elem_id) {
 
     // Node indicator historical graph details handler
     function NodeIndicatorDetailsHistorical(cid, node_id) {
-      // Use dashboard widget outside of the dashboard
       var cont = $('#' + cid);
       var graph_div = $('<div>', { 'class' : 'widgetcontent' });
       cont.addClass('widget');
       cont.append(graph_div);
       graph_div.load('/widgets/widget_historical_node_indicator.html', function() {
-          //$('.dropdown_container').remove();
           setdatePicker(graph_div);
-          //setRefreshButton(graph_div, clusterMetric_id, '', elem_id);
-          //showCombinationGraph(graph_div, clusterMetric_id, '', '', '', elem_id);
           initNodeIndicatorWidget(cont, elem_id, node_id);
       });
     }
