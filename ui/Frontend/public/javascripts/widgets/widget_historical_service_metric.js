@@ -101,6 +101,7 @@ function timedGraph(first_graph_line, min, max, label, div_id) {
         title:label,
         seriesDefaults: {
             breakOnNull:true,
+            showMarker: false,
             trendline: {
                 color : '#555555',
                 show  : $('#trendlineinput').attr('checked') ? true : false, 

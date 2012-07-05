@@ -29,7 +29,7 @@ function getIndicators(sp_id, ext) {
                 } else {
                     var indicatorset_name = indicatorsets[rows[row].indicatorset_id].indicatorset_name;
                     var indic_fullname =  indicatorset_name + '/' + rows[row].indicator_name;
-                    indicators[indic_fullname] = rows[row].indicator_id;
+                    indicators[indic_fullname] = rows[row];
 
                     // THis version use indicator toString but is slow (and indicators name are quoted)
 //                    $.ajax({
@@ -59,7 +59,11 @@ function createServiceMetric(container_id, elem_id, ext) {
     ext = ext || false;
     
     var indicators = getIndicators(elem_id, ext);
-    
+    var indic_options = {};
+    $.each(indicators, function (name, row) {
+        indic_options[name] = row.indicator_id;
+    });
+
     var service_fields  = {
         clustermetric_label    : {
             label   : 'Name',
@@ -73,7 +77,7 @@ function createServiceMetric(container_id, elem_id, ext) {
         clustermetric_indicator_id  :{
             label   : 'Indicator',
             type    : 'select',
-            options : indicators,
+            options : indic_options,
         },
         clustermetric_window_time   :{
             type    : 'hidden',
@@ -254,7 +258,7 @@ function createNodemetricCombination(container_id, elem_id, ext) {
         var availableTags = new Array();
         var indicators = getIndicators(elem_id, ext);
         for (var indic in indicators) {
-            availableTags.push({label : indic, value : indicators[indic]});
+            availableTags.push({label : indic, value : indicators[indic].indicator_id});
         }
 
         function split( val ) {

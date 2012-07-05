@@ -5,7 +5,7 @@
     {
       "id":1,
       "title" : "Monitoring",
-      "amount": 2,
+      "amount": 3,
       "url" : "jsonfeed/category_monitoring_widgets.json"
     },
     {

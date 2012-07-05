@@ -51,6 +51,23 @@ function loadServicesRessources (container_id, elem_id) {
     var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
     var nodemetricrules;
     var container = $('#'+container_id);
+
+    // Node indicator historical graph details handler
+    function NodeIndicatorDetailsHistorical(cid, node_id) {
+      // Use dashboard widget outside of the dashboard
+      var cont = $('#' + cid);
+      var graph_div = $('<div>', { 'class' : 'widgetcontent' });
+      cont.addClass('widget');
+      cont.append(graph_div);
+      graph_div.load('/widgets/widget_historical_node_indicator.html', function() {
+          //$('.dropdown_container').remove();
+          setdatePicker(graph_div);
+          //setRefreshButton(graph_div, clusterMetric_id, '', elem_id);
+          //showCombinationGraph(graph_div, clusterMetric_id, '', '', '', elem_id);
+          initNodeIndicatorWidget(cont, elem_id, node_id);
+      });
+    }
+
     $.ajax({
         url     : '/api/nodemetricrule?nodemetric_rule_service_provider_id=' + elem_id,
         success : function(data) {
@@ -101,6 +118,7 @@ function loadServicesRessources (container_id, elem_id) {
             tabs : [
                         { label : 'General', id : 'generalnodedetails', onLoad : nodedetailsaction },
                         { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid, elem_id); } },
+                        { label : 'monitoring', id : 'ressource_monitoring', onLoad : NodeIndicatorDetailsHistorical },
                         { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
                     ],
             title : { from_column : 'externalnode_hostname' }

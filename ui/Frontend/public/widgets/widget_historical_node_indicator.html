@@ -1,0 +1,21 @@
+<script>
+    require('widgets/widget_historical_node_indicator.js');
+</script>
+
+<div class="indicator_options">
+    <div class="field">
+        <span style='white-space:nowrap'>Start: <input type="text" class="graph_start_time" /></span>
+        <span style='white-space:nowrap'>End: <input type="text" class="graph_end_time" /></span>
+        <button class='refresh_button hidden'>Refresh</button>
+    </div>
+    <div class="dropdown_container">
+        <select class="indicator_list">
+            <option selected="selected" id="default">Select an indicator</option>
+        </select>
+        
+    </div>
+    <br/>
+    <!--input id="trendlineinput" type="checkbox" onclick="toggleTrendLine()" value="show"> Trend line</input-->
+</div>
+
+<div class="nodeIndicatorView"></div>
