@@ -164,20 +164,65 @@ sub getHostData {
     my $self = shift;
     my %args = @_;
 
-    my $rrd_name = $self->rrdName( set_name => $args{set}, host_name => $args{host} );
+    my $set_name  = $args{set};
+    my $host_name = $args{host};
+    my $time_laps = $args{time_laps};
+    my $set_def   = $self->getSetDesc(set_label => $set_name);
 
-    my $set_def = $self->getSetDesc(set_label => $args{set});
-    my @max_def;
-    if ( $set_def->{max} ) { @max_def = split( /\+/, $set_def->{max} ) };
-    if (defined $args{percent} && 0 == scalar @max_def ) {
-        $log->warn("No max definition to compute percent for '$args{set}'");
+    if (defined $set_def->{table_oid}) {
+        my $host_name = $self->getTableData(
+                            set_name  => $set_name, 
+                            host_name => $host_name,
+                            time_laps => $time_laps,
+                        ); 
+
+        return $host_name;
+    }
+    else {
+        my $rrd_name  = $self->rrdName( set_name => $set_name, host_name => $host_name );
+        my @max_def;
+        if ( $set_def->{max} ) { @max_def = split( /\+/, $set_def->{max} ) };
+        if (defined $args{percent} && 0 == scalar @max_def ) {
+            $log->warn("No max definition to compute percent for '$args{set}'");
+        }
+
+        my %host_data = $self->getData(
+                            rrd_name  => $rrd_name,
+                            time_laps => $time_laps,
+                            max_def   => (scalar @max_def) ? \@max_def : undef,
+                            percent   => $args{percent}
+                        );
+
+        return \%host_data;
+    }
+}
+
+sub getTableData {
+    my ($self,%args) = @_;
+
+    my $set_name  = $args{set_name};
+    my $host_name = $args{host_name};
+    my $time_laps = $args{time_laps};
+
+    # Retrieve list of rrd files corresponding of each raw for the table
+    my %rrds = ();
+    my $rrd_files = `ls $self->{_rrd_base_dir} | grep $set_name`;
+
+    foreach my $file_name ( split '\n', $rrd_files ) {
+        if ($file_name =~ /$set_name\.(.*)_$host_name.*/) {
+            my @fn = split '.rrd', $file_name;
+            $rrds{$1} = $fn[0];
+        }
     }
 
-    my %host_data = $self->getData(rrd_name => $rrd_name,
-                                   time_laps => $args{time_laps},
-                                   max_def => (scalar @max_def) ? \@max_def : undef,
-                                   percent => $args{percent} );
+    my %host_data;
 
+    while (my ($index_oid, $rrd) =  each %rrds) {
+        $host_data{$index_oid} = {$self->getData(
+        rrd_name  => $rrd,
+        time_laps => $time_laps )};
+    }
+    
     return \%host_data;
 }
 
