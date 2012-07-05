@@ -5,7 +5,14 @@ require('jquery/jquery-ui-timepicker-addon.js');
 
 $.validator.addMethod("regex", function(value, element, regexp) {
     var re = new RegExp(regexp);
-    return this.optional(element) || re.test(value);
+
+    /* The following test 'this.optional' do not allow to
+     * validate the pattern of non mandatory fields.
+     * We need to check the role of this test and find
+     * how configure the validator options to do this.
+     */
+    //return this.optional(element) || re.test(value);
+    return re.test(value);
 }, "Please check your input");
 
 var PolicyForm = (function() {
@@ -116,20 +123,20 @@ var PolicyForm = (function() {
             var container = this.findContainer(this.fields[elem].step);
 
             if (! this.fields[elem].disable_filled) {
-	            var remove_button = $("<input>", { text : 'Remove', class : 'wizard-ignore ', type: 'button' });
-	            var removebuttonline = $("<tr>", { class : classes }).css('position', 'relative');
+                var remove_button = $("<input>", { text : 'Remove', class : 'wizard-ignore ', type: 'button' });
+                var removebuttonline = $("<tr>", { class : classes }).css('position', 'relative');
 
-	            $("<td>", { colspan : 2 }).append(remove_button).appendTo(removebuttonline);
-	            container.append(removebuttonline);
+                $("<td>", { colspan : 2 }).append(remove_button).appendTo(removebuttonline);
+                container.append(removebuttonline);
 
-	            remove_button.val('Remove');
-	            remove_button.bind('click', function() {
-	                for (var to_remove in added) {
-	                    $(added[to_remove]).remove();
-	                }
-	                removebuttonline.remove();
-	                hrseprationline.remove();
-	            });
+                remove_button.val('Remove');
+                remove_button.bind('click', function() {
+                    for (var to_remove in added) {
+                        $(added[to_remove]).remove();
+                    }
+                    removebuttonline.remove();
+                    hrseprationline.remove();
+                });
             }
 
             var hrseprationline  = $("<tr>", { class : classes }).css('position', 'relative');
@@ -279,7 +286,7 @@ var PolicyForm = (function() {
             this.validateRules[elementName].required = true;
         }
         // Check if the field must be validated by a regular expression
-        if ($(input).attr('type') !== 'checkbox' && element.pattern !== undefined && element.is_mandatory) {
+        if ($(input).attr('type') !== 'checkbox' && element.pattern !== undefined) {
             this.validateRules[elementName].regex = element.pattern;
         }
 
@@ -380,7 +387,7 @@ var PolicyForm = (function() {
             this.validateRules[elementName].required = true;
         }
         // Check if the field must be validated by a regular expression
-        if ($(input).attr('type') !== 'checkbox' && this.fields[elementName].pattern !== undefined && this.fields[elementName].is_mandatory) {
+        if ($(input).attr('type') !== 'checkbox' && this.fields[elementName].pattern !== undefined) {
             this.validateRules[elementName].regex = this.fields[elementName].pattern;
         }
 
@@ -617,7 +624,7 @@ var PolicyForm = (function() {
                     $(this).change();
                 }
 
-                if (! (that.fields[select_name].disabled)) {// || that.fields[select_name].disable_filled)) {
+                if (! (that.fields[select_name].disabled)) {
                     $(this).removeAttr('disabled');    
                 }
                 if (datavalues[select_name]) {
@@ -814,6 +821,7 @@ var PolicyForm = (function() {
         for (var value in datavalues) {
             this.fields[datavalues[value].name] = {
                 label   : datavalues[value].label,
+                pattern : datavalues[value].pattern,
                 step    : this.fields[name].step,
                 policy  : this.fields[name].policy,
                 prefix  : this.fields[name].prefix,
@@ -952,7 +960,6 @@ var PolicyForm = (function() {
         } else {
             linecontainer.appendTo(container);
         }
-
         return linecontainer;
     }
 
@@ -984,6 +991,7 @@ var PolicyForm = (function() {
                     break;
                 }
             }
+
             if (that.fields[id]){
                 if (that.fields[id].prefix) {
                     $(this).attr('name', that.fields[id].prefix + $(this).attr('name'));
@@ -1046,6 +1054,7 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.startWizard = function() {
+        var that = this;
         $(this.form).formwizard({
             disableUIStyles     : true,
             validationEnabled   : true,
@@ -1151,17 +1160,45 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.validateForm = function () {
+        var that = this;
         var remove_wizard_ignore = function() {
             $(this).removeClass('wizard-ignore');
+        }
+        var addDynamicValidationRules = function() {
+            try {
+                var rules = {};
+                if (that.fields[$(this).attr('rel')].is_mandatory) {
+                    rules.required = true;
+                }
+                console.log($(this).attr('name') + ', value: ' + $(this).val() + ', pattern: ' + that.fields[$(this).attr('rel')].pattern);
+                if ($(this).val() && that.fields[$(this).attr('rel')].pattern) {
+                    rules.regex = that.fields[$(this).attr('rel')].pattern;
+                    console.log('pattern: ' + $(this).attr('name'));
+                }
+
+                if (Object.keys(rules).length) {
+                    console.log('add: ' + $(this).attr('name'));
+                    $(this).rules("add", rules);
+
+                } else {
+                    console.log('remove: ' + $(this).attr('name'));
+                    $(this).rules("remove");
+                }
+
+            } catch (err) {
+                // The form has not been validated yet.
+            }
         }
 
         if ($(this.form).formwizard("state").currentStep) {
             var step_preffix = this.name + '_step';
             var step = $(this.form).formwizard("state").currentStep.substring(step_preffix.length);
             this.findContainer(step).find('.wizard-ignore').each(remove_wizard_ignore);
+            this.findContainer(step).find('input:text').each(addDynamicValidationRules);
 
         } else {
             $(this.form).find('.wizard-ignore').each(remove_wizard_ignore);
+            this.form.find('input:text').each(addDynamicValidationRules);
         }
 
         $(this.form).formwizard("next");
