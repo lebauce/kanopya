@@ -389,13 +389,13 @@ sub scaleMemoryHost{
                              content => "Scale in memory value must be strictly positive (typed : $args{memory}");
         $log->warn("*** Cannot Scale Ram to a negative value (typed : $args{memory})*** ");
     }
-    elsif ($memory > 4096*1024*1024 ) { # WARNING TODO : UNHARCODE 4096 which corresponds to the maximum defined in the VM Template
+    elsif ($args{memory_limit} && ($memory > $args{memory_limit}*1024*1024)) {
             $self->{_admin}->addMessage(
                                 from    => 'Capacity Management',
                                 level   => 'info',
-                                content => "Cannot scale to more than 4096 MB (typed : $args{memory})",
+                                content => "Scale in is limited to <".($args{memory_limit}*1024*1024)."> B, (<$memory> B requested)",
                              );
-        $log->warn("*** Cannot scale ram to more than 4096 MB (typed : $args{memory})*** ");
+        $log->warn("Scale in is limited to <".($args{memory_limit}*1024*1024)."> B, (<$memory> B requested)");
     }
     else {
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
@@ -479,13 +479,13 @@ sub scaleCpuHost{
                          );
         $log->warn("*** Cannot scale CPU to a negative value (typed : $args{vcpu_number}) *** ");
     }
-    elsif ($cpu > 4 ) { # WARNING TODO : UNHARCODE 4 which corresponds to the maximum defined in the VM Template
+    elsif ($args{cpu_limit} && ($cpu > $args{cpu_limit})) {
             $self->{_admin}->addMessage(
                                 from    => 'Capacity Management',
                                 level   => 'info',
-                                content => "Cannot scale to more than 4 CPU (typed : $args{vcpu_number})",
+                                content => "Scale in is limited to $args{cpu_limit} CPU, ($cpu CPU requested)",
                              );
-        $log->warn("*** Cannot scale CPU to more than 4 (typed : $args{vcpu_number} => $cpu) *** ");
+        $log->warn("Scale in is limited to $args{cpu_limit} CPU, ($cpu CPU requested)");
     }
     else {
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};

@@ -81,18 +81,24 @@ sub execute{
 
     my $cluster_id = $self->{context}->{host}->getClusterId();
     my $cm         = CapacityManagement->new(cluster_id => $cluster_id);
+
+    # Do not call getServiceProvider() method, because it returns HV Cluster
+    # Here we need VM Cluster
+    my $service_provider = $self->{context}->{host}->node->parent->service_provider;
+
     my $operation_plan;
-    $log->info('____scaleintype'.$scalein_type);
     if ($scalein_type eq 'memory') {
         $operation_plan = $cm->scaleMemoryHost(
-            host_id => $self->{context}->{host}->getId(),
-            memory  => $scalein_value,
+            host_id      => $self->{context}->{host}->getId(),
+            memory       => $scalein_value,
+            memory_limit => $service_provider->getLimit(type => 'ram'),
         );
     }
     elsif ($scalein_type eq 'cpu') {
         $operation_plan = $cm->scaleCpuHost(
-            host_id     => $self->{context}->{host}->getId(),
-            vcpu_number => $scalein_value,
+            host_id      => $self->{context}->{host}->getId(),
+            vcpu_number  => $scalein_value,
+            cpu_limit    => $service_provider->getLimit(type => 'cpu'),
         );
     }
     for my $operation (@$operation_plan){
