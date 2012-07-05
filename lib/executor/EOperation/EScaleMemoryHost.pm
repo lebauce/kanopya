@@ -76,7 +76,9 @@ sub prepare {
                     wanted_resource => $self->{params}->{memory} * 1024 * 1024, #GIVEN IN MB MUST BE IN B
                 );
 
-    if($check == 0){
+    my $mem_limit = $self->{context}->{host}->node->parent->service_provider->getLimit(type => 'ram');
+
+    if ($mem_limit && ($check == 0 || $self->{params}->{memory} > $mem_limit)) {
         my $errmsg = "Not enough memory in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }

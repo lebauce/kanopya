@@ -79,7 +79,9 @@ sub prepare {
                     wanted_resource => $self->{params}->{cpu_number},
                 );
 
-    if($check == 0){
+    my $cpu_limit = $self->{context}->{host}->node->parent->service_provider->getLimit(type => 'cpu');
+
+    if ($cpu_limit && ($check == 0 || $self->{params}->{cpu_number} > $cpu_limit)) {
         my $errmsg = "Not enough CPU in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
