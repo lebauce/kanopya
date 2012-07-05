@@ -26,7 +26,7 @@ var mainmenu_def = {
         'Services'          : [ { label : 'Services',    id : 'service_template', onLoad : load_service_template_content } ],
         'Customers'         : [ { label : 'Customers', id : 'customers', onLoad: customers.load_content }]
     },
-    'Service instances'     : {
+    'Services'     : {
         masterView : [
                       {label : 'Service instances', id : 'services_overview', onLoad : function(cid) { require('KIM/services.js'); servicesList(cid); }}
                       ],
