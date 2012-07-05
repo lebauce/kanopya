@@ -88,7 +88,7 @@ function createbutton(button) {
             url         : button.action,
             type        : 'POST',
             contentType : 'application/json',
-            data        : JSON.parse((button.data !== undefined) ? button.data : {})
+            data        : JSON.stringify((button.data !== undefined) ? button.data : {})
         });
     } : button.action));
 }
