@@ -285,7 +285,8 @@ var PolicyForm = (function() {
 
         // Insert value if any
         if (value !== undefined) {
-            if (type === 'text' || type === 'textarea' || type === 'hidden') {
+            if (type === 'text' || type === 'textarea' || type === 'hidden'
+                || type === 'datetime' || type === 'time') {
                 $(input).val(value);
                 if (type !== 'hidden') {
                     if (this.fields[elementName].disable_filled) {

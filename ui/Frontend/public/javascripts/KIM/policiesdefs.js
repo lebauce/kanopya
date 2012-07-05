@@ -320,7 +320,7 @@ var policies = {
             is_mandatory: 1,
             serialize   : serializeDateTime
         },
-        limit_end       : {
+        limit_ending    : {
             step        : 'Limits',
             composite   : 'billing_limits',
             type        : 'datetime',
@@ -353,7 +353,7 @@ var policies = {
             label       : 'Value',
             is_mandatory: 1
         },
-        limit_repeat    : {
+        limit_repeats   : {
             step        : 'Limits',
             composite   : 'billing_limits',
             type        : 'select',
@@ -361,7 +361,7 @@ var policies = {
             options     : ['Daily'],
             is_mandatory: 0
         },
-        limit_repeat_start  : {
+        limit_repeat_start_time : {
             step        : 'Limits',
             composite   : 'billing_limits',
             type        : 'time',
@@ -369,7 +369,7 @@ var policies = {
             serialize   : serializeTime,
             is_mandatory: 0
         },
-        limit_repeat_end    : {
+        limit_repeat_end_time   : {
             step        : 'Limits',
             composite   : 'billing_limits',
             type        : 'time',

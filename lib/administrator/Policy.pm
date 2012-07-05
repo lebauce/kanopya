@@ -30,6 +30,8 @@ use Hash::Merge;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
+use POSIX;
+
 my $log = get_logger('administrator');
 
 use constant ATTR_DEF => {
@@ -176,20 +178,20 @@ sub buildPatternFromHash {
                 my $limit_index = $name;
                 $limit_index    =~ s/^limit_start_//g;
 
-                if (defined($args{hash}->{'limit_end_' . $limit_index}) and defined($args{hash}->{'limit_value_' . $limit_index}) and
+                if (defined($args{hash}->{'limit_ending_' . $limit_index}) and defined($args{hash}->{'limit_value_' . $limit_index}) and
                     defined($args{hash}->{'limit_type_' . $limit_index})) {
                     my $limit   = {
                         start   => $args{hash}->{'limit_start_' . $limit_index},
-                        ending  => $args{hash}->{'limit_end_'   . $limit_index},
+                        ending  => $args{hash}->{'limit_ending_'   . $limit_index},
                         value   => $args{hash}->{'limit_value_' . $limit_index},
                         type    => $args{hash}->{'limit_type_'  . $limit_index},
                         soft    => $args{hash}->{'limit_soft_'  . $limit_index}
                     };
-                    if ($args{hash}->{'limit_repeat_' . $limit_index} and $args{hash}->{'limit_repeat_start_' . $limit_index} and
-                        $args{hash}->{'limit_repeat_end_' . $limit_index}) {
-                        $limit->{repeats}           = $args{hash}->{'limit_repeat_' . $limit_index};
-                        $limit->{repeat_start_time} = $args{hash}->{'limit_repeat_start_' . $limit_index};
-                        $limit->{repeat_end_time}   = $args{hash}->{'limit_repeat_end_' . $limit_index};
+                    if ($args{hash}->{'limit_repeats_' . $limit_index} and $args{hash}->{'limit_repeat_start_time_' . $limit_index} and
+                        $args{hash}->{'limit_repeat_end_time_' . $limit_index}) {
+                        $limit->{repeats}           = $args{hash}->{'limit_repeats_' . $limit_index};
+                        $limit->{repeat_start_time} = $args{hash}->{'limit_repeat_start_time_' . $limit_index};
+                        $limit->{repeat_end_time}   = $args{hash}->{'limit_repeat_end_time_' . $limit_index};
                     } else {
                         $limit->{repeats}           = 0;
                         $limit->{repeat_start_time} = 0;
@@ -268,6 +270,19 @@ sub getFlattenedHash {
                 }
 
                 for my $k (keys %{ $billinglimit }) {
+                    # Must transform times from timestamp to GMT
+                    if ($k eq "start" or $k eq "ending"
+                        or $k eq "repeat_start_time" or $k eq "repeat_end_time") {
+                        my $strftimeformat;
+                        if ($k eq "start" or $k eq "ending") {
+                            $strftimeformat     = "%d/%m/%Y %H:%M";
+                        } else {
+                            $strftimeformat     = "%H:%M";
+                        }
+                        if (not $billinglimit->{$k} eq '0') {
+                            $billinglimit->{$k} = strftime $strftimeformat, localtime($billinglimit->{$k} / 1000);
+                        }
+                    }
                     $blimit->{'limit_' . $k}    = $billinglimit->{$k};
                 }
                 push @{ $flat_hash{'billing_limits'} }, $blimit;
