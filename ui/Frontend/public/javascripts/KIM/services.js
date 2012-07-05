@@ -5,7 +5,10 @@ require('common/service_common.js');
 
 function servicesList (container_id, elem_id) {
     var container = $('#' + container_id);
-    
+    $('a[href=#content_services_overview_static]').text('Service instances');
+    if($('#services_list') !=  undefined) {
+        $('#services_list').jqGrid('GridDestroy');
+    }
     create_grid( {
         url: '/api/cluster',
         content_container_id: container_id,

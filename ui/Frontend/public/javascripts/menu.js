@@ -26,8 +26,39 @@ function add_menutree(container, label, menu_info, elem_id) {
     
     var link_li = $('<li>');
     var link_a = $('<a class="view_link" style="white-space: nowrap">' + label + '</a>');
-    link_a.bind('click', function() {
+    link_a.bind('click', function(event) {
+        
         $(this).next().toggle();
+        
+        
+        $('#services_list').jqGrid('GridDestroy');
+        $('#view-container .master_view').hide();
+        $('#view_Services').show();
+        $('a[href=#content_services_overview_static]').text(label +' instances');
+        $('.selected_viewlink').removeClass('selected_viewlink')
+        $(this).addClass('selected_viewlink');
+        
+        var container_id = 'content_services_overview_static';
+        
+        create_grid( {
+            url: '/api/cluster?service_template_id='+elem_id,
+            content_container_id: container_id,
+            grid_id: 'services_list',
+            afterInsertRow: function (grid, rowid, rowdata, rowelem) {
+                addServiceExtraData(grid, rowid, rowdata, rowelem, '');
+            },
+            rowNum : 25,
+            colNames: [ 'ID', 'Instance Name', 'State', 'Rules State', 'Node Number' ],
+            colModel: [
+                { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
+                { name: 'cluster_name', index: 'service_name', width: 200 },
+                { name: 'cluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
+                { name: 'rulesstate', index : 'rulesstate' },
+                { name: 'node_number', index: 'node_number', width: 150 }
+            ],
+            elem_name   : 'service',
+            details     : { link_to_menu : 'yes', label_key : 'cluster_name'}
+        });
     });
     var sublevel = $('<ul>');
     sublevel.hide();
