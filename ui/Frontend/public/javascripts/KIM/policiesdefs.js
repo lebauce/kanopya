@@ -152,16 +152,19 @@ var policies = {
             step         : 'Policy',
             label        : 'Domain name',
             type         : 'text',
+            pattern      : '^[a-z0-9-]+(\\.[a-z0-9-]+)+$',
         },
         cluster_nameserver1 : {
             step         : 'Policy',
             label        : 'Name server 1',
             type         : 'text',
+            pattern      : '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$',
         },
         cluster_nameserver2 : {
             step         : 'Policy',
             label        : 'Name server 2',
             type         : 'text',
+            pattern      : '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$',
         },
         network_interface : {
             step         : 'Interfaces',
@@ -228,7 +231,7 @@ var policies = {
             step         : 'Policy',
             label        : 'System image size',
             type         : 'text',
-            pattern      : '^[0-9]*$'
+            pattern      : '^[0-9]+$',
         },
         cluster_si_shared : {
             step         : 'Policy',
@@ -244,6 +247,7 @@ var policies = {
             step         : 'Policy',
             label        : 'Cluster base hostname',
             type         : 'text',
+            pattern      : '^[a-z_0-9]+$',
         },
         component_type : {
             step         : 'Components',
@@ -275,14 +279,17 @@ var policies = {
         cluster_min_node : {
             label        : 'Minimum node number',
             type         : 'text',
+            pattern      : '^[1-9][0-9]*$',
         },
         cluster_max_node : {
             label        : 'Maximum node number',
             type         : 'text',
+            pattern      : '^[1-9][0-9]*$',
         },
         cluster_priority : {
             label        : 'Cluster priority',
             type         : 'text',
+            pattern      : '^[1-9][0-9]*$',
         },
     },
     billing: {
@@ -351,6 +358,7 @@ var policies = {
             composite   : 'billing_limits',
             type        : 'text',
             label       : 'Value',
+            pattern     : '^[0-9]+$',
             is_mandatory: 1
         },
         limit_repeats   : {
