@@ -21,6 +21,9 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
+# circular reference here
+use Entity::ServiceProvider;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -51,5 +54,47 @@ use constant ATTR_DEF => {
 
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        'getMonitoringData'   => {
+            'description'   => 'getMonitoringData',
+            'perm_holder'   => 'entity'
+        },
+    };
+}
+
+=head2 getMonitoringData
+
+    Desc: call linked collector manager to retrieve indicators values for this node
+    Args:
+        (required) \@indicators_id
+        $time_span OR $start, $end
+        Options : same as CollectorManager::RetrieveData()
+
+    return \%data;
+
+=cut
+
+sub getMonitoringData {
+    my ($self, %args) = @_;
+
+    my $manager = $self->service_provider->getManager( manager_type => 'collector_manager' );
+
+    # Construst indicators params as expected by CollectorManager
+    my %indicators;
+    for my $indic_id (@{$args{indicators_id}}) {
+        $indicators{$indic_id} = Indicator->get(id => $indic_id);
+    }
+    delete $args{indicators_id};
+
+    my $data = $manager->retrieveData(
+        nodelist    => [$self->externalnode_hostname],
+        indicators  => \%indicators,
+        %args
+    );
+
+    return $data->{$self->externalnode_hostname} || {};
+}
 
 1;

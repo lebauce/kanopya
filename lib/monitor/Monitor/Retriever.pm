@@ -50,14 +50,21 @@ sub new {
 
     Args :
         rrd_name                : string : the name of the rrd where data are stored.
-        time_laps               : int : time laps to consider.
+
+        time_laps               : int : time laps to consider in second from now.
+        OR
+        start, stop             : epoch : start and stop time to consider.
+
         (optionnal) required_ds : array ref : list of ds name to retrieve. If not defined, get all ds. WARNING: don't use it if 'percent'.
         (optionnal) percent     : if defined compute percent else compute mean for each ds. See 'max_def'.
         (optionnal) max_def     : array : list of ds name to add to obtain max value (used to compute percent). If not defined, use all ds.
         (optionnal) raw         : if defined return raw data (no aggregation of data (percent, mean) during time step).
         (optionnal) historical  : if defined return timestamped raw data. Win on options raw and percent.
 
-    Return : A hash ( ds_name => computed_value )
+    Return : A hash, according to args, either:
+         -default   : ( ds_name => computed_value, ... )
+         -raw       : ( ds_name => [v1,v2,...], ...)
+         -historical: ( ds_name => { t1 => v1, t2 => v2,...}, ...)
 
 =cut
 

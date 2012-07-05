@@ -90,7 +90,8 @@ sub getAttrDef { return ATTR_DEF; }
 
     Desc: Call kanopya native monitoring API to retrieve indicators data
 
-    Args:   (required) \%indicators, \@nodelist, $time_span
+    Args:   (required) \%indicators, \@nodelist
+            (required) $time_span OR $start, $end
             (optional) historical
 
     return \%monitored_values
@@ -100,9 +101,15 @@ sub getAttrDef { return ATTR_DEF; }
 sub retrieveData {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'nodelist', 'time_span', 'indicators' ]);
+    General::checkParams(args => \%args, required => [ 'nodelist', 'indicators' ]);
 
+    if ((not defined $args{time_span}) && ((not defined $args{start}) || (not defined $args{end}))) {
+        throw Kanopya::Exception::Internal::MissingParam(error => "Need param 'time_span' OR 'start', 'end'");
+    }
+
+    ####################################
     # WARNING time span hardcoded here!!
+    ####################################
     my $time_span = 300;
 
     my $nodelist       = $args{'nodelist'};
@@ -130,6 +137,8 @@ sub retrieveData {
             eval {
                 my %data = $retriever->getData(rrd_name     => $rrd,
                                                time_laps    => $time_span,
+                                               start        => $args{start},
+                                               end          => $args{end},
                                                historical   => $args{historical},
                                                );
                 $monitored_values{$node} = $monitored_values{$node} ? { %{$monitored_values{$node}}, %data } :  \%data;
