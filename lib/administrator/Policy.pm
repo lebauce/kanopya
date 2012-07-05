@@ -177,7 +177,7 @@ sub buildPatternFromHash {
                 $limit_index    =~ s/^limit_start_//g;
 
                 if (defined($args{hash}->{'limit_end_' . $limit_index}) and defined($args{hash}->{'limit_value_' . $limit_index}) and
-                    defined($args{hash}->{'limit_type_' . $limit_index}) and defined($args{hash}->{'limit_soft_' . $limit_index})) {
+                    defined($args{hash}->{'limit_type_' . $limit_index})) {
                     my $limit   = {
                         start   => $args{hash}->{'limit_start_' . $limit_index},
                         ending  => $args{hash}->{'limit_end_'   . $limit_index},
@@ -258,6 +258,19 @@ sub getFlattenedHash {
                     $interface->{interface_networks} = $interface->{interface_networks}[0];
                 }
                 push @{ $flat_hash{'network_interface'} }, $interface;
+            }
+        }
+        elsif ($name eq 'billing_limits') {
+            for my $billinglimit (values %{ $pattern->{$name} }) {
+                my $blimit  = {};
+                if (not defined $flat_hash{'billing_limits'}) {
+                    $flat_hash{'billing_limits'}    = [];
+                }
+
+                for my $k (keys %{ $billinglimit }) {
+                    $blimit->{'limit_' . $k}    = $billinglimit->{$k};
+                }
+                push @{ $flat_hash{'billing_limits'} }, $blimit;
             }
         }
         else {

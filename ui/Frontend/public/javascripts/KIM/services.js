@@ -115,6 +115,7 @@ function nodedetailsaction(cid, eid) {
             $.ajax({
                 url         : '/api/host/' + data.host.pk + '/getRemoteSessionURL',
                 type        : 'POST',
+                async       : false,
                 success     : function(ret) {
                     remoteUrl   = ret;
                 }
@@ -155,7 +156,7 @@ function nodedetailsaction(cid, eid) {
                 {
                     label       : 'Remote session',
                     icon        : 'image',
-                    condition   : (remoteUrl && remoteUrl !== ''),
+                    condition   : (remoteUrl !== null && remoteUrl !== ''),
                     action      : function() { window.open(remoteUrl); }
                 }
             ]
