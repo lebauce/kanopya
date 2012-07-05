@@ -137,6 +137,9 @@ var PolicyForm = (function() {
             container.append(hrseprationline);
 
             $(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
+            if ($(this.content).height() > $(window).innerHeight() - 200) {
+                $(this.content).css('height', $(window).innerHeight() - 200);
+            }
         }
         return added;
     }
