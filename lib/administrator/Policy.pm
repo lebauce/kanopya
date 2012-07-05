@@ -270,20 +270,20 @@ sub getFlattenedHash {
                 }
 
                 for my $k (keys %{ $billinglimit }) {
-                    # Must transform times from timestamp to GMT
-                    if ($k eq "start" or $k eq "ending"
-                        or $k eq "repeat_start_time" or $k eq "repeat_end_time") {
-                        my $strftimeformat;
-                        if ($k eq "start" or $k eq "ending") {
-                            $strftimeformat     = "%d/%m/%Y %H:%M";
-                        } else {
-                            $strftimeformat     = "%H:%M";
-                        }
-                        if (not $billinglimit->{$k} eq '0') {
+                    if ("$billinglimit->{$k}" ne "0") {
+                        # Must transform times from timestamp to GMT
+                        if ($k eq "start" or $k eq "ending"
+                            or $k eq "repeat_start_time" or $k eq "repeat_end_time") {
+                            my $strftimeformat;
+                            if ($k eq "start" or $k eq "ending") {
+                                $strftimeformat     = "%d/%m/%Y %H:%M";
+                            } else {
+                                $strftimeformat     = "%H:%M";
+                            }
                             $billinglimit->{$k} = strftime $strftimeformat, localtime($billinglimit->{$k} / 1000);
                         }
+                        $blimit->{'limit_' . $k}    = $billinglimit->{$k};
                     }
-                    $blimit->{'limit_' . $k}    = $billinglimit->{$k};
                 }
                 push @{ $flat_hash{'billing_limits'} }, $blimit;
             }
