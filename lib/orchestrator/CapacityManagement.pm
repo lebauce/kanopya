@@ -66,8 +66,8 @@ sub new {
     else{
         General::checkParams(args => \%args, required => ['cluster_id']);
         $self->{_cluster_id}    = $args{cluster_id};
-        $self->{_infra}         = $self->_constructInfra();
         $self->{_admin}         = Administrator->new();
+        $self->{_infra}         = $self->_constructInfra();
         $self->{_operationPlan} = [];
     }
     return $self;
@@ -343,24 +343,27 @@ sub scaleMemoryHost{
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['host_id','memory']);
 
-     my $sign = substr($args{memory},0,1); # get the first value
-     my $mem_input;
+    #Firstly Check
+    my $sign = substr($args{memory},0,1); # get the first value
+    my $mem_input;
 
-     if($sign eq '+' || $sign eq '-'){
-         $mem_input = substr $args{memory},1; # remove sign
-     } else {
-         $mem_input = $args{memory};
-     }
+    if($sign eq '+' || $sign eq '-'){
+        $mem_input = substr $args{memory},1; # remove sign
+    }
+    else {
+        $mem_input = $args{memory};
+    }
 
-     if($mem_input =~ /\D/){
+    if($mem_input =~ /\D/){
         $self->{_admin}->addMessage(
-                            from    => 'Capacity Management',
-                            level   => 'info',
-                            content => "Wrong format for scale in memory value (typed : $args{memory})",
-                         );
+                           from    => 'Capacity Management',
+                           level   => 'info',
+                           content => "Wrong format for scale in memory value (typed : $args{memory})",
+                        );
         $log->warn("*** Wrong format for scale in memory value (typed : $args{memory})*** ");
         return $self->{_operationPlan};
-    }else{
+    }
+    else {
         $mem_input *= 1024 * 1024; #GIVEN IN MB
     }
 
@@ -1289,9 +1292,6 @@ sub _computeInfraChargeStat{
 =head2 _computeRelativeResourceSize
 
     Class : Private
-
-    Desc : Compute the relative value of resource
-
 =cut
 
 sub _computeRelativeResourceSize{
