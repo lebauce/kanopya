@@ -29,7 +29,32 @@ window.setInterval(function(){
             lastMsgId = maxID;
          }
     });
-    
-   
+
+    var workflows = get("/api/workflow?state=pending");
+    workflows = workflows.concat(get("/api/workflow?state=running"));
+
+    for (var i = 0; i < workflows.length; i++) {
+        var gritter = $('.gritter-item-workflow-' + workflows[i].pk);
+        if (gritter.length) {
+            updateWorkflowGritter(workflows[i]);
+        } else {
+            showWorkflowGritter(workflows[i]);
+        }
+    }
+
+    $.each($(".gritter-item-workflow"), function (n, gritter) {
+        var displayed = false;
+        var id = $(gritter).data("workflow");
+        for (var i = 0; i < workflows.length; i++) {
+            if (workflows[i].pk == id) {
+                displayed = true;
+                break;
+            }
+        }
+        if (!displayed) {
+            var workflow = get("/api/workflow/" + id);
+            updateWorkflowGritter(workflow);
+        }
+    });
     
 }, 5000);
