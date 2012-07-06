@@ -26,11 +26,19 @@ sub applyVLAN {
         $self->{vnicEtherIf} = [];
     }
 
-    push @{$self->{vnicEtherIf}}, {
-        defaultNet        => "no",
-        name              => $args{name},
-        rn                => "if-" . $args{name}
-    };
+    if (defined ($args{delete}) and $args{delete}) {
+        push @{$self->{vnicEtherIf}}, {
+            rn                => "if-" . $args{name},
+            status            => "deleted"
+        };
+    }
+    else {
+        push @{$self->{vnicEtherIf}}, {
+            defaultNet        => "no",
+            name              => $args{name},
+            rn                => "if-" . $args{name}
+        };
+    }
 
     $self->update();
 }
