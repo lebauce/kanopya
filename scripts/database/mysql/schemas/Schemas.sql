@@ -1450,7 +1450,7 @@ CREATE TABLE `verified_noderule` (
 --
 
 CREATE TABLE `workflow_noderule` (
-  `workflow_noderule_id` int(8) unsigned NOT NULL,
+  `workflow_noderule_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `externalnode_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_id` int(8) unsigned NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
