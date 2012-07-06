@@ -43,6 +43,7 @@ use Entity::Component::Fileimagemanager0;
 use Entity::Connector::NetappVolumeManager;
 use Entity::Connector::NetappLunManager;
 
+use List::Util qw[min max];
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -352,6 +353,29 @@ sub removeNetworkInterface {
     General::checkParams(args => \%args, required => ['interface_id']);
 
     Entity::Interface->get(id => $args{interface_id})->delete();
+}
+
+sub getLimit {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "type" ]);
+
+    # TODO: Use only one request
+    my @limits = Entity::Billinglimit->search(hash => {
+                     service_provider_id => $self->getId,
+                     soft                => 0,
+                     type                => $args{type},
+                 });
+
+    my $value;
+    my $now = time();
+    for my $limit (@limits) {
+        if (($limit->start < $now) && ($limit->ending > $now)) {
+            $value = $value ? min($value, $limit->value) : $limit->value;
+        }
+    }
+
+    return $value;
 }
 
 1;
