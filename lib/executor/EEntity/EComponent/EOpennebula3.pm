@@ -116,25 +116,36 @@ sub migrateHost {
     my $masternode_econtext = EFactory::newEContext(ip_source      => $self->getExecutorEContext->getLocalIp,
                                                     ip_destination => $masternodeip);
 
+    # Get the source hypervisor
+    my $src_hypervisor = $self->getHypervisorHost(
+                             host => $args{host}
+                         );
+    $log->debug("The VM <" . $args{host}->getId . "> is on the <" . $src_hypervisor->getId . "> host");
 
     my $hypervisor_id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{hypervisor_dst}->getAttr(name => "host_id"));
     my $hypervisor_host_name = $args{hypervisor_dst}->getAttr(name=>'host_hostname');
 
     my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
 
+    $log->debug("Apply VLAN on the destination hypervisor");
+    $self->propagateVLAN(host       => $args{host},
+                         hypervisor => $args{hypervisor_dst});
+
     my $command_to_exec = "onevm livemigrate $host_id $hypervisor_id" ;
     my $command = $self->_oneadmin_command(command => $command_to_exec);
     my $result = $masternode_econtext->execute(command => $command);
     $log->debug('Migration command: '.$command_to_exec);
-    return $self->_getEntity()->migrateHost(%args);
+
+    return $src_hypervisor;
 }
 
-sub checkMigration{
+sub checkMigration {
     my ($self,%args) = @_;
 
     General::checkParams(args     => \%args,
                          required => [
                             'host',
+                            'hypervisor_src',
                             'hypervisor_dst',
                             'hypervisor_cluster'
     ]);
@@ -156,13 +167,21 @@ sub checkMigration{
     if (ref $history eq 'HASH') {
         $hypervisor_migr = $history->{HOSTNAME};
     }
-    else { # ref $history eq 'ARRAY'
+    else {
         $hypervisor_migr =  $history->[-1]->{HOSTNAME};
     }
 
     my $state = $hxml->{LCM_STATE};
     $log->info("State = $state ; CURRENT_H = $hypervisor_migr ; DEST_H = $hypervisor_host_name");
-    ($state == 3 && ($hypervisor_migr eq $hypervisor_host_name )) ? return 1 : return 0;
+
+    return 0 if ($state == 3 && ($hypervisor_migr eq $hypervisor_host_name ));
+
+    $log->debug("Apply VLAN on the source hypervisor");
+    # $self->propagateVLAN(host       => $args{host},
+    #                      hypervisor => $args{hypervisor_src},
+    #                      delete     => 1);
+
+    return 1;
 }
 
 # execute memory scale in

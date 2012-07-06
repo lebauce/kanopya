@@ -101,12 +101,14 @@ sub prepare {
     }
 }
 
-sub execute{
+sub execute {
     my $self = shift;
 
-    $self->{context}->{cloudmanager_comp}->migrateHost( host               => $self->{context}->{vm},
-                                                        hypervisor_dst     => $self->{context}->{host},
-                                                        hypervisor_cluster => $self->{context}->{cluster});
+    $self->{context}->{src_hypervisor} = $self->{context}->{cloudmanager_comp}->migrateHost(
+                          host               => $self->{context}->{vm},
+                          hypervisor_dst     => $self->{context}->{host},
+                          hypervisor_cluster => $self->{context}->{cluster}
+                      );
 
     $log->info("VM <" . $self->{context}->{vm}->getAttr(name => 'entity_id') . "> is migrating to <" .
                $self->{context}->{host}->getAttr(name => 'entity_id') . ">");
@@ -122,13 +124,27 @@ sub finish{
 
 sub postrequisites {
     my $self = shift;
+
     my $is_check = $self->{context}->{cloudmanager_comp}->checkMigration(
         host               => $self->{context}->{vm},
+        hypervisor_src     => $self->{context}->{src_hypervisor},
         hypervisor_dst     => $self->{context}->{host},
         hypervisor_cluster => $self->{context}->{cluster},
     );
 
-    ($is_check == 1)? return 0 : return 15;
+    if ($is_check == 1) {
+        # After checking migration -> store migration in DB
+        $log->info('Migration save in DB');
+        $self->{context}->{cloudmanager_comp}->_getEntity()->migrateHost(
+                                                host               => $self->{context}->{vm},
+                                                hypervisor_dst     => $self->{context}->{host},
+                                                hypervisor_cluster => $self->{context}->{cluster});
+
+         return 0;
+    }
+    else {
+        return 15;
+    }
 }
 =head1 DIAGNOSTICS
 
