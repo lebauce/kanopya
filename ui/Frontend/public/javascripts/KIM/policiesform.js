@@ -1170,18 +1170,14 @@ var PolicyForm = (function() {
                 if (that.fields[$(this).attr('rel')].is_mandatory) {
                     rules.required = true;
                 }
-                console.log($(this).attr('name') + ', value: ' + $(this).val() + ', pattern: ' + that.fields[$(this).attr('rel')].pattern);
                 if ($(this).val() && that.fields[$(this).attr('rel')].pattern) {
                     rules.regex = that.fields[$(this).attr('rel')].pattern;
-                    console.log('pattern: ' + $(this).attr('name'));
                 }
 
                 if (Object.keys(rules).length) {
-                    console.log('add: ' + $(this).attr('name'));
                     $(this).rules("add", rules);
 
                 } else {
-                    console.log('remove: ' + $(this).attr('name'));
                     $(this).rules("remove");
                 }
 
