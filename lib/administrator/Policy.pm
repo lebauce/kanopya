@@ -140,10 +140,8 @@ sub buildPatternFromHash {
                 $manager_type =~ s/_id$//g;
 
                 # Set the manager infos
-                $pattern{managers}->{$manager_type} = {
-                    manager_id   => $args{hash}->{$name},
-                    manager_type => $manager_type
-                };
+                $pattern{managers}->{$manager_type}->{manager_id} = $args{hash}->{$name};
+                $pattern{managers}->{$manager_type}->{manager_type} = $manager_type;
 
                 # Set the manager params if required
                 my $manager = Entity->get(id => $args{hash}->{$name});
