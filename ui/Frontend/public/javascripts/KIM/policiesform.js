@@ -272,7 +272,7 @@ var PolicyForm = (function() {
                 if (optionvalue == value) {
                     option.attr('selected', 'selected');
                     if (this.fields[elementName].disable_filled) {
-                        input.attr('disabled', 'disabled');
+                        this.disableInput(input);
                     }
                 }
             }
@@ -297,14 +297,14 @@ var PolicyForm = (function() {
                 $(input).val(value);
                 if (type !== 'hidden') {
                     if (this.fields[elementName].disable_filled) {
-                        input.attr('disabled', 'disabled');
+                        this.disableInput(input);
                     }
                 }
             } else if (type === 'checkbox' && value == true) {
                 //$(input).attr('checked', 'checked');
                 $(input).val('1');
                 if (this.fields[elementName].disable_filled) {
-                    input.attr('disabled', 'disabled');
+                    this.disableInput(input);
                 }
             }
         }
@@ -321,7 +321,7 @@ var PolicyForm = (function() {
         }
 
         if (this.mustDisableField(elementName, element) === true) {
-            $(input).attr('disabled', 'disabled');
+            this.disableInput(input);
         }
 
         if ($(input).attr('type') === 'date') {
@@ -513,14 +513,13 @@ var PolicyForm = (function() {
                 option.attr('selected', 'selected');
 
                 if (this.fields[elementName].disable_filled) {
-                    input.attr('disabled', 'disabled');
-                    //input.addClass('wizard-ignore');
+                    this.disableInput(input);
                 }
             }
         }
 
         if (this.mustDisableField(elementName, this.fields[elementName]) === true) {
-            $(input).attr('disabled', 'disabled');
+            this.disableInput(input);
         }
 
         /*
@@ -646,7 +645,7 @@ var PolicyForm = (function() {
                             var parent = that.form.find('#input_' + that.fields[select_name].parent);
                             parent.val(manager.service_provider_id);
                             parent.change();
-                            parent.attr('disabled', 'disabled');
+                            that.disableInput(parent);
                         }
                     }
 
@@ -659,8 +658,7 @@ var PolicyForm = (function() {
                         $(this).change();
                     }
                     if (that.fields[select_name].disable_filled) {
-                        $(this).addClass('wizard-ignore');
-                        $(this).attr('disabled', 'disabled');
+                        that.disableInput($(this));
                     }
 
                     if (that.fields[select_name].hide_filled) {
@@ -692,7 +690,7 @@ var PolicyForm = (function() {
                 if (datavalues[$(this).attr('name')]) {
                     $(this).val(datavalues[$(this).attr('name')]);
                     if (that.fields[$(this).attr('name')].disable_filled) {
-                        $(this).attr('disabled', 'disabled');
+                        that.disableInput($(this));
                     }
                     if (that.fields[$(this).attr('name')].hide_filled) {
                         $(this).parent().parent().hide();
@@ -707,7 +705,7 @@ var PolicyForm = (function() {
                 if (datavalues[$(this).attr('name')]) {
                     $(this).val(datavalues[$(this).attr('name')]);
                     if (that.fields[$(this).attr('name')].disable_filled) {
-                        $(this).attr('disabled', 'disabled');
+                        that.disableInput($(this));
                     }
                     if (that.fields[$(this).attr('name')].hide_filled) {
                         $(this).parent().parent().hide();
@@ -801,7 +799,7 @@ var PolicyForm = (function() {
             if (datavalues[value].pk == this.values[name]) {
                 option.attr('selected', 'selected');
                 if (this.fields[name].disable_filled) {
-                    element.attr('disabled', 'disabled');
+                    this.disableInput(element);
                 }
             }
         }
@@ -1013,6 +1011,7 @@ var PolicyForm = (function() {
         });
         this.form.find(".disabled_policy_id").each(function () {
             $(this).attr('disabled', 'disabled');
+//            $(this).addClass('wizard-ignore');
         });
     }
 
@@ -1148,6 +1147,8 @@ var PolicyForm = (function() {
             this.cancel();
         }
         $(this.form).formwizard("back");
+
+        this.disableCurrentStepFilled();
     }
 
     PolicyForm.prototype.closeDialog = function() {
@@ -1163,6 +1164,9 @@ var PolicyForm = (function() {
         var that = this;
         var remove_wizard_ignore = function() {
             $(this).removeClass('wizard-ignore');
+
+            /* Keep the info about the filed has been desabled at least one time. */
+            $(this).addClass('filled-disabled');
         }
         var addDynamicValidationRules = function() {
             try {
@@ -1180,7 +1184,6 @@ var PolicyForm = (function() {
                 } else {
                     $(this).rules("remove");
                 }
-
             } catch (err) {
                 // The form has not been validated yet.
             }
@@ -1189,15 +1192,29 @@ var PolicyForm = (function() {
         if ($(this.form).formwizard("state").currentStep) {
             var step_preffix = this.name + '_step';
             var step = $(this.form).formwizard("state").currentStep.substring(step_preffix.length);
-            this.findContainer(step).find('.wizard-ignore').each(remove_wizard_ignore);
+            this.findContainer(step).find('.wizard-ignore').not(':button').each(remove_wizard_ignore);
             this.findContainer(step).find('input:text').each(addDynamicValidationRules);
 
         } else {
-            $(this.form).find('.wizard-ignore').each(remove_wizard_ignore);
+            $(this.form).find('.wizard-ignore').not(':button').each(remove_wizard_ignore);
             this.form.find('input:text').each(addDynamicValidationRules);
         }
 
         $(this.form).formwizard("next");
+        this.disableCurrentStepFilled();
+    }
+
+    PolicyForm.prototype.disableCurrentStepFilled = function () {
+        if ($(this.form).formwizard("state").currentStep) {
+            var step_preffix = this.name + '_step';
+            var step = $(this.form).formwizard("state").currentStep.substring(step_preffix.length);
+            this.findContainer(step).find('.filled-disabled').attr('disabled', 'disabled');
+        }
+    }
+
+    PolicyForm.prototype.disableInput = function (input) {
+        input.attr('disabled', 'disabled');
+        input.addClass('wizard-ignore');
     }
 
     PolicyForm.prototype.ajaxCall = function (method, route, data) {
