@@ -75,7 +75,6 @@ sub getData {
 
     my $rrd_name = $args{rrd_name};
 
-    $log->info('REQUESTED RRD: '.Dumper $rrd_name);
     # rrd constructor
     my $rrd = $self->getRRD(file => "$rrd_name.rrd" );
 
@@ -95,7 +94,6 @@ sub getData {
     # WARN we directly access class hash, breaking encapsulation
     my $ds_names = $rrd->{fetch_ds_names};
 
-    $log->info('DS NAMES FOR REQUESTED RRD : '.Dumper $ds_names);
     my @max_def = $args{max_def} ? @{ $args{max_def} } : @$ds_names;
     my %res_data = ( "_MAX_" => [] );
 
@@ -111,7 +109,7 @@ sub getData {
         my $ds_idx = 0;
         ++$ds_idx until ( ($ds_idx == scalar @$ds_names) or ($ds_names->[$ds_idx] eq $ds_name) );
         if ($ds_idx == scalar @$ds_names) {
-            die "Invalid ds_name for this RRD : '$args{ds_name}'";
+            die "Invalid ds_name for this RRD : '$ds_name'";
         }
         $required_ds_idx{ $ds_name } = $ds_idx;
         $res_data{ $ds_name } = [];
@@ -199,6 +197,7 @@ sub getHostData {
     delete $args{set};
 
     if (defined $set_def->{table_oid}) {
+
         my $host_data = $self->getTableData(
                             set_name  => $set_name, 
                             host_name => $host_name,
@@ -252,8 +251,16 @@ sub getTableData {
         rrd_name  => $rrd,
         %args )};
     }
-    
-    return \%host_data;
+
+    # { index => { ds => value } } to { ds => { index => value } }
+    my %host_data_by_ds;
+    while (my ($index, $data) = each %host_data) {
+        while (my ($ds_name, $values) = each %$data) {
+            $host_data_by_ds{$ds_name}{$index} = $values;
+        }
+    }
+
+    return \%host_data_by_ds;
 }
 
 sub getClusterData {
