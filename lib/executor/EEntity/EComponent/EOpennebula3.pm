@@ -526,33 +526,15 @@ sub postStart {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    # retrieve hypervisor hostname for the vm from opennebula
     my $id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
     my $command = $self->_oneadmin_command(command => "onevm show $id --xml");
     my $result = $self->getEContext->execute(command => $command);
     my $hxml = XMLin($result->{stdout});
 
-    my $history = $hxml->{HISTORY_RECORDS}->{HISTORY};
-    my $hypervisor_hostname;
-
-    if (ref $history eq 'HASH') {
-        $hypervisor_hostname = $history->{HOSTNAME};
-    }
-    else { # ref $history eq 'ARRAY'
-        $hypervisor_hostname =  $history->[-1]->{HOSTNAME};
-    }
-
     my $vnc_port = $hxml->{TEMPLATE}->{GRAPHICS}->{PORT};
-
-    $log->info("Hypervisor Hostname = $hypervisor_hostname");
-    # retrieve hypervisor id from his hostname
-    $command = $self->_oneadmin_command(command => "onehost show $hypervisor_hostname --xml");
-    $result = $self->getEContext->execute(command => $command);
-    $hxml = XMLin($result->{stdout});
 
     $self->_getEntity()->updateVM(
         vm_host_id    => $args{host}->getAttr(name => 'host_id'),
-        hypervisor_id => $hxml->{ID},
         vnc_port      => $vnc_port,
     );
 }

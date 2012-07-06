@@ -68,6 +68,7 @@ use Data::Dumper;
 use Administrator;
 use General;
 use Entity::Kernel;
+use Entity::Host;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -368,6 +369,19 @@ sub getHypervisorIdFromHostId {
            } )->single()->get_column('hypervisor_id');
 }
 
+sub getHypervisorHost {
+    my $self = shift;
+    my %args = @_;
+
+    my $vm = $self->{_dbix}->opennebula3_vms->search( {
+        vm_host_id => $args{host}->getId
+    } )->single();
+
+    my $hypervisor = $vm->opennebula3_hypervisor;
+
+    return Entity::Host->get(id => $hypervisor->get_column('hypervisor_host_id'));
+}
+
 ### VMs manipulations ###
 
 sub addVM {
@@ -376,11 +390,16 @@ sub addVM {
 
     General::checkParams(args => \%args, required => ['host', 'id']);
 
+    my $hypervisor_id = $self->{_dbix}->opennebula3_hypervisors->search( {
+        hypervisor_host_id => $args{hypervisor}->getId
+    } )->single()->get_column('opennebula3_hypervisor_id');
+
     $self->{_dbix}->create_related(
         'opennebula3_vms',
         {
-            vm_host_id => $args{host}->getId(),
-            vm_id      => $args{id},
+            vm_host_id                => $args{host}->getId(),
+            vm_id                     => $args{id},
+            opennebula3_hypervisor_id => $hypervisor_id
         }
     );
 }
@@ -436,17 +455,12 @@ sub updateVM {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'vm_host_id', 'hypervisor_id', 'vnc_port' ]);
-
-    my $opennebula3_hypervisor_id = $self->{_dbix}->opennebula3_hypervisors->search( {
-                                        hypervisor_id => $args{hypervisor_id}}
-                                    )->single()->get_column('opennebula3_hypervisor_id');
+    General::checkParams(args => \%args, required => [ 'vm_host_id', 'vnc_port' ]);
 
     $self->{_dbix}->opennebula3_vms->search( {
         vm_host_id => $args{vm_host_id}
     } )->single()->update( {
-        opennebula3_hypervisor_id => $opennebula3_hypervisor_id,
-        vnc_port                  => $args{vnc_port}
+        vnc_port => $args{vnc_port}
     } );
 }
 
