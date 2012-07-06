@@ -1,4 +1,14 @@
 // This file is used to check and display notifications about new messages.
+
+function get(url) {
+    var value;
+    $.ajax({
+        url     : url,
+        success : function(data) { value = data; }
+    });
+    return value;
+}
+
 window.setInterval(function(){
 
     var jsondata = '';
@@ -30,10 +40,10 @@ window.setInterval(function(){
          }
     });
 
-    var workflows = get("/api/workflow?state=pending");
+    var workflows = get("/api/workflow?state=pending") || [];
     workflows = workflows.concat(get("/api/workflow?state=running"));
 
-    for (var i = 0; i < workflows.length; i++) {
+    for (var i = 0; i < workflows.length; i++) if (workflows.hasOwnProperty(i) && workflows[i] != null) {
         var gritter = $('.gritter-item-workflow-' + workflows[i].pk);
         if (gritter.length) {
             updateWorkflowGritter(workflows[i]);
