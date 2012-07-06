@@ -1588,8 +1588,8 @@ CREATE TABLE `masterimage` (
 
 CREATE TABLE `billinglimit` (
   `id` int(8) unsigned NOT NULL,
-  `start` int(16) NOT NULL,
-  `ending` int(16) NOT NULL,
+  `start` BIGINT(16) NOT NULL,
+  `ending` BIGINT(16) NOT NULL,
   `type` CHAR(32) NOT NULL,
   `soft` BOOLEAN NOT NULL,
   `value` int(8),
