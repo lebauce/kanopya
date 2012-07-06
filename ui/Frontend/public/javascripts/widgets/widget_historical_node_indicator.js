@@ -13,8 +13,6 @@ $('.widget').live('widgetLoadContent',function(e, obj){
              sp_id,
              node_id
      );
-
-     setdatePicker(obj.widget.element);
 });
 
 function initNodeIndicatorWidget (widget_elem, sp_id, node_id) {
@@ -38,7 +36,9 @@ function initNodeIndicatorWidget (widget_elem, sp_id, node_id) {
         indic_list.append($('<option>', {value : name, html : name, id : row.indicator_id, unit : row.indicator_unit}));
     });
 
-    setRefreshButton(widget_elem, sp_id, node_id);
+    setIndicDatePicker(widget_elem);
+
+    setIndicRefreshButton(widget_elem, sp_id, node_id);
 
 //    // Load widget content if configured
 //    if (widget.metadata.aggregate_combination_id) {
@@ -47,7 +47,7 @@ function initNodeIndicatorWidget (widget_elem, sp_id, node_id) {
 //    }
 }
 
-function setdatePicker(widget_div) {
+function setIndicDatePicker(widget_div) {
     var now = new Date();
     var start = new Date();
     start.setDate(now.getDate() - 1);
@@ -60,7 +60,7 @@ function setdatePicker(widget_div) {
     }).datetimepicker('setDate', now);
 }
 
-function setRefreshButton(widget_div, sp_id, node_id) {
+function setIndicRefreshButton(widget_div, sp_id, node_id) {
     widget_div.find('.refresh_button').click(function () {
         indic_list = widget_div.find('.indicator_list');
         showIndicatorGraph(

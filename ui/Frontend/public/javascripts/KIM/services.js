@@ -59,7 +59,6 @@ function loadServicesRessources (container_id, elem_id) {
       cont.addClass('widget');
       cont.append(graph_div);
       graph_div.load('/widgets/widget_historical_node_indicator.html', function() {
-          setdatePicker(graph_div);
           initNodeIndicatorWidget(cont, elem_id, node_id);
       });
     }
