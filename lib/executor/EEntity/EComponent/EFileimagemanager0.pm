@@ -194,6 +194,9 @@ sub fileCreate{
         $self->getEContext->execute(command => $command);
     };
     if ($@) {
+        $econtainer_access->umount(mountpoint => $mountpoint,
+                                   econtext   => $self->getEContext);
+
         throw Kanopya::Exception::Execution(
                   error => "Unable to create file <$file_image_path> with size <$args{file_size}>: $@"
               );
