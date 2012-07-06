@@ -239,8 +239,11 @@ sub jsonify {
     my $var = shift;
 
     if ($var->can("toJSON")) {
-        if ($var->isa("Operation") || $var->isa("Workflow")) {
-            return Entity->get(id => $var->getId)->toJSON;
+        if ($var->isa("Operation")) {
+            return Operation->get(id => $var->getId)->toJSON;
+        }
+        elsif ($var->isa("Workflow")) {
+            return Workflow->get(id => $var->getId)->toJSON;
         } else {
             return $var->toJSON;
         }
