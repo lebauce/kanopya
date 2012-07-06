@@ -200,7 +200,7 @@ sub scale_memory {
 
     $self->getEContext->execute(command => $command);
 
-    return $self->_getEntity()->scaleMemory(%args);
+    return $self->_getEntity()->updateMemory(%args);
 }
 
 #execute cpu scale in
@@ -219,7 +219,7 @@ sub scale_cpu {
 
     $self->getEContext->execute(command => $command);
 
-    return $self->_getEntity()->scaleCPU(%args);
+    return $self->_getEntity()->updateCPU(%args);
 }
 
 # generate $ONE_LOCATION/etc/oned.conf configuration file

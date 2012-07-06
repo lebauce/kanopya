@@ -89,6 +89,10 @@ sub methods {
             'description' => 'Return the type of managed hosts.',
             'perm_holder' => 'entity',
         },
+        'scaleHost'     => {
+            'description'   => 'scale cpu / memory for a host',
+            'perm_holder'   => 'entity'
+        }
     }
 }
 
@@ -512,7 +516,7 @@ sub getRemoteSessionURL {
            ":" . $self->getVncport(host => $args{host});
 }
 
-sub scaleCPU {
+sub updateCPU {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['host']);
 
@@ -521,13 +525,37 @@ sub scaleCPU {
     $args{host}->save();
 }
 
-sub scaleMemory {
+sub updateMemory {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
 
     $args{host}->setAttr(name  => "host_ram",
                          value => $args{memory} * 1024 * 1024);
     $args{host}->save();
+}
+
+=head2 scaleHost
+
+=cut
+
+sub scaleHost {
+    my $self            = shift;
+    my %args            = @_;
+
+    General::checkParams(args => \%args, required => [ 'host_id', 'scalein_value', 'scalein_type' ]);
+
+    my $host            = Entity->get(id => $args{host_id});
+
+    my $wf_params       = {
+        scalein_value   => $args{scalein_value},
+        scalein_type    => $args{scalein_type},
+        context         => {
+            host                => $host,
+            cloudmanager_comp   => $self
+        }
+    };
+
+    Workflow->run(name => 'ScaleInWorkflow', params => );
 }
 
 =head1 DIAGNOSTICS
