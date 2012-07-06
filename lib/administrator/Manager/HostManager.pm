@@ -40,6 +40,19 @@ use constant BOOT_POLICIES => {
     boot_on_san  => 'BootOnSan',
 };
 
+sub methods {
+    return {
+        'getHostType'   => {
+            'description'   => 'Return the type of managed hosts.',
+            'perm_holder'   => 'entity'
+        },
+        'scaleHost'     => {
+            'description'   => "scale host's cpu / memory",
+            'perm_holder'   => 'entity'
+        }
+    };
+}
+
 =head2 checkHostManagerParams
 
 =cut
@@ -231,6 +244,14 @@ sub getHostType {
 =cut
 
 sub getRemoteSessionURL {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+=head2 scaleHost
+
+=cut
+
+sub scaleHost {
     throw Kanopya::Exception::NotImplemented();
 }
 
