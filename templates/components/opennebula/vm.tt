@@ -11,8 +11,8 @@ REQUIREMENTS = "NAME = \"[% hypervisor_name %]\""
 [% END %]
 
 [% IF hypervisor_type == "xen" %]
-RAW = [ type="xen", data="maxvcpus=[% maxvcpu %]" ]
-RAW = [ type="xen", data="maxmem=[% maxmem %]" ]
+RAW = [ type="xen", data="maxvcpus=128" ]
+RAW = [ type="xen", data="maxmem=262144" ]
 [% END %]
 
 OS = [
