@@ -123,6 +123,44 @@ function loadServicesRessources (container_id, elem_id) {
     } );
 }
 
+function runScaleWorkflow(type, eid, spid) {
+    var cont    = $('<div>');
+    $('<label>', { text : type + ' amount : ', for : type }).appendTo(cont);
+    var inp     = $('<input>', { id : type }).appendTo(cont);
+    $(cont).dialog({
+        draggable       : false,
+        resizable       : false,
+        close           : function() { $(this).remove(); },
+        buttons         : {
+            'Ok'        : function() {
+                var amount  = $(inp).val();
+                if (amount != null && amount !== "") {
+                    $.ajax({
+                        async       : false,
+                        url         : '/api/serviceprovider/' + spid + '/getManager',
+                        contentType : 'application/json',
+                        data        : JSON.stringify({ manager_type : 'host_manager' }),
+                        success     : function(hmgr) {
+                            $.ajax({
+                                url         : '/api/entity/' + hmgr.pk + '/scaleHost',
+                                type        : 'POST',
+                                contentType : 'application/json', 
+                                data        : JSON.stringify({  
+                                    host_id         : eid,
+                                    scalein_value   : amount,
+                                    scalein_type    : type.toLowerCase()
+                                }),
+                                success     : function() { $(cont).dialog('close'); }
+                            });
+                        }
+                    });
+                }
+            },
+            'Cancel'    : function() { $(this).dialog('close'); }
+        }
+    });
+}
+
 function nodedetailsaction(cid, eid) {
     $.ajax({
         url     : '/api/node/' + eid + '?expand=host',
@@ -156,13 +194,13 @@ function nodedetailsaction(cid, eid) {
                     label       : 'Scale Cpu',
                     icon        : 'arrowthick-2-n-s',
                     condition   : isVirtual,
-                    action      : $.noop
+                    action      : function() { runScaleWorkflow("CPU", eid, data.service_provider_id); }
                 },
                 {
                     label       : 'Scale Memory',
                     icon        : 'arrowthick-2-n-s',
                     condition   : isVirtual,
-                    action      : $.noop
+                    action      : function() { runScaleWorkflow("Memory", eid, data.service_provider_id); }
                 },
                 {
                     label       : 'Migrate',
