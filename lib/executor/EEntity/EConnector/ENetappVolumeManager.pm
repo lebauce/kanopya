@@ -62,7 +62,7 @@ sub createDisk {
                      container_name       => $args{name},
                      container_size       => $args{size},
                      container_filesystem => $args{filesystem},
-                     container_freespace  => 0,
+                     container_freespace  => $args{size},
                      container_device     => $args{name},
                      aggregate_id         => $args{aggregate_id}
                  );
