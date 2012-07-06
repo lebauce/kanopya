@@ -30,7 +30,7 @@ use Hash::Merge;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
-use POSIX;
+use POSIX qw[strftime];
 
 my $log = get_logger('administrator');
 
