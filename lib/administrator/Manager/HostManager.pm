@@ -49,6 +49,10 @@ sub methods {
         'scaleHost'     => {
             'description'   => "scale host's cpu / memory",
             'perm_holder'   => 'entity'
+        },
+        'migrate'       => {
+            'description'   => "migrate a host",
+            'perm_holrder'  => "entity"
         }
     };
 }
@@ -252,6 +256,14 @@ sub getRemoteSessionURL {
 =cut
 
 sub scaleHost {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+=head2 migrate
+
+=cut
+
+sub migrate {
     throw Kanopya::Exception::NotImplemented();
 }
 

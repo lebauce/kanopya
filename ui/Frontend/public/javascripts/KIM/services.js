@@ -130,6 +130,7 @@ function runScaleWorkflow(type, eid, spid) {
     $(cont).dialog({
         draggable       : false,
         resizable       : false,
+        modal           : true,
         close           : function() { $(this).remove(); },
         buttons         : {
             'Ok'        : function() {
@@ -157,6 +158,55 @@ function runScaleWorkflow(type, eid, spid) {
                 }
             },
             'Cancel'    : function() { $(this).dialog('close'); }
+        }
+    });
+}
+
+function migrate(spid, eid) {
+    var cont    = $('<div>');
+    $('<label>', { text : 'Hypervisor : ', for : 'hypervisorselector' }).appendTo(cont);
+    var sel     = $('<select>').appendTo(cont);
+    $.ajax({
+        async       : false,
+        url         : '/api/serviceprovider/' + spid + '/getManager',
+        contentType : 'application/json',
+        data        : JSON.stringify({ manager_type : 'host_manager' }),
+        success     : function(hmgr) {
+            $.ajax({
+                url     : '/api/opennebula3/' + hmgr.pk + '/getHypervisors',
+                type    : 'POST',
+                success : function(data) {
+                    for (var i in data) if (data.hasOwnProperty(i)) {
+                        $(sel).append($('<option>', { text : data[i].host_hostname, value : data[i].pk }));
+                    }
+                    $(cont).dialog({
+                        modal       : true,
+                        draggable   : false,
+                        resizable   : false,
+                        close       : function() { $(this).remove(); },
+                        buttons     : {
+                            'Ok'        : function() {
+                                var hyp = $(sel).val();
+                                if (hyp != null && hyp != "") {
+                                    $.ajax({
+                                        url         : '/api/opennebula3/' + hmgr.pk + '/migrate',
+                                        type        : 'POST',
+                                        contentType : 'application/json',
+                                        data        : JSON.stringify({
+                                            host_id         : eid,
+                                            hypervisor_id   : hyp
+                                        }),
+                                        success     : function() {
+                                            $(cont).dialog('close');
+                                        }
+                                    });
+                                }
+                            },
+                            'Cancel'    : function() { $(this).dialog('close'); }
+                        }
+                    });
+                }
+            });
         }
     });
 }
@@ -206,7 +256,7 @@ function nodedetailsaction(cid, eid) {
                     label       : 'Migrate',
                     icon        : 'extlink',
                     condition   : isVirtual,
-                    action      : $.noop
+                    action      : function() { migrate(data.service_provider_id, eid); }
                 },
                 {
                     label       : 'Remote session',

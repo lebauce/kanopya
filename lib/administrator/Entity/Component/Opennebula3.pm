@@ -68,7 +68,7 @@ use Data::Dumper;
 use Administrator;
 use General;
 use Entity::Kernel;
-use Entity::Host;
+use Entity::Host qw(get new);
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -82,6 +82,33 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        getHypervisors  => {
+            description => 'get hypervisors',
+            perm_holder => 'entity'
+        }
+    };
+}
+
+=head2 getHypervisors
+
+=cut
+
+sub getHypervisors {
+    my $self        = shift;
+
+    my $hypervisors = $self->{_dbix}->opennebula3_hypervisors;
+    my $hyphosts    = [];
+
+    while (my $row = $hypervisors->next) {
+        my $host   = Entity::Host->get(id => $row->get_column('hypervisor_host_id'));
+        push @{$hyphosts}, $host;
+    }
+
+    return $hyphosts;
+}
 
 =head2 checkHostManagerParams
 
@@ -417,6 +444,27 @@ sub getVmIdFromHostId {
            } )->single()->get_column('vm_id');
 }
 
+sub migrate {
+    my $self    = shift;
+    my %args    = @_;
+
+    General::checkParams(args => \%args, required => [ 'host_id', 'hypervisor_id' ]);
+
+    my $host    = Entity->get(id => $args{host_id});
+
+    Operation->enqueue(
+        type        => 'MigrateHost',
+        priority    => 200,
+        params      => {
+            context => {
+                vm                  => $host,
+                host                => Entity->get(id => $args{hypervisor_id}),
+                cloudmanager_comp   => $self
+            }
+        }
+    );
+}
+
 # Execute host migration to a new hypervisor
 sub migrateHost {
     my $self = shift;
@@ -542,7 +590,7 @@ sub scaleHost {
         }
     };
 
-    Workflow->run(name => 'ScaleInWorkflow', params => );
+    Workflow->run(name => 'ScaleInWorkflow', params => $wf_params);
 }
 
 =head1 DIAGNOSTICS
