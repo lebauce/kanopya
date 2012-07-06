@@ -121,29 +121,26 @@ sub retrieveData {
 
     my $nodelist       = $args{'nodelist'};
     my $indicators     = $args{'indicators'};
-    my @sets_to_fetch;
+    my %sets_to_fetch;
 
+    # Arrange indicators name by set_name
     foreach my $indicator (values %$indicators) {
         # We fetch the indicator set related to the indicator
-        my $set       = $indicator->indicatorset->indicatorset_name;
-
-        # Then we check if it was already inserted into the array of sets to fetch
-        my %sets = map { $_ => 1 } @sets_to_fetch;
-        if (! exists($sets{$set})) {
-            push @sets_to_fetch, $set;
-        }
+        my $set_name = $indicator->indicatorset->indicatorset_name;
+        push @{$sets_to_fetch{$set_name}}, $indicator->indicator_name;
     }
 
-    # Now we fetch the requested RRD
+    # Now we fetch the requested data
     my $retriever = Monitor::Retriever->new();
     my %monitored_values;
 
-    foreach my $set (@sets_to_fetch) {
+    while (my ($set_name, $indic_names) = each %sets_to_fetch) {
         foreach my $node (@$nodelist) {
             eval {
                 my $data = $retriever->getHostData(
-                                                set         => $set,
+                                                set         => $set_name,
                                                 host        => $node,
+                                                required_ds => $indic_names,
                                                 time_laps   => $time_span,
                                                 start       => $args{start},
                                                 end         => $args{end},
