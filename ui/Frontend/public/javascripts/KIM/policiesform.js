@@ -233,7 +233,7 @@ var PolicyForm = (function() {
         if (type === undefined ||
             (type !== 'textarea' && type !== 'select')) {
             var type    = type || 'text';
-            var input   = $("<input>", { type : type });
+            var input   = $("<input>", { type : type, name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
 
             if (type === 'radio') {
                 var that = this;
@@ -255,10 +255,10 @@ var PolicyForm = (function() {
             }
         } else if (type === 'textarea') {
             var type    = 'textarea';
-            var input   = $("<textarea>", { type : type });
+            var input   = $("<textarea>", { type : type, name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
         }
         else if (type === 'select') {
-            var input   = $("<select>", { width: 300, type : type });
+            var input   = $("<select>", { width: 300, type : type, name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
             var isArray = options instanceof Array;
             if (! this.fields[elementName].is_mandatory) {
                 var option  = $("<option>", { value : 0, text : '-' });
@@ -277,7 +277,6 @@ var PolicyForm = (function() {
                 }
             }
         }
-        $(input).attr({ name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
 
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
@@ -1011,7 +1010,6 @@ var PolicyForm = (function() {
         });
         this.form.find(".disabled_policy_id").each(function () {
             $(this).attr('disabled', 'disabled');
-//            $(this).addClass('wizard-ignore');
         });
     }
 
