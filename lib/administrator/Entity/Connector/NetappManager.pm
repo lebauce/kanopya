@@ -95,7 +95,7 @@ sub DESTROY {
 
 sub getFreeSpace {
     my $self = shift;
-	my $total_spare_cap = 0;
+    my $total_spare_cap = 0;
     my @disks = $self->disks;
 
     for my $disk (@disks) {

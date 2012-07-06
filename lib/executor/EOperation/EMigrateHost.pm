@@ -51,7 +51,6 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-
 =head2 prepare
 
 =cut

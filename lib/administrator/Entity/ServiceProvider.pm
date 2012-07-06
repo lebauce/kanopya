@@ -323,7 +323,7 @@ sub addNetworkInterface {
     return $interface;
 }
 
-=head2 getNetworkInterfaces 
+=head2 getNetworkInterfaces
 
     Desc : return a list of NetworkInterface
 
@@ -343,7 +343,7 @@ sub getNetworkInterfaces {
 
 =head2 removeNetworkInterface
 
-    Desc: remove a network interface 
+    Desc: remove a network interface
 
 =cut
 

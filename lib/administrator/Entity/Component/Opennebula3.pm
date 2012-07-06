@@ -407,7 +407,6 @@ sub getVmIdFromHostId {
            } )->single()->get_column('vm_id');
 }
 
-
 # Execute host migration to a new hypervisor
 sub migrateHost {
     my $self = shift;

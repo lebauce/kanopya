@@ -532,7 +532,7 @@ sub _generatePXEConf {
     my $pxeiface = $args{host}->getPXEIface;
     my $interface = $pxeiface->getInterface;
     my $gateway = undef;
-    if($interface->hasDefaultGateway) {
+    if ($interface->hasDefaultGateway) {
         $gateway = $pxeiface->getPoolip()->getAttr(name => 'poolip_gateway');
     }
 

@@ -143,7 +143,6 @@ sub checkMigration{
     my $masternode_econtext = EFactory::newEContext(ip_source      => $self->getExecutorEContext->getLocalIp,
                                                     ip_destination => $masternodeip);
 
-
     my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
     my $hypervisor_host_name = $args{hypervisor_dst}->getAttr(name=>'host_hostname');
 

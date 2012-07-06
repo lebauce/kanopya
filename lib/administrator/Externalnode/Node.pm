@@ -81,13 +81,13 @@ sub new {
     return $self;
 }
 
-sub getServiceProvider(){
+sub getServiceProvider() {
     my $self = shift;
 
     return Entity->get(id => $self->getAttr(name => 'service_provider_id'));
 }
 
-sub remove(){
+sub remove() {
     my $self = shift;
     
     my $serviceProvider = $self->getServiceProvider();

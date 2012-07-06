@@ -191,7 +191,7 @@ sub clusterBilling {
         $csv->print ($fh, $row);
 
         $timestamp += $interval;
-   }
+    }
 
     close $fh or die "$filename: $!";
 }

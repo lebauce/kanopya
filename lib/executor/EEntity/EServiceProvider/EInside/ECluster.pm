@@ -172,7 +172,7 @@ sub generateResolvConf {
         template_file => 'resolv.conf.tt',
         data          => $data
     );
-    
+
     $self->getExecutorEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/resolv.conf'
@@ -189,12 +189,12 @@ sub generateHostsConf {
     my $nodes = $self->getHosts();
     my @hosts_entries = ();
 
-    # we add each nodes 
+    # we add each nodes
     foreach my $node (values %$nodes) {
-        my $tmp = { 
+        my $tmp = {
             hostname   => $node->getAttr(name => 'host_hostname'),
             domainname => $args{kanopya_domainname},
-            ip         => $node->getAdminIp 
+            ip         => $node->getAdminIp
         };
 
         push @hosts_entries, $tmp;
@@ -219,7 +219,7 @@ sub generateHostsConf {
         template_file => 'hosts.tt',
         data          => { hosts => \@hosts_entries }
     );
-    
+
     $self->getExecutorEContext->send(
         src => $file,
         dest => $args{mount_point}.'/etc/hosts'
@@ -239,27 +239,27 @@ sub updateHostsFile {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host','kanopya_domainname' ]);
-    
+
     $log->info('Update cluster nodes /etc/hosts');
-    
+
     my $rand = new String::Random;
     my $kanopya_hostfile = '/tmp/' . $rand->randpattern("cccccccc");
     my $template = Template->new(General::getTemplateConfiguration());
     my $input = "hosts.tt";
-    
+
     my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
     my $cluster_id = $self->getAttr(name => 'cluster_id');
-    
+
     my @all_nodes = ();
     my @cluster_nodes = ();
-    
+
     foreach my $cluster (@clusters) {
         my $nodes = $cluster->getHosts();
         foreach my $node (values %$nodes) {
-            my $tmp = { 
+            my $tmp = {
                 hostname   => $node->getAttr(name => 'host_hostname'),
                 domainname => $args{kanopya_domainname},
-                ip         => $node->getAdminIp 
+                ip         => $node->getAdminIp
             };
             if($cluster->getAttr(name => 'cluster_id') eq $cluster_id) {
                 push @cluster_nodes, $tmp;
@@ -277,7 +277,7 @@ sub updateHostsFile {
             push @all_nodes, $tmp;
         }
     }
-    
+
     my $nodefile = $self->generateNodeFile(
         cluster       => $self->_getEntity,
         host          => $args{host},
@@ -286,9 +286,9 @@ sub updateHostsFile {
         template_file => 'hosts.tt',
         data          => { hosts => \@cluster_nodes }
     );
-    
+
     $template->process($input, {hosts => \@all_nodes}, $kanopya_hostfile);
-    
+
     foreach my $node (@cluster_nodes) {
         my $node_ip = $node->{ip};
         eval {
