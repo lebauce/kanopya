@@ -5,7 +5,7 @@ window.setInterval(function(){
     var maxID = lastMsgId;
     // Get Messages
     $.ajax({
-        url: '/api/message',
+        url: '/api/message?rows=100&order_by=message_id%20DESC',
         success: function(rows) {
             var newMsg = false;
             $(rows).each(function(row) {
