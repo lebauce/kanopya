@@ -22,16 +22,36 @@ function load_iaas_content (container_id) {
         contentType : 'application/json',
         data        : JSON.stringify({ category : 'Cloudmanager' }),
         success     : function(data) {
-            create_grid({
-                data                    : data,
-                content_container_id    : container_id,
-                grid_id                 : 'iaas_list',
-                colNames                : [ 'ID', 'Name', 'State' ],
-                colModel                : [
-                    { name : 'id', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
-                    { name : 'cluster_name', index : 'cluster_name', width : 200 },
-                    { name : 'cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter }
-                ]
+            var iaas    = [];
+            $.ajax({
+                url         : '/api/serviceprovider/findManager',
+                type        : 'POST',
+                contentType : 'application/json',
+                data        : JSON.stringify({ category : 'Cloudmanager' }),
+                success     : function(managers) {
+                    for (var i in data) if (data.hasOwnProperty(i)) {
+                        for (var j in managers) if (managers.hasOwnProperty(j)) {
+                            if (managers[j].service_provider_id === data[i].pk) {
+                                if (managers[j].host_type === "Virtual Machine") {
+                                    data[i].cloudmanager    = managers[j];
+                                    iaas.push(data[i]);
+                                }
+                                break;
+                            };
+                        }
+                    }
+                    create_grid({
+                        data                    : iaas,
+                        content_container_id    : container_id,
+                        grid_id                 : 'iaas_list',
+                        colNames                : [ 'ID', 'Name', 'State' ],
+                        colModel                : [
+                            { name : 'id', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
+                            { name : 'cluster_name', index : 'cluster_name', width : 200 },
+                            { name : 'cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter }
+                        ]
+                    });
+                }
             });
         }
     });
