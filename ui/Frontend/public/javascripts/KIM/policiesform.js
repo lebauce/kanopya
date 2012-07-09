@@ -91,6 +91,7 @@ var PolicyForm = (function() {
             if (! this.triggeredFields[this.fields[elem].triggered]) {
                 this.triggeredFields[this.fields[elem].triggered] = new Array();
             }
+
             this.triggeredFields[this.fields[elem].triggered].push(elem);
             return 0;
         }
@@ -362,16 +363,6 @@ var PolicyForm = (function() {
         if (! current) {
             current = this.values[elementName];
         }
-
-//        if (this.fields[elementName].hide_filled && current) {
-//            //this.fields[elementName].type = 'hidden';
-//            if (this.fields[elementName].parent) {
-//                /* @ @ You never had seen the following line @ @ */
-//                this.form.find('#input_' + this.fields[elementName].parent).parent().parent().hide();
-//
-//                //this.fields[this.fields[elementName].parent].type = 'hidden';
-//            }
-//        }
 
         // If type is 'set', post fix the element name with the current index
         var inputid = 'input_' + elementName;
@@ -889,6 +880,10 @@ var PolicyForm = (function() {
     PolicyForm.prototype.insertTriggeredElements = function (input, name) {
         var that = this;
         if (this.fields[name].trigger) {
+
+            var fieldsToInsert = this.triggeredFields[name];
+            this.triggeredFields[name] = new Array();
+
             if (this.fields[name].values_provider) {
                 function updateValuesOnChange (event) {
                     that.updateValues(input, event.target.value);
@@ -899,8 +894,8 @@ var PolicyForm = (function() {
 
             input.change();
 
-            for (var field in this.triggeredFields[name]) {
-                var elem = this.triggeredFields[name][field]
+            for (var field in fieldsToInsert) {
+                var elem = fieldsToInsert[field]
                 this.fields[elem].triggered = undefined;
 
                 this.handleField(elem);
@@ -911,9 +906,8 @@ var PolicyForm = (function() {
                     });
                 }
 
-                this.triggeredFields[name][field] = undefined;
+                fieldsToInsert[field] = undefined;
             }
-           this.triggeredFields[name] = new Array();
         }
 
         /* This block is a hugly copy from updateValues method for quick fix. */
@@ -999,6 +993,7 @@ var PolicyForm = (function() {
         if (after) {
             this.form.find("#input_" + after).after(arealine);
             this.form.find("#input_" + after).after(labelline);
+
         } else {
             labelline.appendTo(container);
             arealine.appendTo(container);
@@ -1031,7 +1026,7 @@ var PolicyForm = (function() {
                 if (that.fields[id].type === 'radio' && $(this).val() === 'on') {
                     $(this).val(1);
                 }
-                if (that.fields[id].serialize != null) {
+                if (that.fields[id].serialize != null && $(this).val() !== '') {
                     $(this).val(that.fields[id].serialize($(this).val()));
                 }
             }
