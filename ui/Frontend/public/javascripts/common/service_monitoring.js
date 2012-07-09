@@ -254,11 +254,37 @@ function createNodemetricCombination(container_id, elem_id, ext) {
         mod = new ModalForm(service_opts);
         mod.start();
             ////////////////////////////////////// Node Combination Forumla Construction ///////////////////////////////////////////
+            
+        var component_id;
+        var indicators;
+        $.ajax({
+            async : false,
+            type : 'POST',
+            url:'/api/serviceprovider/' + elem_id + '/getManager',
+            data : {
+                manager_type : 'collector_manager'
+            },
+            success : function(row) {
+                component_id = row.component_id;
+            }
+        });
+        
+        $.ajax({
+            async : false,
+            type : 'POST',
+            url:'/api/component/' + component_id + '/getIndicators',
+            data : {},
+            success : function(row) {
+                indicators = row;
+                console.log(indicators);
+            }
+        });
 
         var availableTags = new Array();
         var indicators = getIndicators(elem_id, ext);
         for (var indic in indicators) {
-            availableTags.push({label : indic, value : indicators[indic].indicator_id});
+            //availableTags.push({label : indic, value : indicators[indic].indicator_id});
+            availableTags.push({indcators});
         }
 
         function split( val ) {

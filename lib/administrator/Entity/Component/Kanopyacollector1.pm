@@ -89,7 +89,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         'getIndicators' => { 'description' => 'create a new cluster',
-                             'perm_holder' => 'entity' }
+                             'perm_holder' => 'entity',}
     },
 }
 
