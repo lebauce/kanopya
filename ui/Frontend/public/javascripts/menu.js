@@ -49,7 +49,11 @@ function add_menutree(container, label, menu_info, elem_id) {
             content_container_id: container_id,
             grid_id: 'services_list',
             afterInsertRow: function (grid, rowid, rowdata, rowelem) {
-                addServiceExtraData(grid, rowid, rowdata, rowelem, '');
+                if (!servicesListFilter(rowelem)) {
+                    $(grid).jqGrid('delRowData', rowid);
+                } else {
+                    addServiceExtraData(grid, rowid, rowdata, rowelem, '');
+                }
             },
             rowNum : 25,
             colNames: [ 'ID', 'Instance Name', 'State', 'Rules State', 'Node Number' ],
@@ -69,8 +73,10 @@ function add_menutree(container, label, menu_info, elem_id) {
     sublevel.hide();
     $.getJSON(menu_info.level2_url+'?service_template_id='+elem_id, function (data) {
         for(index in data) {
-            add_menu(sublevel,data[index].cluster_name,menu_info.submenu,data[index].pk);
-            //sublevel.append($('<li>'+data[index].cluster_name+'</li>'));
+            if (menu_info.level2_filter == null || menu_info.level2_filter(data[index]) === true) {
+                add_menu(sublevel,data[index].cluster_name,menu_info.submenu,data[index].pk);
+                //sublevel.append($('<li>'+data[index].cluster_name+'</li>'));
+            }
         }
     });
     

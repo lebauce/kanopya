@@ -3,7 +3,28 @@
 require('modalform.js');
 require('common/service_common.js');
 
+var ressources  = {};
+
+function    servicesListFilter(elem) {
+    if (ressources.hasOwnProperty(elem.pk)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 function servicesList (container_id, elem_id) {
+    $.ajax({
+        url         : '/api/serviceprovider/getServiceProviders',
+        type        : 'POST',
+        contentType : 'application/json',
+        data        : JSON.stringify({ category : 'Cloudmanager' }),
+        success     : function(data) {
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                ressources[data[i].pk]  = true;
+            }
+        }
+    });
     var container = $('#' + container_id);
 
     $('a[href=#content_services_overview_static]').text('Service instances');
@@ -17,19 +38,23 @@ function servicesList (container_id, elem_id) {
         content_container_id: container_id,
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
-            addServiceExtraData(grid, rowid, rowdata, rowelem, '');
+            if (!servicesListFilter(rowelem)) {
+                $(grid).jqGrid('delRowData', rowid);
+            } else {
+                addServiceExtraData(grid, rowid, rowdata, rowelem, '');
 
-            // Service name
-            $.ajax({
-                url     : '/api/cluster/' + rowid + '/service_template',
-                type    : 'GET',
-                success : function(serv_template) {
-                    $(grid).setCell(rowid, 'service_template_name', serv_template.service_name);
-                },
-                error : function ()  {
-                    $(grid).setCell(rowid, 'service_template_name', 'internal');
-                }
-            });
+                // Service name
+                $.ajax({
+                    url     : '/api/cluster/' + rowid + '/service_template',
+                    type    : 'GET',
+                    success : function(serv_template) {
+                        $(grid).setCell(rowid, 'service_template_name', serv_template.service_name);
+                    },
+                    error : function ()  {
+                        $(grid).setCell(rowid, 'service_template_name', 'internal');
+                    }
+                });
+            }
         },
         rowNum : 25,
         colNames: [ 'ID', 'Service', 'Instance Name', 'State', 'Rules State', 'Node Number' ],

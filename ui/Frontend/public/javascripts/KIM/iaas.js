@@ -15,18 +15,24 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
 }
 
 function load_iaas_content (container_id) {
-    create_grid( {
-        url: '/api/cluster',
-        content_container_id: container_id,
-        grid_id: 'iaas_list',
-        colNames: [ 'ID', 'Name', 'Type', 'State', 'Admin IP', 'Auto-scale' ],
-        colModel: [
-            { name: 'id', index:'entity_id', width: 60, sorttype: "int", hidden: true, key: true },
-            { name: 'cluster_name', index: 'cluster_name', width: 90, sorttype: "date" },
-            { name: 'cluster_type', index: 'cluster_type', width: 200 },
-            { name: 'cluster_state', index: 'cluster_state', width: 200 },
-            { name: 'admin_ip', index: 'admin_ip', width: 200 },
-            { name: 'auto_scale', index: 'auto_scale', width: 200 },
-        ]
+    require('common/formatters.js');
+    $.ajax({
+        url         : '/api/serviceprovider/getServiceProviders',
+        type        : 'POST',
+        contentType : 'application/json',
+        data        : JSON.stringify({ category : 'Cloudmanager' }),
+        success     : function(data) {
+            create_grid({
+                data                    : data,
+                content_container_id    : container_id,
+                grid_id                 : 'iaas_list',
+                colNames                : [ 'ID', 'Name', 'State' ],
+                colModel                : [
+                    { name : 'id', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
+                    { name : 'cluster_name', index : 'cluster_name', width : 200 },
+                    { name : 'cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter }
+                ]
+            });
+        }
     });
 }
