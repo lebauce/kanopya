@@ -29,15 +29,19 @@ function add_menutree(container, label, menu_info, elem_id) {
     link_a.bind('click', function(event) {
         
         $(this).next().toggle();
-        
-        
+
+        var add_button;
+        if ($('#instantiate_service_button') != undefined && $('#instantiate_service_button').length) {
+            add_button = $('#instantiate_service_button');
+        }
+
         $('#services_list').jqGrid('GridDestroy');
         $('#view-container .master_view').hide();
         $('#view_Services').show();
         $('a[href=#content_services_overview_static]').text(label +' instances');
         $('.selected_viewlink').removeClass('selected_viewlink')
         $(this).addClass('selected_viewlink');
-        
+
         var container_id = 'content_services_overview_static';
         
         create_grid( {
@@ -57,7 +61,8 @@ function add_menutree(container, label, menu_info, elem_id) {
                 { name: 'node_number', index: 'node_number', width: 150 }
             ],
             elem_name   : 'service',
-            details     : { link_to_menu : 'yes', label_key : 'cluster_name'}
+            details     : { link_to_menu : 'yes', label_key : 'cluster_name'},
+            before_container : add_button,
         });
     });
     var sublevel = $('<ul>');

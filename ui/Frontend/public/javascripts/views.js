@@ -163,7 +163,13 @@ function create_grid(options) {
 
     // Grid class allow to manipulate grid (show_detail of a row) even if grid is associated to an instance (same grid logic but different id)
     var grid_class = options.grid_class || options.grid_id;
-    content_container.append($("<table>", {'id' : options.grid_id, 'class' : grid_class}));
+
+    if (! options.before_container) {
+        content_container.append($("<table>", {'id' : options.grid_id, 'class' : grid_class}));
+
+    } else {
+        options.before_container.before($("<table>", {'id' : options.grid_id, 'class' : grid_class}));
+    }
 
     if (!options.pager) {
         content_container.append("<div id='" + pager_id + "'></div>");

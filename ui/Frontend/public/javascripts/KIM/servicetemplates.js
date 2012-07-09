@@ -121,67 +121,6 @@ function load_service_template_content (container_id) {
         $('#' + cid).append(button);
     };
 
-    function createServiceDef () {
-        var service_def = jQuery.extend(true, {}, service);
-
-        for (var policy in policies) {
-            var policy_def = jQuery.extend(true, {}, policies[policy]);
-
-            var step = policy.substring(0, 1).toUpperCase() + policy.substring(1);
-
-            // Add the policy selection input
-            service_def[policy + '_policy_id'] = {
-                label           : step + ' policy',
-                step            : step,
-                type            : 'select',
-                entity          : 'policy',
-                filters         : { policy_type : policy },
-                display         : 'policy_name',
-                values_provider : {
-                    func : 'getFlattenedHash',
-                    args : { },
-                },
-                is_mandatory    : true,
-                pattern         : '^[1-9][0-9]*$',
-                disable_filled  : true,
-            };
-            service_def.service_template_id.fields_provided.push(policy + '_policy_id');
-            
-            for (var field in policy_def) {
-                if (field !== 'policy_name' && field !== 'policy_desc') {
-                    policy_def[field].policy         = policy;
-                    policy_def[field].step           = step;
-                    policy_def[field].disable_filled = true;
-                    policy_def[field].hide_filled    = true;
-
-                    if (! policy_def[field].composite)
-                        policy_def[field].is_mandatory   = true;
-
-                    service_def[field] = policy_def[field];
-                }
-            }
-        }
-        return service_def;
-    }
-
-    function createAddServiceButton(cid, grid) {
-        var service_opts = {
-            title       : 'Instantiate a service',
-            name        : 'cluster',
-            callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
-        };
-
-        var button = $("<button>", { html : 'Instantiate a service'} ).button({
-            icons   : { primary : 'ui-icon-plusthick' }
-        });
-
-        button.bind('click', function() {
-            service_opts.fields = createServiceDef();
-            new PolicyForm(service_opts).start();
-        });
-        $('#' + cid).append(button);
-    };
-
     var container = $('#' + container_id);
     var grid = create_grid( {
         url: '/api/servicetemplate',
@@ -194,7 +133,6 @@ function load_service_template_content (container_id) {
     } );
 
     createAddServiceTemplateButton(container_id, grid);
-    createAddServiceButton(container_id, grid);
 }
 
 function load_service_template_details (elem_id, row_data, grid_id) {
