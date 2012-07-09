@@ -65,7 +65,8 @@ var mainmenu_def = {
 var details_def = {
     'iaas_list' : { tabs: 
         [   { label  : 'Overview', 
-                id     : 'iaas_detail_overview'},
+                id     : 'iaas_detail_overview',
+                onLoad  : function() { }},
             { label  : 'Hypervisor', 
                 id     : 'iass_detail_hyp',
                 onLoad : load_iaas_detail_hypervisor },
