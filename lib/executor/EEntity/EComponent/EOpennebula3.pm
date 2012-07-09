@@ -174,14 +174,15 @@ sub checkMigration {
     my $state = $hxml->{LCM_STATE};
     $log->info("State = $state ; CURRENT_H = $hypervisor_migr ; DEST_H = $hypervisor_host_name");
 
-    return 0 if ($state == 3 && ($hypervisor_migr eq $hypervisor_host_name ));
+    if ($state == 3 && ($hypervisor_migr eq $hypervisor_host_name )) {
+        $log->debug("Apply VLAN on the source hypervisor");
 
-    $log->debug("Apply VLAN on the source hypervisor");
-    # $self->propagateVLAN(host       => $args{host},
-    #                      hypervisor => $args{hypervisor_src},
-    #                      delete     => 1);
-
-    return 1;
+        # $self->propagateVLAN(host       => $args{host},
+        #                      hypervisor => $args{hypervisor_src},
+        #                      delete     => 1);
+        return 1;
+    }
+    return 0;
 }
 
 # execute memory scale in
@@ -729,7 +730,8 @@ sub propagateVLAN {
                            " on the bridge interface " . $iface->getAttr(name => "iface_name"));
                 my $ehost_manager = EFactory::newEEntity(data => $args{hypervisor}->getHostManager);
                 $ehost_manager->applyVLAN(iface => $bridge,
-                                          vlan  => $network);
+                                          vlan  => $network,
+                                          delete => (defined ($args{delete}) && $args{delete}) ? 1 : 0);
             }
         }
     }
