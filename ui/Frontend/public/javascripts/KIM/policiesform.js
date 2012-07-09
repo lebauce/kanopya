@@ -139,13 +139,22 @@ var PolicyForm = (function() {
                 });
             }
 
-            var hrseprationline  = $("<tr>", { class : classes }).css('position', 'relative');
-            $("<td>", { colspan : 2 }).append($('<hr>')).appendTo(hrseprationline);
-            container.append(hrseprationline);
+            var need_separtion = false;
+            for (var set_item in added) {
+                if (! ($(added[set_item]).css('display') == 'none')) {
+                    need_separtion = true;
+                    break;
+                }
+            }
+            if (need_separtion) {
+                var hrseprationline  = $("<tr>", { class : classes }).css('position', 'relative');
+                $("<td>", { colspan : 2 }).append($('<hr>')).appendTo(hrseprationline);
+                container.append(hrseprationline);
 
-            $(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
-            if ($(this.content).height() > $(window).innerHeight() - 200) {
-                $(this.content).css('height', $(window).innerHeight() - 200);
+                $(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
+                if ($(this.content).height() > $(window).innerHeight() - 200) {
+                    $(this.content).css('height', $(window).innerHeight() - 200);
+                }
             }
         }
         return added;
@@ -195,7 +204,7 @@ var PolicyForm = (function() {
         /* Arg */
         if (! value) value = this.values[elementName];
 
-        if (this.fields[elementName].hide_filled && value) {
+        if (this.fields[elementName].hide_filled && (value || this.fields[elementName].type === 'radio')) {
             this.fields[elementName].type = 'hidden';
         }
 
@@ -354,15 +363,15 @@ var PolicyForm = (function() {
             current = this.values[elementName];
         }
 
-        if (this.fields[elementName].hide_filled && current) {
-            this.fields[elementName].type = 'hidden';
-            if (this.fields[elementName].parent) {
-                /* @ @ You never had seen the following line @ @ */
-                this.form.find('#input_' + this.fields[elementName].parent).parent().parent().hide();
-
-                this.fields[this.fields[elementName].parent].type = 'hidden';
-            }
-        }
+//        if (this.fields[elementName].hide_filled && current) {
+//            //this.fields[elementName].type = 'hidden';
+//            if (this.fields[elementName].parent) {
+//                /* @ @ You never had seen the following line @ @ */
+//                this.form.find('#input_' + this.fields[elementName].parent).parent().parent().hide();
+//
+//                //this.fields[this.fields[elementName].parent].type = 'hidden';
+//            }
+//        }
 
         // If type is 'set', post fix the element name with the current index
         var inputid = 'input_' + elementName;
@@ -539,8 +548,17 @@ var PolicyForm = (function() {
         // Raise the onChange event to update related objects
         input.change();
 
-        /*
-         * If 'values_func' defined in the field, this is a field that could
+        if (this.fields[elementName].hide_filled && current) {
+            inserted.hide();
+            if (this.fields[elementName].parent) {
+                /* @ @ You never had seen the following line @ @ */
+                this.form.find('#input_' + this.fields[elementName].parent).parent().parent().hide();
+
+                this.fields[this.fields[elementName].parent].type = 'hidden';
+            }
+        }
+
+        /* If 'values_func' defined in the field, this is a field that could
          * fill other fields with key/value hash returned by the given function
          * call.
          */
@@ -731,6 +749,17 @@ var PolicyForm = (function() {
                 $(this).bind('change.resetPolicy', resetPolicyIdOnChange);
             }
         });
+
+        /* Add set elements if exists in values. Unfortunately we need
+         * to check if we have values for each set element.
+         */
+        for (var set_element in this.fields) {
+            if (this.values[set_element] && this.fields[set_element].set && !this.fields[set_element].composite) {
+                for (var value in this.values[set_element]) {
+                    this.newElement(set_element, this.values[set_element][value]);
+                }
+            }
+        }
     }
 
     PolicyForm.prototype.resetPolicyId = function (elementName) {

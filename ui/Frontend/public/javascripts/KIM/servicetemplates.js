@@ -105,12 +105,15 @@ function load_service_template_content (container_id) {
 
     function createAddServiceTemplateButton(cid, grid) {
         var service_template_opts = {
-            title       : 'Add a service template',
+            title       : 'Add a service',
             name        : 'servicetemplate',
             callback    : function () { grid.trigger("reloadGrid"); }
         };
 
-        var button = $("<button>", { html : 'Add a service'} );
+        var button = $("<button>", { html : 'Add a service'} ).button({
+            icons   : { primary : 'ui-icon-plusthick' }
+        });
+
         button.bind('click', function() {
             service_template_opts.fields = createServiceTemplateDef();
             new PolicyForm(service_template_opts).start();
@@ -150,7 +153,9 @@ function load_service_template_content (container_id) {
                     policy_def[field].step           = step;
                     policy_def[field].disable_filled = true;
                     policy_def[field].hide_filled    = true;
-                    policy_def[field].is_mandatory   = true;
+
+                    if (! policy_def[field].composite)
+                        policy_def[field].is_mandatory   = true;
 
                     service_def[field] = policy_def[field];
                 }
@@ -161,12 +166,15 @@ function load_service_template_content (container_id) {
 
     function createAddServiceButton(cid, grid) {
         var service_opts = {
-            title       : 'Create a service',
+            title       : 'Instantiate a service',
             name        : 'cluster',
             callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
         };
 
-        var button = $("<button>", { html : 'Instantiate a service'} );
+        var button = $("<button>", { html : 'Instantiate a service'} ).button({
+            icons   : { primary : 'ui-icon-plusthick' }
+        });
+
         button.bind('click', function() {
             service_opts.fields = createServiceDef();
             new PolicyForm(service_opts).start();

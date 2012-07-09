@@ -14,7 +14,10 @@ function load_policy_content (container_id) {
             callback    : function () { grid.trigger("reloadGrid"); }
         };
 
-        var button = $("<button>", {html : 'Add a ' + policy_type + ' policy'});
+        var button = $("<button>", {html : 'Add a ' + policy_type + ' policy'}).button({
+            icons   : { primary : 'ui-icon-plusthick' }
+        });
+
         button.bind('click', function() {
             policy_opts.fields  = jQuery.extend(true, {}, policies[policy_type]);
             new PolicyForm(policy_opts).start();
