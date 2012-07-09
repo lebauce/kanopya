@@ -76,6 +76,18 @@ function setIndicRefreshButton(widget_div, sp_id, node_id) {
     }).button({ icons : { primary : 'ui-icon-refresh' } }).show();
 }
 
+function setItemList(widget_div, labels) {
+    var item_list = widget_div.find('.table_elem_list');
+    curr_opt_id = item_list.find(':selected').attr('id')
+    item_list.empty().show();
+    item_list.append($('<option>', {html : 'Select item', value : 'Select item', checked : 'checked', id : 'default'}));
+    $(labels).each(function (item_idx) {
+        label = labels[item_idx];
+        item_list.append($('<option>', {value : label, html : label, id : label}));
+    });
+    item_list.find('option#'+curr_opt_id).attr('selected', 'selected').change();
+}
+
 //function triggered on node indicator selection
 function showIndicatorGraph(curobj,indic_id,indic_name,indic_unit,start,stop, sp_id, node_id) {
     if (indic_id == 'default'){return}
@@ -103,18 +115,57 @@ function showIndicatorGraph(curobj,indic_id,indic_name,indic_unit,start,stop, sp
             graph_container.append(div);
 
             // Build input as expected by jqplot and transform unix timestamp into js timestamp
+            // Also manage indicator table
             var graph_data = [];
+            var table_data = {};
+            var graph_labels = [];
             var min = start;
             var max = stop;
+            var mode_table = null;
             $.each(data, function(indic_oid, values) {
-                $.each(values, function(time, value) {
-                    graph_data.push([time*1000, value]);
+                var line_data = [];
+                // Manage table data or not
+                // if it's a table then key is the index and data the map {time => value}
+                // else key is time and data the value
+                $.each(values, function(key, data) {
+                    if (mode_table === null) {
+                        mode_table = (data !== null && typeof data == 'object') ? 1 : 0;
+                    }
+                    if (mode_table) {
+                        graph_labels.push(key);
+                        var item_line_data = [];
+                        $.each(data, function(time, value) {
+                            item_line_data.push([time*1000, value]);
+                        });
+                        table_data[key] = item_line_data;
+                    } else {
+                        line_data.push([key*1000, data]);
+                    }
                 });
+                if (!mode_table) {
+                    graph_data.push(line_data);
+                }
             });
-            if (graph_data.length != 0) {
-                nodeTimedGraph(graph_data, min, max, '', indic_unit, div_id);
+
+            widget.find('.table_elem_list').unbind('change');
+            if (mode_table) {
+                // Manage table row select dropdown
+                widget.find('.table_elem_list').change( function() {
+                    var item_label = $(this).find(':selected').attr('id');
+                    if (item_label != 'default') {
+                        graph_container.children().remove();
+                        graph_container.append(div);
+                        nodeTimedGraph([table_data[item_label]], [item_label], min, max, '', indic_unit, div_id);
+                    }
+                });
+                setItemList(widget, graph_labels);
             } else {
-                $(graph_container).append('<span>No data for this indicator in the selected period</span>');
+                if (graph_data.length != 0) {
+                    widget.find('.table_elem_list').hide();
+                    nodeTimedGraph(graph_data, graph_labels, min, max, '', indic_unit, div_id);
+                } else {
+                    $(graph_container).append('<span>No data for this indicator in the selected period</span>');
+                }
             }
             widget_loading_stop( widget );
         },
@@ -126,10 +177,10 @@ function showIndicatorGraph(curobj,indic_id,indic_name,indic_unit,start,stop, sp
 
 }
 
-function nodeTimedGraph(first_graph_line, min, max, label, ylabel, div_id) {
+function nodeTimedGraph(graph_lines, graph_labels, min, max, label, ylabel, div_id) {
     $.jqplot.config.enablePlugins = true;
 
-    var cluster_timed_graph = $.jqplot(div_id, [first_graph_line], {
+    var cluster_timed_graph = $.jqplot(div_id, graph_lines, {
         title:label,
         seriesDefaults: {
             breakOnNull:true,
@@ -138,6 +189,10 @@ function nodeTimedGraph(first_graph_line, min, max, label, ylabel, div_id) {
                 color : '#555555',
                 show  : $('#trendlineinput').attr('checked') ? true : false, 
             }
+        },
+        legend: {
+            labels  : graph_labels,
+            show    : false,
         },
         axes:{
             xaxis:{
@@ -151,7 +206,7 @@ function nodeTimedGraph(first_graph_line, min, max, label, ylabel, div_id) {
                     markSize: 10,
                     showGridline: false,
                     angle: -60,
-                    formatString: '%m-%d-%Y %H:%M'
+                    formatString: '%m-%d-%y %H:%M'
                 },
                 min:min,
                 max:max,
