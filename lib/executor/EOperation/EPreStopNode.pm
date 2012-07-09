@@ -44,7 +44,7 @@ use Kanopya::Exceptions;
 use EFactory;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
-
+use Externalnode::Node;
 use strict;
 use warnings;
 
@@ -70,17 +70,38 @@ my $config = {
 =cut
 
 sub prepare {
-    
+
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
+    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+
+    if(not defined $self->{context}->{host}) { # Choose a random non master node
+        $log->info('No node selected, select a random node');
+
+        my @nodes = Externalnode::Node->search(hash => {
+                inside_id   => $self->{context}->{cluster}->getId(),
+                master_node => 0,
+        });
+
+        if((scalar @nodes) == 0) {
+            throw Kanopya::Exception(error => 'Cannot remove a node from cluster <'.($self->{context}->{cluster}->getId()).'> only one master left');
+        }
+        my $random_int = int(scalar (@nodes) * rand);
+
+        my $node = $nodes[$random_int];
+
+        $log->info('Node <'.$node->getId().'> selected to be removed between <'.(scalar @nodes).'> nodes');
+        my $host = $node->host;
+
+        $self->{context}->{host} = EFactory::newEEntity(data => $host);
+    }
 
     my $master_node_id = $self->{context}->{cluster}->getMasterNodeId();
     my $node_count = $self->{context}->{cluster}->getCurrentNodesCount();
     my $host_id = $self->{context}->{host}->getAttr(name => 'entity_id');
-    
+
     if ($node_count > 1 && $master_node_id == $host_id){
         $errmsg = "Node <$host_id> is master node and not alone";
         $log->error($errmsg);
