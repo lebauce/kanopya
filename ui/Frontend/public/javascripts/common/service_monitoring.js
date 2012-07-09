@@ -283,8 +283,8 @@ function createNodemetricCombination(container_id, elem_id, ext) {
         var availableTags = new Array();
         var indicators = getIndicators(elem_id, ext);
         for (var indic in indicators) {
-            //availableTags.push({label : indic, value : indicators[indic].indicator_id});
-            availableTags.push({indcators});
+            availableTags.push({label : indic, value : indicators[indic].indicator_id});
+            //availableTags.push({indicators});
         }
 
         function split( val ) {
