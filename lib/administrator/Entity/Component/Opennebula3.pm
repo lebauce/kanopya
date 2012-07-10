@@ -88,6 +88,10 @@ sub methods {
         getHypervisors  => {
             description => 'get hypervisors',
             perm_holder => 'entity'
+        },
+        getVmsFromHypervisorHostId  => {
+            description => 'get all vms from an hypervisor',
+            perm_holder => 'entity'
         }
     };
 }
@@ -108,6 +112,29 @@ sub getHypervisors {
     }
 
     return $hyphosts;
+}
+
+=head2 getVmsFromHypervisorHostId
+
+=cut
+
+sub getVmsFromHypervisorHostId {
+    my $self        = shift;
+    my %args        = @_;
+
+    General::checkParams(args => \%args, required => [ 'hypervisor_host_id' ]);
+    
+    my $vms       = $self->{_dbix}->opennebula3_hypervisors->search({
+        hypervisor_host_id => $args{hypervisor_host_id}
+    })->single()->opennebula3_vms;
+    my $vmhosts     = [];
+
+    while (my $row = $vms->next) {
+        my $vm  = Entity::Host->get(id => $row->get_column('vm_host_id'));
+        push @{$vmhosts}, $vm;
+    }
+    
+    return $vmhosts;
 }
 
 =head2 checkHostManagerParams
