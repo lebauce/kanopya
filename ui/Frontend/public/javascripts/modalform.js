@@ -364,7 +364,7 @@ var ModalForm = (function() {
                     // Ugly but must delete all DOM elements
                     // but formwizard is using the element after this
                     // callback, so we delay the deletion
-                    setTimeout($.proxy(function() { this.closeDialog(); }, this), 10);
+                    this.closeDialog();
                     this.callback(data, this.form);
                 }, this),
                 error           : $.proxy(function(data) {
@@ -436,10 +436,12 @@ var ModalForm = (function() {
     }
  
     ModalForm.prototype.closeDialog = function() {
-        $(this).dialog("close");
-        $(this).dialog("destroy");
-        $(this.form).formwizard("destroy");
-        $(this.content).remove();
+        setTimeout($.proxy(function() {
+            $(this).dialog("close");
+            $(this).dialog("destroy");
+            $(this.form).formwizard("destroy");
+            $(this.content).remove();
+        }, this), 10);
     }
  
     ModalForm.prototype.validateForm = function () {
