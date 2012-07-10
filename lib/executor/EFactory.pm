@@ -84,7 +84,7 @@ EFactory::newEEntity($objdata) instanciates a new object EEntity from Entity.
 
 sub newEEntity {
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['data']);
 
     my $data = $args{data};
@@ -93,17 +93,16 @@ sub newEEntity {
     my $class = General::getClassEEntityFromEntity(entity => $data);
     #$log->debug("GetClassEEntityFromEntity return $class");
 
-    my $location = General::getLocFromClass(entityclass => $class);
+    do {
+        my $location = General::getLocFromClass(entityclass => $class);
 
-    eval { require $location; };
-    if ($@){
-        $errmsg = "EFactory->newEEntity : require location failed (location is $location) : $@";
-        $log->warn($errmsg);
-        # if $data does not match a EEntity::Something class, we
-        # use EENtity base class to be able to manipulate it 
-        $class = 'EEntity';
-    }
-    
+        eval { require $location; };
+        if ($@){
+            # Try to use the parent package
+            $class =~ s/\:\:[a-zA-Z0-9]+$//g;
+        }
+    } while ($class != 'EEntity');
+
     return $class->new(%params);
 }
 
