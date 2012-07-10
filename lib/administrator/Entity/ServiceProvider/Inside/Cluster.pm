@@ -339,6 +339,8 @@ sub create {
         }
     }
 
+    
+
     General::checkParams(args => \%params, required => [ 'managers' ]);
     General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
@@ -531,7 +533,14 @@ sub configureInterfaces {
 
                 if ($interface_pattern->{interface_networks}) {
                     for my $network_id (@{ $interface_pattern->{interface_networks} }) {
-                        $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
+                        eval {
+                            $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
+                        };
+                        if($@) {
+                            my $msg = '>>>>> interface '.$interface->getAttr(name => 'interface_id');
+                            $msg .= 'already associated with network'.$network_id;
+                            $log->debug($msg);
+                        }
                     }
                 }
             }
