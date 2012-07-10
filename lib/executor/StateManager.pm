@@ -90,7 +90,10 @@ sub run {
                 eval {
                    $pingable = $ehost->checkUp();
                 };
-                if (! $pingable and $ehost->getState eq 'up') {
+
+                my ($hoststate, $hosttimestamp) = $ehost->getState;
+                
+                if (! $pingable and $hoststate eq 'up') {
                     my $msg = "Node <" . $node->host_hostname . "> unreachable in cluster <" . $cluster->cluster_name . ">";
                     $log->info($msg);
 
@@ -103,12 +106,13 @@ sub run {
                     # Set the host and node states to broken
                     $ehost->setState(state => 'broken');
                     $ehost->setNodeState(state => 'broken');
-                    $cluster->getState(state => 'warning');
 
+                    $cluster->setState(state => 'warning');
                     $adm->{db}->txn_commit;
                     next;
                 }
-                elsif ($pingable and $ehost->getState eq 'broken') {
+
+                elsif ($pingable and $hoststate eq 'broken') {
                     # Host has been repaired
                     $ehost->setState(state => $ehost->getPrevState());
                 }
@@ -134,7 +138,8 @@ sub run {
                         last;
                     }
                 }
-                if (! $node_available and $ehost->getNodeState eq 'in') {
+                my ($nodestate, $nodetimestamp) = $ehost->getNodeState;
+                if (! $node_available and $nodestate eq 'in') {
                     # Set the node state to broken
                     $ehost->setNodeState(state => 'broken');
                     $cluster->setState(state => 'warning');
@@ -142,12 +147,13 @@ sub run {
                     $adm->{db}->txn_commit;
                     next;
                 }
-                elsif ($node_available and $ehost->getNodeState eq 'broken') {
+                elsif ($node_available and $nodestate eq 'broken') {
                     # Set the node is repaired
                     $ehost->setNodeState(state => 'in');
                 }
             }
-            if ($services_available and $cluster->getState eq 'warning') {
+            my ($clusterstate, $clustertimestamp) = $cluster->getState;
+            if ($services_available and $clusterstate eq 'warning') {
                 # Set the cluster as repaired
                 $cluster->setState(state => 'up');
             }
