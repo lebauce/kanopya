@@ -135,7 +135,7 @@ sub isUp {
     my $net_conf = $self->{_entity}->getNetConf();
 
     # Test executable
-    $log->info("Test component " . ref $self);
+    $log->debug("Test component " . ref $self);
     foreach my $i (keys %$execution_list) {
         my $ret;
         eval {

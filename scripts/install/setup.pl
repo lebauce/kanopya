@@ -418,6 +418,7 @@ writeFile('/etc/hosts', "127.0.0.1 localhost\n$internal_ip_add $hostname.$domain
 
 # Launching Kanopya's init scripts
 service([ 'kanopya-executor' ], 'restart');
+service([ 'kanopya-state-manager' ], 'restart');
 service([ 'kanopya-aggregator' ], 'restart');
 service([ 'kanopya-collector' ], 'restart');
 service([ 'kanopya-grapher' ], 'restart');
