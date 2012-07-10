@@ -2,15 +2,17 @@ use strict;
 use warnings;
 use Win32;
 use Win32::Daemon;
+use Win32::Process;
 use Term::ReadKey;
-
+use Data::Dumper;
+  
 main();
 
 use constant SERVICE_NAME => 'kanopya-orchestrator';
 use constant SERVICE_DESC => 'Orchestrator service for Kanopya';
 
-sub main
-{
+
+sub main {
    # Get command line argument - if none passed, use empty string
    my $opt = shift (@ARGV) || "";
 
@@ -34,6 +36,7 @@ sub main
       # Redirect STDOUT and STDERR to log file
       open(STDOUT, ">> $log") or die "Couldn't open $log for appending: $!\n";
       open(STDERR, ">&STDOUT");
+
       # Autoflush, no buffering
       $|=1;
 
@@ -45,16 +48,12 @@ sub main
             pause       =>  \&Callback_Pause,
             continue    =>  \&Callback_Continue,
          } );
-      my %Context = (
+      my %context = (
          last_state => SERVICE_STOPPED,
          start_time => time(),
       );
-      # Start the service passing in a context and indicating to callback
-      # using the "Running" event every 2000 milliseconds (2 seconds).
-      # NOTE: the StartService method with in 'callback mode' will block, in other
-      # words it won't return until the service has stopped, but the callbacks below
-      # will respond to the various events - START, STOP, PAUSE etc...
-      Win32::Daemon::StartService( \%Context, 2000 );
+
+      Win32::Daemon::StartService( \%context, 10000 );
 
       # Here the service has stopped
       close STDERR; close STDOUT;
@@ -66,72 +65,77 @@ sub main
 }
 
 
-sub Callback_Running
-{
-   my( $Event, $Context ) = @_;
-
-   # Note that here you want to check that the state
-   # is indeed SERVICE_RUNNING. Even though the Running
-   # callback is called it could have done so before
-   # calling the "Start" callback.
-   if( SERVICE_RUNNING == Win32::Daemon::State() )
-   {
-	print 'Running the service: '."\n";
-	my $cmd = "START \"\"kanopya-orchestrator\"\" /Dc:\\opt\\kanopya\\sbin\\win32\\ \"kanopya-orchestrator.bat\"";
-	print $cmd."\n";
-	system($cmd);
-   }
+sub Callback_Running {
+   my( $Event, $context ) = @_;
+   
+   if( SERVICE_RUNNING == Win32::Daemon::State() ) {
+		print 'main running loop'."\n";
+		$context->{pid} = fork();
+		print 'BASE PID = '.$context->{pid}."\n";
+		if ($context->{pid} == 0) { # Child
+			while ( 1 == 1) {
+				print 'Running the service: '."\n";	
+				my $cmd = "perl c\:\\opt\\kanopya\\sbin\\kanopya-orchestrator";
+				print $cmd."\n";
+				system($cmd);
+			}
+		}
+		else {
+			while ( SERVICE_STOP_PENDING != Win32::Daemon::State() ) {
+				sleep 5;            
+			}
+			#### We are done so close down... ###
+			print "SERVICE STOP PENDING IS RECEIVED\n";
+			Win32::Daemon::State( SERVICE_STOPPED );
+			Win32::Daemon::StopService();
+			# kill(9, $context->{pid});
+			my $tokill = 'orchestrator';
+			my $cmd = 'WMIC PROCESS WHERE (Commandline LIKE \'%' . $tokill . '%\' AND name LIKE \'perl.exe\' AND NOT Commandline LIKE \'%%WMIC\') call terminate';
+			print $cmd."\n";
+			system($cmd);
+			exit;
+		}	
+	}
 }   
 
 sub Callback_Start
 {
-   my( $Event, $Context ) = @_;
+   my( $Event, $context ) = @_;
 	print "Starting the service...\n";
-	# my $cmd = "START \"kanopya-frontend\" /DC:\\strawberry\\perl\\bin\\ \"perl.exe\" \"C:\\opt\\kanopya\\sbin\\win32\\kanopya-frontend.pl\"";
-	# my $cmd = "START \"\"kanopya-frontend\"\" /Dc:\\opt\\kanopya\\sbin\\win32\\ \"kanopya-frontend.bat\"";
-	# my $cmd = "START \"kanopya-frontend\" plackup \"-E production_win32 -p 5000 -workers 10 -a c:\\opt\\kanopya\\ui\\Frontend\\bin\\app.pl\"";
-	
-	# print $cmd."\n";
-	# system($cmd);
-	# my $exec = `$cmd`;
-	
-   $Context->{last_state} = SERVICE_RUNNING;
+
+   $context->{last_state} = SERVICE_RUNNING;
    Win32::Daemon::State( SERVICE_RUNNING );
 }
 
 sub Callback_Pause
 {
-   my( $Event, $Context ) = @_;
+   my( $Event, $context ) = @_;
 
    print "Pausing...\n";
 
-   $Context->{last_state} = SERVICE_PAUSED;
+   $context->{last_state} = SERVICE_PAUSED;
    Win32::Daemon::State( SERVICE_PAUSED );
 }
 
 sub Callback_Continue
 {
-   my( $Event, $Context ) = @_;
+   my( $Event, $context ) = @_;
 
    print "Continuing...\n";
 
-   $Context->{last_state} = SERVICE_RUNNING;
+   $context->{last_state} = SERVICE_RUNNING;
    Win32::Daemon::State( SERVICE_RUNNING );
 }
 
 sub Callback_Stop
 {
-   my( $Event, $Context ) = @_;
+   my( $Event, $context ) = @_;
 
 	print "Stopping...\n";
-	# my $cmd = 'taskkill /T /F /FI "WINDOWTITLE eq kanopya-frontend"';
-	# my $cmd ='taskkill /IM cmd.exe /F';
-	# print $cmd."\n";
-	# my $exec = `$cmd`;
-   
-   $Context->{last_state} = SERVICE_STOPPED;
+	
+    $context->{last_state} = SERVICE_STOPPED;
    Win32::Daemon::State( SERVICE_STOPPED );
-
+	
    # We need to notify the Daemon that we want to stop callbacks and the service.
    Win32::Daemon::StopService();
 }
@@ -146,9 +150,7 @@ sub install_service
    my $fn = Win32::GetFullPathName($0);
 
   # Source perl script - invoke perl interpreter
-  $path = "\"$^X\"";
-   # my $inc = ' -IC:\opt\kanopya\ui\lib -IC:\opt\kanopya\lib\common -IC:\opt\kanopya\lib\administrator -IC:\opt\kanopya\lib\executor -IC:\opt\kanopya\lib\monitor -IC:\opt\kanopya\lib\orchestrator -IC:\opt\kanopya\lib\external';
-   
+  $path = "\"$^X\"";   
   
   # The command includes the --run switch needed in main()
       $parameters = "\"$fn\" --run";
