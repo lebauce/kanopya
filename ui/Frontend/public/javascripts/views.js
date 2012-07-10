@@ -200,6 +200,10 @@ function create_grid(options) {
                 remove_action += '</div>';
                 return remove_action;
             }});
+    } else if (options.treeGrid === true) {
+        // TreeGrids strangely want an additional column so we push an empty one...
+        options.colNames.push('');
+        options.colModel.push({hidden : true});
     }
 
     var grid = $('#' + options.grid_id).jqGrid({ 
@@ -212,6 +216,10 @@ function create_grid(options) {
         },
 
         afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(this, rowid, rowdata, rowelem); },
+
+        treeGrid        : options.treeGrid      || false,
+        treeGridModel   : options.treeGridModel || '',
+        ExpandColumn    : options.ExpandColumn  || '',
 
         caption : options.caption || '',
         height: options.height || 'auto',
@@ -304,6 +312,16 @@ function reload_grid (grid_id,  data_route) {
         
     });
     
+}
+
+function createTreeGrid(params, pageSize) {
+    var grid = create_grid(params);
+    $(grid)[0].addJSONData({
+        total   : params.data.length / pageSize,
+        page    : 1,
+        recors  : params.data.length,
+        rows    : params.data
+    });
 }
 
 $(document).ready(function () {
