@@ -58,7 +58,7 @@ sub configureNode {
         my $admin = $args{host}->getAdminIface();
         my $network = NetAddr::IP->new(
             $admin->getIPAddr(),
-            $admin->getNetMask(),
+            $admin->getPoolip()->poolip_netmask,
         )->network();
         my $exports = "/var/lib/one $network(rw,no_root_squash,no_subtree_check)\n";
         my $cmd = "echo '$exports' > " .$args{mount_point}."/etc/exports";
