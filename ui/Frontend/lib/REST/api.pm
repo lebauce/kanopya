@@ -143,15 +143,20 @@ sub db_to_json {
 
     if (defined ($expand) and $expand) {
         for my $key (@$expand) {
-            if ($basedb->{_dbix}->result_source->relationship_info($key)->{attrs}->{accessor} eq "multi") {
-                my $children = [];
-                for my $item ($basedb->{_dbix}->$key) {
-                    push @$children, db_to_json($item);
+            if ($basedb->{_dbix}->result_source->has_relationship($key)) {
+                if ($basedb->{_dbix}->result_source->relationship_info($key)->{attrs}->{accessor} eq "multi") {
+                    my $children = [];
+                    for my $item ($basedb->{_dbix}->$key) {
+                        push @$children, db_to_json($item);
+                    }
+                    $json->{$key} = $children;
                 }
-                $json->{$key} = $children;
+                else {
+                    $json->{$key} = db_to_json($basedb->getAttr(name => $key));
+                }
             }
             else {
-                $json->{$key} = db_to_json($basedb->getAttr(name => $key));
+                $json->{$key} = $basedb->getAttr(name => $key);
             }
         }
     }
@@ -281,7 +286,6 @@ sub setupREST {
                 }
 
                 if ($class->can('create')) {
-                    #$obj = $class->create(params)->toJSON();
                     $obj = jsonify($class->create(params));
                 }
                 else {
@@ -450,7 +454,8 @@ sub setupREST {
                                       dataType  => params->{dataType},
                                       %query);
 
-            return to_json($json);
+            my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
+            return to_json($json, \@expand);
         }
     }
 }
