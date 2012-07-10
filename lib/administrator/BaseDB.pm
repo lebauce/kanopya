@@ -355,6 +355,8 @@ sub fromDBIx {
     my %args = @_;
 
     my $name = classFromDbix($args{row}->result_source);
+    requireClass($name);
+
     return bless {
         _dbix      => $args{row},
         _entity_id => $args{row}->id
