@@ -92,7 +92,7 @@ sub run {
                 };
 
                 my ($hoststate, $hosttimestamp) = $ehost->getState;
-                
+
                 if (! $pingable and $hoststate eq 'up') {
                     my $msg = "Node <" . $node->host_hostname . "> unreachable in cluster <" . $cluster->cluster_name . ">";
                     $log->info($msg);
@@ -102,15 +102,16 @@ sub run {
                     # Set the host and node states to broken
                     $ehost->setState(state => 'broken');
                     $ehost->setNodeState(state => 'broken');
-
                     $cluster->setState(state => 'warning');
+
                     $adm->{db}->txn_commit;
                     next;
                 }
-
                 elsif ($pingable and $hoststate eq 'broken') {
                     # Host has been repaired
-                    $ehost->setState(state => $ehost->getPrevState());
+                    my ($prevstate, $prevtimestamp) = $ehost->getPrevState;
+
+                    $ehost->setState(state => $prevstate);
                 }
 
                 # Then check the node component availability
