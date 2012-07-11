@@ -1060,6 +1060,9 @@ var PolicyForm = (function() {
             ++i;
         });
         $(this.content).children("div#" + this.name + "_steps").html(text);
+        if ($(this.content).height() > $(window).innerHeight() - 200) {
+            $(this.content).css('height', $(window).innerHeight() - 200);
+        }
     }
 
     PolicyForm.prototype.handleBeforeSubmit = function(arr, $form, opts) {
