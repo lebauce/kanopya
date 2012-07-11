@@ -70,7 +70,6 @@ function Customers() {
             ]
         });
         
-        reload_grid('customers_list', '/api/user?user_profiles.profile.profile_name=Customer');
         createAddCustomerButton(container_id);
     }
     
