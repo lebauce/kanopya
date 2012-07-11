@@ -17,6 +17,7 @@
 # Created 3 july 2010
 package Entity::Connector::Scom;
 use base 'Entity::Connector';
+use base 'Manager::CollectorManager';
 
 use strict;
 use warnings;
@@ -53,27 +54,26 @@ sub getAttrDef { return ATTR_DEF; }
 sub retrieveData {
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['nodelist', 'indicators', 'time_span']);
-    
-    my $management_server_name = $self->getAttr(name => 'scom_ms_name');
-    my $use_ssl = $self->getAttr(name => 'scom_usessl');
 
-    # Transform array of ObjectName/CounterName into hash {ObjectName => [CounterName]}
+    General::checkParams(args => \%args, required => ['nodelist', 'indicators', 'time_span']);
+
+    my $management_server_name = $self->getAttr(name => 'scom_ms_name');
+    my $use_ssl                = $self->getAttr(name => 'scom_usessl');
+
     my %counters;
-    foreach my $indic (@{$args{indicators}}) {
+    while (my($oid,$object) = each (%{$args{indicators}})) {
 
         # TODO check indic format
-        my ($object_name, @counter_name_tab) = split '/', $indic;
+        my ($object_name, @counter_name_tab) = split '/', $oid;
         my $counter_name = join('/',@counter_name_tab);
         push @{$counters{$object_name}}, $counter_name;
     }
-    
+
     my $global_time_laps = 7200;
     my $time_zone = 'UTC';
     my $end_dt   = DateTime->now->set_time_zone($time_zone);
     my $start_dt = DateTime->now->subtract( seconds => $global_time_laps )->set_time_zone($time_zone);
-    
+
     my $scom = SCOM::Query->new(
         server_name => $management_server_name,
         use_ssl     => $use_ssl,
@@ -85,16 +85,16 @@ sub retrieveData {
         start_time          => _format_dt(dt => $start_dt),
         end_time            => _format_dt(dt => $end_dt),
     );
-    
+
     my $res = _format_data(
         data        => $all_perfs,
         end_dt      => $end_dt,
         time_span   => $args{time_span},
         time_zone   => $time_zone,
     );
-    
+
     _consolidateName( data => $res, nodes => $args{nodelist});
-    
+
     return $res;
 }
 
@@ -216,5 +216,14 @@ sub getIndicator {
 
     return ScomIndicator->get(id => $args{id});
 } 
+
+=head2 getCollectorType
+    Desc: Usefull to give information about this component
+    Return: 'SCOM monitoring'
+=cut
+
+sub getCollectorType {
+    return 'SCOM monitoring';
+}
 
 1;

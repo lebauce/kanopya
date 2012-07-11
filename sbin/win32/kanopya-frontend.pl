@@ -36,6 +36,7 @@ sub main {
       # Redirect STDOUT and STDERR to log file
       open(STDOUT, ">> $log") or die "Couldn't open $log for appending: $!\n";
       open(STDERR, ">&STDOUT");
+
       # Autoflush, no buffering
       $|=1;
 

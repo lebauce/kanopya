@@ -18,6 +18,7 @@
 
 package Entity::Connector::ActiveDirectory;
 use base "Entity::Connector";
+use base "Manager::DirectoryServiceManager";
 
 use strict;
 use warnings;
@@ -45,12 +46,6 @@ use constant ATTR_DEF => {
                     is_extended    => 0,
                     is_editable    => 1
              },
-    ad_nodes_base_dn => {
-                    pattern        => '.*',
-                    is_mandatory   => 0,
-                    is_extended    => 0,
-                    is_editable    => 1
-             },
     ad_usessl => {
       pattern       => '^[01]$',
       is_mandatory  => 0,
@@ -65,13 +60,12 @@ sub getAttrDef { return ATTR_DEF; }
 sub getNodes {
     my $self = shift;
     my %args = @_;
-    
+
     return $self->retrieveNodes(
         ad_host             => $self->getAttr(name => 'ad_host'),
         ad_user             => $self->getAttr(name => 'ad_user'),
-        #ad_pwd              => $self->getAttr(name => 'ad_pwd'), # Password is not stored in db but provided to the method
         ad_pwd              => $args{password},
-        ad_nodes_base_dn    => $self->getAttr(name => 'ad_nodes_base_dn'),
+        ad_nodes_base_dn    => $args{ad_nodes_base_dn},
         ad_usessl           => $self->getAttr(name => 'ad_usessl'),
     );
 }

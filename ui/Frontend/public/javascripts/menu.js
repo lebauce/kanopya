@@ -225,11 +225,15 @@ function loadMenuFromJSON(event) {
         // Add menu entry and associated view
         for (var elem in data) {
             if (data[elem][menu_info.label_key] != null) {
-                add_menu(   container,
+                if (menu_info.filter == null ||
+                    menu_info.filter(data[elem]))
+                {
+                    add_menu(   container,
                         data[elem][menu_info.label_key],
                         menu_info.submenu,
                         data[elem][menu_info.id_key]
-                );
+                    );
+                }
             }
         }
         

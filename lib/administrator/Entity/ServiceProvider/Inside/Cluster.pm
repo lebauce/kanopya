@@ -462,8 +462,8 @@ sub configureManagers {
             };
             if ($@) {
                 next if not $manager->{manager_id};
-                $cluster_manager = $self->addManager(manager      => Entity->get(id => $manager->{manager_id}),
-                                                     manager_type => $manager->{manager_type});
+                $cluster_manager = $self->addManager(manager_id     => $manager->{manager_id},
+                                                     manager_type   => $manager->{manager_type});
             }
             if ($manager->{manager_params}) {
                 $cluster_manager->addParams(params => $manager->{manager_params}, override => 1);
@@ -486,7 +486,7 @@ sub configureManagers {
                               boot_policy => $self->getAttr(name => 'cluster_boot_policy')
                           );
 
-        $self->addManager(manager => $export_manager, manager_type => "export_manager");
+        $self->addManager(manager_id => $export_manager->getId, manager_type => "export_manager");
     }
 
     # Get export manager parameter related to si shared value.

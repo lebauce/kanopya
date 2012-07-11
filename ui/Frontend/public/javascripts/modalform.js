@@ -133,7 +133,7 @@ var ModalForm = (function() {
             title           : this.title,
             skippable       : this.skippable,
             beforeSubmit    : this.beforeSubmit,
-            cancelCallback  : this.cancelCallback
+            cancel          : this.cancelCallback
         };
     }
     

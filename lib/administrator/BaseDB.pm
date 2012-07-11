@@ -19,7 +19,12 @@ my $errmsg;
 my %class_type_cache;
 
 sub methods {
-    return { };
+    return {
+        'toString'  => {
+            'description' => 'toString',
+            'perm_holder' => 'entity'
+        }
+    };
 }
 
 =head2
