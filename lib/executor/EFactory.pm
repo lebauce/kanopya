@@ -93,15 +93,19 @@ sub newEEntity {
     my $class = General::getClassEEntityFromEntity(entity => $data);
     #$log->debug("GetClassEEntityFromEntity return $class");
 
+    my $required = 0;
     do {
         my $location = General::getLocFromClass(entityclass => $class);
 
-        eval { require $location; };
+        eval {
+            require $location;
+            $required = 1;
+        };
         if ($@){
             # Try to use the parent package
             $class =~ s/\:\:[a-zA-Z0-9]+$//g;
         }
-    } while ($class != 'EEntity');
+    } while ($required == 0 and $class ne 'EEntity');
 
     return $class->new(%params);
 }

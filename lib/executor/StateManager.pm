@@ -97,11 +97,7 @@ sub run {
                     my $msg = "Node <" . $node->host_hostname . "> unreachable in cluster <" . $cluster->cluster_name . ">";
                     $log->info($msg);
 
-                    Message->send(
-                        from    => 'StateManager',
-                        level   => 'info',
-                        content => $msg
-                    );
+                    Message->send(from => 'StateManager', level => 'info', content => $msg);
 
                     # Set the host and node states to broken
                     $ehost->setState(state => 'broken');
@@ -151,7 +147,12 @@ sub run {
                     # Set the node is repaired
                     $ehost->setNodeState(state => 'in');
                 }
+
+                $adm->{db}->txn_commit;
             }
+
+            $adm->{db}->txn_begin;
+
             my ($clusterstate, $clustertimestamp) = $cluster->getState;
             if ($services_available and $clusterstate eq 'warning') {
                 # Set the cluster as repaired
