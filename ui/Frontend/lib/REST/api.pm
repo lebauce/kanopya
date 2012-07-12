@@ -142,17 +142,33 @@ sub db_to_json {
     }
 
     if (defined ($expand) and $expand) {
+        my $exp     = [];
+        my $subexp  = {};
         for my $key (@$expand) {
+            my @key     = split('\.', $key);
+            my $size    = @key;
+            if ($size == 1) {
+                push(@$exp, $key);
+            }
+            else {
+                if (not exists($subexp->{$key[0]})) {
+                    $subexp->{$key[0]}  = [];
+                }
+                push(@{$subexp->{$key[0]}}, ($#key == 1) ? @key[1] : join('.', @key[1..$#key]));
+            }
+        }
+        for my $key (@$exp) {
             if ($basedb->{_dbix}->result_source->has_relationship($key)) {
+                my $nextexpand  = $subexp->{$key} || [];
                 if ($basedb->{_dbix}->result_source->relationship_info($key)->{attrs}->{accessor} eq "multi") {
                     my $children = [];
                     for my $item ($basedb->{_dbix}->$key) {
-                        push @$children, db_to_json($item);
+                        push @$children, db_to_json($item, $nextexpand);
                     }
                     $json->{$key} = $children;
                 }
                 else {
-                    $json->{$key} = db_to_json($basedb->getAttr(name => $key));
+                    $json->{$key} = db_to_json($basedb->getAttr(name => $key), $nextexpand);
                 }
             }
             else {
