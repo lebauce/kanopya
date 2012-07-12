@@ -21,6 +21,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                     contentType : 'application/json',
                     data        : JSON.stringify({ hypervisor_host_id : data[i].id }),
                     success     : function(vms) {
+                        data[i].totalRamUsed    = 0;
                         if (data.length > 0) {
                             data[i].isLeaf  = false;
                             data[i].vmcount = data.length
@@ -30,6 +31,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                                 vms[j].level    = '1';
                                 vms[j].parent   = data[i].id;
                                 vms[j].type     = 'vm';
+                                data[i].totalRamUsed    += parseInt(vms[j].host_ram);
                                 topush.push(vms[j]);
                             }
                         } else {
@@ -47,7 +49,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 data                    : data,
                 content_container_id    : container_id,
                 grid_id                 : 'iaas_hyp_list',
-                colNames                : [ 'ID', 'Base hostname', 'Initiator name', 'State', 'Vms', 'Admin Ip', '', '' ],
+                colNames                : [ 'ID', 'Base hostname', 'Initiator name', 'State', 'Vms', 'Admin Ip', '', '', '', '' ],
                 colModel                : [ 
                     { name : 'id', index : 'id', width : 60, sorttype : "int", hidden : true, key : true },
                     { name : 'host_hostname', index : 'host_hostname', width : 90 },
@@ -55,6 +57,8 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                     { name : 'host_state', index : 'host_state', width : 30, formatter : StateFormatter, align : 'center' },
                     { name : 'vmcount', index : 'vmcount', width : 30, align : 'center' },
                     { name : 'adminip', index : 'adminip', width : 100 },
+                    { name : 'totalRamUsed', index : 'totalRamUsed', hidden : true },
+                    { name : 'host_ram', index : 'host_ram', hidden : true },
                     { name : 'type', index : 'type', hidden : true },
                     { name : 'entity_id', index : 'entity_id', hidden : 'true' }
                 ],
@@ -93,20 +97,25 @@ function displayAdminIps() {
 
 function load_hypervisorvm_details(cid, eid, cmgrid) {
     var data            = $('#iaas_hyp_list').jqGrid('getRowData', eid);
-    var table           = $('<table>').appendTo($('#' + cid));
-    $('#' + cid).append('<hr>');
-    var networktable    = $('<table>', { width : '100%' }).appendTo($('#' + cid));
-    $(table).append($('<tr>').append($('<th>', { text : 'Hostname : ' }))
+    var table           = $('<table>', { width : '100%' }).appendTo($('#' + cid));
+    $(table).append($('<tr>').append($('<th>', { text : 'Hostname : ', width : '100px' }))
                                  .append($('<td>', { text : data.host_hostname })));
+    data.host_ram = data.host_ram / 1024 / 1024;
+    data.totalRamUsed = data.totalRamUsed / 1024 / 1024;
     if (data.type === 'hypervisor') {
         var hypervisorType  = $('<td>');
         $(table).append($('<tr>').append($('<th>', { text : 'Hypervisor : ' }))
-                                     .append(hypervisorType));
+                                 .append(hypervisorType))
+                .append($('<tr>').append($('<th>', { text : 'RAM Used : ' }))
+                                 .append($('<td>').append($('<div>').slider({ max : data.host_ram, value : data.totalRamUsed, disabled : true, range : "min" }))
+                                                  .append($('<span>', { text : data.totalRamUsed + ' / ' + data.host_ram + ' Mo' }))));
         $.ajax({
             url     : '/api/entity/' + cmgrid,
             success : function(elem) { $(hypervisorType).text(elem.hypervisor); }
         });
     }
+    $('#' + cid).append('<hr>');
+    var networktable    = $('<table>', { width : '100%' }).appendTo($('#' + cid));
     $(networktable).append($('<tr>').append($('<th>', { text : 'Network type' }))
                                     .append($('<th>', { text : 'Network' }))
                                     .append($('<th>', { text : 'Pool IP' })));
@@ -145,7 +154,6 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
                             $(current).after(tmp);
                             current = tmp;
                         }
-                        console.log(current);
                     }
                 }
             }
