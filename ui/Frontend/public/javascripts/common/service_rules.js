@@ -6,15 +6,55 @@ var comparators = ['<','>'];
 
     ////////////////////////NODES AND METRICS MODALS//////////////////////////////////
 function nodemetricconditionmodal(elem_id, editid) {
+    var combinationsWithUnits = {};
+    
+    /*var listOfCombinations = new Array();
+        var combinationUnit;
+        var combi;
+        //var combinationsWithUnits = {};
+            // List all nodemetric combination for the current service provider :
+            $.ajax({
+                url: '/api/nodemetriccombination?nodemetric_combination_service_provider_id=' + elem_id + '&dataType=jqGrid',
+                async   : false,
+                success: function(answer) {
+                    $(answer.rows).each(function(row) {
+                        listOfCombinations[row] = answer.rows[row].nodemetric_combination_id;
+                    });
+                }
+            });
+        
+            for (var i=0; i < listOfCombinations.length; i++) {
+                
+            }
+    */
+    function combiUnits(combinationId) {
+        
+        $.ajax({
+            url: '/api/nodemetriccombination/' + combinationId + '?expand=unit',
+            async   : false,
+            success: function(answer) {
+                $(answer).each(function(row) {
+                    combinationUnit = answer.unit;
+                    combinationLabel = answer.nodemetric_combination_label;
+                    //combinationsWithUnits[combinationLabel + '(' + combinationUnit + ')'] = answer.pk;
+                    combi = combinationLabel + ' (' + combinationUnit + ')';
+                });
+            }
+        });
+        
+            console.log(combinationsWithUnits);
+            return combi;
+        }
+    
     var service_fields  = {
         nodemetric_condition_label    : {
             label   : 'Name',
             type    : 'text',
         },
         nodemetric_condition_combination_id :{
-            label   : 'Combination',
-            display : 'nodemetric_combination_label',
-            cond    : '?nodemetric_combination_service_provider_id=' + elem_id
+            label       : 'Combination',
+            display     : 'nodemetric_combination_id',
+            formatter   : combiUnits,
         },
         nodemetric_condition_comparator    : {
             label   : 'Comparator',
@@ -24,6 +64,7 @@ function nodemetricconditionmodal(elem_id, editid) {
         nodemetric_condition_threshold: {
             label   : 'Threshold',
             type    : 'text',
+            //value   : CombinationUnit,
         },
         nodemetric_condition_service_provider_id:{
             type: 'hidden',
