@@ -229,6 +229,9 @@ var ModalForm = (function() {
         for (value in values) {
             var display = this.fields[elementName].display || 'pk';
             var option  = $("<option>", { value : values[value].pk , text : values[value][display] });
+            if (this.fields[elementName].formatter != null) {
+                $(option).text(this.fields[elementName].formatter($(option).text()));
+            }
             $(input).append(option);
             if (current !== undefined && current == values[value].pk) {
                 $(option).attr('selected', 'selected');
