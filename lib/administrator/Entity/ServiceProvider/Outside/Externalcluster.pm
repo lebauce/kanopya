@@ -287,7 +287,8 @@ sub updateNodes {
             my $row;
             eval {
                 $row = Externalnode->find( hash => {
-                              externalnode_hostname   => $node->{hostname},
+                              externalnode_hostname => $node->{hostname},
+                              service_provider_id   => $self->getId(),
                           });
             };
             if ($@) {

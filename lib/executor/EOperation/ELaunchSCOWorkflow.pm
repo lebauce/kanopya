@@ -114,25 +114,6 @@ sub postrequisites {
     }
 }
 
-sub finish {
-    my $self = shift;
-
-    #reactive the linked rule
-    my $rule_id = $self->{params}->{rule_id};
-
-    if ($self->{params}->{scope_name} eq 'node') {
-        my $rule = NodemetricRule->find(hash => {rule_id => $rule_id});
-        $rule->deleteVerifiedRuleWfDefId(
-            hostname => $self->{params}->{workflow_values}->{node_hostname}, 
-            service_provider_id => $self->{params}->{sp_id},
-        );
-    }
-    elsif ($self->{params}->{scope_name} eq 'service_provider') {
-        my $rule = AggregateRule->find(hash => {rule_id => $rule_id});
-        $rule->enable();
-    }
-}
-
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

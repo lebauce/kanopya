@@ -455,7 +455,7 @@ sub setupREST {
                                       %query);
 
             my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-            return to_json($json, \@expand);
+            return to_json($json);
         }
     }
 }
