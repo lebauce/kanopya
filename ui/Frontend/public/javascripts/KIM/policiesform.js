@@ -1066,8 +1066,7 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.handleBeforeSubmit = function(arr, $form, opts) {
-        var b   = this.beforeSubmit(arr, $form, opts, this) || true;
-
+        var b   = this.beforeSubmit(arr, $form, opts, this);
         if (b) {
             var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
             buttonsdiv.find('button').each(function() {
