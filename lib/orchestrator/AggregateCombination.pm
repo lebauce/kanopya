@@ -48,6 +48,18 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getAttr {
+    my $self = shift;
+    my %args = @_;
+
+    if ($args{name} eq "unit") {
+        return $self->getUnit();
+    }
+    else {
+        return $self->SUPER::getAttr(%args);
+    }
+}
+
 sub methods {
   return {
     'toString'  => {
@@ -338,6 +350,33 @@ sub getAllTheCombinationsRelativeToAClusterId{
     }
 
     return @rep;
+}
+
+=head2 getUnit
+
+    desc: Return the formula of the combination in which the indicator id is
+          replaced by its Unit or by '?' when unit is not specified in database
+
+=cut
+
+sub getUnit {
+    my ($self, %args) = @_;
+
+    my $formula             = $self->getAttr(name => 'aggregate_combination_formula');
+    my $service_provider_id = $self->getAttr(name => 'aggregate_combination_service_provider_id');
+    my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
+    my $collector           = $service_provider->getManager(manager_type => "collector_manager");
+
+    #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            $element = $collector->getIndicator(id => substr($element,2))->getAttr(name => 'indicator_unit') || '?';
+        }
+    }
+    return join('',@array);
 }
 
 1;

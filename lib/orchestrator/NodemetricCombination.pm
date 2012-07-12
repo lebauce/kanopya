@@ -44,12 +44,28 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getAttr {
+    my $self = shift;
+    my %args = @_;
+
+    if ($args{name} eq "unit") {
+        return $self->getUnit();
+    }
+    else {
+        return $self->SUPER::getAttr(%args);
+    }
+}
+
 sub methods {
     return {
         'toString'  => {
             'description' => 'toString',
             'perm_holder' => 'entity'
-        }
+        },
+        'getUnit'   => {
+            'description' => 'getUnit',
+            'perm_holder' => 'entity',  
+        },
     }
 }
 

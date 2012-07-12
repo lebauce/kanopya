@@ -7,26 +7,7 @@ var comparators = ['<','>'];
     ////////////////////////NODES AND METRICS MODALS//////////////////////////////////
 function nodemetricconditionmodal(elem_id, editid) {
     var combinationsWithUnits = {};
-    
-    /*var listOfCombinations = new Array();
-        var combinationUnit;
-        var combi;
-        //var combinationsWithUnits = {};
-            // List all nodemetric combination for the current service provider :
-            $.ajax({
-                url: '/api/nodemetriccombination?nodemetric_combination_service_provider_id=' + elem_id + '&dataType=jqGrid',
-                async   : false,
-                success: function(answer) {
-                    $(answer.rows).each(function(row) {
-                        listOfCombinations[row] = answer.rows[row].nodemetric_combination_id;
-                    });
-                }
-            });
-        
-            for (var i=0; i < listOfCombinations.length; i++) {
-                
-            }
-    */
+
     function combiUnits(combinationId) {
         
         $.ajax({
@@ -41,9 +22,7 @@ function nodemetricconditionmodal(elem_id, editid) {
                 });
             }
         });
-        
-            console.log(combinationsWithUnits);
-            return combi;
+        return combi;
         }
     
     var service_fields  = {
@@ -228,15 +207,34 @@ function createNodemetricRule(container_id, elem_id) {
 };
 
 function serviceconditionmodal(elem_id, editid) {
+    
+    function combiUnits(combinationId) {
+        var tttt;
+        $.ajax({
+            url: '/api/aggregatecombination/' + combinationId + '?expand=unit',
+            async   : false,
+            success: function(answer) {
+                $(answer).each(function(row) {
+                    combinationUnit = answer.unit;
+                    combinationLabel = answer.aggregate_combination_label;
+                    combi = combinationLabel + ' (' + combinationUnit + ')';
+                    tttt = combinationUnit;
+                });
+            }
+        });
+        console.log(getMathematicOperator(tttt));
+        return combi;
+        }
+    
     var service_fields  = {
         aggregate_condition_label    : {
             label   : 'Name',
             type    : 'text',
         },
-        aggregate_combination_id    :{
-            label   : 'Combination',
-            display : 'aggregate_combination_label',
-            cond    : '?aggregate_combination_service_provider_id=' + elem_id
+        aggregate_combination_id :{
+            label       : 'Combination',
+            display     : 'aggregate_combination_id',
+            formatter   : combiUnits,
         },
         comparator  : {
             label   : 'Comparator',
