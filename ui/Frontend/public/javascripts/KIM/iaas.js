@@ -13,6 +13,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 data[i].id      = data[i].pk;
                 data[i].parent  = 'null';
                 data[i].level   = '0';
+                data[i].type    = 'hypervisor';
                 $.ajax({
                     async       : false,
                     url         : '/api/entity/' + cloudmanagerid + '/getVmsFromHypervisorHostId',
@@ -22,11 +23,13 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                     success     : function(vms) {
                         if (data.length > 0) {
                             data[i].isLeaf  = false;
+                            data[i].vmcount = data.length
                             for (var j in vms) if (vms.hasOwnProperty(i)) {
                                 vms[j].id       = data[i].id + "_" + vms[j].pk;
                                 vms[j].isLeaf   = true;
                                 vms[j].level    = '1';
                                 vms[j].parent   = data[i].id;
+                                vms[j].type     = 'vm';
                                 topush.push(vms[j]);
                             }
                         } else {
@@ -44,18 +47,52 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 data                    : data,
                 content_container_id    : container_id,
                 grid_id                 : 'iaas_hyp_list',
-                colNames                : [ 'ID', 'Base hostname', 'Initiator name', 'State', 'Admin IP' ],
+                colNames                : [ 'ID', 'Base hostname', 'Initiator name', 'State', 'Vms', 'Admin Ip', '', '' ],
                 colModel                : [ 
                     { name : 'id', index : 'id', width : 60, sorttype : "int", hidden : true, key : true },
                     { name : 'host_hostname', index : 'host_hostname', width : 90 },
                     { name : 'host_initiatorname', index : 'host_initiatorname', width : 200 },
-                    { name : 'host_state', index : 'host_state', width : 30, formatter : StateFormatter },
-                    { name : 'ip', index : 'ip', width : 70 }
+                    { name : 'host_state', index : 'host_state', width : 30, formatter : StateFormatter, align : 'center' },
+                    { name : 'vmcount', index : 'vmcount', width : 30, align : 'center' },
+                    { name : 'adminip', index : 'adminip', width : 100 },
+                    { name : 'type', index : 'type', hidden : true },
+                    { name : 'entity_id', index : 'entity_id', hidden : 'true' }
                 ],
-                action_delete           : 'no'
+                action_delete           : 'no',
+                gridComplete            : displayAdminIps,
+                details                 : {
+                    tabs    : [
+                        {
+                            label   : 'Overview',
+                            id      : 'hypervisor_detail_overview',
+                            onLoad  : load_hypervisor_details
+                        },
+                    ]
+                },
             }, 10);
         }
     });
+}
+
+function displayAdminIps() {
+    var grid    = $('#iaas_hyp_list');
+    var dataIds = $(grid).jqGrid('getDataIDs');
+    for (var i in dataIds) if (dataIds.hasOwnProperty(i)) {
+        var rowData = $(grid).jqGrid('getRowData', dataIds[i]);
+        $.ajax({
+            url     : '/api/host/' + rowData.entity_id + '/getAdminIp',
+            type    : 'POST',
+            success : function(grid, rowid) {
+                return function(data) {
+                    $(grid).jqGrid('setCell', rowid, 'adminip', data);
+                };
+            }(grid, dataIds[i])
+        });
+    }
+}
+
+function load_hypervisor_details(cid, eid) {
+    var data    = $('#iaas_hyp_list').jqGrid('getRowData', eid);
 }
 
 function load_iaas_content (container_id) {
@@ -97,11 +134,6 @@ function load_iaas_content (container_id) {
                         ],
                         details                 : {
                             tabs    : [
-                                {
-                                    label   : 'Overview',
-                                    id      : 'iaas_detail_overview',
-                                    onLoad  : function() { }
-                                },
                                 {
                                     label   : 'Hypervisors',
                                     id      : 'iaas_detail_hypervisors',

@@ -180,7 +180,8 @@ function create_grid(options) {
         model.search = true;
     });
 
-    options.afterInsertRow = options.afterInsertRow || $.noop;
+    options.afterInsertRow  = options.afterInsertRow || $.noop;
+    options.gridComplete    = options.gridComplete || $.noop;
 
     // Add delete action column (by default)
     var actions_col_idx = options.colNames.length;
@@ -216,6 +217,7 @@ function create_grid(options) {
         },
 
         afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(this, rowid, rowdata, rowelem); },
+        gridComplete    : options.gridComplete,
 
         treeGrid        : options.treeGrid      || false,
         treeGridModel   : options.treeGridModel || '',
