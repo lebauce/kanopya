@@ -25,7 +25,7 @@ function getIndicators(sp_id, ext) {
         success: function(rows) {
             $(rows).each(function(row) {
                 if (ext) {
-                    indicators[rows[row].indicator_name]   = rows[row].indicator_id;
+                    indicators[rows[row].indicator_name]   = rows[row];
                 } else {
                     var indicatorset_name = indicatorsets[rows[row].indicatorset_id].indicatorset_name;
                     var indic_fullname =  indicatorset_name + '/' + rows[row].indicator_name;
