@@ -65,7 +65,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                         {
                             label   : 'Overview',
                             id      : 'hypervisor_detail_overview',
-                            onLoad  : load_hypervisor_details
+                            onLoad  : function(cid, eid) { load_hypervisorvm_details(cid, eid, cloudmanagerid); }
                         },
                     ]
                 },
@@ -91,8 +91,66 @@ function displayAdminIps() {
     }
 }
 
-function load_hypervisor_details(cid, eid) {
-    var data    = $('#iaas_hyp_list').jqGrid('getRowData', eid);
+function load_hypervisorvm_details(cid, eid, cmgrid) {
+    var data            = $('#iaas_hyp_list').jqGrid('getRowData', eid);
+    var table           = $('<table>').appendTo($('#' + cid));
+    $('#' + cid).append('<hr>');
+    var networktable    = $('<table>', { width : '100%' }).appendTo($('#' + cid));
+    $(table).append($('<tr>').append($('<th>', { text : 'Hostname : ' }))
+                                 .append($('<td>', { text : data.host_hostname })));
+    if (data.type === 'hypervisor') {
+        var hypervisorType  = $('<td>');
+        $(table).append($('<tr>').append($('<th>', { text : 'Hypervisor : ' }))
+                                     .append(hypervisorType));
+        $.ajax({
+            url     : '/api/entity/' + cmgrid,
+            success : function(elem) { $(hypervisorType).text(elem.hypervisor); }
+        });
+    }
+    $(networktable).append($('<tr>').append($('<th>', { text : 'Network type' }))
+                                    .append($('<th>', { text : 'Network' }))
+                                    .append($('<th>', { text : 'Pool IP' })));
+    var expands = ['ifaces', 'ifaces.interface', 'ifaces.interface.interface_role',
+                   'ifaces.interface.interface_networks', 'ifaces.interface.interface_networks.network',
+                   'ifaces.interface.interface_networks.network.network_poolips',
+                   'ifaces.interface.interface_networks.network.network_poolips.poolip',];
+    $.ajax({
+        url     : '/api/host/' + data.entity_id + '?expand=' + expands.join(','),
+        success : function(hostdata) {
+            var interfaces  = {};
+            var current;
+            for (var i in hostdata.ifaces) if (hostdata.ifaces.hasOwnProperty(i)) {
+                var iface   = hostdata.ifaces[i];
+                if (interfaces[iface.interface.interface_role.interface_role_name] == null) {
+                    current = $('<tr>').appendTo(networktable).append($('<td>', { text : iface.interface.interface_role.interface_role_name }));
+                    interfaces[iface.interface.interface_role.interface_role_name]  = current;
+                } else {
+                    var tmp = $('<tr>').append('<td>');
+                    $(current).after(tmp);
+                    current = tmp;
+                }
+                for (var j in iface.interface.interface_networks) if (iface.interface.interface_networks.hasOwnProperty(j)) {
+                    var network = iface.interface.interface_networks[j].network;
+                    $(current).append($('<td>', { text : network.network_name }));
+                    for (var k in network.network_poolips) if (network.network_poolips.hasOwnProperty(k)) {
+                        var pip     = network.network_poolips[k].poolip;
+                        var poolip  = $('<td>', {
+                            text : pip.poolip_name + ' : ' + pip.poolip_addr
+                        });
+                        if (parseInt(k) === 0) {
+                            $(current).append(poolip);
+                        }
+                        else {
+                            var tmp = $('<tr>').append('<td>').append('<td>').append(poolip);
+                            $(current).after(tmp);
+                            current = tmp;
+                        }
+                        console.log(current);
+                    }
+                }
+            }
+        }
+    });
 }
 
 function load_iaas_content (container_id) {
