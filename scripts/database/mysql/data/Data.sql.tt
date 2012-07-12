@@ -778,10 +778,10 @@ INSERT INTO `indicator` VALUES
 (26,'Memory', 'Charged memory', null, null, 'FF000099', 6, null, null),
 (27,'bytesRead', 3, null, null, 'FF000099', 7, null, null),
 (28,'bytesWritten', 4, null, null, 'FF000099', 7, null, null),
-(29,'ifInOctets', 10, null, null, 'FF000099', 8, 'Octets', null),
-(30,'ifOutOctets', 16, null, null, 'FF000099', 8, 'Octets', null),
-(31,'ifOutErrors', 20, null, null, 'FF000099', 8, 'Packets|TU', null),
-(32,'ifInErrors', 14, null, null, 'FF000099', 8, 'Packets|TU', null),
+(29,'ifInOctets', 10, null, null, 'FF000099', 8, 'Octets/sec', null),
+(30,'ifOutOctets', 16, null, null, 'FF000099', 8, 'Octets/sec', null),
+(31,'ifOutErrors', 20, null, null, 'FF000099', 8, 'Packets|TU/sec', null),
+(32,'ifInErrors', 14, null, null, 'FF000099', 8, 'Packets|TU/sec', null),
 (33,'ifSpeed', 5, null, null, 'FF000099', 9, 'Bits/sec', null);
 
 --
