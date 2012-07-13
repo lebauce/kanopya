@@ -1177,10 +1177,10 @@ var PolicyForm = (function() {
         var state = $(this.form).formwizard("state");
         if (state.isFirstStep) {
             this.cancel();
+        } else {
+            $(this.form).formwizard("back");
+            this.disableCurrentStepFilled();
         }
-        $(this.form).formwizard("back");
-
-        this.disableCurrentStepFilled();
     }
 
     PolicyForm.prototype.closeDialog = function() {
