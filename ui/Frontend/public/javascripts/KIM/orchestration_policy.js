@@ -40,7 +40,7 @@ function saveOrchestrationPolicy(sp_id, data) {
      });
 }
 
-function orchestrationPolicyForm(policy_opts, sp_id, edit_mode, grid, policy_values) {
+function orchestrationPolicyForm(policy_opts, sp_id, edit_mode, grid) {
     var policy_opts_spec = {
         dialogParams  : {
             //width       : 1000,
@@ -88,13 +88,7 @@ function orchestrationPolicyForm(policy_opts, sp_id, edit_mode, grid, policy_val
     });
 }
 
-// Edit existing policy
-function load_orchestration_policy_details(policy_opts, policy, grid_id) {
-    orchestrationPolicyForm(policy_opts, policy.orchestration.service_provider_id, 1, $('#' + grid_id), policy);
-}
-
-function addOrchestrationPolicy(policy_opts, grid) {
-
+function createPolicyServiceProvider() {
     // Create policy service provider
     var sp_id;
     $.ajax({
@@ -118,6 +112,34 @@ function addOrchestrationPolicy(policy_opts, grid) {
             manager_type        : 'collector_manager'
         }
      });
+
+    return sp_id;
+}
+
+// Edit existing policy
+function load_orchestration_policy_details(policy_opts, policy, grid_id) {
+    var sp_id;
+    var edit_mode = 1;
+
+    if (policy.orchestration && policy.orchestration.service_provider_id) {
+        sp_id = policy.orchestration.service_provider_id;
+    } else {
+        // default orchestration policy is not linked to a sp, so we create it
+        sp_id = createPolicyServiceProvider();
+        edit_mode = 0;
+    }
+
+    orchestrationPolicyForm(
+            policy_opts,
+            sp_id,
+            edit_mode,
+            $('#' + grid_id)
+    );
+}
+
+function addOrchestrationPolicy(policy_opts, grid) {
+
+    var sp_id = createPolicyServiceProvider();
 
     orchestrationPolicyForm(policy_opts, sp_id, 0, grid);
 }
