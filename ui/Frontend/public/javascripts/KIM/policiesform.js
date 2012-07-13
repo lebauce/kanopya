@@ -174,17 +174,18 @@ var PolicyForm = (function() {
             this.name       = 'form_' + args.name;
         }
 
-        this.id             = args.id;
-        this.callback       = args.callback     || $.noop;
-        this.fields         = args.fields       || {};
-        this.values         = args.values       || {};
-        this.title          = args.title        || this.name;
-        this.skippable      = args.skippable    || false;
-        this.beforeSubmit   = args.beforeSubmit || $.noop;
-        this.cancelCallback = args.cancel       || $.noop;
-        this.error          = args.error        || $.noop;
-
-        this.triggeredFields = {};
+        this.id                 = args.id;
+        this.callback           = args.callback         || $.noop;
+        this.fields             = args.fields           || {};
+        this.values             = args.values           || {};
+        this.title              = args.title            || this.name;
+        this.skippable          = args.skippable        || false;
+        this.beforeSubmit       = args.beforeSubmit     || $.noop;
+        this.cancelCallback     = args.cancel           || $.noop;
+        this.error              = args.error            || $.noop;
+        this.dialogParams       = args.dialogParams     || {};
+        this.formwizardParams   = args.formwizardParams || {};
+        this.triggeredFields    = {};
     }
 
     PolicyForm.prototype.mustDisableField = function(elementName, element) {
@@ -1078,7 +1079,7 @@ var PolicyForm = (function() {
 
     PolicyForm.prototype.startWizard = function() {
         var that = this;
-        $(this.form).formwizard({
+        var formwizard_params = {
             disableUIStyles     : true,
             validationEnabled   : true,
             validationOptions   : {
@@ -1113,7 +1114,11 @@ var PolicyForm = (function() {
                     this.error(data);
                 }, this)
             }
-        });
+        };
+
+        $(this.form).formwizard(
+                $.extend(true, formwizard_params, this.formwizardParams)
+        );
 
         var steps = $(this.form).children("table");
         if (steps.length > 1) {
@@ -1148,15 +1153,18 @@ var PolicyForm = (function() {
                 this.callback();
             }, this);
         }
-        this.content.dialog({
-            title           : this.title,
-            modal           : true,
-            resizable       : false,
-            draggable       : false,
-            width           : 500,
-            buttons         : buttons,
-            closeOnEscape   : false,
-        });
+        var dialog_default_params = {
+                title           : this.title,
+                modal           : true,
+                resizable       : false,
+                draggable       : false,
+                width           : 500,
+                buttons         : buttons,
+                closeOnEscape   : false,
+        };
+        this.content.dialog(
+                $.extend({}, dialog_default_params, this.dialogParams)
+        );
         $('.ui-dialog-titlebar-close').remove();
     }
 
