@@ -154,7 +154,7 @@ sub db_to_json {
                 if (not exists($subexp->{$key[0]})) {
                     $subexp->{$key[0]}  = [];
                 }
-                push(@{$subexp->{$key[0]}}, ($#key == 1) ? @key[1] : join('.', @key[1..$#key]));
+                push(@{$subexp->{$key[0]}}, ($#key == 1) ? $key[1] : join('.', @key[1..$#key]));
             }
         }
         for my $key (@$exp) {
