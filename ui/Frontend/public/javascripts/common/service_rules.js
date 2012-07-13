@@ -210,7 +210,7 @@ function serviceconditionmodal(elem_id, editid) {
     
     function combiUnits(combinationId) {
         $.ajax({
-            url: '/api/aggregatecombination/' + combinationId + '?aggregate_combination_service_provider_id=' + elem_id + '&expand=unitexpand=unit',
+            url: '/api/aggregatecombination/' + combinationId + '?aggregate_combination_service_provider_id=' + elem_id + '&expand=unit',
             async   : false,
             success: function(answer) {
                 $(answer).each(function(row) {
