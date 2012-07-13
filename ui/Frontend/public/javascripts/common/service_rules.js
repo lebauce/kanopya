@@ -11,7 +11,7 @@ function nodemetricconditionmodal(elem_id, editid) {
     function combiUnits(combinationId) {
         
         $.ajax({
-            url: '/api/nodemetriccombination/' + combinationId + '?expand=unit',
+            url: '/api/nodemetriccombination/' + combinationId + '?nodemetric_combination_service_provider_id=' + elem_id + '&expand=unit',
             async   : false,
             success: function(answer) {
                 $(answer).each(function(row) {
@@ -209,20 +209,17 @@ function createNodemetricRule(container_id, elem_id) {
 function serviceconditionmodal(elem_id, editid) {
     
     function combiUnits(combinationId) {
-        var tttt;
         $.ajax({
-            url: '/api/aggregatecombination/' + combinationId + '?expand=unit',
+            url: '/api/aggregatecombination/' + combinationId + '?aggregate_combination_service_provider_id=' + elem_id + '&expand=unitexpand=unit',
             async   : false,
             success: function(answer) {
                 $(answer).each(function(row) {
                     combinationUnit = answer.unit;
                     combinationLabel = answer.aggregate_combination_label;
                     combi = combinationLabel + ' (' + combinationUnit + ')';
-                    tttt = combinationUnit;
                 });
             }
         });
-        console.log(getMathematicOperator(tttt));
         return combi;
         }
     
