@@ -14,30 +14,33 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 data[i].parent  = 'null';
                 data[i].level   = '0';
                 data[i].type    = 'hypervisor';
+                data[i].vmcount = 0;
                 $.ajax({
                     async       : false,
                     url         : '/api/entity/' + cloudmanagerid + '/getVmsFromHypervisorHostId',
                     type        : 'POST',
                     contentType : 'application/json',
                     data        : JSON.stringify({ hypervisor_host_id : data[i].id }),
-                    success     : function(vms) {
-                        data[i].totalRamUsed    = 0;
-                        if (data.length > 0) {
-                            data[i].isLeaf  = false;
-                            data[i].vmcount = data.length
-                            for (var j in vms) if (vms.hasOwnProperty(i)) {
-                                vms[j].id       = data[i].id + "_" + vms[j].pk;
-                                vms[j].isLeaf   = true;
-                                vms[j].level    = '1';
-                                vms[j].parent   = data[i].id;
-                                vms[j].type     = 'vm';
-                                data[i].totalRamUsed    += parseInt(vms[j].host_ram);
-                                topush.push(vms[j]);
+                    success     : function(hyp) {
+                        return (function(vms) {
+                            hyp.totalRamUsed    = 0;
+                            if (vms.length > 0) {
+                                hyp.vmcount     += vms.length
+                                hyp.isLeaf      = false;
+                                for (var j in vms) if (vms.hasOwnProperty(i)) {
+                                    vms[j].id       = hyp.id + "_" + vms[j].pk;
+                                    vms[j].isLeaf   = true;
+                                    vms[j].level    = '1';
+                                    vms[j].parent   = data[i].id;
+                                    vms[j].type     = 'vm';
+                                    hyp.totalRamUsed    += parseInt(vms[j].host_ram);
+                                    topush.push(vms[j]);
+                                }
+                            } else {
+                                hyp.isLeaf  = true;
                             }
-                        } else {
-                            data[i].isLeaf  = true;
-                        }
-                    }
+                        });
+                    }(data[i])
                 });
             }
             data    = data.concat(topush);
@@ -107,8 +110,8 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
         $(table).append($('<tr>').append($('<th>', { text : 'Hypervisor : ' }))
                                  .append(hypervisorType))
                 .append($('<tr>').append($('<th>', { text : 'RAM Used : ' }))
-                                 .append($('<td>').append($('<div>').slider({ max : data.host_ram, value : data.totalRamUsed, disabled : true, range : "min" }))
-                                                  .append($('<span>', { text : data.totalRamUsed + ' / ' + data.host_ram + ' Mo' }))));
+                                 .append($('<td>').append($('<div>').progressbar({ max : data.host_ram, value : data.totalRamUsed }))
+                                                  .append($('<span>', { text : data.totalRamUsed + ' / ' + data.host_ram + ' Mo', style : 'float:right;' }))));
         $.ajax({
             url     : '/api/entity/' + cmgrid,
             success : function(elem) { $(hypervisorType).text(elem.hypervisor); }
