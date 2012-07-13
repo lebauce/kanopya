@@ -202,10 +202,9 @@ function loadServicesRessources (container_id, elem_id) {
         details : {
             tabs : [
                         { label : 'General', id : 'generalnodedetails', onLoad : nodedetailsaction },
-                        { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid, elem_id); } },
+                        { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid); } },
                         { label : 'monitoring', id : 'ressource_monitoring', onLoad : NodeIndicatorDetailsHistorical },
                         { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
-                        { label : 'Actions', id : 'actions', onLoad : function(cid, eid) { node_actions_tab(cid, eid, elem_id); } },
                     ],
             title : { from_column : 'externalnode_hostname' }
         },
@@ -302,6 +301,9 @@ function migrate(spid, eid) {
 }
 
 function nodedetailsaction(cid, eid) {
+    if (eid.indexOf('_') !== -1) {
+        eid = (eid.split('_'))[0];
+    }
     $.ajax({
         url     : '/api/node/' + eid + '?expand=host',
         success : function(data) {
@@ -362,7 +364,7 @@ function nodedetailsaction(cid, eid) {
 }
 
 // load network interfaces details grid for a node
-function node_ifaces_tab(cid, eid, elem_id) {
+function node_ifaces_tab(cid, eid) {
     var node;
     $.ajax({
         url     : '/api/node?node_id=' + eid,
