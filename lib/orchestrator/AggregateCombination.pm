@@ -24,7 +24,8 @@ use List::Util qw {reduce};
 use List::MoreUtils qw {any} ;
 # logger
 use Log::Log4perl "get_logger";
-my $log = get_logger("orchestrator");
+#my $log = get_logger("orchestrator");
+my $log = get_logger("administrator");
 
 use constant ATTR_DEF => {
     aggregate_combination_id      =>  {pattern       => '^.*$',
@@ -370,12 +371,27 @@ sub getUnit {
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
+    my $ref_element;
+    my $are_same_units = 0;
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
             $element = $collector->getIndicator(id => substr($element,2))->getAttr(name => 'indicator_unit') || '?';
+            if (not defined $ref_element) {
+                $ref_element = $element;
+            } else {
+                if ($ref_element eq $element) {
+                    $are_same_units = 1;
+                } else {
+                    $are_same_units = 0;
+                }
+            }
         }
     }
+    if ($are_same_units == 1) {
+        @array = $ref_element;
+    }
+    #$log->info(@array);
     return join('',@array);
 }
 
