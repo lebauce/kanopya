@@ -1018,11 +1018,15 @@ INSERT INTO `param_preset` VALUES (62, "billing_policy", NULL, NULL);
 -- Network policy update
 INSERT INTO `param_preset` VALUES (63, "default_gateway", 1, 23);
 
+-- Default orchestration policy
+INSERT INTO `param_preset` VALUES (64, "orchestration", NULL, NULL);
+
 INSERT INTO `policy` VALUES (1, 1, 'Default physical host', "Hosting policy for default physical hosts.", 'hosting');
 INSERT INTO `policy` VALUES (2, 10, 'Kanopya LVM disk exported via ISCSI', "Datastore on Kanopya cluster for PXE boot via ISCSI.", 'storage');
 INSERT INTO `policy` VALUES (3, 18, 'Default network configuration', "Default network configuration, with admin and public interfaces.", 'network');
 INSERT INTO `policy` VALUES (4, 29, 'Cluster manual scalability', "Manual scalability.", 'scalability');
 INSERT INTO `policy` VALUES (5, 33, 'Debian squeeze', "Hosting policy for standard physical hosts.", 'system');
 INSERT INTO `policy` VALUES (6, 62, 'Empty billing configuration', "Empty billing configuration", 'billing');
+INSERT INTO `policy` VALUES (7, 64, 'Empty orchestration configuration', "Empty orchestration configuration", 'orchestration');
 
-INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5, 6, NULL);
+INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5, 6, 7);

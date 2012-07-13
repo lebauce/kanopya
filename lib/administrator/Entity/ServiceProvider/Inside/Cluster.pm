@@ -571,9 +571,18 @@ sub configureBillingLimits {
     }
 }
 
+=head2 configureOrchestration
+
+    desc :
+        Use the linked policy service provider and clone its orchestration data in $self
+
+=cut
+
 sub configureOrchestration {
     my $self    = shift;
     my %args    = @_;
+
+    return if (not defined $args{service_provider_id});
 
     my $sp = Entity::ServiceProvider->get(id => $args{service_provider_id});
 
@@ -617,7 +626,6 @@ sub configureOrchestration {
         this formula is translated during cloning according to cloned elems ids
 
 =cut
-
 
 sub _cloneOrchestrationCompositeData {
     my $self    = shift;

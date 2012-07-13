@@ -105,8 +105,9 @@ function servicesList (container_id, elem_id) {
                     policy_def[field].disable_filled = true;
                     policy_def[field].hide_filled    = true;
 
-                    if (! policy_def[field].composite)
+                    if (! policy_def[field].composite &&  policy_def[field].type != 'hidden') {
                         policy_def[field].is_mandatory   = true;
+                    }
 
                     service_def[field] = policy_def[field];
                 }
