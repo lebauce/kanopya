@@ -207,6 +207,10 @@ sub buildPatternFromHash {
             elsif ($name eq 'systemimage_size') {
                 $pattern{managers}->{disk_manager}->{manager_params}->{$name} = $args{hash}->{$name};
             }
+            # Handle orchestration data (already well formatted metrics and rules)
+            elsif ($name eq 'orchestration_service_provider_id') {
+                $pattern{orchestration}{service_provider_id} = $args{hash}->{$name};
+            }
             # Handle cluster attributtes.
             elsif (exists $cluster_attrs->{$name}) {
                 # TODO: checkAttr

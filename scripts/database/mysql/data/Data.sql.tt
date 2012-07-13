@@ -82,7 +82,8 @@ INSERT INTO `class_type` VALUES
 (79, 'Entity::Connector::Sco'),
 (80, 'Entity::Connector::MockMonitor'),
 (81, 'Entity::Component::Kanopyaworkflow0'),
-(82, 'Entity::Billinglimit');
+(82, 'Entity::Billinglimit'),
+(83, 'Entity::ServiceProvider');
 
 --
 -- entity comment list
