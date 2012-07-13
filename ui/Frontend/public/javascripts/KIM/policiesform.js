@@ -1097,7 +1097,7 @@ var PolicyForm = (function() {
                     // Ugly but must delete all DOM elements
                     // but formwizard is using the element after this
                     // callback, so we delay the deletion
-                    setTimeout($.proxy(function() { this.closeDialog(); }, this), 10);
+                    this.closeDialog();
                     this.callback(data);
                 }, this),
                 error           : $.proxy(function(data) {
@@ -1176,12 +1176,13 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.closeDialog = function() {
-        this.removeDynamicFields();
-
-        $(this).dialog("close");
-        $(this).dialog("destroy");
-        $(this.form).formwizard("destroy");
-        $(this.content).remove();
+        setTimeout($.proxy(function() {
+            this.removeDynamicFields();
+            $(this).dialog("close");
+            $(this).dialog("destroy");
+            $(this.form).formwizard("destroy");
+            $(this.content).remove();
+        }, this), 10);
     }
 
     PolicyForm.prototype.validateForm = function () {
