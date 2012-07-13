@@ -12,7 +12,7 @@ function nodemetricconditionmodal(elem_id, editid) {
     function combiUnits(combinationId) {
         
         $.ajax({
-            url: '/api/nodemetriccombination/' + combinationId + '?nodemetric_combination_service_provider_id=' + elem_id + '&expand=unit',
+            url: '/api/nodemetriccombination/' + combinationId + '?expand=unit',
             async   : false,
             success: function(answer) {
                 $(answer).each(function(row) {
@@ -34,6 +34,7 @@ function nodemetricconditionmodal(elem_id, editid) {
         nodemetric_condition_combination_id :{
             label       : 'Combination',
             display     : 'nodemetric_combination_id',
+            cond        : '?nodemetric_combination_service_provider_id=' + elem_id,
             formatter   : combiUnits,
         },
         nodemetric_condition_comparator    : {
@@ -211,7 +212,7 @@ function serviceconditionmodal(elem_id, editid) {
     
     function combiUnits(combinationId) {
         $.ajax({
-            url: '/api/aggregatecombination/' + combinationId + '?aggregate_combination_service_provider_id=' + elem_id + '&expand=unit',
+            url: '/api/aggregatecombination/' + combinationId + '?expand=unit',
             async   : false,
             success: function(answer) {
                 $(answer).each(function(row) {
@@ -232,6 +233,7 @@ function serviceconditionmodal(elem_id, editid) {
         aggregate_combination_id :{
             label       : 'Combination',
             display     : 'aggregate_combination_id',
+            cond        : '?aggregate_combination_service_provider_id=' + elem_id,
             formatter   : combiUnits,
         },
         comparator  : {
