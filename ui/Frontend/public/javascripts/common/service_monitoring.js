@@ -54,7 +54,7 @@ function getIndicators(sp_id, ext) {
 };
 
 ////////////////////////MONITORING MODALS//////////////////////////////////
-function createServiceMetric(container_id, elem_id, ext) {
+function createServiceMetric(container_id, elem_id, ext, options) {
 
     ext = ext || false;
     
@@ -116,8 +116,8 @@ function createServiceMetric(container_id, elem_id, ext) {
                         }
                     });
                 }
-            
-        }      
+        },
+        beforeSubmit: (options && options.beforeSubmit) || $.noop,
     };
 
     var button = $("<button>", {html : 'Add a service metric'});
@@ -128,7 +128,7 @@ function createServiceMetric(container_id, elem_id, ext) {
     $('#' + container_id).append(button);
 };
 
-function createServiceConbination(container_id, elem_id) {
+function createServiceConbination(container_id, elem_id, options) {
     var service_fields  = {
         aggregate_combination_label    : {
             label   : 'Name',
@@ -152,7 +152,8 @@ function createServiceConbination(container_id, elem_id) {
         },
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
-        }
+        },
+        beforeSubmit: (options && options.beforeSubmit) || $.noop,
     };
 
     var button = $("<button>", {html : 'Add a combination'});
@@ -221,7 +222,7 @@ function createServiceConbination(container_id, elem_id) {
     $('#' + container_id).append(button);
 };
 
-function createNodemetricCombination(container_id, elem_id, ext) {
+function createNodemetricCombination(container_id, elem_id, ext, options) {
     ext     = ext || false;
     var service_fields  = {
         nodemetric_combination_label    : {
@@ -247,6 +248,7 @@ function createNodemetricCombination(container_id, elem_id, ext) {
         callback    : function() {
             $('#service_ressources_nodemetric_combination_' + elem_id).trigger('reloadGrid');
         },
+        beforeSubmit: (options && options.beforeSubmit) || $.noop,
     };
 
     var button = $("<button>", {html : 'Add a combination'});
@@ -255,30 +257,30 @@ function createNodemetricCombination(container_id, elem_id, ext) {
         mod.start();
             ////////////////////////////////////// Node Combination Forumla Construction ///////////////////////////////////////////
             
-        var component_id;
-        var indicators;
-        $.ajax({
-            async : false,
-            type : 'POST',
-            url:'/api/serviceprovider/' + elem_id + '/getManager',
-            data : {
-                manager_type : 'collector_manager'
-            },
-            success : function(row) {
-                component_id = row.component_id;
-            }
-        });
-        
-        $.ajax({
-            async : false,
-            type : 'POST',
-            url:'/api/component/' + component_id + '/getIndicators',
-            data : {},
-            success : function(row) {
-                indicators = row;
-                console.log(indicators);
-            }
-        });
+//        var component_id;
+//        var indicators;
+//        $.ajax({
+//            async : false,
+//            type : 'POST',
+//            url:'/api/serviceprovider/' + elem_id + '/getManager',
+//            data : {
+//                manager_type : 'collector_manager'
+//            },
+//            success : function(row) {
+//                component_id = row.component_id;
+//            }
+//        });
+//
+//        $.ajax({
+//            async : false,
+//            type : 'POST',
+//            url:'/api/component/' + component_id + '/getIndicators',
+//            data : {},
+//            success : function(row) {
+//                indicators = row;
+//                console.log(indicators);
+//            }
+//        });
 
         var availableTags = new Array();
         var indicators = getIndicators(elem_id, ext);
@@ -333,7 +335,7 @@ function createNodemetricCombination(container_id, elem_id, ext) {
     $('#' + container_id).append(button);
 };
 
-function loadServicesMonitoring(container_id, elem_id, ext) {
+function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
 
     var container   = $("#" + container_id);
 
@@ -397,13 +399,14 @@ function loadServicesMonitoring(container_id, elem_id, ext) {
         afterInsertRow: function(grid, rowid) {
             var id  = $(grid).getCell(rowid, 'pk');
             var url = '/api/nodemetriccombination/' + id + '/toString';
-            setCellWithCallMethod(url, grid, rowid, 'nodemetric_combination_formula');
+            setCellWithCallMethod(url, grid, rowid, 'nodemetric_combination_formula_tostring');
         },
-        colNames: [ 'id', 'name', 'indicators formula' ],
+        colNames: [ 'id', 'name', 'indicators formula', 'indicators formula brut' ],
         colModel: [ 
             { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
-            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', width: 170 },
+            { name: 'nodemetric_combination_formula_tostring', index: 'nodemetric_combination_formula_tostring', width: 170 },
+            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', hidden: true },
         ],
         details: {
             tabs : [
@@ -412,6 +415,7 @@ function loadServicesMonitoring(container_id, elem_id, ext) {
                 ],
             title : { from_column : 'nodemetric_combination_label' }
         },
+        deactivate_details  : mode_policy,
         action_delete: {
             url : '/api/nodemetriccombination',
         }
@@ -444,6 +448,7 @@ function loadServicesMonitoring(container_id, elem_id, ext) {
         action_delete: {
             url : '/api/clustermetric',
         },
+        deactivate_details  : mode_policy,
     } );
     createServiceMetric('service_monitoring_accordion_container', elem_id, (external !== '') ? true : false);
     
@@ -471,6 +476,7 @@ function loadServicesMonitoring(container_id, elem_id, ext) {
                 ],
             title : { from_column : 'aggregate_combination_label' }
         },
+        deactivate_details  : mode_policy,
         action_delete: {
             url : '/api/aggregatecombination',
         },

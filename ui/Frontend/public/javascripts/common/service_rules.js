@@ -1,5 +1,6 @@
 require('common/grid.js');
 require('common/workflows.js');
+require('common/formatters.js');
 
 var rulestates = ['enabled','disabled'];
 var comparators = ['<','>'];
@@ -221,7 +222,7 @@ function serviceconditionmodal(elem_id, editid) {
             }
         });
         return combi;
-        }
+    }
     
     var service_fields  = {
         aggregate_condition_label    : {
@@ -421,7 +422,7 @@ function createServiceRule(container_id, elem_id) {
 };
     ////////////////////////END OF : NODES AND METRICS MODALS//////////////////////////////////
 
-function loadServicesRules (container_id, elem_id, ext) {
+function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     var container = $("#" + container_id);
 
     ext = ext || '';
@@ -548,6 +549,7 @@ function loadServicesRules (container_id, elem_id, ext) {
         },
     } );
     createServiceCondition('service_accordion_container', elem_id);
+
     // Display services rules :
     $("<p>").appendTo('#service_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
@@ -562,7 +564,7 @@ function loadServicesRules (container_id, elem_id, ext) {
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
              {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,},
-             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90, formatter : lastevalStateFormatter},
+             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90, formatter : lastevalStateFormatter, hidden:mode_policy},
              {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
              {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
            ],
@@ -590,7 +592,6 @@ function loadServicesRules (container_id, elem_id, ext) {
                                     }
                         }
                     });
-                    require('KIO/workflows.js');
                     createWorkflowRuleAssociationButton(cid, eid, 2, elem_id);
                }},
             ],

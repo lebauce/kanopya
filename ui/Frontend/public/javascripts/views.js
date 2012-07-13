@@ -241,7 +241,7 @@ function create_grid(options) {
 //        },
 
         onCellSelect: function(rowid, index, contents, target) {
-            if (index != actions_col_idx) {
+            if (index != actions_col_idx && ! options.deactivate_details) {
                 var row_data = $('#' + options.grid_id).getRowData(rowid);
                 show_detail(options.grid_id, grid_class, rowid, row_data, options.details)
             }
@@ -252,6 +252,7 @@ function create_grid(options) {
             alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 
         },
 
+        url     : options.url, // not used by jqGrid (handled by datatype option, see below) but we want this info in grid
         datatype: (options.hasOwnProperty('url')) ? function (postdata) {
             var data = { dataType : 'jqGrid' };
 

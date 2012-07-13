@@ -119,7 +119,7 @@ function servicesList (container_id, elem_id) {
         var service_opts = {
             title       : 'Instantiate a service',
             name        : 'cluster',
-            callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
+            callback    : function () { $(grid).trigger("reloadGrid"); }
         };
 
         var button = $("<button>", { id : 'instantiate_service_button', text : 'Instantiate a service'} ).button({
