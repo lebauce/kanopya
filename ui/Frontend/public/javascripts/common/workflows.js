@@ -434,13 +434,17 @@ function    workflowsoverview(cid, eid) {
         content_container_id    : cid,
         colNames                : [ 'Id', 'Name', 'State', 'CurrentOperation' ],
         afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
-            $.ajax({
-                url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
-                type    : 'POST',
-                success : function(data) {
-                    $(grid).setCell(rowid, 'currentOperation', data.type);
-                }
-            });
+            if (rowdata.state != 'done') {
+                $.ajax({
+                    url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
+                    type    : 'POST',
+                    success : function(data) {
+                        $(grid).setCell(rowid, 'currentOperation', data.type);
+                    }
+                });
+            } else {
+                $(grid).setCell(rowid, 'currentOperation', ' ');
+            }
         },
         colModel                : [
             { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
