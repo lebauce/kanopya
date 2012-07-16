@@ -20,6 +20,7 @@ function servicesList (container_id, elem_id) {
         contentType : 'application/json',
         data        : JSON.stringify({ category : 'Cloudmanager' }),
         success     : function(data) {
+            ressources  = {};
             for (var i in data) if (data.hasOwnProperty(i)) {
                 ressources[data[i].pk]  = true;
             }

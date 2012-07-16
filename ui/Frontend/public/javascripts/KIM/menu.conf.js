@@ -12,7 +12,11 @@ var mainmenu_def = {
                       { label : 'Hosts', id : 'hosts'} ],
         'Storage' : [ { label : 'Overview', id : 'storage_overview'} ],
         'IaaS'    : [ { label : 'IaaS', id : 'iaas', onLoad : load_iaas_content} ],
-        'Network' : [],
+        'Network' : [
+            { label : 'Overview', id : 'network_overview' },
+            { label : 'Networks', id : 'network_vlans', onLoad : function(cid) { require('KIM/networks.js'); networks_list(cid); } },
+            { label : 'PoolIPs', id : 'network_poolips', onLoad : function(cid) { require('KIM/poolips.js'); poolips_list(cid); } }
+        ],
         'System'  : [],
     },
     'Business' : {
