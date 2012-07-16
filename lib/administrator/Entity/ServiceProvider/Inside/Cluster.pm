@@ -592,7 +592,7 @@ sub configureOrchestration {
         my %attrs = $nmc->getAttrs();
         delete $attrs{nodemetric_combination_id};
         $attrs{nodemetric_combination_service_provider_id} = $self->getId();
-        #NodemetricCombination->new( %attrs );
+        NodemetricCombination->new( %attrs );
     }
 
     # Cluster metrics and combinations
