@@ -137,7 +137,7 @@ function createNodemetricRule(container_id, elem_id) {
             $("div#waiting_default_insert").dialog("destroy");
         },
         callback    : function() {
-            $('#service_ressources_aggregate_rules_' + elem_id).trigger('reloadGrid');
+            $('#service_ressources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
         }
     };
 
@@ -339,6 +339,9 @@ function createServiceRule(container_id, elem_id) {
         fields      : service_fields,
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
+        },
+        callback    : function() {
+            $('#service_ressources_aggregate_rules_' + elem_id).trigger('reloadGrid');
         }
     };
 
@@ -460,18 +463,27 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         grid_class: 'service_ressources_nodemetric_rules',
-        colNames: [ 'id', 'name', 'enabled', 'description', 'formula' ],
-        afterInsertRow: function(grid, rowid) {
+        afterInsertRow: function(grid, rowid, rowdata) {
+            // Formula
             var id  = $(grid).getCell(rowid, 'pk');
             var url = '/api/nodemetricrule/' + id + '/toString';
             setCellWithCallMethod(url, grid, rowid, 'nodemetric_rule_formula');
+
+            // Workflow name
+            if (rowdata.workflow_def_id) {
+                setCellWithRelatedValue(
+                        '/api/workflowdef/' + rowdata.workflow_def_id,
+                        grid, rowid, 'workflow_def_id', 'workflow_def_name');
+            }
         },
+        colNames: [ 'id', 'name', 'enabled', 'formula', 'description', 'trigger' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
             { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60,},
-            { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 120 },
             { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 120 },
+            { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 120 },
+            { name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
         ],
         details: {
             tabs : [
@@ -548,7 +560,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         grid_class: 'service_ressources_aggregate_rules',
         content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
-        colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description'],
+        colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description', 'trigger'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
@@ -556,11 +568,20 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
              {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90, formatter : lastevalStateFormatter, hidden:mode_policy},
              {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
              {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
+             {name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
            ],
-        afterInsertRow: function(grid, rowid) {
+        afterInsertRow: function(grid, rowid, rowdata) {
+            // Formula
             var id  = $(grid).getCell(rowid, 'pk');
             var url = '/api/aggregaterule/' + id + '/toString';
             setCellWithCallMethod(url, grid, rowid, 'aggregate_rule_formula');
+
+            // Workflow name
+            if (rowdata.workflow_def_id) {
+                setCellWithRelatedValue(
+                        '/api/workflowdef/' + rowdata.workflow_def_id,
+                        grid, rowid, 'workflow_def_id', 'workflow_def_name');
+            }
         },
         details : {
             tabs    : [
