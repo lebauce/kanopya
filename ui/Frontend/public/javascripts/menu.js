@@ -145,6 +145,10 @@ function build_submenu(container, view_id, links, elem_id) {
     view.tabs({});
 
     for (var smenu in links) {
+        if (links[smenu].hidden) {
+            continue;
+        }
+
         var id_suffix = elem_id ? elem_id : 'static';
 
         var content_id = 'content_' + links[smenu]['id'] + '_' + id_suffix;
