@@ -88,6 +88,37 @@ function orchestrationPolicyForm(policy_opts, sp_id, edit_mode, grid) {
     });
 }
 
+// Associate to service provider <sp_id> the manager <type> corresponding to component installed on kanopya cluster
+function associateAdminManager(sp_id, component_category, manager_type) {
+    var manager_id;
+
+    // Get manager id
+    $.ajax({
+        url     : '/api/serviceprovider/1/findManager',
+        type    : 'POST',
+        async   : false,
+        data    : {
+            category : component_category
+        },
+        success : function(data) {
+            manager_id = data[0].pk;
+        }
+    });
+
+    // Associate sp to manager
+    $.ajax({
+        type    : 'POST',
+        url     : 'api/serviceprovidermanager',
+        async   : false,
+        data    : {
+            service_provider_id : sp_id,
+            manager_id          : manager_id,
+            manager_type        : manager_type
+        }
+     });
+
+}
+
 function createPolicyServiceProvider() {
     // Create policy service provider
     var sp_id;
@@ -100,18 +131,9 @@ function createPolicyServiceProvider() {
        }
     });
 
-    // Associate our policy sp to default kanopya collector manager
-    var default_collector_manager_id = 68;
-    $.ajax({
-        type    : 'POST',
-        url     : 'api/serviceprovidermanager',
-        async   : false,
-        data    : {
-            service_provider_id : sp_id,
-            manager_id          : default_collector_manager_id,
-            manager_type        : 'collector_manager'
-        }
-     });
+    associateAdminManager(sp_id, 'Collectormanager', 'collector_manager');
+
+    associateAdminManager(sp_id, 'Workflowmanager', 'workflow_manager');
 
     return sp_id;
 }
