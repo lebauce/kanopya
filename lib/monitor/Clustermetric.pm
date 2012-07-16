@@ -147,4 +147,20 @@ sub toString {
     }
 }
 
+sub getUnit {
+    my ($self, %args) = @_;
+
+    my $stat_func = $self->clustermetric_statistics_function_name;
+    my $keep_unit = grep { $_ eq $stat_func } qw(mean variance std max min sum);
+    if (!$keep_unit) {
+        return '-';
+    }
+
+    my $service_provider = $self->clustermetric_service_provider;
+    my $collector = $service_provider->getManager(manager_type => "collector_manager");
+    my $indicator_unit = $collector->getIndicator(id => $self->clustermetric_indicator_id)->getAttr(name => 'indicator_unit') || '?';
+
+    return $indicator_unit;
+}
+
 1;

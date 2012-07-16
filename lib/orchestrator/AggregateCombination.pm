@@ -375,7 +375,8 @@ sub getUnit {
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            $element = $collector->getIndicator(id => substr($element,2))->getAttr(name => 'indicator_unit') || '?';
+            $element = Clustermetric->get('id'=>substr($element,2))->getUnit();
+
             if (not defined $ref_element) {
                 $ref_element = $element;
             } else {
