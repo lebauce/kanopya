@@ -118,15 +118,16 @@ function loadServicesDetails(cid, eid) {
         
     var service_opts = {
         name   : 'cluster',
+        filters : { expand : 'kernel,masterimage,user,service_template' },
         fields : { cluster_name         : {label: 'Name'},
                    cluster_state        : {label: 'State'},
                    cluster_prev_state   : {label: 'Previous state'},
                    active               : {label: 'Active'},
                    cluster_min_node     : {label: 'Min node'},
                    cluster_max_node     : {label: 'Max node'},
-                   masterimage_id       : {label: 'Master Image'},
-                   kernel_id            : {label: 'Kernel'},
-                   service_template_id  : {label: 'Service template'},
+                   "masterimage.masterimage_name" : {label: 'Master Image'},
+                   "kernel.kernel_name" : {label: 'Kernel'},
+                   "service_template.service_name" : {label: 'Service template'},
                    cluster_domainname   : {label: 'Domain name'},
                    cluster_nameserver1  : {label: 'Domain name server 1'},
                    cluster_nameserver2  : {label: 'Domain name server 2'},
@@ -135,7 +136,7 @@ function loadServicesDetails(cid, eid) {
                    cluster_priority     : {label: 'Priority'},
                    cluster_si_persistent: {label: 'Persistent'},
                    cluster_si_shared    : {label: 'Shared'},
-                   user_id              : {label: 'User'},
+                   "user.user_login"    : {label: 'User'},
                                             
 
         },
