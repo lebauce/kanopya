@@ -310,19 +310,6 @@ function createServiceCondition(container_id, elem_id) {
 };
 
 function createServiceRule(container_id, elem_id) {
-        
-    var loadServicesMonitoringGridId = 'service_rule_creation_condition_listing_' + elem_id;
-    create_grid( {
-        url: '/api/nodemetriccondition',
-        content_container_id: 'service_condition_listing_for_service_rule_creation',
-        grid_id: loadServicesMonitoringGridId,
-        colNames: [ 'id', 'name' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
-            { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 90 },
-        ],
-    } );
-
     var service_fields  = {
         aggregate_rule_label    : {
             label   : 'Name',
@@ -365,7 +352,7 @@ function createServiceRule(container_id, elem_id) {
     $(function() {
     var availableTags = new Array();
     $.ajax({
-        url: '/api/aggregatecondition?dataType=jqGrid',
+        url: '/api/aggregatecondition?aggregate_condition_service_provider_id=' + elem_id + '&dataType=jqGrid',
         async   : false,
         success: function(answer) {
                     $(answer.rows).each(function(row) {
