@@ -1,6 +1,6 @@
 NAME = [% name %]
 MEMORY = [% memory %]
-CPU = [% cpu %]
+CPU = 1
 
 [% IF hypervisor_type && hypervisor_name %]
 REQUIREMENTS = "HYPERVISOR=\"[% hypervisor_type %]\" & NAME = \"[% hypervisor_name %]\""
@@ -11,8 +11,9 @@ REQUIREMENTS = "NAME = \"[% hypervisor_name %]\""
 [% END %]
 
 [% IF hypervisor_type == "xen" %]
-RAW = [ type="xen", data="maxvcpus=128" ]
-RAW = [ type="xen", data="maxmem=262144" ]
+RAW = [ type="xen", data="maxvcpus=24" ]
+RAW = [ type="xen", data="maxmem=48000" ]
+RAW = [ type="xen", data="vcpus=[% cpu %]" ]
 [% END %]
 
 OS = [
