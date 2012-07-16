@@ -230,6 +230,7 @@ function runScaleWorkflow(type, eid, spid) {
                         async       : false,
                         url         : '/api/serviceprovider/' + spid + '/getManager',
                         contentType : 'application/json',
+                        type        : 'POST',
                         data        : JSON.stringify({ manager_type : 'host_manager' }),
                         success     : function(hmgr) {
                             $.ajax({
