@@ -337,13 +337,13 @@ function nodedetailsaction(cid, eid) {
                     label       : 'Scale Cpu',
                     icon        : 'arrowthick-2-n-s',
                     condition   : isVirtual,
-                    action      : function() { runScaleWorkflow("CPU", eid, data.service_provider_id); }
+                    action      : function() { runScaleWorkflow("CPU", data.host.pk, data.service_provider_id); }
                 },
                 {
                     label       : 'Scale Memory',
                     icon        : 'arrowthick-2-n-s',
                     condition   : isVirtual,
-                    action      : function() { runScaleWorkflow("Memory", eid, data.service_provider_id); }
+                    action      : function() { runScaleWorkflow("Memory", data.host.pk, data.service_provider_id); }
                 },
                 {
                     label       : 'Migrate',
