@@ -105,7 +105,8 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
         grid:{
             background: '#eeeeee',
         },
-        seriesColors: ["#D4D4D4" ,"#999999"],
+        //seriesColors: ["#D4D4D4" ,"#999999"],
+        seriesColors: ["#4BB2C5" ,"#6DD4E7"],
         highlighter: { 
             show: true,
             showMarker:false,
