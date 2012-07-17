@@ -835,4 +835,29 @@ sub getHostType {
     return $self->getHostManager->getHostType;
 }
 
+sub scale {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'scalein_value', 'scalein_type' ]);
+
+    return $self->getHostManager->scaleHost(
+               host_id       => $self->getId,
+               scalein_value => $args{scalein_value},
+               scalein_type  => $args{scalein_type}
+           );
+}
+
+sub migrate {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'hypervisor' ]);
+
+    return $self->getHostManager->migrate(
+               host_id       => $self->getId,
+               hypervisor_id => $args{hypervisor}->getId,
+           );
+}
+
 1;
