@@ -58,6 +58,8 @@ our $VERSION = '1.00';
 sub prepare {
     my $self = shift;
     my %args = @_;
+    my $errmsg;
+
     $self->SUPER::prepare();
 
     General::checkParams(args => $self->{context}, required => [ "host", "cloudmanager_comp"]);
@@ -79,7 +81,20 @@ sub prepare {
     my $mem_limit = $self->{context}->{host}->node->parent->service_provider->getLimit(type => 'ram');
 
     if ($mem_limit && ($check == 0 || $self->{params}->{memory} > $mem_limit)) {
-        my $errmsg = "Not enough memory in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
+        $errmsg = "Not enough memory in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    # Check if the given ram amount is not bellow the initial ram.
+    my $host_manager_params = $self->{context}->{host}->node->parent->service_provider->getManagerParameters(manager_type => 'host_manager');
+    my $initial_ram = $host_manager_params->{ram};
+
+    if ($host_manager_params->{ram_unit} eq 'G') {
+        $initial_ram *= 1024;
+    }
+
+    if ($initial_ram > $self->{params}->{memory}) {
+        $errmsg = "Could not scale memory bellow the initial ram amount ($initial_ram)";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
