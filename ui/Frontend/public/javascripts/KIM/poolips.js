@@ -1,8 +1,10 @@
 
-function poolips_addbutton_action() {
+function poolips_addbutton_action(e) {
+    var edit    = !(e instanceof Object);
     (new ModalForm({
         title       : 'Create a PoolIP',
         name        : 'poolip',
+        id          : (edit) ? e : undefined,
         fields      : {
             poolip_name     : { label : 'Name' },
             poolip_addr     : { label : 'First address' },
@@ -27,7 +29,10 @@ function poolips_list(cid) {
             { name : 'poolip_mask', index : 'poolip_mask' },
             { name : 'poolip_netmask', index : 'poolip_netmask' },
             { name : 'poolip_gateway', index : 'poolip_gateway' }
-        ]
+        ],
+        details                 : {
+            onSelectRow : poolips_addbutton_action
+        }
     });
     var addButton   = $('<a>', { text : 'Add a PoolIP' }).appendTo('#' + cid)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
