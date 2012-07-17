@@ -142,6 +142,10 @@ sub prepare {
     my $exec_cluster = Entity::ServiceProvider->get(id => $self->{config}->{cluster}->{executor});
     $self->{params}->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
     
+    # Instanciate puppetmaster
+    my $puppetmaster = $bootserver->getComponent(name => 'Puppetmaster', version => 2);
+    $self->{context}->{component_puppetmaster} = EFactory::newEEntity(data => $puppetmaster);
+
     # retrieve linux component if exists
     my $linux = eval { 
         $self->{context}->{cluster}->getComponent(name    => 'Linux',
@@ -261,11 +265,11 @@ sub execute {
     }
     
     if(defined $self->{context}->{puppetagent}) {
+        $self->{context}->{component_puppetmaster}->updateSite;
         for my $ehost (@ehosts) {
             $self->{context}->{puppetagent}->applyManifest(host => $ehost);
         }
-    }
-    
+     }
 }
 
 sub finish {

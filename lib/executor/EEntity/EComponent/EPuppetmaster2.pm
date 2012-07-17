@@ -63,6 +63,12 @@ sub addNode {
     
 }
 
+sub updateSite {
+    my ($self) = @_;
+    my $command = 'touch /etc/puppet/manifests/site.pp';
+    $self->getExecutorEContext->execute(command => $command);
+}
+
 sub createHostCertificate {
     my ($self, %args) = @_;
  
@@ -97,10 +103,9 @@ sub createHostCertificate {
         src  => '/var/lib/puppet/ssl/private_keys/'.$certificate,
         dest => $args{mount_point} .'/var/lib/puppet/ssl/private_keys/'.$certificate
     );
-    
-    $command = 'touch /etc/puppet/manifests/site.pp';
-    $self->getExecutorEContext->execute(command => $command);
-}    
+
+    $self->updateSite;
+}
 
 sub createHostManifest {
     my ($self, %args) = @_;
@@ -130,12 +135,7 @@ sub createHostManifest {
         throw Kanopya::Exception::Internal(error => $errmsg);
     };
     
-    my $command = 'touch /etc/puppet/manifests/site.pp';
-    $self->getExecutorEContext->execute(command => $command);
+    $self->updateSite;
 }
-
-
-
-
 
 1;
