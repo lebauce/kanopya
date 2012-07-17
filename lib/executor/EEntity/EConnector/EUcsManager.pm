@@ -186,7 +186,8 @@ sub applyVLAN {
         if ($ethernet->{name} eq 'v' . $args{iface}->getAttr(name => "iface_name")) {
             $log->info("Applying vlan " . $args{vlan}->getAttr(name => "network_name") .
                        " on " . $ethernet->{name} . " interface of " . $host->getAttr(name => "host_serial_number"));
-            $ethernet->applyVLAN(name => $args{vlan}->getAttr(name => "network_name"));
+            $ethernet->applyVLAN(name   => $args{vlan}->getAttr(name => "network_name"),
+                                 delete => (defined ($args{delete}) and $args{delete}) ? 1 : 0);
         }
     }
 }
