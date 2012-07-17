@@ -38,7 +38,7 @@ sub new {
 
     # Load conf
     my $conf = Kanopya::Config::get('aggregator');
-    $self->{_time_step} = $conf->{time_step}->{time_step};
+    $self->{_time_step} = $conf->{time_step};
 
     # Get Administrator
     my ($login, $password) = ($conf->{user}->{name}, $conf->{user}->{password});
