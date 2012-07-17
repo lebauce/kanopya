@@ -490,6 +490,10 @@ INSERT INTO `kernel` VALUES (@eid,'2.6.32-5-xen-amd64','2.6.32-5-xen-amd64','Xen
 SET @kernel := @eid;
 SET @eid := @eid +1;
 
+INSERT INTO `entity` VALUES (@eid, 6, NULL);
+INSERT INTO `kernel` VALUES (@eid,'3.2.6-xenvm','3.2.6-xenvm','Kernel for xen virtual machines.');
+SET @eid := @eid +1;
+
 --
 -- kanopya cluster
 --
@@ -710,6 +714,14 @@ INSERT INTO `component` VALUES(@eid, @admin_cluster, 21, NULL, NULL);
 INSERT INTO `kanopyaworkflow0` VALUES(@eid);
 SET @eid := @eid +1;
 
+--
+-- Linux0
+--
+
+INSERT INTO `entity` VALUES (@eid, 29, NULL);
+INSERT INTO `component` VALUES(@eid, @admin_cluster, 9, NULL, NULL);
+INSERT INTO `linux0` VALUES(@eid);
+SET @eid := @eid +1;
 
 
 --
