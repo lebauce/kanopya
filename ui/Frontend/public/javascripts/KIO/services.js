@@ -2,6 +2,7 @@
 require('modalform.js');
 require('common/service_common.js');
 require('common/formatters.js');
+require('KIO/services_config.js');
 
 function createAddServiceButton(container) {
     var service_fields  = {
@@ -32,7 +33,6 @@ function createAddServiceButton(container) {
         },
         callback    : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
-            require('KIO/services_config.js');
             createmanagerDialog('directory_service_manager', data.pk, function() {
                 createmanagerDialog('collector_manager', data.pk, function() {
                     reloadServices();
@@ -128,10 +128,16 @@ function createUpdateNodeButton(container, elem_id, grid) {
                                 }),
                                 contentType : 'application/json',
                                 complete    : function(data) { $(waitingPopup).dialog('close'); },
-                                success     : function(data) { ok  = true; },
+                                success     : function(data) {
+                                    if (data.error) {
+                                        alert(data.error);
+                                    } else {
+                                        ok  = true;
+                                    }
+                                },
                                 error       : function(data) {
-                                    $("input#adpassword").val("");
-                                    $("div#adpassworderror").text(JSON.parse(data.responseText).reason).addClass('ui-state-error');
+                                    //$("input#adpassword").val("");
+                                    //$("div#adpassworderror").text(JSON.parse(data.responseText).reason).addClass('ui-state-error');
                                 }
                             });
                             // If the form succeed, then we can close the dialog

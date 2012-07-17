@@ -275,8 +275,14 @@ sub updateNodes {
      my $ds_manager = $self->getManager( manager_type => 'directory_service_manager' );
      my $mparams    = $self->getManagerParameters( manager_type => 'directory_service_manager' );
      $args{ad_nodes_base_dn}    = $mparams->{ad_nodes_base_dn};
-     my $nodes      = $ds_manager->getNodes(%args);
-     
+
+     my $nodes;
+     eval {
+        $nodes = $ds_manager->getNodes(%args);
+     } or do {
+        return {error => $@};
+     };
+
      my @created_nodes;
      
      my $new_node_count = 0;
