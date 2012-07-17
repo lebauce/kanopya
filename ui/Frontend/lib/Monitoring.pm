@@ -201,7 +201,7 @@ sub _computeClustermetricCombination () {
         }
 
         $rep{'histovalues'} = \@histovalues;
-        $rep{'unit'}        = '';#$combination->getUnit();
+        $rep{'unit'}        = $combination->getUnit();
         return \%rep;
     }
 }
