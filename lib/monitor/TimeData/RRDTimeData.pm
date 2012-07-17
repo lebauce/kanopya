@@ -48,12 +48,12 @@ if ($^O eq 'MSWin32') {
 
 =head2 createTimeDataStore
 
-B<Class>   : Public
-B<Desc>    : This method create a RRD file.
-B<args>    : name, options, RRA, DS
-B<Return>  : None
-B<Comment> : Only name is mandatory. Default RRD configuration are: step = 60, 1 RRA with 1 PDP per CPD, and 1440 CDP (60x1x1440 = 86400scd/ 1 day). Standard is 1 RRA and 1 DS per RRD
-B<throws>  : 'RRD creation failed' if the creation is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+    <Class>   : Public
+    <Desc>    : This method create a RRD file.
+    <args>    : name, options, RRA, DS
+    <Return>  : None
+    <Comment> : Only name is mandatory. Default RRD configuration are: step = 60, 1 RRA with 1 PDP per CPD, and 1440 CDP (60x1x1440 = 86400scd/ 1 day). Standard is 1 RRA and 1 DS per RRD
+    <throws>  : 'RRD creation failed' if the creation is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
 
 =cut
 
@@ -70,11 +70,17 @@ sub createTimeDataStore{
     my $DS_chain;
     my $opts = '';
 
-    #get collect frequency from configuration file
+    #get collect TimeData configuration from monitor.conf
     my $monitor_configuration = Kanopya::Config::get('monitor');
-    #my $frequency             = $monitor_configuration->{rrd_step}->{step};
-    my $frequency             = $monitor_configuration->{time_step};
-    my $heartbeat = $frequency * 2;
+    my $collect_frequency     = $monitor_configuration->{time_step};
+    my $storage_duration      = $monitor_configuration->{storage_duration}->{duration};
+
+    #configure the heartbeat, number of CDP and step according to the configuration
+    my $config    = _configTimeDataStore(
+                        'collect_frequency' => $collect_frequency,
+                        'storage_duration'  => $storage_duration,
+                    );
+
 
     #definition of the options. If unset, default rrd start time is (now -10s)
     if (defined $args{'options'}) {
@@ -92,10 +98,10 @@ sub createTimeDataStore{
         if (defined $options->{step}) {
             $opts .= '-s '.$options->{'step'}.' ';
         } else {
-            $opts .= '-s '.$frequency.' ';
+            $opts .= '-s '.$config->{step}.' ';
         }
     } else {
-        $opts .= '-s '.$frequency.' ';
+        $opts .= '-s '.$config->{step}.' ';
         my $time = time();
         my $moduloTime = $time % 60;
         my $finalTime = $time - $moduloTime;
@@ -103,7 +109,7 @@ sub createTimeDataStore{
     }
 
     #default parameter for Round Robin Archive
-    my %RRA_params = (function => 'LAST', XFF => '0', PDPnb => '1', CDPnb => '10080');
+    my %RRA_params = (function => 'LAST', XFF => '0', PDPnb => '1', CDPnb => $config->{CDP});
 
     if (defined $args{'RRA'}){
         my $RRA = $args{'RRA'};
@@ -119,8 +125,7 @@ sub createTimeDataStore{
     $RRA_chain = 'RRA:'.$RRA_params{'function'}.':'.$RRA_params{'XFF'}.':'.$RRA_params{'PDPnb'}.':'.$RRA_params{'CDPnb'};
 
     #default parameter for Data Source
-    # my $heartbeat = $frequency * 2;
-    my %DS_params = (DSname => 'aggregate', type => 'GAUGE', heartbeat => $heartbeat, min => '0', max => 'U');
+    my %DS_params = (DSname => 'aggregate', type => 'GAUGE', heartbeat => $config->{heartbeat}, min => '0', max => 'U');
 
     if (defined $args{'DS'}){
         my $DS = $args{'DS'};
@@ -160,12 +165,12 @@ sub createTimeDataStore{
 
 =head2 deleteTimeDataStore
 
-B<Class>   : Public
-B<Desc>    : This method delete a RRD file.
-B<args>    : name
-B<Return>  : None
-B<Comment>  : None
-B<throws>  : None
+    <Class>   : Public
+    <Desc>    : This method delete a RRD file.
+    <args>    : name
+    <Return>  : None
+    <Comment>  : None
+    <throws>  : None
 
 =cut
 
@@ -182,12 +187,12 @@ sub deleteTimeDataStore{
 
 =head2 getTimeDataStoreInfo
 
-B<Class>   : Public
-B<Desc>    : This method get info a RRD file.
-B<args>    : name
-B<Return>  : None
-B<Comment>  : None
-B<throws>  : None
+    <Class>   : Public
+    <Desc>    : This method get info a RRD file.
+    <args>    : name
+    <Return>  : None
+    <Comment>  : None
+    <throws>  : None
 
 =cut
 
@@ -204,12 +209,12 @@ sub getTimeDataStoreInfo {
 
 =head2 fetchTimeDataStore
 
-B<Class>   : Public
-B<Desc>    : This method retrieve values from a RRD file.
-B<args>    : name, start, end
-B<Return>  : %values
-B<Comment> : if start and end are not specified, rrd fetch use start = now - 1 day and stop = now
-B<throws>  : 'RRD fetch failed' if the fetch is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+    <Class>   : Public
+    <Desc>    : This method retrieve values from a RRD file.
+    <args>    : name, start, end
+    <Return>  : %values
+    <Comment> : if start and end are not specified, rrd fetch use start = now - 1 day and stop = now
+    <throws>  : 'RRD fetch failed' if the fetch is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
 
 =cut
 
@@ -270,12 +275,12 @@ sub fetchTimeDataStore {
 
 =head2 updateTimeDataStore
 
-B<Class>   : Public
-B<Desc>    : This method update values into a RRD file.
-B<args>    : clustermetric_id, time, value
-B<Return>  : None
-B<Comment> : None
-B<throws>  : 'RRD update failed' if the update is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+    <Class>   : Public
+    <Desc>    : This method update values into a RRD file.
+    <args>    : clustermetric_id, time, value
+    <Return>  : None
+    <Comment> : None
+    <throws>  : 'RRD update failed' if the update is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
 
 =cut
 
@@ -308,15 +313,14 @@ sub updateTimeDataStore {
 
 =head2 getLastUpdatedValue
 
-B<Class>   : Public
-B<Desc>    : This method get the last updated value into a RRD file.
-B<args>    : clustermetric_id
-B<Return>  : %values
-B<Comment> : None
-B<throws>  : 'RRD fetch failed for last updated value' if the fetch is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+    <Class>   : Public
+    <Desc>    : This method get the last updated value into a RRD file.
+    <args>    : clustermetric_id
+    <Return>  : %values
+    <Comment> : None
+    <throws>  : 'RRD fetch failed for last updated value' if the fetch is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
 
 =cut
-
 
 sub getLastUpdatedValue {
     my %args = @_;
@@ -363,14 +367,65 @@ sub getLastUpdatedValue {
     return %values;
 }
 
+=head2 _configTimeDataStore
+
+    <Class>   : Private
+    <Desc>    : This method configure the step, heartbeat, and CDP number for a rrd
+    <args>    : Frequency or storing time desired
+    <Return>  : \%config
+    <Comment> : None
+    <throws>  : None
+
+=cut
+
+sub _configTimeDataStore {
+    my %args = @_;
+
+    my %config;
+
+    #NOTE: the two first case should not happen, because the configuration
+    #file will at least hold the setup default values (furthermore, a null
+    #value in the configuration file markups would result in a code error
+    #at parsing
+
+    #if the frequency only is defined, we generate CDP number and heartbeat 
+    #in this case, by default we will set the rrd to store data for 1 week
+    if (defined $args{collect_frequency} && ! defined $args{storage_duration}) {
+        $config{step}      = $args{collect_frequency};
+        $config{CDP}       = 604800 / $config{step};
+        $config{heartbeat} = $config{step} * 2; 
+        return \%config;
+    }
+    #if the storage duration only is defined, we generate step, heartbeat, and CDP number
+    #step by default will be 5 mn
+    elsif (defined $args{storage_duration} && ! defined $args{collect_frequency}) {
+        $config{step}      = 300 ;
+        $config{CDP}       = $args{storage_duration} / $config{step};
+        $config{heartbeat} = $config{step} * 2; 
+    }
+    #if both storage duration and frequency are defined, we generate heartbeat and CDP number
+    elsif (defined $args{collect_frequency} && defined $args{storage_duration}) {
+        $config{step}      = $args{collect_frequency};
+        $config{CDP}       = $args{storage_duration} / $config{step};
+        $config{heartbeat} = $config{step} * 2; 
+    }
+    else {
+        throw Kanopya::Exception::Internal(
+            error => 'A collect frequency and/or a storage duration must be available to TimeData'
+        );
+    }
+
+    return \%config;
+}
+
 =head2 _formatName
 
-B<Class>   : Public
-B<Desc>    : This method format a name argument for RRD
-B<args>    : None
-B<Return>  : $name
-B<Comment> : None
-B<throws>  : None
+    <Class>   : Private
+    <Desc>    : This method format a name argument for RRD
+    <args>    : None
+    <Return>  : $name
+    <Comment> : None
+    <throws>  : None
 
 =cut
 
