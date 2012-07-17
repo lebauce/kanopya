@@ -103,7 +103,7 @@ function showIndicatorGraph(curobj,indic_id,indic_name,indic_unit,start,stop, sp
         url : '/api/externalnode/' + node_id + '/getMonitoringData',
         contentType : 'application/json',
         data : JSON.stringify( {
-            indicators_id : [indic_id],
+            indicator_ids : [indic_id],
             historical : 1,
             start   : parseInt(start / 1000),
             end     : parseInt(stop / 1000)

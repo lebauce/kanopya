@@ -68,7 +68,7 @@ sub methods {
 
     Desc: call linked collector manager to retrieve indicators values for this node
     Args:
-        (required) \@indicators_id
+        (required) \@indicator_ids
         $time_span OR $start, $end
         Options : same as CollectorManager::RetrieveData()
 
@@ -79,14 +79,15 @@ sub methods {
 sub getMonitoringData {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, required => ['indicator_ids']);
     my $manager = $self->service_provider->getManager( manager_type => 'collector_manager' );
 
     # Construst indicators params as expected by CollectorManager
     my %indicators;
-    for my $indic_id (@{$args{indicators_id}}) {
+    for my $indic_id (@{$args{indicator_ids}}) {
         $indicators{$indic_id} = Indicator->get(id => $indic_id);
     }
-    delete $args{indicators_id};
+    delete $args{indicator_ids};
 
     my $data = $manager->retrieveData(
         nodelist    => [$self->externalnode_hostname],
