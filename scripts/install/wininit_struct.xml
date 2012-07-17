@@ -18,6 +18,8 @@
     <executor.conf template="executor.conf.tt">
       <datas logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>
     </executor.conf>
+    <aggregator.conf template="aggregator.conf.tt">
+    </aggregator.conf>
     <executor-log.conf template="executor-log.conf.tt">
         <datas logdir="log_directory"/>
     </executor-log.conf>
