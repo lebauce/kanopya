@@ -128,7 +128,6 @@ sub postrequisites {
     my $migr_state = $self->{context}->{cloudmanager_comp}->checkMigration(
         host               => $self->{context}->{vm},
         hypervisor_src     => $self->{context}->{src_hypervisor},
-#        hypervisor_dst     => $self->{context}->{host},
         hypervisor_cluster => $self->{context}->{cluster},
     );
 
