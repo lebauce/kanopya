@@ -100,6 +100,66 @@ sub finish {
     delete $self->{context}->{host};
     delete $self->{params}->{memory};
 }
+
+sub postrequisites {
+    my $self = shift;
+
+    my $scale_state = $self->{context}->{cloudmanager_comp}->checkScaleMemory (
+        host   => $self->{context}->{host},
+    );
+
+    $self->{context}->{cloudmanager_comp}->_getEntity->updateMemory(
+        host   => $self->{context}->{host},
+        memory => int($scale_state->{ram_current}/1024)
+    );
+
+    my $time = 0;
+    if($scale_state->{ram_current} == $scale_state->{ram_before}){
+
+        if(not defined $self->{params}->{time}) {
+            $self->{params}->{time} = time();
+        }
+
+        $time = time() - $self->{params}->{time} ;
+        $log->info("Checker Scale time = $time");
+    }else{
+       delete $self->{params}->{time};
+    }
+
+    my $precision = 0.05;
+
+    if( ($scale_state->{ram_current} > $self->{params}->{memory} * 1024 * ( 1 - $precision ))
+     && ($scale_state->{ram_current} < $self->{params}->{memory} * 1024 * ( 1 + $precision )) ) {
+
+        return 0;
+    }
+    elsif($time < 2*10) {
+        return 15;
+    }
+    else {
+        my $error = 'ScaleIn of vm <'.($self->{context}->{host}->getId()).'> : Failed. Current RAM is <'.($scale_state->{ram_current}).'>';
+        Message->send(
+             from    => 'EScaleMemoryHost',
+             level   => 'error',
+             content => $error,
+        );
+        throw Kanopya::Exception(error => $error);
+    }
+}
+
+sub _cancel {
+    my $self = shift;
+
+    my $scale_state = $self->{context}->{cloudmanager_comp}->checkScaleMemory (
+        host   => $self->{context}->{host},
+    );
+
+    $self->{context}->{cloudmanager_comp}->_getEntity->updateMemory(
+                                                             host   => $self->{context}->{host},
+                                                             memory => int($scale_state->{ram_current}/1024));
+
+    $log->info('Last mem update <'.($scale_state->{ram_current}).'>');
+}
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

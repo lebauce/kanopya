@@ -64,8 +64,6 @@ sub prerequisites {
    my $cluster = $self->{context}->{cluster};
    my $host_type = $cluster->getHostManager()->getHostType();
 
-   $log->info("#########<$host_type>############");
-
    if($host_type eq 'Virtual Machine') {
        my $host_manager_params = $cluster->getManagerParameters(manager_type => 'host_manager');
        my $cm = CapacityManagement->new(cluster_id => $cluster->getId());

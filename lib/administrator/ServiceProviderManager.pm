@@ -83,9 +83,13 @@ sub addParams {
 sub getParams {
     my $self = shift;
     my %args = @_;
+    
+    my $id = $self->getAttr(name => 'param_preset_id');
+    if(not defined $id) {
+        return {};
+    }
 
-    my $param_presets = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
-
+    my $param_presets = ParamPreset->get(id => $id);
     return $param_presets->load();
 }
 

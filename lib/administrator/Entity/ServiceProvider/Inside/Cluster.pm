@@ -339,8 +339,6 @@ sub create {
         }
     }
 
-    
-
     General::checkParams(args => \%params, required => [ 'managers' ]);
     General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
@@ -360,7 +358,7 @@ sub create {
     $log->debug("Final parameters after applying policies:\n" . Dumper(%params));
 
     my %composite_params;
-    for my $name ('managers', 'interfaces', 'components', 'billing_limits') {
+    for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
         if ($params{$name}) {
             $composite_params{$name} = delete $params{$name};
         }
@@ -409,6 +407,9 @@ sub applyPolicies {
         }
         elsif ($name eq 'billing_limits') {
             $self->configureBillingLimits(billing_limits => $value);
+        }
+        elsif ($name eq 'orchestration') {
+            $self->configureOrchestration(%$value);
         }
         else {
             $self->setAttr(name => $name, value => $value);
@@ -568,6 +569,123 @@ sub configureBillingLimits {
             );
         }
     }
+}
+
+=head2 configureOrchestration
+
+    desc :
+        Use the linked policy service provider and clone its orchestration data in $self
+
+=cut
+
+sub configureOrchestration {
+    my $self    = shift;
+    my %args    = @_;
+
+    return if (not defined $args{service_provider_id});
+
+    my $sp = Entity::ServiceProvider->get(id => $args{service_provider_id});
+
+    # Node metrics
+    my @nodemetriccombinations = $sp->nodemetric_combinations;
+    for my $nmc (@nodemetriccombinations) {
+        my %attrs = $nmc->getAttrs();
+        delete $attrs{nodemetric_combination_id};
+        $attrs{nodemetric_combination_service_provider_id} = $self->getId();
+        NodemetricCombination->new( %attrs );
+    }
+
+    # Cluster metrics and combinations
+    $self->_cloneOrchestrationCompositeData(
+        from            => $sp,
+        elem_name       => 'clustermetric',
+        composite_name  => 'aggregate_combination',
+    );
+
+    # Node conditions and rules
+    $self->_cloneOrchestrationCompositeData(
+        from            => $sp,
+        elem_name       => 'nodemetric_condition',
+        composite_name  => 'nodemetric_rule',
+    );
+
+    # Cluster conditions and rules
+    $self->_cloneOrchestrationCompositeData(
+        from            => $sp,
+        elem_name       => 'aggregate_condition',
+        composite_name  => 'aggregate_rule',
+    );
+}
+
+=head2 _cloneOrchestrationCompositeData
+
+    desc :
+        clone all <elems> from service provider <from> and add it to $self
+        do the same with <composites>
+        A composite has a formula build with elems id,
+        this formula is translated during cloning according to cloned elems ids
+
+=cut
+
+sub _cloneOrchestrationCompositeData {
+    my $self    = shift;
+    my %args    = @_;
+
+    my $elem_name   = $args{elem_name};
+    my $elem_class  = BaseDB::normalizeName($elem_name);
+    my $comp_name   = $args{composite_name};
+    my $comp_class  = BaseDB::normalizeName($comp_name);
+
+    my %id_mapper;
+    my $relationship;
+
+    $relationship = $elem_name . 's';
+    my @elems = $args{from}->$relationship;
+    for my $elem (@elems) {
+        my %attrs = $elem->getAttrs();
+        my $elem_id = delete $attrs{ $elem_name . '_id'};
+        $attrs{ $elem_name . '_service_provider_id' } = $self->getId();
+        my $clone_elem = $elem_class->new( %attrs );
+        $id_mapper{ $elem_id } = $clone_elem->getId();
+    }
+
+    $relationship = $comp_name . 's';
+    my @composites = $args{from}->$relationship;
+    for my $comp (@composites) {
+        my %attrs = $comp->getAttrs();
+        delete $attrs{ $comp_name . '_id'};
+        $attrs{ $comp_name . '_service_provider_id' } = $self->getId();
+        $attrs{ $comp_name . '_formula' } = $self->_translateFormula(
+            formula => $attrs{ $comp_name . '_formula' },
+            id_map  => \%id_mapper,
+        );
+        $comp_class->new( %attrs );
+    }
+}
+
+=head2 _translateFormula
+
+    desc : replaces id of a formula (used for metrics and rules) using an id translation map
+
+=cut
+
+sub _translateFormula {
+    my $self    = shift;
+    my %args    = @_;
+
+    my $formula = $args{formula};
+    my $id_map  = $args{id_map};
+
+    # Split id from formula
+    my @array = split(/(id\d+)/, $formula);
+    # replace each id by its translation id
+    for my $element (@array) {
+        if( $element =~ m/id(\d+)/)
+        {
+            $element = 'id' . $id_map->{$1};
+        }
+    }
+    return join('',@array);
 }
 
 =head2 update
@@ -1202,29 +1320,32 @@ sub setState {
 
 
 sub getNewNodeNumber {
-	my $self = shift;
-	my $nodes = $self->getHosts();
+    my $self = shift;
+    my $nodes = $self->getHosts();
 
-	# if no nodes already registered, number is 1
-	if(! keys %$nodes) { return 1; }
+    # if no nodes already registered, number is 1
+    if(! keys %$nodes) { return 1; }
 
-	my @current_nodes_number = ();
-	while( my ($host_id, $host) = each(%$nodes) ) {
-		push @current_nodes_number, $host->getNodeNumber();
-	}
-	@current_nodes_number = sort(@current_nodes_number);
-	$log->debug("Nodes number sorted: ".Dumper(@current_nodes_number));
+    my @current_nodes_number = ();
+    while( my ($host_id, $host) = each(%$nodes) ) {
+        push @current_nodes_number, $host->getNodeNumber();
+    }
 
-	my $counter = 1;
-	for my $number (@current_nodes_number) {
-		if("$counter" eq "$number") {
-			$counter += 1;
-			next;
-		} else {
-			return $counter;
-		}
-	}
-	return $counter;
+    # http://rosettacode.org/wiki/Sort_an_integer_array#Perl
+    @current_nodes_number =  sort {$a <=> $b} @current_nodes_number;
+    $log->debug("Nodes number sorted: " . Dumper(@current_nodes_number));
+
+    my $counter = 1;
+    for my $number (@current_nodes_number) {
+        if ("$counter" eq "$number") {
+            $counter += 1;
+            next;
+        } else {
+            return $counter;
+        }
+    }
+
+    return $counter;
 }
 
 =head2 getNodeState

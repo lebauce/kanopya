@@ -34,9 +34,18 @@ function DetailsTable(container_id, elem_id, opts) {
             dataType: 'json',
             success: $.proxy(function(data) { 
                 var table = this.table; 
-                for(key in this.fields) { 
-                    if(data.hasOwnProperty(key)) {
-                        this._buildAttribute(this.fields[key].label, data[key]);
+                for(key in this.fields) {
+                    var obj = data;
+                    var fields = key.split('.');
+                    for (var i = 0; obj && (i < fields.length - 1); i++) {
+                        obj = obj[fields[i]];
+                    }
+                    if (!obj) {
+                        continue;
+                    }
+                    var attr = fields[fields.length - 1];
+                    if(obj.hasOwnProperty(attr)) {
+                        this._buildAttribute(this.fields[key].label, obj[attr]);
                     }
                 }
             }, this) 
@@ -58,8 +67,15 @@ function DetailsTable(container_id, elem_id, opts) {
     
     this.container = $('#'+container_id);
     this.table = $('<table></table>');
-    this.url = '/api/' + opts.name + '/' + elem_id;
+    
+    var query = '';
+    $.each(opts.filters || {}, function (key, value) {
+        query += (query == '' ? '?' : '&') + key + '=' + value;
+    });
+
+    this.url = '/api/' + opts.name + '/' + elem_id + query;
     this.fields = opts.fields;
+
     this.actions = [];
     this._buildTable();
     

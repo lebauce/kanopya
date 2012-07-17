@@ -20,6 +20,7 @@ function servicesList (container_id, elem_id) {
         contentType : 'application/json',
         data        : JSON.stringify({ category : 'Cloudmanager' }),
         success     : function(data) {
+            ressources  = {};
             for (var i in data) if (data.hasOwnProperty(i)) {
                 ressources[data[i].pk]  = true;
             }
@@ -105,8 +106,9 @@ function servicesList (container_id, elem_id) {
                     policy_def[field].disable_filled = true;
                     policy_def[field].hide_filled    = true;
 
-                    if (! policy_def[field].composite)
+                    if (! policy_def[field].composite &&  policy_def[field].type != 'hidden') {
                         policy_def[field].is_mandatory   = true;
+                    }
 
                     service_def[field] = policy_def[field];
                 }
@@ -119,7 +121,7 @@ function servicesList (container_id, elem_id) {
         var service_opts = {
             title       : 'Instantiate a service',
             name        : 'cluster',
-            callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
+            callback    : function () { $(grid).trigger("reloadGrid"); }
         };
 
         var button = $("<button>", { id : 'instantiate_service_button', text : 'Instantiate a service'} ).button({
@@ -202,10 +204,9 @@ function loadServicesRessources (container_id, elem_id) {
         details : {
             tabs : [
                         { label : 'General', id : 'generalnodedetails', onLoad : nodedetailsaction },
-                        { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid, elem_id); } },
+                        { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid); } },
                         { label : 'monitoring', id : 'ressource_monitoring', onLoad : NodeIndicatorDetailsHistorical },
                         { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
-                        { label : 'Actions', id : 'actions', onLoad : function(cid, eid) { node_actions_tab(cid, eid, elem_id); } },
                     ],
             title : { from_column : 'externalnode_hostname' }
         },
@@ -230,6 +231,7 @@ function runScaleWorkflow(type, eid, spid) {
                         async       : false,
                         url         : '/api/serviceprovider/' + spid + '/getManager',
                         contentType : 'application/json',
+                        type        : 'POST',
                         data        : JSON.stringify({ manager_type : 'host_manager' }),
                         success     : function(hmgr) {
                             $.ajax({
@@ -302,6 +304,9 @@ function migrate(spid, eid) {
 }
 
 function nodedetailsaction(cid, eid) {
+    if (eid.indexOf('_') !== -1) {
+        eid = (eid.split('_'))[0];
+    }
     $.ajax({
         url     : '/api/node/' + eid + '?expand=host',
         success : function(data) {
@@ -334,13 +339,13 @@ function nodedetailsaction(cid, eid) {
                     label       : 'Scale Cpu',
                     icon        : 'arrowthick-2-n-s',
                     condition   : isVirtual,
-                    action      : function() { runScaleWorkflow("CPU", eid, data.service_provider_id); }
+                    action      : function() { runScaleWorkflow("CPU", data.host.pk, data.service_provider_id); }
                 },
                 {
                     label       : 'Scale Memory',
                     icon        : 'arrowthick-2-n-s',
                     condition   : isVirtual,
-                    action      : function() { runScaleWorkflow("Memory", eid, data.service_provider_id); }
+                    action      : function() { runScaleWorkflow("Memory", data.host.pk, data.service_provider_id); }
                 },
                 {
                     label       : 'Migrate',
@@ -362,7 +367,7 @@ function nodedetailsaction(cid, eid) {
 }
 
 // load network interfaces details grid for a node
-function node_ifaces_tab(cid, eid, elem_id) {
+function node_ifaces_tab(cid, eid) {
     var node;
     $.ajax({
         url     : '/api/node?node_id=' + eid,

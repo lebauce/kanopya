@@ -42,3 +42,7 @@
 .ui-accordion .ui-accordion-header {
     margin-top: 7px;
 }
+
+.custom_policy_step .ui-accordion-content {
+    max-height : 250px;
+}

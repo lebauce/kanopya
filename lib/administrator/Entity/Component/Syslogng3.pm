@@ -56,6 +56,7 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Kanopya::Config;
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -160,8 +161,10 @@ sub insertDefaultConfiguration {
     my %args = @_;
     
     # Retrieve admin ip
-    my $admin_ip = "0.0.0.0";
-    
+    my $config = Kanopya::Config::get('executor');
+    my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
+    my $admin_ip = $kanopya_cluster->getMasterNodeIp();
+
     # Conf to send all node logs to admin
     $self->{_dbix}->syslogng3_logs->populate([ 
 		{ syslogng3_log_params => [

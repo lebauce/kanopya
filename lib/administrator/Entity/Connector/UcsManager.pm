@@ -185,7 +185,7 @@ sub synchronize {
             $processormodel = Entity::Processormodel->new(
                                   processormodel_brand       => $cpu->{vendor},
                                   processormodel_name        => $cpu->{model},
-                                  processormodel_core_num    => $blade->{numOfCores},
+                                  processormodel_core_num    => $blade->{numOfCores} * 2,
                                   processormodel_clock_speed => $cpu->{speed},
                                   processormodel_l2_cache    => 1,
                                   processormodel_max_tdp     => 0,

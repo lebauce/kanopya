@@ -126,3 +126,8 @@ a.linkbutton {
 .gritter-title div {
    display: inline-block;
 }
+
+th {
+    text-align: left;
+    vertical-align: top;
+}

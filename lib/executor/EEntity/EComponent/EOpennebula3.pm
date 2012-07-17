@@ -139,6 +139,7 @@ sub migrateHost {
     return $src_hypervisor;
 }
 
+
 sub checkMigration {
     my ($self,%args) = @_;
 
@@ -146,7 +147,6 @@ sub checkMigration {
                          required => [
                             'host',
                             'hypervisor_src',
-                            'hypervisor_dst',
                             'hypervisor_cluster'
     ]);
 
@@ -155,7 +155,6 @@ sub checkMigration {
                                                     ip_destination => $masternodeip);
 
     my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
-    my $hypervisor_host_name = $args{hypervisor_dst}->getAttr(name=>'host_hostname');
 
     my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
     my $result = $masternode_econtext->execute(command => $command);
@@ -172,17 +171,12 @@ sub checkMigration {
     }
 
     my $state = $hxml->{LCM_STATE};
-    $log->info("State = $state ; CURRENT_H = $hypervisor_migr ; DEST_H = $hypervisor_host_name");
 
-    if ($state == 3 && ($hypervisor_migr eq $hypervisor_host_name )) {
-        $log->debug("Apply VLAN on the source hypervisor");
+    return { state => $state, hypervisor => $hypervisor_migr };
 
         # $self->propagateVLAN(host       => $args{host},
         #                      hypervisor => $args{hypervisor_src},
         #                      delete     => 1);
-        return 1;
-    }
-    return 0;
 }
 
 # execute memory scale in
@@ -201,7 +195,66 @@ sub scale_memory {
 
     $self->getEContext->execute(command => $command);
 
-    return $self->_getEntity()->updateMemory(%args);
+    # Memroy scale checked in post requisite before saving in DB
+    # return $self->_getEntity()->updateMemory(%args);
+}
+
+
+
+sub restoreHost {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['hypervisor_host_id']);
+    # Option  memory, hypervisor, resubmit
+    my $host_name = Entity::Host->get(id => $args{hypervisor_host_id})->host_hostname;
+    my $vms = $self->_getEntity
+                   ->getVmsFromHypervisorHostId(
+                        hypervisor_host_id => $args{hypervisor_host_id}
+                     );
+
+
+    for my $vm (@{$vms}) {
+
+        # Get vm id in opennebula
+        my $host_id = $self->getVmIdFromHostId(host_id => $vm->getAttr(name => "host_id"));
+        my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
+        my $result  = $self->getEContext->execute(command => $command);
+        my $hxml = XMLin($result->{stdout});
+        my $history = $hxml->{HISTORY_RECORDS}->{HISTORY};
+        my $hypervisor;
+
+        if (ref $history eq 'HASH') {
+            $hypervisor = $history->{HOSTNAME};
+        }
+        else {
+            $hypervisor =  $history->[-1]->{HOSTNAME};
+        }
+
+        my $state  = $hxml->{LCM_STATE};
+        my $memory = $hxml->{MEMORY} * 1024;
+
+        $log->info('vm '.$hxml->{ID}.' hv '.$hypervisor.' state '.$state);
+        if($state == 3) {
+            if (defined $args{hypervisor}) {
+                if(!($hypervisor eq $host_name)){
+                   $log->info("VM running on a wrong hypervisor");
+                }
+            }
+           if (defined $args{memory}){
+                if( $memory != $vm->getHostRAM()){
+                    $log->info("Memory one = $memory VS db = ".($vm->getHostRAM()));
+                    $vm->setAttr(name => 'host_ram', value => $memory);
+                    $vm->save();
+                }
+           }
+        }
+        else{
+            if(defined $args{resubmit}){
+                $log->info("onevm resubmit $hxml->{ID}");
+                my $command = $self->_oneadmin_command(command => "onevm resubmit $hxml->{ID}");
+                my $result  = $self->getEContext->execute(command => $command);
+            }
+        }
+    }
 }
 
 #execute cpu scale in

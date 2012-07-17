@@ -17,7 +17,7 @@ $('.widget').live('widgetLoadContent',function(e, obj){
 
 function initNodeIndicatorWidget (widget_elem, sp_id, node_id) {
     var indic_list = widget_elem.find('.indicator_list');
-    
+
     indic_list.change(function () {
         showIndicatorGraph(
                 this,
@@ -51,7 +51,7 @@ function setIndicDatePicker(widget_div) {
     var now = new Date();
     var start = new Date();
     start.setDate(now.getDate() - 1);
-    
+
     widget_div.find('.graph_start_time').datetimepicker({
         dateFormat: 'mm-dd-yy'
     }).datetimepicker('setDate', start);
@@ -103,7 +103,7 @@ function showIndicatorGraph(curobj,indic_id,indic_name,indic_unit,start,stop, sp
         url : '/api/externalnode/' + node_id + '/getMonitoringData',
         contentType : 'application/json',
         data : JSON.stringify( {
-            indicators_id : [indic_id],
+            indicator_ids : [indic_id],
             historical : 1,
             start   : parseInt(start / 1000),
             end     : parseInt(stop / 1000)
@@ -187,7 +187,7 @@ function nodeTimedGraph(graph_lines, graph_labels, min, max, label, ylabel, div_
             showMarker: false,
             trendline: {
                 color : '#555555',
-                show  : $('#trendlineinput').attr('checked') ? true : false, 
+                show  : $('#trendlineinput').attr('checked') ? true : false,
             }
         },
         legend: {
@@ -226,7 +226,7 @@ function nodeTimedGraph(graph_lines, graph_labels, min, max, label, ylabel, div_
             show: true,
             // formatString: '<p class="cluster_combination_tooltip">Date: %s<br /> value: %f</p>',
         }
-        
+
     });
 
     // Attach resize event handlers

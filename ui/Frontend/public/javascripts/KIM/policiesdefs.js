@@ -385,5 +385,34 @@ var policies = {
             serialize   : serializeTime,
             is_mandatory: 0
         }
+    },
+    'orchestration' : {
+        policy_name : {
+            step         : 'Policy',
+            label        : 'Policy name',
+            type         : 'text',
+            is_mandatory : 1,
+        },
+        policy_desc : {
+            step         : 'Policy',
+            label        : 'Policy description',
+            type         : 'textarea',
+            is_mandatory : 0,
+        },
+        policy_type : {
+            step         : 'Policy',
+            label        : 'Policy type',
+            type         : 'hidden',
+            value        : 'orchestration',
+            is_mandatory : 1,
+        },
+        monitoring : {
+            step         : 'Monitoring',
+            type         : 'hidden',
+        },
+        rules : {
+            step         : 'Rules',
+            type         : 'hidden',
+        }
     }
 }

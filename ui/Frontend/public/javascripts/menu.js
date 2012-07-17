@@ -72,16 +72,24 @@ function add_menutree(container, label, menu_info, elem_id) {
     var sublevel = $('<ul>');
     sublevel.hide();
     $.getJSON(menu_info.level2_url+'?service_template_id='+elem_id, function (data) {
+        var n   = 0;
         for(index in data) {
             if (menu_info.level2_filter == null || menu_info.level2_filter(data[index]) === true) {
+                ++n;
                 add_menu(sublevel,data[index].cluster_name,menu_info.submenu,data[index].pk);
                 //sublevel.append($('<li>'+data[index].cluster_name+'</li>'));
             }
+        }
+        if (n === 0) {
+            $(link_li).remove();
+        } else {
+            $(link_li).show();
         }
     });
     
     link_li.append(link_a);
     link_li.append(sublevel);
+    $(link_li).hide();
     container.append(link_li);
 }
 
@@ -137,6 +145,10 @@ function build_submenu(container, view_id, links, elem_id) {
     view.tabs({});
 
     for (var smenu in links) {
+        if (links[smenu].hidden) {
+            continue;
+        }
+
         var id_suffix = elem_id ? elem_id : 'static';
 
         var content_id = 'content_' + links[smenu]['id'] + '_' + id_suffix;

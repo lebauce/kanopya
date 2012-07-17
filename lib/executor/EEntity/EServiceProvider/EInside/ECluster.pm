@@ -93,10 +93,15 @@ sub create {
     }
 
     # Use the method for policy applying to configure manager, components, and interfaces.
-    $self->applyPolicies(presets => { components        => $args{components},
-                                      interfaces        => $args{interfaces},
-                                      managers          => $args{managers},
-                                      billing_limits    => $args{billing_limits} });
+    $self->applyPolicies(
+        presets => {
+            components      => $args{components},
+            interfaces      => $args{interfaces},
+            managers        => $args{managers},
+            billing_limits  => $args{billing_limits},
+            orchestration   => $args{orchestration},
+        }
+    );
 
     # Automatically add the admin interface if not exists
     my $adminrole = Entity::InterfaceRole->find(hash => { interface_role_name => 'admin' });

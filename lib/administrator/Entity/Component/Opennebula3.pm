@@ -148,6 +148,25 @@ sub checkHostManagerParams {
     General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
 }
 
+sub checkScaleMemory {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $node = $args{host}->node;
+
+    my $indicator_oid = 'XenTotalMemory'; # Memory Total
+    my $indicator_id  = Indicator->find(hash => {'indicator_oid'  => $indicator_oid})->getId();
+
+    my $raw_data = $node->getMonitoringData(raw => 1, time_span => 600, indicator_ids => [$indicator_id]);
+
+    $log->info(Dumper $raw_data);
+    my $ram_current = pop @{$raw_data->{$indicator_oid}};
+    my $ram_before  = pop @{$raw_data->{$indicator_oid}};
+
+    return {ram_current => $ram_current, ram_before => $ram_before};
+}
+
 =head2 getPolicyParams
 
 =cut
@@ -159,8 +178,8 @@ sub getPolicyParams {
     General::checkParams(args => \%args, required => [ 'policy_type' ]);
 
     if ($args{policy_type} eq 'hosting') {
-        return [ { name => 'core',     label => 'CPU number', pattern => '^[0-9]+$' },
-                 { name => 'ram',      label => 'RAM amount', pattern => '^[0-9]+$' },
+        return [ { name => 'core',     label => 'Initial CPU number', pattern => '^[0-9]+$' },
+                 { name => 'ram',      label => 'Initial RAM amount', pattern => '^[0-9]+$' },
                  { name => 'ram_unit', label => 'RAM unit',   values => [ 'M', 'G' ] } ];
     }
     return [];
@@ -245,7 +264,7 @@ sub getConf {
             };
         }
     }
-			
+
     $conf{container_accesses}       = \@available_accesses;
     $conf{opennebula3_repositories} = \@repositories;
     $conf{opennebula3_hypervisors}  = \@hypervisors;

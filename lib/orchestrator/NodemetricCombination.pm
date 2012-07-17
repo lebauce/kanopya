@@ -44,12 +44,28 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getAttr {
+    my $self = shift;
+    my %args = @_;
+
+    if ($args{name} eq "unit") {
+        return $self->getUnit();
+    }
+    else {
+        return $self->SUPER::getAttr(%args);
+    }
+}
+
 sub methods {
     return {
         'toString'  => {
             'description' => 'toString',
             'perm_holder' => 'entity'
-        }
+        },
+        'getUnit'   => {
+            'description' => 'getUnit',
+            'perm_holder' => 'entity',  
+        },
     }
 }
 
@@ -227,11 +243,25 @@ sub getUnit {
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
+    my $ref_element;
+    my $are_same_units = 0;
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
             $element = $collector->getIndicator(id => substr($element,2))->getAttr(name => 'indicator_unit') || '?';
+            if (not defined $ref_element) {
+                $ref_element = $element;
+            } else {
+                if ($ref_element eq $element) {
+                    $are_same_units = 1;
+                } else {
+                    $are_same_units = 0;
+                }
+            }
         }
+    }
+    if ($are_same_units == 1) {
+        @array = $ref_element;
     }
     return join('',@array);
 }

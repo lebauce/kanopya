@@ -50,7 +50,12 @@ sub userBilling {
                    );
 
     for my $cluster (@clusters) {
-        clusterBilling($user, $cluster, $from, $to);
+        eval {
+            clusterBilling($user, $cluster, $from, $to);
+        };
+        if ($@) {
+            $log->warn("Failed to generate billing for " . $cluster->cluster_name . "\n" . $@);
+        }
     }
 };
 

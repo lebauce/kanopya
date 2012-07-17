@@ -3,6 +3,7 @@ require('jquery/jquery.validate.js');
 require('jquery/jquery.form.wizard.js');
 require('KIM/policiesdefs.js');
 require('KIM/policiesform.js');
+require('KIM/orchestration_policy.js');
 
 function load_policy_content (container_id) {
     var policy_type = container_id.split('_')[1];
@@ -20,7 +21,11 @@ function load_policy_content (container_id) {
 
         button.bind('click', function() {
             policy_opts.fields  = jQuery.extend(true, {}, policies[policy_type]);
-            new PolicyForm(policy_opts).start();
+            if (policy_type != 'orchestration') {
+                new PolicyForm(policy_opts).start();
+            } else {
+                addOrchestrationPolicy(policy_opts, grid);
+            }
         });
         $('#' + cid).append(button);
     };
@@ -33,7 +38,8 @@ function load_policy_content (container_id) {
         colNames: [ 'ID', 'Name', 'Description' ],
         colModel: [ { name:'policy_id',   index:'policy_id',   width:60, sorttype:"int", hidden:true, key:true},
                     { name:'policy_name', index:'policy_name', width:300 },
-                    { name:'policy_desc', index:'policy_desc', width:500 } ]
+                    { name:'policy_desc', index:'policy_desc', width:500 } ],
+        details: { onSelectRow : load_policy_details }
     } );
 
     createAddPolicyButton(container_id, grid);
@@ -79,5 +85,10 @@ function load_policy_details (elem_id, row_data, grid_id) {
         callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
     };
 
-    new PolicyForm(policy_opts).start();
+    // Special management for Orchestration policy
+    if (policy.policy_type == 'orchestration') {
+        load_orchestration_policy_details(policy_opts, flattened_policy, grid_id);
+    } else {
+        new PolicyForm(policy_opts).start();
+    }
 }

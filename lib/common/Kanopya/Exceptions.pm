@@ -158,11 +158,11 @@ Kanopya::Exception->Trace(0);
 # Override method called when exception is stringified
 sub Kanopya::Exception::full_message {
      my $self = shift;
-    
+
     my $except_string = "## EXCEPTION : " . $self->description . " ##";
     $except_string .= "\n" . $self->message if ($self->message ne "");
 
-    # Show fields    
+    # Show fields
     for my $field ( $self->Fields ) {
         $except_string .= ("\n=> " . $field . ": '" . $self->$field . "'") if (defined $self->$field);
     }
@@ -183,7 +183,7 @@ This module is a part of Administrator package so refers to Administrator config
 
 =head1 DEPENDENCIES
 
-This module depends of 
+This module depends of
 
 =over
 

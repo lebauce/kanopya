@@ -158,6 +158,7 @@ var PolicyForm = (function() {
                 }
             }
         }
+
         return added;
     }
 
@@ -174,17 +175,18 @@ var PolicyForm = (function() {
             this.name       = 'form_' + args.name;
         }
 
-        this.id             = args.id;
-        this.callback       = args.callback     || $.noop;
-        this.fields         = args.fields       || {};
-        this.values         = args.values       || {};
-        this.title          = args.title        || this.name;
-        this.skippable      = args.skippable    || false;
-        this.beforeSubmit   = args.beforeSubmit || $.noop;
-        this.cancelCallback = args.cancel       || $.noop;
-        this.error          = args.error        || $.noop;
-
-        this.triggeredFields = {};
+        this.id                 = args.id;
+        this.callback           = args.callback         || $.noop;
+        this.fields             = args.fields           || {};
+        this.values             = args.values           || {};
+        this.title              = args.title            || this.name;
+        this.skippable          = args.skippable        || false;
+        this.beforeSubmit       = args.beforeSubmit     || $.noop;
+        this.cancelCallback     = args.cancel           || $.noop;
+        this.error              = args.error            || $.noop;
+        this.dialogParams       = args.dialogParams     || {};
+        this.formwizardParams   = args.formwizardParams || {};
+        this.triggeredFields    = {};
     }
 
     PolicyForm.prototype.mustDisableField = function(elementName, element) {
@@ -598,7 +600,7 @@ var PolicyForm = (function() {
                                        '/api/' + this.fields[name].entity + '/' + selected_id + '/' + this.fields[name].values_provider.func,
                                        this.fields[name].values_provider.args);
         }
-        
+
         /* Complete the values hash with the entity attributes */
         var datavalues = jQuery.extend(datavalues, this.ajaxCall('GET', '/api/' + this.fields[name].entity + '/' + selected_id));
 
@@ -632,7 +634,7 @@ var PolicyForm = (function() {
                 }
 
                 if (! (that.fields[select_name].disabled)) {
-                    $(this).removeAttr('disabled');    
+                    $(this).removeAttr('disabled');
                 }
                 if (datavalues[select_name]) {
                     /*
@@ -708,7 +710,7 @@ var PolicyForm = (function() {
             this.findContainer(step).find('textarea').each(function() {
                 $(this).val('');
                 if (! (that.fields[$(this).attr('name')].disabled)) {
-                    $(this).removeAttr('disabled');    
+                    $(this).removeAttr('disabled');
                 }
                 if (datavalues[$(this).attr('name')]) {
                     $(this).val(datavalues[$(this).attr('name')]);
@@ -1060,14 +1062,15 @@ var PolicyForm = (function() {
             ++i;
         });
         $(this.content).children("div#" + this.name + "_steps").html(text);
+
+        $(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
         if ($(this.content).height() > $(window).innerHeight() - 200) {
             $(this.content).css('height', $(window).innerHeight() - 200);
         }
     }
 
     PolicyForm.prototype.handleBeforeSubmit = function(arr, $form, opts) {
-        var b   = this.beforeSubmit(arr, $form, opts, this) || true;
-
+        var b   = this.beforeSubmit(arr, $form, opts, this);
         if (b) {
             var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
             buttonsdiv.find('button').each(function() {
@@ -1079,7 +1082,7 @@ var PolicyForm = (function() {
 
     PolicyForm.prototype.startWizard = function() {
         var that = this;
-        $(this.form).formwizard({
+        var formwizard_params = {
             disableUIStyles     : true,
             validationEnabled   : true,
             validationOptions   : {
@@ -1098,7 +1101,7 @@ var PolicyForm = (function() {
                     // Ugly but must delete all DOM elements
                     // but formwizard is using the element after this
                     // callback, so we delay the deletion
-                    setTimeout($.proxy(function() { this.closeDialog(); }, this), 10);
+                    this.closeDialog();
                     this.callback(data);
                 }, this),
                 error           : $.proxy(function(data) {
@@ -1114,7 +1117,11 @@ var PolicyForm = (function() {
                     this.error(data);
                 }, this)
             }
-        });
+        };
+
+        $(this.form).formwizard(
+                $.extend(true, formwizard_params, this.formwizardParams)
+        );
 
         var steps = $(this.form).children("table");
         if (steps.length > 1) {
@@ -1149,15 +1156,18 @@ var PolicyForm = (function() {
                 this.callback();
             }, this);
         }
-        this.content.dialog({
-            title           : this.title,
-            modal           : true,
-            resizable       : false,
-            draggable       : false,
-            width           : 500,
-            buttons         : buttons,
-            closeOnEscape   : false,
-        });
+        var dialog_default_params = {
+                title           : this.title,
+                modal           : true,
+                resizable       : false,
+                draggable       : false,
+                width           : 500,
+                buttons         : buttons,
+                closeOnEscape   : false,
+        };
+        this.content.dialog(
+                $.extend({}, dialog_default_params, this.dialogParams)
+        );
         $('.ui-dialog-titlebar-close').remove();
     }
 
@@ -1170,19 +1180,20 @@ var PolicyForm = (function() {
         var state = $(this.form).formwizard("state");
         if (state.isFirstStep) {
             this.cancel();
+        } else {
+            $(this.form).formwizard("back");
+            this.disableCurrentStepFilled();
         }
-        $(this.form).formwizard("back");
-
-        this.disableCurrentStepFilled();
     }
 
     PolicyForm.prototype.closeDialog = function() {
-        this.removeDynamicFields();
-
-        $(this).dialog("close");
-        $(this).dialog("destroy");
-        $(this.form).formwizard("destroy");
-        $(this.content).remove();
+        setTimeout($.proxy(function() {
+            this.removeDynamicFields();
+            $(this).dialog("close");
+            $(this).dialog("destroy");
+            $(this.form).formwizard("destroy");
+            $(this.content).remove();
+        }, this), 10);
     }
 
     PolicyForm.prototype.validateForm = function () {

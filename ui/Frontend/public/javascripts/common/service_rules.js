@@ -1,20 +1,41 @@
 require('common/grid.js');
 require('common/workflows.js');
+require('common/formatters.js');
 
 var rulestates = ['enabled','disabled'];
 var comparators = ['<','>'];
 
     ////////////////////////NODES AND METRICS MODALS//////////////////////////////////
 function nodemetricconditionmodal(elem_id, editid) {
+    var combinationsWithUnits = {};
+
+    function combiUnits(combinationId) {
+        
+        $.ajax({
+            url: '/api/nodemetriccombination/' + combinationId + '?expand=unit',
+            async   : false,
+            success: function(answer) {
+                $(answer).each(function(row) {
+                    combinationUnit = answer.unit;
+                    combinationLabel = answer.nodemetric_combination_label;
+                    //combinationsWithUnits[combinationLabel + '(' + combinationUnit + ')'] = answer.pk;
+                    combi = combinationLabel + ' (' + combinationUnit + ')';
+                });
+            }
+        });
+        return combi;
+        }
+    
     var service_fields  = {
         nodemetric_condition_label    : {
             label   : 'Name',
             type    : 'text',
         },
         nodemetric_condition_combination_id :{
-            label   : 'Combination',
-            display : 'nodemetric_combination_label',
-            cond    : '?nodemetric_combination_service_provider_id=' + elem_id
+            label       : 'Combination',
+            display     : 'nodemetric_combination_id',
+            cond        : '?nodemetric_combination_service_provider_id=' + elem_id,
+            formatter   : combiUnits,
         },
         nodemetric_condition_comparator    : {
             label   : 'Comparator',
@@ -24,6 +45,7 @@ function nodemetricconditionmodal(elem_id, editid) {
         nodemetric_condition_threshold: {
             label   : 'Threshold',
             type    : 'text',
+            //value   : CombinationUnit,
         },
         nodemetric_condition_service_provider_id:{
             type: 'hidden',
@@ -115,7 +137,7 @@ function createNodemetricRule(container_id, elem_id) {
             $("div#waiting_default_insert").dialog("destroy");
         },
         callback    : function() {
-            $('#service_ressources_aggregate_rules_' + elem_id).trigger('reloadGrid');
+            $('#service_ressources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
         }
     };
 
@@ -187,15 +209,32 @@ function createNodemetricRule(container_id, elem_id) {
 };
 
 function serviceconditionmodal(elem_id, editid) {
+    
+    function combiUnits(combinationId) {
+        $.ajax({
+            url: '/api/aggregatecombination/' + combinationId + '?expand=unit',
+            async   : false,
+            success: function(answer) {
+                $(answer).each(function(row) {
+                    combinationUnit = answer.unit;
+                    combinationLabel = answer.aggregate_combination_label;
+                    combi = combinationLabel + ' (' + combinationUnit + ')';
+                });
+            }
+        });
+        return combi;
+    }
+    
     var service_fields  = {
         aggregate_condition_label    : {
             label   : 'Name',
             type    : 'text',
         },
-        aggregate_combination_id    :{
-            label   : 'Combination',
-            display : 'aggregate_combination_label',
-            cond    : '?aggregate_combination_service_provider_id=' + elem_id
+        aggregate_combination_id :{
+            label       : 'Combination',
+            display     : 'aggregate_combination_id',
+            cond        : '?aggregate_combination_service_provider_id=' + elem_id,
+            formatter   : combiUnits,
         },
         comparator  : {
             label   : 'Comparator',
@@ -271,19 +310,6 @@ function createServiceCondition(container_id, elem_id) {
 };
 
 function createServiceRule(container_id, elem_id) {
-        
-    var loadServicesMonitoringGridId = 'service_rule_creation_condition_listing_' + elem_id;
-    create_grid( {
-        url: '/api/nodemetriccondition',
-        content_container_id: 'service_condition_listing_for_service_rule_creation',
-        grid_id: loadServicesMonitoringGridId,
-        colNames: [ 'id', 'name' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
-            { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 90 },
-        ],
-    } );
-
     var service_fields  = {
         aggregate_rule_label    : {
             label   : 'Name',
@@ -313,6 +339,9 @@ function createServiceRule(container_id, elem_id) {
         fields      : service_fields,
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
+        },
+        callback    : function() {
+            $('#service_ressources_aggregate_rules_' + elem_id).trigger('reloadGrid');
         }
     };
 
@@ -326,7 +355,7 @@ function createServiceRule(container_id, elem_id) {
     $(function() {
     var availableTags = new Array();
     $.ajax({
-        url: '/api/aggregatecondition?dataType=jqGrid',
+        url: '/api/aggregatecondition?aggregate_condition_service_provider_id=' + elem_id + '&dataType=jqGrid',
         async   : false,
         success: function(answer) {
                     $(answer.rows).each(function(row) {
@@ -385,7 +414,7 @@ function createServiceRule(container_id, elem_id) {
 };
     ////////////////////////END OF : NODES AND METRICS MODALS//////////////////////////////////
 
-function loadServicesRules (container_id, elem_id, ext) {
+function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     var container = $("#" + container_id);
 
     ext = ext || '';
@@ -434,18 +463,27 @@ function loadServicesRules (container_id, elem_id, ext) {
         content_container_id: 'node_accordion_container',
         grid_id: loadServicesMonitoringGridId,
         grid_class: 'service_ressources_nodemetric_rules',
-        colNames: [ 'id', 'name', 'enabled', 'description', 'formula' ],
-        afterInsertRow: function(grid, rowid) {
+        afterInsertRow: function(grid, rowid, rowdata) {
+            // Formula
             var id  = $(grid).getCell(rowid, 'pk');
             var url = '/api/nodemetricrule/' + id + '/toString';
             setCellWithCallMethod(url, grid, rowid, 'nodemetric_rule_formula');
+
+            // Workflow name
+            if (rowdata.workflow_def_id) {
+                setCellWithRelatedValue(
+                        '/api/workflowdef/' + rowdata.workflow_def_id,
+                        grid, rowid, 'workflow_def_id', 'workflow_def_name');
+            }
         },
+        colNames: [ 'id', 'name', 'enabled', 'formula', 'description', 'trigger' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
             { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60,},
-            { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 120 },
             { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 120 },
+            { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 120 },
+            { name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
         ],
         details: {
             tabs : [
@@ -469,7 +507,7 @@ function loadServicesRules (container_id, elem_id, ext) {
                             require('common/workflows.js');
                             createWorkflowRuleAssociationButton(cid, eid, 1, elem_id);
                         }},
-                        { label : 'Nodes', id : 'nodes', onLoad : function(cid, eid) { rule_nodes_tab(cid, eid, elem_id); } },
+                        { label : 'Nodes', id : 'nodes', onLoad : function(cid, eid) { rule_nodes_tab(cid, eid, elem_id); }, hidden : mode_policy },
                     ],
             title : { from_column : 'nodemetric_rule_label' }
         },
@@ -512,6 +550,7 @@ function loadServicesRules (container_id, elem_id, ext) {
         },
     } );
     createServiceCondition('service_accordion_container', elem_id);
+
     // Display services rules :
     $("<p>").appendTo('#service_accordion_container');
     var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
@@ -521,19 +560,28 @@ function loadServicesRules (container_id, elem_id, ext) {
         grid_class: 'service_ressources_aggregate_rules',
         content_container_id: 'service_accordion_container',
         grid_id: loadServicesMonitoringGridId,
-        colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description'],
+        colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description', 'trigger'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
              {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,},
-             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90, formatter : lastevalStateFormatter},
+             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90, formatter : lastevalStateFormatter, hidden:mode_policy},
              {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
              {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
+             {name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
            ],
-        afterInsertRow: function(grid, rowid) {
+        afterInsertRow: function(grid, rowid, rowdata) {
+            // Formula
             var id  = $(grid).getCell(rowid, 'pk');
             var url = '/api/aggregaterule/' + id + '/toString';
             setCellWithCallMethod(url, grid, rowid, 'aggregate_rule_formula');
+
+            // Workflow name
+            if (rowdata.workflow_def_id) {
+                setCellWithRelatedValue(
+                        '/api/workflowdef/' + rowdata.workflow_def_id,
+                        grid, rowid, 'workflow_def_id', 'workflow_def_name');
+            }
         },
         details : {
             tabs    : [
@@ -554,7 +602,6 @@ function loadServicesRules (container_id, elem_id, ext) {
                                     }
                         }
                     });
-                    require('KIO/workflows.js');
                     createWorkflowRuleAssociationButton(cid, eid, 2, elem_id);
                }},
             ],

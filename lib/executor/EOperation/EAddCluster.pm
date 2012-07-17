@@ -111,6 +111,7 @@ sub execute {
                                         components      => $self->{params}->{components},
                                         interfaces      => $self->{params}->{interfaces},
                                         billing_limits  => $self->{params}->{billing_limits},
+                                        orchestration   => $self->{params}->{orchestration},
                                         erollback       => $self->{erollback});
 
     $log->info("Cluster <" . $self->{context}->{cluster}->getAttr(name => "cluster_name") . "> is now added");

@@ -69,19 +69,24 @@ sub connect {
 
     my $device = '/dev/disk/by-path/ip-' . $ip . ':' . $port . '-iscsi-' . $target . '-' . $lun;
 
+    my $result;
     my $retry = 20;
-    while (! -e $device) {
-        if ($retry <= 0) {
-            my $errmsg = "IsciContainer->mount: unable to find waited device<$device>";
-            $log->error($errmsg);
+    do {
+        $result = $args{econtext}->execute(command => "file $device");
 
-            throw Kanopya::Exception::Execution($errmsg);
+        if ($result->{exitcode} != 0) {
+            if ($retry <= 0) {
+                my $errmsg = "IsciContainer->mount: unable to find waited device<$device>";
+                $log->error($errmsg);
+
+                throw Kanopya::Exception::Execution($errmsg);
+            }
+            $retry -= 1;
+
+            $log->info("Device not found yet (<$device>), sleeping 1s and retry.");
+            sleep 1;
         }
-        $retry -= 1;
-
-        $log->info("Device not found yet (<$device>), sleeping 1s and retry.");
-        sleep 1;
-    }
+    } while ($result->{exitcode} != 0);
 
     $log->info("Device found (<$device>).");
     $self->setAttr(name => 'device_connected', value => $device);

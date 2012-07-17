@@ -73,10 +73,10 @@ sub run {
         # Check all nodes services availability
         my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
 
-        $log->debug('Check service availability for ' . scalar(@clusters) . ' clusters...');
+        $log->info('Check service availability for ' . scalar(@clusters) . ' clusters...');
         foreach my $cluster (@clusters) {
 
-            $log->debug('Check service availability for cluster <' . $cluster->cluster_name . '>.');
+            $log->debug('Check service availability for cluster : ' . $cluster->cluster_name . '.');
             my $nodes = $cluster->getHosts();
 
             my $services_available = 1;
@@ -92,29 +92,26 @@ sub run {
                 };
 
                 my ($hoststate, $hosttimestamp) = $ehost->getState;
-                
+
                 if (! $pingable and $hoststate eq 'up') {
-                    my $msg = "Node <" . $node->host_hostname . "> unreachable in cluster <" . $cluster->cluster_name . ">";
+                    my $msg = "Node " . $node->host_hostname . " unreachable in cluster :" . $cluster->cluster_name;
                     $log->info($msg);
 
-                    Message->send(
-                        from    => 'StateManager',
-                        level   => 'info',
-                        content => $msg
-                    );
+                    Message->send(from => 'StateManager', level => 'info', content => $msg);
 
                     # Set the host and node states to broken
                     $ehost->setState(state => 'broken');
                     $ehost->setNodeState(state => 'broken');
-
                     $cluster->setState(state => 'warning');
+
                     $adm->{db}->txn_commit;
                     next;
                 }
-
                 elsif ($pingable and $hoststate eq 'broken') {
                     # Host has been repaired
-                    $ehost->setState(state => $ehost->getPrevState());
+                    my ($prevstate, $prevtimestamp) = $ehost->getPrevState;
+
+                    $ehost->setState(state => $prevstate);
                 }
 
                 # Then check the node component availability
@@ -127,14 +124,15 @@ sub run {
                     $log->debug("Check the availability of the component : " . $component_name);
 
                     if (! $ecomponent->isUp(host => $ehost, cluster => $cluster)) {
-                        my $msg = "A component <" . $component_name .
-                                  "> is not available on node <" . $node->host_hostname .
-                                  "> in cluster <" . $cluster->cluster_name . ">";
+                        my $msg = "A component (" . $component_name .
+                                  ") is not available on node (" . $node->host_hostname .
+                                  ") in cluster (" . $cluster->cluster_name . ")";
                         $log->info($msg);
 
                         Message->send(from => 'StateManager', level => 'info', content => $msg);
 
                         $node_available = 0;
+                        $services_available = 0;
                         last;
                     }
                 }
@@ -143,7 +141,6 @@ sub run {
                     # Set the node state to broken
                     $ehost->setNodeState(state => 'broken');
                     $cluster->setState(state => 'warning');
-
                     $adm->{db}->txn_commit;
                     next;
                 }
@@ -151,7 +148,12 @@ sub run {
                     # Set the node is repaired
                     $ehost->setNodeState(state => 'in');
                 }
+
+                $adm->{db}->txn_commit;
             }
+
+            $adm->{db}->txn_begin;
+
             my ($clusterstate, $clustertimestamp) = $cluster->getState;
             if ($services_available and $clusterstate eq 'warning') {
                 # Set the cluster as repaired
@@ -160,7 +162,7 @@ sub run {
 
             $adm->{db}->txn_commit;
        }
-       sleep 10;
+       sleep 20;
    }
 
    Message->send(from => 'StateManager', level => 'warning', content => "Kanopya State Manager stopped");

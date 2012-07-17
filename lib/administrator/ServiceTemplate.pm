@@ -78,7 +78,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-our $POLICY_TYPES = ['hosting', 'storage', 'network', 'scalability', 'system', 'billing'];
+our $POLICY_TYPES = ['hosting', 'storage', 'network', 'scalability', 'system', 'billing', 'orchestration'];
 
 
 sub new {

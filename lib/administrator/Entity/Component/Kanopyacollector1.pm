@@ -145,6 +145,7 @@ sub retrieveData {
                                                 start       => $args{start},
                                                 end         => $args{end},
                                                 historical  => $args{historical},
+                                                raw         => $args{raw},
                                                 );
                 $monitored_values{$node} = $monitored_values{$node} ? { %{$monitored_values{$node}}, %{$data} } :  $data;
             };
@@ -199,7 +200,7 @@ sub getIndicators {
 =cut
 
 sub getIndicator {
-    my ($self, %args) = @_; 
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['id']);
 
