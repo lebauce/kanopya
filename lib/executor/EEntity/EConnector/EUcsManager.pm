@@ -106,10 +106,16 @@ sub getFreeHost {
             my $sp;
             if ($blade->{assignedToDn} eq "") {
                 # Create a new service for the blade
+                $log->debug("Getting service profile template " . $args{service_profile_template_id});
                 my $tmpl = $ucs->{api}->get(dn => $ou . "/ls-" . $args{service_profile_template_id});
-                $sp = $tmpl->instantiate_service_profile(name      => $sp_name,
-                                                         targetOrg => $ou);
-
+                eval {
+                    $log->debug("Retrieving service profile $sp_name");
+                    $sp = $ucs->{api}->get(dn => $sp_name);
+                };
+                if ($@) {
+                    $sp = $tmpl->instantiate_service_profile(name      => $sp_name,
+                                                             targetOrg => $ou);
+                }
             }
             else {
                 $sp = $ucs->{api}->get(dn => $blade->{assignedToDn});
