@@ -460,9 +460,9 @@ sub associateInterfaces {
                 eval {
                     $iface->associateInterface(interface => $interface);
                     $assigned = 1;
-                    last;
                 };
                 if ($@) { $log->debug($@); }
+                if ($assigned) { last; }
             }
         }
         if (not $assigned) {
