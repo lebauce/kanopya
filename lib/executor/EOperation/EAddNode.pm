@@ -133,6 +133,11 @@ sub prepare {
     $self->{params}->{node_number} = $self->{context}->{cluster}->getNewNodeNumber();
     $log->debug("Node number for this new node: $self->{params}->{node_number} ");
 
+    my $maxnode = $self->{context}->{cluster}->getAttr(name => 'cluster_max_node');
+    if ($maxnode < $self->{params}->{node_number}) {
+        throw Kanopya::Exception::Internal::WrongValue(error => "Too many nodes, limited to " . $maxnode);
+    }
+
     my $systemimage_name = $self->{context}->{cluster}->getAttr(name => 'cluster_name') . '_' .
                            $self->{params}->{node_number};
 
