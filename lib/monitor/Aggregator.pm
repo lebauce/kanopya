@@ -77,7 +77,7 @@ sub _contructRetrieverOutput {
             $time_span = $clustermetric_time_span;
         } else {
             if ($time_span != $clustermetric_time_span) {
-                $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
+                #$log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
             }
         }
 
