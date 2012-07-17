@@ -381,7 +381,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
       cont.append(graph_div);
       graph_div.load('/widgets/widget_historical_service_metric.html', function() {
           $('.dropdown_container').remove();
-          setdatePicker(graph_div);
+          setGraphDatePicker(graph_div);
           setRefreshButton(graph_div, clusterMetric_id, '', elem_id);
           showCombinationGraph(graph_div, clusterMetric_id, '', '', '', elem_id);
       });
