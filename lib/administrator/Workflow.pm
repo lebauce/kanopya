@@ -105,7 +105,7 @@ sub getCurrentOperation {
     my $current = $adm->{db}->resultset('Operation')->search(
                       { workflow_id => $workflow_id, -not => { state => 'succeeded' } },
                       { order_by    => { -asc => 'execution_rank' }}
-                  )->single();
+                  )->first();
 
     my $op;
     eval {
