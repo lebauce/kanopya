@@ -129,8 +129,15 @@ sub dissociatePoolip {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to dissociate pool ip to this network");
     }
 
+    my $poolip;
+    if (ref($args{poolip}) eq 'Entity::Poolip') {
+        $poolip = $args{poolip};
+    }
+    else {
+        $poolip = Entity::Poolip->get(id => $args{poolip});
+    }
     $self->getNetworksPoolipsDbix->search({
-        poolip_id => $args{poolip}->getAttr(name => 'entity_id')
+        poolip_id => $poolip->getAttr(name => 'entity_id')
     })->single()->delete();
 }
 
