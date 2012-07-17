@@ -85,14 +85,14 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
             var div = '<div id=\"'+div_id+'\"></div>';
             graph_container.css('display', 'block');
             graph_container.append(div);
-            timedGraph(data.first_histovalues, data.min, data.max, label, div_id);
+            timedGraph(data.first_histovalues, data.min, data.max, label, data.unit, div_id);
             //graph_container.append(button);
         }
         widget_loading_stop( widget );
     });
 }
 
-function timedGraph(first_graph_line, min, max, label, div_id) {
+function timedGraph(first_graph_line, min, max, label, unit, div_id) {
     $.jqplot.config.enablePlugins = true;
     // var first_graph_line=[['03-14-2012 16:23', 0], ['03-14-2012 16:17', 0], ['03-14-2012 16:12', 0],['03-14-2012 16:15',null], ['03-14-2012 16:19', 0], ['03-14-2012 16:26', null]];
     // alert ('min: '+min+' max: '+max);
@@ -125,6 +125,8 @@ function timedGraph(first_graph_line, min, max, label, div_id) {
                 max:max,
             },
             yaxis:{
+                label: unit,
+                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
                 tickOptions: {
                     showMark: false,
                 },

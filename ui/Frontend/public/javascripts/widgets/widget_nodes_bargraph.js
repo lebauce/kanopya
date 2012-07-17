@@ -59,6 +59,7 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
         if (data.error){ alert (data.error); }
         else {
             graph_container_div.css('display', 'block');
+            var nodemetric_combination_unit = data.unit;
             var max = data.values[0];
             var min = data.values[(data.values.length-1)];
             // alert('min: '+min+ ' max: '+max); 
@@ -76,7 +77,7 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
                 var sliced_values = data.values.slice(indexOffset,toElementNumber);
                 var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
                 //we generate the graph
-                nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, div_id, max, nodemetric_combination_label);
+                nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, div_id, max, nodemetric_combination_label, nodemetric_combination_unit);
             }
             //var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
             //graph_container_div.append(button);
@@ -86,7 +87,7 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
 }
 
 //Jqplot bar plots
-function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title) {
+function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title, unit) {
     $.jqplot.config.enablePlugins = true;
     var nodes_bar_graph = $.jqplot(div_id, [values], {
     title: title,
@@ -113,6 +114,8 @@ function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title) {
             yaxis:{
                 min:0,
                 max:max,
+                label: unit,
+                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
             },
         },
         grid:{
