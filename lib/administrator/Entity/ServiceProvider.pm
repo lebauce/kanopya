@@ -368,7 +368,7 @@ sub getLimit {
                  });
 
     my $value;
-    my $now = time();
+    my $now = time() * 1000;
     for my $limit (@limits) {
         if (($limit->start < $now) && ($limit->ending > $now)) {
             $value = $value ? min($value, $limit->value) : $limit->value;
