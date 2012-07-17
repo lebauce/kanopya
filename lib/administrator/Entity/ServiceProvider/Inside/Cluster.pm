@@ -467,6 +467,10 @@ sub configureManagers {
                 next if not $manager->{manager_id};
                 $cluster_manager = $self->addManager(manager      => Entity->get(id => $manager->{manager_id}),
                                                      manager_type => $manager->{manager_type});
+
+                if ($manager->{manager_type} eq 'collector_manager') {
+                    $self->initCollectorManager(collector_manager => Entity->get(id => $manager->{manager_id}));
+                }
             }
             if ($manager->{manager_params}) {
                 $cluster_manager->addParams(params => $manager->{manager_params}, override => 1);
@@ -1498,6 +1502,35 @@ sub generateDefaultMonitoringConfiguration {
                 aggregate_combination_formula               => 'id' . $cm->getId
             };
             my $clustermetric_combination = AggregateCombination->new(%$acf_params);
+        }
+    }
+}
+
+=head2 initCollectorManager
+
+    desc: initialize the collect for the native kanopya collector indicatorsets
+    Args: object $collector_manager
+    Return: none
+
+=cut
+
+sub initCollectorManager {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'collector_manager' ]);
+
+    my @indicatorsets = Indicatorset->search (hash => {});
+
+    foreach my $indicatorset (@indicatorsets) {
+        if ($indicatorset->indicatorset_provider eq 'SnmpProvider' ||
+            $indicatorset->indicatorset_provider eq 'KanopyaDatabaseProvider') {
+            eval {
+                my $adm = Administrator->new();
+                $adm->{db}->resultset('Collect')->create({
+                    cluster_id      => $self->getId,
+                    indicatorset_id => $indicatorset->indicatorset_id
+                });
+            };
         }
     }
 }
