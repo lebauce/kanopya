@@ -1320,29 +1320,32 @@ sub setState {
 
 
 sub getNewNodeNumber {
-	my $self = shift;
-	my $nodes = $self->getHosts();
+    my $self = shift;
+    my $nodes = $self->getHosts();
 
-	# if no nodes already registered, number is 1
-	if(! keys %$nodes) { return 1; }
+    # if no nodes already registered, number is 1
+    if(! keys %$nodes) { return 1; }
 
-	my @current_nodes_number = ();
-	while( my ($host_id, $host) = each(%$nodes) ) {
-		push @current_nodes_number, $host->getNodeNumber();
-	}
-	@current_nodes_number = sort(@current_nodes_number);
-	$log->debug("Nodes number sorted: ".Dumper(@current_nodes_number));
+    my @current_nodes_number = ();
+    while( my ($host_id, $host) = each(%$nodes) ) {
+        push @current_nodes_number, $host->getNodeNumber();
+    }
 
-	my $counter = 1;
-	for my $number (@current_nodes_number) {
-		if("$counter" eq "$number") {
-			$counter += 1;
-			next;
-		} else {
-			return $counter;
-		}
-	}
-	return $counter;
+    # http://rosettacode.org/wiki/Sort_an_integer_array#Perl
+    @current_nodes_number =  sort {$a <=> $b} @current_nodes_number;
+    $log->debug("Nodes number sorted: " . Dumper(@current_nodes_number));
+
+    my $counter = 1;
+    for my $number (@current_nodes_number) {
+        if ("$counter" eq "$number") {
+            $counter += 1;
+            next;
+        } else {
+            return $counter;
+        }
+    }
+
+    return $counter;
 }
 
 =head2 getNodeState
