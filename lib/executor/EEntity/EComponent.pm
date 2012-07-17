@@ -165,12 +165,13 @@ sub isUp {
             else {
                 $cmd .= "-sT ";
             }
-            $cmd .= "-p $port $ip | grep $port | cut -d\" \" -f1";
+            $cmd .= "-p $port $ip | grep $port | cut -d\" \" -f2";
             my $port_state = `$cmd`;
-                $log->debug("Check host <$ip> on port $port ($proto) is <$port_state>");
+            chomp($port_state);
+            $log->debug("Check host <$ip> on port $port ($proto) is <$port_state>");
             if ($port_state eq "closed"){
                 return 0;
-               }
+            }
         }
     }
     return 1;
