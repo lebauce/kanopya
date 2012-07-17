@@ -64,6 +64,7 @@ sub updateHostData {
     my %all_values = ();
     my $error_happened = 0;
     my %providers = ();
+    my $error;
 
     eval {
         #For each required set of indicators
@@ -175,13 +176,13 @@ sub updateHostData {
         }
     };
     if ($@) {
-        my $error = $@;
+        $error = $@;
         $log->error( $error );
         $error_happened = 1;
         #TODO manage $host_state in this case (error)
     }
     
-    $log->warn("[$host_name] => some errors happened collecting data") if ($error_happened);
+    $log->warn("[$host_name] => some errors happened collecting data " . $error) if ($error_happened);
     $log->info("[$host_name] Collect time : " . (time() - $start_time));
     
     return \%all_values;
