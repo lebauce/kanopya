@@ -205,9 +205,7 @@ sub restoreHost {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['hypervisor_host_id']);
     # Option  memory, hypervisor, resubmit
-    print "enter \n";
     my $host_name = Entity::Host->get(id => $args{hypervisor_host_id})->host_hostname;
-    print "my host name = $host_name \n";
     my $vms = $self->_getEntity
                    ->getVmsFromHypervisorHostId(
                         hypervisor_host_id => $args{hypervisor_host_id}
@@ -217,7 +215,6 @@ sub restoreHost {
     for my $vm (@{$vms}) {
 
         # Get vm id in opennebula
-        print "lol\n";
         my $host_id = $self->getVmIdFromHostId(host_id => $vm->getAttr(name => "host_id"));
         my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
         my $result  = $self->getEContext->execute(command => $command);
@@ -235,16 +232,16 @@ sub restoreHost {
         my $state  = $hxml->{LCM_STATE};
         my $memory = $hxml->{MEMORY} * 1024;
 
-        print 'vm '.$hxml->{ID}.' hv '.$hypervisor.' state '.$state."\n";
+        $log->info('vm '.$hxml->{ID}.' hv '.$hypervisor.' state '.$state);
         if($state == 3) {
             if (defined $args{hypervisor}) {
                 if(!($hypervisor eq $host_name)){
-                   print "VM running on a wrong hypervisor \n";
+                   $log->info("VM running on a wrong hypervisor");
                 }
             }
            if (defined $args{memory}){
                 if( $memory != $vm->getHostRAM()){
-                    print "Memory one = $memory VS db = ".($vm->getHostRAM())."\n";
+                    $log->info("Memory one = $memory VS db = ".($vm->getHostRAM()));
                     $vm->setAttr(name => 'host_ram', value => $memory);
                     $vm->save();
                 }
@@ -252,7 +249,7 @@ sub restoreHost {
         }
         else{
             if(defined $args{resubmit}){
-                print "onevm resubmit $hxml->{ID}\n";
+                $log->info("onevm resubmit $hxml->{ID}");
                 my $command = $self->_oneadmin_command(command => "onevm resubmit $hxml->{ID}");
                 my $result  = $self->getEContext->execute(command => $command);
             }
