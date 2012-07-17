@@ -87,6 +87,10 @@ sub newEEntity {
 
     General::checkParams(args => \%args, required => ['data']);
 
+    if (not $args{data}->isa('Entity')) {
+        throw Kanopya::Exception::Internal(error => 'EFactory::newEEntity: ' . ref($args{data}) . ' is not an Entity.');
+    }
+
     my $data = $args{data};
     my %params = (data => $args{data});
 

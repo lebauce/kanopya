@@ -60,18 +60,21 @@ sub createExport {
                                              name    => 'client_options',
                                              default => 'rw,sync,no_root_squash');
 
-    my $mountpoint = $self->_getEntity()->getMountDir(
+    # Keep the old conf to be able to regenerate the conf file if the export fail.
+    my $old_data = $self->getTemplateDataExports();
+
+    my $mountpoint = $self->getMountDir(
                          device => $args{container}->getAttr(name => 'container_device')
                      );
 
     my $elocal_access = EEntity::EContainerAccess::ELocalContainerAccess->new(
-                            econtainer => EFactory::newEEntity(data => $args{container})
+                            econtainer => $args{container}
                         );
 
-    $elocal_access->mount(mountpoint => $mountpoint, econtext => $self->getEContext);
+    $elocal_access->mount(mountpoint => $mountpoint, econtext => $self->getEContext, erollback => $args{erollback});
 
-    my $manager_ip = $self->_getEntity->getServiceProvider->getMasterNodeIp;
-    my $mount_dir  = $self->_getEntity->getMountDir(device => $args{container}->getAttr(name => 'container_device'));
+    my $manager_ip = $self->getServiceProvider->getMasterNodeIp;
+    my $mount_dir  = $self->getMountDir(device => $args{container}->getAttr(name => 'container_device'));
 
     my $entity = Entity::ContainerAccess::NfsContainerAccess->new(
                      container_id            => $args{container}->getAttr(name => 'container_id'),
@@ -81,13 +84,42 @@ sub createExport {
                      container_access_port   => 2049,
                      options                 =>  $client_options,
                  );
-    my $container_access = EFactory::newEEntity(data => $entity);
 
+    my $container_access = EFactory::newEEntity(data => $entity);
     my $client = $self->addExportClient(export         => $container_access,
                                         client_name    => $client_name,
                                         client_options => $client_options);
 
+    $self->generateExports(data => $self->getTemplateDataExports());
+    if (exists $args{erollback}) {
+        $args{erollback}->add(
+            function   => $self->can('generateExports'),
+            parameters => [ $self, "data", $old_data ]
+        );
+    }
+
     $self->updateExports();
+
+    # Update the configuration of the component Mounttable of the cluster,
+    # to automatically mount the images repositories.
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+    my $mounttable = $cluster->getComponent(name => "Linux", version => "0");
+
+    my $oldconf = $mounttable->getConf();
+    my @mountentries = @{$oldconf->{mountdefs}};
+    push @mountentries, {
+        linux0_mount_dumpfreq   => 0,
+        linux0_mount_filesystem => 'nfs',
+        linux0_mount_point      => $mountpoint,
+        linux0_mount_device     => $args{container}->getAttr(name => 'container_device'),
+        linux0_mount_options    => 'rw',
+        linux0_mount_passnum    => 0,
+    };
+
+    $mounttable->setConf({ linux_mountdefs => \@mountentries });
+
+    my $emounttable = EFactory::newEEntity(data => $mounttable);
+    $emounttable->_generateFstab(cluster => $cluster, host => $cluster->getMasterNode);
 
     $log->info("Added NFS Export of device <$args{export_name}>");
 
@@ -122,6 +154,8 @@ sub removeExport {
                                              data => $args{container_access}->getContainer
                                           )
                         );
+
+    $self->generateExports(data => $self->getTemplateDataExports());
 
     my $retry = 5;
     while ($retry > 0) {
@@ -169,8 +203,11 @@ sub updateExports {
     my $self = shift;
     my %args = @_;
 
-    $self->generateExports();
-    $self->getEContext->execute(command => "/usr/sbin/exportfs -rf");
+    my $result = $self->getEContext->execute(command => "/usr/sbin/exportfs -rf");
+    if ($result->{exitcode} != 0) {
+        $errmsg = "Error while updating nfs exports: " . $result->{stderr};
+        throw Kanopya::Exception::Execution(error => $errmsg);
+    }
 }
 
 sub generateConfFile {
@@ -211,7 +248,7 @@ sub generateNfsCommon {
     $self->generateConfFile(
         template => "nfs-common.tt",
         dest     => "/etc/default/nfs-common",
-        data     => $self->_getEntity()->getTemplateDataNfsCommon(),
+        data     => $self->getTemplateDataNfsCommon(),
     );
 }
 
@@ -223,7 +260,7 @@ sub generateNfsKernelServer {
     $self->generateConfFile(
         template => "nfs-kernel-server.tt",
         dest     => "/etc/default/nfs-kernel-server",
-        data     => $self->_getEntity()->getTemplateDataNfsKernelServer(),
+        data     => $self->getTemplateDataNfsKernelServer(),
     );
 }
 
@@ -232,10 +269,12 @@ sub generateExports {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, required => [ 'data' ]);
+
     $self->generateConfFile(
         template => "exports.tt",
         dest     => "/etc/exports",
-        data     => $self->_getEntity()->getTemplateDataExports()
+        data     => $args{data},
     );
 }
 

@@ -138,7 +138,7 @@ sub generateAuthorizedKeys {
     General::checkParams(args => \%args, required => [ "export_manager" ]);
 
     # mount the root systemimage device
-    my $container = $self->getDevice();
+    my $container = EFactory::newEEntity(data => $self->getDevice());
 
     my $container_access = $args{export_manager}->createExport(
                                container   => $container,
@@ -175,7 +175,7 @@ sub activate {
     General::checkParams(args     => \%args,
                          required => [ "export_manager", "manager_params", "erollback" ]);
 
-    my $container = $self->getDevice();
+    my $container = EFactory::newEEntity(data => $self->getDevice());
 
     # Provide root rsa pub key to provide ssh key authentication
     $self->generateAuthorizedKeys(export_manager => $args{export_manager},

@@ -60,6 +60,7 @@ sub configureNode {
             $admin->getIPAddr(),
             $admin->getPoolip()->poolip_netmask,
         )->network();
+
         my $exports = "/var/lib/one $network(rw,no_root_squash,no_subtree_check)\n";
         my $cmd = "echo '$exports' > " .$args{mount_point}."/etc/exports";
         $self->getExecutorEContext->execute(command => $cmd);
@@ -304,6 +305,7 @@ sub generateLibvirtbin {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+
     my $cluster = $self->_getEntity->getServiceProvider;
     my $data = $self->_getEntity()->getTemplateDataLibvirtbin();
     my $file = $self->generateNodeFile(
