@@ -39,6 +39,8 @@ use General;
 use ServiceProviderManager;
 use ServiceTemplate;
 use VerifiedNoderule;
+use Indicator;
+use Indicatorset;
 use Entity::Billinglimit;
 use Entity::Component::Kanopyaworkflow0;
 use Entity::Component::Kanopyacollector1;
@@ -568,6 +570,16 @@ sub configureBillingLimits {
                 value               => $value->{value}
             );
         }
+
+        my $charged_mem = Indicator->find(hash => { indicator_oid => "Charged memory" });
+        my $charged_cores = Indicator->find(hash => { indicator_oid => "Charged cores" });
+        my $collector = $self->getManager(manager_type => "collector_manager");
+
+        $collector->collectIndicator(indicator_id        => $charged_mem->getId,
+                                     service_provider_id => $self->getId);
+
+        $collector->collectIndicator(indicator_id        => $charged_cores->getId,
+                                     service_provider_id => $self->getId);
     }
 }
 
