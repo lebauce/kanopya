@@ -158,6 +158,7 @@ var PolicyForm = (function() {
                 }
             }
         }
+
         return added;
     }
 
@@ -599,7 +600,7 @@ var PolicyForm = (function() {
                                        '/api/' + this.fields[name].entity + '/' + selected_id + '/' + this.fields[name].values_provider.func,
                                        this.fields[name].values_provider.args);
         }
-        
+
         /* Complete the values hash with the entity attributes */
         var datavalues = jQuery.extend(datavalues, this.ajaxCall('GET', '/api/' + this.fields[name].entity + '/' + selected_id));
 
@@ -633,7 +634,7 @@ var PolicyForm = (function() {
                 }
 
                 if (! (that.fields[select_name].disabled)) {
-                    $(this).removeAttr('disabled');    
+                    $(this).removeAttr('disabled');
                 }
                 if (datavalues[select_name]) {
                     /*
@@ -709,7 +710,7 @@ var PolicyForm = (function() {
             this.findContainer(step).find('textarea').each(function() {
                 $(this).val('');
                 if (! (that.fields[$(this).attr('name')].disabled)) {
-                    $(this).removeAttr('disabled');    
+                    $(this).removeAttr('disabled');
                 }
                 if (datavalues[$(this).attr('name')]) {
                     $(this).val(datavalues[$(this).attr('name')]);

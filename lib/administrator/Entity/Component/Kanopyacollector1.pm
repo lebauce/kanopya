@@ -199,7 +199,7 @@ sub getIndicators {
 =cut
 
 sub getIndicator {
-    my ($self, %args) = @_; 
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['id']);
 

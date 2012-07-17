@@ -22,10 +22,10 @@ EFactory - Module which instanciate EEntity and EContext
 =head1 SYNOPSIS
 
     use EFactory;
-    
+
     # Creates an EEntity
     my $eentity = EFactory::newEEntity();
-    
+
     # Create an EContext
     my $econtext = EFactory::newEContext
 
@@ -62,9 +62,9 @@ sub newEOperation{
 
     my $data = $args{op};
     my $class = "EOperation::E". $args{op}->getAttr(name => 'type');
-#    $log->debug("EOperation class is $class"); 
+#    $log->debug("EOperation class is $class");
     my $location = General::getLocFromClass(entityclass => $class);
-    
+
     eval { require $location; };
     if ($@){
         $errmsg = "EFactory->newEOperation : require '$location' failed : $@";
@@ -122,12 +122,12 @@ sub newEContext {
     General::checkParams(args => \%args, required => ['ip_source', 'ip_destination']);
 
     if (!ip_is_ipv4($args{ip_source})){
-        $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";    
+        $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     if (!ip_is_ipv4($args{ip_destination})){
-        $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";    
+        $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
