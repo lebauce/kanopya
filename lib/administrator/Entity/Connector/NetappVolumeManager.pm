@@ -265,53 +265,64 @@ sub synchronize {
 }
 
 sub getConf {
-    my ($self) = @_;
-    my $config = {};
-    $config->{aggregates} = [];
-    $config->{volumes} = [];
-    my @aggregates = Entity::NetappAggregate->search( hash => {} );
-    my @aggr_object = $self->aggregates;
-    my @vol_object = $self->volumes;
-    my $aggregate = [];
+    my $self = shift;
+
+    my $aggregates = [];
     my $volumes = [];
-    
-    foreach my $aggr (@aggr_object) {
-        my $aggr_key = $aggr->name;
-        my $aggr_id = Entity::NetappAggregate->find( hash => { name => $aggr_key } )->getAttr(name => 'aggregate_id');
-        my $entity_id = Entity->find( hash => { entity_id => $aggr_id })->getAttr(name => 'entity_comment_id');
-        my $aggr_list = {
-            aggregate_name      => $aggr->name,
-            aggregate_id        => $aggr_id,
-            aggregate_state     => $aggr->state,
-            aggregate_totalsize => General::bytesToHuman(value => $aggr->size_total, precision => 5),
-            aggregate_sizeused  => General::bytesToHuman(value => $aggr->size_used, precision => 5),
-            entity_comment      => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
+    my $netapp_volumes = {};
+
+    for my $vol ($self->volumes) {
+        $netapp_volumes->{$vol->name} = $vol;
+    }
+
+    # Only display the aggregates that are both on NetApp and in our DB
+    foreach my $netapp_aggr ($self->aggregates) {
+        my $aggr;
+        eval {
+            $aggr = Entity::NetappAggregate->find(hash => { name => $netapp_aggr->name });
         };
-        my @netappvolumes = Entity::Container::NetappVolume->search( hash => { aggregate_id => $aggr->getAttr(name => 'aggregate_id') } );
-        foreach my $vol (@vol_object) {
-            my $volume_id = Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_id');
-            my $entity_comment_id = Entity->find( hash => {entity_id => $volume_id})->getAttr(name => 'entity_comment_id');
-            my $vol_list = {
-                container_id            => $volume_id,
+
+        if ($@) {
+            $log->debug("Aggregate " . $netapp_aggr->name . " has been removed on NetApp " .
+                        "but still exists in our DB, skipping it ...");
+            next;
+        }
+
+        my $aggregate = {
+            aggregate_name      => $netapp_aggr->name,
+            aggregate_id        => $aggr->getId,
+            aggregate_state     => $netapp_aggr->state,
+            aggregate_totalsize => General::bytesToHuman(value => $netapp_aggr->size_total, precision => 5),
+            aggregate_sizeused  => General::bytesToHuman(value => $netapp_aggr->size_used, precision => 5),
+            entity_comment      => $aggr->getComment,
+        };
+
+        my @contained_volumes = $netapp_aggr->child_get("volumes")->children_get;
+        foreach my $vol (@contained_volumes) {
+            $vol = $netapp_volumes->{$vol->child_get("name")->{content}};
+            bless $vol, "NaObject";
+            my $volume =  Entity::Container->find(hash => { container_name => $vol->name });
+
+            push @$volumes, {
+                container_id            => $volume->getId,
                 container_name          => $vol->name,
                 container_state         => $vol->state,
-                container_size          => General::bytesToHuman(value => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_size'), precision => 5),
-                container_device        => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_device'),
-                container_filesystem    => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_filesystem'),
-                container_freespace     => General::bytesToHuman(value => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'container_freespace'), precision => 5),
-                disk_manager_id         => Entity::Container->find( hash => {container_name => $vol->name})->getAttr(name => 'disk_manager_id'),
-                entity_comment          => EntityComment->find( hash => {entity_comment_id => $entity_comment_id})->getAttr(name => 'entity_comment'),
+                container_size          => General::bytesToHuman(value => $volume->container_size, precision => 5),
+                container_device        => $volume->container_device,
+                container_filesystem    => $volume->container_filesystem,
+                container_freespace     => General::bytesToHuman(value => $volume->container_freespace, precision => 5),
+                disk_manager_id         => $volume->disk_manager_id,
+                entity_comment          => $volume->getComment,
             };
-            push(@$volumes, $vol_list);
         }
-        $aggr_list->{netapp_volumes}=$volumes;
-        push(@$aggregate, $aggr_list);
+
+        $aggregate->{netapp_volumes} = $volumes;
+        push @$aggregates, $aggregate;
     }
     
     return {
-            "aggregates"=>$aggregate,
+        "aggregates" => $aggregates,
     };
-    return $config;
 }
 
 1;
