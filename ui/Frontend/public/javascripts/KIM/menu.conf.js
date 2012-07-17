@@ -9,7 +9,7 @@ require('KIM/policies.js');
 var mainmenu_def = {
     'Infrastructure' : {
         'Compute' : [ { label : 'Overview', id : 'compute_overview'},
-                      { label : 'Hosts', id : 'hosts'} ],
+                      { label : 'Hosts', id : 'hosts', onLoad : function(cid) { require('KIM/hosts.js'); hosts_list(cid); } } ],
         'Storage' : [ { label : 'Overview', id : 'storage_overview'} ],
         'IaaS'    : [ { label : 'IaaS', id : 'iaas', onLoad : load_iaas_content} ],
         'Network' : [
