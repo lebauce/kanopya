@@ -17,7 +17,7 @@ BEGIN {
         libkanopya_path   => '/opt/kanopya/conf/libkanopya.conf',
         orchestrator      => XMLin('/opt/kanopya/conf/monitor.conf'), 
         orchestrator_path => '/opt/kanopya/conf/monitor.conf',
-        aggregator        => XMLin('/opt/kanopya/conf/aggregator.conf.old'),
+        aggregator        => XMLin('/opt/kanopya/conf/aggregator.conf'),
         aggregator_path   => '/opt/kanopya/conf/aggregator.conf',
     }
 }
