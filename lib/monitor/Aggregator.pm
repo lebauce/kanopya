@@ -286,14 +286,33 @@ sub run {
 }
 
 
-=head2 run
+=head2 updateAggregatorConf
 
     Class : Public
 
-    Desc : Retrieve indicator values for all the clustermetrics, compute the
-    aggregation statistics function and store them in TimeDb
-    every time_step (configuration)
+    Desc : update values in the aggregator.conf file 
 
 =cut
+
+sub updateAggregatorConf {
+    my %args = @_;
+
+    #get aggregator configuration
+    my $configuration = Kanopya::Config::get('aggregator');
+
+    if (defined $args{collect_frequency}) {
+        $configuration->{time_step} = $args{collect_frequency};
+        Kanopya::Config::set(subsystem => 'aggregator', config => $configuration);
+    }
+    if (defined $args{storage_duration}) {
+        $configuration->{storage_duration}->{duration} = $args{storage_duration};
+        Kanopya::Config::set(subsystem => 'aggregator', config => $configuration);
+    }
+    else {
+        throw Kanopya::Exception::Internal(
+            error => 'A collect frequency and/or a storage duration must be provided for update'
+        );
+    }
+}
 
 1;

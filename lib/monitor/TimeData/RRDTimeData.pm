@@ -72,7 +72,7 @@ sub createTimeDataStore{
 
     #get collect TimeData configuration from aggregator.conf
     my $monitor_configuration = Kanopya::Config::get('aggregator');
-    my $collect_frequency     = $monitor_configuration->{time_step}->{time_step};
+    my $collect_frequency     = $monitor_configuration->{time_step};
     my $storage_duration      = $monitor_configuration->{storage_duration}->{duration};
 
     #configure the heartbeat, number of CDP and step according to the configuration
