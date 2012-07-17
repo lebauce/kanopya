@@ -26,12 +26,14 @@ function StateFormatter(cell, options, row) {
             'down'      : 'down',
     };
 
+    var curr_state = cell.split(':')[0];
+
     for (var state in state_map) {
-        if ( cell.indexOf(state) != -1 ) {
-            return "<img src='/images/icons/" + state_map[state] + ".png' title='" + state + "' />";
+        if (curr_state === state) {
+            return "<img src='/images/icons/" + state_map[state] + ".png' title='" + curr_state + "' />";
         }
     }
-    return "<img src='/images/icons/down.png' title='unknown' />";
+    return "<img src='/images/icons/down.png' title='" + curr_state + "' />";
 }
 
 function serviceStateFormatter(cell, options, row) {
