@@ -706,10 +706,11 @@ sub _generateVmTemplate {
         interfaces      => $interfaces,
     };
 
+    my $template_file = 'vm-' . $hostname . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $self->_getEntity->getServiceProvider,
         host          => $args{hypervisor},
-        file          => '/tmp/vm.template',
+        file          => $template_file,
         template_dir  => '/templates/components/opennebula',
         template_file => 'vm.tt',
         data         => $data,
@@ -745,7 +746,7 @@ sub _generateVmTemplate {
     $econtainer_access->umount(mountpoint => $mountpoint,
                                econtext    => $self->getExecutorEContext);
 
-    return '/tmp/vm.template';
+    return '/tmp/' . $template_file;
 }
 
 # prefix commands to use oneadmin account with its environment variables
