@@ -13,6 +13,7 @@ BEGIN {
         monitor      => XMLin('/opt/kanopya/conf/monitor.conf'), 
         libkanopya   => XMLin('/opt/kanopya/conf/libkanopya.conf'),
         orchestrator => XMLin('/opt/kanopya/conf/monitor.conf'), 
+        aggregator   => XMLin('/opt/kanopya/conf/aggregator.conf'), 
     }
 }
 

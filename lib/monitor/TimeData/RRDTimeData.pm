@@ -70,9 +70,9 @@ sub createTimeDataStore{
     my $DS_chain;
     my $opts = '';
 
-    #get collect TimeData configuration from monitor.conf
-    my $monitor_configuration = Kanopya::Config::get('monitor');
-    my $collect_frequency     = $monitor_configuration->{time_step};
+    #get collect TimeData configuration from aggregator.conf
+    my $monitor_configuration = Kanopya::Config::get('aggregator');
+    my $collect_frequency     = $monitor_configuration->{time_step}->{time_step};
     my $storage_duration      = $monitor_configuration->{storage_duration}->{duration};
 
     #configure the heartbeat, number of CDP and step according to the configuration

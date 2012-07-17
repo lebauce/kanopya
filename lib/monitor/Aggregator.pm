@@ -23,6 +23,7 @@ use Entity::ServiceProvider;
 use Indicator;
 use TimeData::RRDTimeData;
 use Clustermetric;
+use Kanopya::Config;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("aggregator");
@@ -36,11 +37,11 @@ sub new {
     bless $self, $class;
 
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/monitor.conf");
-    $self->{_time_step} = $conf->{time_step};
+    my $conf = Kanopya::Config::get('aggregator');
+    $self->{_time_step} = $conf->{time_step}->{time_step};
 
     # Get Administrator
-    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
+    my ($login, $password) = ($conf->{user}->{name}, $conf->{user}->{password});
     Administrator::authenticate( login => $login, password => $password );
     $self->{_admin} = Administrator->new();
 
@@ -283,5 +284,16 @@ sub run {
         content => "Kanopya Aggregator stopped"
     );
 }
+
+
+=head2 run
+
+    Class : Public
+
+    Desc : Retrieve indicator values for all the clustermetrics, compute the
+    aggregation statistics function and store them in TimeDb
+    every time_step (configuration)
+
+=cut
 
 1;
