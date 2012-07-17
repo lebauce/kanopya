@@ -145,6 +145,7 @@ sub retrieveData {
                                                 start       => $args{start},
                                                 end         => $args{end},
                                                 historical  => $args{historical},
+                                                raw         => $args{raw},
                                                 );
                 $monitored_values{$node} = $monitored_values{$node} ? { %{$monitored_values{$node}}, %{$data} } :  $data;
             };
