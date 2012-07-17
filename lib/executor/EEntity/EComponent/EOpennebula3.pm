@@ -139,6 +139,7 @@ sub migrateHost {
     return $src_hypervisor;
 }
 
+
 sub checkMigration {
     my ($self,%args) = @_;
 
@@ -146,7 +147,6 @@ sub checkMigration {
                          required => [
                             'host',
                             'hypervisor_src',
-                            'hypervisor_dst',
                             'hypervisor_cluster'
     ]);
 
@@ -155,7 +155,6 @@ sub checkMigration {
                                                     ip_destination => $masternodeip);
 
     my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
-    my $hypervisor_host_name = $args{hypervisor_dst}->getAttr(name=>'host_hostname');
 
     my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
     my $result = $masternode_econtext->execute(command => $command);
@@ -172,17 +171,12 @@ sub checkMigration {
     }
 
     my $state = $hxml->{LCM_STATE};
-    $log->info("State = $state ; CURRENT_H = $hypervisor_migr ; DEST_H = $hypervisor_host_name");
 
-    if ($state == 3 && ($hypervisor_migr eq $hypervisor_host_name )) {
-        $log->debug("Apply VLAN on the source hypervisor");
+    return { state => $state, hypervisor => $hypervisor_migr };
 
         # $self->propagateVLAN(host       => $args{host},
         #                      hypervisor => $args{hypervisor_src},
         #                      delete     => 1);
-        return 1;
-    }
-    return 0;
 }
 
 # execute memory scale in

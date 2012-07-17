@@ -125,24 +125,40 @@ sub finish{
 sub postrequisites {
     my $self = shift;
 
-    my $is_check = $self->{context}->{cloudmanager_comp}->checkMigration(
+    my $migr_state = $self->{context}->{cloudmanager_comp}->checkMigration(
         host               => $self->{context}->{vm},
         hypervisor_src     => $self->{context}->{src_hypervisor},
-        hypervisor_dst     => $self->{context}->{host},
+#        hypervisor_dst     => $self->{context}->{host},
         hypervisor_cluster => $self->{context}->{cluster},
     );
 
-    if ($is_check == 1) {
-        # After checking migration -> store migration in DB
-        $log->info('Migration save in DB');
-        $self->{context}->{cloudmanager_comp}->_getEntity()->migrateHost(
+
+
+    $log->info('State <'.($migr_state->{state}).'> ; CURRENT_H = <'.($migr_state->{hypervisor}).'> ; DEST_H = <'.($self->{context}->{host}->getAttr(name => 'host_hostname')).'>');
+    if ($migr_state->{state} == 3) { # VM IS RUNNING
+        if ($migr_state->{hypervisor} eq $self->{context}->{host}->getAttr(name => 'host_hostname')) { # ON THE TARGETED HV
+
+            # After checking migration -> store migration in DB
+            $log->info('Migration save in DB');
+            $self->{context}->{cloudmanager_comp}->_getEntity()->migrateHost(
                                                 host               => $self->{context}->{vm},
                                                 hypervisor_dst     => $self->{context}->{host},
                                                 hypervisor_cluster => $self->{context}->{cluster});
 
-         return 0;
+            return 0;
+        }
+        else { #VM IS RUNNING BUT NOT ON ITS HYPERVISOR
+            my $error = 'Migration of vm <'.($self->{context}->{vm}->getId()).'> : Failed. But VM Still Running';
+            Message->send(
+                from    => 'EMigrateHost',
+                level   => 'error',
+                content => $error,
+            );
+            throw Kanopya::Exception(error => $error);
+        }
     }
-    else {
+    elsif ($migr_state->{state} == 4) { # VM STILL MIGRATING
+        $log->info('Delay Migration');
         return 15;
     }
 }
