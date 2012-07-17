@@ -195,7 +195,69 @@ sub scale_memory {
 
     $self->getEContext->execute(command => $command);
 
-    return $self->_getEntity()->updateMemory(%args);
+    # Memroy scale checked in post requisite before saving in DB
+    # return $self->_getEntity()->updateMemory(%args);
+}
+
+
+
+sub restoreHost {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['hypervisor_host_id']);
+    # Option  memory, hypervisor, resubmit
+    print "enter \n";
+    my $host_name = Entity::Host->get(id => $args{hypervisor_host_id})->host_hostname;
+    print "my host name = $host_name \n";
+    my $vms = $self->_getEntity
+                   ->getVmsFromHypervisorHostId(
+                        hypervisor_host_id => $args{hypervisor_host_id}
+                     );
+
+
+    for my $vm (@{$vms}) {
+
+        # Get vm id in opennebula
+        print "lol\n";
+        my $host_id = $self->getVmIdFromHostId(host_id => $vm->getAttr(name => "host_id"));
+        my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
+        my $result  = $self->getEContext->execute(command => $command);
+        my $hxml = XMLin($result->{stdout});
+        my $history = $hxml->{HISTORY_RECORDS}->{HISTORY};
+        my $hypervisor;
+
+        if (ref $history eq 'HASH') {
+            $hypervisor = $history->{HOSTNAME};
+        }
+        else {
+            $hypervisor =  $history->[-1]->{HOSTNAME};
+        }
+
+        my $state  = $hxml->{LCM_STATE};
+        my $memory = $hxml->{MEMORY} * 1024;
+
+        print 'vm '.$hxml->{ID}.' hv '.$hypervisor.' state '.$state."\n";
+        if($state == 3) {
+            if (defined $args{hypervisor}) {
+                if(!($hypervisor eq $host_name)){
+                   print "VM running on a wrong hypervisor \n";
+                }
+            }
+           if (defined $args{memory}){
+                if( $memory != $vm->getHostRAM()){
+                    print "Memory one = $memory VS db = ".($vm->getHostRAM())."\n";
+                    $vm->setAttr(name => 'host_ram', value => $memory);
+                    $vm->save();
+                }
+           }
+        }
+        else{
+            if(defined $args{resubmit}){
+                print "onevm resubmit $hxml->{ID}\n";
+                my $command = $self->_oneadmin_command(command => "onevm resubmit $hxml->{ID}");
+                my $result  = $self->getEContext->execute(command => $command);
+            }
+        }
+    }
 }
 
 #execute cpu scale in
