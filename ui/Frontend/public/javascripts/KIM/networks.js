@@ -1,3 +1,4 @@
+var vlans   = [];
 
 function networks_addbutton_action(e) {
     (new ModalForm({
@@ -70,8 +71,16 @@ function networks_associatepoolipbutton_action(network, associated, cid) {
 }
 
 function networks_details_poolips(cid, eid) {
+    var     isvlan  = false;
+    for (var i = 0; i < vlans.length; ++i) {
+        console.log(vlans[i]);
+        if (vlans[i].pk == eid) {
+            isvlan  = true;
+        }
+    }
+    var     expand  = (!isvlan) ? 'network_poolips,network_poolips.poolip' : 'parent,parent.network_poolips,parent.network_poolips.poolip';
     $.ajax({
-        url     : '/api/network/' + eid + '?expand=network_poolips,network_poolips.poolip',
+        url     : '/api/network/' + eid + '?expand=' + expand,
         success : function(data) {
             create_grid({
                 data                    : data.network_poolips,
@@ -85,31 +94,40 @@ function networks_details_poolips(cid, eid) {
                     { name : 'poolip.poolip_mask', index : 'poolip.poolip_mask' },
                     { name : 'poolip.poolip_netmask', index : 'poolip.poolip_netmask' },
                     { name : 'poolip.poolip_gateway', index : 'poolip.poolip_gateway' }
-                ]
+                ],
+                action_delete           : 'no',
             });
             var associatepoolipbutton   = $('<a>', { text : 'Associate a Pool IP' }).appendTo('#' + cid)
                                             .button({ icons : { primary : 'ui-icon-plusthick' } });
             $(associatepoolipbutton).bind('click', function() {
-                networks_associatepoolipbutton_action(eid, data.network_poolips, cid);
+                var pips    = (isvlan) ? data.parent.network_poolips : data.network_poolips;
+                networks_associatepoolipbutton_action(eid, pips, cid);
             });
         }
     });
 }
 
 function networks_list(cid) {
+    vlans   = [];
     create_grid({
         url                     : '/api/network',
         content_container_id    : cid,
         grid_id                 : 'networks_list',
-        colNames                : [ 'Id', 'Name' ],
+        colNames                : [ 'Id', 'Name', 'Vlan' ],
         colModel                : [
             { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
-            { name : 'network_name', index : 'network_name' }
+            { name : 'network_name', index : 'network_name' },
+            { name : 'vlan_number', index : 'vlan_number' }
         ],
         details                 : {
             tabs    : [
                 { label : 'PoolIPs', onLoad : networks_details_poolips }
             ]
+        },
+        afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
+            if (rowdata.vlan_number != null) {
+                vlans.push(rowelem);
+            }
         }
     });
     var addButton   = $('<a>', { text : 'Add a Network' }).appendTo('#' + cid)
