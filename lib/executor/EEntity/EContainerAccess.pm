@@ -314,7 +314,11 @@ sub getPartitionCount {
     $command = "parted -m -s $device u B print";
     $result = $args{econtext}->execute(command => $command);
 
-    return (scalar (split('\n', $result->{stdout}))) - 2;
+
+
+    my @splited_output = split('\n', $result->{stdout});
+
+    return (scalar (@splited_output)) - 2;
 }
 
 sub connectPartition {
