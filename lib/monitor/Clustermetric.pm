@@ -92,6 +92,26 @@ sub getLastValueFromDB{
     return $indicator[0];
 }
 
+=head2
+
+    Class: Public
+    Desc: delete and create again every time data store for the clustermetric
+    Args: none
+    Return: none
+
+=cut
+
+sub regenTimeDataStores {
+
+    my @clustermetrics = Clustermetric->search(hash => { }); 
+
+    foreach my $clustermetric (@clustermetrics) {
+        #delete previous rrd 
+        RRDTimeData::deleteTimeDataStore(name => $clustermetric->clustermetric_id);
+        #create new rrd
+        RRDTimeData::createTimeDataStore(name => $clustermetric->clustermetric_id);
+    }
+}
 
 sub new {
     my $class = shift;

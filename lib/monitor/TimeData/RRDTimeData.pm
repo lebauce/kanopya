@@ -32,14 +32,17 @@ my $log = get_logger("timedata");
 
 my $dir;
 my $rrd;
+my $delete;
 
 #Quick solution to handle windows and linux
 if ($^O eq 'MSWin32') {
-    $dir = 'C:\\tmp\\monitor\\TimeData\\';
-    $rrd = 'rrdtool.exe';
+    $dir    = 'C:\\tmp\\monitor\\TimeData\\';
+    $rrd    = 'rrdtool.exe';
+    $delete = 'del';
 } elsif ($^O eq 'linux') {
-    $rrd = '/usr/bin/rrdtool';
-    $dir = '/var/cache/kanopya/monitor/';
+    $rrd    = '/usr/bin/rrdtool';
+    $dir    = '/var/cache/kanopya/monitor/';
+    $delete = 'rm';
 }
 
 ####################################################################################################################
@@ -180,7 +183,7 @@ sub deleteTimeDataStore{
     General::checkParams(args => \%args, required => ['name']);
 
     my $name = _formatName(name => $args{'name'});
-    my $cmd = 'del '.$dir.$name;
+    my $cmd = $delete.' '.$dir.$name;
 
     system ($cmd);
 }
