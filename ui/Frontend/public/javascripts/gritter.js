@@ -4,9 +4,106 @@ function get(url) {
     var value;
     $.ajax({
         url     : url,
+        async   : false,
         success : function(data) { value = data; }
     });
+
     return value;
+}
+
+function callMethod(options) {
+    $.ajax({
+        url: options.url,
+        type: "POST",
+        data: options.data || { },
+        success: function (data) {
+            $.gritter.add({
+                title: 'Message',
+                text: content
+            });
+            if (options.success) {
+                options.success(data);
+            }
+        }
+    });
+}
+
+function formatOperations(operations) {
+    var ul = $("<ul class='gritter-operations'></ul>");
+    for (var i = 0; i < operations.length; i++) {
+        var operation = operations[i];
+        var state;
+        if (operation.state == "running" || operation.state == "ready" ||
+            operation.state == "processing" || operation.state == "prereported") {
+            state = $("<div class='ui-icon icon-running'>");
+        }
+        else if (operation.state == "done" || operation.state == "succeeded") {
+            state = $("<div class='ui-icon icon-done'></div>");
+        }
+        else if (operation.state == "pending") {
+            state = $("<div class='ui-icon ui-icon-radio-on'></div>");
+        }
+        else {
+            state = operation.state;
+        }
+
+        ul.append($("<li></li>")
+                       .append(
+                           $("<div>" + operation.type + "</div>")
+                               .addClass("operation_type")
+                       )
+                       .append(
+                           $("<div></div>")
+                               .addClass("operation_state")
+                               .append(state)
+                       )
+                  );
+    };
+
+    return ul;
+}
+
+function updateWorkflowGritter(workflow) {
+    var gritter = $('.gritter-item-workflow-' + workflow.pk);
+    var gritterId = gritter[0].id.substr(13);
+    var id = workflow.pk;
+    var ul = gritter.find("ul.gritter-operations");
+    var operations = get("/api/workflow/" + id + "/operations");
+    ul.empty().append(formatOperations(operations).children());
+    if (workflow.state != "running" && workflow.state != "pending") {
+        $.gritter.remove(gritterId);
+        return;
+    }
+}
+
+function showWorkflowGritter(workflow) {
+    var id = workflow.pk;
+    var operations = get("/api/workflow/" + id + "/operations");
+    var title = "Running workflow '" + workflow.workflow_name + "'";
+    var content = $("<div></div>");
+    var ul = formatOperations(operations);
+    if (operations.length == 0) {
+        return;
+    }
+    content.append(ul);
+    var gritterId = $.gritter.add({
+        title : "<div>" + title + "</div>" +
+                "<div class='gritter-action'>" +
+                    "<div class='ui-icon ui-icon-radio-on'></div>" +
+                "</div>",
+        text: content.html(),
+        sticky: true
+    });
+    var gritter = $('#gritter-item-' + gritterId);
+    gritter.find(".gritter-action").click(function () {
+        callMethod({
+            url: "/api/workflow/" + id + "/cancel",
+            success: function (data) { $.gritter.remove(gritterId); }
+        });
+    });
+    gritter.addClass("gritter-item-workflow-" + id);
+    gritter.addClass("gritter-item-workflow");
+    gritter.data("workflow", id);
 }
 
 window.setInterval(function(){

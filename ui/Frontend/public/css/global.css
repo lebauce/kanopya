@@ -127,3 +127,15 @@ th {
     text-align: left;
     vertical-align: top;
 }
+
+.icon-running {
+    background-image: url(/images/icons/running.gif);
+    width: 16px;
+    height: 16px;
+}
+
+.icon-done {
+    background-image: url(/images/icons/done.png);
+    width: 16px;
+    height: 16px;
+}
