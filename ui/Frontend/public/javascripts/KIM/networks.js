@@ -73,7 +73,6 @@ function networks_associatepoolipbutton_action(network, associated, cid) {
 function networks_details_poolips(cid, eid) {
     var     isvlan  = false;
     for (var i = 0; i < vlans.length; ++i) {
-        console.log(vlans[i]);
         if (vlans[i].pk == eid) {
             isvlan  = true;
         }

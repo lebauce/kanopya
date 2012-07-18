@@ -223,6 +223,7 @@ var ModalForm = (function() {
         if (this.fields[elementName].label !== undefined) {
             $(label).text(this.fields[elementName].label);
         }
+        $(label).text($(label).text() + ' * :');
         var input   = $("<select>", { name : elementName, id : 'input_' + elementName, rel : elementName });
 
         // Inject all values in the select
