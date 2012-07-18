@@ -98,8 +98,8 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
             yaxis:{
                 label:'# nodes',
                 labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-                min:0,
-                max:nodesquantity,
+//              min:0,
+//              max:nodesquantity,
             },
         },
         grid:{
@@ -110,6 +110,8 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
         highlighter: { 
             show: true,
             showMarker:false,
+            tooltipAxes: 'y',
+            formatString: '%s nodes',
         }
     });
 
