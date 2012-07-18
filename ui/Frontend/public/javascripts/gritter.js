@@ -34,7 +34,8 @@ function formatOperations(operations) {
         var operation = operations[i];
         var state;
         if (operation.state == "running" || operation.state == "ready" ||
-            operation.state == "processing" || operation.state == "prereported") {
+            operation.state == "processing" || operation.state == "prereported" ||
+            operation.state == "postreported") {
             state = $("<div class='ui-icon icon-running'>");
         }
         else if (operation.state == "done" || operation.state == "succeeded") {
