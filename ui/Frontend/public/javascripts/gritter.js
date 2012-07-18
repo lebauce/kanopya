@@ -89,7 +89,7 @@ function showWorkflowGritter(workflow) {
     var gritterId = $.gritter.add({
         title : "<div>" + title + "</div>" +
                 "<div class='gritter-action'>" +
-                    "<div class='ui-icon ui-icon-radio-on'></div>" +
+                    "<div title='Cancel workflow' class='ui-icon icon-cancel'></div>" +
                 "</div>",
         text: content.html(),
         sticky: true

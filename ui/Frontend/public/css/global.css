@@ -120,7 +120,13 @@ a.linkbutton {
 }
 
 .gritter-title div {
-   display: inline-block;
+    display: inline-block;
+}
+
+.gritter-action {
+    line-height: 16px;
+    vertical-align: middle;
+    margin-left: 16px;
 }
 
 th {
@@ -136,6 +142,12 @@ th {
 
 .icon-done {
     background-image: url(/images/icons/done.png);
+    width: 16px;
+    height: 16px;
+}
+
+.icon-cancel {
+    background-image: url(/images/icons/cancel.png);
     width: 16px;
     height: 16px;
 }
