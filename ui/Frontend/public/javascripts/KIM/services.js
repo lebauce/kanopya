@@ -261,6 +261,7 @@ function migrate(spid, eid) {
     $.ajax({
         async       : false,
         url         : '/api/serviceprovider/' + spid + '/getManager',
+        type        : 'POST',
         contentType : 'application/json',
         data        : JSON.stringify({ manager_type : 'host_manager' }),
         success     : function(hmgr) {
@@ -351,7 +352,7 @@ function nodedetailsaction(cid, eid) {
                     label       : 'Migrate',
                     icon        : 'extlink',
                     condition   : isVirtual,
-                    action      : function() { migrate(data.service_provider_id, eid); }
+                    action      : function() { migrate(data.service_provider_id, data.host.pk); }
                 },
                 {
                     label       : 'Remote session',
