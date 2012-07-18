@@ -20,8 +20,10 @@
 package RRDTimeData;
 
 use base TimeData;
+
 use strict;
 use warnings;
+
 use General;
 use Data::Dumper;
 use Kanopya::Config;
@@ -45,23 +47,30 @@ if ($^O eq 'MSWin32') {
     $delete = 'rm';
 }
 
-####################################################################################################################
-#########################################RRD MANIPULATION FUNCTIONS#################################################
-####################################################################################################################
+###################################################################################################
+#########################################RRD MANIPULATION FUNCTIONS################################
+###################################################################################################
 
 =head2 createTimeDataStore
 
     <Class>   : Public
     <Desc>    : This method create a RRD file.
     <args>    : name, options, RRA, DS
-    <Return>  : None
-    <Comment> : Only name is mandatory. Default RRD configuration are: step = 60, 1 RRA with 1 PDP per CPD, and 1440 CDP (60x1x1440 = 86400scd/ 1 day). Standard is 1 RRA and 1 DS per RRD
-    <throws>  : 'RRD creation failed' if the creation is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+    <Comment> : Only name is mandatory. Default RRD configuration are: step = 60, 1 RRA with 
+                1 PDP per CPD, and 1440 CDP (60x1x1440 = 86400scd/ 1 day). 
+                Standard is 1 RRA and 1 DS per RRD
+    <throws>  : 'RRD creation failed' if the creation is a failure 
+                §WARNING§: the code only catch the keyword 'ERROR' in the command return...
 
 =cut
 
 sub createTimeDataStore{
-    #rrd creation example: system ('$rrd create target.rrd --start 1328190055 --step 300 DS:mem:GAUGE:600:0:671744 RRA:AVERAGE:0.5:12:24');
+    #rrd creation example: system ('$rrd create target.rrd --start 1328190055 
+    #                                                      --step 300 
+    #                                                      DS:mem:GAUGE:600:0:671744 
+    #                                                      RRA:AVERAGE:0.5:12:24'
+    #                             );
+
     my %args = @_;
     $log->debug(Dumper(\%args));
 
@@ -73,10 +82,10 @@ sub createTimeDataStore{
     my $DS_chain;
     my $opts = '';
 
-    #get collect TimeData configuration from aggregator.conf
-    my $monitor_configuration = Kanopya::Config::get('aggregator');
-    my $collect_frequency     = $monitor_configuration->{time_step};
-    my $storage_duration      = $monitor_configuration->{storage_duration}->{duration};
+    #get collect TimeData configuration 
+    my $configuration     = _getConfiguration();
+    my $collect_frequency = $configuration->{collect_frequency};
+    my $storage_duration  = $configuration->{storage_duration};
 
     #configure the heartbeat, number of CDP and step according to the configuration
     my $config    = _configTimeDataStore(
@@ -170,10 +179,7 @@ sub createTimeDataStore{
 
     <Class>   : Public
     <Desc>    : This method delete a RRD file.
-    <args>    : name
-    <Return>  : None
-    <Comment>  : None
-    <throws>  : None
+    <args>    : $name
 
 =cut
 
@@ -192,10 +198,7 @@ sub deleteTimeDataStore{
 
     <Class>   : Public
     <Desc>    : This method get info a RRD file.
-    <args>    : name
-    <Return>  : None
-    <Comment>  : None
-    <throws>  : None
+    <args>    : $name
 
 =cut
 
@@ -217,7 +220,8 @@ sub getTimeDataStoreInfo {
     <args>    : name, start, end
     <Return>  : %values
     <Comment> : if start and end are not specified, rrd fetch use start = now - 1 day and stop = now
-    <throws>  : 'RRD fetch failed' if the fetch is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+    <throws>  : 'RRD fetch failed' if the fetch is a failure 
+    §WARNING§: the code only catch the keyword 'ERROR' in the command return...
 
 =cut
 
@@ -281,9 +285,8 @@ sub fetchTimeDataStore {
     <Class>   : Public
     <Desc>    : This method update values into a RRD file.
     <args>    : clustermetric_id, time, value
-    <Return>  : None
-    <Comment> : None
-    <throws>  : 'RRD update failed' if the update is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+    <throws>  : 'RRD update failed' if the update is a failure 
+    §WARNING§: the code only catch the keyword 'ERROR' in the command return...
 
 =cut
 
@@ -320,8 +323,8 @@ sub updateTimeDataStore {
     <Desc>    : This method get the last updated value into a RRD file.
     <args>    : clustermetric_id
     <Return>  : %values
-    <Comment> : None
-    <throws>  : 'RRD fetch failed for last updated value' if the fetch is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+    <throws>  : 'RRD fetch failed for last updated value' if the fetch is a failure 
+    §WARNING§: the code only catch the keyword 'ERROR' in the command return...
 
 =cut
 
@@ -370,14 +373,77 @@ sub getLastUpdatedValue {
     return %values;
 }
 
+=head2 resizeTimeDataStore
+
+    <Class>   : Public
+    <Desc>    : This method grows or shrink a rrd 
+    <args>    : New desired storing time 
+
+=cut 
+
+sub resizeTimeDataStore {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['storage_duration', 'clustermetric_id']);
+
+    my $new_duration = $args{storage_duration};
+    my $rrd_name     = _formatName(name => $args{'clustermetric_id'});
+
+    #get collect frequency value 
+    my $configuration     = _getConfiguration();
+    my $collect_frequency = $configuration->{collect_frequency};
+    my $old_duration      = $configuration->{storage_duration};
+
+    #Generate the CPD number to be added or remove and then resize the rrd
+    #grow
+    if ($new_duration > $old_duration) {
+        my $delta    = $new_duration - $old_duration;
+        my $CDPToAdd = $delta / $collect_frequency;
+        my $cmd      = qq{$rrd resize $dir$rrd_name 0 GROW $CDPToAdd};
+
+        #resize the rrd
+        system($cmd);
+        #backup the old rrd
+        my $time = time();
+        my $cp   = qq{cp $dir$rrd_name $dir$rrd_name.$time.bck};
+        system($cp);
+        #replace old rrd by newly generated resize.rrd 
+        my $mv = qq{mv resize.rrd $dir$rrd_name};
+        system($mv);
+    }
+    #shrink
+    elsif ($new_duration < $old_duration) {
+        my $delta    = $old_duration - $new_duration;
+        my $CDPToDel = $delta / $collect_frequency;
+        my $cmd      = qq{$rrd resize $dir$rrd_name 0 SHRINK $CDPToDel};
+
+        #resize the rrd
+        system($cmd);
+        #backup the old rrd
+        my $time = time();
+        my $cp   = qq{cp $dir$rrd_name $dir$rrd_name.$time.bck};
+        system($cp);
+        #replace old rrd by newly generated resize.rrd 
+        my $mv = qq{mv resize.rrd $dir$rrd_name};
+        system($mv);
+    }
+    #do nothing
+    elsif ($new_duration == $old_duration) {
+        return 'the requested new stogare duration is the same than the old one'."\n";
+    }
+
+}
+
+#########################################################################################################
+#########################################INNER FUNCTIONS#################################################
+#########################################################################################################
+
 =head2 _configTimeDataStore
 
     <Class>   : Private
     <Desc>    : This method configure the step, heartbeat, and CDP number for a rrd
     <args>    : Frequency or storing time desired
     <Return>  : \%config
-    <Comment> : None
-    <throws>  : None
 
 =cut
 
@@ -425,10 +491,8 @@ sub _configTimeDataStore {
 
     <Class>   : Private
     <Desc>    : This method format a name argument for RRD
-    <args>    : None
+    <args>    : $name
     <Return>  : $name
-    <Comment> : None
-    <throws>  : None
 
 =cut
 
@@ -437,4 +501,27 @@ sub _formatName {
 	my $name = 'timeDB_'.$args{'name'}.'.rrd';
 	return $name;
 }
+
+=head2 _getConfiguration
+
+    <Class>   : Private
+    <Desc>    : This method returns the configuration values in aggregator.conf 
+    <Return>  : \%configuration
+
+=cut
+
+sub _getConfiguration {
+    my %args = @_;
+
+    #get collect TimeData configuration from aggregator.conf
+    my $monitor_configuration = Kanopya::Config::get('aggregator');
+
+    my %configuration;
+    #set the returned hash
+    $configuration{collect_frequency} = $monitor_configuration->{time_step};
+    $configuration{storage_duration}  = $monitor_configuration->{storage_duration}->{duration};
+
+    return \%configuration;
+}
+
 1;
