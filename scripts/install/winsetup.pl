@@ -24,15 +24,26 @@ use Data::Dumper;
 use Template;
 use XML::Simple;
 use Term::ReadKey;
+use Path::Class;
+
 
 #generic variables used through the script
-my $install_conf = XMLin("/opt/kanopya/scripts/install/wininit_struct.xml");
-my $conf_vars    = $install_conf->{general_conf};
-my $conf_files   = $install_conf->{genfiles};
-my $log_directory = $conf_vars->{log_directory};
-my $tmp_monitor = $conf_vars->{tmp_monitor};
-my $tmp_orchestrator = $conf_vars->{tmp_orchestrator};
-my $timedata_dir = $conf_vars->{timedata_tmp};
+my $base_dir	 = file($0)->absolute->dir;
+my @kanopya	 = split 'kanopya', $base_dir;
+my $kanopya_dir	 = $kanopya[0];
+
+my $install_conf  = XMLin("$base_dir/wininit_struct.xml");
+my $conf_vars     = $install_conf->{general_conf};
+print $kanopya_dir."\n";
+while (my ($key,$path) = each %$conf_vars) {
+    $conf_vars->{$key} = $kanopya_dir.$path;
+}
+
+my $conf_files    = $install_conf->{genfiles};
+my $log_directory = 'C:\var\log\kanopya\\';
+my $timedata_dir   = 'C:\tmp\monitor\TimeData\\';
+my $tmp_orchestrator = 'C:\tmp\orchestrator\graph\\';
+my $tmp_monitor  = 'C:\tmp\monitor\graph\\';
 
 my %conf_data = (
     logdir => $log_directory,
@@ -50,7 +61,7 @@ my %conf_data = (
     );
 
 #Welcome message - accepting Licence is mandatory
-welcome();
+# welcome();
 
 #generation of configuration files
 genConf();
@@ -213,6 +224,7 @@ useTemplate(
     include  => $conf_vars->{install_template_dir}
 );
 
+#Install windows services
 
 ##########################################################################################
 ##############################FUNCTIONS DECLARATION#######################################
@@ -263,6 +275,8 @@ sub useTemplate{
     my $dat     = $args{datas};
     my $output  = $args{conf};
 
+    print 'INPUT#########'.$input."\n";
+    print 'OUTPUT####:'.$output."\n";
     my $config = {
             INCLUDE_PATH => $include,
             INTERPOLATE  => 1,
