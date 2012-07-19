@@ -31,14 +31,14 @@ function setGraphResizeHandlers (graph_div_id, graph) {
     });
 }
 
-function setGraphDatePicker(widget) {
+function setGraphDatePicker(widget_elem, widget) {
     var now = new Date();
     var start = new Date();
     start.setDate(now.getDate() - 1);
 
     var default_mode = 'mode1';
 
-    var container = widget.find('.graph_time_settings');
+    var container = widget_elem.find('.graph_time_settings');
 
     if (default_mode == 'mode1') {container.addClass(default_mode);}
     var time_mode_button = $('<button>').button({ icons : { primary : 'ui-icon-clock' }, text : false }).click(function() {
@@ -72,6 +72,28 @@ function setGraphDatePicker(widget) {
     container.append($('<span>', {css:'white-space:nowrap', 'class':'timeset_mode2 hidden' , html:' Last '}).append(select_amount).append(select_timescale) );
 
     container.find('.timeset_' + default_mode).show();
+
+    // Manage widget metadata (save and load)
+    if (widget !== undefined) {
+        // Save
+        select_amount.change( function() {
+           //alert($(this).find(':selected').val());
+           widget.addMetadataValue('timeset_amount', $(this).find(':selected').val());
+        });
+        select_timescale.change( function() {
+            //alert($(this).find(':selected').val());
+            widget.addMetadataValue('timeset_timescale', $(this).find(':selected').val());
+        });
+
+        // Load
+        var amount      = widget.metadata.timeset_amount;
+        var timescale   = widget.metadata.timeset_timescale;
+        if (amount !== undefined || timescale !== undefined) {
+            time_mode_button.click(); // change mode to mode2
+            select_amount.find('[value="' + amount + '"]').attr('selected', 'selected');
+            select_timescale.find('[value="' + timescale + '"]').attr('selected', 'selected');
+        }
+    }
 }
 
 function getPickedDate(widget) {

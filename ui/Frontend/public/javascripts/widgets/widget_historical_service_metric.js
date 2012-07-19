@@ -12,7 +12,7 @@ $('.widget').live('widgetLoadContent',function(e, obj){
              sp_id
      );
 
-     setGraphDatePicker(obj.widget.element);
+     setGraphDatePicker(obj.widget.element, obj.widget);
 });
 
 function fillServiceMetricCombinationList (widget, sp_id) {
