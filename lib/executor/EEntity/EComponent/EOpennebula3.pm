@@ -549,23 +549,14 @@ sub startHost {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $cm = CapacityManagement->new(cluster_id => $args{host}->getClusterId());
-
-    my $hypervisor_id = $cm->getHypervisorIdForVM(
-        wanted_values => {
-            ram => $args{host}->getAttr(name => 'host_ram'),
-            cpu => $args{host}->getAttr(name => 'host_core'),
-        }
-    );
-
-    if( !defined $hypervisor_id){
-        my $errmsg = "Cannot add node in cluster ".$args{host}->getClusterId().", not enough resources\n";
+    if( !defined $args{hypervisor}){
+        my $errmsg = "Cannot add node in cluster ".$args{host}->getClusterId().", no hypervisor available";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
     # Pick up an hypervisor
 
-    my $hypervisor = Entity::Host->get(id => $hypervisor_id);
+    my $hypervisor = $args{hypervisor};
     $log->info("Picked up hypervisor " . $hypervisor->getId());
 
     # generate template in opennebula master node

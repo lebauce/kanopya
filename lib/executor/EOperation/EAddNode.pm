@@ -59,32 +59,51 @@ sub prerequisites {
             $log->info('Remediation workflow <'.($self->{params}->{remediation_worfklow_id}).'> status unknown : '.($wf->getAttr(name => 'state')).', EXCEPTION');
             throw Kanopya::Exception::Internal(error => 'Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> has been cancelled');
         }
-   }
+    }
 
-   my $cluster = $self->{context}->{cluster};
-   my $host_type = $cluster->getHostManager()->getHostType();
+    my $cluster = $self->{context}->{cluster};
+    my $host_type = $cluster->getHostManager()->getHostType();
 
-   if($host_type eq 'Virtual Machine') {
-       my $host_manager_params = $cluster->getManagerParameters(manager_type => 'host_manager');
-       my $cm = CapacityManagement->new(cluster_id => $cluster->getId());
+    if($host_type eq 'Virtual Machine') {
 
-       my $hypervisor_id = $cm->getHypervisorIdForVM(
-                                 wanted_values => {
-                                     ram => $host_manager_params->{ram},
-                                     cpu => $host_manager_params->{core},
-                                 }
-       );
-       if(defined $hypervisor_id){
-            $log->info('HYPERVISOR READY ('.($hypervisor_id).') OK ');
+        $self->{context}->{host_manager} = EFactory::newEEntity(
+                                               data => $cluster->getManager(manager_type => 'host_manager'),
+                                           );
+
+        my $hvs   = $self->{context}->{host_manager}->getHypervisors();
+        my @hv_in_ids;
+        for my $hv (@$hvs) {
+            my ($state,$time_stamp) = $hv->getNodeState();
+            $log->info('hv <'.($hv->getId()).'>, state <'.($state).'>');
+            if($state eq 'in') {
+                push @hv_in_ids, $hv->getId();
+            }
+        }
+        $log->info("Hvs selected <@hv_in_ids>");
+
+        my $host_manager_params = $cluster->getManagerParameters(manager_type => 'host_manager');
+
+        my $cm = CapacityManagement->new(cluster_id => $cluster->getId());
+
+        my $hypervisor_id = $cm->getHypervisorIdForVM(
+                                # blacklisted_hv_ids => $self->{params}->{blacklisted_hv_ids},
+                                selected_hv_ids => \@hv_in_ids,
+                                wanted_values   => {
+                                    ram => $host_manager_params->{ram},
+                                    cpu => $host_manager_params->{core},
+                                }
+        );
+
+        if(defined $hypervisor_id){
+            $log->info("Hypervisor <$hypervisor_id> ready");
+            $self->{context}->{hypervisor} = Entity::Host->get(id => $hypervisor_id);
             return 0;
-       } else {
-            $log->info('NEED TO START A NEW HYPERVISOR');
-
-            my $opennebula = $cluster->getManager(manager_type => 'host_manager');
-            my $hv_cluster = $opennebula->getServiceProvider();
+        } else {
+            $log->info('Need to start a new hypervisor');
+            my $hv_cluster = $self->{context}->{host_manager}->getServiceProvider();
             my $wf = $hv_cluster->addNode();
             $self->{params}->{remediation_workflow_id} = $wf->getAttr(name => 'workflow_id');
-            $log->info('LAUNCH REMEDIATION WORKFLOW ID = '.($self->{params}->{remediation_workflow_id}));
+            $log->info('Launch remediation workflow id <'.($self->{params}->{remediation_workflow_id}).'>');
             return 15;
         }
    }

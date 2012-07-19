@@ -67,7 +67,7 @@ sub start {
     my $self = shift;
     my %args = @_;
 
-    $self->{host_manager}->startHost(host => $self);
+    $self->{host_manager}->startHost(host => $self, hypervisor => $args{hypervisor});
 
     $self->setState(state => 'starting');
 }
@@ -102,7 +102,7 @@ sub ping {
     $ping->close();
     return $pingable ? $pingable : 0;
 }
-    
+
 sub checkUp {
     my $self = shift;
     my %args = @_;
@@ -111,7 +111,7 @@ sub checkUp {
     my $ping = Net::Ping->new();
     my $pingable = $ping->ping($ip);
     $ping->close();
-    
+
     if ($pingable) {
         eval {
             $self->getEContext;
