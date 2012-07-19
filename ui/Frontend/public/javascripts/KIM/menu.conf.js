@@ -10,7 +10,10 @@ var mainmenu_def = {
     'Infrastructure' : {
         'Compute' : [ { label : 'Overview', id : 'compute_overview'},
                       { label : 'Hosts', id : 'hosts', onLoad : function(cid) { require('KIM/hosts.js'); hosts_list(cid); } } ],
-        'Storage' : [ { label : 'Overview', id : 'storage_overview'} ],
+        'Storage' : [
+            { label : 'Overview', id : 'storage_overview'},
+            { label : 'NetApp', id : 'storage_netapp', onLoad : function(cid) { require('KIM/netapp.js'); netapp_list(cid); } }
+        ],
         'IaaS'    : [ { label : 'IaaS', id : 'iaas', onLoad : load_iaas_content} ],
         'Network' : [
             { label : 'Overview', id : 'network_overview' },

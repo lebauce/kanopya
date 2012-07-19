@@ -70,7 +70,7 @@ sub new {
     my $admin = Administrator->new();
     my $connector_type = $admin->{db}->resultset('ConnectorType')->search(
         { connector_name    => $connector_name }
-    )->single;
+    )->first;
     
     if (not defined $connector_type) {
         throw Kanopya::Exception::Internal(error => "Connector type $connector_name not found in DB");
