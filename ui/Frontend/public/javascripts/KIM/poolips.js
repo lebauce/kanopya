@@ -1,3 +1,4 @@
+require('modalform.js');
 
 function poolips_addbutton_action(e) {
     var edit    = !(e instanceof Object);

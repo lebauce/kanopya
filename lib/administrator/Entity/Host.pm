@@ -111,17 +111,17 @@ use constant ATTR_DEF => {
     },
     host_hostname => {
         pattern      => '^\w*$',
-        is_mandatory => 0,
+        is_mandatory => 1,
         is_extended  => 0
     },
     host_ram => {
-        pattern      => '^\w*$',
-        is_mandatory => 0,
+        pattern      => '^\d*$',
+        is_mandatory => 1,
         is_extended  => 0
     },
     host_core => {
-        pattern      => '^\w*$',
-        is_mandatory => 0,
+        pattern      => '^\d*$',
+        is_mandatory => 1,
         is_extended  => 0
     },
     host_initiatorname => {
@@ -190,7 +190,21 @@ sub methods {
     };
 }
 
+=head2 create
 
+=cut
+
+sub create {
+    my $class   = shift;
+    my %args    = @_;
+
+    General::checkParams(args   => \%args,
+                         required => ['host_manager_id', 'host_core', 'kernel_id',
+                                      'host_ram', 'host_serial_number', 'host_hostname']);
+
+    my $manager = Entity::ServiceProvider->get(id => $args{host_manager_id});
+    $manager->createHost(%args);
+}
 
 =head2 getHyperVisor
 

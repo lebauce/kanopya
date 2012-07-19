@@ -1,13 +1,15 @@
+require('modalform.js');
 var vlans   = [];
 
 function networks_addbutton_action(e) {
+    var fields  = {
+        network_name    : { label : 'Name' },
+        vlan_number     : { label : 'Vlan Number', skip : true }
+    };
     (new ModalForm({
         title           : 'Create a Network',
         name            : 'network',
-        fields          : {
-            network_name    : { label : 'Name' },
-            vlan_number     : { label : 'Vlan Number', skip : true }
-        },
+        fields          : fields,
         beforeSubmit    : function(fdata, f, opts, mdfrm) {
             var vlannumber  = $(mdfrm.content).find(':input#input_vlan_number').val();
             var action      = $(mdfrm.form).attr('action');

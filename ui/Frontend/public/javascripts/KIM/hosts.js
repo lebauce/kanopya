@@ -1,6 +1,20 @@
 require('common/formatters.js');
+require('modalform.js');
 
 function host_addbutton_action(e) {
+    (new ModalForm({
+        title   : 'Create a host',
+        name    : 'host',
+        fields  : {
+            host_hostname       : { label : 'Hostname' },
+            host_desc           : { label : 'Description', type : 'textarea' },
+            host_core           : { label : 'Core Number' },
+            host_ram            : { label : 'RAM Amount' },
+            kernel_id           : { label : 'Default Kernel', display : 'kernel_name' },
+            host_serial_number  : { label : 'Serial number' },
+            host_manager_id     : { label : '', value : '2', type : 'hidden' }
+        }
+    })).start();
 }
 
 function hosts_list(cid) {
@@ -8,15 +22,16 @@ function hosts_list(cid) {
         content_container_id    : cid,
         grid_id                 : 'hosts_list',
         url                     : '/api/host',
-        colNames                : [ 'Id', 'Hostname', 'IP', 'Active', 'State' ],
+        colNames                : [ 'Id', 'Hostname', 'Description', 'Active', 'State' ],
         colModel                : [
             { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
             { name : 'host_hostname', index : 'host_hostname' },
-            { name : 'node.
-            { name : 'active', index : 'active', formatter : function(a) { if (a) { return 'Enabled'; } else { return 'Disabled'; } } },
+            { name : 'host_desc', index : 'host_desc' },
+            { name : 'active', index : 'active', width : 40, align : 'center', formatter : booleantostateformatter },
             { name : 'host_state', index : 'host_state', width : 40, align : 'center', formatter : StateFormatter }
         ]
     });
     var host_addbutton  = $('<a>', { text : 'Add a host' }).appendTo('#' + cid)
                             .button({ icons : { primary : 'ui-icon-plusthick' } });
+    $(host_addbutton).bind('click', host_addbutton_action);
 }

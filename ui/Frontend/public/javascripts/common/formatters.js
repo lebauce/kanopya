@@ -53,3 +53,12 @@ function lastevalStateFormatter(cell, options, row) {
         return "<img src='/images/icons/down.png' title='down' />";
     }
 }
+
+function booleantostateformatter(val) {
+    if (val) {
+        return "<img src='/images/icons/up.png' title='up' />";
+    }
+    else {
+        return "<img src='/images/icons/down.png' title='down' />";
+    }
+}

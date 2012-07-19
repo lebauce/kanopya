@@ -44,8 +44,8 @@ sub createHost {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "processormodel_id", "host_core", "kernel_id",
-                                       "hostmodel_id", "host_serial_number", "host_ram" ]);
+                         required => [ "host_core", "kernel_id",
+                                       "host_serial_number", "host_ram" ]);
 
     if (defined $args{erollback}) { delete $args{erollback}; }
 
@@ -56,28 +56,6 @@ sub createHost {
     };
     if($@) {
         $errmsg = "Wrong kernel_id attribute detected <$args{kernel_id}>\n" . $@;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Check if host_model_id exist
-    $log->debug("Checking host model existence with id <$args{hostmodel_id}>");
-    eval {
-          Entity::Hostmodel->get(id => $args{hostmodel_id});
-    };
-    if($@) {
-        $errmsg = "Wrong hostmodel_id attribute detected <$args{hostmodel_id}>\n" . $@;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Check if processor_model_id exist
-    $log->debug("Checking processor model existence with id <$args{processormodel_id}>");
-    eval {
-         Entity::Processormodel->get(id => $args{processormodel_id});
-    };
-    if($@) {
-        $errmsg = "Wrong processormodel_id attribute detected <$args{processormodel_id}>\n" . $@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }

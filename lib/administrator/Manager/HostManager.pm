@@ -77,8 +77,7 @@ sub addHost {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "processormodel_id", "host_core", "kernel_id",
-                                       "hostmodel_id", "host_serial_number", "host_ram" ]);
+                         required => [ "host_core", "kernel_id", "host_serial_number", "host_ram" ]);
 
     my $host_manager_id = $self->getAttr(name => 'entity_id');
 
@@ -159,8 +158,7 @@ sub createHost {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "processormodel_id", "host_core", "kernel_id",
-                                       "hostmodel_id", "host_serial_number", "host_ram" ]);
+                         required => [ "host_core", "kernel_id", "host_serial_number", "host_ram" ]);
 
     $log->debug("New Operation AddHost with attrs : " . Dumper(%args));
     Operation->enqueue(
