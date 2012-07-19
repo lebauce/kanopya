@@ -483,12 +483,35 @@ sub preStopNode {
      $self->_getEntity()->removeHypervisor(host_id => $args{host}->getAttr(name => 'host_id'));
 }
 
+
+sub retrieveOpennebulaHypervisorStatus {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ] );
+
+    my $command = $self->_oneadmin_command(command => 'onehost show '.$args{host}->host_hostname.' --xml');
+    my $result  = $self->getEContext->execute(command => $command);
+    my $hxml    = XMLin($result->{stdout});
+    if($hxml->{STATE} != 2) {
+        $log->info('hypervisor <'.$args{host}->host_hostname.'> error for opennebula');
+        return 0;
+    }
+
+    $log->info('hypervisor <'.$args{host}->host_hostname.'> running for opennebula');
+    return 1;
+}
+
 sub isUp {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ] );
     my $ip = $args{host}->getAdminIp;
+
+    my $check_opennebula_status = $self->retrieveOpennebulaHypervisorStatus(host => $args{host});
+    if($check_opennebula_status == 0) {
+        return 0;
+    }
 
     if($args{cluster}->getMasterNodeIp() eq $ip) {
         # host is the opennebula frontend
