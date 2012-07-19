@@ -1,19 +1,23 @@
 require('modalform.js');
 var vlans   = [];
 
-function networks_addbutton_action(e) {
+function networks_addbutton_action(e, isvlan) {
     var fields  = {
         network_name    : { label : 'Name' },
-        vlan_number     : { label : 'Vlan Number', skip : true }
     };
+    var isedit  = !(e instanceof Object);
+    if (!isedit || isvlan) {
+        fields.vlan_number  = { label : 'Vlan Number', skip : true }
+    }
     (new ModalForm({
         title           : 'Create a Network',
         name            : 'network',
         fields          : fields,
+        id              : (isedit) ? e : undefined,
         beforeSubmit    : function(fdata, f, opts, mdfrm) {
             var vlannumber  = $(mdfrm.content).find(':input#input_vlan_number').val();
             var action      = $(mdfrm.form).attr('action');
-            var newaction   = (vlannumber != null && vlannumber != "") ? 'vlan' : 'network';
+            var newaction   = (isvlan || (vlannumber != null && vlannumber != "")) ? 'vlan' : 'network';
             $(mdfrm.form).attr('action', '/api/vlan');
             opts.url        = '/api/vlan';
             if (newaction === 'vlan') {
@@ -103,6 +107,12 @@ function networks_details_poolips(cid, eid) {
             $(associatepoolipbutton).bind('click', function() {
                 var pips    = (isvlan) ? data.parent.network_poolips : data.network_poolips;
                 networks_associatepoolipbutton_action(eid, pips, cid);
+            });
+
+            var editnetworkbutton       = $('<a>', { text : 'Edit network' }).appendTo('#' + cid)
+                                            .button({ icons : { primary : 'ui-icon-wrench' } });
+            $(editnetworkbutton).bind('click', function() {
+                networks_addbutton_action(eid, isvlan);
             });
         }
     });
