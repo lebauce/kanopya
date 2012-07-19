@@ -36,21 +36,57 @@ function setGraphDatePicker(widget) {
     var start = new Date();
     start.setDate(now.getDate() - 1);
 
+    var default_mode = 'mode1';
+
     var container = widget.find('.graph_time_settings');
 
+    if (default_mode == 'mode1') {container.addClass(default_mode);}
+    var time_mode_button = $('<button>').button({ icons : { primary : 'ui-icon-clock' }, text : false }).click(function() {
+        container.find('.timeset_mode2').toggle();
+        container.find('.timeset_mode1').toggle();
+        container.toggleClass('mode1');
+    });
+    container.append(time_mode_button);
+
+    // Time setting mode 1 (start/end)
     var start_input = $('<input>', {type:'text', 'class':'graph_start_time'}).datetimepicker({
         dateFormat: 'mm-dd-yy'
     }).datetimepicker('setDate', start);
-    container.append ($('<span>', {css:'white-space:nowrap', html:'Start: '}).append(start_input) );
+    container.append($('<span>', {css:'white-space:nowrap', 'class' : 'timeset_mode1 hidden', html:' Start: '}).append(start_input) );
 
     var end_input = $('<input>', {type:'text', 'class':'graph_end_time'}).datetimepicker({
         dateFormat: 'mm-dd-yy'
     }).datetimepicker('setDate', now);
-    container.append ($('<span>', {css:'white-space:nowrap', html:'End: '}).append(end_input) );
+    container.append($('<span>', {css:'white-space:nowrap', 'class' : 'timeset_mode1 hidden', html:' End: '}).append(end_input) );
 
+    // Time setting mode 2 (last xxx)
+    var select_amount       = $('<select>', {'class' : 'timeset_amount'});
+    for (var i=1; i<10; i++) {
+        select_amount.append($('<option>', { value: i, html: i}))
+    }
+
+    var select_timescale    = $('<select>', {'class' : 'timeset_timescale'});
+    var timescale_options = {'hour(s)' : 3600, 'day(s)' : 3600*24, 'week(s)' : 3600*24*7};
+    $.each(timescale_options, function(label, seconds) { select_timescale.append($('<option>', { value: seconds, html: label}))});
+
+    container.append($('<span>', {css:'white-space:nowrap', 'class':'timeset_mode2 hidden' , html:' Last '}).append(select_amount).append(select_timescale) );
+
+    container.find('.timeset_' + default_mode).show();
 }
 
 function getPickedDate(widget) {
+    if ( ! widget.find('.graph_time_settings').hasClass('mode1')) {
+        // Mode 2 -> set datepicker values according to relative time settings
+        var amount      = widget.find('.timeset_amount :selected').val();
+        var timescale   = widget.find('.timeset_timescale :selected').val();
+
+        var now   = new Date();
+        var start = new Date( now.getTime() - (amount*timescale*1000) );
+
+        widget.find('.graph_end_time').datetimepicker('setDate', now);
+        widget.find('.graph_start_time').datetimepicker('setDate', start);
+    }
+
     return {
         start : widget.find('.graph_start_time').val(),
         end   : widget.find('.graph_end_time').val(),
