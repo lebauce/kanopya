@@ -21,7 +21,7 @@ function hosts_list(cid) {
     create_grid({
         content_container_id    : cid,
         grid_id                 : 'hosts_list',
-        url                     : '/api/host',
+        url                     : '/api/host?host_manager_id=2',
         colNames                : [ 'Id', 'Hostname', 'Description', 'Active', 'State' ],
         colModel                : [
             { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
