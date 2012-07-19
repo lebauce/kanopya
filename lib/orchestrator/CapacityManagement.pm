@@ -335,18 +335,37 @@ sub _applyMigrationPlan{
 
 sub getHypervisorIdForVM{
     my ($self,%args) = @_;
+
     General::checkParams(args => \%args, required => ['wanted_values']);
+    # Option : blacklisted_hv_ids
+    # Option : selected_hv_ids
+
     $log->info('Wanted values'. Dumper $args{wanted_values});
-    my $wanted_values = $args{wanted_values};
-    my $infra = $self->{_infra};
-    my @all_hv = keys %{$infra->{hvs}};
+    my $wanted_values      = $args{wanted_values};
+    my $blacklisted_hv_ids = $args{blacklisted_hv_ids};
+    my $selected_hv_ids    = $args{selected_hv_ids};
+
+    if (! defined $selected_hv_ids){
+        my @keys_array = keys %{$self->{_infra}->{hvs}};
+        $selected_hv_ids = \@keys_array;
+    }
+
+    my %hv_selection_ids;
+    for my $hv_id (@{$selected_hv_ids}) {
+        $hv_selection_ids{$hv_id} = undef;
+    }
+
+    for my $blacklisted_hv_id (@{$blacklisted_hv_ids}) {
+        delete $hv_selection_ids{$blacklisted_hv_id};
+    }
+    my @hv_selection_ids_keys = keys %hv_selection_ids;
 
     my $hv = $self->_findMinHVidRespectCapa(
-        hv_selection_ids => \@all_hv,
+        hv_selection_ids => \@hv_selection_ids_keys,
         wanted_metrics   => $wanted_values,
-        infra            => $infra,
     );
-    $log->info('Found HV : '.(Dumper $hv));
+
+    $log->info('Selected hv <'.(Dumper $hv).'>');
     return $hv->{hv_id};
 }
 
@@ -932,7 +951,6 @@ sub _migrateVmToScale{
     $wanted_metrics->{$scale_metric} = $new_value;
 
     my $hv_dest_id = $self->_findMinHVidRespectCapa(
-        infra            => $infra,
         hv_selection_ids => $hv_selection_ids,
         wanted_metrics   => $wanted_metrics,
     );
@@ -967,10 +985,13 @@ sub _migrateVmToScale{
 
 sub _findMinHVidRespectCapa{
     my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['hv_selection_ids', 'wanted_metrics']);
+
     my $hvs_selection_ids = $args{hv_selection_ids};
     my $wanted_metrics    = $args{wanted_metrics};
-    my $infra             = $args{infra};
 
+    my $infra             = $self->{_infra};
 
     my $rep;
     for my $hv_id (@$hvs_selection_ids){
@@ -1070,7 +1091,6 @@ sub _migrateOtherVmToScale{
         $log->info(Dumper \@selection);
 
         $hv_dest_id = $self->_findMinHVidRespectCapa(
-            infra            => $infra,
             hv_selection_ids => \@selection,,
             wanted_metrics   =>  $infra->{vms}->{$vm_to_migrate_id},
         );
@@ -1157,7 +1177,6 @@ sub _optimStep{
         for my $vm_to_migrate_id (@vmlist){
             $log->info("__ Processing VM $vm_to_migrate_id");
             my $hv_dest_id = $self->_findMinHVidRespectCapa(
-                infra            => $infra,
                 hv_selection_ids => \@hv_selection_ids,
                 wanted_metrics   => $infra->{vms}->{$vm_to_migrate_id},
             );
