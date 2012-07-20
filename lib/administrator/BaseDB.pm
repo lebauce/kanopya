@@ -129,6 +129,18 @@ sub getAttrDefs {
 
 =head2
 
+    Get the primary key column name
+
+=cut
+
+sub getPrimaryKey {
+    my $self = shift;
+
+    return ($self->{_dbix}->result_source->primary_columns)[0];
+}
+
+=head2
+
     Get the primary key of the object
 
 =cut
@@ -136,7 +148,43 @@ sub getAttrDefs {
 sub getId {
     my $self = shift;
 
-    return $self->{_dbix}->get_column(($self->{_dbix}->result_source->primary_columns)[0]);
+    return $self->id;
+}
+
+=head2
+
+    Get the primary key of the object
+
+=cut
+
+sub id {
+    my $self = shift;
+
+    return $self->{_dbix}->get_column($self->getPrimaryKey);
+}
+
+=head2
+
+    Return the parent class name
+
+=cut
+
+sub _parentClass {
+    my ($class) = @_;
+    $class =~ s/\:\:[a-zA-Z0-9]+$//g;
+    return $class;
+}
+
+=head2
+
+    Reùove the top of hierarchy class
+
+=cut
+
+sub _childClass {
+    my ($class) = @_;
+    $class =~ s/^[a-zA-Z0-9]+\:\://g;
+    return $class;
 }
 
 =head2
@@ -162,6 +210,21 @@ sub _rootTable {
     my ($class) = @_;
     $class =~ s/\:\:.*$//g;
     return $class;
+}
+
+=head2
+
+    Convert a class name to table name
+
+=cut
+
+sub _classToTable {
+    my ($class) = @_;
+
+    $class =~ s/([A-Z])/_$1/g;
+    my $table = lc( substr($class, 1) );
+
+    return $table;
 }
 
 =head2
@@ -219,6 +282,7 @@ sub checkAttr {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['name']);
+
     if(! exists $args{value}) {
         $errmsg = ref($self) . " checkAttr need a value named argument!";
         $log->error($errmsg);
@@ -253,7 +317,7 @@ sub checkAttrs {
     my $final_attrs = {};
     my $attributes_def = $class->getAttrDefs();
     
-    General::checkParams(args => \%args, required => ['attrs']);  
+    General::checkParams(args => \%args, required => ['attrs']);
 
     foreach my $module (keys %$attributes_def) {
         $final_attrs->{$module} = {};
@@ -290,17 +354,28 @@ sub checkAttrs {
             }
         }
     }
-    
+
     my @modules = sort keys %$final_attrs;
-    # finaly restructure the hashref with dbix relationships         
+    # finaly restructure the hashref with dbix relationships
     for my $i (0..$#modules-1) {
-        my $classname = _buildClassNameFromString($modules[$i+1]);
-        $classname =~ s/([A-Z])/_$1/g;
-        my $relation = lc( substr($classname, 1) );
+        my $relation = _classToTable(_buildClassNameFromString($modules[$i+1]));
         $final_attrs->{$modules[$i]}->{$relation} = $final_attrs->{$modules[$i+1]};
     }
-    
-    return $final_attrs->{$modules[0]};
+
+    # If trunc is defined, only return a sub hash
+    my $result = $final_attrs->{$modules[0]};
+    if (defined $args{trunc}) {
+        my $trunc = $args{trunc};
+
+        while ($trunc =~ m/\:\:/) {
+            $trunc = _childClass($trunc);
+            my $classname = $trunc;
+            $classname =~ s/\:\:.*//g;
+
+            $result = $result->{_classToTable($classname)};
+        }
+    }
+    return $result;
 }
 
 =head2
@@ -331,18 +406,126 @@ sub new {
         $log->debug($errmsg);
     }
 
-    my $dbixroot = $adm->_newDbix(table => _rootTable($class), row => $attrs);
-    $dbixroot->insert;
-    my $id = $dbixroot->id;
-
-    my $self = {
-        _dbix => $adm->getRow(table => _buildClassNameFromString($class),
-                              id    => $id),
-        _entity_id => $id
-    };
+    my $self = $class->newDBix(attrs => $attrs);
 
     bless $self, $class;
     return $self;
+}
+
+=head2
+
+    Extend an object instance to a concreter type.
+
+=cut
+
+sub promote {
+    my $class = shift;
+    my %args = @_;
+
+    my $baseobject = General::checkParam(args => \%args, name => 'promoted');
+
+    my $adm = Administrator->new();
+
+    # Check if the new type is in the same hierarchy
+    my $baseclass = ref($baseobject);
+    if (not ($class =~ m/$baseclass/)) {
+        $errmsg = "Unable to promote " . ref($baseobject) . " to " . $class;
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+
+    my $pattern = $baseclass . '::';
+    my $subclass = $class;
+    $subclass =~ s/^$pattern//g;
+
+    # Set the primary key to the parent primary key value.
+    my $primary_key = ($adm->{db}->source(_rootTable($subclass))->primary_columns)[0];
+    $args{$primary_key} = $baseobject->id;
+
+    # Merge the base object attributtes and new ones for attrs checking
+    my %totalargs = (%args, $baseobject->getAttrs);
+
+    # Then extract only the attrs for new tables for insertion
+    my $attrs = $class->checkAttrs(attrs => \%totalargs,
+                                   trunc => $baseclass . '::' . _rootTable($subclass));
+
+    my $self = $class->newDBix(attrs => $attrs, subclass => $subclass);
+
+    bless $self, $class;
+
+    # Set the class type to the new promotion class
+    eval {
+        my $rs = $adm->_getDbixFromHash(table => "ClassType",
+                                        hash  => { class_type => $class })->single;
+
+        $self->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
+        $self->save();
+    };
+    if ($@) {
+        $errmsg = "Unregistred or abstract class name <$class>, assuming it is not an Entity.";
+        $log->debug($errmsg);
+    }
+    return $self;
+}
+
+=head2
+
+    Generalize an object instance to a parent type.
+
+=cut
+
+sub demote {
+    my $class = shift;
+    my %args = @_;
+
+    my $baseobject = General::checkParam(args => \%args, name => 'demoted');
+
+    my $adm = Administrator->new();
+
+    # Check if the new type is in the same hierarchy
+    my $baseclass = ref($baseobject);
+    if (not ($baseclass =~ m/$class/)) {
+        $errmsg = "Unable to demote " . ref($baseobject) . " to " . $class;
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+
+    # Delete row of tables bellow $class
+    $baseobject->delete(trunc => $class);
+
+    bless $baseobject, $class;
+
+    # Set the class type to the new promotion class
+    eval {
+        my $rs = $adm->_getDbixFromHash(table => "ClassType",
+                                        hash  => { class_type => $class })->single;
+
+        $baseobject->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
+        $baseobject->save();
+    };
+    if ($@) {
+        $errmsg = "Unregistred or abstract class name <$class>, assuming it is not an Entity.";
+        $log->debug($errmsg);
+    }
+    return $baseobject;
+}
+
+sub newDBix {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'attrs' ]);
+
+    my $adm = Administrator->new();
+
+    my $subclass = defined $args{subclass} ? $args{subclass} : $class;
+
+    my $dbixroot = $adm->_newDbix(table => _rootTable($subclass), row => $args{attrs});
+    $dbixroot->insert;
+    my $id = $dbixroot->id;
+
+    return {
+        _dbix => $adm->getRow(table => _buildClassNameFromString($class), id => $id),
+        _entity_id => $id
+    };
 }
 
 =head2
@@ -354,6 +537,8 @@ sub new {
 
 sub fromDBIx {
     my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'row' ]);
 
     my $name = classFromDbix($args{row}->result_source);
     requireClass($name);
@@ -394,7 +579,9 @@ sub getAttr {
                 return map { fromDBIx(row => $_) } $dbix->$name;
             }
             else {
-                $value = fromDBIx(row => $dbix->$name);
+                if ($dbix->$name) {
+                    $value = fromDBIx(row => $dbix->$name);
+                }
             }
             last;
         }
@@ -774,17 +961,29 @@ sub save {
 
 sub delete {
     my $self = shift;
+    my %args = @_;
     my $dbix = $self->{_dbix};
+
+    if (defined $args{trunc}) {
+        $args{trunc} = _buildClassNameFromString($args{trunc});
+    }
+
     # Search for first mother table in the hierarchy
     while(1) {
-        if($dbix->can('parent')) {
+        if ($dbix->can('parent')) {
+            my $parentclass = _buildClassNameFromString(ref($dbix->parent));
+
+            if (defined $args{trunc} and $parentclass eq $args{trunc}) {
+                last;
+            }
+
             # go to parent dbix
             $dbix = $dbix->parent;
             next;
-        } else {
-            last;
-        }
+
+        } else { last; }
     }
+
     $dbix->delete;
 }
 
@@ -869,7 +1068,6 @@ sub toJSON {
             is_mandatory => 1,
             is_extended  => 0
         };
-
     }
     else {
         $hash->{pk} = $self->getId;
