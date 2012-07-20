@@ -130,7 +130,7 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     host_state => {
-        pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
+        pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*|locked:\d*$',
         is_mandatory => 0,
         is_extended  => 0
     },
@@ -200,40 +200,11 @@ sub create {
 
     General::checkParams(args   => \%args,
                          required => ['host_manager_id', 'host_core', 'kernel_id',
-                                      'host_ram', 'host_serial_number', 'host_hostname']);
+                                      'host_ram', 'host_serial_number' ]);
 
     my $manager = Entity::ServiceProvider->get(id => $args{host_manager_id});
     $manager->createHost(%args);
 }
-
-=head2 getHyperVisor
-
-    desc: Return the hyper visor if the host is a VM, else return undef
-
-=cut
-
-sub getHyperVisorHostId(){
-    my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => []);
-
-    my $host_type = $self->getHostManager()->getHostType();
-    my ($state,$timestamp) = $self->getNodeState();
-    if($host_type eq "Virtual Machine" && $state eq 'in'){
-
-        my $opennebula3_vms = $self->{_dbix}->opennebula3_vms;
-
-        if($opennebula3_vms->count > 1) {
-            throw Kanopya::Exception::Internal(
-             error => "VM must have only one HV host"
-            );
-        }else{
-            return $opennebula3_vms->first->opennebula3_hypervisor->get_column('hypervisor_host_id');
-        }
-    }else{
-        return undef;
-    }
-}
-
 
 =head2 getServiceProvider
 
@@ -267,13 +238,13 @@ sub getHostManager {
 
 sub getState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('host_state');
+    my $state = $self->host_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
 sub getPrevState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('host_prev_state');
+    my $state = $self->host_prev_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -288,8 +259,10 @@ sub setState {
     General::checkParams(args => \%args, required => ['state']);
     my $new_state = $args{state};
     my $current_state = $self->getState();
-    $self->{_dbix}->update({'host_prev_state' => $current_state,
-                            'host_state' => $new_state.":".time})->discard_changes();;
+    
+    $self->setAttr(name => 'host_prev_state', value => $current_state);
+    $self->setAttr(name => 'host_state', value => $new_state.":".time);
+    $self->save();
 }
 
 =head2 getNodeState
@@ -298,7 +271,7 @@ sub setState {
 
 sub getNodeState {
     my $self = shift;
-    my $state = $self->{_dbix}->node->get_column('node_state');
+    my $state = $self->node->node_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -307,7 +280,7 @@ sub getNodeState {
 =cut
 sub getNodeNumber {
     my $self = shift;
-    my $node_number = $self->{_dbix}->node->get_column('node_number');
+    my $node_number = $self->node->node_number;
     return $node_number;
 }
 
@@ -317,30 +290,12 @@ sub getNodeNumber {
 
 sub getNodeSystemimage {
     my $self = shift;
-
-    my $systemimage_id = $self->{_dbix}->node->get_column('systemimage_id');
-    return Entity::Systemimage->get(id => $systemimage_id);
+    return $self->node->systemimage;
 }
 
 sub getNode {
     my $self = shift;
-    return Externalnode::Node->get(id => $self->{_dbix}->node->get_column('node_id'));
-}
-
-=head2 getHostRAM
-=cut
-sub getHostRAM {
-    my $self = shift;
-    my $host_ram = $self->{_dbix}->get_column('host_ram');
-    return $host_ram;
-}
-
-=head2 getHostCore
-=cut
-sub getHostCORE {
-    my $self = shift;
-    my $host_core = $self->{_dbix}->get_column('host_core');
-    return $host_core;
+    return $self->node;
 }
 
 sub setNodeNumber {
@@ -349,13 +304,13 @@ sub setNodeNumber {
 
     General::checkParams(args => \%args, required => ['node_number']);
 
-    my $best_node_number = $args{'node_number'};
-    $self->{_dbix}->node->update({'node_number' => $best_node_number});
+    $self->node->setAttr(name => 'node_number', value => $args{'node_number'});
+    $self->node->save();
 }
 
 sub getPrevNodeState {
     my $self = shift;
-    my $state = $self->{_dbix}->node->get_column('node_prev_state');
+    my $state = $self->node->node_prev_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -371,10 +326,10 @@ sub setNodeState {
 
     my $new_state = $args{state};
     my $current_state = $self->getNodeState();
-    $self->{_dbix}->node->update({
-        node_prev_state => $current_state,
-        node_state      => $new_state . ":" . time
-    })->discard_changes();
+    
+    $self->node->setAttr(name => 'node_prev_state', value => $current_state);
+    $self->node->setAttr(name => 'node_state', value => $new_state . ":" . time);
+    $self->node->save();
 }
 
 =head2 Entity::Host->becomeNode (%args)
@@ -410,19 +365,19 @@ sub becomeNode {
     my $cluster = Entity::ServiceProvider->get(id => $args{inside_id});
     $self->associateInterfaces(cluster => $cluster);
 
-    return $node->getAttr(name => 'node_id');
+    return $node->id;
 }
 
 sub becomeMasterNode{
     my $self = shift;
 
-    my $row = $self->{_dbix}->node;
-    if(not defined $row) {
-        $errmsg = "Entity::Host->becomeMasterNode :Host " . $self->getAttr(name => "entity_id") . " is not a node!";
+    if(not defined $self->node) {
+        $errmsg = "Entity::Host->becomeMasterNode :Host " . $self->id . " is not a node!";
         $log->error($errmsg);
         throw Kanopya::Exception::DB(error => $errmsg);
     }
-    $row->update({master_node => 1});
+    $self->node->setAttr(name => 'master_node', value => 1);
+    $self->node->save();
 }
 
 =head2 Entity::Host->stopToBeNode (%args)
@@ -439,13 +394,9 @@ sub becomeMasterNode{
 sub stopToBeNode{
     my $self = shift;
 
-    my $node;
-    eval {
-        # TODO: $node = $self->getRelated(name => 'node');
-        $node = Externalnode::Node->find(hash => { host_id => $self->getAttr(name => 'entity_id') });
-    };
-    if($@) {
-        $errmsg = "Node representing host " . $self->getAttr(name => "entity_id") . " not found!";
+    if(not defined $self->node) {
+        $errmsg = "Host " . $self->id . " is not a node!";
+        $log->error($errmsg);
         #throw Kanopya::Exception::DB(error => $errmsg);
     }
 
@@ -453,7 +404,7 @@ sub stopToBeNode{
     $self->dissociateInterfaces();
 
     # Remove node entry
-    $node->delete();
+    $self->node->delete();
 
     $self->setState(state => 'down');
 }
@@ -604,7 +555,7 @@ sub removeIface {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove an interface from this host");
     }
 
-    my $ifc = $self->{_dbix}->ifaces->find($args{iface_id});
+    my $ifc = Entity::Iface->find(hash => { host_id => $self->id, iface_id => $args{iface_id} });
     $ifc->delete();
 }
 
@@ -669,7 +620,7 @@ sub getFreeHosts {
     my $class = shift;
     my %args = @_;
 
-    my $hash = {active => 1, host_state => {-like => 'down:%'}};
+    my $hash = { active => 1, host_state => {-like => 'down:%'} };
 
     if (defined $args{host_manager_id}) {
         $hash->{host_manager_id} = $args{host_manager_id}
@@ -678,7 +629,7 @@ sub getFreeHosts {
     my @hosts = $class->getHosts(hash => $hash);
     my @free;
     foreach my $m (@hosts) {
-        if(not $m->{_dbix}->node) {
+        if(not $m->node) {
             push @free, $m;
         }
     }
@@ -809,14 +760,15 @@ sub toString {
 
 sub getClusterId {
     my $self = shift;
-    return $self->{_dbix}->node->parent->service_provider->get_column('service_provider_id');
+    return $self->node->service_provider->id;
 }
 
 sub getPowerSupplyCardId {
     my $self = shift;
-    my $row = $self->{_dbix}->host_powersupply;
+    my $row = $self->host_powersupply;
     if (defined $row) {
-        return $row->get_column('powersupplycard_id');}
+        return $row->id;
+    }
     else {
         return;
     }
@@ -824,11 +776,7 @@ sub getPowerSupplyCardId {
 
 sub getModel {
     my $self = shift;
-    my $model_row = $self->{_dbix}->hostmodel;
-    if ( defined $model_row ) {
-        return $model_row->get_columns();
-    }
-    return;
+    return $self->hostmodel;
 }
 
 sub getRemoteSessionURL {
@@ -847,31 +795,6 @@ sub getHostType {
     my $self    = shift;
 
     return $self->getHostManager->getHostType;
-}
-
-sub scale {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'scalein_value', 'scalein_type' ]);
-
-    return $self->getHostManager->scaleHost(
-               host_id       => $self->getId,
-               scalein_value => $args{scalein_value},
-               scalein_type  => $args{scalein_type}
-           );
-}
-
-sub migrate {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'hypervisor' ]);
-
-    return $self->getHostManager->migrate(
-               host_id       => $self->getId,
-               hypervisor_id => $args{hypervisor}->getId,
-           );
 }
 
 1;

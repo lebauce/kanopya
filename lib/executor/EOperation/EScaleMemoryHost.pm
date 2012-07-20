@@ -67,8 +67,8 @@ sub prepare {
 
     # Verify if there is enough resource in HV
 
-    my $vm_id = $self->{context}->{host}->getId();
-    my $hv_id = $self->{context}->{host}->getHyperVisorHostId();
+    my $vm_id = $self->{context}->{host}->getId;
+    my $hv_id = $self->{context}->{host}->hypervisor->getId;
 
     my $cm    = CapacityManagement->new(cluster_id => $self->{context}->{host}->getClusterId());
     my $check = $cm->isScalingAuthorized(

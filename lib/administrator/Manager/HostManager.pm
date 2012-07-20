@@ -211,7 +211,7 @@ sub getFreeHosts {
     my @hosts = Entity::Host->getHosts(hash => $where);
     my @free;
     foreach my $m (@hosts) {
-        if(not $m->{_dbix}->node) {
+        if(not $m->node) {
             push @free, $m;
         }
     }

@@ -211,9 +211,10 @@ sub execute {
     $log->info('Processing cluster components configuration for this node');
     foreach my $i (keys %$components) {
         my $comp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is ".ref($comp));
-        $comp->postStartNode(host    => $self->{context}->{host},
-                             cluster => $self->{context}->{cluster});
+        $log->debug("Component is ".ref($comp));
+        $comp->postStartNode(host      => $self->{context}->{host},
+                             cluster   => $self->{context}->{cluster},
+                             erollback => $self->{erollback});
     }
 
     if(defined $self->{context}->{puppetagent}) {

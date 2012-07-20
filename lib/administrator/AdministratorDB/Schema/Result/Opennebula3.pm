@@ -75,18 +75,19 @@ __PACKAGE__->table("opennebula3");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 hypervisor
+
+  data_type: 'char'
+  default_value: 'xen'
+  is_nullable: 0
+  size: 255
+
 =head2 debug_level
 
   data_type: 'enum'
   default_value: 3
   extra: {list => [0,1,2,3]}
   is_nullable: 0
-
-=head2 hypervisor
-
-  data_type: 'varchar'
-  is_nullable: 0
-  size: 255
 
 =cut
 
@@ -147,18 +148,14 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_nullable => 0,
   },
+  "hypervisor",
+  { data_type => "char", default_value => "xen", is_nullable => 0, size => 255 },
   "debug_level",
   {
     data_type => "enum",
     default_value => 3,
     extra => { list => [0 .. 3] },
     is_nullable => 0,
-  },
-  "hypervisor",
-  {
-    data_type => "varchar",
-    is_nullable => 0,
-    size => 255
   },
 );
 __PACKAGE__->set_primary_key("opennebula3_id");
@@ -177,7 +174,7 @@ __PACKAGE__->belongs_to(
   "opennebula3",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "opennebula3_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 opennebula3_hypervisors
@@ -226,9 +223,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-03 13:46:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rA2zyvgfenNBO41JrSkFYQ
-
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-18 11:47:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:vt3kD9US6ndQ8p+gmUOxcQ
 
 __PACKAGE__->belongs_to(
   "parent",

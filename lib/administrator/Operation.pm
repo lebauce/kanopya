@@ -379,7 +379,7 @@ sub getParams {
                 if ($@) {
                     # Can skip errors on entity instanciation. Could be usefull when
                     # loading context that containing deleted entities.
-                    if (not ($@->isa('Kanopya::Exception::DB') and $args{skip_not_found})) {
+                    if (not $args{skip_not_found}) {
                         $errmsg = "Workflow <" . $self->getAttr(name => 'workflow_id') .
                                    ">, context param <$value>, seems not to be an entity id.\n$@";
                         $log->debug($errmsg);
