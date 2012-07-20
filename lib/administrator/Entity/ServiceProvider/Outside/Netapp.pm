@@ -46,6 +46,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        getState    => {
+            description => 'get the state',
+            perm_holder => 'entity'
+        }
+    };
+}
+
 sub getNetapp {
     my $class = shift;
     my %args = @_;

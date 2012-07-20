@@ -7,6 +7,7 @@ function host_addbutton_action(e) {
     (new ModalForm({
         title   : 'Create a host',
         name    : 'host',
+        id      : (!(e instanceof Object)) ? e : undefined,
         fields  : {
             host_hostname       : { label : 'Hostname' },
             host_desc           : { label : 'Description', type : 'textarea' },
@@ -32,7 +33,8 @@ function hosts_list(cid, host_manager_id) {
             { name : 'host_desc', index : 'host_desc' },
             { name : 'active', index : 'active', width : 40, align : 'center', formatter : booleantostateformatter },
             { name : 'host_state', index : 'host_state', width : 40, align : 'center', formatter : StateFormatter }
-        ]
+        ],
+        details                 : { onSelectRow : host_addbutton_action }
     });
     var host_addbutton  = $('<a>', { text : 'Add a host' }).appendTo('#' + cid)
                             .button({ icons : { primary : 'ui-icon-plusthick' } });

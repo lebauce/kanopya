@@ -1,5 +1,5 @@
 require('modalform.js');
-require('common/formatter.js');
+require('common/formatters.js');
 
 function netapp_addbutton_action(e) {
     (new ModalForm({
@@ -24,15 +24,27 @@ function netapp_list(cid) {
         content_container_id    : cid,
         url                     : '/api/netapp',
         grid_id                 : 'netapp_list',
-        colNames                : ['Id', 'Name', 'Description', 'Address', 'Login'],
+        colNames                : ['Id', 'Name', 'Description', 'Address', 'Login', 'State'],
         colModel                : [
             { name : 'pk', index : 'pk', key : true, hidden : true, sorttype : 'int' },
             { name : 'netapp_name', index : 'netapp_name' },
             { name : 'netapp_desc', index : 'netapp_desc' },
             { name : 'netapp_addr', index : 'netapp_addr' },
-            { name : 'netapp_login', index : 'netapp_login' }
+            { name : 'netapp_login', index : 'netapp_login' },
+            { name : 'state', index : 'state', width : 40, align : 'center' }
         ],
-        details                 : { onSelectRow : netapp_addbutton_action }
+        details                 : { onSelectRow : netapp_addbutton_action },
+        afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
+            $.ajax({
+                url     : '/api/netapp/' + rowid + '/getState',
+                type    : 'POST',
+                success : function(data) {
+                    $(grid).setGridParam({ autoencode : false });
+                    $(grid).setCell(rowid, 'state', StateFormatter(data));
+                    $(grid).setGridParam({ autoencode : true });
+                }
+            });
+        }
     });
     
     var netapp_addbutton    = $('<a>', { text : 'Create a NetApp' }).appendTo('#' + cid)
