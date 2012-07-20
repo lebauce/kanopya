@@ -125,16 +125,14 @@ sub finish{
 sub postrequisites {
     my $self = shift;
 
-    my $migr_state = $self->{context}->{cloudmanager_comp}->checkMigration(
-        host               => $self->{context}->{vm},
-        hypervisor_src     => $self->{context}->{src_hypervisor},
-        hypervisor_cluster => $self->{context}->{cluster},
+    my $migr_state = $self->{context}->{cloudmanager_comp}->getVMState(
+        host => $self->{context}->{vm},
     );
 
 
 
     $log->info('State <'.($migr_state->{state}).'> ; CURRENT_H = <'.($migr_state->{hypervisor}).'> ; DEST_H = <'.($self->{context}->{host}->getAttr(name => 'host_hostname')).'>');
-    if ($migr_state->{state} == 3) { # VM IS RUNNING
+    if ($migr_state->{state} eq 'runn') {
         if ($migr_state->{hypervisor} eq $self->{context}->{host}->getAttr(name => 'host_hostname')) { # ON THE TARGETED HV
 
             # After checking migration -> store migration in DB
