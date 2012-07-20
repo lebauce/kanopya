@@ -85,10 +85,12 @@ sub createExport {
                      options                 =>  $client_options,
                  );
 
+
     my $container_access = EFactory::newEEntity(data => $entity);
-    my $client = $self->addExportClient(export         => $container_access,
-                                        client_name    => $client_name,
-                                        client_options => $client_options);
+    my $client = $self->addExportClient(export  => $container_access,
+                                        host    => $client_name,
+                                        options => $client_options);
+
 
     $self->generateExports(data => $self->getTemplateDataExports());
     if (exists $args{erollback}) {
@@ -190,12 +192,12 @@ sub addExportClient {
     my %args = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ 'export', 'client_name', 'client_options' ]);
+                         required => [ 'export', 'host', 'options' ]);
 
     return $self->_getEntity()->addExportClient(
                export_id      => $args{export}->getAttr(name => "container_access_id"),
-               client_name    => $args{client_name},
-               client_options => $args{client_options}
+               client_name    => $args{host},
+               client_options => $args{options}
            );
 }
 
