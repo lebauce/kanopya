@@ -76,7 +76,7 @@ sub createTimeDataStore{
 
     General::checkParams(args => \%args, required => ['name']);
 
-	my $name = _formatName(name => $args{'name'});
+    my $name = _formatName(name => $args{'name'});
 
     my $RRA_chain;
     my $DS_chain;
@@ -101,11 +101,11 @@ sub createTimeDataStore{
         if (defined $options->{start}) {
             $opts .= '-b '.$options->{'start'}.' ';
         } else {
-			my $time = time();
-			my $moduloTime = $time % 60;
-			my $finalTime = $time - $moduloTime;
-			$opts .= '-b '.$finalTime.' ';
-		}
+            my $time = time();
+            my $moduloTime = $time % 60;
+            my $finalTime = $time - $moduloTime;
+            $opts .= '-b '.$finalTime.' ';
+        }
 
         if (defined $options->{step}) {
             $opts .= '-s '.$options->{'step'}.' ';
@@ -153,9 +153,9 @@ sub createTimeDataStore{
         #
         #The DS syntax is different for the COMPUTE type, that's why we're checking the type here to form the command string
         #if ($type eq 'GAUGE' or $type eq 'COUNTER' or $type eq 'DERIVE' or $type eq 'ABSOLUTE') {
-        #	$DSchain = 'DS'.$DSname.':'.$type.':'.$heartbeat.':'.$min.':'.$max;
+        #    $DSchain = 'DS'.$DSname.':'.$type.':'.$heartbeat.':'.$min.':'.$max;
         #}elsif ($type eq 'COMPUTE'){
-        #	$DSchain = 'DS:'.$DSname.':'.$type.':'.$rpn;
+        #    $DSchain = 'DS:'.$DSname.':'.$type.':'.$rpn;
         #}
     }
 
@@ -207,7 +207,7 @@ sub getTimeDataStoreInfo {
 
     General::checkParams(args => \%args, required => ['name']);
 
-	my $name = _formatName(name => $args{'name'});
+    my $name = _formatName(name => $args{'name'});
     my $cmd = $rrd.' info '.$dir.$name;
 
     system ($cmd);
@@ -255,8 +255,8 @@ sub fetchTimeDataStore {
 
     #clean the string of unwanted ":"
     $exec =~ s/://g;
-	#replace the ',' by '.'
-	$exec =~ s/,/./g;
+    #replace the ',' by '.'
+    $exec =~ s/,/./g;
     #we split the string into an array
     my @values = split(' ', $exec);
     #print Dumper(\@values);
@@ -267,15 +267,15 @@ sub fetchTimeDataStore {
     my %values = @values;
 
     if (scalar(keys %values) == 0) {
-    	throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
+        throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
     }
 
-	#we replace the '-1.#IND000000e+000' values for "undef"
-	while (my ($timestamp, $value) = each %values) {
-		if (($value eq '-1.#IND000000e+000') or ($value eq '-nan')){
-			$values{$timestamp} = undef;
-			}
-	}
+    #we replace the '-1.#IND000000e+000' values for "undef"
+    while (my ($timestamp, $value) = each %values) {
+        if (($value eq '-1.#IND000000e+000') or ($value eq '-nan')){
+            $values{$timestamp} = undef;
+            }
+    }
     #$log->debug(Dumper(\%values));
     return %values;
 }
@@ -346,8 +346,8 @@ sub getLastUpdatedValue {
 
     #clean the string of unwanted ":"
     $exec =~ s/://g;
-	#replace the ',' by '.'
-	$exec =~ s/,/./g;
+    #replace the ',' by '.'
+    $exec =~ s/,/./g;
     #we split the string into an array
     my @values = split(' ', $exec);
     #print Dumper(\@values);
@@ -358,15 +358,15 @@ sub getLastUpdatedValue {
     my %values = @values;
 
     if (scalar(keys %values) == 0) {
-    	throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
+        throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
     }
 
-	#we replace the '-1.#IND000000e+000' values for "undef"
-	while (my ($timestamp, $value) = each %values) {
-		if ($value eq '-1.#IND000000e+000'){
-			$values{$timestamp} = undef;
-			}
-	}
+    #we replace the '-1.#IND000000e+000' values for "undef"
+    while (my ($timestamp, $value) = each %values) {
+        if ($value eq '-1.#IND000000e+000'){
+            $values{$timestamp} = undef;
+            }
+    }
 
     #print Dumper(\%values);
     $log->debug(Dumper(\%values));
@@ -394,41 +394,23 @@ sub resizeTimeDataStore {
     my $collect_frequency = $configuration->{collect_frequency};
     my $old_duration      = $configuration->{storage_duration};
 
+    my $delta       = abs($new_duration - $old_duration);
+    my $resize_type = ($new_duration > $old_duration) ? 'GROW' : 'SHRINK';
+
     #Generate the CPD number to be added or remove and then resize the rrd
     #grow
-    if ($new_duration > $old_duration) {
-        my $delta    = $new_duration - $old_duration;
-        my $CDPToAdd = $delta / $collect_frequency;
-        my $cmd      = qq{$rrd resize $dir$rrd_name 0 GROW $CDPToAdd};
+    if ($delta != 0) {
+        my $CDPDiff = $delta / $collect_frequency;
+        my $cmd     = qq{$rrd resize $dir$rrd_name 0 $resize_type $CDPDiff};
 
         #resize the rrd
         system($cmd);
-        #backup the old rrd
-        my $time = time();
-        my $cp   = qq{cp $dir$rrd_name $dir$rrd_name.$time.bck};
-        system($cp);
-        #replace old rrd by newly generated resize.rrd 
-        my $mv = qq{mv resize.rrd $dir$rrd_name};
-        system($mv);
-    }
-    #shrink
-    elsif ($new_duration < $old_duration) {
-        my $delta    = $old_duration - $new_duration;
-        my $CDPToDel = $delta / $collect_frequency;
-        my $cmd      = qq{$rrd resize $dir$rrd_name 0 SHRINK $CDPToDel};
-
-        #resize the rrd
-        system($cmd);
-        #backup the old rrd
-        my $time = time();
-        my $cp   = qq{cp $dir$rrd_name $dir$rrd_name.$time.bck};
-        system($cp);
         #replace old rrd by newly generated resize.rrd 
         my $mv = qq{mv resize.rrd $dir$rrd_name};
         system($mv);
     }
     #do nothing
-    elsif ($new_duration == $old_duration) {
+    else {
         return 'the requested new stogare duration is the same than the old one'."\n";
     }
 
@@ -497,9 +479,9 @@ sub _configTimeDataStore {
 =cut
 
 sub _formatName {
-	my %args = @_;
-	my $name = 'timeDB_'.$args{'name'}.'.rrd';
-	return $name;
+    my %args = @_;
+    my $name = 'timeDB_'.$args{'name'}.'.rrd';
+    return $name;
 }
 
 =head2 _getConfiguration

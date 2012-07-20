@@ -35,7 +35,10 @@ var mainmenu_def = {
     },
     'Administration'    : {
         //'Kanopya'          : [],
-        'Monitoring'       : [{label : 'Scom', id : 'scommanagement',onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }}],
+        'Monitoring'       :  [
+                               {label : 'Scom', id : 'scommanagement', onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }},
+                               {label : 'Settings', id : 'monitorsettings', onLoad : function(cid, eid) { require('KIO/monitorsettings.js'); loadMonitorSettings(cid, eid); }}
+                              ],
         'Right Management' :  [
                                {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('common/users.js'); usersList(cid, eid); }},
                                {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); }},

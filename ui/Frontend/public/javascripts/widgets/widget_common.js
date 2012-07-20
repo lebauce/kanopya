@@ -77,11 +77,9 @@ function setGraphDatePicker(widget_elem, widget) {
     if (widget !== undefined) {
         // Save
         select_amount.change( function() {
-           //alert($(this).find(':selected').val());
            widget.addMetadataValue('timeset_amount', $(this).find(':selected').val());
         });
         select_timescale.change( function() {
-            //alert($(this).find(':selected').val());
             widget.addMetadataValue('timeset_timescale', $(this).find(':selected').val());
         });
 

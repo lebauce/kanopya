@@ -28,6 +28,19 @@ use Kanopya::Config;
 use Log::Log4perl "get_logger";
 my $log = get_logger("aggregator");
 
+sub getMethods {
+  return {
+    'updateAggregatorConf'  => {
+      'description' => 'Update aggregator conf',
+      'perm_holder' => 'entity'
+    },
+    'getAggregatorConf'  => {
+      'description' => 'Get aggregator conf',
+      'perm_holder' => 'entity'
+    }
+  }
+}
+
 # Constructor
 
 sub new {
@@ -285,7 +298,6 @@ sub run {
     );
 }
 
-
 =head2 updateAggregatorConf
 
     Class : Public
@@ -295,7 +307,13 @@ sub run {
 =cut
 
 sub updateAggregatorConf {
-    my %args = @_;
+    my ($class, %args) = @_;
+
+    if ((not defined $args{collect_frequency}) && (not defined $args{storage_duration})) {
+        throw Kanopya::Exception::Internal(
+            error => 'A collect frequency and/or a storage duration must be provided for update'
+        );
+    }
 
     #get aggregator configuration
     my $configuration = Kanopya::Config::get('aggregator');
@@ -308,10 +326,21 @@ sub updateAggregatorConf {
         $configuration->{storage_duration}->{duration} = $args{storage_duration};
         Kanopya::Config::set(subsystem => 'aggregator', config => $configuration);
     }
-    else {
-        throw Kanopya::Exception::Internal(
-            error => 'A collect frequency and/or a storage duration must be provided for update'
-        );
+}
+
+=head2 getAggregatorConf
+
+    Class : Public
+
+    Desc : get public values from aggregator.conf file
+
+=cut
+
+sub getAggregatorConf {
+    my $conf = Kanopya::Config::get('aggregator');
+    return {
+        time_step           => $conf->{time_step},
+        storage_duration    => $conf->{storage_duration}{duration},
     }
 }
 
