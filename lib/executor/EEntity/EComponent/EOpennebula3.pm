@@ -104,6 +104,40 @@ sub configureNode {
    );
 }
 
+
+sub getHostsMemAvailable {
+    my ($self, %args) = @_;
+    my $hypervisors = $self->getHypervisors();
+    my $hash;
+
+    for my $hypervisor (@$hypervisors) {
+        $log->info('***********************************'.$hypervisor->getId());
+        $hash->{$hypervisor->getId()} = $self->getHostMemAvailable(host => $hypervisor);
+    }
+    return $hash;
+}
+
+sub getHostMemAvailable {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'host' ]);
+
+    my $e_host  = EFactory::newEEntity(data => $args{host});
+    my $command = 'xm info';
+    my $result  = $e_host->getEContext->execute(command => $command);
+    my $res = $result->{stdout};
+
+#    $log->info("---$res---");
+    my @lines = split('\n',$res);
+    for my $line (@lines) {
+        my ($key,$value) = split(':',$line);
+        $key =~ s/\s+//; #Remove spaces before and after
+        $value =~ s/\s+//;
+        if($key eq 'free_memory') { return $value * 1024}
+    }
+}
+
 # Execute host migration to a new hypervisor
 sub migrateHost {
     my $self = shift;
