@@ -175,24 +175,13 @@ sub migrateHost {
 }
 
 
-sub checkMigration {
+sub getVMState {
     my ($self,%args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [
-                            'host',
-                            'hypervisor_src',
-                            'hypervisor_cluster'
-    ]);
-
-    my $masternodeip = $args{hypervisor_cluster}->getMasterNodeIp();
-    my $masternode_econtext = EFactory::newEContext(ip_source      => $self->getExecutorEContext->getLocalIp,
-                                                    ip_destination => $masternodeip);
+    General::checkParams(args     => \%args, required => ['host']);
 
     my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
-
     my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
-    my $result = $masternode_econtext->execute(command => $command);
+    my $result  = $self->getEContext->execute(command => $command);
     my $hxml = XMLin($result->{stdout});
 
     my $history = $hxml->{HISTORY_RECORDS}->{HISTORY};
@@ -201,17 +190,30 @@ sub checkMigration {
     if (ref $history eq 'HASH') {
         $hypervisor_migr = $history->{HOSTNAME};
     }
-    else {
+    elsif (ref $history eq 'ARRAY')  {
         $hypervisor_migr =  $history->[-1]->{HOSTNAME};
     }
+    # Else $hypervisor_migr stay undef
 
-    my $state = $hxml->{LCM_STATE};
+    my $state_id     = $hxml->{STATE};
+    my $lcm_state_id = $hxml->{LCM_STATE};
 
-    return { state => $state, hypervisor => $hypervisor_migr };
+    my $state = {
+         0 => { 0 => 'init' },
+         1 => { 0 => 'pend' },
+         2 => { 0 => 'hold' },
+         3 => { 1 => 'prog', 2 => 'boot', 3 => 'runn', 4 => 'migr', 5 => 'save',
+                6 => 'save', 7 => 'save', 8 => 'migr', 9 => '',    10 => 'epil',
+               11 => 'epil', 12 => 'shut', 13 => 'shut'},
+         4 => { 0 => 'stop' },
+         5 => { 0 => 'suspended' },
+         6 => { 0 => 'done' },
+         7 => { 0 => 'fail' },
+    };
 
-        # $self->propagateVLAN(host       => $args{host},
-        #                      hypervisor => $args{hypervisor_src},
-        #                      delete     => 1);
+    $log->info("<$state_id> <$lcm_state_id> => <".($state->{$state_id}->{$lcm_state_id}).'>');
+    return { state => $state->{$state_id}->{$lcm_state_id}, hypervisor => $hypervisor_migr };
+
 }
 
 # execute memory scale in
