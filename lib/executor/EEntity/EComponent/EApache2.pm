@@ -66,7 +66,7 @@ sub addNode {
         host          => $args{host},
         file          => '/etc/apache2/sites-available/default', 
         template_dir  => '/templates/components/apache2',
-        template_file => 'virtualhost.tt', 
+        template_file    => 'virtualhost.tt', 
         data          => $data
     );
 
