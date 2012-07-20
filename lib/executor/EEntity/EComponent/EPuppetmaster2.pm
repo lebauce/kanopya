@@ -79,12 +79,19 @@ sub createHostCertificate {
     # check if new certificate is required
     my $command = "find /etc/puppet/ssl/certs -name $certificate";
     my $result = $self->getExecutorEContext->execute(command => $command);
+        
     if(! $result->{stdout}) {
         # generate a certificate for the host
         $command = "puppetca --generate $args{host_fqdn}";
         my $result = $self->getExecutorEContext->execute(command => $command);
         # TODO check for error in command execution
     }
+    
+    # clean existing certificates information
+    $command = 'rm -r '.$args{mount_point} .'/var/lib/puppet/ssl/*';
+    $command .= ' && mkdir -p '.$args{mount_point} .'/var/lib/puppet/ssl/certs ';
+    $command .= $args{mount_point} .'/var/lib/puppet/ssl/private_keys';    
+    $self->getExecutorEContext->execute(command => $command);    
     
     # copy master certificate to the image
     $self->getExecutorEContext->send(
