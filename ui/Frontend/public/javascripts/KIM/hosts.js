@@ -1,6 +1,8 @@
 require('common/formatters.js');
 require('modalform.js');
 
+var g_host_manager_id = undefined;
+
 function host_addbutton_action(e) {
     (new ModalForm({
         title   : 'Create a host',
@@ -12,16 +14,17 @@ function host_addbutton_action(e) {
             host_ram            : { label : 'RAM Amount' },
             kernel_id           : { label : 'Default Kernel', display : 'kernel_name' },
             host_serial_number  : { label : 'Serial number' },
-            host_manager_id     : { label : '', value : '2', type : 'hidden' }
+            host_manager_id     : { label : '', value : g_host_manager_id, type : 'hidden' }
         }
     })).start();
 }
 
-function hosts_list(cid) {
+function hosts_list(cid, host_manager_id) {
+    g_host_manager_id   = host_manager_id;
     create_grid({
         content_container_id    : cid,
         grid_id                 : 'hosts_list',
-        url                     : '/api/host?host_manager_id=2',
+        url                     : '/api/host?host_manager_id=' + g_host_manager_id,
         colNames                : [ 'Id', 'Hostname', 'Description', 'Active', 'State' ],
         colModel                : [
             { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
