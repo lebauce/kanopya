@@ -274,6 +274,27 @@ sub restoreHost {
             if (defined $args{hypervisor}) {
                 if(!($hypervisor eq $host_name)){
                    $log->info("VM running on a wrong hypervisor");
+                     $log->info('VM <'.($hxml->{ID}).'> running on HV <'.($hypervisor).'> while on HV <'.($host_name).'> in DB');
+
+                    # NOT TESTED YET !!!
+                    # Get host_id of running hypervisor
+                    my $hypervisor_host_id = Entity::Host->find(hash => {host_hostname => $hypervisor})->getId();
+                    $log->info("hv host id = $hypervisor_host_id ($hypervisor)");
+                    #$log->info(Dumper $self->_getEntity()->{_dbix}->opennebula3_hypervisors);
+                    my $opennebula3_hypervisor_id = $self->_getEntity()
+                                                         ->{_dbix}
+                                                         ->opennebula3_hypervisors
+                                                         ->search( {
+                                                               hypervisor_host_id => $hypervisor_host_id
+                                                           } )
+                                                         ->single()
+                                                         ->get_column('opennebula3_hypervisor_id');
+
+                    $self->_getEntity()->{_dbix}->opennebula3_vms->search( {
+                        vm_id => $hxml->{ID} }
+                    )->single()->update( {
+                        opennebula3_hypervisor_id => $opennebula3_hypervisor_id
+                    });
                 }
             }
            if (defined $args{memory}){
