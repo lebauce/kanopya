@@ -397,13 +397,18 @@ useTemplate(
     datas    => {kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules'}
 );
 
+my $path = $answers->{clusters_directory};
+if($path =~ /\/$/) {
+    chop($path);
+}
+
 useTemplate(
     include  => '/opt/kanopya/templates/components/puppetmaster',
     template => 'fileserver.conf.tt',
     conf     => '/etc/puppet/fileserver.conf',
     datas    => {
         domainname         => $answers->{kanopya_server_domain_name},
-        clusters_directory => $answers->{clusters_directory},
+        clusters_directory => $path,
     }
 );
 
