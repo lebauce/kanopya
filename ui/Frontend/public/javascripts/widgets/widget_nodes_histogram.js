@@ -78,7 +78,7 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
-            rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 30 },
+            rendererOptions:{ varyBarColor : true, barWidth: 30 },
             pointLabels: { show: true },
             trendline: {
                 show: false, 

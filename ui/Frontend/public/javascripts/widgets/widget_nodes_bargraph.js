@@ -100,7 +100,7 @@ function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title, uni
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
-            rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 30 - (nodelist.length * 0.5) },
+            rendererOptions:{ varyBarColor : true, barWidth: 30 - (nodelist.length * 0.5) },
             pointLabels: { show: true },
             trendline: {
                 show: false, 
