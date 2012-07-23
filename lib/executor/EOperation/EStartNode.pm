@@ -104,6 +104,8 @@ sub prepare {
 
     $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->getAttr(name => 'cluster_domainname');
 
+    $self->{cluster_components} = $self->{context}->{cluster}->getComponents(category => "all");
+
 }
 
 sub execute {
@@ -146,8 +148,7 @@ sub execute {
                                            ),
                              options    => $mount_options);
 
-    # TODO: Component migration (node, exec context?)
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
+    my $components = $self->{cluster_components};
     my $puppet_definitions = "";
     foreach my $i (keys %$components) {
         my $ecomponent = EFactory::newEEntity(data => $components->{$i});
@@ -255,9 +256,36 @@ sub _generateNetConf {
 
     General::checkParams(args => \%args, required => [ 'mount_point' ]);
 
+    # search for an potential 'loadbalanced' component
+    my $components = $self->{cluster_components};
+    my $is_loadbalanced = 0;
+    foreach my $component (values %$components) {
+        if($component->getClusterizationType() eq 'loadbalanced') {
+            $is_loadbalanced = 1;
+            last;
+        }
+    }
+
+    my $is_masternode;
+    if($self->{context}->{cluster}->getCurrentNodesCount > 1) { 
+        $is_masternode = 0;
+    } else {
+        $is_masternode = 1;
+    }
+
     # Pop an IP adress for all host iface,
     my @net_ifaces;
+    INTERFACES:
     foreach my $interface (@{$self->{context}->{cluster}->getNetworkInterfaces}) {
+        
+        # public network on loadbalanced cluster must be configured only
+        # on the master node
+        my $interface_role_name = $interface->getRole->getAttr(name => 'interface_role_name');
+        if(( $interface_role_name eq 'public') and $is_loadbalanced
+            and not $is_masternode) {
+            next INTERFACES;
+        }
+        
         my $iface = $interface->getAssociatedIface(host => $self->{context}->{host});
 
         # Assign ip from the associated interface poolip
@@ -266,10 +294,15 @@ sub _generateNetConf {
         # Only add non pxe iface to /etc/network/interfaces
         if ($iface->hasIp and not $iface->getAttr(name => 'iface_pxe')) {
             my $pool = $iface->getPoolip;
+            my $gateway = $interface->hasDefaultGateway() ? $pool->poolip_gateway : undef;
+            if($is_loadbalanced and not $is_masternode) {
+                $gateway = $self->{context}->{cluster}->getMasterNodeIp
+            }
+            
             push @net_ifaces, { name    => $iface->iface_name,
                                 address => $iface->getIPAddr,
                                 netmask => $pool->poolip_netmask,
-                                gateway => $interface->hasDefaultGateway() ? $pool->poolip_gateway : undef };
+                                gateway => $gateway };
         }
 
         # Apply VLAN's
@@ -287,25 +320,25 @@ sub _generateNetConf {
         }
     }
 
-    if (not $self->{context}->{cluster}->getMasterNodeId()) {
-        my $i = 1;
-        my $tiers = $self->{context}->{cluster}->getTiers();
-        if ($tiers) {
-            foreach my $tier_key (keys %$tiers){
-                my $dmz_ips = $tiers->{$tier_key}->getDmzIps();
-                foreach my $dmz_ip (@$dmz_ips){
-                    my $tmp_iface = {
-                        name    => "eth0:$i",
-                        address => $dmz_ip->{address},
-                        netmask => $dmz_ip->{netmask}
-                    };
-                    push (@net_ifaces, $tmp_iface);
-                    $i++;
-                }
-            }
-        }
-        @net_ifaces = (@net_ifaces, @{$self->{context}->{cluster}->getPublicIps()});
-    }
+    #~ if (not $self->{context}->{cluster}->getMasterNodeId()) {
+        #~ my $i = 1;
+        #~ my $tiers = $self->{context}->{cluster}->getTiers();
+        #~ if ($tiers) {
+            #~ foreach my $tier_key (keys %$tiers){
+                #~ my $dmz_ips = $tiers->{$tier_key}->getDmzIps();
+                #~ foreach my $dmz_ip (@$dmz_ips){
+                    #~ my $tmp_iface = {
+                        #~ name    => "eth0:$i",
+                        #~ address => $dmz_ip->{address},
+                        #~ netmask => $dmz_ip->{netmask}
+                    #~ };
+                    #~ push (@net_ifaces, $tmp_iface);
+                    #~ $i++;
+                #~ }
+            #~ }
+        #~ }
+        #~ @net_ifaces = (@net_ifaces, @{$self->{context}->{cluster}->getPublicIps()});
+    #~ }
 
      my $file = $self->{context}->{cluster}->generateNodeFile(
         cluster       => $self->{context}->{cluster},
@@ -419,7 +452,7 @@ sub _generateBootConf {
                 additional_devices => "",
             };
 
-            my $components = $self->{context}->{cluster}->getComponents(category => "all");
+            my $components = $self->{cluster_components};
             foreach my $i (keys %$components) {
                 if ($components->{$i}->isa("Entity::Component")) {
                     if ($components->{$i}->isa("Entity::Component::Openiscsi2")){
