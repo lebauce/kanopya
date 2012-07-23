@@ -21,6 +21,8 @@ use base "Entity::Host";
 use strict;
 use warnings;
 
+use Entity::Host::VirtualMachine;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -48,7 +50,9 @@ sub getVms {
     my $self = shift;
     my %args = @_;
 
-    return $self->virtual_machines;
+    my @vms = Entity::Host::VirtualMachine->search(hash => { hypervisor_id => $self->id });
+
+    return wantarray ? @vms : \@vms;
 }
 
 1;
