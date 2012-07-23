@@ -111,17 +111,17 @@ use constant ATTR_DEF => {
     },
     host_hostname => {
         pattern      => '^\w*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     host_ram => {
         pattern      => '^\d*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     host_core => {
         pattern      => '^\d*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     host_initiatorname => {
