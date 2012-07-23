@@ -43,19 +43,12 @@ sub addNode {
         
         # retrieve all public ips associated with the cluster
         my $publicips  = [];
-        my $interfaces = $args{cluster}->getNetworkInterfaces();
-        foreach my $interface (@{$interfaces}) {
-            if ($interface->getRole()->getAttr(name => 'interface_role_name') eq "public") {
-                my $networks = $interface->{_dbix}->interface_networks;
-                while (my $interface_network = $networks->next) {
-                    my $network = Entity::Network->get(id => $interface_network->get_column('network_id'));
-                    my $poolIps = $network->getAssociatedPoolips();
-                    foreach my $poolIp (@{$poolIps}) {
-                        push(@{$publicips}, @{$poolIp->getAllIps()});
-                    }
-                }
-            }
+        
+        my @ifaces = $args{host}->getIfaces(role => 'public');
+        foreach my $iface (@ifaces) {
+            push @$publicips, $iface->getIPAddr;
         }
+        
                 
         my $components = $args{cluster}->getComponents(category => 'all');
 
@@ -75,7 +68,7 @@ sub addNode {
                 
                 #$log->debug("adding virtualserver  definition in database");
                 my $vsid = $keepalived->addVirtualserver(
-                    virtualserver_ip => $vip->addr(),
+                    virtualserver_ip => $vip,
                     virtualserver_port => $port,
                     virtualserver_lbkind => 'NAT',
                     virtualserver_lbalgo => 'wlc');
@@ -266,7 +259,7 @@ sub generateKeepalived {
 }
 
 sub generateAndSendKeepalived {
-    my ($self, %args) = @_;
+    my ($self) = @_;
     
     my $data = $self->_getEntity()->getTemplateDataKeepalived();
     my $file = $self->generateNodeFile(
@@ -346,10 +339,9 @@ sub postStartNode{
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     if($masternodeip eq $args{host}->getAdminIp) {
         # this host is the masternode so we remove virtualserver definitions
-        $log->debug('First Node is started, nothing to do');
         return;        
     } else {
-        $self->generateKeepalived(mount_point => '/etc');
+        $self->generateAndSendKeepalived();
         $self->reload();
     }
 }
