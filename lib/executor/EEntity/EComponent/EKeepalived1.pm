@@ -90,6 +90,9 @@ sub addNode {
         $log->debug("generate /etc/keepalived/keepalived.conf file");
         $self->generateKeepalived(host => $args{host}, mount_point => $args{mount_point});
         
+        $log->debug("generate /etc/sysctl.conf file");
+        $self->generateSysctlconf(host => $args{host}, mount_point => $args{mount_point});
+        
         $self->addInitScripts(
             mountpoint => $args{mount_point},
             scriptname => 'ipvsadm'
@@ -99,12 +102,6 @@ sub addNode {
             mountpoint => $args{mount_point}, 
             scriptname => 'keepalived'
         );
-                                
-        # activating ipv4 forwarding to sysctl
-        $log->debug('activating ipv4 forwarding to sysctl.conf');
-        my $command = "echo 'net.ipv4.ip_forward=1' >> $args{mount_point}/sysctl.conf";
-        $log->debug($command);
-        $self->getExecutorEContext->execute(command => $command);
     
     } else {
         # a masternode exists so we update his keepalived configuration
@@ -255,6 +252,30 @@ sub generateKeepalived {
     $self->getExecutorEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/keepalived'
+    );
+}
+
+# generate /etc/sysctl.conf configuration file
+sub generateSysctlconf {
+    my ($self, %args) = @_;
+    
+    General::checkParams(args => \%args, required => ['host','mount_point']);
+    my $cluster = $self->_getEntity->getServiceProvider;
+    my $host = $cluster->getMasterNode;
+    $host = $args{host} if not defined $host;
+    my $data = { sysctl_entries => [ 'net.ipv4.ip_forward = 1' ] };
+    my $file = $self->generateNodeFile(
+        host          => $host,
+        cluster       => $cluster,
+        file          => '/etc/sysctl.conf',
+        template_dir  => '/templates/components/keepalived',
+        template_file => 'sysctl.conf.tt',
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc'
     );
 }
 
