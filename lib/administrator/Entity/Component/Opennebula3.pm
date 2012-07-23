@@ -378,7 +378,7 @@ sub createVirtualHost {
     $vm->{_dbix}->discard_changes();
 
     my $adm = Administrator->new();
-    foreach (1 .. $args{ifaces}) {
+    foreach (0 .. $args{ifaces}-1) {
         $vm->addIface(
             iface_name     => 'eth' . $_,
             iface_mac_addr => $adm->{manager}->{network}->generateMacAddress(),
