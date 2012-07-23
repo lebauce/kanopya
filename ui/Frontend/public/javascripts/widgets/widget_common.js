@@ -45,7 +45,7 @@ function setGraphDatePicker(widget_elem, widget) {
         container.find('.timeset_mode2').toggle();
         container.find('.timeset_mode1').toggle();
         container.toggleClass('mode1');
-    });
+    }).removeClass('ui-button-icon-only'); // removing this class is an ugly fix to have a correct button size
     container.append(time_mode_button);
 
     // Time setting mode 1 (start/end)
