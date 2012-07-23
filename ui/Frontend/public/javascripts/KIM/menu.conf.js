@@ -8,8 +8,11 @@ require('KIM/policies.js');
 // onLoad handlers are called with params (content_container_id)
 var mainmenu_def = {
     'Infrastructure' : {
-        'Compute' : [ { label : 'Overview', id : 'compute_overview'},
-                      { label : 'Hosts', id : 'hosts', onLoad : function(cid) { require('KIM/hosts.js'); hosts_list(cid); } } ],
+        'Compute' : [
+            { label : 'Overview', id : 'compute_overview'},
+            { label : 'Hosts', id : 'hosts', onLoad : function(cid) { require('KIM/hosts.js'); hosts_list(cid, '2'); } },
+            { label : 'UCS', id : 'ucs', onLoad : function(cid) { require('KIM/ucs.js'); ucs_list(cid); } }
+        ],
         'Storage' : [
             { label : 'Overview', id : 'storage_overview'},
             { label : 'NetApp', id : 'storage_netapp', onLoad : function(cid) { require('KIM/netapp.js'); netapp_list(cid); } }

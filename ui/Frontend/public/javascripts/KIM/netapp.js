@@ -48,7 +48,7 @@ function netapp_list(cid) {
             var cell        = $(grid).find('tr#' + rowid).find('td[aria-describedby="netapp_list_synchronize"]');
             var syncButton  = $('<div>').button({ text : false, icons : { primary : 'ui-icon-refresh' } }).appendTo(cell);
             $(syncButton).attr('style', 'margin-top:0px;');
-            $(syncButton).click(function(event) {
+            $(syncButton).click(function() {
                 $.ajax({
                     url     : '/api/netapp/' + rowid + '/synchronize',
                     type    : 'POST'
