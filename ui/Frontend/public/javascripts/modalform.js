@@ -159,6 +159,7 @@ var ModalForm = (function() {
             var type    = field.type || 'text';
             var input   = $("<input>", { type : type });
         } else if (field.type === 'textarea') {
+            var type    = 'textarea';
             var input   = $("<textarea>");
         } else if (field.type === 'select') {
             var input   = $("<select>");
@@ -195,6 +196,8 @@ var ModalForm = (function() {
                 $(input).attr('value', value);
             } else if (type === 'checkbox' && value == true) {
                 $(input).attr('checked', 'checked');
+            } else if (type === 'textarea') {
+                $(input).text(value);
             }
         }
         
