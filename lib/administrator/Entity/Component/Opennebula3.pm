@@ -142,7 +142,8 @@ sub methods {
 sub getHypervisors {
     my $self = shift;
 
-    return Entity::Host::Hypervisor::Opennebula3Hypervisor->search(hash => { opennebula3_id => $self->getId });
+    my @hypervisors = Entity::Host::Hypervisor::Opennebula3Hypervisor->search(hash => { opennebula3_id => $self->getId });
+    return wantarray ? @hypervisors : \@hypervisors;
 }
 
 =head2 checkHostManagerParams
@@ -422,11 +423,16 @@ sub addVM {
 
     General::checkParams(args => \%args, required => [ 'hypervisor', 'host', 'id' ]);
 
-    return Entity::Host::VirtualMachine::Opennebula3Vm->new(
-               host_id       => $args{host}->getId,
-               onevm_id      => $args{id},
-               hypervisor_id => $args{hypervisor}->getId
-           );
+    my $opennebulavm = Entity::Host::VirtualMachine::Opennebula3Vm->promote(
+                           promoted       => $args{host},
+                           opennebula3_id => $self->id,
+                           onevm_id       => $args{id},
+                       );
+
+    $opennebulavm->setAttr(name => 'hypervisor_id', value => $args{hypervisor}->id);
+    $opennebulavm->save();
+
+    return $opennebulavm;
 }
 
 sub migrate {
