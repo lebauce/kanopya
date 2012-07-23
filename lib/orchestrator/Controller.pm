@@ -25,7 +25,7 @@ use CapacityPlanning::IncrementalSearch;
 use Model::MVAModel;
 use MultiTuning;
 use Actuator;
-
+use Kanopya::Config;
 
 
 use Log::Log4perl "get_logger";
@@ -52,7 +52,7 @@ sub new {
 sub _authenticate {
     my $self = shift;
     
-    $self->{config} = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    $self->{config} = Kanopya::Config::get('orchestrator');
     if ( (! defined $self->{config}{user}{name}) ||
          (! defined $self->{config}{user}{password}) ) { 
         throw Kanopya::Exception::Internal::IncorrectParam(error => "needs user definition in config file!");

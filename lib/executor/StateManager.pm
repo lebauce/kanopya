@@ -20,6 +20,7 @@ package StateManager;
 use strict;
 use warnings;
 
+use Kanopya::Config;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Inside::Cluster;
 
@@ -42,7 +43,7 @@ sub new {
 
     bless $self, $class;
 
-    $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
+    $self->{config} = Kanopya::Config::get('executor');
 
     if ((! exists $self->{config}->{user}->{name}     || ! defined exists $self->{config}->{user}->{name}) &&
         (! exists $self->{config}->{user}->{password} || ! defined exists $self->{config}->{user}->{password})) {

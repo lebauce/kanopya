@@ -15,7 +15,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Entity::Connector::NetappManager;
-use lib "/opt/kanopya/lib/external/NetApp";
+
+BEGIN {
+    use Kanopya::Config;
+    #get Kanopya parent directory
+    my $dir     = Kanopya::Config::getKanopyaDir();
+    my $use_lib = $dir.'/kanopya/lib/external/NetApp';
+    push @INC, $use_lib;
+}
+
 use base "Entity::Connector";
 
 use Entity::ServiceProvider::Outside::Netapp;

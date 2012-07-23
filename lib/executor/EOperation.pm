@@ -29,6 +29,7 @@ use ERollback;
 use EFactory;
 use Operation;
 
+use Kanopya::Config;
 use Kanopya::Exceptions;
 
 my $log = get_logger("executor");
@@ -173,7 +174,7 @@ EOperation - Abstract class of EOperation object.
     my $operation = Operation->getNexOp();
     my $eoperation = EOperation->new(data => $operation);
     
-    $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
+    $self->{config} = Kanopya::Config::get('executor');
     
     eval {
         $eoperation->prepare();

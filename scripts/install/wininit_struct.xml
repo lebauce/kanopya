@@ -1,47 +1,53 @@
-<init_struct  nb="10">
-  <general_conf
-    kanopya_dir="\kanopya"
-     install_template_dir="\kanopya\scripts\install\templates\"
-     conf_dir="\kanopya\conf\"
-     comp_conf="\kanopya\conf\components.conf"
-     database_dir="\kanopya\scripts\database\mysql\"
-    comp_schemas_dir="\kanopya\scripts\database\mysql\schemas\components\"
-    schemas_dir="\kanopya\scripts\database\mysql\schemas"
-    data_dir="\kanopya\scripts\database\mysql\data\"
-    data_sql="\kanopya\scripts\database\mysql\data\Data.sql"
-    schema_sql="\kanopya\scripts\database\mysql\schemas\Schemas.sql"/>
-  <genfiles>
-    <executor.conf template="executor.conf.tt">
-      <datas logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>
-    </executor.conf>
-    <aggregator.conf template="aggregator.conf.tt">
-    </aggregator.conf>
-    <executor-log.conf template="executor-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </executor-log.conf>
-    <libkanopya.conf template="libkanopya.conf.tt">
-        <datas db_user="dbuser" admin_password="dbpassword1" logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" dbport="dbport" dbip="dbip" dmz_net_add="dmz_net_add" dmz_net_mask="dmz_net_mask"/>
-    </libkanopya.conf>
-    <monitor.conf template="monitor.conf.tt">
-        <datas admin_password="dbpassword1" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask"/>
-    </monitor.conf>
-    <monitor-log.conf template="monitor-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </monitor-log.conf>
-    <orchestrator.conf template="orchestrator.conf.tt">
-        <datas admin_password="dbpassword1"/>
-    </orchestrator.conf>
-    <orchestrator-log.conf template="orchestrator-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </orchestrator-log.conf>
-    <state-manager-log.conf template="state-manager-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </state-manager-log.conf>
-    <components.conf template="components.conf.tt">
-        <datas />
-    </components.conf>
-    <webui-log.conf template="webui-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </webui-log.conf>
-  </genfiles>
+<init_struct nb="10">
+    <general_conf
+        kanopya_dir          = "kanopya"
+        install_template_dir = "kanopya\scripts\install\templates\"
+        conf_dir             = "kanopya\conf\"
+        comp_conf            = "kanopya\conf\components.conf"
+        database_dir         = "kanopya\scripts\database\mysql\"
+        comp_schemas_dir     = "kanopya\scripts\database\mysql\schemas\components\"
+        schemas_dir          = "kanopya\scripts\database\mysql\schemas"
+        data_dir             = "kanopya\scripts\database\mysql\data\"
+        data_sql             = "kanopya\scripts\database\mysql\data\Data.sql"
+        schema_sql           = "kanopya\scripts\database\mysql\schemas\Schemas.sql"
+        services_dir         = "kanopya\sbin\win32\" />
+    <services 
+        kanopya_aggregator   = "kanopya-aggregator.pl"
+        kanopya_executor     = "kanopya-executor.pl"
+        kanopya_frontend     = "kanopya-frontend.pl"
+        kanopya_orchestrator = "kanopya-orchestrator.pl" />
+    <genfiles>
+        <executor.conf template="executor.conf.tt">
+            <datas logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>
+        </executor.conf>
+        <aggregator.conf template="aggregator.conf.tt">
+        </aggregator.conf>
+        <executor-log.conf template="executor-log.conf.tt">
+            <datas logdir="log_directory"/>
+        </executor-log.conf>
+        <libkanopya.conf template="libkanopya.conf.tt">
+            <datas db_user="dbuser" admin_password="dbpassword1" logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" dbport="dbport" dbip="dbip" dmz_net_add="dmz_net_add" dmz_net_mask="dmz_net_mask"/>
+        </libkanopya.conf>
+        <monitor.conf template="monitor.conf.tt">
+            <datas admin_password="dbpassword1" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask"/>
+        </monitor.conf>
+        <monitor-log.conf template="monitor-log.conf.tt">
+            <datas logdir="log_directory"/>
+        </monitor-log.conf>
+        <orchestrator.conf template="orchestrator.conf.tt">
+            <datas admin_password="dbpassword1"/>
+        </orchestrator.conf>
+        <orchestrator-log.conf template="orchestrator-log.conf.tt">
+            <datas logdir="log_directory"/>
+        </orchestrator-log.conf>
+        <state-manager-log.conf template="state-manager-log.conf.tt">
+            <datas logdir="log_directory"/>
+        </state-manager-log.conf>
+        <components.conf template="components.conf.tt">
+            <datas />
+        </components.conf>
+        <webui-log.conf template="webui-log.conf.tt">
+            <datas logdir="log_directory"/>
+        </webui-log.conf>
+    </genfiles>
 </init_struct>

@@ -38,10 +38,12 @@ Collector dynamically gather informations about clustered nodes and aggregates d
 use strict;
 use warnings;
 use Monitor::Collector;
+use Kanopya::Config;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
 
-Log::Log4perl->init('/opt/kanopya/conf/monitor-log.conf');
+my $dir = Kanopya::Config::getKanopyaDir();
+Log::Log4perl->init($dir.'/kanopya/conf/monitor-log.conf');
 my $log = get_logger("collector");
 
 

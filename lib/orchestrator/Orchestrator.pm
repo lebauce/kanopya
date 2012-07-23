@@ -50,6 +50,7 @@ use warnings;
 use XML::Simple;
 use General;
 use Administrator;
+use Kanopya::Config;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
@@ -82,7 +83,7 @@ sub new {
     bless $self, $class;
 
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    my $conf = Kanopya::Config::get('orchestrator');
    # Get Administrator
     my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
     Administrator::authenticate( login => $login, password => $password );
@@ -1583,7 +1584,7 @@ sub run {
     my $self = shift;
     my $running = shift;
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    my $conf = Kanopya::Config::get('orchestrator');
     $self->{_time_step} = $conf->{time_step};
 
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
@@ -1615,7 +1616,7 @@ sub new_old {
     bless $self, $class;
 
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    my $conf = Kanopya::Config::get('orchestrator');
     $self->{_time_step} = $conf->{time_step};
     $self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
     $self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );

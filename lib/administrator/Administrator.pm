@@ -51,6 +51,7 @@ use NetAddr::IP;
 use AdministratorDB::Schema;
 use EntityRights;
 use Kanopya::Exceptions;
+use Kanopya::Config;
 use General;
 use XML::Simple;
 use DateTime;
@@ -71,7 +72,7 @@ my ($schema, $config, $oneinstance);
     Class : Private
 
     Desc : This method allow to load configuration from xml file
-            /opt/kanopya/conf/administrator.conf
+            ../kanopya/conf/administrator.conf
             File Administrator with config hash containing
 
     return: scalar string : a dbi data_source used for database connection
@@ -79,7 +80,7 @@ my ($schema, $config, $oneinstance);
 =cut
 
 sub loadConfig {
-    $config = XMLin("/opt/kanopya/conf/libkanopya.conf");
+    $config = Kanopya::Config::get('libkanopya');
     if (! exists $config->{internalnetwork}->{ip} ||
         ! defined $config->{internalnetwork}->{ip} ||
         ! exists $config->{internalnetwork}->{mask} ||
