@@ -51,6 +51,10 @@ sub methods {
         getState    => {
             description => 'get the state',
             perm_holder => 'entity'
+        },
+        synchronize => {
+            description => 'synchronize',
+            perm_holder => 'entity'
         }
     };
 }

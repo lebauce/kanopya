@@ -241,7 +241,7 @@ function create_grid(options) {
 //        },
 
         onCellSelect: function(rowid, index, contents, target) {
-            if (index != actions_col_idx && ! options.deactivate_details) {
+            if (index != actions_col_idx && ! options.deactivate_details && ! options.colModel[index].nodetails) {
                 var row_data = $('#' + options.grid_id).getRowData(rowid);
                 show_detail(options.grid_id, grid_class, rowid, row_data, options.details)
             }
