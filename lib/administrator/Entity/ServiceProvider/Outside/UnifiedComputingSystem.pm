@@ -50,6 +50,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        synchronize => {
+            description => 'synchronize width UCS',
+            perm_holder => 'entity'
+        }
+    };
+}
+
 sub getUcs {
     my $class = shift;
     my %args = @_;

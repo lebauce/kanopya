@@ -24,7 +24,7 @@ function ucs_list(cid) {
         content_container_id    : cid,
         grid_id                 : 'ucs_list',
         url                     : '/api/unifiedcomputingsystem',
-        colNames                : ['Id', 'Name', 'Description', 'Address', 'Login', 'OU', 'State'],
+        colNames                : ['Id', 'Name', 'Description', 'Address', 'Login', 'OU', 'State', 'Synchronize'],
         colModel                : [
             { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
             { name : 'ucs_name', index : 'ucs_name' },
@@ -32,9 +32,22 @@ function ucs_list(cid) {
             { name : 'ucs_addr', index : 'ucs_addr' },
             { name : 'ucs_login', index : 'ucs_login' },
             { name : 'ucs_ou', index : 'ucs_ou' },
-            { name : 'ucs_state', index : 'ucs_state', width : 40, align : 'center', formatter : StateFormatter }
+            { name : 'ucs_state', index : 'ucs_state', width : 40, align : 'center', formatter : StateFormatter },
+            { name : 'synchronize', index : 'synchronize', width : 40, align : 'center', nodetails : true }
         ],
-        details                 : { onSelectRow : ucsaddbutton_action }
+        details                 : { onSelectRow : ucsaddbutton_action },
+        afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
+            var cell    = $(grid).find('tr#' + rowid).find('td[aria-describedby="ucs_list_synchronize"]');
+            var button  = $('<button>').button({ text : false, icons : { primary : 'ui-icon-refresh' } })
+                                        .attr('style', 'margin-top:0;')
+                                        .click(function() {
+                                            $.ajax({
+                                                url     : '/api/unifiedcomputingsystem/' + rowid + '/synchronize',
+                                                type    : 'POST'
+                                            });
+                                        });
+            $(cell).append(button);
+        }
     });
     $('<a>', { text : 'Add an UCS' }).button({ icons : { primary : 'ui-icon-plusthick' } })
                                     .appendTo('#' + cid).bind('click', ucsaddbutton_action);
