@@ -4,12 +4,13 @@ function ucsaddbutton_action(e) {
     (new ModalForm({
         title       : 'Add an UCS',
         name        : 'unifiedcomputingsystem',
+        id          : (e instanceof Object) ? undefined : e,
         fields      : {
             ucs_name    : { label : 'Name' },
             ucs_desc    : { label : 'Description', type : 'textarea' },
             ucs_addr    : { label : 'Address' },
             ucs_login   : { label : 'Login' },
-            ucs_passwd  : { label : 'Password', type : 'passwd' },
+            ucs_passwd  : { label : 'Password', type : 'password' },
             ucs_ou      : { label : 'OU' }
         },
         callback    : function() {
@@ -32,7 +33,8 @@ function ucs_list(cid) {
             { name : 'ucs_login', index : 'ucs_login' },
             { name : 'ucs_ou', index : 'ucs_ou' },
             { name : 'ucs_state', index : 'ucs_state', width : 40, align : 'center', formatter : StateFormatter }
-        ]
+        ],
+        details                 : { onSelectRow : ucsaddbutton_action }
     });
     $('<a>', { text : 'Add an UCS' }).button({ icons : { primary : 'ui-icon-plusthick' } })
                                     .appendTo('#' + cid).bind('click', ucsaddbutton_action);
