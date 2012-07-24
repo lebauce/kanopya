@@ -66,11 +66,15 @@ sub prepare {
     General::checkParams(args => $self->{params}, required => [ "memory" ]);
 
     # Verify if there is enough resource in HV
-
     my $vm_id = $self->{context}->{host}->getId;
     my $hv_id = $self->{context}->{host}->hypervisor->getId;
 
-    my $cm    = CapacityManagement->new(cluster_id => $self->{context}->{host}->getClusterId());
+    my $hvs_mem_available = $self->{context}->{cloudmanager_comp}->getHostsMemAvailable();
+    my $cm    = CapacityManagement->new(
+                    cluster_id        => $self->{context}->{host}->getClusterId(),
+                    hvs_mem_available => $self->{context}->{cloudmanager_comp}->getHostsMemAvailable(),
+                );
+
     my $check = $cm->isScalingAuthorized(
                     vm_id           => $vm_id,
                     hv_id           => $hv_id,

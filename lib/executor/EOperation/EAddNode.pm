@@ -82,23 +82,33 @@ sub prerequisites {
         $log->info("Hvs selected <@hv_in_ids>");
 
         my $host_manager_params = $cluster->getManagerParameters(manager_type => 'host_manager');
+        $log->info('host_manager_params :'.(Dumper $host_manager_params));
 
-        my $cm = CapacityManagement->new(cluster_id => $cluster->getId());
+        my $converted_ram = General::convertToBytes(
+                                value => $host_manager_params->{ram},
+                                units => $host_manager_params->{ram_unit},
+                            );
+
+        my $cm = CapacityManagement->new(
+            cluster_id        => $cluster->getId(),
+            hvs_mem_available => $self->{context}->{host_manager}->getHostsMemAvailable()
+        );
 
         my $hypervisor_id = $cm->getHypervisorIdForVM(
                                 # blacklisted_hv_ids => $self->{params}->{blacklisted_hv_ids},
                                 selected_hv_ids => \@hv_in_ids,
                                 wanted_values   => {
-                                    ram => $host_manager_params->{ram},
+                                    ram => $converted_ram,
                                     cpu => $host_manager_params->{core},
                                 }
         );
 
-        if(defined $hypervisor_id){
+        if(defined $hypervisor_id) {
             $log->info("Hypervisor <$hypervisor_id> ready");
             $self->{context}->{hypervisor} = Entity::Host->get(id => $hypervisor_id);
             return 0;
-        } else {
+        }
+        else {
             $log->info('Need to start a new hypervisor');
             my $hv_cluster = $self->{context}->{host_manager}->getServiceProvider();
             my $wf = $hv_cluster->addNode();

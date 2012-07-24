@@ -64,7 +64,8 @@ sub new {
         $self->{_test}  = 1;
     }
     else{
-        General::checkParams(args => \%args, required => ['cluster_id']);
+        General::checkParams(args => \%args, required => ['cluster_id']); #Option : hvs_mem_available
+        $self->{_hvs_mem_available} = $args{hvs_mem_available};
         $self->{_cluster_id}    = $args{cluster_id};
         $self->{_admin}         = Administrator->new();
         $self->{_infra}         = $self->_constructInfra();
@@ -90,7 +91,7 @@ sub _constructInfra{
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => []);
-
+    # OPTION : hv_capacities
     my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_cluster_id});
 
     # Get the list of all hypervisors
@@ -106,7 +107,6 @@ sub _constructInfra{
             },
             vm_ids => [],
         };
-
         my @hypervisor_vms = $hypervisor->getVms();
         for my $vm (@hypervisor_vms) {
             $vms->{$vm->getId} = {
@@ -114,7 +114,7 @@ sub _constructInfra{
                 cpu => $vm->host_core,
             };
             push @{$hvs->{$hypervisor->getId}->{vm_ids}}, $vm->getId;
-            
+
 #            my $msg = "Warning capacity management detect an inconcistency in DB VM <$vm_id> in hypervisor <$hvid>";
 #            $self->{_admin}->addMessage(
 #               from    => 'Capacity Management',
@@ -179,11 +179,13 @@ sub isScalingAuthorized{
     }
 
     my $delta    = $wanted_resource - $current_resource;
-    $log->info("**** [scale-in $resource_type]  Remaining $remaining_resource in HV $hv_id, need $delta more to have $wanted_resource ****");
+    $log->info("**** [scale-in $resource_type]  Remaining <$remaining_resource> in HV <$hv_id>, need <$delta> more to have <$wanted_resource> ****");
     if ($remaining_resource < $delta) {
+        $log->info('not enough resource');
         return 0;
     }
     else{
+        $log->info('scaling authorized by capacity management');
         return 1;
     }
 }
@@ -758,10 +760,16 @@ sub _getHvSizeRemaining {
     my $all_the_ram   = $infra->{hvs}->{$hv_id}->{hv_capa}->{ram};
     my $all_the_cpu   = $infra->{hvs}->{$hv_id}->{hv_capa}->{cpu};
 
-    my $remaining_ram = $all_the_ram - $size->{ram};
-
 
     my $remaining_cpu = $all_the_cpu - $size->{cpu};
+    my $remaining_ram;
+
+    if(defined $self->{_hvs_mem_available }) {
+        $remaining_ram = $self->{_hvs_mem_available}->{$hv_id} * 1024;
+    }
+    else {
+        $remaining_ram = $all_the_ram - $size->{ram};
+    }
 
     my $size_rem = {
         ram   => $remaining_ram,
