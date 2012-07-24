@@ -318,7 +318,7 @@ sub getHypervisorIdForVM{
     General::checkParams(args => \%args, required => ['wanted_values']);
     # Option : blacklisted_hv_ids
     # Option : selected_hv_ids
-
+    # Wanted values : { cpu => num_of_proc, ram => value_in_bytes}
     $log->info('Wanted values'. Dumper $args{wanted_values});
     my $wanted_values      = $args{wanted_values};
     my $blacklisted_hv_ids = $args{blacklisted_hv_ids};
@@ -427,7 +427,6 @@ sub scaleMemoryHost{
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
         $log->info("Call scaleMemoryMetric for host $args{host_id} and new value = $args{memory}");
         $self->_scaleMetric(
-            infra            => $self->{_infra},
             vm_id            => $args{host_id},
             new_value        => $memory,
             hv_selection_ids => \@hv_selection_ids,
@@ -517,7 +516,6 @@ sub scaleCpuHost{
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
         $log->info("Call scaleCpuMetric for host $args{host_id} and new value = $cpu");
         $self->_scaleMetric(
-            infra            => $self->{_infra},
             vm_id            => $args{host_id},
             new_value        => $cpu,
             hv_selection_ids => \@hv_selection_ids,
@@ -540,14 +538,11 @@ sub _scaleMetric {
     my ($self,%args) = @_;
 
     my $scale_metric     = $args{scale_metric};
-    my $infra            = $args{infra};
-
     my $vm_id            = $args{vm_id};
     my $new_value        = $args{new_value};
-
     my $hv_selection_ids = $args{hv_selection_ids};
 
-    $log->info(Dumper $infra);
+    my $infra            = $self->{_infra};
 
     my $old_value = $infra->{vms}->{$vm_id}->{$scale_metric};
     my $delta     = $new_value - $old_value;
@@ -587,7 +582,6 @@ sub _scaleMetric {
                 vm_id             => $vm_id,
                 scale_metric      => $scale_metric,
                 new_value         => $new_value,
-                infra             => $infra,
                 hv_selection_ids  => $hv_selection_ids,
             );
 
@@ -928,9 +922,10 @@ sub _migrateVmToScale{
 
     my $vm_id            = $args{vm_id};
     my $new_value        = $args{new_value};
-    my $infra            = $args{infra};
     my $hv_selection_ids = $args{hv_selection_ids};
     my $scale_metric     = $args{scale_metric};
+
+    my $infra            = $self->{_infra};
 
     my $wanted_metrics  = clone($infra->{vms}->{$vm_id});
     $wanted_metrics->{$scale_metric} = $new_value;
