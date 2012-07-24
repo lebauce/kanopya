@@ -10,7 +10,7 @@ my $kanopya_dir;
 
 BEGIN {
     #get Kanopya base directory
-    my $base_dir = file($0)->absolute->dir;
+    my $base_dir = __FILE__;
     my @kanopya  = split 'kanopya', $base_dir;
     $kanopya_dir = $kanopya[0];
 

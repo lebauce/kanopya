@@ -27,9 +27,9 @@ use Path::Class;
 
 
 #get Kanopya directory
-my $base_dir    = file($0)->absolute->dir;
-my @kanopya     = split 'kanopya', $base_dir;
-my $kanopya_dir = $kanopya[0];
+my $infos       = getKanopyaDirectory();
+my $kanopya_dir = $infos->{kanopya_dir};
+my $base_dir    = $infos->{base_dir};
 
 #generic variables used through the script
 my $install_conf = XMLin("$base_dir/wininit_struct.xml");
@@ -202,6 +202,9 @@ while(defined($line = <$FILE>)) {
 close($FILE);
 print "components DB schemas loaded\n";
 
+#We set again the cariage return caracter to \n
+$/ = "\n"; 
+
 #And to conclude, we insert initial datas in the DB
 print "inserting initial datas...";
 $cmd  = "mysql -u $db_user -p$db_pwd < $conf_vars->{data_sql}"; 
@@ -212,20 +215,20 @@ print "done\n";
 #Service configuration#
 #######################
 
-# Dancer configuration
-useTemplate(
-    template => "dancer_cfg.tt",
-    datas    => {
-       log_directory => $log_directory
-    },
-    conf     => "$kanopya_dir/kanopya/ui/Frontend/config.yml",
-    include  => $conf_vars->{install_template_dir}
-);
+#gather login and pwd
+print 'Gathering Kanopya services informations...'."\n";
+my ($login,$pwd);
+print 'Please enter your full Kanopya service user:'."\n";
+chomp($login = <STDIN>);
+print 'Please enter your full Kanopya service password'."\n";
+ReadMode('noecho');
+chomp($pwd = <STDIN>);
+ReadMode('original');
 
 #Install windows services
 while (my ($service,$file) = each %$services) {
     print 'installing '."$service ... \n";
-    my $cmd = qq[perl.exe $service_dir$file -i];
+    my $cmd = qq[perl.exe $service_dir$file -i $kanopya_dir $login $pwd];
 
     eval {
         system($cmd);
@@ -248,6 +251,16 @@ while (my ($service,$file) = each %$services) {
         }
     }
 }
+
+# Dancer configuration
+useTemplate(
+    template => "dancer_cfg.tt",
+    datas    => {
+       log_directory => $log_directory
+    },
+    conf     => "$kanopya_dir/kanopya/ui/Frontend/config.yml",
+    include  => $conf_vars->{install_template_dir}
+);
 
 print q{Congratulations, you've finished Kanopya installation!}."\n";
 print q{You can now visit the web interface at the following adress:}."\n";
@@ -314,4 +327,14 @@ sub useTemplate {
     $template->process($input, $dat, $output) || do {
             print "error while generating $output: $!";
     };
+}
+
+sub getKanopyaDirectory {
+    my %infos;
+
+    $infos{base_dir}    = __FILE__;
+    my @kanopya         = split 'kanopya', $infos{base_dir}
+    $infos{kanopya_dir} = $kanopya[0];
+
+    return \%infos;
 }

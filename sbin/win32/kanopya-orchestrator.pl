@@ -3,19 +3,12 @@ use warnings;
 use Win32;
 use Win32::Daemon;
 use Win32::Process;
-use Term::ReadKey;
 use Data::Dumper;
-use Path::Class;
-
-#get Kanopya directory
-my $base_dir = file($0)->absolute->dir;
-my @kanopya  = split 'kanopya', $base_dir;
-my $dir      = $kanopya[0];
-
-main();
 
 use constant SERVICE_NAME => 'kanopya-orchestrator';
 use constant SERVICE_DESC => 'Orchestrator service for Kanopya';
+
+main();
 
 sub main {
     # Get command line argument - if none passed, use empty string
@@ -23,7 +16,7 @@ sub main {
 
     # Check command line argument
     if ($opt =~ /^(-i|--install)$/i) {
-        install_service(SERVICE_NAME, SERVICE_DESC);
+        install_service(srv_name => SERVICE_NAME, srv_desc => SERVICE_DESC, dir => $ARGV[0], login => $ARGV[1], pwd => $ARGV[2]);
     }
     elsif ($opt =~ /^(-r|--remove)$/i) {
         remove_service(SERVICE_NAME);
@@ -54,7 +47,7 @@ sub main {
         my %context = (
             last_state => SERVICE_STOPPED,
             start_time => time(),
-            dir        => $dir,
+            dir        => $ARGV[0],
         );
 
         Win32::Daemon::StartService(\%context, 10000);
@@ -141,7 +134,7 @@ sub Callback_Stop {
 }
 
 sub install_service {
-    my ($srv_name, $srv_desc) = @_;
+    my %args = @_;
     my ($path, $parameters);
 
     # Get the program's full filename
@@ -151,27 +144,17 @@ sub install_service {
     $path = "\"$^X\"";
 
     # The command includes the --run switch needed in main()
-    $parameters = "\"$fn\" --run";
-
-    #gather login and pwd
-    my $login;
-    my $pwd;
-    print "Please enter your full Kanopya machine user: \n";
-    chomp($login = <STDIN>);
-    print "Please enter your full Kanopya machine password: \n";
-    ReadMode('noecho');
-    chomp($pwd = <STDIN>);
-    ReadMode('original');
+    $parameters = "\"$fn\" --run $args{dir}";
 
     # Populate the service configuration hash
     # The hash is required by Win32::Daemon::CreateService
     my %srv_config = (
-        name         => $srv_name,
-        display      => $srv_name,
-        user         => $login,
-        password     => $pwd,
+        name         => $args{srv_name},
+        display      => $args{srv_name},
+        user         => $args{login},
+        password     => $args{pwd},
         path         => $path,
-        description  => $srv_desc,
+        description  => $args{srv_desc},
         parameters   => $parameters,
         service_type => SERVICE_WIN32_OWN_PROCESS,
         start_type   => SERVICE_AUTO_START,
