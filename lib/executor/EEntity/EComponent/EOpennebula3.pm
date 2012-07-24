@@ -105,13 +105,49 @@ sub configureNode {
 }
 
 
+sub getVmResources {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm' ]);
+    my $hypervisor = EFactory::newEEntity(data => $args{vm}->hypervisor);
+    my $all_capa = $self->getVmsResources(hypervisor => $hypervisor);
+    return $all_capa->{$args{vm}->getId()}; #ram/cpu
+};
+
+sub getVmsResources {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args, required => [ 'hypervisor' ]);
+
+    # my $e_host  = EFactory::newEEntity(data => $args{host});
+    my $command = 'xm list';
+    my $result  = $args{hypervisor}->getEContext->execute(command => $command);
+    my $res = $result->{stdout};
+
+    my @lines = split('\n',$res);
+    shift @lines; #remove first line (titles)
+    shift @lines; #remove second line (Dom0)
+
+    my %hash;
+    for my $line (@lines) {
+        my @splited_line = split('\s+',$line);
+        my ($foo,$vm_id) = split '-',$splited_line[0];
+#        $log->info("vm <$vm_id> mem <$splited_line[2]> cpu <$splited_line[3]> ");
+        my $one3vm = Entity::Host::VirtualMachine::Opennebula3Vm->find(hash => {onevm_id => $vm_id});
+
+        $hash{$one3vm->getId()}->{ram} = $splited_line[2] * 1024 * 1024;
+        $hash{$one3vm->getId()}->{cpu} = $splited_line[3];
+    }
+    return \%hash;
+}
+
+
+
 sub getHostsMemAvailable {
     my ($self, %args) = @_;
     my $hypervisors = $self->getHypervisors();
     my $hash;
 
     for my $hypervisor (@$hypervisors) {
-        $log->info('***********************************'.$hypervisor->getId());
         $hash->{$hypervisor->getId()} = $self->getHostMemAvailable(host => $hypervisor);
     }
     return $hash;
