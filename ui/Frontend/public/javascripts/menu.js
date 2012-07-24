@@ -223,6 +223,7 @@ function onViewLinkSelect(event) {
     //reload content of the current selected sub menu of the selected view (menu)
     var content_ref =  view.find('.ui-tabs-selected a').attr('href');
     if (content_ref !== undefined) {
+        $('div.toRemove').remove();
         var content_id  = content_ref.split('#')[1];
         reload_content(content_id, elem_id);
     }

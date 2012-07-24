@@ -95,35 +95,42 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     // Set dialog title using column defined in conf
     var title = details_info.title && details_info.title.from_column && row_data[details_info.title.from_column];
 
-    var dialog = $(view_detail_container)
-    .dialog({
-        autoOpen: true,
-        modal: true,
-        title: title,
-        width: 800,
-        height: 500,
-        resizable: false,
-        draggable: true,
-        close: function(event, ui) {
-            $('.last_content').addClass('current_content').removeClass('last_content');
-            $(this).remove(); // detail modals are never closed, they are destroyed
-        },
-        buttons: {
-            Ok: function() {
-                //loading_start();
-                $(this).dialog('close');
-                
+    if (!(details_info.noDialog)) {
+        var dialog = $(view_detail_container)
+        .dialog({
+            autoOpen: true,
+            modal: true,
+            title: title,
+            width: 800,
+            height: 500,
+            resizable: false,
+            draggable: true,
+            close: function(event, ui) {
+                $('.last_content').addClass('current_content').removeClass('last_content');
+                $(this).remove(); // detail modals are never closed, they are destroyed
             },
-            Cancel: function() {
-                $(this).dialog('close');
-            }
-        },
-    });
-
-    // Remove dialog title if wanted
-    if (details_info.title == 'none') {
-        $(view_detail_container).dialog('widget').find(".ui-dialog-titlebar").hide();
+            buttons: {
+                Ok: function() {
+                    //loading_start();
+                    $(this).dialog('close');
+                    
+                },
+                Cancel: function() {
+                    $(this).dialog('close');
+                }
+            },
+        });
+        // Remove dialog title if wanted
+        if (details_info.title == 'none') {
+            $(view_detail_container).dialog('widget').find(".ui-dialog-titlebar").hide();
+        }
     }
+    else {
+        var masterview  = $('#' + grid_id).parents('div.master_view');
+        $(masterview).hide();
+        $(masterview).after($(view_detail_container).find('div.master_view').addClass('toRemove'));
+    }
+
 
     // Load first tab content
     reload_content('content_' + details_info.tabs[0]['id'] + '_' + elem_id, elem_id, true);
