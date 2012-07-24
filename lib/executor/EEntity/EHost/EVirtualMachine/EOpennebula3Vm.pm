@@ -25,4 +25,10 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 
+sub timeOuted {
+    my $self = shift;
+
+    $self->{host_manager}->forceDeploy(vm => $self, hypervisor => $self->hypervisor);
+}
+
 1;

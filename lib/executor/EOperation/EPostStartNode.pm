@@ -81,9 +81,8 @@ sub prerequisites {
     # Check how long the host is 'starting'
     my @state = $self->{context}->{host}->getState;
     my $starting_time = time() - $state[1];
-
     if($starting_time > $broken_time) {
-        $self->{context}->{host}->setState(state => 'broken');
+        $self->{context}->{host}->timeOuted();
     }
 
     my $node_ip = $self->{context}->{host}->getAdminIp;
@@ -142,6 +141,7 @@ sub prerequisites {
     $self->{context}->{host}->setNodeState(state => "in");
 
     $log->debug("Host <$host_id> in cluster <$cluster_id> is 'up', preparing PostStartNode.");
+
     return 0;
 }
 

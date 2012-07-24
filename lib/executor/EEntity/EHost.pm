@@ -138,6 +138,11 @@ sub getEContext {
                                  ip_destination => $self->getAdminIp);
 }
 
+
+sub timeOuted {
+    my $self = shift;
+    $self->setState(state => 'broken');
+}
 1;
 
 __END__
