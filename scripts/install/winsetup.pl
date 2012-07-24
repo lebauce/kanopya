@@ -332,8 +332,8 @@ sub useTemplate {
 sub getKanopyaDirectory {
     my %infos;
 
-    $infos{base_dir}    = __FILE__;
-    my @kanopya         = split 'kanopya', $infos{base_dir}
+    $infos{base_dir}    = file($0)->absolute->dir;
+    my @kanopya         = split 'kanopya', $infos{base_dir};
     $infos{kanopya_dir} = $kanopya[0];
 
     return \%infos;
