@@ -32,6 +32,10 @@ use Data::Dumper;
 
 sub methods {
     return {
+        'getDirectoryTree'  => {
+            'description'   => 'getDirectoryTree',
+            'perm_holder'   => 'entity'
+        }
     };
 }
 
@@ -46,6 +50,10 @@ sub getManagerParamsDef {
 }
 
 sub getNodes {
+    throw Kanopya::Exceptions::NotImplemented();
+}
+
+sub getDirectoryTree {
     throw Kanopya::Exceptions::NotImplemented();
 }
 

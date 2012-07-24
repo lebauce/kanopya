@@ -57,44 +57,116 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub _ldapObj {
+    my $self = shift;
+    my %args = @_;
+
+    my ($ad_host, $ad_user, $ad_pwd, $usessl) = (
+        $args{'ad_host'},
+        $args{'ad_user'},
+        $args{'ad_pwd'},
+        $args{'ad_usessl'},
+    );
+
+    my $ldap_class = $usessl ? 'Net::LDAPS' : 'Net::LDAP';
+
+    my $ldap = $ldap_class->new( $ad_host ) or throw Kanopya::Exception::Internal(error => "LDAP connection error: $@");
+    my $mesg = $ldap->bind($ad_user, password => $ad_pwd);
+
+    $mesg->code && throw Kanopya::Exception::Internal(error => "LDAP connection error. Invalid login/password. (" . ($mesg->error) . ")");
+
+    return $ldap;
+}
+
 sub getNodes {
     my $self = shift;
     my %args = @_;
 
-    return $self->retrieveNodes(
+    my $ldap = $self->_ldapObj(
         ad_host             => $self->getAttr(name => 'ad_host'),
         ad_user             => $self->getAttr(name => 'ad_user'),
         ad_pwd              => $args{password},
-        ad_nodes_base_dn    => $args{ad_nodes_base_dn},
         ad_usessl           => $self->getAttr(name => 'ad_usessl'),
     );
+
+    return $self->retrieveNodes(
+        ldap                => $ldap,
+        ad_nodes_base_dn    => $args{ad_nodes_base_dn},
+    );
+}
+
+sub getDirectoryTree {
+    my $self = shift;
+    my %args = @_;
+
+    my $ldap = $self->_ldapObj(
+        ad_host             => $self->getAttr(name => 'ad_host'),
+        ad_user             => $self->getAttr(name => 'ad_user'),
+        ad_pwd              => $args{password},
+        ad_usessl           => $self->getAttr(name => 'ad_usessl'),
+    );
+
+    # get Root DN
+    my $mesg = $ldap->search(
+        base => '',
+        scope => 'base',
+        filter => 'cn=*'
+    );
+
+    my @entries = $mesg->entries;
+    my $entry = shift @entries;
+    my ($domain) = split(':', $entry->get_value('ldapServiceName'));
+    my $root = $entry->get_value('rootDomainNamingContext');
+
+    return [{
+        name        => $domain,
+        dn          => $root,
+        children    =>_getTree(ldap => $ldap, base => $root)
+    }];
+}
+
+sub _getTree {
+    my %args = @_;
+
+    my $ldap = $args{ldap};
+
+    my $mesg = $ldap->search(
+        base => $args{base},
+        scope => 'one',
+        filter => "(|(objectClass=group)(objectClass=organizationalUnit)(objectClass=container))",
+    );
+    $mesg->code && die $mesg->error;
+    my @tree;
+    for my $entry ($mesg->entries) {
+        my $advanced = $entry->get_value('showInAdvancedViewOnly');
+        next if ($advanced && $advanced eq 'TRUE');
+        my $elem = {
+            name        => $entry->get_value('name'),
+            dn          => $entry->get_value('distinguishedName'),
+            children    => getTree(ldap => $ldap, base => $entry->get_value('distinguishedName')),
+        };
+        push @tree, $elem;
+    }
+    return \@tree;
 }
 
 sub retrieveNodes {
     my $self = shift;
     my %args = @_;
 
-    my ($ad_host, $ad_user, $ad_pwd, $ad_nodes_base_dn, $usessl) = (
-        $args{'ad_host'},
-        $args{'ad_user'},
-        $args{'ad_pwd'},
+    my ($ldap, $ad_nodes_base_dn) = (
+        $args{'ldap'},
         $args{'ad_nodes_base_dn'},
-        $args{'ad_usessl'},
     );
-    
-    my $ldap_class = $usessl ? 'Net::LDAPS' : 'Net::LDAP';
-    
-    my $ldap = $ldap_class->new( $ad_host ) or throw Kanopya::Exception::Internal(error => "LDAP connection error: $@");
-    my $mesg = $ldap->bind($ad_user, password => $ad_pwd);
-    
-    $mesg = $ldap->search(
+
+    my $mesg = $ldap->search(
         base => $ad_nodes_base_dn,
         scope => 'base',
         filter => "cn=*",
     );
-    
+
     $mesg->code && die $mesg->error;
-    
+
     my $computers;
     my @entries = $mesg->entries;
     my $entry = shift @entries;
@@ -112,9 +184,9 @@ sub retrieveNodes {
     foreach my $computer (@$computers) {
         push @nodes, {hostname => $computer->get_value('dNSHostName')};
     }
-        
+
     $mesg = $ldap->unbind;   # take down session
-    
+
     return \@nodes;
 }
 
