@@ -504,7 +504,7 @@ sub updateMemory {
     General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
 
     $args{host}->setAttr(name  => "host_ram",
-                         value => $args{memory} * 1024 * 1024);
+                         value => $args{memory});
     $args{host}->save();
 }
 
