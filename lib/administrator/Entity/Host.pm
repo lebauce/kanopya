@@ -259,7 +259,7 @@ sub setState {
     General::checkParams(args => \%args, required => ['state']);
     my $new_state = $args{state};
     my $current_state = $self->getState();
-    
+
     $self->setAttr(name => 'host_prev_state', value => $current_state);
     $self->setAttr(name => 'host_state', value => $new_state.":".time);
     $self->save();
@@ -326,7 +326,7 @@ sub setNodeState {
 
     my $new_state = $args{state};
     my $current_state = $self->getNodeState();
-    
+
     $self->node->setAttr(name => 'node_prev_state', value => $current_state);
     $self->node->setAttr(name => 'node_state', value => $new_state . ":" . time);
     $self->node->save();
@@ -399,13 +399,14 @@ sub stopToBeNode{
         $log->error($errmsg);
         #throw Kanopya::Exception::DB(error => $errmsg);
     }
+    else {
+        $self->node->delete();
+    }
 
     # Dissociate iface from cluster interfaces
     $self->dissociateInterfaces();
 
     # Remove node entry
-    $self->node->delete();
-
     $self->setState(state => 'down');
 }
 
@@ -786,7 +787,7 @@ sub getRemoteSessionURL {
 }
 
 =head2
-    
+
     desc: return the host type from hostmanager
 
 =cut
