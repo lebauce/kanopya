@@ -712,7 +712,16 @@ sub postStart {
 
     my $vnc_port = $hxml->{TEMPLATE}->{GRAPHICS}->{PORT};
 
+     # Check final RAM and CPU and store
+    my $vm_capacities = $self->getVmResources(vm  => $args{host});
+
     $args{host}->setAttr(name => 'vnc_port', value => $vnc_port);
+    $args{host}->setAttr(name => 'host_ram', value => $vm_capacities->{ram});
+    $args{host}->setAttr(name => 'host_core', value => $vm_capacities->{cpu});
+     # Check final RAM and CPU and store
+
+    $log->info('Set Ram and Cpu from real info : ram <'.($vm_capacities->{ram}).'> cpu <'.($vm_capacities->{cpu}).'>');
+
     $args{host}->save();
 }
 
