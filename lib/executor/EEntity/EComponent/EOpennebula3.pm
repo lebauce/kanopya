@@ -275,72 +275,50 @@ sub restoreHost {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'hypervisor' ]);
+    # Option  resources, hypervisor, resubmit
 
-    # Option  memory, hypervisor, resubmit
+
     my $host_name = $args{hypervisor}->host_hostname;
-    my $vms = $args{hypervisor}->getVms;
+    my $vms       = $args{hypervisor}->getVms();
 
-    for my $vm (@{$vms}) {
 
-        # Get vm id in opennebula
-        my $host_id = $vm->onevm_id;
-        my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
-        my $result  = $self->getEContext->execute(command => $command);
-        my $hxml = XMLin($result->{stdout});
-        my $history = $hxml->{HISTORY_RECORDS}->{HISTORY};
-        my $hypervisor;
 
-        if (ref $history eq 'HASH') {
-            $hypervisor = $history->{HOSTNAME};
-        }
-        else {
-            $hypervisor =  $history->[-1]->{HOSTNAME};
-        }
+    if (defined $args{check_resubmit} || defined $args{check_hypervisor}) {
+        for my $vm (@{$vms}) {
+            my $state = $self->getVMState(host => $vm );
 
-        my $state  = $hxml->{LCM_STATE};
-        my $memory = $hxml->{MEMORY} * 1024;
-
-        $log->info('vm '.$hxml->{ID}.' hv '.$hypervisor.' state '.$state);
-        if($state == 3) {
-            if (defined $args{hypervisor}) {
-                if(!($hypervisor eq $host_name)){
-                   $log->info("VM running on a wrong hypervisor");
-                     $log->info('VM <'.($hxml->{ID}).'> running on HV <'.($hypervisor).'> while on HV <'.($host_name).'> in DB');
-
-                    # NOT TESTED YET !!!
-                    # Get host_id of running hypervisor
-                    my $hypervisor_host_id = Entity::Host->find(hash => {host_hostname => $hypervisor})->getId();
-                    $log->info("hv host id = $hypervisor_host_id ($hypervisor)");
-                    #$log->info(Dumper $self->_getEntity()->{_dbix}->opennebula3_hypervisors);
-                    my $opennebula3_hypervisor_id = $self->_getEntity()
-                                                         ->{_dbix}
-                                                         ->opennebula3_hypervisors
-                                                         ->search( {
-                                                               hypervisor_host_id => $hypervisor_host_id
-                                                           } )
-                                                         ->single()
-                                                         ->get_column('opennebula3_hypervisor_id');
-
-                    $self->_getEntity()->{_dbix}->opennebula3_vms->search( {
-                        vm_id => $hxml->{ID} }
-                    )->single()->update( {
-                        opennebula3_hypervisor_id => $opennebula3_hypervisor_id
-                    });
+            $log->info('vm <'.($vm->getId).'> hv '.$state->{hypervisor}.' state '.$state->{state});
+            if($state->{state} eq 'runn') {
+                if (defined $args{hypervisor}) {
+                    if(!($args{hypervisor}->host_hostname eq $state->{hypervisor})){
+                        $log->info('VM running on a wrong hypervisor');
+                    }
                 }
             }
-           if (defined $args{memory}){
-                if( $memory != $vm->host_ram){
-                    $log->info("Memory one = $memory VS db = ".($vm->host_ram));
-                    $vm->setAttr(name => 'host_ram', value => $memory);
-                    $vm->save();
+            else{
+                if(defined $args{check_resubmit}){
+                    my $command = $self->_oneadmin_command(command => 'onevm resubmit '.$vm->onevm_id);
+                    my $result  = $self->getEContext->execute(command => $command);
                 }
-           }
+            }
         }
-        else{
-            if(defined $args{resubmit}){
-                $log->info("onevm resubmit $hxml->{ID}");
-                my $command = $self->_oneadmin_command(command => "onevm resubmit $hxml->{ID}");
-                my $result  = $self->getEContext->execute(command => $command);
+    }
+
+    if (defined $args{check_resources}){
+        my $host_vm_capacities = $self->getVmsResources(hypervisor => $args{hypervisor});
+        $log->info(Dumper $host_vm_capacities);
+
+        for my $vm (@{$vms}) {
+
+            if( $host_vm_capacities->{$vm->getId()}->{ram} != $vm->host_ram) {
+                    $log->info('Memory one = '.($host_vm_capacities->{$vm->getId()}->{ram}).' VS db = '.($vm->host_ram));
+                    $vm->setAttr(name => 'host_ram', value => $host_vm_capacities->{$vm->getId()}->{ram});
+                    $vm->save();
+            }
+            if( $host_vm_capacities->{$vm->getId()}->{cpu} != $vm->host_core){
+                    $log->info('Cpu one = '.(($host_vm_capacities->{$vm->getId()}->{cpu})).' VS db = '.($vm->host_core));
+                    $vm->setAttr(name => 'host_core', value => $host_vm_capacities->{$vm->getId()}->{cpu});
+                    $vm->save();
             }
         }
     }
