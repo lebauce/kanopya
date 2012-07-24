@@ -95,6 +95,19 @@ sub getNodes {
     );
 }
 
+=head2 getDirectoryTree
+
+    desc: return all the tree of Container,OU and Group from AD root
+    args: password
+    returns:    [ ADnode, ...]
+                with    ADnode = {
+                            name => <node common name>,
+                            dn => <node distinguished name>,
+                            children => [ ADnode, ...]
+                        }
+
+=cut
+
 sub getDirectoryTree {
     my $self = shift;
     my %args = @_;

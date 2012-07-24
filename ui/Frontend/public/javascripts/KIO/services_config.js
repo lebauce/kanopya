@@ -215,8 +215,9 @@ function createmanagerDialog(managertype, sp_id, callback, skippable) {
             }
             $(select).bind('change', function(event) {
                 $(fieldset).empty();
+                var manager_id = $(event.currentTarget).val();
                 $.ajax({
-                    url     : '/api/entity/' + $(event.currentTarget).val() + '/getManagerParamsDef',
+                    url     : '/api/entity/' + manager_id + '/getManagerParamsDef',
                     type    : 'POST',
                     success : function(data) {
                         for (var i in data) if (data.hasOwnProperty(i)) {
@@ -224,6 +225,11 @@ function createmanagerDialog(managertype, sp_id, callback, skippable) {
                                 text : managerParams(data[i]) + " : ",
                                 for : data[i]
                             })).append($("<input>", { name : data[i], id : data[i] }));
+
+                            // Specific management for custom form
+                            if (connectortype == 'DirectoryServiceManager' && data[i] == 'ad_nodes_base_dn') {
+                                $(fieldset).append($('<button>', {html : 'browse...'}).click( {manager_id : manager_id }, ActiveDirectoryBrowser ));
+                            }
                         }
                     }
                 });
@@ -245,7 +251,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable) {
                         };
                         var params  = {};
                         var ok      = true;
-                        $(fieldset).find(':input').each(function() {
+                        $(fieldset).find(':input:not(:button)').each(function() {
                             if ($(this).val() == null || $(this).val() === '') {
                               ok                            = false;
                             } else {
@@ -304,4 +310,85 @@ function createManagerButton(managertype, ctnr, sp_id, container_id) {
     });
     addManagerButton.appendTo($(ctnr));
     $(ctnr).append("<br />");
+}
+
+// Build json tree as expected by jstree from ad tree
+function buildADTreeJSONData(ad_tree) {
+    var treedata = [];
+
+    $.each(ad_tree, function (node_idx) {
+        var node = ad_tree[node_idx];
+        var treenode = {
+                data        : node.name,
+                attr        : { id : node.dn },
+        }
+        if (node.children.length > 0) {
+            treenode.children = buildADTreeJSONData( node.children );
+        }
+        treedata.push( treenode );
+    });
+
+   return treedata;
+}
+
+function ActiveDirectoryBrowser(event) {
+    var dn_input = $(this).prev();
+    var ad_id    = event.data.manager_id;
+
+    // Get AD user
+    $.ajax({
+        url         : '/api/entity/' + ad_id,
+        async       : false,
+        success     : function(data) {
+            ad_user  = data.ad_user;
+        }
+    });
+
+    require('common/general.js');
+    callMethodWithPassword({
+            login        : ad_user,
+            dialog_title : "",
+            url          : '/api/entity/' + ad_id + '/getDirectoryTree',
+            success      : function(data) {
+                require('jquery/jquery.jstree.js');
+                var treedata = buildADTreeJSONData(data);
+
+                var browser = $('<div>');
+                var tree_cont = $('<div>', {style : 'height:300px'});
+                var selected_dn_input = $('<input>', {style : 'width:350px'});
+                browser.append(selected_dn_input);
+                browser.append(tree_cont);
+
+                tree_cont.jstree({
+                    "plugins"   : ["themes","json_data","ui"],
+                    "themes"    : {
+                        url : "css/jstree_themes/default/style.css"
+                    },
+                    "json_data" : {
+                        "data"                  : treedata,
+                        "progressive_render"    : true
+                    }
+                }).bind("select_node.jstree", function (e, data) {
+                    selected_dn_input.val(data.rslt.obj.attr("id"));
+                });
+
+                browser.dialog({
+                    title   : 'AD Browser',
+                    modal   : true,
+                    width   : '400px',
+                    buttons : {
+                        Ok: function () {
+                            dn_input.val(selected_dn_input.val());
+                            $(this).dialog("close");
+                        },
+                        Cancel: function () {
+                            $(this).dialog("close");
+                        }
+                    },
+                    close: function (event, ui) {
+                        $(this).remove();
+                    }
+                });
+            }
+    });
 }
