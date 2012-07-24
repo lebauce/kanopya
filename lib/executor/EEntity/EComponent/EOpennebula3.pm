@@ -591,12 +591,19 @@ sub isUp {
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ] );
     my $ip = $args{host}->getAdminIp;
 
-    my $check_opennebula_status = $self->retrieveOpennebulaHypervisorStatus(host => $args{host});
-    if($check_opennebula_status == 0) {
+    my $hypervisor_status = 1;
+    eval {
+        # Skip ths test if the cluster has no master node yet.
+        $self->getEContext;
+
+        $hypervisor_status = $self->retrieveOpennebulaHypervisorStatus(host => $args{host});
+    };
+
+    if ($hypervisor_status == 0) {
         return 0;
     }
 
-    if($args{cluster}->getMasterNodeIp() eq $ip) {
+    if(defined $args{cluster}->getMasterNodeIp() and $args{cluster}->getMasterNodeIp() eq $ip) {
         # host is the opennebula frontend
         # we must test opennebula port reachability
         my $net_conf = $self->{_entity}->getNetConf();
