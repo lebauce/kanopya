@@ -94,67 +94,15 @@ function createUpdateNodeButton(container, elem_id, grid) {
     var manager = isThereAManager(elem_id, 'directory_service_manager');
     if (manager) {
         $(button).bind('click', function(event) {
-            var dialog = $("<div>", { css : { 'text-align' : 'center' } });
-            // Ugly cause specific for ActiveDirectory (access ad_user field)
-            dialog.append($("<label>", { for : 'adpassword', text : 'Please enter ' + manager.ad_user + ' password :' }));
-            dialog.append($("<input>", { id : 'adpassword', name : 'adpassword', type : 'password' }));
-            dialog.append($("<div>", { id : "adpassworderror", class : 'ui-corner-all' }));
-            // Create the modal dialog
-            $(dialog).dialog({
-                modal           : true,
-                title           : "Update service nodes",
-                resizable       : false,
-                draggable       : false,
-                closeOnEscape   : false,
-                buttons         : {
-                    'Ok'    : function() {
-                        $("div#adpassworderror").removeClass("ui-state-error").empty();
-                        var waitingPopup    = $("<div>", { text : 'Waiting...' }).css('text-align', 'center').dialog({
-                            draggable   : false,
-                            resizable   : false,
-                            onClose     : function() { $(this).remove(); }
-                        });
-                        $(waitingPopup).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
-                        var passwd          = $("input#adpassword").attr('value');
-                        var ok              = false;
-                        // If a password was typen, then we can submit the form
-                        if (passwd !== "" && passwd !== undefined) {
-                            $.ajax({
-                                url         : '/api/externalcluster/' + elem_id + '/updateNodes',
-                                type        : 'POST',
-                                async       : false,
-                                data        : JSON.stringify({
-                                    password    : passwd
-                                }),
-                                contentType : 'application/json',
-                                complete    : function(data) { $(waitingPopup).dialog('close'); },
-                                success     : function(data) {
-                                    if (data.error) {
-                                        alert(data.error);
-                                    } else {
-                                        ok  = true;
-                                    }
-                                },
-                                error       : function(data) {
-                                    //$("input#adpassword").val("");
-                                    //$("div#adpassworderror").text(JSON.parse(data.responseText).reason).addClass('ui-state-error');
-                                }
-                            });
-                            // If the form succeed, then we can close the dialog
-                            if (ok === true) {
-                                $(grid).trigger("reloadGrid");
-                                $(this).dialog('destroy');
-                            }
-                        } else {
-                            $("input#adpassword").css('border', '1px solid #f00');
-                        }
-                    },
-                    'Cancel': function() {
-                        $(this).dialog('destroy');
+            require('common/general.js');
+            callMethodWithPassword({
+                    login        : manager.ad_user,
+                    dialog_title : "Update service nodes",
+                    url          : '/api/externalcluster/' + elem_id + '/updateNodes',
+                    success      : function(data) {
+                        $(grid).trigger("reloadGrid");
                     }
-                }
             });
-            $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
         });
     } else {
         $(button).attr('disabled', 'disabled');
