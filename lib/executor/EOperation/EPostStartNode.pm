@@ -105,9 +105,11 @@ sub prerequisites {
             return $delay;
         }
         elsif ($vm_state->{state} eq 'fail' ) {
-            throw Kanopya::Exception(error => 'VM fail');
+            my $lastmessage = $self->{context}->{host_manager}->vmLoggedErrorMessage(opennebula3_vm => $self->{context}->{host});
+            throw Kanopya::Exception(error => 'Vm fail on boot: '.$lastmessage);
         }
         elsif ($vm_state->{state} eq 'pend' ) {
+            $log->info('timeout in '.($broken_time - $starting_time).' s');
             $log->info('VM still pending'); #TODO check HV state
             return $delay;
         }

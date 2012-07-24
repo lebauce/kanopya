@@ -874,4 +874,31 @@ sub propagateVLAN {
     }
 }
 
+sub vmLoggedErrorMessage {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => [ 'opennebula3_vm' ]);
+
+    my $command = $self->_oneadmin_command(command => 'tail -n 50 /var/log/one/oned.log |grep "LOG I '.($args{opennebula3_vm}->onevm_id).' Error"');
+
+    $log->info("commande = $command");
+    my $result  = $self->getEContext->execute(command => $command);
+    my $output  = $result->{stdout};
+    $log->info($output);
+
+    my @lastmessage =  split '\n',$output;
+
+
+    $log->info(@lastmessage);
+    return $lastmessage[-1];
+
+}
+
+sub forceDeploy {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm', 'hypervisor' ]);
+    my $command = $self->_oneadmin_command(command => 'onevm deploy '.$args{vm}->onevm_id.' '.(Entity->get(id => $args{hypervisor}->getId())->onehost_id));
+    my $result  = $self->getEContext->execute(command => $command);
+    $log->info($result->{stdout});
+}
+
 1;
