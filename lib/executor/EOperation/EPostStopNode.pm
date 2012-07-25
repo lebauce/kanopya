@@ -148,28 +148,20 @@ sub prepare {
 
     # retrieve linux component if exists
     my $linux = eval { 
-        $self->{context}->{cluster}->getComponent(name    => 'Linux',
-                                                  version => 0
-        );
+        $self->{context}->{cluster}->getComponent(name => 'Linux', version => 0);
     };
     if($linux) {
-        $self->{context}->{linux} = EFactory::newEEntity(
-                data => $linux
-        );
+        $self->{context}->{linux} = EFactory::newEEntity(data => $linux);
     } else {
         $self->{context}->{linux} = undef;
     }
-    
+
     # retrieve puppet component if exists
     my $puppetagent = eval { 
-        $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
-                                                  version => 2
-        );
+        $self->{context}->{cluster}->getComponent(name => 'Puppetagent', version => 2);
     };
     if($puppetagent) {
-        $self->{context}->{puppetagent} = EFactory::newEEntity(
-                data => $puppetagent
-        );
+        $self->{context}->{puppetagent} = EFactory::newEEntity(data => $puppetagent);
     } else {
         $self->{context}->{puppetagent} = undef;
     }
@@ -227,7 +219,6 @@ sub execute {
     
     $self->{context}->{host}->setAttr(name => "host_hostname", value => undef);
     $self->{context}->{host}->setAttr(name => "host_initiatorname", value => undef);
-
     
     my $systemimage_name = $self->{context}->{cluster}->getAttr(name => 'cluster_name');
     $systemimage_name .= '_' . $self->{context}->{host}->getNodeNumber();
@@ -278,17 +269,16 @@ sub finish {
     my @cluster_state = $self->{context}->{cluster}->getState;
     my $cluster_nodes = $self->{context}->{cluster}->getHosts();
 
-    if ($cluster_state[0] eq 'stopping') {
-        # If the cluster has no node any more, it has been properly stoped
-        if ((scalar keys %$cluster_nodes) == 0) {
-            $self->{context}->{cluster}->setState(state => "down");
-        }
-        # If the cluster has one node left, this is must be the master node
-        elsif ((scalar keys %$cluster_nodes) == 1) {
-            $self->{context}->{cluster}->removeNode(
-                host_id => $self->{context}->{cluster}->getMasterNodeId()
-            );
-        }
+    # If the cluster has no node any more, it has been properly stoped
+    if ((scalar keys %$cluster_nodes) == 0) {
+        $self->{context}->{cluster}->setState(state => "down");
+    }
+
+    # If a stoping cluster has one node left, this is must be the master node
+    if ($cluster_state[0] eq 'stopping' and (scalar keys %$cluster_nodes) == 1) {
+        $self->{context}->{cluster}->removeNode(
+            host_id => $self->{context}->{cluster}->getMasterNodeId()
+        );
     }
 }
 

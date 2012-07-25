@@ -70,6 +70,10 @@ sub start {
     $self->{host_manager}->startHost(host => $self, hypervisor => $args{hypervisor});
 
     $self->setState(state => 'starting');
+
+    # Sommetimes a host can be promoted to another object type
+    # So reload the object to be sure to have the good type.
+    return EFactory::newEEntity(data => Entity->get(id => $self->id));
 }
 
 sub halt {
@@ -134,6 +138,11 @@ sub getEContext {
                                  ip_destination => $self->getAdminIp);
 }
 
+
+sub timeOuted {
+    my $self = shift;
+    $self->setState(state => 'broken');
+}
 1;
 
 __END__

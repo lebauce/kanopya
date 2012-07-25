@@ -466,8 +466,33 @@ CREATE TABLE `host` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `virtual_machine`
+-- Entity::Host::VirtualMachine
+
+CREATE TABLE `virtual_machine` (
+  `virtual_machine_id` int(8) unsigned NOT NULL,
+  `hypervisor_id` int(8) unsigned NULL DEFAULT NULL,
+  `vnc_port` int(8) unsigned NULL DEFAULT NULL,
+  PRIMARY KEY (`virtual_machine_id`),
+  FOREIGN KEY (`virtual_machine_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`hypervisor_id`),
+  FOREIGN KEY (`hypervisor_id`) REFERENCES `hypervisor` (`hypervisor_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `hypervisor`
+-- Entity::Host::Hypervisor
+
+CREATE TABLE `hypervisor` (
+  `hypervisor_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`hypervisor_id`),
+  FOREIGN KEY (`hypervisor_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `iface`
 --
+
 CREATE TABLE `iface` (
   `iface_id` int(8) UNSIGNED NOT NULL,
   `iface_name` char(32) NOT NULL ,

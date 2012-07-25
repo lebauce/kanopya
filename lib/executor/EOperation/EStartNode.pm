@@ -210,7 +210,7 @@ sub execute {
     $self->{context}->{host}->save();
 
     # Finally we start the node
-    $self->{context}->{host}->start(
+    $self->{context}->{host} = $self->{context}->{host}->start(
         erollback  => $self->{erollback},
         hypervisor => $self->{context}->{hypervisor}, #only need for vm add
     );

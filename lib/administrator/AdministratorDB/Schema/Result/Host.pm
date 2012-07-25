@@ -288,6 +288,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 hypervisor
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Hypervisor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "hypervisor",
+  "AdministratorDB::Schema::Result::Hypervisor",
+  { "foreign.hypervisor_id" => "self.host_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 ifaces
 
 Type: has_many
@@ -318,39 +333,25 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 opennebula3_hypervisors
+=head2 virtual_machine
 
-Type: has_many
+Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Opennebula3Hypervisor>
-
-=cut
-
-__PACKAGE__->has_many(
-  "opennebula3_hypervisors",
-  "AdministratorDB::Schema::Result::Opennebula3Hypervisor",
-  { "foreign.hypervisor_host_id" => "self.host_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 opennebula3_vms
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Opennebula3Vm>
+Related object: L<AdministratorDB::Schema::Result::VirtualMachine>
 
 =cut
 
-__PACKAGE__->has_many(
-  "opennebula3_vms",
-  "AdministratorDB::Schema::Result::Opennebula3Vm",
-  { "foreign.vm_host_id" => "self.host_id" },
+__PACKAGE__->might_have(
+  "virtual_machine",
+  "AdministratorDB::Schema::Result::VirtualMachine",
+  { "foreign.virtual_machine_id" => "self.host_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-13 14:46:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qgjMtnrMTrveW8/u39G+mA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-19 15:18:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:x4KaHGJX/lb7ikHxUeksDw
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",

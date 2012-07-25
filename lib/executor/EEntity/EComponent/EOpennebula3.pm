@@ -105,13 +105,49 @@ sub configureNode {
 }
 
 
+sub getVmResources {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm' ]);
+    my $hypervisor = EFactory::newEEntity(data => $args{vm}->hypervisor);
+    my $all_capa = $self->getVmsResources(hypervisor => $hypervisor);
+    return $all_capa->{$args{vm}->getId()}; #ram/cpu
+};
+
+sub getVmsResources {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args, required => [ 'hypervisor' ]);
+
+    # my $e_host  = EFactory::newEEntity(data => $args{host});
+    my $command = 'xm list';
+    my $result  = $args{hypervisor}->getEContext->execute(command => $command);
+    my $res = $result->{stdout};
+
+    my @lines = split('\n',$res);
+    shift @lines; #remove first line (titles)
+    shift @lines; #remove second line (Dom0)
+
+    my %hash;
+    for my $line (@lines) {
+        my @splited_line = split('\s+',$line);
+        my ($foo,$vm_id) = split '-',$splited_line[0];
+#        $log->info("vm <$vm_id> mem <$splited_line[2]> cpu <$splited_line[3]> ");
+        my $one3vm = Entity::Host::VirtualMachine::Opennebula3Vm->find(hash => {onevm_id => $vm_id});
+
+        $hash{$one3vm->getId()}->{ram} = $splited_line[2] * 1024 * 1024;
+        $hash{$one3vm->getId()}->{cpu} = $splited_line[3];
+    }
+    return \%hash;
+}
+
+
+
 sub getHostsMemAvailable {
     my ($self, %args) = @_;
     my $hypervisors = $self->getHypervisors();
     my $hash;
 
     for my $hypervisor (@$hypervisors) {
-        $log->info('***********************************'.$hypervisor->getId());
         $hash->{$hypervisor->getId()} = $self->getHostMemAvailable(host => $hypervisor);
     }
     return $hash;
@@ -152,15 +188,13 @@ sub migrateHost {
                                                     ip_destination => $masternodeip);
 
     # Get the source hypervisor
-    my $src_hypervisor = $self->getHypervisorHost(
-                             host => $args{host}
-                         );
+    my $src_hypervisor = $args{host}->hypervisor;
     $log->debug("The VM <" . $args{host}->getId . "> is on the <" . $src_hypervisor->getId . "> host");
 
-    my $hypervisor_id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{hypervisor_dst}->getAttr(name => "host_id"));
+    my $hypervisor_id = $args{hypervisor_dst}->onehost_id;
     my $hypervisor_host_name = $args{hypervisor_dst}->getAttr(name=>'host_hostname');
 
-    my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    my $host_id = $args{host}->onevm_id;
 
     $log->debug("Apply VLAN on the destination hypervisor");
     $self->propagateVLAN(host       => $args{host},
@@ -179,7 +213,8 @@ sub getVMState {
     my ($self,%args) = @_;
     General::checkParams(args     => \%args, required => ['host']);
 
-    my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    my $host_id = $args{host}->onevm_id;
+
     my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
     my $result  = $self->getEContext->execute(command => $command);
     my $hxml = XMLin($result->{stdout});
@@ -225,9 +260,7 @@ sub scale_memory {
 
     my $memory = $args{memory};
 
-    my $host_id = $self->_getEntity()->getVmIdFromHostId(
-                      host_id => $args{host}->getAttr(name => "host_id")
-                  );
+    my $host_id = $args{host}->onevm_id;
     my $command = $self->_oneadmin_command(command => "onevm memset $host_id $memory");
 
     $self->getEContext->execute(command => $command);
@@ -240,76 +273,52 @@ sub scale_memory {
 
 sub restoreHost {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['hypervisor_host_id']);
-    # Option  memory, hypervisor, resubmit
-    my $host_name = Entity::Host->get(id => $args{hypervisor_host_id})->host_hostname;
-    my $vms = $self->_getEntity
-                   ->getVmsFromHypervisorHostId(
-                        hypervisor_host_id => $args{hypervisor_host_id}
-                     );
+
+    General::checkParams(args => \%args, required => [ 'hypervisor' ]);
+    # Option  resources, hypervisor, resubmit
 
 
-    for my $vm (@{$vms}) {
+    my $host_name = $args{hypervisor}->host_hostname;
+    my $vms       = $args{hypervisor}->getVms();
 
-        # Get vm id in opennebula
-        my $host_id = $self->getVmIdFromHostId(host_id => $vm->getAttr(name => "host_id"));
-        my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
-        my $result  = $self->getEContext->execute(command => $command);
-        my $hxml = XMLin($result->{stdout});
-        my $history = $hxml->{HISTORY_RECORDS}->{HISTORY};
-        my $hypervisor;
 
-        if (ref $history eq 'HASH') {
-            $hypervisor = $history->{HOSTNAME};
-        }
-        else {
-            $hypervisor =  $history->[-1]->{HOSTNAME};
-        }
 
-        my $state  = $hxml->{LCM_STATE};
-        my $memory = $hxml->{MEMORY} * 1024;
+    if (defined $args{check_resubmit} || defined $args{check_hypervisor}) {
+        for my $vm (@{$vms}) {
+            my $state = $self->getVMState(host => $vm );
 
-        $log->info('vm '.$hxml->{ID}.' hv '.$hypervisor.' state '.$state);
-        if($state == 3) {
-            if (defined $args{hypervisor}) {
-                if(!($hypervisor eq $host_name)){
-                   $log->info("VM running on a wrong hypervisor");
-                     $log->info('VM <'.($hxml->{ID}).'> running on HV <'.($hypervisor).'> while on HV <'.($host_name).'> in DB');
-
-                    # NOT TESTED YET !!!
-                    # Get host_id of running hypervisor
-                    my $hypervisor_host_id = Entity::Host->find(hash => {host_hostname => $hypervisor})->getId();
-                    $log->info("hv host id = $hypervisor_host_id ($hypervisor)");
-                    #$log->info(Dumper $self->_getEntity()->{_dbix}->opennebula3_hypervisors);
-                    my $opennebula3_hypervisor_id = $self->_getEntity()
-                                                         ->{_dbix}
-                                                         ->opennebula3_hypervisors
-                                                         ->search( {
-                                                               hypervisor_host_id => $hypervisor_host_id
-                                                           } )
-                                                         ->single()
-                                                         ->get_column('opennebula3_hypervisor_id');
-
-                    $self->_getEntity()->{_dbix}->opennebula3_vms->search( {
-                        vm_id => $hxml->{ID} }
-                    )->single()->update( {
-                        opennebula3_hypervisor_id => $opennebula3_hypervisor_id
-                    });
+            $log->info('vm <'.($vm->getId).'> hv '.$state->{hypervisor}.' state '.$state->{state});
+            if($state->{state} eq 'runn') {
+                if (defined $args{hypervisor}) {
+                    if(!($args{hypervisor}->host_hostname eq $state->{hypervisor})){
+                        $log->info('VM running on a wrong hypervisor');
+                    }
                 }
             }
-           if (defined $args{memory}){
-                if( $memory != $vm->getHostRAM()){
-                    $log->info("Memory one = $memory VS db = ".($vm->getHostRAM()));
-                    $vm->setAttr(name => 'host_ram', value => $memory);
-                    $vm->save();
+            else{
+                if(defined $args{check_resubmit}){
+                    my $command = $self->_oneadmin_command(command => 'onevm resubmit '.$vm->onevm_id);
+                    my $result  = $self->getEContext->execute(command => $command);
                 }
-           }
+            }
         }
-        else{
-            if(defined $args{resubmit}){
-                $log->info("onevm resubmit $hxml->{ID}");
-                my $command = $self->_oneadmin_command(command => "onevm resubmit $hxml->{ID}");
-                my $result  = $self->getEContext->execute(command => $command);
+    }
+
+    if (defined $args{check_resources}){
+        my $host_vm_capacities = $self->getVmsResources(hypervisor => $args{hypervisor});
+        $log->info(Dumper $host_vm_capacities);
+
+        for my $vm (@{$vms}) {
+
+            if( $host_vm_capacities->{$vm->getId()}->{ram} != $vm->host_ram) {
+                    $log->info('Memory one = '.($host_vm_capacities->{$vm->getId()}->{ram}).' VS db = '.($vm->host_ram));
+                    $vm->setAttr(name => 'host_ram', value => $host_vm_capacities->{$vm->getId()}->{ram});
+                    $vm->save();
+            }
+            if( $host_vm_capacities->{$vm->getId()}->{cpu} != $vm->host_core){
+                    $log->info('Cpu one = '.(($host_vm_capacities->{$vm->getId()}->{cpu})).' VS db = '.($vm->host_core));
+                    $vm->setAttr(name => 'host_core', value => $host_vm_capacities->{$vm->getId()}->{cpu});
+                    $vm->save();
             }
         }
     }
@@ -324,9 +333,7 @@ sub scale_cpu {
 
     my $cpu_number = $args{cpu_number};
 
-    my $host_id = $self->_getEntity()->getVmIdFromHostId(
-                      host_id => $args{host}->getAttr(name => "host_id")
-                  );
+    my $host_id = $args{host}->onevm_id;
     my $command = $self->_oneadmin_command(command => "onevm vcpuset $host_id $cpu_number");
 
     $self->getEContext->execute(command => $command);
@@ -499,6 +506,7 @@ sub addNode {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+
     $self->configureNode(%args);
 }
 
@@ -508,19 +516,28 @@ sub postStartNode {
 
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
-    # this host is a new hypervisor node so we declare it to opennebula
+    # This host is a new hypervisor node so we declare it to opennebula
     my $hostname = $args{host}->getAttr(name => 'host_hostname');
     my $command = $self->_oneadmin_command(command => "onehost create $hostname im_xen vmm_xen tm_shared 802.1Q");
 
     sleep(10);
     my $result = $self->getEContext->execute(command => $command);
+    if ($result->{exitcode} != 0) {
+         throw Kanopya::Exception::Internal::IncorrectParam(error => $result->{stdout});
+    }
     my $id = substr($result->{stdout}, 4);
 
-    $log->info('hypervisor id returned by opennebula: '.$id);
-    $self->_getEntity()->addHypervisor(
-        host_id => $args{host}->getAttr(name => 'host_id'),
-        id      => $id,
-    );
+    # Delete the hypervisor from opennebula if the operation fail later.
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('deleteHypervisor'),
+            parameters => [ $self, "hypervisor_id", $id ]
+        );
+    }
+
+    $log->info('Hypervisor id returned by opennebula: ' . $id);
+    my $hypervisor = $self->addHypervisor(host => $args{host}->_getEntity, id => $id);
+
     $command = $self->_oneadmin_command(command => "onehost enable $hostname");
     $result = $self->getEContext->execute(command => $command);
 }
@@ -529,15 +546,24 @@ sub preStopNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
-    my $id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
-    my $command = $self->_oneadmin_command(command => "onehost delete $id");
-
-     sleep(10);
-     my $result = $self->getEContext->execute(command => $command);
+     my $result = $self->deleteHypervisor(hypervisor_id => $args{host}->onehost_id);
      # TODO verifier le succes de la commande
-     $self->_getEntity()->removeHypervisor(host_id => $args{host}->getAttr(name => 'host_id'));
+
+     $self->_getEntity->removeHypervisor(host => $args{host});
+}
+
+sub deleteHypervisor {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'hypervisor_id' ]);
+
+    my $command = $self->_oneadmin_command(command => "onehost delete $args{hypervisor_id}");
+
+    sleep(10);
+    return $self->getEContext->execute(command => $command);
 }
 
 
@@ -565,12 +591,19 @@ sub isUp {
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ] );
     my $ip = $args{host}->getAdminIp;
 
-    my $check_opennebula_status = $self->retrieveOpennebulaHypervisorStatus(host => $args{host});
-    if($check_opennebula_status == 0) {
+    my $hypervisor_status = 1;
+    eval {
+        # Skip ths test if the cluster has no master node yet.
+        $self->getEContext;
+
+        $hypervisor_status = $self->retrieveOpennebulaHypervisorStatus(host => $args{host});
+    };
+
+    if ($hypervisor_status == 0) {
         return 0;
     }
 
-    if($args{cluster}->getMasterNodeIp() eq $ip) {
+    if(defined $args{cluster}->getMasterNodeIp() and $args{cluster}->getMasterNodeIp() eq $ip) {
         # host is the opennebula frontend
         # we must test opennebula port reachability
         my $net_conf = $self->{_entity}->getNetConf();
@@ -654,7 +687,7 @@ sub stopHost {
 
     # retrieve vm info from opennebula
 
-    my $id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
+    my $id = $args{host}->onevm_id;
     my $command = $self->_oneadmin_command(command => "onevm delete $id");
     my $result = $self->getEContext->execute(command => $command);
 
@@ -672,17 +705,24 @@ sub postStart {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
+    my $id = $args{host}->onevm_id;
     my $command = $self->_oneadmin_command(command => "onevm show $id --xml");
     my $result = $self->getEContext->execute(command => $command);
     my $hxml = XMLin($result->{stdout});
 
     my $vnc_port = $hxml->{TEMPLATE}->{GRAPHICS}->{PORT};
 
-    $self->_getEntity()->updateVM(
-        vm_host_id    => $args{host}->getAttr(name => 'host_id'),
-        vnc_port      => $vnc_port,
-    );
+     # Check final RAM and CPU and store
+    my $vm_capacities = $self->getVmResources(vm  => $args{host});
+
+    $args{host}->setAttr(name => 'vnc_port', value => $vnc_port);
+    $args{host}->setAttr(name => 'host_ram', value => $vm_capacities->{ram});
+    $args{host}->setAttr(name => 'host_core', value => $vm_capacities->{cpu});
+     # Check final RAM and CPU and store
+
+    $log->info('Set Ram and Cpu from real info : ram <'.($vm_capacities->{ram}).'> cpu <'.($vm_capacities->{cpu}).'>');
+
+    $args{host}->save();
 }
 
 sub getFreeHost {
@@ -705,10 +745,10 @@ sub getFreeHost {
                );
     };
     if ($@) {
-        my $error =$@;
+        $errmsg = "Component OpenNebula3 <" . $self->_getEntity->getAttr(name => 'component_id') .
+                  "> No capabilities to host this vm core <$args{core}> and ram <$args{ram}>:\n" . $@;
         # We can't create virtual host for some reasons (e.g can't meet constraints)
-        $log->debug("Component OpenNebula3 <" . $self->_getEntity->getAttr(name => 'component_id') .
-                    "> No capabilities to host this vm core <$args{cpu}> and ram <$args{ram}>:\n" . $error);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
     return $host;
@@ -862,6 +902,33 @@ sub propagateVLAN {
             }
         }
     }
+}
+
+sub vmLoggedErrorMessage {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => [ 'opennebula3_vm' ]);
+
+    my $command = $self->_oneadmin_command(command => 'tail -n 50 /var/log/one/oned.log |grep "LOG I '.($args{opennebula3_vm}->onevm_id).' Error"');
+
+    $log->info("commande = $command");
+    my $result  = $self->getEContext->execute(command => $command);
+    my $output  = $result->{stdout};
+    $log->info($output);
+
+    my @lastmessage =  split '\n',$output;
+
+
+    $log->info(@lastmessage);
+    return $lastmessage[-1];
+
+}
+
+sub forceDeploy {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm', 'hypervisor' ]);
+    my $command = $self->_oneadmin_command(command => 'onevm deploy '.$args{vm}->onevm_id.' '.(Entity->get(id => $args{hypervisor}->getId())->onehost_id));
+    my $result  = $self->getEContext->execute(command => $command);
+    $log->info($result->{stdout});
 }
 
 1;

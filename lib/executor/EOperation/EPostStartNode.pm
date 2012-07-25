@@ -81,9 +81,8 @@ sub prerequisites {
     # Check how long the host is 'starting'
     my @state = $self->{context}->{host}->getState;
     my $starting_time = time() - $state[1];
-
     if($starting_time > $broken_time) {
-        $self->{context}->{host}->setState(state => 'broken');
+        $self->{context}->{host}->timeOuted();
     }
 
     my $node_ip = $self->{context}->{host}->getAdminIp;
@@ -106,9 +105,11 @@ sub prerequisites {
             return $delay;
         }
         elsif ($vm_state->{state} eq 'fail' ) {
-            throw Kanopya::Exception(error => 'VM fail');
+            my $lastmessage = $self->{context}->{host_manager}->vmLoggedErrorMessage(opennebula3_vm => $self->{context}->{host});
+            throw Kanopya::Exception(error => 'Vm fail on boot: '.$lastmessage);
         }
         elsif ($vm_state->{state} eq 'pend' ) {
+            $log->info('timeout in '.($broken_time - $starting_time).' s');
             $log->info('VM still pending'); #TODO check HV state
             return $delay;
         }
@@ -142,6 +143,7 @@ sub prerequisites {
     $self->{context}->{host}->setNodeState(state => "in");
 
     $log->debug("Host <$host_id> in cluster <$cluster_id> is 'up', preparing PostStartNode.");
+
     return 0;
 }
 
@@ -211,9 +213,10 @@ sub execute {
     $log->info('Processing cluster components configuration for this node');
     foreach my $i (keys %$components) {
         my $comp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is ".ref($comp));
-        $comp->postStartNode(host    => $self->{context}->{host},
-                             cluster => $self->{context}->{cluster});
+        $log->debug("Component is ".ref($comp));
+        $comp->postStartNode(host      => $self->{context}->{host},
+                             cluster   => $self->{context}->{cluster},
+                             erollback => $self->{erollback});
     }
 
     if(defined $self->{context}->{puppetagent}) {

@@ -30,7 +30,7 @@ It allows to implement Host creation operation
 
 EPreStartNode allows to prepare cluster for node addition.
 It takes as parameters :
-- host_id : Int (Scalar) : host_id identifies host 
+- host_id : Int (Scalar) : host_id identifies host
     which will be migrated into cluster to become a node.
 - cluster_id : Int (Scalar) : cluster_id identifies cluster which will grow.
 
@@ -60,7 +60,7 @@ my $errmsg;
 my $config = {
     INCLUDE_PATH => '/templates/internal/',
     INTERPOLATE  => 1,               # expand "$var" in plain text
-    POST_CHOMP   => 0,               # cleanup whitespace 
+    POST_CHOMP   => 0,               # cleanup whitespace
     EVAL_PERL    => 1,               # evaluate Perl code blocks
     RELATIVE => 1,                   # desactive par defaut
 };
@@ -142,7 +142,7 @@ sub _cancel {
     }
 
     if ($self->{context}->{host}) {
-        
+
         my $dir = $self->{config}->{clusters}->{directory};
         $dir .= '/' . $self->{context}->{cluster}->getAttr(name => 'cluster_name');
         $dir .= '/' . $self->{context}->{host}->getAttr(name => 'host_hostname');
@@ -151,8 +151,8 @@ sub _cancel {
         $self->{context}->{host}->setAttr(name  => 'host_hostname',
                                           value => undef);
         $self->{context}->{host}->setState(state => 'down');
-        
-           
+        $self->{context}->{host_manager}->stopHost(host => $self->{context}->{host});
+
     }
 }
 

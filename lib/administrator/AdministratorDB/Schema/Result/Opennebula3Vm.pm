@@ -23,7 +23,7 @@ __PACKAGE__->table("opennebula3_vm");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 opennebula3_id
@@ -33,27 +33,7 @@ __PACKAGE__->table("opennebula3_vm");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 vm_host_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
-=head2 opennebula3_hypervisor_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
-=head2 vm_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
-
-=head2 vnc_port
+=head2 onevm_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -66,7 +46,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "opennebula3_id",
@@ -76,28 +56,27 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "vm_host_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "opennebula3_hypervisor_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
-  "vm_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
-  "vnc_port",
+  "onevm_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
 __PACKAGE__->set_primary_key("opennebula3_vm_id");
 
 =head1 RELATIONS
+
+=head2 opennebula3_vm
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::VirtualMachine>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "opennebula3_vm",
+  "AdministratorDB::Schema::Result::VirtualMachine",
+  { virtual_machine_id => "opennebula3_vm_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 =head2 opennebula3
 
@@ -114,45 +93,15 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 vm_host
 
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Host>
-
-=cut
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-19 12:48:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:l2/lvngkKXIBV7KB9EJyEA
 
 __PACKAGE__->belongs_to(
-  "vm_host",
-  "AdministratorDB::Schema::Result::Host",
-  { host_id => "vm_host_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  "parent",
+  "AdministratorDB::Schema::Result::VirtualMachine",
+  { "foreign.virtual_machine_id" => "self.opennebula3_vm_id" },
+  { cascade_copy => 0, cascade_delete => 1 }
 );
 
-=head2 opennebula3_hypervisor
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Opennebula3Hypervisor>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "opennebula3_hypervisor",
-  "AdministratorDB::Schema::Result::Opennebula3Hypervisor",
-  { opennebula3_hypervisor_id => "opennebula3_hypervisor_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-12-26 10:20:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4c6KzkZ/gen0z36gR1QmPQ
-
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

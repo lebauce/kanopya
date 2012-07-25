@@ -77,7 +77,8 @@ sub prepare {
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
-    if(not defined $self->{context}->{host}) { # Choose a random non master node
+    # Choose a random non master node
+    if (not defined $self->{context}->{host}) {
         $log->info('No node selected, select a random node');
 
         my @nodes = Externalnode::Node->search(hash => {
@@ -119,8 +120,9 @@ sub execute {
     foreach my $i (keys %$components) {
         my $comp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is " . ref($comp));
-        $comp->preStopNode(host     => $self->{context}->{host},
-                           cluster  => $self->{context}->{cluster});
+        $comp->preStopNode(host      => $self->{context}->{host},
+                           cluster   => $self->{context}->{cluster},
+                           erollback => $self->{erollback});
     }
     $self->{context}->{host}->setNodeState(state => "pregoingout");
 }

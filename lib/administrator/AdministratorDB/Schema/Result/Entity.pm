@@ -69,6 +69,21 @@ __PACKAGE__->set_primary_key("entity_id");
 
 =head1 RELATIONS
 
+=head2 billinglimit
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Billinglimit>
+
+=cut
+
+__PACKAGE__->might_have(
+  "billinglimit",
+  "AdministratorDB::Schema::Result::Billinglimit",
+  { "foreign.id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 component
 
 Type: might_have
@@ -141,22 +156,12 @@ __PACKAGE__->belongs_to(
   "entity_comment",
   "AdministratorDB::Schema::Result::EntityComment",
   { entity_comment_id => "entity_comment_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 billinglimit
- 
-Type: might_have
- 
-Related object: L<AdministratorDB::Schema::Result::Billinglimit>
- 
-=cut
- 
-__PACKAGE__->might_have(
-    "billinglimit",
-    "AdministratorDB::Schema::Result::Billinglimit",
-    { "foreign.id" => "self.entity_id" },
-    { cascade_copy => 0, cascade_delete => 0 },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 class_type
@@ -171,7 +176,22 @@ __PACKAGE__->belongs_to(
   "class_type",
   "AdministratorDB::Schema::Result::ClassType",
   { class_type_id => "class_type_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 entity_lock
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::EntityLock>
+
+=cut
+
+__PACKAGE__->might_have(
+  "entity_lock",
+  "AdministratorDB::Schema::Result::EntityLock",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 entityright_entityrights_consumed
@@ -336,21 +356,6 @@ __PACKAGE__->might_have(
   "kernel",
   "AdministratorDB::Schema::Result::Kernel",
   { "foreign.kernel_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 manager_parameter
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::ManagerParameter>
-
-=cut
-
-__PACKAGE__->might_have(
-  "manager_parameter",
-  "AdministratorDB::Schema::Result::ManagerParameter",
-  { "foreign.manager_parameter_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -535,8 +540,9 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-19 15:36:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Y4ljDKG10e99GRZe1gsyHw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-18 11:47:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:I9VZtZzRag/M+kp+7fswTw
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

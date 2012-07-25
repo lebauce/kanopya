@@ -83,7 +83,11 @@ INSERT INTO `class_type` VALUES
 (80, 'Entity::Connector::MockMonitor'),
 (81, 'Entity::Component::Kanopyaworkflow0'),
 (82, 'Entity::Billinglimit'),
-(83, 'Entity::ServiceProvider');
+(83, 'Entity::ServiceProvider'),
+(84, 'Entity::Host::Hypervisor'),
+(85, 'Entity::Host::VirtualMachine'),
+(86, 'Entity::Host::Hypervisor::Opennebula3Hypervisor'),
+(87, 'Entity::Host::VirtualMachine::Opennebula3Vm');
 
 --
 -- entity comment list

@@ -42,10 +42,9 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 data[i].vmcount = 0;
                 $.ajax({
                     async       : false,
-                    url         : '/api/entity/' + cloudmanagerid + '/getVmsFromHypervisorHostId',
+                    url         : '/api/entity/' + data[i].id + '/getVms',
                     type        : 'POST',
                     contentType : 'application/json',
-                    data        : JSON.stringify({ hypervisor_host_id : data[i].id }),
                     success     : function(hyp) {
                         return (function(vms) {
                             hyp.totalRamUsed    = 0;

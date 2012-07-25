@@ -64,7 +64,8 @@ sub new {
         $self->{_test}  = 1;
     }
     else{
-        General::checkParams(args => \%args, required => ['cluster_id']);
+        General::checkParams(args => \%args, required => ['cluster_id']); #Option : hvs_mem_available
+        $self->{_hvs_mem_available} = $args{hvs_mem_available};
         $self->{_cluster_id}    = $args{cluster_id};
         $self->{_admin}         = Administrator->new();
         $self->{_infra}         = $self->_constructInfra();
@@ -88,63 +89,39 @@ sub getInfra{
 
 sub _constructInfra{
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => []);
 
+    General::checkParams(args => \%args, required => []);
+    # OPTION : hv_capacities
     my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_cluster_id});
 
-    #GET LIST OF ALL HV
-    my $hvs;
-    my $opennebula   = $cluster->getManager(manager_type => 'host_manager');
-    my $hypervisors_r = $opennebula->{_dbix}->opennebula3_hypervisors;
+    # Get the list of all hypervisors
+    my $opennebula    = $cluster->getManager(manager_type => 'host_manager');
+    my @hypervisors_r = $opennebula->getHypervisors();
 
-    while (my $row = $hypervisors_r->next) {
-        my $hypervisor = Entity::Host->get(id => $row->get_column('hypervisor_host_id'));
-        my $hv_id = $row->get_column('hypervisor_host_id');
-        $hvs->{$hv_id}->{'hv_capa'} = {
-            ram => $hypervisor->getHostRAM(),
-            cpu => $hypervisor->getHostCORE(),
+    my ($hvs, $vms);
+    for my $hypervisor (@hypervisors_r) {
+        $hvs->{$hypervisor->getId} = {
+            hv_capa => {
+                ram => $hypervisor->host_ram,
+                cpu => $hypervisor->host_core,
+            },
+            vm_ids => [],
         };
-        $hvs->{$hv_id}->{'vm_ids'} = [];
-    }
+        my @hypervisor_vms = $hypervisor->getVms();
+        for my $vm (@hypervisor_vms) {
+            $vms->{$vm->getId} = {
+                ram => $vm->host_ram,
+                cpu => $vm->host_core,
+            };
+            push @{$hvs->{$hypervisor->getId}->{vm_ids}}, $vm->getId;
 
-    my $opennebula3_vms = $opennebula->{_dbix}->opennebula3_vms;
-    my $vms;
-    while (my $row = $opennebula3_vms->next) {
-
-        my $hv_dbix = $row->opennebula3_hypervisor;
-
-        my $vm_id = $row->get_column('vm_host_id');
-        if(defined $hv_dbix){
-            my $hvid = $hv_dbix->get_column('hypervisor_host_id');
-
-            my $vm_id = $row->get_column('vm_host_id');
-            my $opennebula3_vm_host = Entity::Host->get(id => $vm_id);
-
-            $vms->{$vm_id}->{ram} = $opennebula3_vm_host->getHostRAM();
-            $vms->{$vm_id}->{cpu} = $opennebula3_vm_host->getHostCORE();
-
-            if(defined $hvs->{$hvid}){
-                push @{$hvs->{$hvid}->{'vm_ids'}}, $vm_id;
-            }
-            else {
-                my $msg = "Warning capacity management detect an inconcistency in DB VM <$vm_id> in hypervisor <$hvid>";
-                $self->{_admin}->addMessage(
-                   from    => 'Capacity Management',
-                   level   => 'info',
-                   content =>$msg,
-                );
-                $log->warn($msg);
-		$log->warn(Dumper $hvs);
-            }
-        }
-        else {
-            my $msg = "Warning capacity management detect an inconcistency in DB VM <$vm_id> has no hypervisor";
-            $self->{_admin}->addMessage(
-                from    => 'Capacity Management',
-                level   => 'info',
-                content => $msg,
-            );
-            $log->warn($msg)
+#            my $msg = "Warning capacity management detect an inconcistency in DB VM <$vm_id> in hypervisor <$hvid>";
+#            $self->{_admin}->addMessage(
+#               from    => 'Capacity Management',
+#               level   => 'info',
+#               content =>$msg,
+#            );
+#            $log->warn($msg);
         }
     }
 
@@ -153,7 +130,7 @@ sub _constructInfra{
         hvs => $hvs,
     };
 
-    $log->info(Dumper $current_infra);
+    $log->debug(Dumper $current_infra);
     return $current_infra;
 }
 
@@ -202,11 +179,13 @@ sub isScalingAuthorized{
     }
 
     my $delta    = $wanted_resource - $current_resource;
-    $log->info("**** [scale-in $resource_type]  Remaining $remaining_resource in HV $hv_id, need $delta more to have $wanted_resource ****");
+    $log->info("**** [scale-in $resource_type]  Remaining <$remaining_resource> in HV <$hv_id>, need <$delta> more to have <$wanted_resource> ****");
     if ($remaining_resource < $delta) {
+        $log->info('not enough resource');
         return 0;
     }
     else{
+        $log->info('scaling authorized by capacity management');
         return 1;
     }
 }
@@ -339,7 +318,7 @@ sub getHypervisorIdForVM{
     General::checkParams(args => \%args, required => ['wanted_values']);
     # Option : blacklisted_hv_ids
     # Option : selected_hv_ids
-
+    # Wanted values : { cpu => num_of_proc, ram => value_in_bytes}
     $log->info('Wanted values'. Dumper $args{wanted_values});
     my $wanted_values      = $args{wanted_values};
     my $blacklisted_hv_ids = $args{blacklisted_hv_ids};
@@ -448,7 +427,6 @@ sub scaleMemoryHost{
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
         $log->info("Call scaleMemoryMetric for host $args{host_id} and new value = $args{memory}");
         $self->_scaleMetric(
-            infra            => $self->{_infra},
             vm_id            => $args{host_id},
             new_value        => $memory,
             hv_selection_ids => \@hv_selection_ids,
@@ -538,7 +516,6 @@ sub scaleCpuHost{
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
         $log->info("Call scaleCpuMetric for host $args{host_id} and new value = $cpu");
         $self->_scaleMetric(
-            infra            => $self->{_infra},
             vm_id            => $args{host_id},
             new_value        => $cpu,
             hv_selection_ids => \@hv_selection_ids,
@@ -561,14 +538,11 @@ sub _scaleMetric {
     my ($self,%args) = @_;
 
     my $scale_metric     = $args{scale_metric};
-    my $infra            = $args{infra};
-
     my $vm_id            = $args{vm_id};
     my $new_value        = $args{new_value};
-
     my $hv_selection_ids = $args{hv_selection_ids};
 
-    $log->info(Dumper $infra);
+    my $infra            = $self->{_infra};
 
     my $old_value = $infra->{vms}->{$vm_id}->{$scale_metric};
     my $delta     = $new_value - $old_value;
@@ -608,7 +582,6 @@ sub _scaleMetric {
                 vm_id             => $vm_id,
                 scale_metric      => $scale_metric,
                 new_value         => $new_value,
-                infra             => $infra,
                 hv_selection_ids  => $hv_selection_ids,
             );
 
@@ -781,10 +754,16 @@ sub _getHvSizeRemaining {
     my $all_the_ram   = $infra->{hvs}->{$hv_id}->{hv_capa}->{ram};
     my $all_the_cpu   = $infra->{hvs}->{$hv_id}->{hv_capa}->{cpu};
 
-    my $remaining_ram = $all_the_ram - $size->{ram};
-
 
     my $remaining_cpu = $all_the_cpu - $size->{cpu};
+    my $remaining_ram;
+
+    if(defined $self->{_hvs_mem_available }) {
+        $remaining_ram = $self->{_hvs_mem_available}->{$hv_id} * 1024;
+    }
+    else {
+        $remaining_ram = $all_the_ram - $size->{ram};
+    }
 
     my $size_rem = {
         ram   => $remaining_ram,
@@ -943,9 +922,10 @@ sub _migrateVmToScale{
 
     my $vm_id            = $args{vm_id};
     my $new_value        = $args{new_value};
-    my $infra            = $args{infra};
     my $hv_selection_ids = $args{hv_selection_ids};
     my $scale_metric     = $args{scale_metric};
+
+    my $infra            = $self->{_infra};
 
     my $wanted_metrics  = clone($infra->{vms}->{$vm_id});
     $wanted_metrics->{$scale_metric} = $new_value;
