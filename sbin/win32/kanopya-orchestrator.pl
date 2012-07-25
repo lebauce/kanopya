@@ -70,7 +70,7 @@ sub Callback_Running {
         if ($context->{pid} == 0) { # Child
             while (1 == 1) {
                 print 'Running the service: '."\n";
-                my $cmd = "perl $context->{dir}\\kanopya\\sbin\\kanopya-orchestrator";
+                my $cmd = "perl \"$context->{dir}\\kanopya\\sbin\\kanopya-orchestrator\"";
                 print $cmd."\n";
                 system($cmd);
             }
@@ -144,7 +144,7 @@ sub install_service {
     $path = "\"$^X\"";
 
     # The command includes the --run switch needed in main()
-    $parameters = "\"$fn\" --run $args{dir}";
+    $parameters = "\"$fn\" --run \"$args{dir}\"";
 
     # Populate the service configuration hash
     # The hash is required by Win32::Daemon::CreateService

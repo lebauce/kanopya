@@ -180,7 +180,7 @@ print "done\n";
 
 #We now generate the database schemas
 print "generating database schemas...";
-$cmd  ="mysql -h $dbip  -P $dbport -u $db_user -p$db_pwd < $conf_vars->{schema_sql}";
+$cmd  ="mysql -h $dbip  -P $dbport -u $db_user -p$db_pwd < \"$conf_vars->{schema_sql}\"";
 $exec = `$cmd 2>&1`;
 print "done\n";
 
@@ -195,7 +195,7 @@ while(defined($line = <$FILE>)) {
     # don't proceed empty lines or commented lines
     next if (( ! $line ) || ( $line =~ /^#/ ));
     print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql..\n";
-    $cmd  = "mysql -u $db_user -p$db_pwd < $conf_vars->{comp_schemas_dir}$line.sql";
+    $cmd  = "mysql -u $db_user -p$db_pwd < \"$conf_vars->{comp_schemas_dir}$line.sql\"";
     $exec = `$cmd 2>&1`;
     print "done\n";
 }
@@ -207,7 +207,7 @@ $/ = "\n";
 
 #And to conclude, we insert initial datas in the DB
 print "inserting initial datas...";
-$cmd  = "mysql -u $db_user -p$db_pwd < $conf_vars->{data_sql}"; 
+$cmd  = "mysql -u $db_user -p$db_pwd < \"$conf_vars->{data_sql}\""; 
 $exec = `$cmd 2>&1`;
 print "done\n";
 
@@ -226,9 +226,10 @@ chomp($pwd = <STDIN>);
 ReadMode('original');
 
 #Install windows services
+chop($kanopya_dir);
 while (my ($service,$file) = each %$services) {
     print 'installing '."$service ... \n";
-    my $cmd = qq[perl.exe $service_dir$file -i $kanopya_dir $login $pwd];
+    my $cmd = qq[perl.exe "$service_dir$file" -i "$kanopya_dir" $login $pwd];
 
     eval {
         system($cmd);

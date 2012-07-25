@@ -71,7 +71,7 @@ sub Callback_Running {
         if ($context->{pid} == 0) { # Child
             while (1 == 1) {
                 print 'Running the service: '."\n";
-                my $cmd = "plackup \-E production\_win32 \-p 5000 \-\-workers 10 \-a $context->{dir}\\kanopya\\ui\\Frontend\\bin\\app\.pl";
+                my $cmd = "plackup \-E production\_win32 \-p 5000 \-\-workers 10 \-a \"$context->{dir}\\kanopya\\ui\\Frontend\\bin\\app\.pl\"";
                 print $cmd."\n";
                 system($cmd);
             }
@@ -144,7 +144,7 @@ sub install_service {
     $path = "\"$^X\"";
 
     # The command includes the --run switch needed in main()
-    $parameters = "\"$fn\" --run $args{dir}";
+    $parameters = "\"$fn\" --run \"$args{dir}\"";
 
     # Populate the service configuration hash
     # The hash is required by Win32::Daemon::CreateService
