@@ -59,7 +59,9 @@ function callMethodWithPassword( options ) {
                             password    : passwd
                         }),
                         contentType : 'application/json',
-                        complete    : function(data) { $(waitingPopup).dialog('close'); },
+                        complete    : function(data) {
+                            $(waitingPopup).dialog('close');
+                        },
                         success     : function(data) {
                             if (data.error) {
                                 alert(data.error);
@@ -75,7 +77,7 @@ function callMethodWithPassword( options ) {
                     });
                     // If the form succeed, then we can close the dialog
                     if (ok === true) {
-                        $(this).dialog('destroy');
+                        $(this).remove();
                         options.success(response_data);
                     }
                 } else {
@@ -83,7 +85,7 @@ function callMethodWithPassword( options ) {
                 }
             },
             'Cancel': function() {
-                $(this).dialog('destroy');
+                $(this).remove();
             }
         }
     });
