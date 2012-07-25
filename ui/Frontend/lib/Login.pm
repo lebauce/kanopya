@@ -90,4 +90,11 @@ get '/logout' => sub {
     redirect '/login';
 };
 
+# /me is a route that return the username for current user.
+
+get '/me' => sub {
+    my $username = session('username');
+    return $username;
+};
+
 1;
