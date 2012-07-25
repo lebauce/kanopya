@@ -311,7 +311,11 @@ var ModalForm = (function() {
             if (this.fields[field].type === 'checkbox') {
                 var checkbox = $(form).find('input[name="' + field + '"]');
                 if (checkbox.attr('value') === 'on') {
-                    checkbox.attr('value', '1');
+                    if (checkbox.attr('checked')) {
+                        checkbox.attr('value', '1');
+                    } else {
+                        checkbox.attr('value', '0');
+                    }
                 } else if (checkbox.attr('value') === 'off') {
                     checkbox.attr('value', '0');
                 }
@@ -341,6 +345,14 @@ var ModalForm = (function() {
     }
     
     ModalForm.prototype.handleBeforeSubmit = function(arr, $form, opts) {
+        // Add data to submit for each unchecked checkbox
+        // Because by default no data are posted for unchecked box
+        $form.find(':checkbox').each(function() {
+            if ($(this).val() == 0) {
+                arr.push({name: $(this).attr('name'), value: 0});
+            }
+        });
+
         var b   = this.beforeSubmit(arr, $form, opts, this);
         if (b) {
             var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
