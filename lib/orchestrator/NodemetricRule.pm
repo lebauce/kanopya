@@ -36,11 +36,11 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    nodemetric_rule_formula   =>  {pattern       => '^((id\d+)|AND|and|OR|or|NOT|not|[ ()!&|])+$',
+    nodemetric_rule_formula   =>  {pattern       => '^((id\d+)|and|or|not|[ ()!&|])+$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1,
-                                 description    => "Construct a formula by condition's names with AND, OR and NOT operators. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the available choice."},
+                                 description    => "Construct a formula by condition's names with logical operators (and, or, not). It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the available choice."},
     nodemetric_rule_last_eval =>  {pattern       => '^(0|1)$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
@@ -189,7 +189,7 @@ sub evalOnOneNode{
         }
     }
     my $res = undef;
-    my $arrayString = '$res = '."@array"; 
+    my $arrayString = '$res = '."(@array)"; 
 
     $log->info("NM rule evaluation: $arrayString");
     #Evaluate the logic formula

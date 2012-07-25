@@ -40,11 +40,11 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    aggregate_rule_formula     =>  {pattern       => '^((id\d+)|and|AND|or|OR|not|NOT|[ ()!&|])+$',
+    aggregate_rule_formula     =>  {pattern       => '^((id\d+)|and|or|not|[ ()!&|])+$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1,
-                                 description    => "Construct a formula by condition's names with AND, OR and NOT keywords. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the availalbe choice."},
+                                 description    => "Construct a formula by condition's names with logical operators (and, or, not). It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the availalbe choice."},
     aggregate_rule_last_eval   =>  {pattern       => '^(0|1)$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
@@ -178,7 +178,7 @@ sub eval {
 
 
     my $res = -1;
-    my $arrayString = '$res = '."@array";
+    my $arrayString = '$res = '."(@array)";
 
     #Evaluate the logic formula
     eval $arrayString;
