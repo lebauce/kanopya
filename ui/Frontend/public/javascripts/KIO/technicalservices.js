@@ -7,7 +7,7 @@ function getAllConnectorFields() {
         'activedirectory'   : {
             ad_host             : {
                 label   : 'Domain controller',
-                help    : 'May be the Domain Controller name or the Domain Name'
+                help    : 'Could be the Domain Controller name or the Domain Name'
             },
             ad_user             : {
                 label   : 'User@domain'
@@ -196,7 +196,7 @@ function technicalservicedetails(cid, eid) {
             }
         }
     });
-    var addButton   = $('<a>', { text : 'Connect to a Service' }).button({ icons : { primary : 'ui-icon-plusthick' } });
+    var addButton   = $('<a>', { text : 'Connect to a Service' }).button({ icons : { primary : 'ui-icon-transferthick-e-w' } });
     $(addButton).appendTo(container).bind('click', function() { connectConnectorForm(eid, null, null, function() {
         $(container).empty();
         technicalservicedetails(cid, eid);
