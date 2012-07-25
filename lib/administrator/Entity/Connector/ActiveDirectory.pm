@@ -134,11 +134,12 @@ sub getDirectoryTree {
     return [{
         name        => $domain,
         dn          => $root,
-        children    =>_getTree(ldap => $ldap, base => $root)
+        children    => $self->_getTree(ldap => $ldap, base => $root)
     }];
 }
 
 sub _getTree {
+    my $self = shift;
     my %args = @_;
 
     my $ldap = $args{ldap};
@@ -149,17 +150,30 @@ sub _getTree {
         filter => "(|(objectClass=group)(objectClass=organizationalUnit)(objectClass=container))",
     );
     $mesg->code && die $mesg->error;
+
     my @tree;
+
+    ENTRY:
     for my $entry ($mesg->entries) {
-        my $advanced = $entry->get_value('showInAdvancedViewOnly');
-        next if ($advanced && $advanced eq 'TRUE');
+        my $advanced    = $entry->get_value('showInAdvancedViewOnly');
+        my $dn          = $entry->get_value('distinguishedName');
+
+        # Don't get advanced system containers
+        next ENTRY if ( $advanced && $advanced eq 'TRUE' );
+
+        # Keep only computer containers
+        next ENTRY if ( $dn =~ 'CN=Users,.*' ||
+                        $dn =~ 'CN=ForeignSecurityPrincipals,.*' ||
+                        $dn =~ 'CN=Managed Service Accounts,.*' );
+
         my $elem = {
             name        => $entry->get_value('name'),
-            dn          => $entry->get_value('distinguishedName'),
-            children    => getTree(ldap => $ldap, base => $entry->get_value('distinguishedName')),
+            dn          => $dn,
+            children    => $self->_getTree(ldap => $ldap, base => $dn),
         };
         push @tree, $elem;
     }
+
     return \@tree;
 }
 
