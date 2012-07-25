@@ -17,44 +17,57 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 16 february 2012
 
-
 use strict;
 use warnings;
 use Data::Dumper;
 use Template;
 use XML::Simple;
 use Term::ReadKey;
+use Path::Class;
+
+
+#get Kanopya directory
+my $infos       = getKanopyaDirectory();
+my $kanopya_dir = $infos->{kanopya_dir};
+my $base_dir    = $infos->{base_dir};
 
 #generic variables used through the script
-my $install_conf = XMLin("/opt/kanopya/scripts/install/wininit_struct.xml");
+my $install_conf = XMLin("$base_dir/wininit_struct.xml");
 my $conf_vars    = $install_conf->{general_conf};
-my $conf_files   = $install_conf->{genfiles};
-my $log_directory = $conf_vars->{log_directory};
-my $tmp_monitor = $conf_vars->{tmp_monitor};
-my $tmp_orchestrator = $conf_vars->{tmp_orchestrator};
-my $timedata_dir = $conf_vars->{timedata_tmp};
+
+while (my ($key,$path) = each %$conf_vars) {
+    $conf_vars->{$key} = $kanopya_dir.$path;
+}
+
+my $conf_files  = $install_conf->{genfiles};
+my $service_dir = $conf_vars->{services_dir};
+my $services    = $install_conf->{services};
+
+my $log_directory    = 'C:\var\log\kanopya\\';
+my $tmp_monitor      = 'C:\tmp\monitor\graph\\';
+my $tmp_orchestrator = 'C:\tmp\orchestrator\graph\\';
+my $timedata_dir     = 'C:\tmp\monitor\TimeData\\';
 
 my %conf_data = (
-    logdir => $log_directory,
-    internal_net_add => '10.0.1.0',
-    internal_net_mask => '255.255.255.0',
-    dmz_net_add => '10.0.11.0',
-    dmz_net_mask => '255.255.255.0',
-    db_user => 'kanopya',
-    dbport => '3306',
-    dbip => '127.0.0.1',
-    admin_password => 'K4n0pY4', 
+    logdir                     => $log_directory,
+    internal_net_add           => '10.0.1.0',
+    internal_net_mask          => '255.255.255.0',
+    dmz_net_add                => '10.0.11.0',
+    dmz_net_mask               => '255.255.255.0',
+    db_user                    => 'kanopya',
+    dbport                     => '3306',
+    dbip                       => '127.0.0.1',
+    admin_password             => 'K4n0pY4', 
     kanopya_server_domain_name => 'hostname',
-    db_name => 'kanopya',
-    db_pwd => 'K4n0pY4',
-    );
+    db_name                    => 'kanopya',
+    db_pwd                     => 'K4n0pY4',
+);
 
 #Welcome message - accepting Licence is mandatory
-welcome();
+# welcome();
 
 #generation of configuration files
 genConf();
-
 
 ###########################
 #Environment configuration#
@@ -62,12 +75,12 @@ genConf();
 
 #init PERL5LIB
 print 'initialazing PERL5LIB'."\n";
-my $cmd = 'setx PERL5LIB "C:\opt\kanopya\ui\lib;C:\opt\kanopya\lib\common;C:\opt\kanopya\lib\administrator;C:\opt\kanopya\lib\executor;C:\opt\kanopya\lib\monitor;C:\opt\kanopya\lib\orchestrator;C:\opt\kanopya\lib\external"';
+my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\ui\\lib;$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external"];
 print $cmd."\n";
 my $exec = `$cmd 2>&1`;
 
 print $exec."\n";
-print 'You will have to relog to your session to enjoy the configured PERL5LIB'."\n";
+print 'You will have to restart a shell session to enjoy the newly configured PERL5LIB in it'."\n";
 
 ######################
 #Directories Creation#
@@ -97,7 +110,6 @@ print $cmd."\n";
 $exec = `$cmd 2>&1`;
 print $exec."\n";
 
-
 ################
 #Database Setup#
 ################
@@ -118,10 +130,10 @@ my %db_data = (
     admin_password           => $conf_data{admin_password},
     admin_kernel             => '2.39',
     tmstp                    => time(),
-	poolip_addr				 =>	'10.0.0.1',
-	poolip_mask				 =>	'256',
-	poolip_netmask			 =>	'255.255.255.0',
-	poolip_gateway			 =>	'0.0.0.0',
+    poolip_addr              => '10.0.0.1',
+    poolip_mask              => '256',
+    poolip_netmask           => '255.255.255.0',
+    poolip_gateway           => '0.0.0.0',
 );
 
 print 'generating Data.sql...';
@@ -141,16 +153,14 @@ chomp(my $root_passwd = <STDIN>);
 ReadMode('original');
 
 #Test user for creation
-# this should have been the classic powershell command to grep kanopya user from the sql request. As it doesn't work in the same way from the perl script, we'll use the method bellow
-# my $cmd = "mysql -h 127.0.0.1 -P 3306 -u root -p$root_passwd -e \"use mysql; SELECT user FROM mysql.user WHERE user='kanopya';\" | where {$_ -match \"kanopya\"}";
-$cmd = "mysql -h 127.0.0.1 -P 3306 -u root -p$root_passwd -e \"use mysql; SELECT user FROM mysql.user WHERE user='kanopya';\"";
-my $user = `$cmd 2>&1`;
+$cmd        = "mysql -h 127.0.0.1 -P 3306 -u root -p$root_passwd -e \"use mysql; SELECT user FROM mysql.user WHERE user='kanopya';\"";
+my $user    = `$cmd 2>&1`;
 my $db_user = $conf_data{db_user};
-my $db_pwd = $conf_data{db_pwd};
-my $dbip = $conf_data{dbip};
-my $dbport = $conf_data{dbport};
+my $db_pwd  = $conf_data{db_pwd};
+my $dbip    = $conf_data{dbip};
+my $dbport  = $conf_data{dbport};
 print $user."\n";
- if ($user !~ m/$db_user/) {
+if ($user !~ m/$db_user/) {
     print "creating mysql user, please insert root password...\n";
     $cmd = "mysql -h $dbip -P $dbport -u root -p$root_passwd -e \"CREATE USER '$db_user' IDENTIFIED BY '$db_pwd'\"";
     $exec = `$cmd 2>&1`;
@@ -164,13 +174,13 @@ else {
 my $db_name = $conf_data{db_name};
 
 print "granting all privileges on $db_name database to $db_user , please insert root password...\n";
-$cmd = "mysql -h $dbip  -P $dbport -u root -p$root_passwd -e \"GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user' WITH GRANT OPTION\"";
+$cmd  = "mysql -h $dbip  -P $dbport -u root -p$root_passwd -e \"GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user' WITH GRANT OPTION\"";
 $exec = `$cmd 2>&1`;
 print "done\n";
 
 #We now generate the database schemas
 print "generating database schemas...";
-$cmd ="mysql -h $dbip  -P $dbport -u $db_user -p$db_pwd < $conf_vars->{schema_sql}";
+$cmd  ="mysql -h $dbip  -P $dbport -u $db_user -p$db_pwd < \"$conf_vars->{schema_sql}\"";
 $exec = `$cmd 2>&1`;
 print "done\n";
 
@@ -179,23 +189,25 @@ print "loading component DB schemas...\n";
 open (my $FILE, "<","$conf_vars->{comp_conf}");
 
 my $line;
-while( defined( $line = <$FILE> ) )
-{
+while(defined($line = <$FILE>)) {
     $/ = "\r\n";
     chomp ($line);
     # don't proceed empty lines or commented lines
     next if (( ! $line ) || ( $line =~ /^#/ ));
-    print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
-    $cmd = "mysql -u $db_user -p$db_pwd < $conf_vars->{comp_schemas_dir}$line.sql";
+    print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql..\n";
+    $cmd  = "mysql -u $db_user -p$db_pwd < \"$conf_vars->{comp_schemas_dir}$line.sql\"";
     $exec = `$cmd 2>&1`;
     print "done\n";
 }
 close($FILE);
 print "components DB schemas loaded\n";
 
+#We set again the cariage return caracter to \n
+$/ = "\n"; 
+
 #And to conclude, we insert initial datas in the DB
 print "inserting initial datas...";
-$cmd = "mysql -u $db_user -p$db_pwd < $conf_vars->{data_sql}"; 
+$cmd  = "mysql -u $db_user -p$db_pwd < \"$conf_vars->{data_sql}\""; 
 $exec = `$cmd 2>&1`;
 print "done\n";
 
@@ -203,20 +215,62 @@ print "done\n";
 #Service configuration#
 #######################
 
+#gather login and pwd
+print 'Gathering Kanopya services informations...'."\n";
+my ($login,$pwd);
+print 'Please enter your full Kanopya service user:'."\n";
+chomp($login = <STDIN>);
+print 'Please enter your full Kanopya service password'."\n";
+ReadMode('noecho');
+chomp($pwd = <STDIN>);
+ReadMode('original');
+
+#Install windows services
+chop($kanopya_dir);
+while (my ($service,$file) = each %$services) {
+    print 'installing '."$service ... \n";
+    my $cmd = qq[perl.exe "$service_dir$file" -i "$kanopya_dir" $login $pwd];
+
+    eval {
+        system($cmd);
+    };
+    if ($@) {
+        print "$service".' failed to be installed. Please launch again setup
+               or install the service manually'."\n";
+        print $@."\n";
+    }
+    else {
+        my @service_name = split '.pl', $file;
+        print 'Launching '. $service_name[0]."...\n";
+        my $sc = qq{sc.exe start $service_name[0]};
+        eval {
+            system($sc);
+        };
+        if ($@) {
+            print 'Error while launching '.$service_name[0]."\n";
+            print $@."\n";
+        }
+    }
+}
+
 # Dancer configuration
 useTemplate(
     template => "dancer_cfg.tt",
     datas    => {
        log_directory => $log_directory
     },
-    conf     => "/opt/kanopya/ui/Frontend/config.yml",
+    conf     => "$kanopya_dir/kanopya/ui/Frontend/config.yml",
     include  => $conf_vars->{install_template_dir}
 );
 
+print q{Congratulations, you've finished Kanopya installation!}."\n";
+print q{You can now visit the web interface at the following adress:}."\n";
+print q{localhost:5000}."\n";
 
 ##########################################################################################
 ##############################FUNCTIONS DECLARATION#######################################
 ##########################################################################################
+
 sub welcome {
     my $validate_licence;
 
@@ -226,8 +280,8 @@ sub welcome {
     print "First please validate the user licence\n";
     getLicence();
     print "Do you accept the licence ? (y/n)\n";
-    chomp($validate_licence= <STDIN>);
-    exit if ( $validate_licence ne 'y' );
+    chomp($validate_licence = <STDIN>);
+    exit if ($validate_licence ne 'y');
 }
 
 sub getLicence {
@@ -242,10 +296,10 @@ sub getLicence {
 sub genConf {
     mkdir $conf_vars->{conf_dir};
     my %datas;
-    foreach my $files (keys %$conf_files){
-        foreach my $d (keys %{$conf_files->{$files}->{datas}}){
+    foreach my $files (keys %$conf_files) {
+        foreach my $d (keys %{$conf_files->{$files}->{datas}}) {
             $datas{$d} = $conf_data{$d};
-        }        
+        }
         useTemplate(
             template => $conf_files->{$files}->{template},
             datas    => \%datas,
@@ -255,14 +309,14 @@ sub genConf {
     }
 }
 
-sub useTemplate{
+sub useTemplate {
     my %args = @_;
 
     my $input   = $args{template};
     my $include = $args{include};
     my $dat     = $args{datas};
     my $output  = $args{conf};
-
+    
     my $config = {
             INCLUDE_PATH => $include,
             INTERPOLATE  => 1,
@@ -274,4 +328,14 @@ sub useTemplate{
     $template->process($input, $dat, $output) || do {
             print "error while generating $output: $!";
     };
+}
+
+sub getKanopyaDirectory {
+    my %infos;
+
+    $infos{base_dir}    = file($0)->absolute->dir;
+    my @kanopya         = split 'kanopya', $infos{base_dir};
+    $infos{kanopya_dir} = $kanopya[0];
+
+    return \%infos;
 }

@@ -23,38 +23,38 @@ __PACKAGE__->table("scom_indicator");
 
 =head1 ACCESSORS
 
-=head2 scom_indicator_id
+=head2 indicator_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_auto_increment: 1
   is_nullable: 0
 
-=head2 scom_indicator_name
+=head2 indicator_name
 
   data_type: 'char'
   is_nullable: 0
   size: 32
 
-=head2 scom_indicator_oid
+=head2 indicator_oid
 
   data_type: 'char'
   is_nullable: 0
   size: 64
 
-=head2 scom_indicator_min
+=head2 indicator_min
 
   data_type: 'bigint'
   extra: {unsigned => 1}
   is_nullable: 1
 
-=head2 scom_indicator_max
+=head2 indicator_max
 
   data_type: 'bigint'
   extra: {unsigned => 1}
   is_nullable: 1
 
-=head2 scom_indicator_unit
+=head2 indicator_unit
 
   data_type: 'char'
   is_nullable: 1
@@ -70,22 +70,22 @@ __PACKAGE__->table("scom_indicator");
 =cut
 
 __PACKAGE__->add_columns(
-  "scom_indicator_id",
+  "indicator_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_auto_increment => 1,
     is_nullable => 0,
   },
-  "scom_indicator_name",
+  "indicator_name",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "scom_indicator_oid",
+  "indicator_oid",
   { data_type => "char", is_nullable => 0, size => 64 },
-  "scom_indicator_min",
+  "indicator_min",
   { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 1 },
-  "scom_indicator_max",
+  "indicator_max",
   { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 1 },
-  "scom_indicator_unit",
+  "indicator_unit",
   { data_type => "char", is_nullable => 1, size => 15 },
   "service_provider_id",
   {
@@ -100,13 +100,13 @@ __PACKAGE__->add_columns(
 
 =over 4
 
-=item * L</scom_indicator_id>
+=item * L</indicator_id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("scom_indicator_id");
+__PACKAGE__->set_primary_key("indicator_id");
 
 =head1 RELATIONS
 
@@ -120,7 +120,7 @@ Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 __PACKAGE__->belongs_to(
   "service_provider",
-  "AdministratorDB::Schema::Result::ServiceProvider",
+  "AdministatorDB::Schema::Result::ServiceProvider",
   { service_provider_id => "service_provider_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );

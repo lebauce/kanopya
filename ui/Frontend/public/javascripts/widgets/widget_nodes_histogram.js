@@ -78,7 +78,7 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
-            rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 30 },
+            rendererOptions:{ varyBarColor : true, barWidth: 30 },
             pointLabels: { show: true },
             trendline: {
                 show: false, 
@@ -98,17 +98,20 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
             yaxis:{
                 label:'# nodes',
                 labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-                min:0,
-                max:nodesquantity,
+//              min:0,
+//              max:nodesquantity,
             },
         },
         grid:{
             background: '#eeeeee',
         },
-        seriesColors: ["#D4D4D4" ,"#999999"],
+        //seriesColors: ["#D4D4D4" ,"#999999"],
+        seriesColors: ["#4BB2C5" ,"#6DD4E7"],
         highlighter: { 
             show: true,
             showMarker:false,
+            tooltipAxes: 'y',
+            formatString: '%s nodes',
         }
     });
 

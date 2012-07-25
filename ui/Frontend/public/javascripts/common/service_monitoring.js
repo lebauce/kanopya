@@ -25,7 +25,7 @@ function getIndicators(sp_id, ext) {
         success: function(rows) {
             $(rows).each(function(row) {
                 if (ext) {
-                    indicators[rows[row].scom_indicator_name]   = rows[row].scom_indicator_id;
+                    indicators[rows[row].indicator_name]   = rows[row];
                 } else {
                     var indicatorset_name = indicatorsets[rows[row].indicatorset_id].indicatorset_name;
                     var indic_fullname =  indicatorset_name + '/' + rows[row].indicator_name;
@@ -339,7 +339,11 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
 
     var container   = $("#" + container_id);
 
-    var external    = ext || '';
+    var external        = ext || '';
+
+    // Quick fix to display indicator name without use collector_manager method
+    // TODO use collector_manager method (getIndicator + toString)
+    var indicator_type  = ext ? 'scom' : '';
 
     // Nodemetric bargraph details handler
     function nodeMetricDetailsBargraph(cid, nodeMetric_id) {
@@ -377,7 +381,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
       cont.append(graph_div);
       graph_div.load('/widgets/widget_historical_service_metric.html', function() {
           $('.dropdown_container').remove();
-          setdatePicker(graph_div);
+          setGraphDatePicker(graph_div);
           setRefreshButton(graph_div, clusterMetric_id, '', elem_id);
           showCombinationGraph(graph_div, clusterMetric_id, '', '', '', elem_id);
       });
@@ -434,7 +438,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         grid_id: loadServicesMonitoringGridId,
         afterInsertRow: function(grid, rowid) {
             var id  = $(grid).getCell(rowid, 'clustermetric_indicator_id');
-            var url = '/api/indicator/' + id + '/toString';
+            var url = '/api/' + indicator_type + 'indicator/' + id + '/toString';
             setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id');
             
         },

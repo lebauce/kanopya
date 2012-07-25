@@ -47,6 +47,7 @@ use XML::Simple;
 use Administrator;
 use Entity::ServiceProvider::Inside::Cluster;
 use General;
+use Kanopya::Config;
 use Log::Log4perl "get_logger";
 if ($^O eq 'linux') {
 	require RRDTool::OO;
@@ -79,7 +80,7 @@ sub new {
     $log->info("NEW");
 
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/monitor.conf");
+    my $conf = Kanopya::Config::get('monitor');
 
     $self->{_time_step     } = $conf->{time_step};
     $self->{_period         } = $conf->{period};

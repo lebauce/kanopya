@@ -36,12 +36,15 @@ kanopya-state-manager
 use strict;
 use warnings;
 
+use Kanopya::Config;
 use StateManager;
 
 use Error qw(:try);
 
 use Log::Log4perl "get_logger";
-Log::Log4perl->init('/opt/kanopya/conf/state-manager-log.conf');
+
+my $dir = Kanopya::Config::getKanopyaDir();
+Log::Log4perl->init($dir.'/kanopya/conf/state-manager-log.conf');
 my $log = get_logger("statemanager");
 
 

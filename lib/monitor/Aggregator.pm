@@ -23,9 +23,23 @@ use Entity::ServiceProvider;
 use Indicator;
 use TimeData::RRDTimeData;
 use Clustermetric;
+use Kanopya::Config;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("aggregator");
+
+sub getMethods {
+  return {
+    'updateAggregatorConf'  => {
+      'description' => 'Update aggregator conf',
+      'perm_holder' => 'entity'
+    },
+    'getAggregatorConf'  => {
+      'description' => 'Get aggregator conf',
+      'perm_holder' => 'entity'
+    }
+  }
+}
 
 # Constructor
 
@@ -36,11 +50,11 @@ sub new {
     bless $self, $class;
 
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/monitor.conf");
+    my $conf = Kanopya::Config::get('aggregator');
     $self->{_time_step} = $conf->{time_step};
 
     # Get Administrator
-    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
+    my ($login, $password) = ($conf->{user}->{name}, $conf->{user}->{password});
     Administrator::authenticate( login => $login, password => $password );
     $self->{_admin} = Administrator->new();
 
@@ -77,7 +91,7 @@ sub _contructRetrieverOutput {
             $time_span = $clustermetric_time_span;
         } else {
             if ($time_span != $clustermetric_time_span) {
-                $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
+                #$log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
             }
         }
 
@@ -282,6 +296,52 @@ sub run {
         level   => 'warning',
         content => "Kanopya Aggregator stopped"
     );
+}
+
+=head2 updateAggregatorConf
+
+    Class : Public
+
+    Desc : update values in the aggregator.conf file 
+
+=cut
+
+sub updateAggregatorConf {
+    my ($class, %args) = @_;
+
+    if ((not defined $args{collect_frequency}) && (not defined $args{storage_duration})) {
+        throw Kanopya::Exception::Internal(
+            error => 'A collect frequency and/or a storage duration must be provided for update'
+        );
+    }
+
+    #get aggregator configuration
+    my $configuration = Kanopya::Config::get('aggregator');
+
+    if (defined $args{collect_frequency}) {
+        $configuration->{time_step} = $args{collect_frequency};
+        Kanopya::Config::set(subsystem => 'aggregator', config => $configuration);
+    }
+    if (defined $args{storage_duration}) {
+        $configuration->{storage_duration}->{duration} = $args{storage_duration};
+        Kanopya::Config::set(subsystem => 'aggregator', config => $configuration);
+    }
+}
+
+=head2 getAggregatorConf
+
+    Class : Public
+
+    Desc : get public values from aggregator.conf file
+
+=cut
+
+sub getAggregatorConf {
+    my $conf = Kanopya::Config::get('aggregator');
+    return {
+        time_step           => $conf->{time_step},
+        storage_duration    => $conf->{storage_duration}{duration},
+    }
 }
 
 1;

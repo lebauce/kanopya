@@ -12,19 +12,25 @@ $('.widget').live('widgetLoadContent',function(e, obj){
              sp_id
      );
 
-     setdatePicker(obj.widget.element);
+     setGraphDatePicker(obj.widget.element, obj.widget);
 });
 
 function fillServiceMetricCombinationList (widget, sp_id) {
     var indic_list = widget.element.find('.combination_list');
-    
+
     indic_list.change(function () {
+        var time_settings   = getPickedDate(widget.element);
+        var metric_id       = this.options[this.selectedIndex].id;
+        var metric_name     = this.options[this.selectedIndex].value
+
+        setRefreshButton(widget.element, metric_id, metric_name, sp_id);
+
         showCombinationGraph(
                 this,
-                this.options[this.selectedIndex].id,
-                this.options[this.selectedIndex].value,
-                widget.element.find('.combination_start_time').val(),
-                widget.element.find('.combination_end_time').val(),
+                metric_id,
+                metric_name,
+                time_settings.start,
+                time_settings.end,
                 sp_id
         );
         widget.addMetadataValue('aggregate_combination_id', this.options[this.selectedIndex].id);
@@ -43,23 +49,16 @@ function fillServiceMetricCombinationList (widget, sp_id) {
     });
 }
 
-function setdatePicker(widget_div) {
-    widget_div.find('.combination_start_time').datetimepicker({
-        dateFormat: 'mm-dd-yy'
-    });
-    widget_div.find('.combination_end_time').datetimepicker({
-        dateFormat: 'mm-dd-yy'
-    });
-}
-
 function setRefreshButton(widget_div, combi_id, combi_name, sp_id) {
+    widget_div.find('.refresh_button').unbind('click');
     widget_div.find('.refresh_button').click(function () {
+        var time_settings = getPickedDate(widget_div);
         showCombinationGraph(
                 widget_div,
                 combi_id,
                 combi_name,
-                widget_div.find('.combination_start_time').val(),
-                widget_div.find('.combination_end_time').val(),
+                time_settings.start,
+                time_settings.end,
                 sp_id
         );
     }).button({ icons : { primary : 'ui-icon-refresh' } }).show();
@@ -85,14 +84,14 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
             var div = '<div id=\"'+div_id+'\"></div>';
             graph_container.css('display', 'block');
             graph_container.append(div);
-            timedGraph(data.first_histovalues, data.min, data.max, label, div_id);
+            timedGraph(data.first_histovalues, data.min, data.max, label, data.unit, div_id);
             //graph_container.append(button);
         }
         widget_loading_stop( widget );
     });
 }
 
-function timedGraph(first_graph_line, min, max, label, div_id) {
+function timedGraph(first_graph_line, min, max, label, unit, div_id) {
     $.jqplot.config.enablePlugins = true;
     // var first_graph_line=[['03-14-2012 16:23', 0], ['03-14-2012 16:17', 0], ['03-14-2012 16:12', 0],['03-14-2012 16:15',null], ['03-14-2012 16:19', 0], ['03-14-2012 16:26', null]];
     // alert ('min: '+min+' max: '+max);
@@ -125,6 +124,8 @@ function timedGraph(first_graph_line, min, max, label, div_id) {
                 max:max,
             },
             yaxis:{
+                label: unit,
+                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
                 tickOptions: {
                     showMark: false,
                 },

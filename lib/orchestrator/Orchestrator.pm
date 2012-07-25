@@ -50,6 +50,7 @@ use warnings;
 use XML::Simple;
 use General;
 use Administrator;
+use Kanopya::Config;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
@@ -82,7 +83,7 @@ sub new {
     bless $self, $class;
 
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    my $conf = Kanopya::Config::get('orchestrator');
    # Get Administrator
     my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
     Administrator::authenticate( login => $login, password => $password );
@@ -166,7 +167,7 @@ sub manage_aggregates {
                 $service_provider->getManager(manager_type => "collector_manager");
             };
             if ($@){
-                $log->info('*** Orchestrator skip service provider '.$service_provider_id.' because it has no MonitoringService Connector ***');
+                $log->info('*** Orchestrator skip service provider '.$service_provider_id.' because it has no collector manager ***');
             }
             else{
                 $log->info('*** Orchestrator running for service provider '.$service_provider_id.' ***');
@@ -176,7 +177,7 @@ sub manage_aggregates {
                     $log->info( '</CM '.$service_provider_id.'>');
                     1;
                 }or do {
-                    print "Error in clustermetricManagement of cluster $service_provider : $@\n";
+                    print "Error in clustermetricManagement of cluster $service_provider->getId : $@\n";
                     $log->error($@);
                 };
 
@@ -190,7 +191,7 @@ sub manage_aggregates {
                     $log->error($@);
                 };
 
-                #my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id, extcluster => $externalCluster);#
+                my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $service_provider_id, extcluster => $service_provider);
             }
         1;
         }or do {
@@ -496,7 +497,16 @@ sub _evalRule {
     my $service_provider_id = $service_provider->getId();
 
     my $rule_id          = $rule->getAttr(name => 'nodemetric_rule_id');
-    my $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+
+    my $workflow_manager;
+
+    eval{ # Avoid the reinstantiation for each node
+        $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+    };
+    if($@){
+        $log->info('No workflow manager in service provider <'.($service_provider->getId()).'>')
+    }
+
     my $workflow_def_id  = $rule->getAttr(name => 'workflow_def_id');
     my $rep = 0;
     #Eval the rule for each node
@@ -505,6 +515,7 @@ sub _evalRule {
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
 
         my $node_state = $service_provider->getNodeState(hostname=> $host_name);
+
         my $nodeEval;
 
         if($node_state eq 'disabled'){
@@ -626,8 +637,6 @@ sub clustermetricManagement{
 
     my $cluster_evaluation = {};
     my $service_provider_id = $service_provider->getId();
-
-    my $workflow_manager;
 
     # Get rules relative to a cluster
     my @rules_enabled = AggregateRule->search(
@@ -1575,7 +1584,7 @@ sub run {
     my $self = shift;
     my $running = shift;
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    my $conf = Kanopya::Config::get('orchestrator');
     $self->{_time_step} = $conf->{time_step};
 
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
@@ -1607,7 +1616,7 @@ sub new_old {
     bless $self, $class;
 
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    my $conf = Kanopya::Config::get('orchestrator');
     $self->{_time_step} = $conf->{time_step};
     $self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
     $self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );

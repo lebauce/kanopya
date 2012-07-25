@@ -66,20 +66,18 @@ sub getTemplateConfiguration {
     };
 }
 
-=head2---------+--------------+
-1 row in set (0.00 sec)
+=head2
 
-    
     Class : Public
-    
+
     Desc : General sub for check existence of required parameters
-    
+
     Args : 
         0: hash ref to check (caller args)
         1: array ref of required params name 
-    
+
     Throw bad param exception if one param is missing
-    
+
 =cut
 
 # TODO log on corresponding caller logger

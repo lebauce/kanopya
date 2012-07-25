@@ -170,7 +170,7 @@ sub _getOuFrom {
 
     my $service_provider            = Entity::ServiceProvider::Outside::Externalcluster->get(id => $args{sp_id});
     my $directory_service_connector = $service_provider->getConnector(
-                                          'category' => 'DirectoryService'
+                                          'category' => 'DirectoryServiceManager'
                                       );
     my $ou_from                     = $directory_service_connector->getAttr(
                                           name => 'ad_nodes_base_dn'

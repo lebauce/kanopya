@@ -20,7 +20,7 @@ var ModalForm = (function() {
         var method      = 'POST';
         var action      = '/api/' + this.baseName;
         // Check if it is a creation or an update form
-        if (this.id !== undefined) {
+        if (this.id != null) {
             method  = 'PUT';
             action  += '/' + this.id;
         }
@@ -40,7 +40,7 @@ var ModalForm = (function() {
             success     : $.proxy(function(data) {
                     var values = {};
                     // If it is an update form, retrieve old datas from REST
-                    if (this.id !== undefined) {
+                    if (this.id != null) {
                         $.ajax({
                             type        : 'GET',
                             async       : false,
@@ -133,7 +133,7 @@ var ModalForm = (function() {
             title           : this.title,
             skippable       : this.skippable,
             beforeSubmit    : this.beforeSubmit,
-            cancelCallback  : this.cancelCallback
+            cancel          : this.cancelCallback
         };
     }
     

@@ -51,6 +51,19 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+  return {
+    'regenTimeDataStores'  => {
+      'description' => 'Delete and create again all data stores',
+      'perm_holder' => 'entity'
+    },
+    'resizeTimeDataStores'  => {
+      'description' => 'Resize all data stores',
+      'perm_holder' => 'entity'
+    }
+  }
+}
+
 sub compute{
     my $self = shift;
     my %args = @_;
@@ -92,6 +105,45 @@ sub getLastValueFromDB{
     return $indicator[0];
 }
 
+=head2 regenTimeDataStores
+
+    Class: Public
+    Desc: delete and create again every time data store for the clustermetrics
+    Args: none
+    Return: none
+
+=cut
+
+sub regenTimeDataStores {
+
+    my @clustermetrics = Clustermetric->search(hash => { }); 
+
+    foreach my $clustermetric (@clustermetrics) {
+        #delete previous rrd
+        RRDTimeData::deleteTimeDataStore(name => $clustermetric->clustermetric_id);
+        #create new rrd
+        RRDTimeData::createTimeDataStore(name => $clustermetric->clustermetric_id);
+    }
+}
+
+=head2 resizeTimeDataStores
+
+    Class: Public
+    Desc: resize every time data store for the clustermetrics
+    Args: storage_duration in seconds
+    Return: none
+
+=cut
+
+sub resizeTimeDataStores {
+    my ($class, %args) = @_;
+    General::checkParams(args => \%args, required => ['storage_duration']);
+
+    my @clustermetrics = Clustermetric->search(hash => { });
+    foreach my $clustermetric (@clustermetrics) {
+        RRDTimeData::resizeTimeDataStore(storage_duration => $args{storage_duration}, clustermetric_id => $clustermetric->clustermetric_id);
+    }
+}
 
 sub new {
     my $class = shift;

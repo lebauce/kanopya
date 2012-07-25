@@ -42,11 +42,13 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use XML::Simple;
+use Kanopya::Config;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EFactory;
 
+my $dir = Kanopya::Config::getKanopyaDir();
 my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
@@ -121,7 +123,7 @@ sub execute{
         next if (not defined $files);
         for my $file (@$files) {
             $self->{context}->{$srv}->getEContext->send(src  => "/tmp/$root_dir_name/" . $file->{src},
-                                                        dest => "/opt/kanopya/" . $file->{dest});    
+                                                        dest => "$dir/kanopya/" . $file->{dest});    
         }
     }
 
@@ -129,13 +131,13 @@ sub execute{
     if (defined $package_info->{templates_dir}) {
         $package_info->{templates_dir} =~ /(.*)\/([^\/]*)$/;
         my $path = $1; 
-        $cmd = "cp -r /tmp/$root_dir_name/$package_info->{templates_dir} /opt/kanopya/$path";
+        $cmd = "cp -r /tmp/$root_dir_name/$package_info->{templates_dir} $dir/kanopya/$path";
         $cmd_res = $self->getEContext->execute(command => $cmd);
     }
     
     # Retriev admin db conf
     # TODO Better way to acces db info
-    my $config = XMLin("/opt/kanopya/conf/libkanopya.conf");
+    my $config = Kanopya::Config::get('libkanopya');
     my ($dbname, $dbuser, $dbpwd, $dbhost, $dbport) = ( $config->{dbconf}->{name},
                                                           $config->{dbconf}->{user},
                                                           $config->{dbconf}->{password},

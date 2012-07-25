@@ -28,6 +28,23 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
+sub methods {
+    return {
+        'getManagerParamsDef'  => {
+            'description'   => 'getParamsDef',
+            'perm_holder'   => 'entity'
+        }
+    };
+}
+
+=head2 getManagerParamsDef
+
+=cut
+
+sub getManagerParamsDef {
+    return {  };
+}
+
 =head2 checkManagerParams
 
 =cut

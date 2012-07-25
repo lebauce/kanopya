@@ -17,6 +17,7 @@
 # Created 3 july 2010
 package Entity::Connector::MockMonitor;
 use base 'Entity::Connector';
+use base 'Manager::CollectorManager';
 
 use strict;
 use warnings;
@@ -38,17 +39,45 @@ sub getAttrDef { return ATTR_DEF; }
 sub retrieveData {
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['nodes', 'indicators', 'time_span']);
-    
+
+    General::checkParams(args => \%args, required => ['nodelist', 'indicators', 'time_span']);
+
     my $res;
-    
-    foreach my $node (@{$args{nodes}}) {
-        my %counters_value = map { $_ => rand(100) } @{$args{indicators}};
+
+    foreach my $node (@{$args{nodelist}}) {
+        my %counters_value = map { $_ => rand(100) } keys %{$args{indicators}};
         $res->{$node} = \%counters_value;
     } 
-    
+
     return $res;
+}
+
+=head2 getIndicators
+
+    Desc: Retrieve a list of indicators available (currently use SCOM indic)
+
+=cut
+
+sub getIndicators {
+    my ($self, %args) = @_;
+
+    my @indicators          = ScomIndicator->search (hash => {});
+
+    return \@indicators;
+}
+
+=head2 getIndicator
+
+    Desc: Return the indicator with the specified id (currently use SCOM indic)
+
+=cut
+
+sub getIndicator {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['id']);
+
+    return ScomIndicator->get(id => $args{id});
 }
 
 1;

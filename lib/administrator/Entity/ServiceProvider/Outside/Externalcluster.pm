@@ -33,7 +33,7 @@ use AggregateCondition;
 use AggregateRule;
 use Clustermetric;
 use ScomIndicator;
-use Externalnode::Node;
+use Externalnode;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -76,6 +76,10 @@ sub methods {
         'setperm'    => {'description' => 'set permissions on this cluster',
                         'perm_holder' => 'entity',
         },
+        'updateNodes'=> {
+            'description'   => 'update nodes',
+            'entity'        => 'perm_holder'
+        }
     };
 }
 
@@ -94,9 +98,26 @@ sub new {
 
     my $self = $class->SUPER::new( %args );
 
-    $self->monitoringDefaultInit();
-
     return $self;
+}
+
+=head2 addManager
+
+    overload ServiceProvider::addManager to insert initial monitoring configuration when adding a collector manager
+
+=cut
+
+sub addManager {
+    my $self = shift;
+    my %args = @_;
+
+    my $manager = $self->SUPER::addManager( %args );
+
+    if ($args{"manager_type"} eq 'collector_manager') {
+        $self->monitoringDefaultInit();
+    }
+
+    return $manager;
 }
 
 =head2 getState
@@ -191,11 +212,20 @@ sub getNodeState {
 sub updateNodeState {
     my $self = shift;
     my %args = @_;
-    
-     $self->{_dbix}->parent->externalnodes->update_or_create({
-                externalnode_hostname   => $args{hostname},
-                externalnode_state      => $args{state},
+   
+    my $hostname = $args{hostname};
+    my $state    = $args{state};
+    my $host;
+
+    $host = Externalnode->find(hash => {
+                externalnode_hostname => $hostname,
+                service_provider_id   => $self->getId,
             });
+
+    if (defined $host) {
+        $host->setAttr(name => 'externalnode_state', value => $state);
+        $host->save();
+    }
 }
 
 
@@ -242,26 +272,43 @@ sub updateNodes {
      my $self = shift;
      my %args = @_;
      
-     my $ds_connector = $self->getConnector( category => 'DirectoryService' );
-     my $nodes = $ds_connector->getNodes(%args);
-     
+     my $ds_manager = $self->getManager( manager_type => 'directory_service_manager' );
+     my $mparams    = $self->getManagerParameters( manager_type => 'directory_service_manager' );
+     $args{ad_nodes_base_dn}    = $mparams->{ad_nodes_base_dn};
+
+     my $nodes;
+     eval {
+        $nodes = $ds_manager->getNodes(%args);
+     } or do {
+        return {error => $@};
+     };
+
      my @created_nodes;
      
      my $new_node_count = 0;
      for my $node (@$nodes) {
          if (defined $node->{hostname}) {
             $new_node_count++;
-            
-            my $row = $self->{_dbix}->parent->externalnodes->find({
-                externalnode_hostname   => $node->{hostname},
-            });
-            
+
+            my $row;
+            eval {
+                $row = Externalnode->find( hash => {
+                              externalnode_hostname => $node->{hostname},
+                              service_provider_id   => $self->getId(),
+                          });
+            };
+            if ($@) {
+                $errmsg = 'could not find '.$node->{hostname}.' while updating nodes';
+                $log->info($errmsg);
+            }
+
             if(! defined $row){
-                my $node_row = $self->{_dbix}->parent->externalnodes->create({
+                my $node_row = Externalnode->new(
                     externalnode_hostname   => $node->{hostname},
                     externalnode_state      => 'down',
-                });
-                $node->{id} =  $node_row->id;
+                    service_provider_id     => $self->getId(),
+                );
+                $node->{id} =  $node_row->externalnode_id;
                 push @created_nodes, $node;
             }
          }
@@ -355,6 +402,7 @@ sub insertCollectorIndicators {
 
     my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
     my $params;
+    my @scom_indicators;
 
     # Create a scom indicator for each indicator from scom set (sic)
     for my $indicator (@indicators) {
@@ -365,14 +413,17 @@ sub insertCollectorIndicators {
             ||
             (($args{'default'} == 0) && not defined $indicator->getAttr(name => 'indicator_color'))
             ) {
-            $params = { scom_indicator_name => $indicator->getAttr(name => 'indicator_name'),
-                        scom_indicator_oid  => $indicator->getAttr(name => 'indicator_oid'),
-                        scom_indicator_unit => $indicator->getAttr(name => 'indicator_unit'),
+            $params = { indicator_name => $indicator->getAttr(name => 'indicator_name'),
+                        indicator_oid  => $indicator->getAttr(name => 'indicator_oid'),
+                        indicator_unit => $indicator->getAttr(name => 'indicator_unit'),
                         service_provider_id => $service_provider_id,
             };
-            ScomIndicator->new(%$params);
+            my $scom_indicator = ScomIndicator->new(%$params);
+            push @scom_indicators, $scom_indicator;
         }
     }
+
+    return \@scom_indicators;
 }
 
 =head2 monitoringDefaultInit
@@ -391,11 +442,11 @@ sub monitoringDefaultInit {
     my $adm = Administrator->new();
 
     #generate the scom indicators (only default)
-    $self->insertCollectorIndicators(default => 1);
+    my $indicators = $self->insertCollectorIndicators(default => 1);
 
     my $service_provider_id = $self->getId();
     my $collector           = $self->getManager(manager_type => "collector_manager");
-    my $indicators          = $collector->getIndicators();
+    #my $indicators          = $collector->getIndicators();
     my $active_session_indicator_id; 
     my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
     my @funcs = qw(mean max min std dataOut);

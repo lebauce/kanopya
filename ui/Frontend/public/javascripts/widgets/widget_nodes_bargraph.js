@@ -59,9 +59,15 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
         if (data.error){ alert (data.error); }
         else {
             graph_container_div.css('display', 'block');
+            var nodemetric_combination_unit = data.unit;
             var max = data.values[0];
             var min = data.values[(data.values.length-1)];
-            // alert('min: '+min+ ' max: '+max); 
+            var total = 0;
+            $.each(data.values,function() {
+                total += parseInt(this);
+            });
+            var mean = total / data.values.length;
+
             var max_nodes_per_graph = 50;
             var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
             var nodes_per_graph = data.nodelist.length/graph_number;
@@ -75,8 +81,9 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
                 var toElementNumber = nodes_per_graph*(i+1);
                 var sliced_values = data.values.slice(indexOffset,toElementNumber);
                 var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
+
                 //we generate the graph
-                nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, div_id, max, nodemetric_combination_label);
+                nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, div_id, max, nodemetric_combination_label, nodemetric_combination_unit, mean);
             }
             //var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
             //graph_container_div.append(button);
@@ -86,14 +93,14 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
 }
 
 //Jqplot bar plots
-function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title) {
+function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title, unit, mean_value) {
     $.jqplot.config.enablePlugins = true;
     var nodes_bar_graph = $.jqplot(div_id, [values], {
     title: title,
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
-            rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 30 },
+            rendererOptions:{ varyBarColor : true, barWidth: 30 - (nodelist.length * 0.5) },
             pointLabels: { show: true },
             trendline: {
                 show: false, 
@@ -113,17 +120,44 @@ function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title) {
             yaxis:{
                 min:0,
                 max:max,
+                label: unit,
+                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
             },
         },
         grid:{
             background: '#eeeeee',
         },
-        seriesColors: ["#D4D4D4" ,"#999999"],
+        //seriesColors: ["#D4D4D4" ,"#999999"],
+        seriesColors: ["#4BB2C5" ,"#6DD4E7"],
         highlighter: { 
             show: true,
+            //useAxesFormatters: true,
+            tooltipAxes: 'y',
             showMarker:false,
-        }
+        },
+        canvasOverlay: {
+            show: true,
+            objects: [
+              {dashedHorizontalLine: {
+                name: 'Average',
+                y: mean_value,
+                lineWidth: 1,
+                color: "#999999",
+                //shadow: true,
+                show: true,
+                //dashPattern: [16, 12],
+                xOffset: 0
+              }}
+            ]
+          }
     });
+
+    // Allow to customize tooltip with the name of th x label, but not working for y value... TODO workaround
+//    $("#" + div_id).bind('jqplotMouseMove', function(ev, gridpos, datapos, neighbor, plot) {
+//        if (neighbor) {;
+//            $(".jqplot-highlighter-tooltip").html("" + plot.axes.xaxis.ticks[neighbor.pointIndex] + ", " + plot.axes.yaxis.ticks[neighbor.pointIndex]);
+//        }
+//    });
 
     // Attach resize event handlers
     setGraphResizeHandlers(div_id, nodes_bar_graph);

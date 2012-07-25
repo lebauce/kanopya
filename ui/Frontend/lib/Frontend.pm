@@ -9,12 +9,15 @@ use KIO::Services;
 use Messager;
 use Monitoring;
 use REST::api;
+use Kanopya::Config;
 
 our $VERSION = '0.1';
 
 prefix undef;
 
-Log::Log4perl->init('/opt/kanopya/conf/webui-log.conf');
+my $dir = Kanopya::Config::getKanopyaDir();
+
+Log::Log4perl->init($dir.'/kanopya/conf/webui-log.conf');
 
 hook 'before' => sub {
     $ENV{EID} = session('EID');

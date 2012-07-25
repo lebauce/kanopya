@@ -61,7 +61,7 @@ ajax '/serviceprovider/:spid/clustersview' => sub {
         return to_json {error => $compute_result->{'error'}};
     } else {
         my $histovalues = $compute_result->{'histovalues'};
-        return to_json {first_histovalues => $histovalues, min => $start, max => $stop};
+        return to_json {first_histovalues => $histovalues, min => $start, max => $stop, unit => $compute_result->{'unit'}};
     }
 };
 
@@ -86,7 +86,7 @@ get '/serviceprovider/:spid/nodesview/bargraph' => sub {
 
     my $nodelist = [ @{$compute_result->{'nodes'}}, @{$compute_result->{'undef'}} ];
 
-    return to_json {values => $compute_result->{'values'}, nodelist => $nodelist};
+    return to_json {values => $compute_result->{'values'}, nodelist => $nodelist, unit => $compute_result->{'unit'}};
 };
 
 =head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram'
@@ -120,7 +120,7 @@ ajax '/serviceprovider/:spid/nodesview/histogram' => sub {
     #We catch the case where only one value is returned: statistics::descriptive cannot create a distribution from only one value.
     if ($values_number == 1) {
         #we push into the array the only node value
-        push @partitions_scopes, $min.' - '.$compute_result->{'values'}[0];
+        push @partitions_scopes, sprintf('%.2f',$min) . ' - ' . sprintf('%.2f',$compute_result->{'values'}[0]);
         push @nbof_nodes_per_partition, 1;
 
         #then we push into the array the number of undef nodes values
@@ -201,6 +201,7 @@ sub _computeClustermetricCombination () {
         }
 
         $rep{'histovalues'} = \@histovalues;
+        $rep{'unit'}        = $combination->getUnit();
         return \%rep;
     }
 }
@@ -262,7 +263,7 @@ sub _computeNodemetricCombination {
         return \%rep;
     # we catch the fact that there is no value available for the selected nodemetric
     } elsif (scalar(keys %nodeEvals) == 0) {
-        $error='Error : No indicator values returned by monitored nodes';
+        $error='No indicator values returned by monitored nodes';
         $log->error($error);
         $rep{'error'} = $error;
         return \%rep;
@@ -289,9 +290,10 @@ sub _computeNodemetricCombination {
         my @nodes = map { $_->{node} } @sorted_nodes_values;
         my @values = map { $_->{value} } @sorted_nodes_values;
 
-        $rep{'nodes'} = \@nodes;
-        $rep{'values'} = \@values;
-        $rep{'undef'} = \@nodes_undef;
+        $rep{'nodes'}   = \@nodes;
+        $rep{'values'}  = \@values;
+        $rep{'undef'}   = \@nodes_undef;
+        $rep{'unit'}    = $nodemetric_combination->getUnit();
         return \%rep;
     }
 }
