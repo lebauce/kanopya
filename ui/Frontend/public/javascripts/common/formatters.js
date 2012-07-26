@@ -62,3 +62,13 @@ function booleantostateformatter(val) {
         return "<img src='/images/icons/down.png' title='down' />";
     }
 }
+
+function datetimeformatter(timestamp) {
+    var d   = new Date(parseInt(timestamp));
+    return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear() + ' '
+      + d.getHours() + ':' + d.getMinutes();
+}
+
+function timeformatter(timestamp) {
+    return ((datetimeformatter(timestamp)).split(' '))[1];
+}

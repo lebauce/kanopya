@@ -23,6 +23,7 @@ my %resources = (
     "aggregatecondition"       => "AggregateCondition",
     "aggregaterule"            => "AggregateRule",
     "apache2"                  => "Entity::Component::Apache2",
+    "billinglimit"             => "Entity::Billinglimit",
     "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
     "clustermetric"            => "Clustermetric",
     "component"                => "Entity::Component",

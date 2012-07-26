@@ -576,8 +576,8 @@ sub configureBillingLimits {
             );
         }
 
-        my $charged_mem = Indicator->find(hash => { indicator_oid => "Charged memory" });
-        my $charged_cores = Indicator->find(hash => { indicator_oid => "Charged cores" });
+        my $charged_mem = Indicator->find(hash => { indicator_name => "Memory" });
+        my $charged_cores = Indicator->find(hash => { indicator_name => "Cores" });
         my $collector = $self->getManager(manager_type => "collector_manager");
 
         $collector->collectIndicator(indicator_id        => $charged_mem->getId,
