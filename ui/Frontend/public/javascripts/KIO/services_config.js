@@ -116,9 +116,7 @@ function loadServicesConfig (container_id, elem_id) {
                                 $(std).css('vertical-align', 'middle');
                                 $("<td>").append($("<a>", { text : 'Configure' }).button({ icons : { primary : 'ui-icon-wrench' } })).bind('click', { manager : data[i] }, function(event) {
                                     var manager = event.data.manager;
-                                    createmanagerDialog(manager.manager_type, elem_id, function() {
-                                        deleteManager(manager.pk, container_id, elem_id);
-                                    }, false, true);
+                                    createmanagerDialog(manager.manager_type, elem_id, $.noop, false, manager.pk);
                                 }).appendTo(l);
                                 $("<td>").append($("<a>", { text : 'Delete' }).button({ icons : { primary : 'ui-icon-trash' } }).bind('click', { pk : data[i].pk }, function(event) {
                                     deleteManager(event.data.pk, container_id, elem_id);
@@ -183,8 +181,9 @@ function _managerConnectorTranslate() {
 }
 var managerConnectorTranslate = _managerConnectorTranslate();
 
-function createmanagerDialog(managertype, sp_id, callback, skippable, mode_config) {
+function createmanagerDialog(managertype, sp_id, callback, skippable, instance_id) {
     var that        = this;
+    var mode_config = instance_id && instance_id > 0;
     callback        = callback || $.noop;
     connectortype   = managerConnectorTranslate(managertype);
     $.ajax({
@@ -195,7 +194,10 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, mode_confi
         success     : function(data) {
             if (data.length <= 0) {
                 if (skippable) callback();
-                else return;
+                else {
+                    alert('No technical service connected to a ' + connectortype + '.\nSee: Administration -> Technical Services');
+                    return;
+                }
             }
             var select  = $("<select>", { name : 'managerselection' })
             var fieldset= $('<fieldset>').css({'border' : 'none'});
@@ -248,6 +250,12 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, mode_confi
                 });
             });
             $(select).trigger('change');
+
+            // Don't show the manager dropdown list if we are configuring an alredy linked manager instance
+            if (mode_config) {
+                $(select).hide();
+            }
+
             $("<div>").append($(select)).append(fieldset).appendTo('body').dialog({
                 title           : mode_config ? connectortype + ' configuration' : 'Link to a ' + connectortype,
                 closeOnEscape   : false,
@@ -255,7 +263,10 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, mode_confi
                 resizable       : false,
                 modal           : true,
                 buttons         : {
-                    'Cancel'    : function() { $(this).dialog("destroy"); if (skippable) callback(); },
+                    'Cancel'    : function() {
+                        $(this).dialog("destroy");
+                        if (skippable) callback();
+                    },
                     'Ok'        : function() {
                         var dial    = this;
                         var data    = {
@@ -285,11 +296,24 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, mode_confi
                                 });
                                 $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
                             }, 10);
+
+                            var url;
+                            var post_data;
+                            if (mode_config) {
+                                url         = '/api/serviceprovidermanager/' + instance_id + '/addParams';
+                                post_data   = {
+                                        params      : data.manager_params,
+                                        override    : 1
+                                };
+                            } else {
+                                url         = '/api/serviceprovider/' + sp_id + '/addManager';
+                                post_data   = data;
+                            }
                             $.ajax({
-                                url           : '/api/serviceprovider/' + sp_id + '/addManager',
+                                url           : url,
                                 type          : 'POST',
                                 contentType   : 'application/json',
-                                data          : JSON.stringify(data),
+                                data          : JSON.stringify(post_data),
                                 success       : function() {
                                     $(dial).dialog("destroy");
                                     callback();
@@ -319,7 +343,7 @@ function createManagerButton(managertype, ctnr, sp_id, container_id) {
         that.loadServicesConfig(container_id, sp_id);
     };
     addManagerButton.bind('click', function() {
-        createmanagerDialog(managertype, sp_id, reload, false, false);
+        createmanagerDialog(managertype, sp_id, reload, false, 0);
     });
     addManagerButton.appendTo($(ctnr));
     $(ctnr).append("<br />");
