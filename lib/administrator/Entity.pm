@@ -7,6 +7,7 @@ use Log::Log4perl 'get_logger';
 use EntityLock;
 use EntityComment;
 use Workflow;
+use Entity::Gp;
 use OperationParameter;
 use Kanopya::Exceptions;
 
@@ -29,15 +30,32 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
-  return {
-    getWorkflows    => {
-        description => 'getWorkflows',
-        perm_holder => 'entity'
-    }
-  };
+    return {
+        getWorkflows => {
+            description => 'getWorkflows',
+            perm_holder => 'entity'
+        }
+    };
 }
 
 sub primarykey { return 'entity_id'; }
+
+=head2 getMasterGroupName
+
+    Override BaseDB constructor to add the newly created entity
+    to the corresponding group. 
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = $class->SUPER::new(%args);
+
+    $class->getMasterGroup->appendEntity(entity => $self);
+    return $self;
+}
 
 =head2 getMasterGroupName
 
@@ -55,7 +73,7 @@ sub getMasterGroupName {
     return $mastergroup;
 }
 
-=head2 getMasterGroupEid
+=head2 getMasterGroup
 
     Class : public
 
@@ -65,35 +83,19 @@ sub getMasterGroupName {
 
 =cut
 
-sub getMasterGroupEid {
+sub getMasterGroup {
     my $self = shift;
     my $adm = Administrator->new();
     my $mastergroup = $self->getMasterGroupName();
-    my $eid = $adm->{db}->resultset('Gp')->find({ gp_name => $mastergroup })->id;
-    return $eid;
-}
 
-=head2 getGroups
-
-return groups resultset where this entity appears (only on an already stored entity)
-
-=cut
-
-sub getGroups {
-    my $self = shift;
-    if( not $self->{_dbix}->in_storage ) { return; }
-    #$log->debug("======> GetGroups call <======");
-    my $mastergroup = $self->getMasterGroupEid();
-    my $groups = $self->{_rightschecker}->{_schema}->resultset('Gp')->search(
-		{
-        -or => [
-            'ingroups.entity_id' => $self->{_dbix}->id,
-            'gp_name' => $mastergroup ]
-        },
-
-        { join => [qw/ingroups/] }
-    );
-    return $groups;
+    my $group;
+    eval {
+        $group = Entity::Gp->find(hash => { gp_name => $mastergroup });
+    };
+    if ($@) {
+        $group = Entity::Gp->find(hash => { gp_name => 'Entity' });
+    }
+    return $group;
 }
 
 sub asString {
@@ -120,17 +122,17 @@ sub getPerms {
     my $self = shift;
     my $class = ref $self;
     my $adm = Administrator->new();
-    my $mastergroupeid = $self->getMasterGroupEid();
+    my $mastergroupeid = $self->getMasterGroup->id;
     my $methods = $self->methods();
     my $granted;
 
     foreach my $m (keys %$methods) {
         if($methods->{$m}->{'perm_holder'} eq 'mastergroup') {
-            $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroupeid, method => $m);
+            $granted = $adm->getRightChecker->checkPerm(entity_id => $mastergroupeid, method => $m);
             $methods->{$m}->{'granted'} = $granted;
         }
         elsif($class and $methods->{$m}->{'perm_holder'} eq 'entity') {
-            $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => $m);
+            $granted = $adm->getRightChecker->checkPerm(entity_id => $self->{_entity_id}, method => $m);
             $methods->{$m}->{'granted'} = $granted;
         }
         else {
@@ -156,12 +158,12 @@ sub addPerm {
 
     if($class) {
         # addPerm call from an instance of type $class
-          my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'setPerm');
+          my $granted = $adm->getRightChecker->checkPerm(entity_id => $self->{_entity_id}, method => 'setPerm');
               if(not $granted) {
                throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{entity_id}");
            }
            #
-        $adm->{_rightchecker}->addPerm(
+        $adm->getRightChecker->addPerm(
             consumer_id => $args{entity_id},
             consumed_id => $self->{_entity_id},
             method         => $args{method},
@@ -172,12 +174,12 @@ sub addPerm {
         my @list = split(/::/, "$self");
         my $mastergroup = pop(@list);
         my $entity_id = $adm->{db}->resultset('Gp')->find({ gp_name => $mastergroup })->id;
-        my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'setPerm');
+        my $granted = $adm->getRightChecker->checkPerm(entity_id => $entity_id, method => 'setPerm');
               if(not $granted) {
                throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{id}");
            }
 
-        $adm->{_rightchecker}->addPerm(
+        $adm->getRightChecker->addPerm(
             consumer_id => $args{entity_id},
             consumed_id => $entity_id,
             method         => $args{method},
@@ -371,6 +373,42 @@ sub toJSON {
         }
     }
     return $hash;
+}
+
+=head2
+
+    It is convenient to override this method in Entity,
+    for centralizing permmissions checking.
+
+=cut
+
+sub methodCall {
+    my $self = shift;
+    my $class = ref $self;
+    my %args = @_;
+
+    my $adm = Administrator->new();
+
+    General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
+
+    my $methods = $self->getMethods();
+
+    # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
+    my ($granted, $perm_holder);
+    if ($methods->{$args{method}}->{perm_holder} eq 'mastergroup') {
+        $perm_holder = $self->getMasterGroup;
+    }
+    elsif ($class and $methods->{$args{method}}->{perm_holder} eq 'entity') {
+        $perm_holder = $self;
+    }
+
+    # Check the permissions for the logged user
+    $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder->id, method => $args{method});
+    if (not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to " . $methods->{$args{method}}->{description});
+    }
+
+    return $self->SUPER::methodCall(%args);
 }
 
 1;
