@@ -80,7 +80,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         'getPolicyParams' => {
-            'description' => 'Return the params required for policies definition.',
+            'description' => 'get the parameters required for policies definition.',
             'perm_holder' => 'entity',
         },
         'getConf'   => {

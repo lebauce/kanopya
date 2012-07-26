@@ -7,6 +7,7 @@ use Log::Log4perl 'get_logger';
 use EntityLock;
 use EntityComment;
 use Workflow;
+use Message;
 use Entity::Gp;
 use OperationParameter;
 use Kanopya::Exceptions;
@@ -415,7 +416,13 @@ sub methodCall {
     # Check the permissions for the logged user
     $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder->id, method => $args{method});
     if (not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to " . $methods->{$args{method}}->{description});
+        my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
+        Message->send(
+            from    => 'Permissions checker',
+            level   => 'error',
+            content => $msg
+        );
+        throw Kanopya::Exception::Permission::Denied(error => $msg);
     }
 
     return $self->SUPER::methodCall(%args);

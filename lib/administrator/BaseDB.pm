@@ -417,7 +417,7 @@ sub new {
     # Get the class_type_id for class name
     eval {
         my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                     hash  => { class_type => $class })->single;
+                                        hash  => { class_type => $class })->single;
 
         $attrs->{class_type_id} = $rs->get_column('class_type_id');
     };
