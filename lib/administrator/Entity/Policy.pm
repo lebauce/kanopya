@@ -61,9 +61,9 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'getFlattenedHash' => {
-            'description' => 'Return a single level hash with all attributes and values of the policy',
-            'perm_holder' => 'entity',
+        getFlattenedHash => {
+            description => 'Return a single level hash with all attributes and values of the policy',
+            perm_holder => 'entity',
         },
     };
 }
