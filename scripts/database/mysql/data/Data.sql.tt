@@ -226,6 +226,12 @@ SET @Component_eid=@eid;
 SET @Component_group_id =@eid;
 SET @eid := @eid +1;
 
+INSERT INTO `entity` VALUES (@eid, 2, NULL);
+INSERT INTO `gp` VALUES (@eid, 'Connector', 'Connector', 'Connector group containing all connectors', 0);
+SET @Connector_eid = @eid;
+SET @Connector_group_id = @eid;
+SET @eid := @eid +1;
+
 --
 -- system user
 --
@@ -597,6 +603,7 @@ INSERT INTO `component_template` VALUES (6,'nfsd','/templates/components/nfsd3',
 INSERT INTO `entity` VALUES (@eid, 20, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,1,NULL,NULL);
 INSERT INTO `lvm2` VALUES(@eid);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @lvm_component := @eid;
 SET @eid := @eid +1;
 
@@ -618,6 +625,7 @@ SET @pvid := @pvid +1;
 INSERT INTO `entity` VALUES (@eid, 21, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,3,NULL,NULL);
 INSERT INTO `iscsitarget1` VALUES(@eid);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @iscsi_component := @eid;
 SET @eid := @eid +1;
 
@@ -629,6 +637,7 @@ INSERT INTO `entity` VALUES (@eid, 24, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,5,NULL,2);
 INSERT INTO `dhcpd3` VALUES (@eid,'hedera-technology.com',NULL,'node001');
 INSERT INTO `dhcpd3_subnet` VALUES (1,@eid,'[% ipv4_internal_network_ip %]','[% poolip_netmask %]','[% poolip_gateway %]');
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
@@ -638,6 +647,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 23, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,6,NULL,NULL);
 INSERT INTO `atftpd0` VALUES (@eid,'--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5', 'FALSE', '/var/log/atftpd.log','/tftp');
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
@@ -647,6 +657,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 37, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,7,NULL,3);
 INSERT INTO `snmpd5` VALUES(@eid, '[% poolip_addr %]', '-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
@@ -656,6 +667,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 39, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,8,NULL,6);
 INSERT INTO `nfsd3` VALUES(@eid,NULL,'no',8,0,NULL,'no',NULL);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
@@ -665,6 +677,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 38, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,11,NULL,NULL);
 INSERT INTO `syslogng3` VALUES(@eid);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
@@ -674,6 +687,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 77, NULL);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,18,NULL,NULL);
 INSERT INTO `puppetmaster2` VALUES(@eid,NULL);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
@@ -683,6 +697,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 31, NULL);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 4, NULL, NULL);
 INSERT INTO `openiscsi2` VALUES(@eid);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
@@ -692,6 +707,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@physical_hoster, 48, NULL);
 INSERT INTO `component` VALUES(@physical_hoster, @admin_cluster, 15, NULL, NULL);
 INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @physical_hoster);
 
 --
 -- Fileimagemanager0
@@ -700,6 +716,7 @@ INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
 INSERT INTO `entity` VALUES (@eid, 53, NULL);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 16, NULL, NULL);
 INSERT INTO `fileimagemanager0` VALUES(@eid);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
@@ -709,6 +726,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 78, NULL);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 19, NULL, NULL);
 INSERT INTO `kanopyacollector1` VALUES(@eid, 3600, 86400);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
@@ -718,6 +736,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 81, NULL);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 21, NULL, NULL);
 INSERT INTO `kanopyaworkflow0` VALUES(@eid);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
@@ -727,6 +746,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 29, NULL);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 9, NULL, NULL);
 INSERT INTO `linux0` VALUES(@eid);
+INSERT INTO `ingroups` VALUES (@Component_group_id, @eid);
 SET @eid := @eid +1;
 
 --
