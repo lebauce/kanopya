@@ -93,8 +93,10 @@ get '/logout' => sub {
 # /me is a route that return the username for current user.
 
 get '/me' => sub {
+    content_type 'application/json';
     my $username = session('username');
-    return $username;
+    my $jsonUsername = '{"username" : "'.$username.'"}';
+    return $jsonUsername;
 };
 
 1;

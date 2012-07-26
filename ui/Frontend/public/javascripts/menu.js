@@ -97,14 +97,39 @@ function add_menutree(container, label, menu_info, elem_id) {
 function build_mainmenu() {
     
     var container = $('#mainmenu-container');
+    var submenu_elements;
+    var menu_elements;
+    // Get the list of menuentries for the current profile :
+    var user_profile = get_user_profile();
+    //console.log(user_profile);
+    $.ajax({
+        async    : false,
+        url      : '/javascripts/menuprofiles.json',
+        dataType : 'json',
+        type     : 'GET',
+        success  : function(data) {
+            //console.log(data);
+            for (i=0; i<data.length; i++) {
+                if (data[i].profile_id == user_profile) {
+                    submenu_elements = data[i].submenu_entries;
+                    menu_elements = data[i].menu_entries;
+                }
+            }
+        } 
+    });
+    
+    
     
     for (var label in mainmenu_def) {
-        var menu_head = $('<h3 id="menuhead_' + label.replace(/ /g, '_') + '"><a href="#">' + label + '</a></h3>');
-        var menu_def = mainmenu_def[label];
-        container.append(menu_head);
+        if (menu_elements.search(label) != -1) {
+            var menu_head = $('<h3 id="menuhead_' + label.replace(/ /g, '_') + '"><a href="#">' + label + '</a></h3>');
+            var menu_def = mainmenu_def[label];
+            container.append(menu_head);
+        //}
         
         var content = $('<ul></ul>');
         container.append(content);
+    }
         
         if (menu_def['onLoad']) {
             // Custom menu
@@ -117,11 +142,13 @@ function build_mainmenu() {
         } else {
             // Static menu
             for (var sublabel in menu_def) {
-                var submenu_links = menu_def[sublabel];
-                add_menu(content, sublabel, submenu_links);
+                // Check if sublabel must be displayed for this session :
+                if (submenu_elements.search(sublabel) != -1) {
+                    var submenu_links = menu_def[sublabel];
+                    add_menu(content, sublabel, submenu_links);
+                }
             }
         }
-        
         // Specific view when select menu head
         if (menu_def['masterView']) {
             var view_id = 'view_' + label.replace(/ /g, '_');
@@ -134,6 +161,39 @@ function build_mainmenu() {
         clearStyle  : true,     // size to content
         active      : false,    // all parts closed at start
     } );
+}
+
+function get_user_profile () {
+    // Get username of current logged user :
+    var username = '';
+    var userid;
+    var profileid;
+    $.ajax({
+        async   : false,
+        url     : '/me',
+        type    : 'GET',
+        success : function(data) {
+            username = data.username;
+        }
+    });
+    // Get profile list for the username :
+    $.ajax({
+        async   : false,
+        url     : '/api/user?user_login=' + username,
+        type    : 'GET',
+        success : function(data) {
+            userid = data[0].user_id;
+        }
+    });
+    $.ajax({
+        async   : false,
+        url     : '/api/userprofile?user_id=' + userid,
+        tyepe   : 'GET',
+        success : function(data) {
+            profileid = data[0].profile_id;
+        }
+    });
+    return profileid;
 }
 
 function build_submenu(container, view_id, links, elem_id) {
