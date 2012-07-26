@@ -68,7 +68,7 @@ sub addParams {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "params" ]);
+    General::checkParams(args => \%args, required => [ "params" ], optional => { "override" => 0 });
 
     my $preset;
     eval {

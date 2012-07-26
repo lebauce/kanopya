@@ -124,13 +124,6 @@ sub getSystemimage {
 #
 #sub create {
 #    my ($class, %params) = @_;
-#    
-#    my $admin = Administrator->new();
-#    my $mastergroup_eid = $class->getMasterGroupEid();
-#       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-#       if(not $granted) {
-#           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new system image");
-#       }
 #
 #    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
 #    Operation->enqueue(
@@ -179,12 +172,7 @@ sub installedComponentLinkCreation {
 
 sub update {
     my $self = shift;
-    my $adm = Administrator->new();
-    # update method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
-    }
+
     # TODO update implementation
 }
 

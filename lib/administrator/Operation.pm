@@ -196,7 +196,7 @@ sub new {
     eval {
         my $execution_rank = $class->getNextRank(workflow_id => $args{workflow_id});
         my $initial_state  = $execution_rank ? "pending" : "ready";
-        my $user_id        = $adm->{_rightchecker}->{user_id};
+        my $user_id        = $adm->getRightChecker->{user_id};
 
         $log->info("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
 

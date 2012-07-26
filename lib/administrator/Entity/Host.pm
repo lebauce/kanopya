@@ -202,8 +202,7 @@ sub create {
                          required => ['host_manager_id', 'host_core', 'kernel_id',
                                       'host_ram', 'host_serial_number' ]);
 
-    my $manager = Entity::ServiceProvider->get(id => $args{host_manager_id});
-    $manager->createHost(%args);
+    Entity->get(id => $args{host_manager_id})->createHost(%args);
 }
 
 =head2 getServiceProvider
@@ -501,14 +500,6 @@ sub addIface {
 
     General::checkParams(args => \%args, required => [ 'iface_name', 'iface_mac_addr', 'iface_pxe' ]);
 
-    my $adm = Administrator->new();
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id},
-                                                   method    => 'addIface');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(
-                  error => "Permission denied to add an interface to this host"
-              );
-    }
     my $iface = Entity::Iface->new(iface_name     => $args{iface_name},
                                    iface_mac_addr => $args{iface_mac_addr},
                                    iface_pxe      => $args{iface_pxe},
@@ -576,13 +567,6 @@ sub removeIface {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['iface_id']);
-
-    my $adm = Administrator->new();
-    # removeIface method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeIface');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove an interface from this host");
-    }
 
     my $ifc = Entity::Iface->find(hash => { host_id => $self->id, iface_id => $args{iface_id} });
     $ifc->delete();
@@ -715,13 +699,6 @@ sub addHarddisk {
 
     General::checkParams(args => \%args, required => ['device']);
 
-    my $adm = Administrator->new();
-    # addHarddisk method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addHarddisk');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a hard disk to this host");
-    }
-
     $self->{_dbix}->harddisks->create({
         harddisk_device => $args{device},
         host_id => $self->getAttr(name => 'host_id'),
@@ -733,13 +710,6 @@ sub removeHarddisk {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['harddisk_id']);
-
-    my $adm = Administrator->new();
-    # removeHarddisk method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeHarddisk');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a hard disk from this host");
-    }
 
     my $hd = $self->{_dbix}->harddisks->find($args{harddisk_id});
     $hd->delete();
