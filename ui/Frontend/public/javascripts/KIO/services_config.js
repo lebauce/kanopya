@@ -192,12 +192,21 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
         contentType : 'application/json',
         data        : JSON.stringify({ 'category' : connectortype }),
         success     : function(data) {
+            // we skip all managers of the Kanopya cluster (id=1)
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                console.log(i);
+                if (data[i].service_provider_id == 1) {
+                    console.log('delete');
+                    data.splice(i,1);
+                }
+            }
+
             if (data.length <= 0) {
                 if (skippable) callback();
                 else {
                     alert('No technical service connected to a ' + connectortype + '.\nSee: Administration -> Technical Services');
-                    return;
                 }
+                return;
             }
             var select  = $("<select>", { name : 'managerselection' })
             var fieldset= $('<fieldset>').css({'border' : 'none'});
