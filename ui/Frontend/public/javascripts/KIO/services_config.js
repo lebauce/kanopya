@@ -220,11 +220,22 @@ function createmanagerDialog(managertype, sp_id, callback, skippable) {
                     url     : '/api/entity/' + manager_id + '/getManagerParamsDef',
                     type    : 'POST',
                     success : function(data) {
+                        var current_params = {};
+                        $.ajax({
+                            url     : '/api/serviceprovider/' + sp_id + '/getManagerParameters',
+                            type    : 'POST',
+                            async   : false,
+                            data    : { manager_type : managertype },
+                            success : function(manager_params) {
+                                current_params = manager_params;
+                            }
+                        });
+
                         for (var i in data) if (data.hasOwnProperty(i)) {
                             $(fieldset).append($('<label>', {
                                 text : managerParams(data[i]) + " : ",
                                 for : data[i]
-                            })).append($("<input>", { name : data[i], id : data[i] }));
+                            })).append($("<input>", { name : data[i], id : data[i], value : current_params[data[i]] }));
 
                             // Specific management for custom form
                             if (connectortype == 'DirectoryServiceManager' && data[i] == 'ad_nodes_base_dn') {

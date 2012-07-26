@@ -71,6 +71,10 @@ sub methods {
         'addManager'    => {
             'description'   => 'addManager',
             'perm_holder'   => 'entity'
+        },
+        'getManagerParameters'  => {
+            'description'   => 'getManagerParameters',
+            'perm_holder'   => 'entity'
         }
     };
 }
