@@ -119,6 +119,10 @@ INSERT INTO `profile` VALUES
 --
 
 INSERT INTO `entity` VALUES (@eid, 2, NULL); SET @MasterUserGroup_eid = @eid;
+INSERT INTO `gp` VALUES(@eid,'Entity','Entity', 'Entity master group containing all entities',1);
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 2, NULL); SET @MasterUserGroup_eid = @eid;
 INSERT INTO `gp` VALUES(@eid,'User','User', 'User master group containing all users',1);
 SET @eid := @eid +1;
 
@@ -132,6 +136,10 @@ SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 2, NULL); SET @HostGroup_eid = @eid;
 INSERT INTO `gp` VALUES(@eid,'Host','Host','Host master group containing all hosts',1);
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 2, NULL); SET @ClusterGroup_eid = @eid;
+INSERT INTO `gp` VALUES(@eid,'ServiceProvider','ServiceProvider','ServiceProvider master group containing all service providers', 1);
 SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 2, NULL); SET @ClusterGroup_eid = @eid;
