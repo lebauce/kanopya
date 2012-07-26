@@ -68,10 +68,7 @@ function servicesList (container_id, elem_id) {
                     url     : '/api/cluster/' + rowid + '/service_template',
                     type    : 'GET',
                     success : function(serv_template) {
-                        var name;
-                        if (serv_template) name = serv_template.service_name;
-                        else               name = 'Internal';
-
+                        var name = serv_template ? serv_template.service_name : 'Internal';
                         $(grid).setCell(rowid, 'service_template_name', name);
                     },
                 });
