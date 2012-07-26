@@ -68,11 +68,11 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['entity_id', 'schema']);
+    General::checkParams(args => \%args, required => [ 'user_id', 'schema' ]);
 
     my $self = { 
         schema => $args{schema},
-        user_id => $args{schema}->resultset("User")->find($ENV{EID})->id,        
+        user_id => $args{user_id},
     };
 
     bless $self, $class;

@@ -187,10 +187,10 @@ sub buildEntityRights {
 
     if($user->get_column('user_system')) {
         #$log->debug("EntityRights build a new EntityRights::System with EID ".$ENV{EID});
-        return EntityRights::System->new(entity_id => $ENV{EID}, schema => $args{schema});
+        return EntityRights::System->new(user_id => $user->id, schema => $args{schema});
     } else {
         #$log->debug("EntityRights build a new EntityRights::User with EID ".$ENV{EID});
-        return EntityRights::User->new(entity_id => $ENV{EID}, schema => $args{schema});
+        return EntityRights::User->new(user_id => $user->id, schema => $args{schema});
     }
 }
 
@@ -571,6 +571,12 @@ sub getComponentsListByCategory {
         push @{$list->[$currentindex]->{components}}, $tmp;
     }
     return $list;
+}
+
+sub getRightChecker {
+    my $self = shift;
+
+    return $oneinstance->{_rightchecker};
 }
 
 1;

@@ -40,11 +40,14 @@ use base 'EntityRights';
 
 use strict;
 use warnings;
-use Log::Log4perl "get_logger";
+
 use General;
 use Kanopya::Exceptions;
 
 our $VERSION = "1.00";
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -67,11 +70,11 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['entity_id','schema']);
+    General::checkParams(args => \%args, required => [ 'user_id', 'schema' ]);
 
     my $self = { 
         schema => $args{schema},
-        user_id => $args{schema}->resultset("User")->find($ENV{EID})->id
+        user_id => $args{user_id},
     };
     bless $self, $class;
     return $self;
@@ -97,9 +100,9 @@ sub checkPerm {
     
     General::checkParams(args => \%args, required => ['method','entity_id']);
     
-    my $consumer_ids = $self->SUPER::_getEntityIds(entity_id => $self->{user_entity_id});
+    my $consumer_ids = $self->SUPER::_getEntityIds(entity_id => $self->{user_id});
     my $consumed_ids = $self->SUPER::_getEntityIds(entity_id => $args{entity_id});
-    
+
     my $row = $self->{schema}->resultset('Entityright')->search(
         {
             entityright_consumer_id => $consumer_ids,
