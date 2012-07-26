@@ -23,10 +23,21 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'toString'  => {
-            'description' => 'toString',
-            'perm_holder' => 'entity'
-        }
+        toString => {
+            description => 'toString',
+            perm_holder => 'entity'
+        },
+        create => {
+            description => 'create a new object',
+            perm_holder => 'mastergroup',
+        },
+        remove => {
+            description => 'remove an object',
+            perm_holder => 'mastergroup',
+        },
+        methodCall => {
+            description => 'Call an object method',
+        },
     };
 }
 
@@ -1110,8 +1121,54 @@ sub toJSON {
     else {
         $hash->{pk} = $self->getId;
     }
-
     return $hash;
+}
+
+=head2
+
+    Generic creation method.
+
+=cut
+
+sub create {
+    my $class = shift;
+    my %args = @_;
+
+    $class->new(%args);
+}
+
+=head2
+
+    Generic deletion method.
+
+=cut
+
+sub remove {
+    my $self = shift;
+    my %args = @_;
+
+    $self->delete();
+}
+
+=head2
+
+    Method used by the api as entry point for methods calls.
+    It is convenient for centralizing permmissions checking.
+
+=cut
+
+sub methodCall {
+    my $self = shift;
+    my $class = ref $self;
+    my %args = @_;
+
+    my $adm = Administrator->new();
+
+    General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
+
+    # Call the requested method
+    my $method = $args{method};
+    return $self->$method(%{$args{params}});
 }
 
 =head2
@@ -1125,14 +1182,13 @@ sub toJSON {
 sub AUTOLOAD {
     my $self = shift;
     my %args = @_;
-        
+
     my @autoload = split(/::/, $AUTOLOAD);
     my $accessor = $autoload[-1];
 
     return $self->getAttr(name => $accessor);
 }
 
-sub DESTROY {
-}
+sub DESTROY {}
 
 1;
