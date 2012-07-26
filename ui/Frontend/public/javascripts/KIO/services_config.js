@@ -118,7 +118,7 @@ function loadServicesConfig (container_id, elem_id) {
                                     var manager = event.data.manager;
                                     createmanagerDialog(manager.manager_type, elem_id, function() {
                                         deleteManager(manager.pk, container_id, elem_id);
-                                    });
+                                    }, false, true);
                                 }).appendTo(l);
                                 $("<td>").append($("<a>", { text : 'Delete' }).button({ icons : { primary : 'ui-icon-trash' } }).bind('click', { pk : data[i].pk }, function(event) {
                                     deleteManager(event.data.pk, container_id, elem_id);
@@ -183,7 +183,7 @@ function _managerConnectorTranslate() {
 }
 var managerConnectorTranslate = _managerConnectorTranslate();
 
-function createmanagerDialog(managertype, sp_id, callback, skippable) {
+function createmanagerDialog(managertype, sp_id, callback, skippable, mode_config) {
     var that        = this;
     callback        = callback || $.noop;
     connectortype   = managerConnectorTranslate(managertype);
@@ -221,15 +221,17 @@ function createmanagerDialog(managertype, sp_id, callback, skippable) {
                     type    : 'POST',
                     success : function(data) {
                         var current_params = {};
-                        $.ajax({
-                            url     : '/api/serviceprovider/' + sp_id + '/getManagerParameters',
-                            type    : 'POST',
-                            async   : false,
-                            data    : { manager_type : managertype },
-                            success : function(manager_params) {
-                                current_params = manager_params;
-                            }
-                        });
+                        if (mode_config) {
+                            $.ajax({
+                                url     : '/api/serviceprovider/' + sp_id + '/getManagerParameters',
+                                type    : 'POST',
+                                async   : false,
+                                data    : { manager_type : managertype },
+                                success : function(manager_params) {
+                                    current_params = manager_params;
+                                }
+                            });
+                        }
 
                         for (var i in data) if (data.hasOwnProperty(i)) {
                             $(fieldset).append($('<label>', {
@@ -247,7 +249,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable) {
             });
             $(select).trigger('change');
             $("<div>").append($(select)).append(fieldset).appendTo('body').dialog({
-                title           : 'Add a ' + connectortype,
+                title           : mode_config ? connectortype + ' configuration' : 'Link to a ' + connectortype,
                 closeOnEscape   : false,
                 draggable       : false,
                 resizable       : false,
@@ -309,15 +311,15 @@ function createmanagerDialog(managertype, sp_id, callback, skippable) {
 
 function createManagerButton(managertype, ctnr, sp_id, container_id) {
     var addManagerButton    = $("<a>", {
-        text : 'Add a ' + managerConnectorTranslate(managertype)
-    }).button({ icons : { primary : 'ui-icon-plusthick' } });
+        text : 'Link to a ' + managerConnectorTranslate(managertype)
+    }).button({ icons : { primary : 'ui-icon-link' } });
     var that                = this;
     var reload = function() {
         $('#' + container_id).empty();
         that.loadServicesConfig(container_id, sp_id);
     };
     addManagerButton.bind('click', function() {
-        createmanagerDialog(managertype, sp_id, reload);
+        createmanagerDialog(managertype, sp_id, reload, false, false);
     });
     addManagerButton.appendTo($(ctnr));
     $(ctnr).append("<br />");
