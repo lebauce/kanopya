@@ -170,10 +170,9 @@ sub createExport {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'container', 'export_name' ]);
-
-    my $typeio = General::checkParam(args => \%args, name => 'typeio', default => 'fileio');
-    my $iomode = General::checkParam(args => \%args, name => 'iomode', default => 'wb');
+                         required => [ 'container', 'export_name' ],
+                         optional => { 'typeio' => 'fileio',
+                                       'iomode' => 'wb' });
 
     my $api = $self->_getEntity();
     my $volume = $args{container}->getVolume();
@@ -222,8 +221,8 @@ sub createExport {
                      container_access_export => $self->_getEntity->iscsi_node_get_name->node_name,
                      container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
                      container_access_port   => 3260,
-                     typeio                  => $typeio,
-                     iomode                  => $iomode,
+                     typeio                  => $args{typeio},
+                     iomode                  => $args{iomode},
                      lun_name                => "lun-" . $lun_id
                  );
     my $container_access = EFactory::newEEntity(data => $entity);

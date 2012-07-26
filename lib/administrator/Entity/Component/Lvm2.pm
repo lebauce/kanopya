@@ -346,11 +346,9 @@ sub getFreeSpace {
     my $self = shift;
     my %args = @_;
 
-    my $vg_id = General::checkParam(args    => \%args,
-                                    name    => 'vg_id',
-                                    default => $self->getMainVg->{vgid});
+    General::checkParams(args => \%args, optional => { 'vg_id' => $self->getMainVg->{vgid} });
 
-    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $vg_id });
+    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $args{vg_id} });
 
     return $vg_rs->get_column('lvm2_vg_freespace');
 }

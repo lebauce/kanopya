@@ -59,10 +59,9 @@ sub create {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'managers' ]);
-
-    $args{interfaces} = General::checkParam(args => \%args, name => 'interfaces', default => {});
-    $args{components} = General::checkParam(args => \%args, name => 'components', default => {});
+    General::checkParams(args     => \%args,
+                         required => [ 'managers' ],
+                         optional => { 'interfaces' => {}, 'components' => {} });
 
     my $config = Kanopya::Config::get('executor');
 

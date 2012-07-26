@@ -92,7 +92,7 @@ sub checkParams {
     for my $param (@$required) {
         if (! exists $caller_args->{$param} or ! defined $caller_args->{$param}) {
             $errmsg = "$caller_sub_name needs a '$param' named argument!";
-           
+
             if (not $args{quiet}) {
                 # Log in general logger
                 # TODO log in the logger corresponding to caller package;
@@ -104,42 +104,13 @@ sub checkParams {
         }
     }
 
-    if (defined $args{defaults}) {
-        while (my ($key, $value) = each %{$args{defaults}}) {
+    if (defined $args{optional}) {
+        while (my ($key, $value) = each %{$args{optional}}) {
             if (not exists $caller_args->{$key}) {
                 $caller_args->{$key} = $value;
             }
         }
     }
-}
-
-sub checkParam {
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'args', 'name' ]);
-
-    my $caller_args = $args{args};
-    my $arg_name = $args{name};
-    my $caller_sub_name = (caller(1))[3];
-
-    my $value;
-    eval {
-        General::checkParams(args => $caller_args, required => [ $arg_name ], quiet => (exists $args{default}) ? 1 : 0);
-        $value = $caller_args->{$arg_name};
-        delete $caller_args->{$arg_name};
-    };
-    if ($@) {
-        if (exists $args{default} ) {
-            $value = $args{default};
-        }
-        else {
-            throw Kanopya::Exception::Internal::MissingParam(
-                      sub_name   => $caller_sub_name,
-                      param_name => $args{name}
-                  );
-        }
-    }
-    return $value;
 }
 
 sub getClassEEntityFromEntity{
