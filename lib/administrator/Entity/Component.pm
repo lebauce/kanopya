@@ -129,6 +129,18 @@ sub new {
     return $self;
 }
 
+=head2 getGenericMasterGroupName
+
+    Get an alternative group name if the correponding group 
+    of the concrete class of the entity do not exists.
+
+=cut
+
+sub getGenericMasterGroupName {
+    my $self = shift;
+    return 'Component';
+}
+
 =head2 getHostingPolicyParams
 
 =cut

@@ -57,6 +57,29 @@ sub new {
     return $self;
 }
 
+=head2 getMasterGroup
+
+    Class : public
+
+    desc : return entity_id of entity master group
+    TO BE CALLED ONLY ON CHILD CLASS/INSTANCE
+    return : scalar : entity_id
+
+=cut
+
+sub getMasterGroup {
+    my $self = shift;
+
+    my $group;
+    eval {
+        $group = Entity::Gp->find(hash => { gp_name => $self->getMasterGroupName });
+    };
+    if ($@) {
+        $group = Entity::Gp->find(hash => { gp_name => $self->getGenericMasterGroupName });
+    }
+    return $group;
+}
+
 =head2 getMasterGroupName
 
     Class : public
@@ -73,29 +96,16 @@ sub getMasterGroupName {
     return $mastergroup;
 }
 
-=head2 getMasterGroup
+=head2 getGenericMasterGroupName
 
-    Class : public
-
-    desc : return entity_id of entity master group
-    TO BE CALLED ONLY ON CHILD CLASS/INSTANCE
-    return : scalar : entity_id
+    Get an alternative group name if the correponding group 
+    of the concrete class of the entity do not exists.
 
 =cut
 
-sub getMasterGroup {
+sub getGenericMasterGroupName {
     my $self = shift;
-    my $adm = Administrator->new();
-    my $mastergroup = $self->getMasterGroupName();
-
-    my $group;
-    eval {
-        $group = Entity::Gp->find(hash => { gp_name => $mastergroup });
-    };
-    if ($@) {
-        $group = Entity::Gp->find(hash => { gp_name => 'Entity' });
-    }
-    return $group;
+    return 'Entity';
 }
 
 sub asString {
