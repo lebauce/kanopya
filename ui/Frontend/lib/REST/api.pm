@@ -330,26 +330,30 @@ sub setupREST {
                 }
 
                 if ($class->can('create')) {
-                    $obj = jsonify($class->create(params));
+                    $obj = jsonify($class->methodCall(method => 'create', params => $params));
                 }
                 else {
-                    eval {
-                        my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
-                        $location =~ s/\:\:/\//g;
-                        require $location;
-                        $obj = Operation->enqueue(
-                            priority => 200,
-                            type     => 'Add' . ucfirst($resource),
-                            params   => $hash
-                        );
-                        $obj = Operation->get(id => $obj->getId)->toJSON;
-                    };
+                    # We probably do not want to directly enqueue operations,
+                    # as permissions are checked from methods calls.
 
-                    if ($@) {
-                        $obj = $class->new(params)->toJSON();
-                    };
+#                    eval {
+#                        my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
+#                        $location =~ s/\:\:/\//g;
+#                        require $location;
+#                        $obj = Operation->enqueue(
+#                            priority => 200,
+#                            type     => 'Add' . ucfirst($resource),
+#                            params   => $hash
+#                        );
+#                        $obj = Operation->get(id => $obj->getId)->toJSON;
+#                    };
+#
+#                    if ($@) {
+#                        $obj = $class->new(params)->toJSON();
+#                    };
+
+                     $obj = $class->new(params)->toJSON();
                 }
-
                 return to_json($obj);
             },
 
@@ -358,7 +362,7 @@ sub setupREST {
                 require (General::getLocFromClass(entityclass => $class));
 
                 my $obj = $class->get(id => params->{id});
-                $obj->can("remove") ? $obj->remove() : $obj->delete();
+                $obj->can("remove") ? $obj->methodCall(method => 'remove') : $obj->delete();
 
                 return to_json( { status => "success" } );
             },
@@ -399,6 +403,8 @@ sub setupREST {
 
                 RELATION:
                 while (1) {
+                    return undef if not defined $parent->$filter;
+
                     if ($parent->result_source->has_relationship($filter)) {
                         # TODO: prefetch filter so that we can just bless it
                         # $obj = bless { _dbix => $parent->$filter }, "Entity";
@@ -468,7 +474,7 @@ sub setupREST {
                 %params = params;
             }
 
-            my $ret = $obj->$method(%params);
+            my $ret = $obj->methodCall(method => $method, params => \%params);
 
             if (ref($ret) eq "ARRAY") {
                 my @jsons;
