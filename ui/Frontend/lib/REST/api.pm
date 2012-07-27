@@ -116,6 +116,7 @@ my %resources = (
     "unifiedcomputingsystem"   => "Entity::ServiceProvider::Outside::UnifiedComputingSystem",
     "user"                     => "Entity::User",
     "userextension"            => "UserExtension",
+    "userprofile"              => "UserProfile",
     "vlan"                     => "Entity::Network::Vlan",
     "workflow"                 => "Workflow",
     "workflowdef"              => "WorkflowDef",
