@@ -35,7 +35,29 @@ function loadServicesDetails(cid, eid) {
     var details = new DetailsTable(divId, eid, service_opts);
 
     details.show();
- 
+    
+    $('<h4>', { text : 'Managers' }).appendTo(div);
+    var managerstable   = $('<table>').appendTo(div);
+
+    $.ajax({
+        url     : '/api/serviceprovider/' + eid + '/getManagers',
+        type    : 'POST',
+        success : function(data) {
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                var tr  = $('<tr>').appendTo(managerstable);
+                $.ajax({
+                    url     : '/api/componenttype/' + data[i].component_type_id,
+                    success : function(line) {
+                        return (function(component_type) {
+                            $(line).append($('<th>', { text : component_type.component_category + ' : ' }))
+                                   .append($('<td>', { text : component_type.component_name }));
+                        });
+                    }(tr)
+                });
+            }
+        }
+    });
+
     var actioncell  = $('<td>').css('text-align', 'right').appendTo(table);
     $(actioncell).append($('<div>').append($('<h4>', { text : 'Actions' })));
     $.ajax({

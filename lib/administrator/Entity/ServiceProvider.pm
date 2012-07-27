@@ -75,6 +75,10 @@ sub methods {
         'getManagerParameters'  => {
             'description'   => 'getManagerParameters',
             'perm_holder'   => 'entity'
+        },
+        'getManagers'   => {
+            'description'   => 'get all managers associated with a service provider',
+            'perm_holder'   => 'entity'
         }
     };
 }
@@ -103,6 +107,24 @@ sub getManager {
                                                   );
 
     return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
+}
+
+=head2 getManagers
+
+    Desc: get all managers associated with a service provider
+    Return: a list of manager objects
+
+=cut
+
+sub getManagers {
+    my $self            = shift;
+ 
+    my @clustermanagers = ServiceProviderManager->search(hash => { service_provider_id => $self->getId });
+    my @managers        = ();
+    for my $clustermanager (@clustermanagers) {
+        push @managers, Entity->get(id => $clustermanager->getAttr(name => 'manager_id'));
+    }
+    return wantarray ? @managers : \@managers;
 }
 
 sub getState {
