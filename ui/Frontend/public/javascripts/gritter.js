@@ -119,16 +119,25 @@ window.setInterval(function(){
             $(rows).each(function(row) {
                 // Get the ID of last emmited message :
                 if ( rows[row].pk > lastMsgId ) {
+                    var sender = rows[row].message_from;
+                    var lvl = rows[row].message_level;
                     //var content = rows[row].message_content;
-                    // Get message level :
-                    var content = "From : " + rows[row].message_from + " <br /> " + rows[row].message_content;
-                    newMsg = true;
-                    // Display the notification :
-                    $.gritter.add({
-                        title: 'Message',
-                        text: content,
-                    });
-                    if (parseInt(rows[row].pk) > maxID) {maxID = parseInt(rows[row].pk)}
+                    // Check sender (if sender is Executor and level is Inof, do not display the gritter) :
+                    if ( sender == "Executor" && lvl == "info") {
+                        
+                    } else {
+                        // Get message level :
+                        var content = "From : " + rows[row].message_from + " <br /> " + "Level : " + rows[row].message_level + " <br /> " + rows[row].message_content;
+                        newMsg = true;
+                        // Display the notification :
+                        $.gritter.add({
+                            title: 'Message',
+                            text: content,
+                        });
+                        if (parseInt(rows[row].pk) > maxID) {
+                            maxID = parseInt(rows[row].pk)
+                        }
+                    }
                 }
             });
             if (newMsg === true) {
