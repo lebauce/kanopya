@@ -276,6 +276,26 @@ sub getServiceProvider {
     return Entity->get(id => $self->getAttr(name => "service_provider_id"));
 }
 
+=head2 remove
+
+    Desc: Overrided to remove associated service_provider_manager
+          Managers can't be cascade deleted because they are linked either to a a connector or a component.
+
+    TODO : merge connector and component or make them inerit from a parent class
+
+=cut
+
+sub remove() {
+    my $self = shift;
+
+    my @managers = ServiceProviderManager->search( hash => {manager_id => $self->id} );
+    for my $manager (@managers) {
+        $manager->delete();
+    }
+
+    $self->delete();
+}
+
 =head2 toString
 
 B<Class>   : Public
