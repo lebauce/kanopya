@@ -107,7 +107,7 @@ INSERT INTO `entity_comment` VALUES
 -- system groups
 --
 
-INSERT INTO `entity` VALUES (@eid, 2, NULL); SET @MasterUserGroup_eid = @eid;
+INSERT INTO `entity` VALUES (@eid, 2, NULL); SET @MasterEntityGroup_eid = @eid;
 INSERT INTO `gp` VALUES(@eid,'Entity','Entity', 'Entity master group containing all entities',1);
 SET @eid := @eid +1;
 
@@ -127,7 +127,7 @@ INSERT INTO `entity` VALUES (@eid, 2, NULL); SET @HostGroup_eid = @eid;
 INSERT INTO `gp` VALUES(@eid,'Host','Host','Host master group containing all hosts',1);
 SET @eid := @eid +1;
 
-INSERT INTO `entity` VALUES (@eid, 2, NULL); SET @ClusterGroup_eid = @eid;
+INSERT INTO `entity` VALUES (@eid, 2, NULL); SET @ServiceProviderGroup_eid = @eid;
 INSERT INTO `gp` VALUES(@eid,'ServiceProvider','ServiceProvider','ServiceProvider master group containing all service providers', 1);
 SET @eid := @eid +1;
 
@@ -180,7 +180,7 @@ SET @eid := @eid +1;
 --
 
 INSERT INTO `entity` VALUES (@eid, 2, NULL);
-INSERT INTO `gp` VALUES (@eid,'Admin','User','Privileged users for administration tasks',0);
+INSERT INTO `gp` VALUES (@eid,'Admin','User','Privileged users for administration tasks', 1);
 SET @Admin_group_id = @eid;
 SET @eid := @eid +1;
 
@@ -822,6 +822,16 @@ INSERT INTO `indicator` VALUES
 --
 -- initial permissions for profile groups
 --
+
+-- Methods required to manage policies
+SET @id:=1;
+INSERT INTO `entityright` VALUES (@id, @ServiceProviderGroup_eid, @Admin_profile_group_id, 'getServiceProfile');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Admin_profile_group_id, 'findManager');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @Component_group_id, @Admin_profile_group_id, 'getHostType');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @Component_group_id, @Admin_profile_group_id, 'getPolicyParams');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @Component_group_id, @Admin_profile_group_id, 'getDiskType');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @Component_group_id, @Admin_profile_group_id, 'getExportType');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ServiceProviderGroup_eid, @Admin_profile_group_id, 'create');SET @id:=@id+1;
 
 --
 -- Services and policies
