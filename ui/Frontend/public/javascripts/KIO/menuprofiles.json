@@ -1,0 +1,27 @@
+[
+   {
+      "profile_id" : "1",
+      "menu_entries" : "",
+      "submenu_entries" : "Pouet",
+   },
+   {
+      "profile_id" : "2",
+      "menu_entries" : "",
+      "submenu_entries" : "",
+   },
+   {
+      "profile_id" : "3",
+      "menu_entries" : "Infrastructure,Business,Administration",
+      "submenu_entries" : "Compute,Storage,IaaS,Network,System,Policies,Customers,Kanopya,Right Management,Monitoring",
+   },
+   {
+      "profile_id" : "4",
+      "menu_entries" : "Infrastructure,Services,Administration",
+      "submenu_entries" : "Customers",
+   },
+   {
+      "profile_id" : "5",
+      "menu_entries" : "Infrastructure,Business,Administration",
+      "submenu_entries" : "Compute,Storage,IaaS,Network,System,Policies,Customers,Kanopya,Right Management,Monitoring",
+   },
+]

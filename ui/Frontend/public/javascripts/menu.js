@@ -105,7 +105,7 @@ function build_mainmenu() {
     //console.log(user_profile);
     $.ajax({
         async    : false,
-        url      : '/javascripts/menuprofiles.json',
+        url      : '/javascripts/KIM/menuprofiles.json',
         dataType : 'json',
         type     : 'GET',
         success  : function(data) {
@@ -122,7 +122,8 @@ function build_mainmenu() {
     
     
     for (var label in mainmenu_def) {
-        if (menu_elements.search(label) != -1) {
+        //if (menu_elements.search(label) != -1) {
+        if (menu_elements.search(label) == -1) {
             var menu_head = $('<h3 id="menuhead_' + label.replace(/ /g, '_') + '"><a href="#">' + label + '</a></h3>');
             var menu_def = mainmenu_def[label];
             container.append(menu_head);
@@ -142,7 +143,8 @@ function build_mainmenu() {
             // Static menu
             for (var sublabel in menu_def) {
                 // Filter by profile :
-                if (submenu_elements.search(sublabel) != -1) {
+                if (submenu_elements.search(sublabel) == -1) {
+                //if (sublabel.search(submenu_elements) != -1) {
                     var submenu_links = menu_def[sublabel];
                     add_menu(content, sublabel, submenu_links);
                 }
