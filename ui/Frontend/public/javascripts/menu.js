@@ -97,6 +97,7 @@ function add_menutree(container, label, menu_info, elem_id) {
 function build_mainmenu() {
     
     var container = $('#mainmenu-container');
+    // There is the beginning of display filtering by profile config :
     var submenu_elements;
     var menu_elements;
     // Get the list of menuentries for the current profile :
@@ -117,7 +118,7 @@ function build_mainmenu() {
             }
         } 
     });
-    
+    // There is the end of display filtering by profile config :
     
     
     for (var label in mainmenu_def) {
@@ -125,11 +126,9 @@ function build_mainmenu() {
             var menu_head = $('<h3 id="menuhead_' + label.replace(/ /g, '_') + '"><a href="#">' + label + '</a></h3>');
             var menu_def = mainmenu_def[label];
             container.append(menu_head);
-        //}
-        
-        var content = $('<ul></ul>');
-        container.append(content);
-    }
+            var content = $('<ul></ul>');
+            container.append(content);
+        }
         
         if (menu_def['onLoad']) {
             // Custom menu
@@ -142,7 +141,7 @@ function build_mainmenu() {
         } else {
             // Static menu
             for (var sublabel in menu_def) {
-                // Check if sublabel must be displayed for this session :
+                // Filter by profile :
                 if (submenu_elements.search(sublabel) != -1) {
                     var submenu_links = menu_def[sublabel];
                     add_menu(content, sublabel, submenu_links);
@@ -150,6 +149,7 @@ function build_mainmenu() {
             }
         }
         // Specific view when select menu head
+        // Filter by profile :
         if (menu_def['masterView']) {
             var view_id = 'view_' + label.replace(/ /g, '_');
             build_submenu($('#view-container'), view_id, menu_def['masterView']);
