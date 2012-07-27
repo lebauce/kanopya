@@ -66,7 +66,7 @@ var mainmenu_def = {
                                {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); }},
                                {label : 'Permissions', id : 'permissions', onLoad : function(cid, eid) { require('common/users.js'); permissions(cid, eid); }}
                                ],
-        'Monitoring'       : []
+        'Monitoring'       : [],
     },
 };
 
@@ -104,42 +104,4 @@ function reloadServices () {
     $('#menuhead_Services').click();
 }
 
-function filterDisplayByProfile () {
-    // Get username of current logged user :
-    var username = '';
-    var userid;
-    var profileid;
-    $.ajax({
-        async   : false,
-        url     : '/me',
-        type    : 'GET',
-        success : function(data) {
-            username = data.username;
-        }
-    });
-    // Get profile list for the username :
-    $.ajax({
-        async   : false,
-        url     : '/api/user?user_login=' + username,
-        type    : 'GET',
-        success : function(data) {
-            userid = data[0].user_id;
-        }
-    });
-    $.ajax({
-        async   : false,
-        url     : '/api/userprofile?user_id=' + userid,
-        tyepe   : 'GET',
-        success : function(data) {
-            profileid = data[0].profile_id;
-        }
-    });
-    // Filter UI display by profile :
-    switch (profileid) {
-        case 1:
-            
-        break;
-    }
-}
 
-filterDisplayByProfile();
