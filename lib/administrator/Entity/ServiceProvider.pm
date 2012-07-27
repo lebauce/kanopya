@@ -408,25 +408,4 @@ sub getLimit {
     return $value;
 }
 
-=head2 remove
-
-    Desc: manually remove associated connectors and components (don't use cascade delete)
-          so each one can manually remove associated service_provider_manager
-          Managers can't be cascade deleted because they are linked either to a a connector or a component.
-
-    TODO : merge connector and component or make them inerit from a parent class
-
-=cut
-
-sub remove() {
-    my $self = shift;
-
-    my @connectors = $self->connectors;
-    for my $connector (@connectors) {
-        $connector->remove();
-    }
-
-    $self->delete();
-}
-
 1;
