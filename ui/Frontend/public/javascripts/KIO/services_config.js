@@ -111,17 +111,36 @@ function loadServicesConfig (container_id, elem_id) {
                             async   : false,
                             success : function(sp) {
                                 var l   = $("<tr>");
+                                // Manager type + connector provider name
                                 $("<td>", { text : data[i].manager_type + ' : ' }).css('vertical-align', 'middle').appendTo(l);
                                 var std = $("<td>", { text : (sp.externalcluster_name != null) ? sp.externalcluster_name : sp.cluster_name }).appendTo(l);
                                 $(std).css('vertical-align', 'middle');
-                                $("<td>").append($("<a>", { text : 'Configure' }).button({ icons : { primary : 'ui-icon-wrench' } })).bind('click', { manager : data[i] }, function(event) {
-                                    var manager = event.data.manager;
-                                    createmanagerDialog(manager.manager_type, elem_id, $.noop, false, manager.pk);
-                                }).appendTo(l);
+
+                                // Configuration button
+                                $.ajax({
+                                    url     : '/api/entity/' + mangr.pk + '/getManagerParamsDef',
+                                    type    : 'POST',
+                                    async   : false,
+                                    success : function(manager_params) {
+                                        if (Object.keys(manager_params).length > 0) {
+                                            $("<td>").append($("<a>", { text : 'Configure' }).button({ icons : { primary : 'ui-icon-wrench' } })).bind('click', { manager : data[i] }, function(event) {
+                                                var manager = event.data.manager;
+                                                createmanagerDialog(manager.manager_type, elem_id, $.noop, false, manager.pk);
+                                            }).appendTo(l);
+                                        } else {
+                                            // Don't show configuration button if no parameters for this manager
+                                            $("<td>").appendTo(l);
+                                        }
+                                    }
+                                });
+
+                                // Deletion button
                                 $("<td>").append($("<a>", { text : 'Delete' }).button({ icons : { primary : 'ui-icon-trash' } }).bind('click', { pk : data[i].pk }, function(event) {
                                     deleteManager(event.data.pk, container_id, elem_id);
                                 })).appendTo(l);
                                 $(table).append(l);
+
+                                // Concrete connector type name
                                 $.ajax({
                                     url     : '/api/connector/' + mangr.pk,
                                     success : function(conn) {
