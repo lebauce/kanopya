@@ -58,6 +58,21 @@ __PACKAGE__->add_unique_constraint("profile_name", ["profile_name"]);
 
 =head1 RELATIONS
 
+=head2 profile_gps
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ProfileGp>
+
+=cut
+
+__PACKAGE__->has_many(
+  "profile_gps",
+  "AdministratorDB::Schema::Result::ProfileGp",
+  { "foreign.profile_id" => "self.profile_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 user_profiles
 
 Type: has_many
@@ -74,9 +89,9 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-06-06 17:51:03
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:s+lubVdPDzFQZoO2tngYmw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-27 15:30:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WsVs9EaVABpl1n9OUtVmag
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

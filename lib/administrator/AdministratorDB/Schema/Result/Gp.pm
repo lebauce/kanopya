@@ -104,15 +104,30 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 profile_gps
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jMYbXt/0v14tkAZ5edGTlA
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ProfileGp>
+
+=cut
+
+__PACKAGE__->has_many(
+  "profile_gps",
+  "AdministratorDB::Schema::Result::ProfileGp",
+  { "foreign.gp_id" => "self.gp_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-27 15:30:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Kk4td0dA8zemg+FRBHvofQ
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.gp_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+  { entity_id => "gp_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 1;

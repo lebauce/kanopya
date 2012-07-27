@@ -985,6 +985,17 @@ CREATE TABLE `user_profile` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `profile_gp`
+
+CREATE TABLE `profile_gp` (
+  `profile_id` int(8) unsigned NOT NULL,
+  `gp_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`profile_id`,`gp_id`),
+  FOREIGN KEY (`profile_id`) REFERENCES `profile` (`profile_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`gp_id`) REFERENCES `gp` (`gp_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `gp`
 -- Entity::Gp class
 
