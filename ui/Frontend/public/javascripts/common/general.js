@@ -91,3 +91,61 @@ function callMethodWithPassword( options ) {
     });
     $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
 }
+
+
+/*
+* convertUnits is used to convert units specified unitIn argument in value with specified unitOut unit.
+* Args :
+*   - value     : value in anyway unit
+*   - unitIn    : unit attached to value (B,K,M,G,T,P)
+*   - unitOut   : expected unit for the value (B,K,M,G,T,P)
+*/
+
+function convertUnits(value, unitIn, unitOut) {
+    // First, convert the value in bytes :
+    var inBytesValue;
+    var toReturnValue;
+    if (unitIn == "B") {
+        inBytesValue = value;
+    } else if (unitIn == "K") {
+        inBytesValue = value*1024;
+    } else if (unitIn == "M") {
+        inBytesValue = value*1024*1024;
+    } else if (unitIn == "G") {
+        inBytesValue = value*1024*1024*1024;
+    } else if (unitIn == "T") {
+        inBytesValue = value*1024*1024*1024*1024;
+    } else if (unitIn == "P") {
+        inBytesValue = value*1024*1024*1024*1024*1024;
+    }
+    // Second, convert the inBytesValue to the expected value :
+    if (unitOut == "B") {
+        toReturnValue = inBytesValue;
+    } else if (unitOut == "K") {
+        toReturnValue = inBytesValue/1024;
+    } else if (unitOut == "M") {
+        toReturnValue = inBytesValue/1024/1024;
+    } else if (unitOut == "G") {
+        toReturnValue = inBytesValue/1024/1024/1024;
+    } else if (unitOut == "T") {
+        toReturnValue = inBytesValue/1024/1024/1024/1024;
+    } else if (unitOut == "P") {
+        toReturnValue = inBytesValue/1024/1024/1024/1024/1024;
+    }
+    return toReturnValue;
+}
+
+function displaySelectUnit() {
+    <form name ="units">
+    <fieldset>
+    <select name="unit" id="unit">
+        <option value="B">B</option>
+        <option value="K">K</option>
+        <option value="M">M</option>
+        <option value="G">G</option>
+        <option value="T">T</option>
+        <option value="P">P</option>
+    </select>
+    </fieldset>
+    </form>
+}
