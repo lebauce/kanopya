@@ -21,11 +21,15 @@ use base "Entity";
 
 use strict;
 use warnings;
+
 use Administrator;
 use Digest::MD5 "md5_hex";
 use DateTime;
 use Kanopya::Exceptions;
 use General;
+use Profile;
+use Entity::Gp;
+
 use Log::Log4perl "get_logger";
 
 our $VERSION = "1.00";
@@ -190,18 +194,22 @@ sub setProfiles {
     my ($self, %args) = @_; 
     my $adm = Administrator->new;
     $self->{_dbix}->user_profiles->delete_all;
-    foreach my $profile (@{$args{profile_names}}) {
-        my $row = $adm->{db}->resultset('Profile')->find(
-            {profile_name => $profile},
-            {key => 'profile_name'}
-        );
-        if(defined $row) {
-            $self->{_dbix}->user_profiles->create(
-                { profile_id => $row->id }
-            );
-        } else {
-            my $msg = "Unknown profile $profile";
-            throw Kanopya::Exception::Internal::IncorrectParam(error => $msg);
+    foreach my $profile_name (@{$args{profile_names}}) {
+        eval {
+            my $profile = Profile->find(hash => { profile_name => $profile_name } );
+
+            # Link the user to the profile
+            $self->{_dbix}->user_profiles->create({ profile_id => $profile->id });
+
+            # Automatically add the user in the groups associated to this profile
+            my $rs = $profile->{_dbix}->profile_gps;
+            while (my $row = $rs->next) {
+                my $gp = Entity::Gp->get(id => $row->gp->id);
+                $gp->appendEntity(entity => $self);
+            }
+        };
+        if ($@) {
+            throw Kanopya::Exception::Internal::IncorrectParam(error => "Unknown profile $profile_name");
         }
     }
 }
