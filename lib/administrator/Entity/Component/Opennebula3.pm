@@ -439,15 +439,15 @@ sub migrate {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'hypervisor' ]);
+    General::checkParams(args => \%args, required => [ 'host_id', 'hypervisor_id' ]);
 
     Operation->enqueue(
         type        => 'MigrateHost',
         priority    => 200,
         params      => {
             context => {
-                vm                => $args{host},
-                host              => $args{hypervisor},
+                vm                => Entity->get(id => $args{host_id}),
+                host              => Entity->get(id => $args{hypervisor_id}),
                 cloudmanager_comp => $self
             }
         }

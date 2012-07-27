@@ -66,8 +66,8 @@ sub migrate {
     General::checkParams(args => \%args, required => [ 'hypervisor' ]);
 
     return $self->getHostManager->migrate(
-               host       => $self,
-               hypervisor => $args{hypervisor},
+               host_id       => $self->getId,
+               hypervisor_id => $args{hypervisor}->getId,
            );
 }
 
