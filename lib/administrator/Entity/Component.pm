@@ -285,7 +285,7 @@ sub getServiceProvider {
 
 =cut
 
-sub remove() {
+sub remove {
     my $self = shift;
 
     my @managers = ServiceProviderManager->search( hash => {manager_id => $self->id} );

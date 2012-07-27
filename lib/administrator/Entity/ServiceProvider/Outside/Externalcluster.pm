@@ -930,7 +930,7 @@ sub generateNodeMetricRules{
 
 =cut
 
-sub remove() {
+sub remove {
     my $self = shift;
 
     my @connectors = $self->connectors;
