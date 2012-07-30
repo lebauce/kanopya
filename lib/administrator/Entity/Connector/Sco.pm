@@ -112,7 +112,9 @@ sub createWorkflow {
 sub _getAutomaticValues {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'automatic_params', 'scope_id' ]);
+    if (not defined $args{automatic_params}) {
+        return undef;
+    }
 
     my $automatic_params = $args{automatic_params};
 

@@ -59,7 +59,6 @@ sub prepare {
     General::checkParams(args => $self->{params}, required => [
         'output_directory',
         'output_file',
-        'workflow_values',
         'template_content',
     ]);
     
