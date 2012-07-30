@@ -83,7 +83,6 @@ function connectConnectorForm(eid, type, id, cb) {
                 }
             });
         });
-        $(selectType).trigger('change');
         $(selectConn).bind('change', function(event) {
             var tmp     = ($(event.currentTarget).val()).toLowerCase();
             var fields      = getAllConnectorFields()[tmp];
@@ -101,7 +100,7 @@ function connectConnectorForm(eid, type, id, cb) {
             modal.startWizard();
         });
     }
-    var fields      = getAllConnectorFields()[(type != null) ? type : 'activedirectory'];
+    var fields      = (type != null) ? getAllConnectorFields()[type] : {};
     fields.service_provider_id  = { value : eid, type : 'hidden' };
     var prependel   = (type != null) ? undefined : upperDiv;
     modal           = new ModalForm({
@@ -114,6 +113,9 @@ function connectConnectorForm(eid, type, id, cb) {
         callback        : function() { $('#technicalserviceslistgrid').trigger('reloadGrid'); cb(); }
     });
     modal.start();
+    if (type == null) {
+        $(selectType).trigger('change');
+    }
 }
 
 function addTechnicalServiceButton(container) {
