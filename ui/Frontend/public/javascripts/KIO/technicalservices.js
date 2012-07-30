@@ -214,7 +214,7 @@ function technicalserviceslist(cid) {
         colNames                : [ 'ID', 'Name' ],
         colModel                : [
             { name : 'pk', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
-            { name : 'externalcluster_name', index : 'service_name', width : 200 }
+            { name : 'externalcluster_name', index : 'externalcluster_name', width : 200 }
         ],
         details                 : {
             tabs    : [

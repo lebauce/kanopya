@@ -66,7 +66,7 @@ function servicesList (container_id, elem_id) {
         colNames: [ 'ID', 'Name', 'Rules State', 'Node Number' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
-            { name: 'externalcluster_name', index: 'service_name', width: 200 },
+            { name: 'externalcluster_name', index: 'externalcluster_name', width: 200 },
             { name: 'rulesstate', index : 'rulesstate' },
             { name: 'node_number', index: 'node_number', width: 150 }
         ],
