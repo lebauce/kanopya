@@ -82,6 +82,14 @@ sub methods {
         'getPolicyParams' => {
             'description' => 'Return the params required for policies definition.',
             'perm_holder' => 'entity',
+        },
+        'getConf'   => {
+            'description'   => 'get configuration',
+            'perm_holder'   => 'entity'
+        },
+        'setConf'   => {
+            'description'   => 'set configuration',
+            'perm_holder'   => 'entity'
         }
     }
 };

@@ -92,7 +92,11 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     my $mountdefs_conf = $conf->{linux_mountdefs};
     
     # for each mount definition , we search it in db for update or deletion
