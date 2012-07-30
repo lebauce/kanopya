@@ -182,6 +182,20 @@ sub db_to_json {
     return $json;
 }
 
+sub handle_null_param {
+    my $param = shift;
+
+    if (!$param) {
+        return undef;
+    }
+    elsif ($param eq "''") {
+        return '';
+    }
+    else {
+        return $param;
+    }
+}
+
 sub format_results {
     my %args = @_;
 
@@ -211,10 +225,14 @@ sub format_results {
     }
 
     foreach my $attr (keys %args) {
-        my @filter = split(',', $args{$attr});
+        my @filter = split(',', $args{$attr}, -1);
         if (scalar (@filter) > 1) {
+            $filter[1] = handle_null_param($filter[1]);
             my %filter = @filter;
             $args{$attr} = \%filter;
+        }
+        else {
+            $args{$attr} = handle_null_param($args{$attr});
         }
     }
 
