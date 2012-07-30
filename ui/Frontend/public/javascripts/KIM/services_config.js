@@ -1,3 +1,11 @@
+require('common/general.js');
+
+function getComponentTypes() {
+    return {
+        'Linux' : 'linux0'
+    };
+}
+
 function loadServicesConfig(cid, eid) {
 
         create_grid({
@@ -10,5 +18,13 @@ function loadServicesConfig(cid, eid) {
                 { name: 'component_type_id', index: 'component_type_id', width: 200, formatter:fromIdToComponentType},
             ],
             caption: 'Components',
+            details : {
+                onSelectRow : function(eid, e) {
+                    var componentType   = (getComponentTypes())[e.component_type_id];
+                    require('KIM/components/' + componentType + '.js');
+                    var l = new window[componentType.ucfirst()](e.pk);
+                    l.openConfig();
+                }
+            }
         });
 }
