@@ -208,7 +208,7 @@ function technicalservicedetails(cid, eid) {
 function technicalserviceslist(cid) {
     var container   = $('#' + cid);
     create_grid({
-        url                     : '/api/externalcluster',
+        url                     : '/api/externalcluster?connectors.connector_id=<>,',
         content_container_id    : cid,
         grid_id                 : 'technicalserviceslistgrid',
         colNames                : [ 'ID', 'Name' ],
@@ -216,16 +216,6 @@ function technicalserviceslist(cid) {
             { name : 'pk', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
             { name : 'externalcluster_name', index : 'service_name', width : 200 }
         ],
-        afterInsertRow          : function(grid, rowid, rowdata) {
-            $.ajax({
-                url     : '/api/connector?service_provider_id=' + rowdata.pk,
-                success : function(data) {
-                    if (data.length <= 0) {
-                        $(grid).delRowData(rowid);
-                    }
-                }
-            });
-        },
         details                 : {
             tabs    : [
                 { label : 'Connectors', onLoad : technicalservicedetails }

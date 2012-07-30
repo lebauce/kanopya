@@ -7,22 +7,9 @@ var mainmenu_def = {
         masterView : [
                       {label : 'Overview', id : 'services_overview', onLoad : function(cid) { require('KIO/services.js'); servicesList(cid); }}
                       ],
-        json : {url         : '/api/serviceprovider',
+        json : {url         : '/api/externalcluster?connectors.connector_id=',
                 label_key   : 'externalcluster_name',
                 id_key      : 'pk',
-                filter      : function(d) { 
-                    var ret = true;
-                    $.ajax({
-                        async   : false,
-                        url     : '/api/connector?service_provider_id=' + d.pk,
-                        success : function(data) {
-                            if (data.length > 0) {
-                                ret = false;
-                            }
-                        }
-                    });
-                    return ret;
-                },
                 submenu     : [
                                {label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid);}},
                                {label : 'Configuration', id : 'service_configuration', onLoad : function(cid, eid) { require('KIO/services_config.js'); loadServicesConfig(cid, eid);}},
