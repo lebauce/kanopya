@@ -134,22 +134,6 @@ function convertUnits(value, unitIn, unitOut) {
     }
     return toReturnValue;
 }
-
-function displaySelectUnit() {
-    <form name ="units">
-    <fieldset>
-    <select name="unit" id="unit">
-        <option value="B">B</option>
-        <option value="K">K</option>
-        <option value="M">M</option>
-        <option value="G">G</option>
-        <option value="T">T</option>
-        <option value="P">P</option>
-    </select>
-    </fieldset>
-    </form>
-}
-
 function ucfirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
