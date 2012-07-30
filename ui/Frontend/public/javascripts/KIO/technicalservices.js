@@ -104,7 +104,7 @@ function connectConnectorForm(eid, type, id, cb) {
     fields.service_provider_id  = { value : eid, type : 'hidden' };
     var prependel   = (type != null) ? undefined : upperDiv;
     modal           = new ModalForm({
-        title           : (type != null) ? 'Configure ' + type : 'Connect to a Service',
+        title           : (type != null) ? 'Configure ' + type : 'Register IT application',
         name            : (type != null) ? type : 'activedirectory',
         fields          : fields,
         prependElement  : prependel,
@@ -198,7 +198,7 @@ function technicalservicedetails(cid, eid) {
             }
         }
     });
-    var addButton   = $('<a>', { text : 'Connect to a Service' }).button({ icons : { primary : 'ui-icon-transferthick-e-w' } });
+    var addButton   = $('<a>', { text : 'Register IT application' }).button({ icons : { primary : 'ui-icon-transferthick-e-w' } });
     $(addButton).appendTo(container).bind('click', function() { connectConnectorForm(eid, null, null, function() {
         $(container).empty();
         technicalservicedetails(cid, eid);
@@ -218,7 +218,7 @@ function technicalserviceslist(cid) {
         ],
         details                 : {
             tabs    : [
-                { label : 'Connectors', onLoad : technicalservicedetails }
+                { label : 'IT applications', onLoad : technicalservicedetails }
             ]
         }
     });
