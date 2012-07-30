@@ -171,12 +171,12 @@ sub _getOuFrom {
     General::checkParams(args => \%args, required => [ 'sp_id' ]);
 
     my $service_provider            = Entity::ServiceProvider::Outside::Externalcluster->get(id => $args{sp_id});
-    my $directory_service_connector = $service_provider->getConnector(
-                                          'category' => 'DirectoryServiceManager'
-                                      );
-    my $ou_from                     = $directory_service_connector->getAttr(
-                                          name => 'ad_nodes_base_dn'
-                                      );
+
+    my $directory_service_manager_params =  $service_provider->getManagerParameters(
+                                                manager_type => 'directory_service_manager'
+                                            );
+
+    my $ou_from = $directory_service_manager_params->{ad_nodes_base_dn};
 
     return $ou_from;
 }
