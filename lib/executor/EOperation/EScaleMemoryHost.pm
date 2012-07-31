@@ -70,9 +70,10 @@ sub prepare {
     my $hv_id = $self->{context}->{host}->hypervisor->getId;
 
     my $hvs_mem_available = $self->{context}->{cloudmanager_comp}->getHostsMemAvailable();
+
     my $cm    = CapacityManagement->new(
                     cluster_id        => $self->{context}->{host}->getClusterId(),
-                    hvs_mem_available => $self->{context}->{cloudmanager_comp}->getHostsMemAvailable(),
+                    hvs_mem_available => $hvs_mem_available,
                 );
 
     my $check = $cm->isScalingAuthorized(

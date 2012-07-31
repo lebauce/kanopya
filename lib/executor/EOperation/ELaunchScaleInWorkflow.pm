@@ -80,13 +80,19 @@ sub execute{
     delete $self->{params}->{scalein_type};
 
     my $cluster_id = $self->{context}->{host}->getClusterId();
-    my $cm         = CapacityManagement->new(cluster_id => $cluster_id);
+    my $hvs_mem_available = $self->{context}->{cloudmanager_comp}->getHostsMemAvailable();
+
+    my $cm    = CapacityManagement->new(
+                    cluster_id        => $self->{context}->{host}->getClusterId(),
+                    hvs_mem_available => $hvs_mem_available,
+                );
 
     # Do not call getServiceProvider() method, because it returns HV Cluster
     # Here we need VM Cluster
     my $service_provider = $self->{context}->{host}->node->parent->service_provider;
 
     my $operation_plan;
+    $log->info('Launch Scale type <'.($scalein_type).'>');
     if ($scalein_type eq 'memory') {
         $operation_plan = $cm->scaleMemoryHost(
             host_id      => $self->{context}->{host}->getId(),
@@ -101,6 +107,7 @@ sub execute{
             cpu_limit    => $service_provider->getLimit(type => 'cpu'),
         );
     }
+    $log->info('Total of <'.(scalar @$operation_plan).'> operation(s) to enqueue');
     for my $operation (@$operation_plan){
         $log->info('Operation enqueuing');
         $self->getWorkflow()->enqueue(
