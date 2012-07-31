@@ -26,6 +26,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
 use File::Copy;
+use Hash::Merge qw(merge);
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -115,10 +116,43 @@ sub getVmResources {
 
 sub getVmsResources {
     my ($self, %args) = @_;
+    General::checkParams(args     => \%args, required => [ 'hypervisor' ]);
+    $log->info(ref $args{hypervisor});
+    my $cpu_resources = $self->getCpuResources(hypervisor => $args{hypervisor});
+    my $mem_resources = $self-> getMemResources(hypervisor => $args{hypervisor});
+
+    return merge($cpu_resources, $mem_resources);
+
+}
+sub getMemResources {
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args, required => [ 'hypervisor' ]);
 
-    # my $e_host  = EFactory::newEEntity(data => $args{host});
+    my $command = 'xentop -b -i 1 ';
+    my $result  = $args{hypervisor}->getEContext->execute(command => $command);
+    my $res = $result->{stdout};
+
+    my @lines = split('\n',$res);
+    shift @lines; #remove first line (titles)
+    shift @lines; #remove second line (Dom0)
+
+    my %hash;
+    for my $line (@lines) {
+        $line =~ s/^\s+//;
+        my @splited_line = split('\s+',$line);
+        my ($foo,$vm_id) = split '-',$splited_line[0];
+        my $one3vm = Entity::Host::VirtualMachine::Opennebula3Vm->find(hash => {onevm_id => $vm_id});
+        $hash{$one3vm->getId()}->{ram} = $splited_line[4] * 1024;
+    }
+    return \%hash;
+}
+
+sub getCpuResources {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args, required => [ 'hypervisor' ]);
+
     my $command = 'xm list';
     my $result  = $args{hypervisor}->getEContext->execute(command => $command);
     my $res = $result->{stdout};
@@ -131,10 +165,8 @@ sub getVmsResources {
     for my $line (@lines) {
         my @splited_line = split('\s+',$line);
         my ($foo,$vm_id) = split '-',$splited_line[0];
-#        $log->info("vm <$vm_id> mem <$splited_line[2]> cpu <$splited_line[3]> ");
         my $one3vm = Entity::Host::VirtualMachine::Opennebula3Vm->find(hash => {onevm_id => $vm_id});
 
-        $hash{$one3vm->getId()}->{ram} = $splited_line[2] * 1024 * 1024;
         $hash{$one3vm->getId()}->{cpu} = $splited_line[3];
     }
     return \%hash;
@@ -153,6 +185,7 @@ sub getHostsMemAvailable {
     return $hash;
 }
 
+#return host mem in bytes
 sub getHostMemAvailable {
     my ($self, %args) = @_;
 
@@ -164,13 +197,12 @@ sub getHostMemAvailable {
     my $result  = $e_host->getEContext->execute(command => $command);
     my $res = $result->{stdout};
 
-#    $log->info("---$res---");
     my @lines = split('\n',$res);
     for my $line (@lines) {
         my ($key,$value) = split(':',$line);
         $key =~ s/\s+//; #Remove spaces before and after
         $value =~ s/\s+//;
-        if($key eq 'free_memory') { return $value * 1024}
+        if($key eq 'free_memory') { return $value * 1024 * 1024} #in bytes
     }
 }
 
