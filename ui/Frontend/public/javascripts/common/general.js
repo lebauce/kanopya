@@ -134,8 +134,9 @@ function convertUnits(value, unitIn, unitOut) {
     }
     return toReturnValue;
 }
+
 function ucfirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-String.prototype.ucfirst    = function() { return this.charAt(0).toUpperCase() + this.slice(1); };
+String.prototype.ucfirst    = function() { return ucfirst(this); };

@@ -4,6 +4,7 @@ var Component = (function() {
     function Component(id) {
         this.id     = id;
         this.conf   = {};
+        this.getConf();
     }
 
     Component.prototype.getConf     = function() {

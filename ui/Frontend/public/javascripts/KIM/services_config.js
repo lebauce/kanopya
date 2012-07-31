@@ -2,7 +2,7 @@ require('common/general.js');
 
 function getComponentTypes() {
     return {
-        'Linux' : 'linux0'
+        'Linux'     : 'linux0'
     };
 }
 
@@ -21,9 +21,10 @@ function loadServicesConfig(cid, eid) {
             details : {
                 onSelectRow : function(eid, e) {
                     var componentType   = (getComponentTypes())[e.component_type_id];
-                    require('KIM/components/' + componentType + '.js');
-                    var l = new window[componentType.ucfirst()](e.pk);
-                    l.openConfig();
+                    if (componentType != undefined) {
+                        require('KIM/components/' + componentType + '.js');
+                        (new window[componentType.ucfirst()](e.pk)).openConfig();
+                    }
                 }
             }
         });

@@ -5,7 +5,6 @@ var Linux0      = (function(_super) {
 
     function Linux0(id) {
         Component.call(this, id);
-        this.getConf();
         this.componentType  = 'linux0';
     }
 
