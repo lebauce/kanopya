@@ -163,6 +163,20 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workflow_noderules
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowNoderule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_noderules",
+  "AdministratorDB::Schema::Result::WorkflowNoderule",
+  { "foreign.nodemetric_rule_id" => "self.nodemetric_rule_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 # Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-15 11:21:08
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Q+Ff8UOs9tqSBMYFyVj4Yw
