@@ -65,7 +65,7 @@ sub new {
     }
     else{
         General::checkParams(args => \%args, required => ['cluster_id']); #Option : hvs_mem_available
-        $self->{_hvs_mem_available} = $args{hvs_mem_available};
+        $self->{_hvs_mem_available} = $args{hvs_mem_available}; # Must be in bytes
         $self->{_cluster_id}    = $args{cluster_id};
         $self->{_admin}         = Administrator->new();
         $self->{_infra}         = $self->_constructInfra();
@@ -97,9 +97,15 @@ sub _constructInfra{
     # Get the list of all hypervisors
     my $opennebula    = $cluster->getManager(manager_type => 'host_manager');
     my @hypervisors_r = $opennebula->getHypervisors();
+    my $master_hv;
 
     my ($hvs, $vms);
     for my $hypervisor (@hypervisors_r) {
+
+        if( $hypervisor->node->master_node == 1 ) {
+            $master_hv = $hypervisor->getId;
+        }
+
         $hvs->{$hypervisor->getId} = {
             hv_capa => {
                 ram => $hypervisor->host_ram,
@@ -128,6 +134,7 @@ sub _constructInfra{
     my $current_infra = {
         vms => $vms,
         hvs => $hvs,
+        master_hv => $master_hv,
     };
 
     $log->debug(Dumper $current_infra);
@@ -220,7 +227,7 @@ sub isMigrationAuthorized{
         return 0;
     }
     elsif($ram > $remaining_resources->{ram}){
-        $log->info("Not enough CPU to migrate VM $vm_id ($ram MB) in HV $hv_id (".$remaining_resources->{ram}." MB)");
+        $log->info("Not enough MEM to migrate VM $vm_id ($ram MB) in HV $hv_id (".$remaining_resources->{ram}." MB)");
         return 0;
     }
     else{
@@ -276,6 +283,35 @@ sub _applyMigrationPlan{
 
     my $plan = $args{plan};
 
+    # Trick to avoid empty master node (useless)
+    # TODO refactoring a better algorithm to avoid this configuration
+
+    my $replace_master_id;
+    my $master_hv_id = $self->{_infra}->{master_hv};
+    $log->info(Dumper $self->{_infra});
+
+    if( scalar (@{$self->{_infra}->{hvs}->{$master_hv_id}->{vm_ids}} ) == 0 ) {
+
+        $log->info('Master node seems empty, try to empty another HV');
+
+        my $hv_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
+
+        for my $hv_id (@{$hv_ids}) {
+            if ( $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{cpu} <= $self->{_infra}->{hvs}->{$master_hv_id}->{hv_capa}->{cpu}
+                 && $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{ram} <= $self->{_infra}->{hvs}->{$master_hv_id}->{hv_capa}->{ram} ) {
+
+                $replace_master_id = $hv_id;
+            }
+        }
+    }
+
+    if (defined $replace_master_id) {
+      $log->info("Master id <$master_hv_id> will replace <$replace_master_id> ");
+        for my $vm_id (@{$self->{_infra}->{hvs}->{$replace_master_id}->{vm_ids}}) {
+            $log->info("$vm_id -> $master_hv_id");
+            push @$plan, {vm_id => $vm_id, hv_id => $master_hv_id};
+        }
+    }
     my @simplified_plan_order; # The order of VM migration
     my $simplified_plan_dest;  # The destination of the VM
 
@@ -287,13 +323,13 @@ sub _applyMigrationPlan{
         $simplified_plan_dest->{$operation->{vm_id}} = $operation->{hv_id};
     }
 
-    $log->debug("*** COMPLETE PLAN : ");
+    $log->debug("*** Complete Plan : ");
     $log->debug(Dumper $plan);
     $log->info("*** SIMPLIFIED PLAN MIGRATION ORDER @simplified_plan_order");
     $log->info(Dumper $simplified_plan_dest);
 
-    # TODO : avoid migrating in origin HV
-    # but must remember origin before !
+
+
     for my $vm_id (@simplified_plan_order){
         $self->_migrateVmOrder(
             vm_id      => $vm_id,
