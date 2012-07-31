@@ -324,6 +324,8 @@ sub restoreHost {
                 if (defined $args{hypervisor}) {
                     if(!($args{hypervisor}->host_hostname eq $state->{hypervisor})){
                         $log->info('VM running on a wrong hypervisor');
+                        $vm->setAttr(name => 'hypervisor_id', value => Entity::Host->find(hash => {host_hostname => $state->{hypervisor}})->getId());
+                        $vm->save();
                     }
                 }
             }
@@ -336,23 +338,38 @@ sub restoreHost {
         }
     }
 
-    if (defined $args{check_resources}){
+    if (defined $args{check_resources}) {
         my $host_vm_capacities = $self->getVmsResources(hypervisor => $args{hypervisor});
         $log->info(Dumper $host_vm_capacities);
 
         for my $vm (@{$vms}) {
+            $log->info('VM <'.($vm->getId()).'> <'.($vm->host_hostname).'>');
 
-            if( $host_vm_capacities->{$vm->getId()}->{ram} != $vm->host_ram) {
-                    $log->info('Memory one = '.($host_vm_capacities->{$vm->getId()}->{ram}).' VS db = '.($vm->host_ram));
-                    $vm->setAttr(name => 'host_ram', value => $host_vm_capacities->{$vm->getId()}->{ram});
-                    $vm->save();
+            if(defined $host_vm_capacities->{$vm->getId()}->{ram}) {
+
+                if ( (not defined $vm->host_ram)
+                     || $host_vm_capacities->{$vm->getId()}->{ram} != $vm->host_ram) {
+                        $log->info('Memory one = '.($host_vm_capacities->{$vm->getId()}->{ram}).' VS db = '.($vm->host_ram));
+                        $vm->setAttr(name => 'host_ram', value => $host_vm_capacities->{$vm->getId()}->{ram});
+                        $vm->save();
+                }
             }
-            if( $host_vm_capacities->{$vm->getId()}->{cpu} != $vm->host_core){
+            else {
+                $log->info('No RAM value from opennebula for this VM, try to check hypervisor or resubmit it');
+            }
+
+            if(defined $host_vm_capacities->{$vm->getId()}->{ram}) {
+                if( (not defined $vm->host_core)
+                    || $host_vm_capacities->{$vm->getId()}->{cpu} != $vm->host_core){
                     $log->info('Cpu one = '.(($host_vm_capacities->{$vm->getId()}->{cpu})).' VS db = '.($vm->host_core));
                     $vm->setAttr(name => 'host_core', value => $host_vm_capacities->{$vm->getId()}->{cpu});
                     $vm->save();
+                }
             }
-        }
+            else {
+                $log->info('No CPU value from opennebula for this VM, try to check hypervisor or resubmit it');
+            }
+       }
     }
 }
 
