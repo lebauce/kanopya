@@ -35,6 +35,7 @@ Component is an abstract class of operation objects
 =cut
 package EOperation::EScaleCpuHost;
 use base "EOperation";
+use CapacityManagement;
 
 use strict;
 use warnings;
@@ -97,7 +98,67 @@ sub finish {
       my $self = shift;
       # Delete all but cloudmanager
       delete $self->{context}->{host};
-      delete $self->{params}->{cpu};
+      delete $self->{params}->{cpu_number};
+}
+
+
+sub postrequisites {
+    my $self = shift;
+    my $vm_capacities = $self->{context}->{cloudmanager_comp}->getVmResources(
+                            vm => $self->{context}->{host}
+    );
+    $self->{context}->{cloudmanager_comp}->_getEntity->updateCPU(
+        host       => $self->{context}->{host},
+        cpu_number => $vm_capacities->{cpu},
+    );
+
+    my $time = 0;
+    if (defined $self->{params}->{old_cpu}
+        && $self->{params}->{old_cpu} == $vm_capacities->{cpu}) { # CPU amount has not moved
+
+        if(not defined $self->{params}->{time}) {
+            $self->{params}->{time} = time();
+        }
+
+        $time = time() - $self->{params}->{time};
+        $log->info("Checker scale time = $time");
+    }
+    else{
+       $self->{params}->{old_cpu} = $vm_capacities->{cpu};
+       delete $self->{params}->{time};
+    }
+
+    $log->info('one cpu <'.($vm_capacities->{cpu}).'> asked cpu <'.($self->{params}->{cpu_number}).'> ');
+    if ( $vm_capacities->{cpu} == $self->{params}->{cpu_number} ) {
+        return 0;
+    }
+    elsif($time < 3*10) {
+        return 5;
+    }
+    else {
+        my $error = 'ScaleIn of vm <'.($self->{context}->{host}->getId()).'> : Failed. Current CPU is <'.($vm_capacities->{cpu}).'>';
+        Message->send(
+             from    => 'EScaleCpuHost',
+             level   => 'error',
+             content => $error,
+        );
+        throw Kanopya::Exception(error => $error);
+    }
+}
+
+sub _cancel {
+    my $self = shift;
+
+    my $vm_capacities = $self->{context}->{cloudmanager_comp}->getVmResources(
+                            vm => $self->{context}->{host}
+    );
+
+    $self->{context}->{cloudmanager_comp}->_getEntity->updateCPU(
+        host       => $self->{context}->{host},
+        cpu_number => $vm_capacities->{cpu},
+    );
+
+    $log->info('Last cpu update <'.($vm_capacities->{cpu}).'>');
 }
 
 =head1 DIAGNOSTICS

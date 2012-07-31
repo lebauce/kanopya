@@ -387,7 +387,7 @@ sub scale_cpu {
 
     $self->getEContext->execute(command => $command);
 
-    return $self->_getEntity()->updateCPU(%args);
+    #return $self->_getEntity()->updateCPU(%args);
 }
 
 # generate $ONE_LOCATION/etc/oned.conf configuration file
