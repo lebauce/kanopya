@@ -922,8 +922,11 @@ sub generateNodeMetricRules{
 
 =head2 getWorkflows
 
-    Desc:   return running workflows (scope nodes and externalcluster)
+    Desc:   return triggered workflows (scope nodes and externalcluster)
             override Entity::getWorkflow because no entity are locked for these workflows
+            so we must use rules relationships to retrieve trigerred workflows
+
+    TODO: add scope info (node, cluster), also in Entity::getWorkflows (locked entity)
 
 =cut
 
@@ -935,7 +938,7 @@ sub getWorkflows {
 
     for my $rule ($self->aggregate_rules) {
         my $workflow = $rule->workflow;
-        if ($workflow->state eq 'running') {
+        if ($workflow) {
             push @workflows, $workflow;
         }
     }
