@@ -78,18 +78,37 @@ sub prepare {
             throw Kanopya::Exception::Internal::WrongValue(error => "vm is not on the hypervisor cluster");
         }
 
-        #Check if there is enough ressource in destination host
+        # Check if the destination differs from the source
+        my $vm_state = $self->{context}->{cloudmanager_comp}->getVMState(
+            host => $self->{context}->{vm},
+        );
 
-        my $vm_id      = $self->{context}->{vm}->getAttr(name => 'entity_id');
-        my $cluster_id = $self->{context}->{vm}->getClusterId();
-        my $hv_id      = $self->{context}->{'host'}->getId();
 
-        my $cm    = CapacityManagement->new(cluster_id => $cluster_id);
-        my $check = $cm->isMigrationAuthorized(vm_id => $vm_id, hv_id => $hv_id);
+        $log->info('Destination hv <'.($self->{context}->{host}->host_hostname).'> vs opennebula hv <'.($vm_state->{hypervisor}).'>');
 
-        if($check == 0){
-            my $errmsg = "Not enough ressource in HV $hv_id for VM $vm_id migration";
-            throw Kanopya::Exception::Internal(error => $errmsg);
+        if ( $self->{context}->{host}->host_hostname eq $vm_state->{hypervisor}) {
+            $log->info('VM is on the same hypervisor, no need to migrate');
+            $self->{params}->{no_migration} = 1;
+        }
+        else {
+
+            # Check if there is enough ressource in destination host
+
+            my $vm_id      = $self->{context}->{vm}->getAttr(name => 'entity_id');
+            my $cluster_id = $self->{context}->{vm}->getClusterId();
+            my $hv_id      = $self->{context}->{'host'}->getId();
+
+            my $cm    = CapacityManagement->new(
+                cluster_id        => $cluster_id,
+                hvs_mem_available => $self->{context}->{cloudmanager_comp}->getHostsMemAvailable()
+            );
+
+            my $check = $cm->isMigrationAuthorized(vm_id => $vm_id, hv_id => $hv_id);
+
+            if($check == 0){
+                my $errmsg = "Not enough ressource in HV $hv_id for VM $vm_id migration";
+                throw Kanopya::Exception::Internal(error => $errmsg);
+            }
         }
     };
     if($@) {
@@ -104,14 +123,22 @@ sub prepare {
 sub execute {
     my $self = shift;
 
-    $self->{context}->{src_hypervisor} = $self->{context}->{cloudmanager_comp}->migrateHost(
+
+    if (defined  $self->{params}->{no_migration} ) {
+        $log->info('no execution');
+        delete  $self->{params}->{no_migration};
+    }
+    else {
+
+        $self->{context}->{src_hypervisor} = $self->{context}->{cloudmanager_comp}->migrateHost(
                           host               => $self->{context}->{vm},
                           hypervisor_dst     => $self->{context}->{host},
                           hypervisor_cluster => $self->{context}->{cluster}
                       );
 
-    $log->info("VM <" . $self->{context}->{vm}->getAttr(name => 'entity_id') . "> is migrating to <" .
+         $log->info("VM <" . $self->{context}->{vm}->getAttr(name => 'entity_id') . "> is migrating to <" .
                $self->{context}->{host}->getAttr(name => 'entity_id') . ">");
+    }
 }
 
 sub finish{
