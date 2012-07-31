@@ -1,4 +1,4 @@
-# Entity::ServiceProvider.pm  
+# Entity::ServiceProvider.pm
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -83,6 +83,10 @@ sub methods {
     };
 }
 
+
+sub getNodesMetrics {
+}
+
 =head2 getManager
 
     Desc: get a service provider manager object
@@ -118,7 +122,7 @@ sub getManager {
 
 sub getManagers {
     my $self            = shift;
- 
+
     my @clustermanagers = ServiceProviderManager->search(hash => { service_provider_id => $self->getId });
     my @managers        = ();
     for my $clustermanager (@clustermanagers) {
