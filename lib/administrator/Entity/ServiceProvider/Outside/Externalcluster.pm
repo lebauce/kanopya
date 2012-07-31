@@ -920,6 +920,34 @@ sub generateNodeMetricRules{
     }
 }
 
+=head2 getWorkflows
+
+    Desc:   return running workflows (scope nodes and externalcluster)
+            override Entity::getWorkflow because no entity are locked for these workflows
+
+=cut
+
+sub getWorkflows {
+    my $self = shift;
+    my %args = @_;
+
+    my @workflows = ();
+
+    for my $rule ($self->aggregate_rules) {
+        my $workflow = $rule->workflow;
+        if ($workflow->state eq 'running') {
+            push @workflows, $workflow;
+        }
+    }
+    for my $rule ($self->nodemetric_rules) {
+        for my $workflow_node ($rule->workflow_noderules) {
+            push @workflows, $workflow_node->workflow;
+        }
+    }
+
+    return \@workflows;
+}
+
 =head2 remove
 
     Desc: manually remove associated connectors (don't use cascade delete)
