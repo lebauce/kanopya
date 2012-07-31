@@ -44,6 +44,18 @@ sub methods {
             'description' => 'Return the type of managed hosts.',
             'perm_holder' => 'entity',
         },
+        'get_service_profiles'          => {
+            'description'   => 'call get_service_profile with UCS API',
+            'perm_holder'   => 'entity'
+        },
+        'get_service_profile_templates' => {
+            'description'   => 'call get_service_profile_templates with UCS API',
+            'perm_holder'   => 'entity'
+        },
+        'get_blades'                    => {
+            'description'   => 'call get_blades with UCS API',
+            'perm_holder'   => 'entity'
+        }
     }
 }
 

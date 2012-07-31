@@ -893,7 +893,7 @@ sub map_objects {
 		                                    classId => $classId);
 	}
 
-	return @objs;
+	return wantarray ? @objs : \@objs;
 }
 
 sub get_ethernets {
