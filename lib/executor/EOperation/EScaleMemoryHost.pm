@@ -123,41 +123,42 @@ sub finish {
 
 sub postrequisites {
     my $self = shift;
-
-    my $scale_state = $self->{context}->{cloudmanager_comp}->checkScaleMemory (
-        host   => $self->{context}->{host},
+    my $vm_capacities = $self->{context}->{cloudmanager_comp}->getVmResources(
+                            vm => $self->{context}->{host}
     );
 
     $self->{context}->{cloudmanager_comp}->_getEntity->updateMemory(
         host   => $self->{context}->{host},
-        memory => int($scale_state->{ram_current}/1024)
+        memory => $vm_capacities->{ram},
     );
 
     my $time = 0;
-    if($scale_state->{ram_current} == $scale_state->{ram_before}){
+    if (defined $self->{params}->{old_mem}
+        && $self->{params}->{old_mem} == $vm_capacities->{ram}) { # RAM amount has not moved
 
         if(not defined $self->{params}->{time}) {
             $self->{params}->{time} = time();
         }
 
-        $time = time() - $self->{params}->{time} ;
-        $log->info("Checker Scale time = $time");
-    }else{
+        $time = time() - $self->{params}->{time};
+        $log->info("Checker scale time = $time");
+    }
+    else{
+       $self->{params}->{old_mem} = $vm_capacities->{ram};
        delete $self->{params}->{time};
     }
 
     my $precision = 0.05;
-
-    if( ($scale_state->{ram_current} > $self->{params}->{memory} * 1024 * ( 1 - $precision ))
-     && ($scale_state->{ram_current} < $self->{params}->{memory} * 1024 * ( 1 + $precision )) ) {
-
+    $log->info('one ram <'.($vm_capacities->{ram}).'> asked ram <'.($self->{params}->{memory}*1024*1024).'> ');
+    if (( $vm_capacities->{ram} >= $self->{params}->{memory} * 1024 * 1024 *(1 - $precision) )
+          && ($vm_capacities->{ram} <= $self->{params}->{memory} * 1024 * 1024 * (1 + $precision) )) {
         return 0;
     }
-    elsif($time < 2*10) {
-        return 15;
+    elsif($time < 3*10) {
+        return 5;
     }
     else {
-        my $error = 'ScaleIn of vm <'.($self->{context}->{host}->getId()).'> : Failed. Current RAM is <'.($scale_state->{ram_current}).'>';
+        my $error = 'ScaleIn of vm <'.($self->{context}->{host}->getId()).'> : Failed. Current RAM is <'.($vm_capacities->{ram}).'>';
         Message->send(
              from    => 'EScaleMemoryHost',
              level   => 'error',
@@ -170,15 +171,16 @@ sub postrequisites {
 sub _cancel {
     my $self = shift;
 
-    my $scale_state = $self->{context}->{cloudmanager_comp}->checkScaleMemory (
-        host   => $self->{context}->{host},
+    my $vm_capacities = $self->{context}->{cloudmanager_comp}->getVmResources(
+                            vm => $self->{context}->{host}
     );
 
     $self->{context}->{cloudmanager_comp}->_getEntity->updateMemory(
-                                                             host   => $self->{context}->{host},
-                                                             memory => int($scale_state->{ram_current}/1024));
+        host   => $self->{context}->{host},
+        memory => $vm_capacities->{ram},
+    );
 
-    $log->info('Last mem update <'.($scale_state->{ram_current}).'>');
+    $log->info('Last mem update <'.($vm_capacities->{ram}).'>');
 }
 =head1 DIAGNOSTICS
 
