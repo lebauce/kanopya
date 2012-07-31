@@ -762,7 +762,7 @@ sub _getHvSizeOccupied{
 
     for my $vm_id (@$hv_vms){
         $size->{cpu} += $infra->{vms}->{$vm_id}->{cpu};
-        $size->{ram} += $infra->{vms}->{$vm_id}->{ram};
+        $size->{ram} += $infra->{vms}->{$vm_id}->{ram} + 32*1024*1024; #ADD MARGIN 32MB per VM
     }
     my $all_the_ram   = $infra->{hvs}->{$hv_id}->{hv_capa}->{ram};
     my $all_the_cpu   = $infra->{hvs}->{$hv_id}->{hv_capa}->{cpu};
@@ -896,6 +896,8 @@ sub _migrateVmModifyInfra{
     my $hv_dest_id = $args{hv_dest_id};
     my $hvs        = $args{hvs};
 
+    my $hv_from_id;
+
     # FIND VM HOST ID
     while (my ($hv_id, $hv) = each %$hvs) {
         my $count = 0;
@@ -908,13 +910,20 @@ sub _migrateVmModifyInfra{
             $count++
         }
         if(defined $index_search){
+            $hv_from_id = $hv_id;
             splice @{$hv->{vm_ids}}, $index_search,1;
         }
     }
-
     push @{$hvs->{$hv_dest_id}->{vm_ids}}, $vm_id;
 
-    $log->info("Infra modified => migration $vm_id to $hv_dest_id");
+    $log->info("Infra modified => migration <$vm_id> (ram: ".($self->{_infra}->{vms}->{$vm_id}->{'ram'}).") from <$hv_from_id> to <$hv_dest_id>");
+    # Modify available memory
+    if (defined $self->{_hvs_mem_available}) {
+        $log->info(Dumper $self->{_hvs_mem_available});
+        $self->{_hvs_mem_available}->{$hv_dest_id} -= $self->{_infra}->{vms}->{$vm_id}->{'ram'};
+        $self->{_hvs_mem_available}->{$hv_from_id} += $self->{_infra}->{vms}->{$vm_id}->{'ram'};
+        $log->info(Dumper $self->{_hvs_mem_available});
+    }
 }
 
 
@@ -1084,7 +1093,7 @@ sub _migrateOtherVmToScale{
                            } @$vms_in_hv;
 
 
-    $log->info("Remaining size = $remaining_size->{$scale_metric}, Need size = $delta, potential VM to scale (according to $scale_metric) = @other_vms");
+    $log->info("HV <$hv_id> Remaining size = $remaining_size->{$scale_metric}, Need size = $delta, potential VM to scale (according to $scale_metric) => VM_ids :  @other_vms");
 
 
     #Find one with other metric OK
@@ -1187,20 +1196,20 @@ sub _optimStep{
         #@hv_selection_ids = grep { $_ != $hv_id } @hv_selection_ids;
 
 
-        $log->debug("HV available to free $hv_id : @hv_selection_ids");
+        $log->debug("List of HVs available to free <$hv_id> : @hv_selection_ids");
         # MIGRATE ALL VM OF THE SELECTED HV
         my @vmlist = @{$infra->{hvs}->{$hv_id}->{vm_ids}};
-        $log->info("__ vmlist = @vmlist");
+        $log->info("List of VMs to migrate = @vmlist");
 
         for my $vm_to_migrate_id (@vmlist){
-            $log->info("__ Processing VM $vm_to_migrate_id");
+            $log->info("Computing where to migrate VM $vm_to_migrate_id");
             my $hv_dest_id = $self->_findMinHVidRespectCapa(
                 hv_selection_ids => \@hv_selection_ids,
                 wanted_metrics   => $infra->{vms}->{$vm_to_migrate_id},
             );
 
             if(defined $hv_dest_id){
-                $log->info("___Enqueue in Plan migration of VM $vm_to_migrate_id");
+                $log->info("Enqueue VM <$vm_to_migrate_id> migration");
                 $self->_migrateVmModifyInfra(
                     vm_id       => $vm_to_migrate_id,
                     hv_dest_id  => $hv_dest_id->{hv_id},
