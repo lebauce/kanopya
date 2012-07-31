@@ -249,24 +249,24 @@ sub optimIaas{
     my ($self,%args) = @_;
     my $infra = $self->{_infra};
 
-    $log->debug(Dumper $infra);
-    my @hv_selected_ids = $self->_getEmptyHVIds(hvs => $infra->{hvs});
+    $log->debug('Infra before optimiaas = '.(Dumper $infra));
+    my $hv_selected_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
     my $optim;
     my $current_plan = [];
     my $step = 1;
     do{
-        $log->info("**STEP $step**\n");
+        $log->info("Loop $step\n");
 
         $optim = $self->_optimStep(
             infra           => $infra,
-            hv_selected_ids => \@hv_selected_ids,
+            hv_selected_ids => $hv_selected_ids,
             methode         => 2,
             current_plan    => $current_plan,
         );
         $step++;
 
-        @hv_selected_ids = $self->_getEmptyHVIds(hvs => $infra->{hvs});
-    }while ($optim == 1);
+        $hv_selected_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
+    } while ($optim == 1);
 
     $self->_applyMigrationPlan(
         plan => $current_plan
@@ -795,10 +795,12 @@ sub _getHvSizeRemaining {
     my $remaining_ram;
 
     if(defined $self->{_hvs_mem_available }) {
-        $remaining_ram = $self->{_hvs_mem_available}->{$hv_id} * 1024;
+        $remaining_ram = $self->{_hvs_mem_available}->{$hv_id};
+        $log->info("HV <$hv_id> Remaining RAM <$remaining_ram> using real values");
     }
     else {
         $remaining_ram = $all_the_ram - $size->{ram};
+        $log->info("HV <$hv_id> Remaining RAM <$remaining_ram> using computed values");
     }
 
     my $size_rem = {
@@ -1215,25 +1217,30 @@ sub _optimStep{
     ($num_failed > 0) ? return 0 : return 1;
 }
 
-=head2 _getEmptyHVIds
+=head2 _separateEmptyHvIds
 
     Class : Private
 
-    Desc : Return list of id of empty HVs
+    Desc :
 
 =cut
 
-sub _getEmptyHVIds {
+sub _separateEmptyHvIds {
     my ($self,%args) = @_;
-    my $hvs = $args{hvs};
+    my $hvs = $self->{_infra}->{hvs};
     my @empty_hv_ids;
+    my @non_empty_hv_ids;
 
     for my $hv_index (keys %$hvs){
         if(scalar @{$hvs->{$hv_index}->{vm_ids}} > 0){
+            push @non_empty_hv_ids, $hv_index;
+        }
+        else {
             push @empty_hv_ids, $hv_index;
         }
     }
-    return @empty_hv_ids;
+    return { empty_hv_ids     => \@empty_hv_ids,
+             non_empty_hv_ids => \@non_empty_hv_ids};
 }
 
 =head2 _findHvIdWithMinVmSize
