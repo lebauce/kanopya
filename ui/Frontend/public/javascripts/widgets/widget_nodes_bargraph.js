@@ -64,10 +64,12 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
             var min = data.values[(data.values.length-1)];
             var total = 0;
             $.each(data.values,function() {
-                total += parseInt(this);
+                total += parseFloat(this);
             });
             var mean = total / data.values.length;
-
+            if (max == mean) {
+                mean = null;
+            }
             var max_nodes_per_graph = 50;
             var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
             var nodes_per_graph = data.nodelist.length/graph_number;
