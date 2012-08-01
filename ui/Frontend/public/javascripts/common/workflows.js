@@ -223,7 +223,7 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
         url         : '/api/entity/' + workflowmanager.id + '/getWorkflowDefs',
         type        : 'POST',
         contentType : 'application/json',
-        data        : JSON.stringify({ no_associate => 1 }),
+        data        : JSON.stringify({ no_associate : 1 }),
         success     : function(workflows) {
             create_grid({
                 grid_id                 : 'workflowdefsgrid',
