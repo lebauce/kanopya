@@ -40,6 +40,10 @@ use Scope;
 sub methods {
   return {
     'getWorkflowDefsIds'    => {
+        'description'   => 'getWorkflowDefsIds',
+        'perm_holder'   => 'entity'
+    },
+    'getWorkflowDefs'    => {
         'description'   => 'getWorkflowDefs',
         'perm_holder'   => 'entity'
     },
@@ -290,7 +294,7 @@ sub runWorkflow {
 =head2 getWorkflowDefs
     Desc: Get a list of workflow defs related to the manager
 
-    Args: none
+    Args: (optional) no_associate : if defined, returns only workflow defs not associated to a rule
 
     Return: array of objects, \@manager_workflow_defs
 =cut
@@ -303,18 +307,19 @@ sub getWorkflowDefs {
                             hash => {manager_id => $self->getId}
                         );
 
-    #then we create a list of workflow_def from the workflow_def_id accessible
-    #through the previously gathered list of objects
+    #then we create a list of workflow_def from the manager workflow_defs
     my @workflow_defs;
 
     foreach my $manager_workflow_def (@manager_workflow_defs) {
-        my $workflow_def_id = $manager_workflow_def->getAttr(
-                                name => 'workflow_def_id'
-                              );
-        my $workflow_def    = $self->getWorkflowDef(
-                                workflow_def_id => $workflow_def_id
-                              );
-        push @workflow_defs, $workflow_def;
+        my $workflow_def = $manager_workflow_def->workflow_def;
+        my $ok = 1;
+        if ($args{no_associate}) {
+            my $all_params   = $workflow_def->getParamPreset();
+            if ($all_params->{internal}{association}) {
+                $ok = 0;
+            }
+        }
+        push @workflow_defs, $workflow_def if $ok;
     }
 
     return \@workflow_defs;
