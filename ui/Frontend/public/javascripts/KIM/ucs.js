@@ -75,7 +75,7 @@ function ucs_list(cid) {
         content_container_id    : cid,
         grid_id                 : 'ucs_list',
         url                     : '/api/unifiedcomputingsystem',
-        colNames                : ['Id', 'Name', 'Description', 'Address', 'Login', 'OU', 'State', 'Synchronize'],
+        colNames                : ['Id', 'Name', 'Description', 'Address', 'Login', 'OU', 'State', ''],
         colModel                : [
             { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
             { name : 'ucs_name', index : 'ucs_name' },
@@ -86,7 +86,6 @@ function ucs_list(cid) {
             { name : 'ucs_state', index : 'ucs_state', width : 40, align : 'center', formatter : StateFormatter },
             { name : 'synchronize', index : 'synchronize', width : 40, align : 'center', nodetails : true }
         ],
-        //details                 : { onSelectRow : ucsaddbutton_action },
         details                 : { tabs : [
             { label : 'Service Profiles Templates', id : 'service_profiles_templates', onLoad : function(cid, eid) { service_profiles(cid, eid, true); } },
             { label : 'Service Profiles', id : 'service_profiles', onLoad : function(cid, eid) { service_profiles(cid, eid, false); } },
@@ -94,7 +93,7 @@ function ucs_list(cid) {
         ] },
         afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
             var cell    = $(grid).find('tr#' + rowid).find('td[aria-describedby="ucs_list_synchronize"]');
-            var button  = $('<button>').button({ text : false, icons : { primary : 'ui-icon-refresh' } })
+            var button  = $('<button>', { text : 'Sync' }).button({ icons : { primary : 'ui-icon-refresh' } })
                                        .attr('style', 'margin-top:0;')
                                        .click(function() {
                                             $.ajax({
@@ -102,6 +101,11 @@ function ucs_list(cid) {
                                                 type    : 'POST'
                                             });
                                        });
+            $(cell).append(button);
+
+            button      = $('<button>', { text : 'Edit' }).button({ icons : { primary : 'ui-icon-wrench' } })
+                                       .attr('style', 'margin-top:0;')
+                                       .click(function() { ucsaddbutton_action(rowid);  });
             $(cell).append(button);
         }
     });
