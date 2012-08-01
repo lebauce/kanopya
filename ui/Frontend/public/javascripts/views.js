@@ -223,44 +223,46 @@ function create_grid(options) {
             repeatitems: false,
         },
 
-        afterInsertRow: function(rowid, rowdata, rowelem) { return options.afterInsertRow(this, rowid, rowdata, rowelem); },
+        afterInsertRow  : function(rowid, rowdata, rowelem) { return options.afterInsertRow(this, rowid, rowdata, rowelem); },
         gridComplete    : options.gridComplete,
 
         treeGrid        : options.treeGrid      || false,
         treeGridModel   : options.treeGridModel || '',
         ExpandColumn    : options.ExpandColumn  || '',
 
-        caption : options.caption || '',
-        height: options.height || 'auto',
-        //width: options.width || 'auto',
-        autowidth   : true,
-        shrinkToFit : true,
-        colNames: options.colNames,
-        colModel: options.colModel,
-        pager: options.pager || '#' + pager_id,
-        altRows: true,
-        rowNum: options.rowNum || 10,
-        rowList: options.rowList || undefined,
-        autoencode: true,
+        caption         : options.caption || '',
+        height          : options.height || 'auto',
+        //width         : options.width || 'auto',
+        autowidth       : true,
+        shrinkToFit     : true,
+        colNames        : options.colNames,
+        colModel        : options.colModel,
+        sortname        : options.sortname,
+        sortorder       : options.sortorder,
+        pager           : options.pager || '#' + pager_id,
+        altRows         : true,
+        rowNum          : options.rowNum || 10,
+        rowList         : options.rowList || undefined,
+        autoencode      : true,
 //        onSelectRow: function (id) {
 //            var row_data = $('#' + options.grid_id).getRowData(id);
 //            show_detail(options.grid_id, id, row_data);
 //        },
 
-        onCellSelect: function(rowid, index, contents, target) {
+        onCellSelect    : function(rowid, index, contents, target) {
             if (index != actions_col_idx && ! options.deactivate_details && ! options.colModel[index].nodetails) {
                 var row_data = $('#' + options.grid_id).getRowData(rowid);
                 show_detail(options.grid_id, grid_class, rowid, row_data, options.details)
             }
         },
 
-        loadError: function (xhr, status, error) {
+        loadError       : function (xhr, status, error) {
             var error_msg = xhr.responseText;
             alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 
         },
 
-        url     : options.url, // not used by jqGrid (handled by datatype option, see below) but we want this info in grid
-        datatype: (options.hasOwnProperty('url')) ? function (postdata) {
+        url             : options.url, // not used by jqGrid (handled by datatype option, see below) but we want this info in grid
+        datatype        : (options.hasOwnProperty('url')) ? function (postdata) {
             var data = { dataType : 'jqGrid' };
 
             if (postdata.page) {
