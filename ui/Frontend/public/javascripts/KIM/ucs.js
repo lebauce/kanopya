@@ -19,6 +19,57 @@ function ucsaddbutton_action(e) {
     })).start();
 }
 
+function service_profiles(cid, eid, template) {
+    $.ajax({
+        url     : '/api/ucsmanager?service_provider_id=' + eid,
+        success : function(data) {
+            var ucsmanager  = data[0];
+            $.ajax({
+                url     : '/api/ucsmanager/' + ucsmanager.pk + ((template) ? '/get_service_profile_templates' : '/get_service_profiles'),
+                type    : 'POST',
+                success : function(data) {
+                    create_grid({
+                        content_container_id    : cid,
+                        grid_id                 : 'service_profile_templates_list',
+                        data                    : data,
+                        colNames                : ['Name', 'DN'],
+                        colModel                : [
+                            { name : 'name', index : 'name' },
+                            { name : 'dn', index : 'dn' }
+                        ],
+                        action_delete           : 'no'
+                    });
+                }
+            });
+        }
+    });
+}
+
+function blades(cid, eid) {
+    $.ajax({
+        url     : '/api/ucsmanager?service_provider_id=' + eid,
+        success : function(data) {
+            var ucsmanager  = data[0];
+            $.ajax({
+                url     : '/api/ucsmanager/' + ucsmanager.pk + '/get_blades',
+                type    : 'POST',
+                success : function(data) {
+                    create_grid({
+                        content_container_id    : cid,
+                        grid_id                 : 'service_profile_templates_list',
+                        data                    : data,
+                        colNames                : ['Model'],
+                        colModel                : [
+                            { name : 'model', index : 'model' }
+                        ],
+                        action_delete           : 'no'
+                    });
+                }
+            });
+        }
+    });
+}
+
 function ucs_list(cid) {
     create_grid({
         content_container_id    : cid,
@@ -35,20 +86,25 @@ function ucs_list(cid) {
             { name : 'ucs_state', index : 'ucs_state', width : 40, align : 'center', formatter : StateFormatter },
             { name : 'synchronize', index : 'synchronize', width : 40, align : 'center', nodetails : true }
         ],
-        details                 : { onSelectRow : ucsaddbutton_action },
+        //details                 : { onSelectRow : ucsaddbutton_action },
+        details                 : { tabs : [
+            { label : 'Service Profiles Templates', id : 'service_profiles_templates', onLoad : function(cid, eid) { service_profiles(cid, eid, true); } },
+            { label : 'Service Profiles', id : 'service_profiles', onLoad : function(cid, eid) { service_profiles(cid, eid, false); } },
+            { label : 'Blades', id : 'blades', onLoad : blades }
+        ] },
         afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
             var cell    = $(grid).find('tr#' + rowid).find('td[aria-describedby="ucs_list_synchronize"]');
             var button  = $('<button>').button({ text : false, icons : { primary : 'ui-icon-refresh' } })
-                                        .attr('style', 'margin-top:0;')
-                                        .click(function() {
+                                       .attr('style', 'margin-top:0;')
+                                       .click(function() {
                                             $.ajax({
                                                 url     : '/api/unifiedcomputingsystem/' + rowid + '/synchronize',
                                                 type    : 'POST'
                                             });
-                                        });
+                                       });
             $(cell).append(button);
         }
     });
     $('<a>', { text : 'Add an UCS' }).button({ icons : { primary : 'ui-icon-plusthick' } })
-                                    .appendTo('#' + cid).bind('click', ucsaddbutton_action);
+                                     .appendTo('#' + cid).bind('click', ucsaddbutton_action);
 }

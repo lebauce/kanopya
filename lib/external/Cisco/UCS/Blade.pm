@@ -56,4 +56,14 @@ sub KVM {
     }
 }
 
+sub toJSON {
+    my $self    = shift;
+
+    my $json    = {
+        model   => $self->{model}
+    };
+
+    return $json;
+}
+
 1;

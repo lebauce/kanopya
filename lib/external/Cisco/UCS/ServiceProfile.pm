@@ -92,4 +92,16 @@ sub unbind {
     $self->update();
 }
 
+#
+sub toJSON {
+    my $self    = shift;
+
+    my $json    = {
+        name    => $self->{name},
+        dn      => $self->{dn}
+    };
+
+    return $json;
+}
+
 1;
