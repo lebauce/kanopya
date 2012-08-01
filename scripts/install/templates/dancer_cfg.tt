@@ -8,6 +8,11 @@ appname: "Frontend"
 # Select for wich product we want ui (KIM/KIO)
 kanopya_product: "KIO"
 
+# Whether to show gritters (1) or not (0)
+show_gritters: 1
+
+# messages grid and gritters update frequency in seconds
+messages_update: 10
 
 # The default layout to use for your application (located in
 # views/layouts/main.tt)

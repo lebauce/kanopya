@@ -107,8 +107,10 @@ function showWorkflowGritter(workflow) {
     gritter.data("workflow", id);
 }
 
-window.setInterval(function(){
-
+// Check if there is new messages and running workflows
+// Update messages grid if necessary
+// Display gritters for messages and workflows if option show_gritters is set
+function updateMessages( show_gritters ) {
     var jsondata = '';
     var maxID = lastMsgId;
     // Get Messages
@@ -122,21 +124,18 @@ window.setInterval(function(){
                     var sender = rows[row].message_from;
                     var lvl = rows[row].message_level;
                     //var content = rows[row].message_content;
+                    newMsg = true;
                     // Check sender (if sender is Executor and level is Inof, do not display the gritter) :
-                    if ( sender == "Executor" && lvl == "info") {
-                        
-                    } else {
-                        // Get message level :
+                    if ( show_gritters && (sender != "Executor" || lvl != "info") ) {
                         var content = "From : " + rows[row].message_from + " <br /> " + "Level : " + rows[row].message_level + " <br /> " + rows[row].message_content;
-                        newMsg = true;
                         // Display the notification :
                         $.gritter.add({
                             title: 'Message',
                             text: content,
                         });
-                        if (parseInt(rows[row].pk) > maxID) {
-                            maxID = parseInt(rows[row].pk)
-                        }
+                    }
+                    if (parseInt(rows[row].pk) > maxID) {
+                        maxID = parseInt(rows[row].pk)
                     }
                 }
             });
@@ -146,6 +145,10 @@ window.setInterval(function(){
             lastMsgId = maxID;
          }
     });
+
+    if (!show_gritters) {
+        return;
+    }
 
     $.getJSON("/api/workflow?state=pending", function (pending) {
         $.getJSON("/api/workflow?state=running", function (running) {
@@ -176,4 +179,12 @@ window.setInterval(function(){
         });
     });
 
-}, 10000);
+}
+
+$(document).ready(function () {
+    $.get('/conf', function (conf) {
+            window.setInterval( function() {
+                updateMessages( conf.show_gritters )
+            }, conf.messages_update * 1000);
+    });
+});

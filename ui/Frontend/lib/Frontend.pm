@@ -44,6 +44,14 @@ get '/kio' => sub {
     template $product . '/index';
 };
 
+get '/conf' => sub {
+    content_type "application/json";
+    return to_json {
+        'messages_update'   => defined config->{'messages_update'}  ? int(config->{'messages_update'})  : 10,
+        'show_gritters'     => defined config->{'show_gritters'}    ? int(config->{'show_gritters'})    : 1,
+    };
+};
+
 get '/sandbox' => sub {
     template 'sandbox', {}, {layout => ''};
 };
