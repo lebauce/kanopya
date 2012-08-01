@@ -443,6 +443,8 @@ function    workflowsoverview(cid, eid) {
             { name : 'workflow_name', index : 'workflow_name' },
             { name : 'state', index : 'state' },
             { name : 'currentOperation', index : 'currentOperation', formatter : function(a) { if (a == null) return 'Loading...'; else return a; } }
-        ]
+        ],
+        sortname    : 'state',
+        sortorder   : "desc"
   });
 }
