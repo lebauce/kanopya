@@ -220,21 +220,11 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
         title       : workflowmanager.service_provider_name + ' - ' + workflowmanager.name
     });
     $.ajax({
-        url         : '/api/entity/' + workflowmanager.id + '/getWorkflowDefsIds',
+        url         : '/api/entity/' + workflowmanager.id + '/getWorkflowDefs',
         type        : 'POST',
         contentType : 'application/json',
-        data        : JSON.stringify({}),
-        success     : function(data) {
-            var     workflows   = new Array;
-            for (var i in data) if (data.hasOwnProperty(i)) {
-                $.ajax({
-                    url     : '/api/workflowdef/' + data[i],
-                    async   : false,
-                    success : function(data) {
-                        workflows.push(data);
-                    }
-                });
-            }
+        data        : JSON.stringify({ no_associate => 1 }),
+        success     : function(workflows) {
             create_grid({
                 grid_id                 : 'workflowdefsgrid',
                 content_container_id    : 'workflowmanagerdetailsdialog',
@@ -325,6 +315,8 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
         contentType : 'application/json',
         data        : JSON.stringify({ 'manager_type' : 'workflow_manager' }),
         success     : function(data) {
+            // TODO call getWorkflowDefs instead of getWorkflowDefsIds to avoid all /api/workflowdef/<id> requests
+            // TODO call getWorkflowDefs with data { no_associate : 1 } to avoid workflow filtering in client side
             manager = data;
             $.ajax({
                 url         : '/api/entity/' + manager.pk + '/getWorkflowDefsIds',
