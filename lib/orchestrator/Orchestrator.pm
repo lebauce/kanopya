@@ -59,6 +59,7 @@ use AggregateRule;
 use NodemetricRule;
 use NodemetricCondition;
 use NodemetricCombination;
+use WorkflowDef;
 use WorkflowNoderule;
 use Log::Log4perl "get_logger";
 
@@ -161,6 +162,7 @@ sub manage_aggregates {
     CLUSTER:
     for my $service_provider (@service_providers){
         eval{
+
             my $service_provider_id = $service_provider->getAttr(name => 'service_provider_id');
 
             eval {
@@ -535,7 +537,8 @@ sub _evalRule {
         })->getId();
 
         # Manage Workflow
-        my $isWorkflowRunning = WorkflowNoderule->isWorkflowRunning(
+
+        my $workflowState = WorkflowNoderule->workflowState(
             externalnode_id    => $externalnode_id,
             nodemetric_rule_id => $rule_id,
         );
@@ -554,21 +557,32 @@ sub _evalRule {
 
                 my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
 
-                if (defined $wf_def_id && $isWorkflowRunning == 0) {
-                    $log->info("Trigger Workflow <$wf_def_id>");
+                if (defined $wf_def_id) {
+                    if ($workflowState->{state} eq 'ready_to_launch') {
+                        $log->info("Trigger Workflow <$wf_def_id>");
 
-                    my $workflow = $workflow_manager->runWorkflow(
-                        workflow_def_id     => $workflow_def_id,
-                        host_name           => $host_name,
-                        service_provider_id => $service_provider_id,
-                        rule_id             => $rule_id
-                    );
+                        my $workflow = $workflow_manager->runWorkflow(
+                            workflow_def_id     => $workflow_def_id,
+                            host_name           => $host_name,
+                            service_provider_id => $service_provider_id,
+                            rule_id             => $rule_id
+                        );
 
-                    WorkflowNoderule->new(
-                        externalnode_id    => $externalnode_id,
-                        nodemetric_rule_id => $rule_id,
-                        workflow_id        => $workflow->getId(),
-                    );
+                        WorkflowNoderule->new(
+                            externalnode_id    => $externalnode_id,
+                            nodemetric_rule_id => $rule_id,
+                            workflow_id        => $workflow->getId(),
+                        );
+                    }
+                    elsif ($workflowState->{state} eq 'delayed') {
+                       $log->info("Not trigger workflow <$wf_def_id> : delayed");
+                    }
+                    elsif ($workflowState->{state} eq 'running') {
+                       $log->info("Not trigger workflow <$wf_def_id> : a workflow is still running");
+                    }
+                    else {
+                        throw Kanopya::Exception(error => 'unkown case');
+                    }
                 }
                 else {
                     $log->info("No workflow to trigger");
@@ -634,12 +648,11 @@ sub _contructRetrieverOutput {
 sub clustermetricManagement{
     my ($self, %args) = @_;
     my $service_provider = $args{service_provider};
-
     my $cluster_evaluation = {};
     my $service_provider_id = $service_provider->getId();
 
     # Get rules relative to a cluster
-    my @rules_enabled = AggregateRule->search(
+    my @rules_enabled   = AggregateRule->search(
                             hash => {
                                 aggregate_rule_service_provider_id => $service_provider_id,
                                 aggregate_rule_state               => 'enabled',
@@ -652,8 +665,14 @@ sub clustermetricManagement{
                                   aggregate_rule_state               => 'triggered'
                               }
                           );
+    my @rules_delayed   = AggregateRule->search(
+                              hash => {
+                                  aggregate_rule_service_provider_id => $service_provider_id,
+                                  aggregate_rule_state               => 'delayed'
+                              }
+                          );
 
-    my @rules = (@rules_enabled, @rules_triggered);
+    my @rules = (@rules_enabled, @rules_triggered, @rules_delayed);
 
     for my $aggregate_rule (@rules) {
 
@@ -664,30 +683,77 @@ sub clustermetricManagement{
         my $workflow_def_id;
         my $workflow_id;
 
-        eval{
+        eval {
             $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
             $workflow_def_id  = $aggregate_rule->getAttr(name => 'workflow_def_id');
             $workflow_id      = $aggregate_rule->getAttr(name => 'workflow_id');
 
             if (defined $workflow_id) {
-
-                if(Workflow->get(id => $workflow_id)->state eq 'running') {
+                $log->info('linked workflow state <'.(Workflow->get(id => $workflow_id)->state).'>');
+                if ( Workflow->get(id => $workflow_id)->state eq 'running' ) {
                     $log->info('Workflow <'.$workflow_id.'> still running');
                 }
-                else {
-                    $log->info('Workflow <'.$workflow_id.'> done or cancelled, re-enable rule');
-                    $aggregate_rule->setAttr(
-                        name  => 'aggregate_rule_state',
-                        value => 'enabled',
-                    );
-                    $aggregate_rule->setAttr(
-                        name  => 'workflow_id',
-                        value => undef,
-                    );
+                elsif ( Workflow->get(id => $workflow_id)->state eq 'cancelled' ) {
+
+                    $log->info('Workflow <'.$workflow_id.'> cancelled, re-enable rule');
+                    $aggregate_rule->setAttr(name  => 'aggregate_rule_state', value => 'enabled' );
+                    $aggregate_rule->setAttr(name  => 'workflow_id',  value => undef );
                     $aggregate_rule->save();
+                }
+                elsif ( Workflow->get(id => $workflow_id)->state eq 'done' ) {
+                    $log->info('Workflow <'.$workflow_id.'> done');
+
+                    if ( $aggregate_rule->aggregate_rule_state eq 'delayed') {
+                        my $delta = $aggregate_rule->workflow_untriggerable_timestamp - time();
+                        if( 0 >= $delta ) {
+                            $log->info('Workflow <'.$workflow_id.'> done, end of delay time, re-enable rule');
+                            $aggregate_rule->setAttr(name  => 'aggregate_rule_state',
+                                                     value => 'enabled' );
+                            $aggregate_rule->setAttr(name  => 'workflow_id',
+                                                     value => undef );
+                            $aggregate_rule->setAttr(name  => 'workflow_untriggerable_timestamp',
+                                                     value => undef );
+                            $aggregate_rule->save();
+                        }
+                        else {
+                            $log->info('Workflow <'.$workflow_id.'> done, still delaying time for <'.($delta).'> sec');
+                        }
+                    }
+                    elsif ( $aggregate_rule->aggregate_rule_state eq 'triggered' ) {
+                        my $wf_def_id = $aggregate_rule->getAttr(name => 'workflow_def_id');
+                        my $wf_def    = WorkflowDef->get(id => $wf_def_id);
+                        my $wf_params = $wf_def->getParamPreset();
+                        my $delay = $wf_params->{specific}->{delay};
+                        $log->info('wf_params = '.(Dumper $wf_params));
+
+                        if ((not defined $delay) || $delay <= 0) {
+                            $log->info('Workflow <'.$workflow_id.'> done, no delay or delay <= 0, re-enable rule');
+                            $aggregate_rule->setAttr(name  => 'aggregate_rule_state', value => 'enabled' );
+                            $aggregate_rule->setAttr(name  => 'workflow_id',  value => undef );
+                            $aggregate_rule->save();
+                        }
+                        else {
+                            $log->info('Workflow <'.$workflow_id.'> done, delay new workflow launch');
+                            $aggregate_rule->setAttr(name  => 'aggregate_rule_state',
+                                                     value => 'delayed' );
+                            $aggregate_rule->setAttr(name  => 'workflow_untriggerable_timestamp',
+                                                     value => time() + $delay);
+                            $aggregate_rule->save();
+                         }
+                    }
+                    else {
+                      $log->info('unknown case <'.($aggregate_rule->aggregate_rule_state).'>');
+                    }
+                }
+                else {
+                    $log->info('Workflow <'.$workflow_id.'> unknown state');
                 }
             }
         };
+        if ($@) {
+            my $error = $@;
+            throw Kanopya::Exception(error => $error);
+        }
 
         my $result = $aggregate_rule->eval();
         my $rule_state = $aggregate_rule->getAttr (name => 'aggregate_rule_state');
@@ -701,8 +767,8 @@ sub clustermetricManagement{
                         $log->info('Rule <'. $rule_id. '> has launched a new workflow (' . $workflow_def_id . ') and was defined as triggered');
 
                         my $workflow = $workflow_manager->runWorkflow(
-                            workflow_def_id => $workflow_def_id,
-                            rule_id => $rule_id,
+                            workflow_def_id     => $workflow_def_id,
+                            rule_id             => $rule_id,
                             service_provider_id => $service_provider_id
                         );
 
@@ -715,10 +781,13 @@ sub clustermetricManagement{
                     }
                 }
                 elsif ($rule_state eq 'triggered') {
-                        $log->info('Rule: '. $rule_id. ' is verified but a workflow is already triggered');
+                    $log->info('Rule: '. $rule_id. ' is verified but a workflow is already triggered');
+                }
+                elsif ($rule_state eq 'delayed') {
+                    $log->info('Rule: '. $rule_id. ' is verified but workflow launching is delayed');
                 }
                 else {
-                    throw Kanopya::Exception(errmsg => 'unkown case');
+                    throw Kanopya::Exception(error => 'unkown case');
                 }
             }
             elsif ($result == 0) {
