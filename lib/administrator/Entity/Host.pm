@@ -798,4 +798,14 @@ sub getHostType {
     return $self->getHostManager->getHostType;
 }
 
+=head2
+
+    Check if the host can be stopped, raise an exception otherwise
+
+=cut
+
+sub checkStoppable {
+    return {};
+}
+
 1;

@@ -43,7 +43,6 @@ sub checkStoppable {
             hvs_mem_available      => $e_opennebula3->getHostsMemAvailable()
         );
         my $flushRes = $cm->flushHypervisor(hv_id => $self->getId());
-        $log->info('Migration plan = '.(Dumper $flushRes));
         if ($flushRes->{num_failed} == 0) {
             my $workflow = Workflow->new(workflow_name => 'remediation_hypervisor_'.$self->getId());
             for my $operation (@{$flushRes->{operation_plan}}){
@@ -61,6 +60,7 @@ sub checkStoppable {
     }
     else {
         $log->info('hypervisor is empty stop authorized');
+        return {};
     }
 }
 

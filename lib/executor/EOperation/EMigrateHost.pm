@@ -60,7 +60,11 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => $self->{context}, required => [ "host", "vm", "cloudmanager_comp" ]);
+    General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
+
+    if ( not defined $self->{context}->{cloudmanager_comp}) {
+          $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(data => $self->{context}->{vm}->getHostManager());
+    }
 
     eval {
         # Check cloudCluster
@@ -130,7 +134,7 @@ sub execute {
     }
     else {
 
-        $self->{context}->{src_hypervisor} = $self->{context}->{cloudmanager_comp}->migrateHost(
+        $self->{context}->{cloudmanager_comp}->migrateHost(
                           host               => $self->{context}->{vm},
                           hypervisor_dst     => $self->{context}->{host},
                           hypervisor_cluster => $self->{context}->{cluster}

@@ -55,4 +55,14 @@ sub getVms {
     return wantarray ? @vms : \@vms;
 }
 
+sub checkStoppable {
+    my $self = shift;
+    my @vms = $self->getVms();
+
+    if (scalar @vms) {
+        throw Kanopya::Exception(error => "The hypervisor " . $self->host_hostname .
+                                          " can't be stopped as it still runs virtual machines");
+    }
+}
+
 1;

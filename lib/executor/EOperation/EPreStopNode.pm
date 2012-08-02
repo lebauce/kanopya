@@ -65,20 +65,19 @@ my $config = {
     RELATIVE => 1,                   # desactive par defaut
 };
 
-=head2 prepare
+
+=head2 prerequisites
 
 =cut
 
-sub prepare {
+sub prerequisites {
+    my ($self, %args) = @_;
+    General::checkParams(args => $self->{context}, required => []);
 
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
-
-    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+    my $delay = 10;
 
     # Choose a random non master node
-    if (not defined $self->{context}->{host}) {
+    if ((not defined $self->{context}->{host}) && (defined $self->{context}->{cluster})) {
         $log->info('No node selected, select a random node');
 
         my @nodes = Externalnode::Node->search(hash => {
@@ -99,9 +98,63 @@ sub prepare {
         $self->{context}->{host} = EFactory::newEEntity(data => $host);
     }
 
+    # Check if there is a remediation_workflow
+    # Currently : all vm migrations when removing an hypervisor
+
+    if (not defined $self->{params}->{remediation_workflow_id}) {
+        $log->info('no remediation workflow');
+        $self->{params}->{remediation_workflow_id} = $self->{context}->{host}->checkStoppable->{remediation_workflow_id};
+    }
+
+    if (defined $self->{params}->{remediation_workflow_id}){
+
+        my $wf = Workflow->get(id => $self->{params}->{remediation_workflow_id});
+        $log->info('Remediation Workflow <'.($self->{params}->{remediation_workflow_id}).'> state <'.($wf->getAttr(name => 'state')).'> ');
+
+        if($wf->getAttr(name => 'state') eq 'cancelled') {
+            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> cancelled, EXCEPTION');
+            throw Kanopya::Exception::Internal(error => 'Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> has been cancelled');
+        }
+        elsif ($wf->getAttr(name => 'state') eq 'done') {
+            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> done, let us continue');
+            # HERE NO RETURN => CONTINUE AFTER THE IF
+        }
+        elsif ($wf->getAttr(name => 'state') eq 'running') {
+            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> still running, waiting for its end');
+            if(defined $self->{context}->{cluster}) {
+                $self->{context}->{cluster}->unlock(workflow => $self->getWorkflow);
+            }
+            $self->{context}->{cluster} = undef;
+            return $delay;
+        }
+        else {
+            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> status unknown : '.($wf->getAttr(name => 'state')).', EXCEPTION');
+            throw Kanopya::Exception::Internal(error => 'Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> has been cancelled');
+        }
+    }
+    if(not defined $self->{context}->{cluster}) {
+         my $cluster = Entity->get(id => $self->{context}->{host}->node->service_provider_id);
+         $self->{context}->{cluster} = $cluster;
+    }
+    return 0;
+}
+
+
+=head2 prepare
+
+=cut
+
+sub prepare {
+
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
+    General::checkParams(args => $self->{context}, required => [ 'host', 'cluster' ]);
+
+
     my $master_node_id = $self->{context}->{cluster}->getMasterNodeId();
-    my $node_count = $self->{context}->{cluster}->getCurrentNodesCount();
-    my $host_id = $self->{context}->{host}->getAttr(name => 'entity_id');
+    my $node_count     = $self->{context}->{cluster}->getCurrentNodesCount();
+    my $host_id        = $self->{context}->{host}->getAttr(name => 'entity_id');
 
     if ($node_count > 1 && $master_node_id == $host_id){
         $errmsg = "Node <$host_id> is master node and not alone";

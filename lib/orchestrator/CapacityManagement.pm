@@ -64,12 +64,14 @@ sub new {
         $self->{_test}  = 1;
     }
     else{
-        General::checkParams(args => \%args, required => ['cluster_id']); #Option : hvs_mem_available
-        $self->{_hvs_mem_available} = $args{hvs_mem_available}; # Must be in bytes
-        $self->{_cluster_id}    = $args{cluster_id};
-        $self->{_admin}         = Administrator->new();
-        $self->{_infra}         = $self->_constructInfra();
-        $self->{_operationPlan} = [];
+        General::checkParams(args => \%args, required => []); #Option : hvs_mem_available
+
+        $self->{_hvs_mem_available}       = $args{hvs_mem_available}; # Must be in bytes
+        $self->{_cluster_id}              = (defined $args{cluster_id}) ? $args{cluster_id}:undef;
+        $self->{_hypervisor_cluster_id}   = (defined $args{hypervisor_cluster_id}) ? $args{hypervisor_cluster_id}:undef;
+        $self->{_admin}                   = Administrator->new();
+        $self->{_infra}                   = $self->_constructInfra();
+        $self->{_operationPlan}           = [];
     }
     return $self;
 }
@@ -92,10 +94,20 @@ sub _constructInfra{
 
     General::checkParams(args => \%args, required => []);
     # OPTION : hv_capacities
-    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_cluster_id});
 
+    my $opennebula;
+    if ( defined $self->{_cluster_id} ) {
+        my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_cluster_id});
+        $opennebula    = $cluster->getManager(manager_type => 'host_manager');
+    }
+    elsif ( defined  $self->{_hypervisor_cluster_id} ) {
+        my $hypervisor = Entity->get(id => $self->{_hypervisor_cluster_id});
+        $opennebula    = $hypervisor->getComponent(name => 'Opennebula', version => 3);
+    }
+    else {
+        throw Kanopya::Exception(error => 'No cluster or hypervisor id, Capacity Manager cannot construct infra');
+    }
     # Get the list of all hypervisors
-    my $opennebula    = $cluster->getManager(manager_type => 'host_manager');
     my @hypervisors_r = $opennebula->getHypervisors();
     my $master_hv;
 
@@ -1239,6 +1251,7 @@ sub _separateEmptyHvIds {
     my $hvs = $self->{_infra}->{hvs};
     my @empty_hv_ids;
     my @non_empty_hv_ids;
+    my @hv_ids;
 
     for my $hv_index (keys %$hvs){
         if(scalar @{$hvs->{$hv_index}->{vm_ids}} > 0){
@@ -1247,9 +1260,12 @@ sub _separateEmptyHvIds {
         else {
             push @empty_hv_ids, $hv_index;
         }
+        push @hv_ids, $hv_index;
     }
     return { empty_hv_ids     => \@empty_hv_ids,
-             non_empty_hv_ids => \@non_empty_hv_ids};
+             non_empty_hv_ids => \@non_empty_hv_ids,
+             hv_ids           => \@hv_ids,
+    };
 }
 
 =head2 _findHvIdWithMinVmSize
@@ -1420,4 +1436,76 @@ sub _findHvIdWithMinNumVms{
     }
     return $rep;
 }
+
+
+
+sub flushHypervisor {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['hv_id']);
+
+    my $flush_results = $self->_getFlushHypervisorPlan(hv_id => $args{hv_id});
+
+    $self->_applyMigrationPlan(
+        plan => $flush_results->{operation_plan}
+    );
+
+    return { num_falied     => $flush_results->{num_failed},
+             operation_plan => $self->{_operationPlan}
+           };
+}
+
+sub _getFlushHypervisorPlan {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['hv_id']);
+
+    my $hv_id = $args{hv_id};
+    # use_empty_hv = 1 in order to allow migration of all the vms in empty hv
+
+    my $hv_selected_ids;
+
+    if ( defined $args{use_empty_hv} && $args{use_empty_hv} == 1) {
+        $hv_selected_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
+    }
+    else {
+        $hv_selected_ids = $self->_separateEmptyHvIds()->{hv_ids};
+    }
+
+    # Just remove current hv it self
+    my @hv_selection_ids = grep { $_ != $hv_id } @$hv_selected_ids;
+
+    $log->debug("List of HVs available to free <$hv_id> : @hv_selection_ids");
+    # MIGRATE ALL VM OF THE SELECTED HV
+    my @vmlist = @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
+    $log->info("List of VMs to migrate = @vmlist");
+
+    my @operation_plan = ();
+    my $num_failed      = 0;
+    for my $vm_to_migrate_id (@vmlist) {
+        $log->info("Computing where to migrate VM $vm_to_migrate_id");
+        my $hv_dest_id = $self->_findMinHVidRespectCapa(
+            hv_selection_ids => \@hv_selection_ids,
+            wanted_metrics   => $self->{_infra}->{vms}->{$vm_to_migrate_id},
+        );
+
+        if(defined $hv_dest_id){
+            $log->info("Enqueue VM <$vm_to_migrate_id> migration");
+            $self->_migrateVmModifyInfra(
+                vm_id       => $vm_to_migrate_id,
+                hv_dest_id  => $hv_dest_id->{hv_id},
+                hvs         => $self->{_infra}->{hvs}
+            );
+            push @operation_plan, {vm_id => $vm_to_migrate_id, hv_id => $hv_dest_id->{hv_id}};
+        }
+        else{
+            $log->info("___Cannot migrate VM $vm_to_migrate_id");
+            $num_failed++;
+        }
+    }
+
+    return {
+        operation_plan => \@operation_plan,
+        num_failed => $num_failed
+    };
+};
+
 1;
