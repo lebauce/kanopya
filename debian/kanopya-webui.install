@@ -1,3 +1,2 @@
 ui/Frontend/* opt/kanopya/ui/Frontend
 scripts/init/kanopya-front etc/init.d
-conf/webui*.conf opt/kanopya/conf

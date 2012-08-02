@@ -5,10 +5,6 @@ t/administrator/* opt/kanopya/t/administrator
 t/common/* opt/kanopya/t/common
 tools/deployment/tftp/* tftp
 UserLicence opt/kanopya
-conf/components.conf opt/kanopya/conf
-conf/libkanopya.conf opt/kanopya/conf
-conf/executor*.conf opt/kanopya/conf
-conf/state-manager*.conf opt/kanopya/conf
 sbin/kanopya-executor opt/kanopya/sbin
 sbin/kanopya-state-manager opt/kanopya/sbin
 lib/executor/* opt/kanopya/lib/executor
