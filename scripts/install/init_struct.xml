@@ -1,15 +1,16 @@
 <init_struct  nb="10">
   <general_conf
     kanopya_dir="/opt/kanopya"
-     install_template_dir="/opt/kanopya/scripts/install/templates/"
-     conf_dir="/opt/kanopya/conf/"
-     comp_conf="/opt/kanopya/conf/components.conf"
-     database_dir="/opt/kanopya/scripts/database/mysql/"
+    install_template_dir="/opt/kanopya/scripts/install/templates/"
+    conf_dir="/opt/kanopya/conf/"
+    comp_conf="/opt/kanopya/conf/components.conf"
+    database_dir="/opt/kanopya/scripts/database/mysql/"
     comp_schemas_dir="/opt/kanopya/scripts/database/mysql/schemas/components/"
     schemas_dir="/opt/kanopya/scripts/database/mysql/schemas"
     data_dir="/opt/kanopya/scripts/database/mysql/data/"
     data_sql="/opt/kanopya/scripts/database/mysql/data/Data.sql"
-    schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"/>
+    schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"
+    product="KIM"/>
   <genfiles>
     <executor.conf template="executor.conf.tt">
       <datas logdir="log_directory" masterimages_dir="masterimages_directory" tftp_dir="tftp_directory" clusters_dir="clusters_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>

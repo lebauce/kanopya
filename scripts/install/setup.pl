@@ -383,7 +383,9 @@ service([ 'snmpd' ], 'restart');
 useTemplate(
     template => "dancer_cfg.tt",
     datas    => {
-       log_directory => $answers->{log_directory}
+       log_directory    => $answers->{log_directory},
+       product          => $conf_vars->{product},
+       show_gritters    => ($conf_vars->{product} ne 'KIO')
     },
     conf     => "/opt/kanopya/ui/Frontend/config.yml",
     include  => $conf_vars->{install_template_dir}

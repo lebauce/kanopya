@@ -257,7 +257,9 @@ while (my ($service,$file) = each %$services) {
 useTemplate(
     template => "dancer_cfg.tt",
     datas    => {
-       log_directory => $log_directory
+       log_directory    => $log_directory,
+       product          => $conf_vars->{product},
+       show_gritters    => ($conf_vars->{product} ne 'KIO')
     },
     conf     => "$kanopya_dir/kanopya/ui/Frontend/config.yml",
     include  => $conf_vars->{install_template_dir}
