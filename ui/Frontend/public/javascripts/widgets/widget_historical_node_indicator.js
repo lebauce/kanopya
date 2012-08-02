@@ -113,7 +113,6 @@ function showIndicatorGraph(curobj,indic_id,indic_name,indic_unit,start,stop, sp
             var div = '<div id=\"'+div_id+'\"></div>';
             graph_container.css('display', 'block');
             graph_container.append(div);
-
             // Build input as expected by jqplot and transform unix timestamp into js timestamp
             // Also manage indicator table
             var graph_data = [];
@@ -171,7 +170,7 @@ function showIndicatorGraph(curobj,indic_id,indic_name,indic_unit,start,stop, sp
         },
         error : function (jqXHR, textStatus, errorThrown) {
             widget_loading_stop( widget );
-            alert('Error: ' + textStatus);
+            graph_container.append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: textStatus}));
         }
     })
 

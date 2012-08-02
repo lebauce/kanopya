@@ -75,8 +75,9 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
     
     var params = {id:combi_id,start:start,stop:stop};
     $.getJSON(clustersview_url, params, function(data) {
-        if (data.error) { alert (data.error); }
-        else {
+        if (data.error) {
+            graph_container.append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: data.error}));
+        } else {
             var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot()\"/>';
             var div_id = 'cluster_combination_graph_' + widget_id;
             var div = '<div id=\"'+div_id+'\"></div>';

@@ -54,8 +54,9 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
     var params = {id:nodemetric_combination_id};
     graph_container_div.children().remove();
     $.getJSON(nodes_view_bargraph, params, function(data) {
-        if (data.error){ alert (data.error); }
-        else {
+        if (data.error){
+            graph_container_div.append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: data.error}));
+        } else {
             graph_container_div.css('display', 'block');
             var nodemetric_combination_unit = data.unit;
             var max = data.values[0];

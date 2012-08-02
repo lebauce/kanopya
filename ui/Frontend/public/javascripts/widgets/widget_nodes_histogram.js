@@ -58,8 +58,9 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nod
     var params = {id:nodemetric_combination_id,pn:part_number};
     //graph_div.html('');
     $.getJSON(nodes_view_histogram, params, function(data) {
-        if (data.error){ alert (data.error); }
-        else {
+        if (data.error){
+            graph_container_div.append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: data.error}));
+        } else {
             graph_div.css('display', 'block');
             nodemetricCombinationHistogram(data.nbof_nodes_in_partition, data.partitions, graph_div_id, data.nodesquantity, nodemetric_combination_label);
         }
