@@ -1,5 +1,4 @@
 // each link will show the div with id "view_<link_name>" and hide all div in "#view-container"
-
 require('common/workflows.js');
 
 var mainmenu_def = {
@@ -11,29 +10,29 @@ var mainmenu_def = {
                 label_key   : 'externalcluster_name',
                 id_key      : 'pk',
                 submenu     : [
-                               {label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid);}},
-                               {label : 'Configuration', id : 'service_configuration', onLoad : function(cid, eid) { require('KIO/services_config.js'); loadServicesConfig(cid, eid);}},
-                               {label : 'Ressources', id : 'service_ressources', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRessources(cid, eid);}},
-                               {label : 'Monitoring', id : 'service_monitoring', onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid, 'external');}},
-                               {label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid, 'external');}},
-                               {label : 'Workflows', id : 'workflows', onLoad : function(cid, eid) { require('common/workflows.js'); workflowslist(cid, eid); } }
+                               {label : 'Overview',         id : 'service_overview', onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid);}},
+                               {label : 'Configuration',    id : 'service_configuration', onLoad : function(cid, eid) { require('KIO/services_config.js'); loadServicesConfig(cid, eid);}},
+                               {label : 'Ressources',       id : 'service_ressources', onLoad : function(cid, eid) { require('KIO/services.js'); loadServicesRessources(cid, eid);}},
+                               {label : 'Monitoring',       id : 'service_monitoring', onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid, 'external');}},
+                               {label : 'Rules',            id : 'service_rules', onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid, 'external');}},
+                               {label : 'Workflows',        id : 'workflows', onLoad : function(cid, eid) { require('common/workflows.js'); workflowslist(cid, eid); } }
                                ]
                 }
     },
     'Administration'    : {
         //'Kanopya'          : [],
         'Monitoring'       :  [
-                               {label : 'Scom', id : 'scommanagement', onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }},
+                               {label : 'Scom',     id : 'scommanagement', onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }},
                                {label : 'Settings', id : 'monitorsettings', onLoad : function(cid, eid) { require('KIO/monitorsettings.js'); loadMonitorSettings(cid, eid); }}
                               ],
         'Right Management' :  [
-                               {label : 'Users', id : 'users', onLoad : function(cid, eid) { require('common/users.js'); usersList(cid, eid); }},
-                               {label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); }},
-                               {label : 'Permissions', id : 'permissions', onLoad : function(cid, eid) { require('common/users.js'); permissions(cid, eid); }}
+                               {label : 'Users',        id : 'users',       onLoad : function(cid, eid) { require('common/users.js'); users.load_content(cid, eid); }},
+                               {label : 'Groups',       id : 'groups',      onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); }},
+                               {label : 'Permissions',  id : 'permissions', onLoad : function(cid, eid) { require('common/users.js'); permissions(cid, eid); }}
                                ],
         'Workflows'        : [
-            { label : 'Overview', id : 'workflows_overview', onLoad : workflowsoverview },
-            { label : 'Workflow Management' , id : 'workflowmanagement', onLoad : sco_workflow },
+            { label : 'Overview',               id : 'workflows_overview', onLoad : workflowsoverview },
+            { label : 'Workflow Management',    id : 'workflowmanagement', onLoad : sco_workflow },
         ],
         'Technical Services' : [
             { label : 'Technical Services', id : 'technicalservices', onLoad : function(cid) { require('KIO/technicalservices.js'); technicalserviceslist(cid); } }
@@ -42,14 +41,6 @@ var mainmenu_def = {
 };
 
 var details_def = {
-        //'services_list' : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
-        /*'service_ressources_list' : {
-            tabs : [
-                        { label : 'Node', id : 'node', onLoad : function(cid, eid) {  } },
-                        { label : 'Rules', id : 'rules', onLoad : node_rules_tab },
-                    ],
-            title : { from_column : 'externalnode_hostname' }
-        },*/
         'workflowmanagement' : { onSelectRow : workflowdetails },
 };
 
