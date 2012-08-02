@@ -66,8 +66,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     
     // Not defined details menu
     if (details_info === undefined) {
-        //alert('Details not defined yet ( menu.conf.js -> details_def["' + grid_class + '"] )');
-        console.log('No details for grid ' +  grid_class);
+        //console.log('No details for grid ' +  grid_class);
         return;
     }
     

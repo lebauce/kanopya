@@ -103,10 +103,6 @@ function createUpdateNodeButton(container, elem_id, grid) {
     $(container).append(button);
 }
 
-function scoConfigurationDialog(elem_id, sco_id) {
-  console.log(sco_id);
-}
-
 function loadServicesRessources (container_id, elem_id) {
     var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
     var nodemetricrules;

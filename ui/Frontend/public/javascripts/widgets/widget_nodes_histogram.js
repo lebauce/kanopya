@@ -4,8 +4,6 @@ $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
     if (obj.widget.element.find('.nmHistogram').length == 0) {return;}
 
-    console.log('Load content of widget histo ' + obj.widget.id);
-
      var sp_id = obj.widget.metadata.service_id;
      fillNodeMetricList2(
              obj.widget,
