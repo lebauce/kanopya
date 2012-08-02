@@ -385,16 +385,19 @@ sub applyPolicies {
 
     General::checkParams(args => \%args, required => [ "presets" ]);
 
+    # First, configure managers (potentially needed by other policies)
+    if (exists $args{presets}{managers}) {
+        $self->configureManagers(managers => $args{presets}{managers});
+        delete $args{presets}{managers};
+    }
+
+    # Then, configure cluster using policies
     my ($name, $value);
     for my $name (keys %{ $args{presets} }) {
         $value = $args{presets}->{$name};
 
-        # Handle managers cluster config
-        if ($name eq 'managers') {
-            $self->configureManagers(managers => $value);
-        }
         # Handle components cluster config
-        elsif ($name eq 'components') {
+        if ($name eq 'components') {
             for my $component (values %$value) {
                 # TODO: Check if the component is already installed
                 my $instance = $self->addComponentFromType(component_type_id => $component->{component_type});
@@ -632,6 +635,33 @@ sub configureOrchestration {
         elem_name       => 'aggregate_condition',
         composite_name  => 'aggregate_rule',
     );
+
+    # Associate workflows to rules (clone workflows)
+    # Workflow_def associated to the rule is the same than the policy
+    # So we clone it and associate the new one to the rule to keep 1 <-> 1 relationship
+    my $workflow_manager = $self->getManager( manager_type => 'workflow_manager');
+    for my $rule ($self->nodemetric_rules, $self->aggregate_rules) {
+        my $rule_id    = $rule->id;
+        my $wf_id      = $rule->workflow_def_id; # The wf id from the policy
+        if ($wf_id) {
+            # Get original workflow def and params (from policy)
+            my $wf_def     = $rule->workflow_def;
+            my $wf_params  = $wf_def->getParamPreset();
+            my $wf_name    = $wf_def->workflow_def_name;
+
+            # Replacing in workflow name the id of original rule (from policy) with id of this rule
+            # TODO change associated workflow naming convention (currently: <ruleid>_<origin_wf_def_name>) UGLY!
+            $wf_name =~ s/^[0-9]*/$rule_id/;
+
+            # Associate to the rule a copy of the policy workflow
+            $workflow_manager->associateWorkflow(
+                'new_workflow_name'         => $wf_name,
+                'origin_workflow_def_id'    => $wf_id,
+                'specific_params'           => $wf_params->{specific} || {},
+                'rule_id'                   => $rule_id,
+            );
+        }
+    }
 }
 
 =head2 _cloneOrchestrationCompositeData
