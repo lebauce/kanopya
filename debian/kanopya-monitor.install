@@ -1,0 +1,8 @@
+sbin/kanopya-aggregator opt/kanopya/sbin
+sbin/kanopya-collector opt/kanopya/sbin
+sbin/kanopya-grapher opt/kanopya/sbin
+scripts/init/kanopya-collector etc/init.d
+scripts/init/kanopya-grapher etc/init.d
+lib/monitor/* opt/kanopya/lib/monitor
+t/monitor/* opt/kanopya/t/monitor
+conf/monitor*.conf opt/kanopya/conf
