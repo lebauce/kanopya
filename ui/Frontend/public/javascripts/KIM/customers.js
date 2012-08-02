@@ -95,7 +95,7 @@ function Customers() {
             }).start();
         }});
         
-        details.addAction({label: 'Detele', action: function() {
+        details.addAction({label: 'Delete', action: function() {
             $.ajax({ 
                 type: 'delete', 
                 async: false, 
@@ -119,7 +119,18 @@ function Customers() {
                  {name:'cluster_id',index:'cluster_id', width:60, sorttype:"int", hidden:true, key:true},
                  {name:'cluster_name',index:'cluster_name', width:120},
                  {name:'cluster_desc',index:'cluster_desc', width:300},
-            ]
+            ],
+            details : {
+                onSelectRow : function(eid, e, cid) {
+                    // Yes, this scope is ugly
+                    // But opening the service view from here is quite difficult
+                    $('#' + cid).parents('.ui-dialog').find('.ui-dialog-buttonset').find('button').first().trigger('click');
+                    $('#menuhead_Services').find('a').trigger('click');
+                    setTimeout(function() { 
+                        $('#link_view_aaa_' + eid).find('a').trigger('click');
+                    }, 400);
+                }
+            }
         });
     }
     

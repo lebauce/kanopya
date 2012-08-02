@@ -4,7 +4,9 @@ var Component = (function() {
     function Component(id) {
         this.id     = id;
         this.conf   = {};
-        this.getConf();
+        if (id) {
+            this.getConf();
+        }
     }
 
     Component.prototype.getConf     = function() {
