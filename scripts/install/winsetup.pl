@@ -39,9 +39,10 @@ while (my ($key,$path) = each %$conf_vars) {
     $conf_vars->{$key} = $kanopya_dir.$path;
 }
 
-my $conf_files  = $install_conf->{genfiles};
-my $service_dir = $conf_vars->{services_dir};
-my $services    = $install_conf->{services};
+my $conf_default    = $install_conf->{default_conf};
+my $conf_files      = $install_conf->{genfiles};
+my $service_dir     = $conf_vars->{services_dir};
+my $services        = $install_conf->{services};
 
 my $log_directory    = 'C:\var\log\kanopya\\';
 my $tmp_monitor      = 'C:\tmp\monitor\graph\\';
@@ -258,8 +259,8 @@ useTemplate(
     template => "dancer_cfg.tt",
     datas    => {
        log_directory    => $log_directory,
-       product          => $conf_vars->{product},
-       show_gritters    => ($conf_vars->{product} ne 'KIO')
+       product          => $conf_default->{product},
+       show_gritters    => ($conf_default->{product} ne 'KIO')
     },
     conf     => "$kanopya_dir/kanopya/ui/Frontend/config.yml",
     include  => $conf_vars->{install_template_dir}

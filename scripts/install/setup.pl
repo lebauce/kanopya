@@ -40,6 +40,7 @@ die "You must be root to execute this scipts" if ( $< != 0 );
 my $install_conf = XMLin("/opt/kanopya/scripts/install/init_struct.xml");
 my $questions    = $install_conf->{questions};
 my $conf_vars    = $install_conf->{general_conf};
+my $conf_default = $install_conf->{default_conf};
 my $conf_files   = $install_conf->{genfiles};
 my $answers      = {};
 
@@ -384,8 +385,8 @@ useTemplate(
     template => "dancer_cfg.tt",
     datas    => {
        log_directory    => $answers->{log_directory},
-       product          => $conf_vars->{product},
-       show_gritters    => ($conf_vars->{product} ne 'KIO')
+       product          => $conf_default->{product},
+       show_gritters    => ($conf_default->{product} ne 'KIO')
     },
     conf     => "/opt/kanopya/ui/Frontend/config.yml",
     include  => $conf_vars->{install_template_dir}
