@@ -118,6 +118,9 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "workflow_untriggerable_timestamp",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+
 );
 __PACKAGE__->set_primary_key("aggregate_rule_id");
 

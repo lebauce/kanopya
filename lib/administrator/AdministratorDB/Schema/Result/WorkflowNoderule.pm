@@ -76,6 +76,14 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "workflow_untriggerable_timestamp",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 0,
+    is_nullable => 1,
+  },
+
 );
 
 =head1 PRIMARY KEY
