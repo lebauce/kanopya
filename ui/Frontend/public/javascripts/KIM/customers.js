@@ -138,7 +138,9 @@ function Customers() {
                                                           .appendTo(cell);
                 var csv     = $('<a>', { text : 'CSV' }).button({ icons : { primary : 'ui-icon-script' } })
                                                         .appendTo(cell);
-                $(graph).bind('click', function() { });
+                $(graph).bind('click', function() {
+                    showConsumptionGraph(rowid);
+                });
                 $(csv).bind('click', function() {
                     require('KIM/services.js');
                     var s   = Service(rowid);
@@ -198,3 +200,63 @@ function Customers() {
 
 var customers = new Customers();
 
+// Return AggregateCombination id from its name for a service provider
+function getCombiId(sp_id, combi_name) {
+    var combi_id
+    $.ajax({
+        url     : '/api/aggregatecombination',
+        async   : false,
+        data    : {
+            aggregate_combination_service_provider_id   : sp_id,
+            aggregate_combination_label                 : combi_name
+        },
+        success : function (data) {
+            if (data.length > 0) {
+                combi_id = data[0].pk;
+            }
+        }
+    });
+    return combi_id;
+}
+
+// Display consumption graphs in dialog box
+// Based on Billing ClusterMetric core and mem
+function showConsumptionGraph(sp_id) {
+    var cont = $('<div>');
+
+    // Get combinations id (billing mem and core)
+    var combi_mem_id    = getCombiId(sp_id, 'BillingMemory');
+    var combi_core_id   = getCombiId(sp_id, 'BillingCores');
+
+    // Dialog box containing graphs
+    var dialog = cont.dialog({
+        autoOpen: true,
+        modal: true,
+        title: 'Consumption',
+        width: 800,
+        height: 500,
+        resizable: false,
+        draggable: true,
+        close: function(event, ui) {
+            $(this).remove();
+        },
+        buttons: {
+            Ok: function() {
+                $(this).dialog('close');
+            }
+        },
+    });
+
+    // Graph div for core and mem
+    function addGraph(combi_id) {
+        var graph_div   = $('<div>', { 'class' : 'widgetcontent' });
+        cont.append($('<div>', {'class' : 'widget'}).append(graph_div));
+        graph_div.load('/widgets/widget_historical_service_metric.html', function() {
+            $('.dropdown_container').remove();
+            setGraphDatePicker(graph_div);
+            showCombinationGraph(graph_div, combi_id, '', '', '', sp_id);
+        });
+    }
+    addGraph(combi_mem_id);
+    addGraph(combi_core_id);
+}
