@@ -11,16 +11,17 @@ $('.widget').live('widgetLoadContent',function(e, obj){
      );
 });
 
-function initNodesBargraph (widget_id) {
-    alert(widget_id);
-}
-
 function fillNodeMetricList (widget, sp_id) {
     var indic_list = widget.element.find('.nmBargraph_list');
     
     indic_list.change(function () {
-        showNodemetricCombinationBarGraph(this, this.options[this.selectedIndex].id, this.options[this.selectedIndex].value, sp_id);
+        showNodemetricCombinationBarGraph(
+                this,
+                this.options[this.selectedIndex].id,
+                this.options[this.selectedIndex].value,
+                sp_id);
         widget.addMetadataValue('nodemetric_id', this.options[this.selectedIndex].id);
+        widgetUpdateTitle(widget, this.options[this.selectedIndex].value);
     });
 
     $.get('/api/serviceprovider/' + sp_id + '/nodemetric_combinations', function (data) {
@@ -46,7 +47,7 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
 
     var graph_container_div = $(curobj).closest('.widget').find('.nodes_bargraph');
     var graph_div_id_prefix = 'nodes_bargraph' + widget_id;
-    
+
     if (nodemetric_combination_id == 'default') { return }
 
     widget_loading_start( $(curobj).closest('.widget') );

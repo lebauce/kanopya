@@ -32,6 +32,7 @@ function fillServiceMetricCombinationList (widget, sp_id) {
                 sp_id
         );
         widget.addMetadataValue('aggregate_combination_id', this.options[this.selectedIndex].id);
+        widgetUpdateTitle(widget, metric_name);
     });
 
     $.get('/api/serviceprovider/' + sp_id + '/aggregate_combinations', function (data) {
@@ -117,7 +118,7 @@ function timedGraph(first_graph_line, min, max, label, unit, div_id) {
                     markSize: 10,
                     showGridline: false,
                     angle: -60,
-                    formatString: '%m-%d-%Y %H:%M'
+                    formatString: '%m-%d-%y %H:%M'
                 },
                 min:min,
                 max:max,

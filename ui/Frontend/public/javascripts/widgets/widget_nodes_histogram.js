@@ -19,6 +19,7 @@ function fillNodeMetricList2 (widget, sp_id) {
     indic_list.change(function () {
         showNodemetricCombinationHistogram(this, this.options[this.selectedIndex].id, this.options[this.selectedIndex].value, part_number, sp_id);
         widget.addMetadataValue('nodemetric_id', this.options[this.selectedIndex].id);
+        widgetUpdateTitle(widget, this.options[this.selectedIndex].value);
     });
 
     $.get('/api/serviceprovider/' + sp_id + '/nodemetric_combinations', function (data) {
