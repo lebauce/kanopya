@@ -579,15 +579,23 @@ sub configureBillingLimits {
             );
         }
 
-        my $charged_mem = Indicator->find(hash => { indicator_name => "Memory" });
-        my $charged_cores = Indicator->find(hash => { indicator_name => "Cores" });
-        my $collector = $self->getManager(manager_type => "collector_manager");
+        my @indicators = qw(Memory Cores);
+        foreach my $name (@indicators) {
+            my $indicator = Indicator->find(hash => { indicator_name => $name });
 
-        $collector->collectIndicator(indicator_id        => $charged_mem->getId,
-                                     service_provider_id => $self->getId);
+            my $cm = Clustermetric->new(
+                clustermetric_label                    => "Billing" . $name,
+                clustermetric_service_provider_id      => $self->getId,
+                clustermetric_indicator_id             => $indicator->getId,
+                clustermetric_statistics_function_name => "sum",
+                clustermetric_window_time              => '1200',
+            );
 
-        $collector->collectIndicator(indicator_id        => $charged_cores->getId,
-                                     service_provider_id => $self->getId);
+            AggregateCombination->new(
+                aggregate_combination_service_provider_id => $self->getId,
+                aggregate_combination_formula             => 'id' . $cm->getId
+            );
+        }
     }
 }
 
