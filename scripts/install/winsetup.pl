@@ -65,7 +65,7 @@ my %conf_data = (
 );
 
 #Welcome message - accepting Licence is mandatory
-# welcome();
+welcome();
 
 #generation of configuration files
 genConf();
@@ -260,7 +260,7 @@ useTemplate(
     datas    => {
        log_directory    => $log_directory,
        product          => $conf_default->{product},
-       show_gritters    => ($conf_default->{product} ne 'KIO')
+       show_gritters    => $conf_default->{product} eq 'KIO' ? 0 : 1,
     },
     conf     => "$kanopya_dir/kanopya/ui/Frontend/config.yml",
     include  => $conf_vars->{install_template_dir}
