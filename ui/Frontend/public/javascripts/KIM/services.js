@@ -3,6 +3,35 @@
 require('modalform.js');
 require('common/service_common.js');
 
+// Must progressively move functions in the Service class
+var Service = (function() {
+    function Service(id) {
+        this.id     = id;
+        this.attrs;
+        $.ajax({
+            url     : '/api/serviceprovider/' + this.id + '?expand=billinglimits',
+            success : function(data) {
+                this.attrs  = data;
+                console.log(this.attrs);
+            }
+        });
+    }
+
+    Service.prototype.callFunction  = function(funcName, callback, data) {
+        var theCallback = callback  || $.noop;
+        var theData     = data      || {};
+        $.ajax({
+            type        : 'POST',
+            url         : '/api/serviceprovider/' + this.id + '/' + funcName,
+            contentType : 'application/json',
+            data        : JSON.stringify(theData),
+            success     : theCallback
+        });
+    };
+
+    return Service;
+})();
+
 var ressources  = {};
 
 function    servicesListFilter(elem) {

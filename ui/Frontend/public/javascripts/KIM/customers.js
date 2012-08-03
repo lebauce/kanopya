@@ -114,11 +114,12 @@ function Customers() {
             url: '/api/cluster?user_id='+elem_id,
             content_container_id: container_id,
             grid_id: 'customer_services_list',
-            colNames: ['cluster id','name', 'description' ],
+            colNames: ['cluster id','Name', 'Description', '' ],
             colModel: [    
                  {name:'cluster_id',index:'cluster_id', width:60, sorttype:"int", hidden:true, key:true},
                  {name:'cluster_name',index:'cluster_name', width:120},
                  {name:'cluster_desc',index:'cluster_desc', width:300},
+                 {name:'actions', index : 'action', nodetails : true}
             ],
             details : {
                 onSelectRow : function(eid, e, cid) {
@@ -130,6 +131,18 @@ function Customers() {
                         $('#link_view_aaa_' + eid).find('a').trigger('click');
                     }, 400);
                 }
+            },
+            afterInsertRow  : function(grid, rowid, rowelem, rowdata) {
+                var cell    = $(grid).find('tr#' + rowid).find('td[aria-describedby="customer_services_list_actions"]');
+                var graph   = $('<a>', { text : 'Graph' }).button({ icons : { primary : 'ui-icon-image' } })
+                                                          .appendTo(cell);
+                var csv     = $('<a>', { text : 'CSV' }).button({ icons : { primary : 'ui-icon-script' } })
+                                                        .appendTo(cell);
+                $(graph).bind('click', function() { });
+                $(csv).bind('click', function() {
+                    require('KIM/services.js');
+                    var s   = Service(rowid);
+                });
             }
         });
     }
