@@ -122,10 +122,9 @@ function loadServicesRessources (container_id, elem_id) {
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             addRessourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, 'external');
         },
-        colNames: [ 'id', 'State', 'Hostname', 'Rules State' ],
+        colNames: [ 'id', 'Hostname', 'Rules State' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'externalnode_state', index: 'externalnode_state', width: 90, formatter: StateFormatter },
             { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 200 },
             { name: 'rulesstate', index: 'rulestate' }
         ],
