@@ -4,11 +4,14 @@ $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
      if (obj.widget.element.find('.nmBarGraph').length == 0) {return;}
 
+     setNodesSelection(obj.widget.element, obj.widget);
+
      var sp_id = obj.widget.metadata.service_id;
      fillNodeMetricList(
              obj.widget,
              sp_id
      );
+
 });
 
 function fillNodeMetricList (widget, sp_id) {
@@ -42,15 +45,17 @@ function fillNodeMetricList (widget, sp_id) {
 function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nodemetric_combination_label, sp_id) {
 
     var nodes_view_bargraph = '/monitoring/serviceprovider/' + sp_id +'/nodesview/bargraph';
+    var widget_elem = $(curobj).closest('.widget');
+    var widget_id   = widget_elem.attr("id");
 
-    var widget_id = $(curobj).closest('.widget').attr("id");
-
-    var graph_container_div = $(curobj).closest('.widget').find('.nodes_bargraph');
+    var graph_container_div = widget_elem.find('.nodes_bargraph');
     var graph_div_id_prefix = 'nodes_bargraph' + widget_id;
 
     if (nodemetric_combination_id == 'default') { return }
 
-    widget_loading_start( $(curobj).closest('.widget') );
+    widget_loading_start( widget_elem );
+
+    var nodes_selection_opt = getNodesSelection(widget_elem);
 
     var params = {id:nodemetric_combination_id};
     graph_container_div.children().remove();
@@ -70,6 +75,13 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
             if (max == mean) {
                 mean = null;
             }
+
+            // Apply nodes selection opt
+            if (nodes_selection_opt.type !== 'all' ) {
+                data.nodelist   = data.nodelist.slice(0,nodes_selection_opt.count);
+                data.values     = data.values.slice(0,nodes_selection_opt.count);
+            }
+
             var max_nodes_per_graph = 50;
             var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
             var nodes_per_graph = data.nodelist.length/graph_number;
@@ -163,4 +175,43 @@ function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title, uni
 
     // Attach resize event handlers
     setGraphResizeHandlers(div_id, nodes_bar_graph);
+}
+
+function setNodesSelection(widget_elem, widget) {
+    var type_select     = widget_elem.find('.order_type');
+    var count_select    = widget_elem.find('.display_count');
+    var count_options   = [5,10,20,50];
+    for (var i in count_options) {
+        count_select.append($('<option>', { value: count_options[i], html: count_options[i]}));
+    }
+
+    // Manage save/load
+    type_select.change( function() {
+        var val = $(this).find(':selected').attr('id');
+        val == 'all' ? count_select.hide() : count_select.show();
+        if (widget !== undefined) widget.addMetadataValue('displayopt_type', val);
+    });
+    count_select.change( function() {
+        if (widget !== undefined) widget.addMetadataValue('displayopt_count', $(this).find(':selected').val());
+    })
+    // Load
+    var type_value  = 'top';
+    var count_value = '10';
+    if (widget !== undefined) {
+        type_value  = widget.metadata.displayopt_type || type_value;
+        count_value = widget.metadata.displayopt_count || count_value;
+    }
+    type_select.find('#' + type_value).attr('selected', 'selected');
+    type_select.change();
+    count_select.find('[value="' + count_value + '"]').attr('selected', 'selected');
+}
+
+function getNodesSelection(widget_elem) {
+    var type_select     = widget_elem.find('.order_type');
+    var count_select    = widget_elem.find('.display_count');
+
+    return {
+        type    : type_select.find(':selected').attr('id'),
+        count   : count_select.find(':selected').val()
+    }
 }
