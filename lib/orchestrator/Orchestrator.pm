@@ -64,6 +64,18 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("orchestrator");
 
+sub getMethods {
+  return {
+    'updateOrchestratorConf'  => {
+      'description' => 'Update orchestrator conf',
+      'perm_holder' => 'entity'
+    },
+    'getOrchestratorConf'  => {
+      'description' => 'Get orchestrator conf',
+      'perm_holder' => 'entity'
+    }
+  }
+}
 
 =head2 new
 

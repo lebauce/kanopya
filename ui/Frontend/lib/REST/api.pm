@@ -99,6 +99,7 @@ my %resources = (
     "openldap1"                => "Entity::Component::Openldap1",
     "openssh5"                 => "Entity::Component::Openssh5",
     "operation"                => "Operation",
+    "orchestrator"             => "Orchestrator",
     "outside"                  => "Entity::ServiceProvider::Outside",
     "sco"                      => "Entity::Connector::Sco",
     "scom"                     => "Entity::Connector::Scom",
@@ -451,7 +452,7 @@ sub setupREST {
             }
 
             my %params;
-            if ((split(/;/, request->content_type))[0] eq "application/json") {
+            if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
                 %params = %{from_json(request->body)};
             } else {
                 %params = params;
