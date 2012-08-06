@@ -146,6 +146,15 @@ sub getHypervisors {
     return wantarray ? @hypervisors : \@hypervisors;
 }
 
+=head2 getHypervisorType
+
+=cut
+
+sub getHypervisorType {
+    my ($self) = @_;
+    return $self->{_dbix}->get_column('hypervisor');
+}
+
 =head2 checkHostManagerParams
 
 =cut

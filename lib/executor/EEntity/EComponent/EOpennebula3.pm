@@ -31,20 +31,37 @@ use Hash::Merge qw(merge);
 my $log = get_logger("executor");
 my $errmsg;
 
+###############################
+# component interface methods #
+###############################
+
+sub addNode {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'host', 'mount_point', 'cluster' ]
+    );
+
+    $self->configureNode(%args);
+}
+
 # generate configuration files on node
 sub configureNode {
     my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['cluster', 'host', 'mount_point']);
+    General::checkParams(
+        args     => \%args, 
+        required => ['cluster', 'host', 'mount_point']
+    );
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
+    my $hypervisor_type = $self->getHypervisorType();
 
     if(not $masternodeip) {
         # we start the first node so we start opennebula services
         $log->info('opennebula frontend configuration');
         $log->debug('generate /etc/one/oned.conf');
 
-        $self->generateOnedConf(%args);
+        $self->_generateOnedConf(%args);
 
         $self->addInitScripts(
                 mountpoint => $args{mount_point},
@@ -72,39 +89,98 @@ sub configureNode {
         $self->getExecutorEContext->execute(command => $cmd);
     }
 
-    $log->info("Opennebula cluster's node configuration");
-    $log->debug('generate /etc/default/libvirt-bin');
-    $self->generateLibvirtbin(%args);
+    # configure kvm hypervisor
+    if($hypervisor_type eq 'kvm') {
+        $log->debug('generate /etc/default/libvirt-bin');
+        $self->_generateLibvirtbin(%args);
 
-    $log->debug('generate /etc/libvirt/libvirtd.conf');
-    $self->generateLibvirtdconf(%args);
+        $log->debug('generate /etc/libvirt/libvirtd.conf');
+        $self->_generateLibvirtdconf(%args);
 
-    $log->debug('generate /etc/libvirt/qemu.conf');
-    $self->generateQemuconf(%args);
-
-    $self->generateXenconf(%args);
-
-    $self->addInitScripts(
-          mountpoint => $args{mount_point},
-          scriptname => 'xend',
-    );
-
-   $self->addInitScripts(
-          mountpoint => $args{mount_point},
-          scriptname => 'xendomains',
-   );
-
-    $self->addInitScripts(
+        $log->debug('generate /etc/libvirt/qemu.conf');
+        $self->_generateQemuconf(%args);
+        
+        $self->addInitScripts(
           mountpoint => $args{mount_point},
           scriptname => 'libvirt-bin',
-   );
+        );
 
-   $self->addInitScripts(
-          mountpoint => $args{mount_point},
-          scriptname => 'qemu-kvm',
-   );
+        $self->addInitScripts(
+              mountpoint => $args{mount_point},
+              scriptname => 'qemu-kvm',
+        );
+    # configure xen hypervisor
+    } elsif($hypervisor_type eq 'xen') {
+        $log->debug('generate /etc/xen/xend-config.sxp');
+        $self->_generateXenconf(%args);
+
+        $self->addInitScripts(
+              mountpoint => $args{mount_point},
+              scriptname => 'xend',
+        );
+
+        $self->addInitScripts(
+              mountpoint => $args{mount_point},
+              scriptname => 'xendomains',
+        );
+    }
 }
 
+sub postStartNode {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'cluster', 'host' ]
+    );
+    
+    # if the host is the opennebula master, we register datastores
+    #if($args{cluster}->getMasterNodeIp() eq $args{host}->getAdminIp()) {
+    #    my $conf = $self->getConf();
+    #    my $repositories = $conf->{opennebula3_repositories};
+    #    for my $repo (@$repositories) {
+        
+    #        my $datastore_name;
+    #        my $datastore_template = $self->generateDatastoreTemplate(ds_name => $datastore_name);
+    #        my $datastoreid = $self->onedatastore_create(file => $datastore_template);
+    #    }
+    #}
+    
+ 
+ 
+    # hypervisor declaration
+    my $hostname = $args{host}->getAttr(name => 'host_hostname');
+    my $hostid = $self->onehost_create(hostname => $hostname);
+
+    # Delete the hypervisor from opennebula if the operation fail later.
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('onehost_delete'),
+            parameters => [ $self, 'host_nameorid', $hostid ]
+        );
+    }
+
+    $log->info('Hypervisor id returned by opennebula: ' . $hostid);
+    my $hypervisor = $self->addHypervisor(
+        host => $args{host}->_getEntity, 
+        id   => $hostid
+    );
+
+    $self->onehost_enable(host_nameorid => $hostname);
+    
+}
+
+sub preStopNode {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'cluster', 'host' ]
+    );
+
+     $self->onehost_delete(host_nameorid => $args{host}->onehost_id);
+     # TODO verifier le succes de la commande
+
+     $self->_getEntity->removeHypervisor(host => $args{host});
+}
 
 sub getVmResources {
     my ($self, %args) = @_;
@@ -390,230 +466,6 @@ sub scale_cpu {
     #return $self->_getEntity()->updateCPU(%args);
 }
 
-# generate $ONE_LOCATION/etc/oned.conf configuration file
-sub generateOnedConf {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point']);
-
-    my $cluster = $self->_getEntity->getServiceProvider;
-    my $data = $self->_getEntity()->getTemplateDataOned();
-    my $file = $self->generateNodeFile(
-        cluster       => $cluster,
-        host          => $args{host},
-        file          => '/etc/one/oned.conf',
-        template_dir  => '/templates/components/opennebula',
-        template_file => 'oned.conf.tt',
-        data          => $data
-    );
-
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/one'
-    );
-}
-
-# generate /etc/default/libvirt-bin configuration file
-sub generateLibvirtbin {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    my $cluster = $self->_getEntity->getServiceProvider;
-    my $data = $self->_getEntity()->getTemplateDataLibvirtbin();
-    my $file = $self->generateNodeFile(
-        cluster       => $cluster,
-        host          => $args{host},
-        file          => '/etc/default/libvirt-bin',
-        template_dir  => "/templates/components/opennebula",
-        template_file => 'libvirt-bin.tt',
-        data          => $data
-    );
-
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/default'
-    );
-}
-
-# generate /etc/libvirt/libvirtd.conf configuration file
-sub generateLibvirtdconf {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    my $data = $self->_getEntity()->getTemplateDataLibvirtd();
-    $data->{listen_ip_address} = $args{host}->getAdminIp;
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/libvirt/libvirtd.conf',
-        template_dir  => '/templates/components/opennebula',
-        template_file => 'libvirtd.conf.tt',
-        data          => $data
-    );
-
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/libvirt'
-    );
-}
-
-# generate /etc/libvirt/qemu.conf configuration file
-sub generateQemuconf {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    my $data = {};
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/libvirt/qemu.conf',
-        template_dir  => '/templates/components/opennebula',
-        template_file => 'qemu.conf.tt',
-        data          => $data
-    );
-
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/libvirt'
-    );
-}
-
-# generate /etc/xen/xend-config.sxp configuration file
-sub generateXenconf {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    # TODO recup de l'interface pour les vms
-    my $data = {
-             vmiface => 'eth1',
-        min_mem_dom0 => '1024'
-    };
-
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/xen/xend-config.sxp',
-        template_dir  => '/templates/components/opennebula',
-        template_file => 'xend-config.sxp.tt',
-        data          => $data
-    );
-
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/xen'
-    );
-}
-
-sub generatemultivlanconf {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    my $data = {};
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/xen/scripts/network-multi-vlan',
-        template_dir  => '/templates/components/opennebula',
-        template_file => 'network-multi-vlan.tt',
-        data          => $data
-    );
-
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/xen/scripts'
-    );
-}
-
-sub generatevlanconf {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    my $data = {};
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/xen/scripts/network-bridge-vlan',
-        template_dir  => '/templates/components/opennebula',
-        template_file => 'network-bridge-vlan.tt',
-        data          => $data
-    );
-
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/xen/scripts'
-    );
-}
-
-sub addNode {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    $self->configureNode(%args);
-}
-
-sub postStartNode {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
-
-    # This host is a new hypervisor node so we declare it to opennebula
-    my $hostname = $args{host}->getAttr(name => 'host_hostname');
-    my $command = $self->_oneadmin_command(command => "onehost create $hostname im_xen vmm_xen tm_shared 802.1Q");
-
-    sleep(10);
-    my $result = $self->getEContext->execute(command => $command);
-    if ($result->{exitcode} != 0) {
-         throw Kanopya::Exception::Internal::IncorrectParam(error => $result->{stdout});
-    }
-    my $id = substr($result->{stdout}, 4);
-
-    # Delete the hypervisor from opennebula if the operation fail later.
-    if (exists $args{erollback} and defined $args{erollback}){
-        $args{erollback}->add(
-            function   => $self->can('deleteHypervisor'),
-            parameters => [ $self, "hypervisor_id", $id ]
-        );
-    }
-
-    $log->info('Hypervisor id returned by opennebula: ' . $id);
-    my $hypervisor = $self->addHypervisor(host => $args{host}->_getEntity, id => $id);
-
-    $command = $self->_oneadmin_command(command => "onehost enable $hostname");
-    $result = $self->getEContext->execute(command => $command);
-}
-
-sub preStopNode {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
-
-     my $result = $self->deleteHypervisor(hypervisor_id => $args{host}->onehost_id);
-     # TODO verifier le succes de la commande
-
-     $self->_getEntity->removeHypervisor(host => $args{host});
-}
-
-sub deleteHypervisor {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'hypervisor_id' ]);
-
-    my $command = $self->_oneadmin_command(command => "onehost delete $args{hypervisor_id}");
-
-    sleep(10);
-    return $self->getEContext->execute(command => $command);
-}
 
 
 sub retrieveOpennebulaHypervisorStatus {
@@ -806,8 +658,350 @@ sub getFreeHost {
 # generate vm template and push it on opennebula master node
 sub _generateVmTemplate {
     my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'hypervisor','host']
+    );
+    
+    my $hypervisor_type = $self->getHypervisorType();
+    
+    # generate image template and register it
+    my $image_templatefile = $self->generateImageTemplate(
+    
+    );
+    my $imageid = $self->oneimage_create(
+    
+    );
+    # generate vnet templates for each ifaces and register them
+    
+    
+    # generate vm template and create it
+    my $vm_templatefile;
+    if($hypervisor_type eq 'kvm') {
+        $vm_templatefile = $self->generateKvmVmTemplate(
+        
+        )
+    } elsif($hypervisor_type eq 'xen') {
+        $vm_templatefile = $self->generateXenVmTemplate(
+        
+        )
+    }
+    my $vmid = $self->onevm_create(file => $vm_templatefile);
+    
+}
 
-    General::checkParams(args => \%args, required => [ 'hypervisor','host']);
+sub applyVLAN {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'iface', 'vlan' ]
+    );
+
+    # In the case of OpenNebula, we need to apply the VLAN on the
+    # bridge interface of the hypervisor the VM is running on.
+}
+
+# Apply the VLAN's on the hypervisor interface dedicated to virtual machines
+
+sub propagateVLAN {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'host', 'hypervisor' ]
+    );
+
+    my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
+    for my $iface (@{$args{host}->getIfaces}) {
+        for my $network ($iface->getInterface->getNetworks) {
+            if ($network->isa("Entity::Network::Vlan")) {
+                $log->info("Applying vlan " . $network->getAttr(name => "network_name") .
+                           " on the bridge interface " . $iface->getAttr(name => "iface_name"));
+                my $ehost_manager = EFactory::newEEntity(data => $args{hypervisor}->getHostManager);
+                $ehost_manager->applyVLAN(iface => $bridge,
+                                          vlan  => $network,
+                                          delete => (defined ($args{delete}) && $args{delete}) ? 1 : 0);
+            }
+        }
+    }
+}
+
+sub vmLoggedErrorMessage {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'opennebula3_vm' ]
+    );
+
+    my $command = one_command('tail -n 50 /var/log/one/oned.log |grep "LOG I '.($args{opennebula3_vm}->onevm_id).' Error"');
+
+    $log->debug("commande = $command");
+    my $result  = $self->getEContext->execute(command => $command);
+    my $output  = $result->{stdout};
+    $log->debug($output);
+
+    my @lastmessage =  split '\n',$output;
+
+    $log->debug(@lastmessage);
+    return $lastmessage[-1];
+
+}
+
+sub forceDeploy {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'vm', 'hypervisor' ]
+    );
+    $self->onevm_deploy(
+        vmid   => $args{vm}->onevm_id, 
+        hostid => $args{hypervisor}->getId()->onehost_id
+    );
+}
+
+#########################################
+# configuration files generation methods #
+#########################################
+
+# generate /etc/oned.conf configuration file
+sub _generateOnedConf {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'host', 'mount_point']
+    );
+
+    my $cluster = $self->_getEntity->getServiceProvider;
+    my $data = $self->_getEntity()->getTemplateDataOned();
+    my $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/one/oned.conf',
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'oned.conf.tt',
+        data          => $data
+    );
+
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/one'
+    );
+}
+
+# generate /etc/default/libvirt-bin configuration file
+sub _generateLibvirtbin {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+
+    my $cluster = $self->_getEntity->getServiceProvider;
+    my $data = $self->_getEntity()->getTemplateDataLibvirtbin();
+    my $file = $self->generateNodeFile(
+        cluster       => $cluster,
+        host          => $args{host},
+        file          => '/etc/default/libvirt-bin',
+        template_dir  => "/templates/components/opennebula",
+        template_file => 'libvirt-bin.tt',
+        data          => $data
+    );
+
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/default'
+    );
+}
+
+# generate /etc/libvirt/libvirtd.conf configuration file
+sub _generateLibvirtdconf {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+
+    my $data = $self->_getEntity()->getTemplateDataLibvirtd();
+    $data->{listen_ip_address} = $args{host}->getAdminIp;
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/libvirt/libvirtd.conf',
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'libvirtd.conf.tt',
+        data          => $data
+    );
+
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/libvirt'
+    );
+}
+
+# generate /etc/libvirt/qemu.conf configuration file
+sub _generateQemuconf {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+
+    my $data = {};
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/libvirt/qemu.conf',
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'qemu.conf.tt',
+        data          => $data
+    );
+
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/libvirt'
+    );
+}
+
+# generate /etc/xen/xend-config.sxp configuration file
+sub _generateXenconf {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+
+    # TODO recup de l'interface pour les vms
+    my $data = {
+             vmiface => 'eth1',
+        min_mem_dom0 => '1024'
+    };
+
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/xen/xend-config.sxp',
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'xend-config.sxp.tt',
+        data          => $data
+    );
+
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/xen'
+    );
+}
+
+###########################################
+# opennebula templates generation methods #
+###########################################
+
+# generate datastore template and push it on opennebula master node
+sub generateDatastoreTemplate {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['ds_name']
+    );
+    
+    my $data = {
+        datastore_name   => $args{ds_name},
+        datastore_ds_mad => 'fs',
+        datastore_tm_mad => 'shared',
+    };
+    
+    my $template_file = 'datastore-' . $args{ds_name} . '.tt';
+    my $file = $self->generateNodeFile(
+        cluster       => $self->_getEntity->getServiceProvider,
+        host          => $args{hypervisor},
+        file          => $template_file,
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'datastore.tt',
+        data         => $data,
+    );
+
+    $self->getEContext->send(
+        src  => $file,
+        dest => '/tmp'
+    );
+    return '/tmp/' . $template_file;
+}
+
+# generate image template and push it on opennebula master node
+# image_source is $datastore_id/$image_file.img
+sub generateImageTemplate {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'image_name','image_source','image_desc', 'hypervisor_type']
+    );
+       
+    my $data = {
+        image_name        => $args{name},
+        image_source      => $args{image_source},
+        image_type        => 'OS',
+        image_description => $args{image_desc},
+        image_persistent  => 'YES', 
+    };
+    
+    if($args{hypervisor_type} eq 'xen') {
+        $data->{image_driver} = '"file:"';
+        $data->{image_target} = 'xvda';
+    } elsif($args{hypervisor_type} eq 'kvm') {
+        $data->{image_driver} = 'raw';
+        $data->{image_target} = 'sd';
+    }
+    
+    my $template_file = 'image-' . $args{name} . '.tt';
+    my $file = $self->generateNodeFile(
+        cluster       => $self->_getEntity->getServiceProvider,
+        host          => $args{hypervisor},
+        file          => $template_file,
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'image.tt',
+        data         => $data,
+    );
+
+    $self->getEContext->send(
+        src  => $file,
+        dest => '/tmp'
+    );
+    return '/tmp/' . $template_file;
+}
+
+# generate vnet template and push it on opennebula master node
+# name 
+sub generateVnetTemplate {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'name','']
+    );
+    
+    my $data = {
+        vnet_name       => $args{name},
+        vnet_type       => 'RANGED',
+        vnet_bridge     => ,
+        vnet_vlanid     => ,
+        vnet_phydev     => ,
+        vnet_netaddress => '10.0.0.0/24',
+    };
+    
+    my $template_file = 'vnet-' . $args{name} . '.tt';
+    my $file = $self->generateNodeFile(
+        cluster       => $self->_getEntity->getServiceProvider,
+        host          => $args{hypervisor},
+        file          => $template_file,
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'vnet.tt',
+        data         => $data,
+    );
+
+    $self->getEContext->send(
+        src  => $file,
+        dest => '/tmp'
+    );
+    return '/tmp/' . $template_file;
+    
+}
+
+# generate xen vm template and push it on opennebula master node
+sub generateXenVmTemplate {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ 'hypervisor','host']
+    );
 
     # host_ram is stored in octect, so we convert it to megaoctect
     my $ram = General::convertFromBytes(
@@ -872,7 +1066,7 @@ sub _generateVmTemplate {
         host          => $args{hypervisor},
         file          => $template_file,
         template_dir  => '/templates/components/opennebula',
-        template_file => 'vm.tt',
+        template_file => 'xen-vm.tt',
         data         => $data,
     );
 
@@ -907,77 +1101,344 @@ sub _generateVmTemplate {
                                econtext    => $self->getExecutorEContext);
 
     return '/tmp/' . $template_file;
+    
 }
 
-# prefix commands to use oneadmin account with its environment variables
-sub _oneadmin_command {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['command']);
-
-    my $config = $self->_getEntity()->getConf();
-    return "su oneadmin -c '" . $args{command} . "'";
+# generate kvm vm template and push it on opennebula master node
+sub generateKvmVmTemplate {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => [ '','']
+    );
 }
 
-sub applyVLAN {
-    my $self = shift;
-    my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'iface', 'vlan' ]);
+########################################################
+# methods to execute opennebula commands on masternode #
+########################################################
 
-    # In the case of OpenNebula, we need to apply the VLAN on the
-    # bridge interface of the hypervisor the VM is running on.
+sub one_command {
+    my $command = @_;
+    return "su oneadmin -c '" . $command . "'";
 }
 
-# Apply the VLAN's on the hypervisor interface dedicated to virtual machines
-
-sub propagateVLAN {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'hypervisor' ]);
-
-    my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
-    for my $iface (@{$args{host}->getIfaces}) {
-        for my $network ($iface->getInterface->getNetworks) {
-            if ($network->isa("Entity::Network::Vlan")) {
-                $log->info("Applying vlan " . $network->getAttr(name => "network_name") .
-                           " on the bridge interface " . $iface->getAttr(name => "iface_name"));
-                my $ehost_manager = EFactory::newEEntity(data => $args{hypervisor}->getHostManager);
-                $ehost_manager->applyVLAN(iface => $bridge,
-                                          vlan  => $network,
-                                          delete => (defined ($args{delete}) && $args{delete}) ? 1 : 0);
-            }
-        }
+# declare a datastore from a template file and return the ID
+sub onedatastore_create {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['file']
+    );
+    
+    my $cmd = one_command("onedatastore create $args{file}");
+    my $result = $self->getEContext->execute(command => $cmd);
+    if($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stdout});
+    }
+    
+    if($result->{stdout} =~ /(\d+)/) {
+        return $1;
     }
 }
 
-sub vmLoggedErrorMessage {
+sub onedatastore_delete {
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => [ 'opennebula3_vm' ]);
-
-    my $command = $self->_oneadmin_command(command => 'tail -n 50 /var/log/one/oned.log |grep "LOG I '.($args{opennebula3_vm}->onevm_id).' Error"');
-
-    $log->info("commande = $command");
-    my $result  = $self->getEContext->execute(command => $command);
-    my $output  = $result->{stdout};
-    $log->info($output);
-
-    my @lastmessage =  split '\n',$output;
-
-
-    $log->info(@lastmessage);
-    return $lastmessage[-1];
-
+    General::checkParams(
+        args     => \%args, 
+        required => ['datastore_nameorid']
+    );
+    
+    my $cmd = one_command("onedatastore delete $args{datastore_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
 }
 
-sub forceDeploy {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'vm', 'hypervisor' ]);
-    my $command = $self->_oneadmin_command(command => 'onevm deploy '.$args{vm}->onevm_id.' '.(Entity->get(id => $args{hypervisor}->getId())->onehost_id));
-    my $result  = $self->getEContext->execute(command => $command);
-    $log->info($result->{stdout});
+sub onedatastore_list {
+    my ($self) = @_;
+   
+    my $cmd = one_command("onedatastore list --xml");
+    my $result = $self->getEContext->execute(command => $cmd);
+    # TODO parse xml output and return hash structure
 }
+
+sub onedatastore_show {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['datastore_nameorid']
+    );
+    
+    my $cmd = one_command("onedatastore show $args{datastore_nameorid} --xml");
+    my $result = $self->getEContext->execute(command => $cmd);
+    # TODO parse xml output and return hash structure
+}
+
+sub oneimage_create {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['datastore_nameorid','file']
+    );
+    
+    my $cmd = one_command("oneimage create $args{datastore_nameorid} $args{file}");
+    my $result = $self->getEContext->execute(command => $cmd);
+    if($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stdout});
+    }
+    # TODO parse command output and return image id
+}
+
+sub oneimage_delete {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['image_nameorid']
+    );
+    
+    my $cmd = one_command("oneimage create $args{image_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
+}
+
+sub oneimage_list {
+    my ($self) = @_;
+    
+    my $cmd = one_command("oneimage list --xml");
+    my $result = $self->getEContext->execute(command => $cmd);
+    # TODO parse xml output and return hash structure
+}
+
+sub oneimage_show {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['image_nameorid']
+    );
+    
+    my $cmd = one_command("oneimage show $args{image_nameorid} --xml");
+    my $result = $self->getEContext->execute(command => $cmd);
+    # TODO parse xml output and return hash structure
+}
+
+sub onevnet_create {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['file']
+    );
+    
+    my $cmd = one_command("onevnet create $args{file}");
+    my $result = $self->getEContext->execute(command => $cmd);
+    if($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stdout});
+    }
+    if($result->{stdout} =~ /(\d+)/) {
+        return $1;
+    }
+}
+
+sub onevnet_delete {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['vnet_nameorid']
+    );
+    
+    my $cmd = one_command("onevnet delete $args{vnet_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
+}
+
+sub onevnet_list {
+    my ($self) = @_;
+
+    
+    my $cmd = one_command("onevnet list --xml");
+    my $result = $self->getEContext->execute(command => $cmd);
+    # TODO parse xml output and return hash structure
+}
+
+sub onevnet_show {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['vnet_nameorid']
+    );
+    
+    my $cmd = one_command("onevnet show $args{vnet_nameorid} --xml");
+    my $result = $self->getEContext->execute(command => $cmd);
+    # TODO parse xml output and return hash structure
+}
+
+sub onehost_create {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['hostname']
+    );
+    
+    my $hypervisor_type = $self->getHypervisorType();
+    
+    my $cmd = "onehost create $args{hostname} ";
+    if($hypervisor_type eq 'xen') {
+        $cmd .= 'im_xen vmm_xen 802.1Q none';
+    } elsif($hypervisor_type eq 'kvm') {
+        $cmd .= 'im_kvm vmm_kvm 802.1Q none';
+    }
+    
+    $cmd = one_command($cmd);
+    my $result = $self->getEContext->execute(command => $cmd);
+    if($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stdout});
+    }
+    if($result->{stdout} =~ /(\d+)/) {
+        return $1;
+    }
+}
+
+sub onehost_delete {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['host_nameorid']
+    );
+    
+    my $cmd = one_command("onehost delete $args{host_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
+}
+
+sub onehost_list {
+    my ($self) = @_;
+    
+    my $cmd = one_command("onehost list --xml");
+    my $result = $self->getEContext->execute(command => $cmd);
+    # TODO parse xml output and return hash structure
+}
+
+sub onehost_show {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['host_nameorid']
+    );
+    
+    my $cmd = one_command("onehost show $args{host_nameorid} --xml");
+    my $result = $self->getEContext->execute(command => $cmd);
+    # TODO parse xml output and return hash structure
+}
+
+sub onehost_enable {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['host_nameorid']
+    );
+    
+    my $cmd = one_command("onehost enable $args{host_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
+}
+
+sub onevm_create {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['file']
+    );
+    
+    my $cmd = one_command("onevm create $args{file}");
+    my $result = $self->getEContext->execute(command => $cmd);
+    if($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stdout});
+    }
+    if($result->{stdout} =~ /(\d+)/) {
+        return $1;
+    }
+}
+
+sub onevm_delete {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['vm_nameorid']
+    );
+    
+    my $cmd = one_command("onevm delete $args{vm_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
+}
+
+sub onevm_deploy {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['vm_nameorid', 'host_nameorid']
+    );
+    
+    my $cmd = one_command("onevm deploy $args{vm_nameorid} $args{host_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
+}
+
+sub onevm_hold {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['vm_nameorid']
+    );
+    
+    my $cmd = one_command("onevm hold $args{vm_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
+}
+
+sub onevm_show {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['vm_nameorid']
+    );
+    
+    my $cmd = one_command("onevm show $args{vm_nameorid} --xml");
+    my $result = $self->getEContext->execute(command => $cmd);
+    # TODO parse xml output and return hash structure
+}
+
+sub onevm_livemigrate {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['vm_nameorid','host_nameorid']
+    );
+    
+    my $cmd = one_command("onevm livemigrate $args{vm_nameorid} $args{host_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
+}
+
+sub onevm_memset {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['vm_nameorid','ram']
+    );
+    
+    my $cmd = one_command("onevm memset $args{vm_nameorid} $args{ram}");
+    my $result = $self->getEContext->execute(command => $cmd);
+}
+
+sub onevm_vcpuset {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['vm_nameorid','cpu']
+    );
+    
+    my $cmd = one_command("onevm vcpuset $args{vm_nameorid} $args{cpu}");
+    my $result = $self->getEContext->execute(command => $cmd);
+}
+
+sub onevm_list {
+    my ($self) = @_;
+
+    my $cmd = one_command("onevm list --xml");
+    my $result = $self->getEContext->execute(command => $cmd);
+    # TODO parse xml output and return hash structure
+}
+
+
 
 1;
