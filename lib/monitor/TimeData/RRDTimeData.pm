@@ -35,16 +35,19 @@ my $log = get_logger("timedata");
 my $dir;
 my $rrd;
 my $delete;
+my $move;
 
 #Quick solution to handle windows and linux
 if ($^O eq 'MSWin32') {
     $dir    = 'C:\\tmp\\monitor\\TimeData\\';
     $rrd    = 'rrdtool.exe';
     $delete = 'del';
+    $move   = 'move';
 } elsif ($^O eq 'linux') {
     $rrd    = '/usr/bin/rrdtool';
     $dir    = '/var/cache/kanopya/monitor/';
     $delete = 'rm';
+    $move   = 'mv';
 }
 
 ###################################################################################################
@@ -406,7 +409,7 @@ sub resizeTimeDataStore {
         #resize the rrd
         system($cmd);
         #replace old rrd by newly generated resize.rrd 
-        my $mv = qq{mv resize.rrd $dir$rrd_name};
+        my $mv = qq{$move resize.rrd $dir$rrd_name};
         system($mv);
     }
     #do nothing
