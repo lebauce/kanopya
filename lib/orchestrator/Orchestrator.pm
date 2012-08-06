@@ -1595,13 +1595,14 @@ sub graph {
 sub run {
     my $self = shift;
     my $running = shift;
-    # Load conf
-    my $conf = Kanopya::Config::get('orchestrator');
-    $self->{_time_step} = $conf->{time_step};
 
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
 
     while ( $$running ) {
+
+        # Load conf
+        my $conf = Kanopya::Config::get('orchestrator');
+        $self->{_time_step} = $conf->{time_step};
 
         my $start_time = time();
 
