@@ -253,7 +253,9 @@ sub _computeCombinationAndFeedTimeDB {
                 $log->info("*** [WARNING] No statvalue computed for clustermetric " . $clustermetric->getId);
             }
         } else {
-             $log->info("*** [WARNING] No datas received for clustermetric " . $clustermetric->getId);
+            # This case is current and produce lot of log
+            # TODO better handling (and user feedback) of missing data
+            $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric->getId);
         }
     }
 }
