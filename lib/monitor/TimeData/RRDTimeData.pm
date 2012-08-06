@@ -42,7 +42,7 @@ if ($^O eq 'MSWin32') {
     $dir    = 'C:\\tmp\\monitor\\TimeData\\';
     $rrd    = 'rrdtool.exe';
     $delete = 'del';
-    $move   = 'move';
+    $move   = 'move /Y';
 } elsif ($^O eq 'linux') {
     $rrd    = '/usr/bin/rrdtool';
     $dir    = '/var/cache/kanopya/monitor/';
@@ -407,10 +407,10 @@ sub resizeTimeDataStore {
         my $cmd     = qq{$rrd resize $dir$rrd_name 0 $resize_type $CDPDiff};
 
         #resize the rrd
-        system($cmd);
+        my $exec = `cd $dir && $cmd 2>&1`;
         #replace old rrd by newly generated resize.rrd 
-        my $mv = qq{$move resize.rrd $dir$rrd_name};
-        system($mv);
+        my $mv   = qq{$move resize.rrd $dir$rrd_name};
+        $exec    = `cd $dir && $mv 2>&1`;
     }
     #do nothing
     else {
