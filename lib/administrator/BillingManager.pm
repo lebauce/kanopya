@@ -149,7 +149,12 @@ sub clusterBilling {
                    "-" . $cluster_name . ".csv";
 
     my $fh;
-    open $fh, ">:encoding(utf8)", $filename or die "$filename: $!";
+    if ($nofile) {
+        open $fh, ">:encoding(utf8)", \$return or die;
+    }
+    else {
+        open $fh, ">:encoding(utf8)", $filename or die "$filename: $!";
+    }
 
     while ($timestamp < $to->epoch) {
         my $values = [];
@@ -200,6 +205,9 @@ sub clusterBilling {
     }
 
     close $fh or die "$filename: $!";
+    if ($return) {
+        return $return;
+    }
 }
 
 1;

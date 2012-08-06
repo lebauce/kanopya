@@ -44,8 +44,10 @@ use Indicatorset;
 use Entity::Billinglimit;
 use Entity::Component::Kanopyaworkflow0;
 use Entity::Component::Kanopyacollector1;
+use BillingManager;
 
 use Hash::Merge;
+use DateTime;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -1574,6 +1576,30 @@ sub initCollectorManager {
             };
         }
     }
+}
+
+=head2 getMonthlyConsommation
+
+=cut
+
+sub getMonthlyConsommation {
+    my $self    = shift;
+
+    my ($from, $to);
+
+    $to         = DateTime->now;
+    $from       = DateTime->new(
+                    year        => $to->year,
+                    month       => $to->month,
+                    day         => 1,
+                    hour        => 0,
+                    minute      => 0,
+                    second      => 0,
+                    nanosecond  => 0,
+                    time_zone   => $to->time_zone
+                  );
+
+    BillingManager::clusterBilling($self->user, $self, $from, $to, 1);
 }
 
 1;
