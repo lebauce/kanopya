@@ -52,6 +52,7 @@ function loadOrchestratorSettings(cid, eid) {
                             });
                             // Update current conf
                             time_step           = orch_freq;
+                            alert('ok');
                         });
     container.append(update_button);
 }
