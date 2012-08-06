@@ -92,6 +92,9 @@ function createUpdateNodeButton(container, elem_id, grid) {
                     url          : '/api/externalcluster/' + elem_id + '/updateNodes',
                     success      : function(data) {
                         $(grid).trigger("reloadGrid");
+                        if (data.node_count) {
+                            alert(data.node_count + ' nodes retrieved');
+                        }
                     }
             });
         });
