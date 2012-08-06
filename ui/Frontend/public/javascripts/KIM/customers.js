@@ -143,7 +143,8 @@ function Customers() {
                 });
                 $(csv).bind('click', function() {
                     require('KIM/services.js');
-                    var s   = Service(rowid);
+                    var s   = new Service(rowid);
+                    s.getMonthlyConsommationCSV();
                 });
             }
         });

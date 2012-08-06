@@ -28,6 +28,10 @@ var Service = (function() {
         });
     };
 
+    Service.prototype.getMonthlyConsommationCSV = function() {
+        window.open('/consommation/cluster/' + this.id);
+    };
+
     return Service;
 })();
 
