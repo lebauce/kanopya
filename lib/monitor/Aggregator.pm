@@ -303,8 +303,8 @@ sub run {
 =head2 updateAggregatorConf
 
     Class : Public
-
     Desc : update values in the aggregator.conf file 
+    Args: $collect_frequency and/or $storage_duration
 
 =cut
 
@@ -333,7 +333,6 @@ sub updateAggregatorConf {
 =head2 getAggregatorConf
 
     Class : Public
-
     Desc : get public values from aggregator.conf file
 
 =cut

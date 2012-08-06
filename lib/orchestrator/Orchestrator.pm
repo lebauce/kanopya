@@ -1643,6 +1643,49 @@ sub new_old {
     return $self;
 }
 
+=head2 updateOrchestratorConf
+
+    Class : Public
+    Desc  : update values in the orchestrator.conf file 
+    Args  : $time_step
+
+=cut
+
+sub updateOrchestratorConf {
+    my ($class, %args) = @_; 
+
+    if ((not defined $args{time_step})) {
+        throw Kanopya::Exception::Internal(
+            error => 'An orchestration frequency must be provided for update'
+        );  
+    } 
+
+    #get orchestrator configuration
+    my $configuration = Kanopya::Config::get('orchestrator'); 
+
+    if (defined $args{time_step}) {
+        $configuration->{time_step} = $args{time_step};
+        Kanopya::Config::set(subsystem => 'orchestrator', config => $configuration);
+    }
+
+}
+
+=head2 getOrchestratorConf
+
+    Class : Public
+    Desc  : get public values from orchestrator.conf file
+
+=cut
+
+sub getOrchestratorConf {
+
+    my $conf = Kanopya::Config::get('orchestrator');
+    return {
+        time_step           => $conf->{time_step},
+    }
+
+}
+
 1;
 
 __END__
