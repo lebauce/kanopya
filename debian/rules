@@ -11,3 +11,8 @@
 
 %:
 	dh  $@
+
+override_dh_install:
+	dh_install
+	rm -rf debian/kanopya-core/tftp
+	rm -rf debian/kanopya-core/opt/kanopya/tools/deployment/tftp/*
