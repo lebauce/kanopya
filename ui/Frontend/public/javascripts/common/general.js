@@ -71,8 +71,20 @@ function callMethodWithPassword( options ) {
                             }
                         },
                         error       : function(data) {
-                            //$("input#meth_password").val("");
-                            //$("div#meth_passworderror").text(JSON.parse(data.responseText).reason).addClass('ui-state-error');
+                            var error_msg;
+                            try {
+                                error_msg = JSON.parse(data.responseText).reason;
+                            }
+                            catch (e) {
+                                // Can't parse response due to special characters
+                                if (data.responseText.indexOf('Invalid login/password') > -1) {
+                                    error_msg = "Invalid login/password";
+                                } else {
+                                    error_msg = data.responseText;
+                                }
+                            }
+                            $("input#meth_password").val("");
+                            $("div#meth_passworderror").text(error_msg).addClass('ui-state-error');
                         }
                     });
                     // If the form succeed, then we can close the dialog
