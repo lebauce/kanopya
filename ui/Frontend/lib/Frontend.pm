@@ -10,6 +10,7 @@ use Messager;
 use Monitoring;
 use REST::api;
 use Kanopya::Config;
+use KIM::Consommation;
 
 our $VERSION = '0.1';
 

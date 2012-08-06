@@ -60,7 +60,8 @@ sub userBilling {
 };
 
 sub clusterBilling {
-    my ($user, $cluster, $from, $to) = @_;
+    my ($user, $cluster, $from, $to, $nofile) = @_;
+    my $return;
 
     my %metrics;
     my %data;

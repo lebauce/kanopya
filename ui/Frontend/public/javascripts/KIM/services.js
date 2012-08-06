@@ -12,7 +12,6 @@ var Service = (function() {
             url     : '/api/serviceprovider/' + this.id + '?expand=billinglimits',
             success : function(data) {
                 this.attrs  = data;
-                console.log(this.attrs);
             }
         });
     }
