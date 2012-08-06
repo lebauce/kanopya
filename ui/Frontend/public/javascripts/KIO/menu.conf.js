@@ -20,23 +20,24 @@ var mainmenu_def = {
                 }
     },
     'Administration'    : {
-        //'Kanopya'          : [],
+        'Technical Services' : [
+                                { label : 'Technical Services', id : 'technicalservices', onLoad : function(cid) { require('KIO/technicalservices.js'); technicalserviceslist(cid); } }
+                               ],
         'Monitoring'       :  [
-                               {label : 'Scom',     id : 'scommanagement', onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }},
-                               {label : 'Settings', id : 'monitorsettings', onLoad : function(cid, eid) { require('KIO/monitorsettings.js'); loadMonitorSettings(cid, eid); }}
+                               {label : 'Scom',     id : 'scommanagement', onLoad : function(cid, eid) { require('KIO/scommanagement.js'); scomManagement(cid, eid); }}
+                              ],
+        'Workflows'        : [
+                              { label : 'Overview',               id : 'workflows_overview', onLoad : workflowsoverview },
+                              { label : 'Workflow Management',    id : 'workflowmanagement', onLoad : sco_workflow },
+                              ],
+        'General'          : [
+                              {label : 'Settings', id : 'monitorsettings', onLoad : function(cid, eid) { require('KIO/monitorsettings.js'); loadMonitorSettings(cid, eid); }}
                               ],
         'Right Management' :  [
                                {label : 'Users',        id : 'users',       onLoad : function(cid, eid) { require('common/users.js'); users.load_content(cid, eid); }},
                                {label : 'Groups',       id : 'groups',      onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); }},
                                {label : 'Permissions',  id : 'permissions', onLoad : function(cid, eid) { require('common/users.js'); permissions(cid, eid); }}
-                               ],
-        'Workflows'        : [
-            { label : 'Overview',               id : 'workflows_overview', onLoad : workflowsoverview },
-            { label : 'Workflow Management',    id : 'workflowmanagement', onLoad : sco_workflow },
-        ],
-        'Technical Services' : [
-            { label : 'Technical Services', id : 'technicalservices', onLoad : function(cid) { require('KIO/technicalservices.js'); technicalserviceslist(cid); } }
-        ]
+                               ]
     },
 };
 
