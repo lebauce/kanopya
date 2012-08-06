@@ -128,7 +128,7 @@ function Customers() {
                     $('#' + cid).parents('.ui-dialog').find('.ui-dialog-buttonset').find('button').first().trigger('click');
                     $('#menuhead_Services').find('a').trigger('click');
                     setTimeout(function() { 
-                        $('#link_view_aaa_' + eid).find('a').trigger('click');
+                        $('#link_view_' + e.cluster_name + '_' + eid).find('a').trigger('click');
                     }, 400);
                 }
             },
