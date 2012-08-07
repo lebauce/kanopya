@@ -25,4 +25,22 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 
+=head2 getVmResources
+
+    Return virtual machines ressources. If no resssource type(s)
+    specified in parameters, return all know ressouces.
+
+=cut
+
+sub getVmResources {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        optional => { vm => undef, ressources => [ 'ram', 'cpu' ] }
+    );
+
+    throw Kanopya::Exception::NotImplemented();
+};
+
 1;
