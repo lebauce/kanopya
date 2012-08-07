@@ -45,6 +45,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                     url         : '/api/entity/' + data[i].id + '/getVms',
                     type        : 'POST',
                     contentType : 'application/json',
+                    data        : JSON.stringify({ }),
                     success     : function(hyp) {
                         return (function(vms) {
                             hyp.totalRamUsed    = 0;
