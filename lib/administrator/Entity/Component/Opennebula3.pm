@@ -314,7 +314,7 @@ sub setConf {
         }
     }
 
-    $mounttable->setConf({ linux_mountdefs => \@mountentries});
+    $mounttable->setConf(conf => { linux_mountdefs => \@mountentries});
 }
 
 sub getNetConf {

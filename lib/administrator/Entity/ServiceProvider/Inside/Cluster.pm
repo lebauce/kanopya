@@ -404,7 +404,7 @@ sub applyPolicies {
                 # TODO: Check if the component is already installed
                 my $instance = $self->addComponentFromType(component_type_id => $component->{component_type});
                 if (defined $component->{component_configuration}) {
-                    $instance->setConf($component->{component_configuration});
+                    $instance->setConf(conf => $component->{component_configuration});
                 }
             }
         }

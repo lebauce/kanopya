@@ -118,7 +118,7 @@ sub createExport {
         linux0_mount_passnum    => 0,
     };
 
-    $mounttable->setConf({ linux_mountdefs => \@mountentries });
+    $mounttable->setConf(conf => { linux_mountdefs => \@mountentries });
 
     my $emounttable = EFactory::newEEntity(data => $mounttable);
     $emounttable->_generateFstab(cluster => $cluster, host => $cluster->getMasterNode);
