@@ -598,7 +598,7 @@ sub startHost {
     }
 
     # Pick up an hypervisor
-
+    my $hypervisor_type = $self->getHypervisorType();
     my $hypervisor = $args{hypervisor};
     $log->info("Picked up hypervisor " . $hypervisor->getId());
 
