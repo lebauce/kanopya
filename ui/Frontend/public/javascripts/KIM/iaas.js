@@ -16,7 +16,7 @@ function vmdetails(spid) {
         tabs : [
             { label : 'General', id : 'generalnodedetails', onLoad : nodedetailsaction },
             { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid); } },
-            { label : 'monitoring', id : 'ressource_monitoring', onLoad : function(cid, eid) { NodeIndicatorDetailsHistorical(cid, eid, spid); } },
+            { label : 'Monitoring', id : 'ressource_monitoring', onLoad : function(cid, eid) { NodeIndicatorDetailsHistorical(cid, eid, spid); } },
             { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, spid); } },
         ],
         title : { from_column : 'externalnode_hostname' }
@@ -79,7 +79,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 content_container_id    : container_id,
                 grid_id                 : 'iaas_hyp_list',
                 colNames                : [ 'ID', 'Base hostname', 'State', 'Vms', 'Admin Ip', '', '', '', '', '', '' ],
-                colModel                : [ 
+                colModel                : [
                     { name : 'id', index : 'id', width : 60, sorttype : "int", hidden : true, key : true },
                     { name : 'host_hostname', index : 'host_hostname', width : 90 },
                     { name : 'host_state', index : 'host_state', width : 30, formatter : StateFormatter, align : 'center' },

@@ -237,7 +237,7 @@ function loadServicesRessources (container_id, elem_id) {
             tabs : [
                         { label : 'General', id : 'generalnodedetails', onLoad : nodedetailsaction },
                         { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid); } },
-                        { label : 'monitoring', id : 'ressource_monitoring', onLoad : NodeIndicatorDetailsHistorical },
+                        { label : 'Monitoring', id : 'ressource_monitoring', onLoad : NodeIndicatorDetailsHistorical },
                         { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
                     ],
             title : { from_column : 'externalnode_hostname' }
