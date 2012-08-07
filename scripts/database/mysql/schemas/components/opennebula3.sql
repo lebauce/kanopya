@@ -58,6 +58,7 @@ CREATE TABLE `opennebula3_repository` (
   `opennebula3_id` int(8) unsigned NOT NULL,
   `repository_name` char(255) NOT NULL,
   `container_access_id` int(8) unsigned NOT NULL,
+  `datastore_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`opennebula3_repository_id`),
   KEY `fk_opennebula3repository_1` (`opennebula3_id`),
   KEY `fk_opennebula3repository_2` (`container_access_id`),

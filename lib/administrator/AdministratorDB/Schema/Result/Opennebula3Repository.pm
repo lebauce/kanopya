@@ -46,6 +46,12 @@ __PACKAGE__->table("opennebula3_repository");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 datastore_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -72,6 +78,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "datastore_id",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
 __PACKAGE__->set_primary_key("opennebula3_repository_id");
 
@@ -89,7 +97,7 @@ __PACKAGE__->belongs_to(
   "opennebula3",
   "AdministratorDB::Schema::Result::Opennebula3",
   { opennebula3_id => "opennebula3_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 container_access
@@ -104,12 +112,12 @@ __PACKAGE__->belongs_to(
   "container_access",
   "AdministratorDB::Schema::Result::ContainerAccess",
   { container_access_id => "container_access_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-03 12:59:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6U28krv7+udZRPzjlCuu1A
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-08-06 17:40:05
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3USdD3Ndig0Oa9dNjXOOdQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
