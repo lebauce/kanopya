@@ -106,8 +106,8 @@ sub clusterBilling {
                          });
 
     for my $limit (@cluster_limits) {
-        my $start = $limit->getAttr(name => "start");
-        my $end = $limit->getAttr(name => "ending");
+        my $start = $limit->getAttr(name => "start") / 1000;
+        my $end = $limit->getAttr(name => "ending") / 1000;
         my $type = $limit->getAttr(name => "type");
         my $tree = $metrics{$type}->{tree};
         my $repeat = $limit->getAttr(name => "repeats");
