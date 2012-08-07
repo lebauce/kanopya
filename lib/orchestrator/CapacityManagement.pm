@@ -57,24 +57,38 @@ sub new {
     my $self = {};
     bless $self, $class;
 
-
     if(defined $args{test}){
         General::checkParams(args => \%args, required => ['infra']);
+
         $self->{_infra} = $args{infra};
         $self->{_test}  = 1;
     }
-    else{
-        General::checkParams(args => \%args, required => []); #Option : hvs_mem_available
+    else {
+        General::checkParams(args => \%args, optional => { cluster_id            => undef,
+                                                           hypervisor_cluster_id => undef
+                                                           cloud_manager         => undef });
 
-        $self->{_hvs_mem_available}       = $args{hvs_mem_available}; # Must be in bytes
-        $self->{_cluster_id}              = (defined $args{cluster_id}) ? $args{cluster_id}:undef;
-        $self->{_hypervisor_cluster_id}   = (defined $args{hypervisor_cluster_id}) ? $args{hypervisor_cluster_id}:undef;
-        $self->{_admin}                   = Administrator->new();
-        $self->{_infra}                   = $self->_constructInfra();
-        $self->{_operationPlan}           = [];
+        $self->{_cloud_manager} = $args{cloud_manager};
+        $self->{_cluster_id} = $args{cluster_id};
+        $self->{_hypervisor_cluster_id} = $args{hypervisor_cluster_id};
+        $self->{_admin} = Administrator->new();
+        $self->{_infra} = $self->_constructInfra();
+        $self->{_operationPlan} = [];
+
+        # Get availble memory for all cloud manager hosts (hypervisors)
+        $self->{_hvs_mem_available} = undef;
+        if (defined $self->{_cloud_manager}) {
+            $self->{_hvs_mem_available} = {};
+
+            my $hypervisors = $self->{_cloud_manager}->getHypervisors();
+            for my $hypervisor (@$hypervisors) {
+                $self->{_hvs_mem_available}->{$hypervisor->id} = $hypervisor->getAvailableMemory;
+            }
+        }
     }
     return $self;
 }
+
 sub getInfra{
     my ($self) = @_;
     return $self->{_infra};
@@ -166,12 +180,8 @@ sub _constructInfra{
 sub isScalingAuthorized{
     my ($self, %args)   = @_;
 
-    General::checkParams(args => \%args, required => ['vm_id',
-                                                      'hv_id',
-                                                      'resource_type',
-                                                      'wanted_resource',
-                                                      ]);
-
+    General::checkParams(args     => \%args,
+                         required => [ 'vm_id', 'hv_id', 'resource_type', 'wanted_resource' ]);
 
     my $vm_id           = $args{vm_id};
     my $hv_id           = $args{hv_id};
@@ -218,6 +228,7 @@ sub isScalingAuthorized{
            Return 1 if migration is possible, return 0 if some resources are
            missing
 =cut
+
 sub isMigrationAuthorized{
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['vm_id','hv_id']);

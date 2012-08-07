@@ -39,7 +39,9 @@ sub createExport {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'container', 'export_name' ]);
+                         required => [ 'container', 'export_name' ],
+                         optional => { 'client_name'    => '*',
+                                       'client_options' => 'rw,sync,no_root_squash' });
 
     # Check if the given container is provided by the same
     # storage provider than the nfsd storage provider.
@@ -49,16 +51,6 @@ sub createExport {
                   error => "Only local containers can be exported through NFS"
               );
     }
-
-    my $default_client = '*';
-
-    my $client_name = General::checkParam(args    => \%args,
-                                          name    => 'client_name',
-                                          default => $default_client);
-
-    my $client_options = General::checkParam(args    => \%args,
-                                             name    => 'client_options',
-                                             default => 'rw,sync,no_root_squash');
 
     # Keep the old conf to be able to regenerate the conf file if the export fail.
     my $old_data = $self->getTemplateDataExports();
@@ -82,15 +74,14 @@ sub createExport {
                      container_access_export => $manager_ip . ':' . $mount_dir,
                      container_access_ip     => $manager_ip,
                      container_access_port   => 2049,
-                     options                 =>  $client_options,
+                     options                 =>  $args{client_options},
                  );
 
 
     my $container_access = EFactory::newEEntity(data => $entity);
     my $client = $self->addExportClient(export  => $container_access,
-                                        host    => $client_name,
-                                        options => $client_options);
-
+                                        host    => $args{client_name},
+                                        options => $args{client_options};
 
     $self->generateExports(data => $self->getTemplateDataExports());
     if (exists $args{erollback}) {

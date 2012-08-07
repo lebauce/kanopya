@@ -1,0 +1,3 @@
+NAME   = [% datastore_name %]
+DS_MAD = [% datastore_ds_mad %]
+TM_MAD = [% datastore_tm_mad %]

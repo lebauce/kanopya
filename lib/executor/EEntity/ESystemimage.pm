@@ -57,7 +57,7 @@ sub createFromMasterimage {
     General::checkParams(args     => \%args,
                          required => [ "masterimage", "disk_manager",
                                        "manager_params", "erollback" ]);
-    
+
     my $master_container = EEntity::EContainer::ELocalContainer->new(
                                path => $args{masterimage}->getAttr(name => 'masterimage_file'),
                                size => $args{masterimage}->getAttr(name => 'masterimage_size'),
@@ -72,9 +72,6 @@ sub createFromMasterimage {
         erollback     => $args{erollback},
         %{$args{manager_params}}
     );
-
-    my @group = Entity::Gp->getGroups(hash => { gp_name => 'SystemImage' });
-    $group[0]->appendEntity(entity => $self->_getEntity);
 
     my $components = $args{masterimage}->getProvidedComponents();
     foreach my $comp (@$components) {
@@ -92,33 +89,26 @@ sub create {
     General::checkParams(args     => \%args,
                          required => [ "disk_manager", "src_container", "erollback" ]);
 
+    General::checkParams(args     => \%args,
+                         optional => { 'systemimage_size' => $args{src_container}->container_size });
+
     $log->info('Device creation for new systemimage');
 
-    my $disk_manager     = General::checkParam(args => \%args, name => 'disk_manager');
-    my $source_container = General::checkParam(args => \%args, name => 'src_container');
-    my $erollback        = General::checkParam(args => \%args, name => 'erollback');
-
-    my $systemimage_size = General::checkParam(
-                               args    => \%args,
-                               name    => 'systemimage_size',
-                               default => $source_container->getAttr(name => 'container_size')
-                           );
-
     # Creation of the device based on distribution device
-    my $container = $disk_manager->createDisk(
+    my $container = $args{disk_manager}->createDisk(
                         name       => $self->getAttr(name => 'systemimage_name'),
-                        size       => $systemimage_size,
-                        filesystem => $source_container->getAttr(name => 'container_filesystem'),
-                        erollback  => $erollback,
+                        size       => $args{systemimage_size},
+                        filesystem => $args{src_container}->getAttr(name => 'container_filesystem'),
+                        erollback  => $args{erollback},
                         %args
                     );
 
     # Copy of distribution data to systemimage devices
     $log->info('Fill the container with source data for new systemimage');
 
-    $source_container->copy(dest      => $container,
-                            econtext  => $self->getExecutorEContext,
-                            erollback => $erollback);
+    $args{src_container}->copy(dest      => $container,
+                               econtext  => $self->getExecutorEContext,
+                               erollback => $args{erollback});
 
     $self->setAttr(name  => "container_id",
                    value => $container->getAttr(name => 'container_id'));

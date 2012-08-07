@@ -1,0 +1,10 @@
+NAME        = [% image_name %]
+DESCRIPTION = [% image_description %]
+TYPE        = [% image_type %]
+PERSISTENT  = [% image_persistent %]
+DEV_PREFIX  = [% image_devprefix %]
+TARGET      = [% image_target %]
+DRIVER      = [% image_driver %]
+SOURCE      = [% image_source %]
+DISK_TYPE   = [% image_disktype %]
+

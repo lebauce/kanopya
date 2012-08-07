@@ -21,8 +21,52 @@ use base "EEntity::EHost";
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
+use Entity;
+use EFactory;
 
+use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
+
+
+=head2 getTotalMemory
+
+    Return the total memory amount.
+
+=cut
+
+sub getTotalMemory {
+    my ($self, %args) = @_;
+
+    my $vm_ressources = $self->getHypervisor->getVmResources(vm => $self, ressources => [ 'ram' ]);
+    return $vm_ressources->{$self->id}->{ram};
+}
+
+=head2 getTotalCpu
+
+    Return the total cpu count.
+
+=cut
+
+sub getTotalCpu {
+    my ($self, %args) = @_;
+
+    my $vm_ressources = $self->getHypervisor->getVmResources(vm => $self, ressources => [ 'cpu' ]);
+    return $vm_ressources->{$self->id}->{cpu};
+}
+
+=head2 getHypervisor
+
+    Return EEntity corresponding to the hypervisor.
+
+=cut
+
+sub getHypervisor {
+    my ($self, %args) = @_;
+
+    # Can not use $self->hypervisor to get the hypervisor as this call
+    # do not return the concrete class of the hypervisor yet, and do not
+    # return the corresponding EEntity.
+    return EFactory::newEEntity(data => Entity->get(id => $self->hypervisor->id));
+}
 
 1;

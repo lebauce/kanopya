@@ -117,11 +117,8 @@ sub createExport {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'container', 'export_name' ]);
-
-    my $client_options = General::checkParam(args    => \%args,
-                                             name    => 'client_options',
-                                             default => 'rw,sync,no_root_squash');
+                         required => [ 'container', 'export_name' ],
+                         optional => { 'client_options' => 'rw,sync,no_root_squash' });
 
     my $manager_ip = $self->_getEntity->getServiceProvider->getMasterNodeIp;
     my $entity = Entity::ContainerAccess::NfsContainerAccess->new(
@@ -130,7 +127,7 @@ sub createExport {
                      container_access_export => $manager_ip . ':/vol/' . $args{export_name},
                      container_access_ip     => $manager_ip,
                      container_access_port   => 2049,
-                     options                 => $client_options,
+                     options                 => $args{client_options},
                  );
     my $container_access = EFactory::newEEntity(data => $entity);
 

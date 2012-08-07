@@ -102,10 +102,10 @@ sub prepare {
             my $cluster_id = $self->{context}->{vm}->getClusterId();
             my $hv_id      = $self->{context}->{'host'}->getId();
 
-            my $cm    = CapacityManagement->new(
-                cluster_id        => $cluster_id,
-                hvs_mem_available => $self->{context}->{cloudmanager_comp}->getHostsMemAvailable()
-            );
+            my $cm = CapacityManagement->new(
+                         cluster_id    => $cluster_id,
+                         cloud_manager => $self->{context}->{cloudmanager_comp},
+                     );
 
             my $check = $cm->isMigrationAuthorized(vm_id => $vm_id, hv_id => $hv_id);
 

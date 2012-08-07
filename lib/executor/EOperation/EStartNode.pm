@@ -398,11 +398,6 @@ sub _generateBootConf {
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{context}->{container_access}->getAttr(name => 'container_access_export');
 
-            #$log->info("Generate Kanopya Halt script Conf");
-
-            #$self->_generateKanopyaHalt(etc_path   => $etc_path,
-            #                            targetname => $targetname);
-
             $self->getEContext->execute(
                 command => "touch $args{mount_point}/etc/iscsi.initramfs"
             );
@@ -413,15 +408,15 @@ sub _generateBootConf {
             my $date = today();
             my $year = $date->year;
             my $month = $date->month;
-            if(length($month) == 1) {
-                $month = '0'.$month;
+            if (length($month) == 1) {
+                $month = '0' . $month;
             }
-            my $initiatorname = 'iqn.'.$year.'-'.$month.'.';
+            my $initiatorname = 'iqn.' . $year . '-' . $month . '.';
             $initiatorname .= $self->{context}->{cluster}->getAttr(name => 'cluster_name');
-            $initiatorname .= '.'.$self->{context}->{host}->getAttr(name => 'host_hostname');
-            $initiatorname .= ':'.time();
+            $initiatorname .= '.' . $self->{context}->{host}->getAttr(name => 'host_hostname');
+            $initiatorname .= ':' . time();
 
-            my $lun_number = $self->{context}->{container_access}->getAttr(name => 'lun_name')
+            my $lun_number = $self->{context}->{container_access}->getLunId(host => $self->{context}->{host})
                              || "lun-0";
 
             # Set initiatorName

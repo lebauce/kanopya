@@ -80,12 +80,11 @@ sub execute{
     delete $self->{params}->{scalein_type};
 
     my $cluster_id = $self->{context}->{host}->getClusterId();
-    my $hvs_mem_available = $self->{context}->{cloudmanager_comp}->getHostsMemAvailable();
 
-    my $cm    = CapacityManagement->new(
-                    cluster_id        => $self->{context}->{host}->getClusterId(),
-                    hvs_mem_available => $hvs_mem_available,
-                );
+    my $cm = CapacityManagement->new(
+                 cluster_id    => $self->{context}->{host}->getClusterId(),
+                 cloud_manager => $self->{context}->{cloudmanager_comp},
+             );
 
     # Do not call getServiceProvider() method, because it returns HV Cluster
     # Here we need VM Cluster

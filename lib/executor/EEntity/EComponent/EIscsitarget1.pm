@@ -59,13 +59,12 @@ sub createExport {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'container', 'export_name' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'container', 'export_name' ],
+                         optional => { 'typeio' => 'fileio', 'iomode' => 'wb' });
 
     # TODO: Check if the given container is provided by the same
     #       storage provider than the iscsi storage provider.
-
-    my $typeio = General::checkParam(args => \%args, name => 'typeio', default => 'fileio');
-    my $iomode = General::checkParam(args => \%args, name => 'iomode', default => 'wb');
 
     my $disk_targetname = $self->generateTargetname(name => $args{export_name});
     my $device          = $args{container}->getAttr(name => 'container_device');
@@ -75,8 +74,8 @@ sub createExport {
     my $lun_id = $self->addLun(
                      number      => 0,
                      device      => $device,
-                     typeio      => $typeio,
-                     iomode      => $iomode,
+                     typeio      => $args{typeio},
+                     iomode      => $args{iomode},
                      target_name => $disk_targetname,
                  );
 
@@ -86,8 +85,8 @@ sub createExport {
                      container_access_export => $disk_targetname,
                      container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
                      container_access_port   => 3260,
-                     typeio                  => $typeio,
-                     iomode                  => $iomode,
+                     typeio                  => $args{typeio},
+                     iomode                  => $args{iomode},
                      lun_name                => "lun-0"
                  );
     my $container_access = EFactory::newEEntity(data => $entity);

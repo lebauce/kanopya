@@ -90,9 +90,9 @@ sub prerequisites {
                             );
 
         my $cm = CapacityManagement->new(
-            cluster_id        => $cluster->getId(),
-            hvs_mem_available => $self->{context}->{host_manager}->getHostsMemAvailable()
-        );
+                     cluster_id    => $cluster->getId(),
+                     cloud_manager => $self->{context}->{host_manager},
+                 );
 
         my $hypervisor_id = $cm->getHypervisorIdForVM(
                                 # blacklisted_hv_ids => $self->{params}->{blacklisted_hv_ids},

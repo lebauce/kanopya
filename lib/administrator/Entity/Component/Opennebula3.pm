@@ -63,6 +63,8 @@ use Manager::HostManager;
 use Entity::ContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::Host::Hypervisor::Opennebula3Hypervisor;
+use Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3XenHypervisor;
+use Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3KvmHypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Host::VirtualMachine::Opennebula3Vm;
 
@@ -144,6 +146,15 @@ sub getHypervisors {
 
     my @hypervisors = Entity::Host::Hypervisor::Opennebula3Hypervisor->search(hash => { opennebula3_id => $self->getId });
     return wantarray ? @hypervisors : \@hypervisors;
+}
+
+=head2 getHypervisorType
+
+=cut
+
+sub getHypervisorType {
+    my ($self) = @_;
+    return $self->hypervisor;
 }
 
 =head2 checkHostManagerParams
@@ -231,7 +242,8 @@ sub getConf {
         push @repositories, {
             repository_name         => $repo_row->get_column('repository_name'),
             container_access_export => $container_access->getAttr(name => 'container_access_export'),
-            container_access_id     => $repo_row->get_column('container_access_id')
+            container_access_id     => $repo_row->get_column('container_access_id'),
+            datastore_id            => $repo_row->get_column('datastore_id'),
         }
     }
 
@@ -287,34 +299,6 @@ sub setConf {
     } else {
         $self->{_dbix}->update($conf);
     }
-
-    # Update the configuration of the component Mounttable of the cluster,
-    # to automatically mount the images repositories.
-    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
-    my $mounttable = $cluster->getComponent(name => "Linux", version => "0");
-
-    my $oldconf = $mounttable->getConf();
-    my @mountentries = @{$oldconf->{mountdefs}};
-    for my $repo (@{$repos}) {
-        if ($repo->{container_access_id}) {
-            $self->{_dbix}->opennebula3_repositories->create($repo);
-
-            my $container_access = Entity::ContainerAccess->get(
-                                       id => $repo->{container_access_id}
-                                   );
-
-            push @mountentries, {
-                linux0_mount_dumpfreq   => 0,
-                linux0_mount_filesystem => 'nfs',
-                linux0_mount_point      => $conf->{image_repository_path} . '/' . $repo->{repository_name},
-                linux0_mount_device     => $container_access->getAttr(name => 'container_access_export'),
-                linux0_mount_options    => 'rw,sync,vers=3',
-                linux0_mount_passnum    => 0,
-            };
-        }
-    }
-
-    $mounttable->setConf(conf => { linux_mountdefs => \@mountentries});
 }
 
 sub getNetConf {
@@ -360,7 +344,7 @@ sub createVirtualHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ], defaults => { 'ifaces' => 0 });
+    General::checkParams(args => \%args, required => [ 'ram', 'core' ], optional => { 'ifaces' => 0 });
 
     # Use the first kernel found...
     my $kernel = Entity::Kernel->find(hash => {});
@@ -389,17 +373,28 @@ sub createVirtualHost {
 
 ### hypervisors manipulation ###
 
-# declare an new hypervisor into database
-# real declaration in opennebula must have been done
-# since `hypervisor_id` is required
+=head2 getVmResources
+
+    Promote the selected host to an hypervisor type.
+    Real declaration in opennebula must have been done
+    since `onehost_id` is required.
+
+=cut
 
 sub addHypervisor {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'id' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'onehost_id' ]);
 
-    return Entity::Host::Hypervisor::Opennebula3Hypervisor->promote(
+    my $hypervisor_type = 'Entity::Host::Hypervisor::Opennebula3Hypervisor::';
+    if ($self->hypervisor eq 'xen') {
+        $hypervisor_type .= 'Opennebula3XenHypervisor';
+    } else {
+        $hypervisor_type .= 'Opennebula3KvmHypervisor';
+    }
+
+    return $hypervisor_type->promote(
                promoted       => $args{host},
                opennebula3_id => $self->id,
                onehost_id     => $args{id}
@@ -488,24 +483,6 @@ sub getRemoteSessionURL {
     General::checkParams(args => \%args, required => ['host']);
 
     return "vnc://" . $args{host}->hypervisor->getAdminIp() . ":" . $args{host}->vnc_port;
-}
-
-sub updateCPU {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['host']);
-
-    $args{host}->setAttr(name  => "host_core",
-                         value => $args{cpu_number});
-    $args{host}->save();
-}
-
-sub updateMemory {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
-
-    $args{host}->setAttr(name  => "host_ram",
-                         value => $args{memory});
-    $args{host}->save();
 }
 
 =head2 scaleHost

@@ -427,14 +427,14 @@ sub promote {
     my $class = shift;
     my %args = @_;
 
-    my $baseobject = General::checkParam(args => \%args, name => 'promoted');
+    General::checkParams(args => \%args, required => [ 'promoted' ]);
 
     my $adm = Administrator->new();
 
     # Check if the new type is in the same hierarchy
-    my $baseclass = ref($baseobject);
+    my $baseclass = ref($args{promoted});
     if (not ($class =~ m/$baseclass/)) {
-        $errmsg = "Unable to promote " . ref($baseobject) . " to " . $class;
+        $errmsg = "Unable to promote " . ref($args{promoted}) . " to " . $class;
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 
@@ -444,10 +444,11 @@ sub promote {
 
     # Set the primary key to the parent primary key value.
     my $primary_key = ($adm->{db}->source(_rootTable($subclass))->primary_columns)[0];
-    $args{$primary_key} = $baseobject->id;
+    $args{$primary_key} = $args{promoted}->id;
 
     # Merge the base object attributtes and new ones for attrs checking
-    my %totalargs = (%args, $baseobject->getAttrs);
+    my %totalargs = (%args, $args{promoted}->getAttrs);
+    delete $totalargs{promoted};
 
     # Then extract only the attrs for new tables for insertion
     my $attrs = $class->checkAttrs(attrs => \%totalargs,
@@ -482,35 +483,35 @@ sub demote {
     my $class = shift;
     my %args = @_;
 
-    my $baseobject = General::checkParam(args => \%args, name => 'demoted');
+    General::checkParams(args => \%args, required => [ 'demoted' ]);
 
     my $adm = Administrator->new();
 
     # Check if the new type is in the same hierarchy
-    my $baseclass = ref($baseobject);
+    my $baseclass = ref($args{demoted});
     if (not ($baseclass =~ m/$class/)) {
-        $errmsg = "Unable to demote " . ref($baseobject) . " to " . $class;
+        $errmsg = "Unable to demote " . ref($args{demoted}) . " to " . $class;
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 
     # Delete row of tables bellow $class
-    $baseobject->delete(trunc => $class);
+    $args{demoted}->delete(trunc => $class);
 
-    bless $baseobject, $class;
+    bless $args{demoted}, $class;
 
     # Set the class type to the new promotion class
     eval {
         my $rs = $adm->_getDbixFromHash(table => "ClassType",
                                         hash  => { class_type => $class })->single;
 
-        $baseobject->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
-        $baseobject->save();
+        $args{demoted}->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
+        $args{demoted}->save();
     };
     if ($@) {
         $errmsg = "Unregistred or abstract class name <$class>, assuming it is not an Entity.";
         $log->debug($errmsg);
     }
-    return $baseobject;
+    return $args{demoted};
 }
 
 sub newDBix {
