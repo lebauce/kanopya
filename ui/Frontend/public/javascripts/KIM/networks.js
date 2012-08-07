@@ -18,8 +18,9 @@ function networks_addbutton_action(e, isvlan) {
             var vlannumber  = $(mdfrm.content).find(':input#input_vlan_number').val();
             var action      = $(mdfrm.form).attr('action');
             var newaction   = (isvlan || (vlannumber != null && vlannumber != "")) ? 'vlan' : 'network';
-            $(mdfrm.form).attr('action', '/api/vlan');
-            opts.url        = '/api/vlan';
+            var appendId    = (isedit) ? '/' + e : '';
+            $(mdfrm.form).attr('action', '/api/' + newaction + appendId);
+            opts.url        = '/api/' + newaction + appendId;
             if (newaction === 'vlan') {
                 fdata.push({
                     name    : 'vlan_number',
