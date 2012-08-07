@@ -94,56 +94,6 @@ sub new {
     return $self;
 }
 
-
-=head2 manage_aggregate
-
-    Class : Public
-
-    Desc :     New manager for aggregates
-
-=cut
-
-sub manage_aggregates_old {
-    my $self = shift;
-
-    print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
-    eval{
-        # FOR EACH EXT CLUSTERS
-        my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
-
-
-        CLUSTER:
-        for my $externalCluster (@externalClusters){
-            my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-            eval{
-                print "<CM $cluster_id>\n";
-                $self->clustermetricManagement(externalCluster => $externalCluster);
-                print "</CM $cluster_id>\n";
-                1;
-            }or do {
-                print "Error in clustermetricManagement of cluster $cluster_id : $@\n";
-                $log->error($@);
-            };
-
-            eval{
-                print "<CN $cluster_id>\n";
-                $self->nodemetricManagement(externalCluster => $externalCluster);
-                print "</CN $cluster_id>\n";
-                1;
-            }or do{
-                print "Error in nodemetricManagement of cluster $cluster_id  $@\n";
-                $log->error($@);
-            };
-
-            my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id, extcluster => $externalCluster);
-        }
-    1;
-    }or do {
-        print "Skip all orchestration service due to error $@\n";
-        $log->error($@);
-    }
-}
-
 =head2 manage_aggregate
 
     Class : Public
@@ -183,17 +133,15 @@ sub manage_aggregates {
                     $log->error($@);
                 };
 
-                eval{
+                eval {
                     $log->info( '<CN '.$service_provider.'>');
                     $self->nodemetricManagement(service_provider => $service_provider);
                     $log->info( '</CN '.$service_provider.'>');
                     1;
-                }or do{
+                } or do {
                     print "Error in nodemetricManagement of cluster $service_provider  $@\n";
                     $log->error($@);
                 };
-
-                my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $service_provider_id, extcluster => $service_provider);
             }
         1;
         }or do {
@@ -204,215 +152,7 @@ sub manage_aggregates {
 
 }
 
-sub evalExtCluster{
-    my %args = @_;
-
-    my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $args{extcluster_id});
-    my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster => $args{extcluster}, extcluster_id => $args{extcluster_id});
-
-    my $cluster_eval = {%$cr_eval,%$nr_eval};
-
-    #print Dumper $cluster_eval;
-
-    if((scalar $cluster_eval->{nm_rule_nodes}) == 0) { # no nodes
-         $args{extcluster}->setAttr(
-            name => 'externalcluster_state',
-            value => 'down',
-        );
-    }
-    elsif ($cluster_eval->{nm_rule_enabled} == 0 && $cluster_eval->{cm_rule_enabled} == 0) { # no rules
-         $args{extcluster}->setAttr(
-            name => 'externalcluster_state',
-            value => 'up',
-        );
-    }
-#    elsif ($cluster_eval->{nm_rule_enabled} == 0) { # cm_rule_enabled > 0
-#        if($cluster_eval->{cm_rule_undef} == 0 && $cluster_eval->{cm_rule_nok} == 0){
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'up',
-#            );
-#        }elsif($cluster_eval->{cm_rule_nok} > 0){
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'warning',
-#            );
-#        }else{
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'down',
-#            );
-#        }
-#    }
-#    elsif ($cluster_eval->{cm_rule_enabled} == 0) { # nm_rule_enabled > 0
-#        if($cluster_eval->{nm_rule_nodes_nok} == 0 && $cluster_eval->{nm_rule_nodes_down} == 0){
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'up',
-#            );
-#        }
-#        elsif($cluster_eval->{nm_rule_nodes_nok} > 0) {
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'warning',
-#            );
-#        }else{
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'down',
-#            );
-#        }
-#    }
-    else { # nm_rule_enabled > 0 AND cm_rule_enabled > 0
-        if($cluster_eval->{nm_rule_nodes_nok} == 0 && $cluster_eval->{nm_rule_nodes_down} == 0
-        && $cluster_eval->{cm_rule_undef} == 0 && $cluster_eval->{cm_rule_nok} == 0)
-        {
-            $args{extcluster}->setAttr(
-                name => 'externalcluster_state',
-                value => 'up',
-            );
-        }elsif(
-            $cluster_eval->{cm_rule_undef} == $cluster_eval->{cm_rule_enabled} &&
-            $cluster_eval->{nm_rule_nodes_down} == (scalar $cluster_eval->{nm_rule_nodes})
-        ){
-            $args{extcluster}->setAttr(
-                name => 'externalcluster_state',
-                value => 'down',
-            );
-        } else {
-            $args{extcluster}->setAttr(
-                name => 'externalcluster_state',
-                value => 'warning',
-            );
-        }
-    }
-
-#
-#    ){
-#    }
-#    if($cluster_eval->{} + $cluster_eval->{}  >0){
-#         $externalCluster->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'warning',
-#            );
-#    }else{
-#        $externalCluster->setAttr(
-#            name => 'externalcluster_state',
-#            value => 'up',
-#        );
-#    }
-    $args{extcluster}->save();
-    return $cluster_eval;
-}
-
-sub evalExtClusterNodeRuleState {
-    my %args = @_;
-    my $extcluster     = $args{extcluster};
-    my $extcluster_id  = $args{extcluster_id};
-
-    my $externalClusterState = {};
-
-    my $nodes = $extcluster->getNodes();
-
-    $externalClusterState->{nm_rule_nodes}   = scalar (@$nodes);
-    $externalClusterState->{nm_rule_enabled} = my $num_node_rule_total = scalar NodemetricRule->search(
-                                    hash=>{
-                                        'nodemetric_rule_service_provider_id' => $extcluster_id,
-                                        'nodemetric_rule_state' => 'enabled',
-                                    }
-                                 );
-
-    $externalClusterState->{nm_rule_nodes_ok}    = 0;
-    $externalClusterState->{nm_rule_nodes_nok}   = 0;
-    $externalClusterState->{nm_rule_nodes_down}  = 0;
-    $externalClusterState->{nm_rule_nok}         = 0;
-    $externalClusterState->{nm_rule_ok}          = 0;
-    $externalClusterState->{nm_rule_undef}       = 0;
-
-
-
-    foreach my $node (@$nodes) {
-        $externalClusterState->{nm_rule_nok}   += $node->{num_verified_rules};
-        $externalClusterState->{nm_rule_undef} += $node->{num_undef_rules};
-
-        if($externalClusterState->{nm_rule_enabled} > 0){ # TEST IF THERE ARE ENABLED RULES
-            if($node->{num_undef_rules} == $externalClusterState->{nm_rule_enabled}){ # TEST IF THERE ARE DATA
-                $node->{state} = 'down';
-                $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'down');
-                $externalClusterState->{nm_rule_nodes_down}++;
-            } else {
-                if($node->{num_verified_rules} > 0 || $node->{num_undef_rules} > 0){
-                    $externalClusterState->{nm_rule_nodes_nok}++;
-                    $node->{state} = 'warning';
-                    $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'warning');
-                }else{
-                    $externalClusterState->{nm_rule_nodes_ok}++;
-                    $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'up');
-                    $node->{state} = 'up';
-                }
-            }
-        }else{ #NO RULES ENABLED, NODE OK!
-            $node->{state} = 'up';
-            $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'up');
-        }
-
-    }
-    $externalClusterState->{nm_rule_nodes} = $nodes;
-    return $externalClusterState;
-}
-
-
-sub evalExtClusterClusterRuleState {
-    my %args = @_;
-    my $extcluster_id = $args{extcluster_id};
-    my $externalClusterState = {};
-
-
-    my @rules = AggregateRule->search(
-        hash => {
-                    aggregate_rule_service_provider_id => $extcluster_id,
-                }
-        );
-
-    my @enabled_rules = AggregateRule->search(
-        hash => {
-                    aggregate_rule_service_provider_id => $extcluster_id,
-                    aggregate_rule_state               => 'enabled',
-                }
-        );
-
-    my @verif_rules = AggregateRule->search(
-        hash => {
-                    aggregate_rule_service_provider_id => $extcluster_id,
-                    aggregate_rule_state               => 'enabled',
-                    aggregate_rule_last_eval           => 1,
-                }
-        );
-
-    my @ok_rules = AggregateRule->search(
-        hash => {
-                    aggregate_rule_service_provider_id => $extcluster_id,
-                    aggregate_rule_state               => 'enabled',
-                    aggregate_rule_last_eval           => 0,
-                }
-        );
-
-    my @undef_rules = AggregateRule->search(
-        hash => {
-                    aggregate_rule_service_provider_id => $extcluster_id,
-                    aggregate_rule_state               => 'enabled',
-                    aggregate_rule_last_eval           => undef,
-                }
-        );
-    $externalClusterState->{cm_rule_total}   = scalar @rules;
-    $externalClusterState->{cm_rule_enabled} = scalar @enabled_rules;
-    $externalClusterState->{cm_rule_nok}     = scalar @verif_rules;
-    $externalClusterState->{cm_rule_ok}      = scalar @ok_rules;
-    $externalClusterState->{cm_rule_undef}   = scalar @undef_rules;
-
-    return $externalClusterState;
-}
-sub nodemetricManagement{
+sub nodemetricManagement {
     my ($self, %args) = @_;
     my $service_provider = $args{service_provider};
 
@@ -944,15 +684,17 @@ sub checkCondition {
     #$log->debug( join ", ", map { "$_: $condition->{$_}" } keys %$condition );
 
     my ($set, $ds) = split ':', $condition->{var};
-    my $var_value = $self->getValue(
-                                        cluster => $args{cluster_name},
-                                        set => $set,
-                                        ds => $ds,
-                                        time_laps => $condition->{time_laps},
-                                        percent => $condition->{percent},
-                                        aggregate => "mean");
+    my $var_value = $self->getValue(cluster   => $args{cluster_name},
+                                    set       => $set,
+                                    ds        => $ds,
+                                    time_laps => $condition->{time_laps},
+                                    percent   => $condition->{percent},
+                                    aggregate => "mean");
     my $res = $self->evaluate( lval => $var_value, rval => $condition->{value}, op => $condition->{operator} );
-     $log->debug("# eval " . $condition->{var} . "($condition->{time_laps})" . " = " . (defined $var_value ? $var_value : "undef") . " ". $condition->{operator} . " " . $condition->{value} .
+
+    $log->debug("# eval " . $condition->{var} . "($condition->{time_laps})" .
+                " = " . (defined $var_value ? $var_value : "undef") . " " .
+                $condition->{operator} . " " . $condition->{value} .
                  " ==> " . ($res > 0 ? "ok" : "fail"));
 
     return $res;
@@ -976,8 +718,6 @@ sub checkOptimCondition {
     my $self = shift;
     my %args = @_;
     my $condition = $args{condition};
-
-    #$log->debug( join ", ", map { "$_: $condition->{$_}" } keys %$condition );
 
     my ($set, $ds) = split ':', $condition->{var};
     my $var_value = $self->getValue(
@@ -1231,19 +971,6 @@ sub _canAddNode {
         return 0;
     }
 
-#    # Check if there is already a node starting in the cluster #
-#    if (     $self->_isNodeInState( cluster => $cluster_name, state => 'starting' ) ||
-#            $self->_isNodeInState( cluster => $cluster_name, state => 'locked' ) ) {
-#        $log->info(" => A node is already starting or locked in cluster '$cluster_name'");
-#        return 0;
-#    }
-#
-#    # Check if there is a corresponding add node operation in operation queue #
-#    if ( $self->_isOpInQueue( cluster => $cluster_name, type => 'AddHostInCluster' ) ) {
-#        $log->info(" => An operation to add node in cluster '$cluster_name' is already in queue");
-#        return 0;
-#    }
-
     return 1;
 }
 
@@ -1296,14 +1023,6 @@ sub _canRemoveNode {
         return 0;
     }
 
-#    # Check if there is a corresponding remove node operation in operation queue #
-#    if (     $self->_isOpInQueue( cluster => $cluster, type => 'RemoveHostFromCluster' ) ||
-#            $self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
-#    {
-#        $log->info(" => An operation to remove node from cluster '$cluster' is already in queue");
-#        return 0;
-#    }
-
     return 1;
 }
 
@@ -1316,18 +1035,17 @@ sub requireRemoveNode {
     $log->info("Want remove node in cluster '$cluster'");
 
     eval {
-           if ( $self->_canRemoveNode( cluster => $cluster ) ) {
+        if ( $self->_canRemoveNode( cluster => $cluster ) ) {
             $self->removeNode( cluster_name => $cluster );
             $self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "ok");
-           } else {
+        } else {
                $self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "req");
-           }
+        }
     };
-       if ($@) {
+    if ($@) {
         my $error = $@;
         $log->error("=> Error while removing node in cluster '$cluster' : $error");
     }
-
 }
 
 
@@ -1345,23 +1063,8 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
-    $log->info("====> add node in $args{cluster_name}");
-
-#    #my @free_hosts = Entity::Host->getHosts( hash => { active => 1, host_state => 'down'} );
-#    my @free_hosts = Entity::Host->getFreeHosts();
-#
-#    die "No free host to add in cluster '$args{cluster_name}'" if ( scalar @free_hosts == 0 );
-#
-#    #TODO  Select the best node ?
-#    my $host = pop @free_hosts;
-
     my $cluster = $self->getClusterByName( cluster_name => $args{cluster_name} );
-
-    ############################################
-    # Enqueue the add host operation
-    ############################################
-    $cluster->addNode( );
-
+    $cluster->addNode();
 }
 
 sub removeNode {
@@ -1455,7 +1158,7 @@ sub _getTimes {
     my $file = $self->_timeFile( cluster => $args{cluster} );
 
     my %times = ();
-       if ( open FILE, "<$file" ) {
+    if ( open FILE, "<$file" ) {
         my $times = <FILE>;
         close FILE;
         my @alltimes = split( /,/, $times );
@@ -1465,11 +1168,7 @@ sub _getTimes {
                 $times{ $2 } = $1;
             }
         }
-       }
-#       else
-#       {
-#           print "Can't open orchestrator time file for cluster '$args{cluster}'\n";
-#       }
+    }
 
     return %times;
 }
@@ -1529,23 +1228,23 @@ sub createRRD {
     }
 
     my $rrd = RRDTool::OO->new( file =>  $args{file} );
-
-    #my $raws = $self->{_period} / $self->{_time_step};
     my $raws = 3000;
-
-    my @rrd_params = (     'step', $self->{_time_step},
-                        'archive', { rows    => $raws }
-                     );
+    my @rrd_params = (
+        'step', $self->{_time_step},
+        'archive', { rows    => $raws }
+    );
 
     for my $name ( @var_list ) {
-        push @rrd_params,     (
-                                'data_source' => {     name      => $name,
-                                                      type      => 'GAUGE' },
-                            );
+        push @rrd_params, (
+            data_source => {
+                name => $name,
+                type => 'GAUGE'
+            },
+        );
     }
 
     # Create a round-robin database
-    $rrd->create( @rrd_params );
+    $rrd->create(@rrd_params);
 
     return $rrd;
 }
@@ -1555,11 +1254,6 @@ sub graph {
     my $self = shift;
     my %args = @_;
 
-#    use Log::Log4perl qw(:easy);
-#    Log::Log4perl->easy_init({
-#        level    => $DEBUG
-#    });
-
     my $cluster = $args{cluster};
     my $op = $args{op};
 
@@ -1567,9 +1261,6 @@ sub graph {
 
     my $graph_dir = $self->{_graph_dir};
     my $graph_filename = "graph_orchestrator_$cluster" . "_$op" . ".png";
-
-    #my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
-    #my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
 
     my $rrd_file = "$self->{_rrd_base_dir}/orchestrator_$cluster" . "_$op" . ".rrd";
 
@@ -1579,20 +1270,15 @@ sub graph {
     my $rrd = RRDTool::OO->new( file => $rrd_file );
 
     my @graph_params = (
-                            'image' => "$graph_dir/$graph_filename",
-                            #'vertical_label', 'ticks',
-                            'start' => time() - $time_laps,
-                            color => { back => "#69B033" },
-
-                            title => ($args{op} eq "add" ? "Add" : "Remove") . " rules analysis",
-
-                            lower_limit => 0,
-                            #upper_limit => 100,
-
-                            #width => 500,
-                            #height => 500,
-
-                        );
+        image => "$graph_dir/$graph_filename",
+        start => time() - $time_laps,
+        color => { back => "#69B033" },
+        title => ($args{op} eq "add" ? "Add" : "Remove") . " rules analysis",
+        lower_limit => 0,
+        # upper_limit => 100,
+        # width => 500,
+        # height => 500,
+    );
 
     # Add vertical red lines corresponding to add times
     my %add_times = $self->_getTimes( cluster => $cluster, op_type => "add" );
@@ -1613,24 +1299,20 @@ sub graph {
     my @var_list = ();
     for my $rule ( @{ $rules } ) {
         foreach my $cond ( @{ General::getAsArrayRef( data => $rule, tag => $tag ) }) {
-
             push @graph_params, (
-                                    draw   => {
-                                        type => 'line',
-                                        dsname => $cond->{var} . "_" . $rule->{time_laps},
-                                        color => $cond->{color},
-                                        legend => sprintf( "%-25s", $cond->{var} . ($rule->{percent} ? " (%)" : "") .
-                                                                    ( $args{op} eq "remove" ? " prevision" : "" ).
-                                                                    " (mean on " . $rule->{time_laps} . "s)" ),
-                                      },
-
-                                      hrule => {
-                                           value => $cond->{min} || $cond->{max},
-                                         color => '#' . $cond->{color},
-                                        #legend => $cond->{var}
-                                       },
-
-                                );
+                draw => {
+                    type   => 'line',
+                    dsname => $cond->{var} . "_" . $rule->{time_laps},
+                    color  => $cond->{color},
+                    legend => sprintf("%-25s", $cond->{var} . ($rule->{percent} ? " (%)" : "") .
+                                               ($args{op} eq "remove" ? " prevision" : "") .
+                                               " (mean on " . $rule->{time_laps} . "s)"),
+                },
+                hrule => {
+                    value => $cond->{min} || $cond->{max},
+                    color => '#' . $cond->{color},
+                },
+            );
         }
     }
 
@@ -1652,6 +1334,7 @@ sub graph {
 sub run {
     my $self = shift;
     my $running = shift;
+
     # Load conf
     my $conf = Kanopya::Config::get('orchestrator');
     $self->{_time_step} = $conf->{time_step};
@@ -1659,9 +1342,7 @@ sub run {
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
 
     while ( $$running ) {
-
         my $start_time = time();
-
         $self->manage_aggregates();
 
         my $update_duration = time() - $start_time;
@@ -1671,45 +1352,9 @@ sub run {
         } else {
             sleep( $self->{_time_step} - $update_duration );
         }
-
     }
 
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
-}
-
-sub new_old {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = {};
-    bless $self, $class;
-
-    # Load conf
-    my $conf = Kanopya::Config::get('orchestrator');
-    $self->{_time_step} = $conf->{time_step};
-    $self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
-    $self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
-
-    $self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/orchestrator';
-    $self->{_graph_dir} = $conf->{graph_dir} || '/tmp/orchestrator';
-
-    # Create orchestrator dirs if needed
-    for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) {
-        my @dir_path = split '/', $dir_path;
-        my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
-        while (scalar @dir_path) {
-            $dir .= (shift @dir_path) . "/";
-            mkdir $dir;
-        }
-    }
-
-    # Get Administrator
-    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
-    Administrator::authenticate( login => $login, password => $password );
-    $self->{_admin} = Administrator->new();
-    $self->{_monitor} = Monitor::Retriever->new( );
-
-    return $self;
 }
 
 1;
