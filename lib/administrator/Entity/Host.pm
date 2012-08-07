@@ -130,7 +130,7 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     host_state => {
-        pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*|locked:\d*$',
+        pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*|locked:\d*|broken:\d*$',
         is_mandatory => 0,
         is_extended  => 0
     },
