@@ -240,7 +240,8 @@ sub getConf {
         push @repositories, {
             repository_name         => $repo_row->get_column('repository_name'),
             container_access_export => $container_access->getAttr(name => 'container_access_export'),
-            container_access_id     => $repo_row->get_column('container_access_id')
+            container_access_id     => $repo_row->get_column('container_access_id'),
+            datastore_id            => $repo_row->get_column('datastore_id'),
         }
     }
 
@@ -296,34 +297,6 @@ sub setConf {
     } else {
         $self->{_dbix}->update($conf);
     }
-
-    # Update the configuration of the component Mounttable of the cluster,
-    # to automatically mount the images repositories.
-    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
-    my $mounttable = $cluster->getComponent(name => "Linux", version => "0");
-
-    my $oldconf = $mounttable->getConf();
-    my @mountentries = @{$oldconf->{mountdefs}};
-    for my $repo (@{$repos}) {
-        if ($repo->{container_access_id}) {
-            $self->{_dbix}->opennebula3_repositories->create($repo);
-
-            my $container_access = Entity::ContainerAccess->get(
-                                       id => $repo->{container_access_id}
-                                   );
-
-            push @mountentries, {
-                linux0_mount_dumpfreq   => 0,
-                linux0_mount_filesystem => 'nfs',
-                linux0_mount_point      => $conf->{image_repository_path} . '/' . $repo->{repository_name},
-                linux0_mount_device     => $container_access->getAttr(name => 'container_access_export'),
-                linux0_mount_options    => 'rw,sync,vers=3',
-                linux0_mount_passnum    => 0,
-            };
-        }
-    }
-
-    $mounttable->setConf(conf => { linux_mountdefs => \@mountentries});
 }
 
 sub getNetConf {
