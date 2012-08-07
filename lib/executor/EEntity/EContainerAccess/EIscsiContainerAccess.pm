@@ -135,4 +135,24 @@ sub disconnect {
     # TODO: insert an eroolback with mount method ?
 }
 
+=head2 getLunId
+
+    desc: Get the LUN id for a host
+
+=cut
+
+sub getLunId {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $emanager = EFactory::newEEntity(data => $self->getExportManager);
+
+    return $emanager->getLunId(
+        lun  => $self->getContainer,
+        host => $args{host}
+    );
+}
+
 1;

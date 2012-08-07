@@ -203,16 +203,8 @@ sub createExport {
     };
     if ($@) {
         # The LUN is already mapped, get its lun ID
-        my @mappings = $api->lun_initiator_list_map_info(
-                           'initiator' => $master->getAttr(name => "host_initiatorname")
-                       )->child_get("lun-maps")->children_get;
-
-        for my $mapping (@mappings) {
-            bless $mapping, "NaObject";
-            if ($mapping->path eq $lun_path) {
-                $lun_id = $mapping->lun_id;
-            }
-        }
+        $lun_id = $self->getLunId(lun  => $args{container},
+                                  host => $master);
     }
 
     my $entity = Entity::ContainerAccess::IscsiContainerAccess->new(
@@ -306,6 +298,34 @@ sub addExportClient {
 
 sub removeExportClient {
     # TODO: implement removeExportClient
+}
+
+=head2
+
+    Desc : Get the LUN id assigned for a client
+    args:
+        lun : the LUN to get the id from
+        host : host to autorize
+
+=cut
+
+sub getLunId {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'lun', 'host' ]);
+
+    my $api = $self->_getEntity();
+    my @mappings = $api->lun_initiator_list_map_info(
+                       'initiator' => $args{host}->getAttr(name => "host_initiatorname")
+                   )->child_get("lun-maps")->children_get;
+
+    for my $mapping (@mappings) {
+        bless $mapping, "NaObject";
+        if ($mapping->path eq $args{lun}->getPath) {
+            return $mapping->lun_id;
+        }
+    }
 }
 
 1;
