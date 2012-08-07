@@ -332,6 +332,34 @@ sub setNodeState {
     $self->node->save();
 }
 
+=head2 updateCPU
+
+=cut
+
+sub updateCPU {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cpu_number' ]);
+
+    $self->setAttr(name  => "host_core",
+                   value => $args{cpu_number});
+    $self->save();
+}
+
+=head2 updateMemory
+
+=cut
+
+sub updateMemory {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'memory' ]);
+
+    $self->setAttr(name  => "host_ram",
+                   value => $args{memory});
+    $self->save();
+}
+
 =head2 Entity::Host->becomeNode (%args)
 
     Class : Public

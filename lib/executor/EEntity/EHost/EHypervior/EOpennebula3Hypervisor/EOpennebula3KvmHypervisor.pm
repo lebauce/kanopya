@@ -15,16 +15,20 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package EEntity::EHost::EHypervisor;
-use base "EEntity::EHost";
+package EEntity::EHost::EHypervisor::EOpennebula3Hypervisor;
+use base "EEntity::EHost::EHypervisor";
 
 use strict;
 use warnings;
 
 use Log::Log4perl "get_logger";
-
 my $log = get_logger("executor");
 
+
+my $ressources_keys = {
+    ram => 'memory',
+    cpu => 'vcpu',
+};
 
 =head2 getVmResources
 
@@ -41,7 +45,29 @@ sub getVmResources {
         optional => { vm => undef, ressources => [ 'ram', 'cpu' ] }
     );
 
-    throw Kanopya::Exception::NotImplemented();
+    # If no vm specified, get resssources for all hypervisor vms.
+    my @vms;
+    if (not defined $args{vm}) {
+        @vms = $self->getVms;
+    } else {
+        push @vms, $args{vm};
+    }
+
+    my $vms_ressources = {};
+    for my $vm (@vms) {
+        # Get the vm configuration in xml
+        my $result = $self->getEContext->execute(command => 'virsh dumpxml one-' . $vm->onevm_id);
+        my $hxml   = XMLin($result->{stdout});
+
+        # Build the resssources hash according to required ressources
+        my $vm_ressources = {};
+        for my $ressource (@{ $args{ressources} }) {
+            $vm_ressources->{$vm->id}->{$ressource} = $hxml->{$ressources_keys->{$ressource}};
+        }
+
+        merge($vms_ressources, $vm_ressources);
+    }
+    return $vms_ressources;
 };
 
 1;

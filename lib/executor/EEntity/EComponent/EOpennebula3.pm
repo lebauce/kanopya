@@ -207,8 +207,8 @@ sub postStartNode {
 
     $log->info('Hypervisor id returned by opennebula: ' . $hostid);
     my $hypervisor = $self->addHypervisor(
-        host => $args{host}->_getEntity, 
-        id   => $hostid
+        host       => $args{host}->_getEntity,
+        onehost_id => $hostid
     );
 
     $self->onehost_enable(host_nameorid => $hostname);
@@ -226,106 +226,6 @@ sub preStopNode {
      # TODO verifier le succes de la commande
 
      $self->_getEntity->removeHypervisor(host => $args{host});
-}
-
-sub getVmResources {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'vm' ]);
-    my $hypervisor = EFactory::newEEntity(data => $args{vm}->hypervisor);
-    my $all_capa = $self->getVmsResources(hypervisor => $hypervisor);
-    return $all_capa->{$args{vm}->getId()}; #ram/cpu
-};
-
-sub getVmsResources {
-    my ($self, %args) = @_;
-    General::checkParams(args     => \%args, required => [ 'hypervisor' ]);
-    $log->info(ref $args{hypervisor});
-    my $cpu_resources = $self->getCpuResources(hypervisor => $args{hypervisor});
-    my $mem_resources = $self-> getMemResources(hypervisor => $args{hypervisor});
-
-    return merge($cpu_resources, $mem_resources);
-
-}
-sub getMemResources {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args, required => [ 'hypervisor' ]);
-
-    my $command = 'xentop -b -i 1 ';
-    my $result  = $args{hypervisor}->getEContext->execute(command => $command);
-    my $res = $result->{stdout};
-
-    my @lines = split('\n',$res);
-    shift @lines; #remove first line (titles)
-    shift @lines; #remove second line (Dom0)
-
-    my %hash;
-    for my $line (@lines) {
-        $line =~ s/^\s+//;
-        my @splited_line = split('\s+',$line);
-        my ($foo,$vm_id) = split '-',$splited_line[0];
-        my $one3vm = Entity::Host::VirtualMachine::Opennebula3Vm->find(hash => {onevm_id => $vm_id});
-        $hash{$one3vm->getId()}->{ram} = $splited_line[4] * 1024;
-    }
-    return \%hash;
-}
-
-sub getCpuResources {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args, required => [ 'hypervisor' ]);
-
-    my $command = 'xm list';
-    my $result  = $args{hypervisor}->getEContext->execute(command => $command);
-    my $res = $result->{stdout};
-
-    my @lines = split('\n',$res);
-    shift @lines; #remove first line (titles)
-    shift @lines; #remove second line (Dom0)
-
-    my %hash;
-    for my $line (@lines) {
-        my @splited_line = split('\s+',$line);
-        my ($foo,$vm_id) = split '-',$splited_line[0];
-        my $one3vm = Entity::Host::VirtualMachine::Opennebula3Vm->find(hash => {onevm_id => $vm_id});
-
-        $hash{$one3vm->getId()}->{cpu} = $splited_line[3];
-    }
-    return \%hash;
-}
-
-
-
-sub getHostsMemAvailable {
-    my ($self, %args) = @_;
-    my $hypervisors = $self->getHypervisors();
-    my $hash;
-
-    for my $hypervisor (@$hypervisors) {
-        $hash->{$hypervisor->getId()} = $self->getHostMemAvailable(host => $hypervisor);
-    }
-    return $hash;
-}
-
-#return host mem in bytes
-sub getHostMemAvailable {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'host' ]);
-
-    my $e_host  = EFactory::newEEntity(data => $args{host});
-    my $command = 'xm info';
-    my $result  = $e_host->getEContext->execute(command => $command);
-    my $res = $result->{stdout};
-
-    my @lines = split('\n',$res);
-    for my $line (@lines) {
-        my ($key,$value) = split(':',$line);
-        $key =~ s/\s+//; #Remove spaces before and after
-        $value =~ s/\s+//;
-        if($key eq 'free_memory') { return $value * 1024 * 1024} #in bytes
-    }
 }
 
 # Execute host migration to a new hypervisor
@@ -420,22 +320,20 @@ sub scale_memory {
     $self->getEContext->execute(command => $command);
 
     # Memroy scale checked in post requisite before saving in DB
-    # return $self->_getEntity()->updateMemory(%args);
+    #$args{host}->updateMemory(memory => $memory);
 }
-
-
 
 sub restoreHost {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'hypervisor' ]);
-    # Option  resources, hypervisor, resubmit
-
+    General::checkParams(args     => \%args,
+                         required => [ 'hypervisor' ],
+                         optional => { check_resubmit   => undef,
+                                       check_hypervisor => undef,
+                                       check_resources  => undef });
 
     my $host_name = $args{hypervisor}->host_hostname;
     my $vms       = $args{hypervisor}->getVms();
-
-
 
     if (defined $args{check_resubmit} || defined $args{check_hypervisor}) {
         for my $vm (@{$vms}) {
@@ -461,7 +359,8 @@ sub restoreHost {
     }
 
     if (defined $args{check_resources}) {
-        my $host_vm_capacities = $self->getVmsResources(hypervisor => $args{hypervisor});
+        my $host_vm_capacities = $args{hypervisor}->getVmResources();
+
         $log->info(Dumper $host_vm_capacities);
 
         for my $vm (@{$vms}) {
@@ -509,7 +408,7 @@ sub scale_cpu {
 
     $self->getEContext->execute(command => $command);
 
-    #return $self->_getEntity()->updateCPU(%args);
+    #$args{host}->updateCPU(cpu_number => $cpu_number);
 }
 
 
@@ -684,22 +583,21 @@ sub postStart {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $id = $args{host}->onevm_id;
-    my $command = $self->_oneadmin_command(command => "onevm show $id --xml");
-    my $result = $self->getEContext->execute(command => $command);
-    my $hxml = XMLin($result->{stdout});
+    my $oneid = $args{host}->onevm_id;
+
+    my $command = $self->_oneadmin_command(command => "onevm show $oneid --xml");
+    my $result  = $self->getEContext->execute(command => $command);
+    my $hxml    = XMLin($result->{stdout});
 
     my $vnc_port = $hxml->{TEMPLATE}->{GRAPHICS}->{PORT};
 
-     # Check final RAM and CPU and store
-    my $vm_capacities = $self->getVmResources(vm  => $args{host});
+    # Check final RAM and CPU and store
+    $args{host}->setAttr(name => 'vnc_port',  value => $vnc_port);
+    $args{host}->setAttr(name => 'host_ram',  value => $args{host}->getTotalMemory);
+    $args{host}->setAttr(name => 'host_core', value => $args{host}->getTotalCpu);
 
-    $args{host}->setAttr(name => 'vnc_port', value => $vnc_port);
-    $args{host}->setAttr(name => 'host_ram', value => $vm_capacities->{ram});
-    $args{host}->setAttr(name => 'host_core', value => $vm_capacities->{cpu});
-     # Check final RAM and CPU and store
-
-    $log->info('Set Ram and Cpu from real info : ram <'.($vm_capacities->{ram}).'> cpu <'.($vm_capacities->{cpu}).'>');
+    $log->info('Set Ram and Cpu from real info : ram <' . $args{host}->host_ram .
+               '> cpu <' . $args{host}->host_cpu . '>');
 
     $args{host}->save();
 }
@@ -1490,7 +1388,5 @@ sub onevm_list {
     my $result = $self->getEContext->execute(command => $cmd);
     # TODO parse xml output and return hash structure
 }
-
-
 
 1;

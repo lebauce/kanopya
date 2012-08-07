@@ -1,29 +1,25 @@
-# EHost.pm - Abstract class of EHosts object
-
-#    Copyright © 2011-2012 Hedera Technology SAS
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
+# Copyright © 2011-2012 Hedera Technology SAS
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
 #
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
 EHost - execution class of host entities
 
 =head1 SYNOPSIS
-
-
 
 =head1 DESCRIPTION
 
@@ -32,6 +28,7 @@ EHost is the execution class of host entities
 =head1 METHODS
 
 =cut
+
 package EEntity::EHost;
 use base "EEntity";
 
@@ -138,11 +135,61 @@ sub getEContext {
                                  ip_destination => $self->getAdminIp);
 }
 
-
 sub timeOuted {
     my $self = shift;
     $self->setState(state => 'broken');
 }
+
+=head2 getAvailableMemory
+
+    Return the available memory amount.
+
+=cut
+
+sub getAvailableMemory {
+    my ($self, %args) = @_;
+
+    # Get the memory infos from procfs
+    my $result = $self->getEContext->execute(command => "cat /proc/meminfo");
+
+    # Keep the lines about free memory only
+    my @lines = grep { $_ =~ '^(MemFree:|Buffers:|Cached:)' } split('\n', $result->{stdout});
+
+    # Total available memory is the sum of free, buffers and cached memory
+    my $free = 0;
+    for my $line (@lines) {
+        my ($mentype, $amount, $unit) = split('\s+', $line);
+        $free += $amount;
+    }
+
+    # Return the free memory in bytes
+    return $free * 1024;
+}
+
+=head2 getTotalMemory
+
+    Return the total memory amount.
+
+=cut
+
+sub getTotalMemory {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
+=head2 getTotalCpu
+
+    Return the total cpu count.
+
+=cut
+
+sub getTotalCpu {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
 1;
 
 __END__

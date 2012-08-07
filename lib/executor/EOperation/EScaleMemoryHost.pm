@@ -69,12 +69,10 @@ sub prepare {
     my $vm_id = $self->{context}->{host}->getId;
     my $hv_id = $self->{context}->{host}->hypervisor->getId;
 
-    my $hvs_mem_available = $self->{context}->{cloudmanager_comp}->getHostsMemAvailable();
-
-    my $cm    = CapacityManagement->new(
-                    cluster_id        => $self->{context}->{host}->getClusterId(),
-                    hvs_mem_available => $hvs_mem_available,
-                );
+    my $cm = CapacityManagement->new(
+                 cluster_id    => $self->{context}->{host}->getClusterId(),
+                 cloud_manager => $self->{context}->{cloudmanager_comp},
+             );
 
     my $check = $cm->isScalingAuthorized(
                     vm_id           => $vm_id,
@@ -123,19 +121,13 @@ sub finish {
 
 sub postrequisites {
     my $self = shift;
-    my $vm_capacities = $self->{context}->{cloudmanager_comp}->getVmResources(
-                            vm => $self->{context}->{host}
-    );
+    my $vm_ram = $self->{context}->{host}->getTotalMemory;
 
-    $self->{context}->{cloudmanager_comp}->_getEntity->updateMemory(
-        host   => $self->{context}->{host},
-        memory => $vm_capacities->{ram},
-    );
+    $self->{context}->{host}->updateMemory(memory => $vm_ram);
 
     my $time = 0;
-    if (defined $self->{params}->{old_mem}
-        && $self->{params}->{old_mem} == $vm_capacities->{ram}) { # RAM amount has not moved
-
+    if (defined $self->{params}->{old_mem} && $self->{params}->{old_mem} == $vm_ram) {
+         # RAM amount has not moved
         if(not defined $self->{params}->{time}) {
             $self->{params}->{time} = time();
         }
@@ -143,22 +135,22 @@ sub postrequisites {
         $time = time() - $self->{params}->{time};
         $log->info("Checker scale time = $time");
     }
-    else{
-       $self->{params}->{old_mem} = $vm_capacities->{ram};
+    else {
+       $self->{params}->{old_mem} = $vm_ram;
        delete $self->{params}->{time};
     }
 
     my $precision = 0.05;
-    $log->info('one ram <'.($vm_capacities->{ram}).'> asked ram <'.($self->{params}->{memory}*1024*1024).'> ');
-    if (( $vm_capacities->{ram} >= $self->{params}->{memory} * 1024 * 1024 *(1 - $precision) )
-          && ($vm_capacities->{ram} <= $self->{params}->{memory} * 1024 * 1024 * (1 + $precision) )) {
+    $log->info('one ram <' . $vm_ram . '> asked ram <' . ($self->{params}->{memory} * 1024 * 1024) . '> ');
+    if (($vm_ram >= $self->{params}->{memory} * 1024 * 1024 * (1 - $precision)) &&
+        ($vm_ram <= $self->{params}->{memory} * 1024 * 1024 * (1 + $precision))) {
         return 0;
     }
-    elsif($time < 3*10) {
+    elsif ($time < 3*10) {
         return 5;
     }
     else {
-        my $error = 'ScaleIn of vm <'.($self->{context}->{host}->getId()).'> : Failed. Current RAM is <'.($vm_capacities->{ram}).'>';
+        my $error = 'ScaleIn of vm <' . $self->{context}->{host}->id . '> : Failed. Current RAM is <' . $vm_ram . '>';
         Message->send(
              from    => 'EScaleMemoryHost',
              level   => 'error',
@@ -171,17 +163,11 @@ sub postrequisites {
 sub _cancel {
     my $self = shift;
 
-    my $vm_capacities = $self->{context}->{cloudmanager_comp}->getVmResources(
-                            vm => $self->{context}->{host}
-    );
+    $self->{context}->{host}->updateMemory(memory => $self->{context}->{host}->getTotalMemory);
 
-    $self->{context}->{cloudmanager_comp}->_getEntity->updateMemory(
-        host   => $self->{context}->{host},
-        memory => $vm_capacities->{ram},
-    );
-
-    $log->info('Last mem update <'.($vm_capacities->{ram}).'>');
+    $log->info('Last mem update <' . $self->{context}->{host}->host_ram . '>');
 }
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

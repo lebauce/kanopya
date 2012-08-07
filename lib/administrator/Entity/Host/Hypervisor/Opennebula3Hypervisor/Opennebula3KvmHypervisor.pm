@@ -1,4 +1,4 @@
-# Copyright © 2012 Hedera Technology SAS
+# Copyright © 2011-2012 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -15,33 +15,24 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package EEntity::EHost::EHypervisor;
-use base "EEntity::EHost";
+package Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3KvmHypervisor;
+use base "Entity::Host::Hypervisor::Opennebula3Hypervisor";
 
 use strict;
 use warnings;
 
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
-my $log = get_logger("executor");
+my $log = get_logger("administrator");
+my $errmsg;
 
+use constant ATTR_DEF => {};
 
-=head2 getVmResources
+sub getAttrDef { return ATTR_DEF; }
 
-    Return virtual machines ressources. If no resssource type(s)
-    specified in parameters, return all know ressouces.
-
-=cut
-
-sub getVmResources {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        optional => { vm => undef, ressources => [ 'ram', 'cpu' ] }
-    );
-
-    throw Kanopya::Exception::NotImplemented();
-};
+sub methods {
+    return {};
+}
 
 1;

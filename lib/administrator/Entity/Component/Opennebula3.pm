@@ -63,6 +63,8 @@ use Manager::HostManager;
 use Entity::ContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::Host::Hypervisor::Opennebula3Hypervisor;
+use Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3XenHypervisor;
+use Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3KvmHypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Host::VirtualMachine::Opennebula3Vm;
 
@@ -152,7 +154,7 @@ sub getHypervisors {
 
 sub getHypervisorType {
     my ($self) = @_;
-    return $self->{_dbix}->get_column('hypervisor');
+    return $self->hypervisor;
 }
 
 =head2 checkHostManagerParams
@@ -371,17 +373,28 @@ sub createVirtualHost {
 
 ### hypervisors manipulation ###
 
-# declare an new hypervisor into database
-# real declaration in opennebula must have been done
-# since `hypervisor_id` is required
+=head2 getVmResources
+
+    Promote the selected host to an hypervisor type.
+    Real declaration in opennebula must have been done
+    since `onehost_id` is required.
+
+=cut
 
 sub addHypervisor {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'id' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'onehost_id' ]);
 
-    return Entity::Host::Hypervisor::Opennebula3Hypervisor->promote(
+    my $hypervisor_type = 'Entity::Host::Hypervisor::Opennebula3Hypervisor::';
+    if ($self->hypervisor eq 'xen') {
+        $hypervisor_type .= 'Opennebula3XenHypervisor';
+    } else {
+        $hypervisor_type .= 'Opennebula3KvmHypervisor';
+    }
+
+    return $hypervisor_type->promote(
                promoted       => $args{host},
                opennebula3_id => $self->id,
                onehost_id     => $args{id}
@@ -470,24 +483,6 @@ sub getRemoteSessionURL {
     General::checkParams(args => \%args, required => ['host']);
 
     return "vnc://" . $args{host}->hypervisor->getAdminIp() . ":" . $args{host}->vnc_port;
-}
-
-sub updateCPU {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['host']);
-
-    $args{host}->setAttr(name  => "host_core",
-                         value => $args{cpu_number});
-    $args{host}->save();
-}
-
-sub updateMemory {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
-
-    $args{host}->setAttr(name  => "host_ram",
-                         value => $args{memory});
-    $args{host}->save();
 }
 
 =head2 scaleHost
