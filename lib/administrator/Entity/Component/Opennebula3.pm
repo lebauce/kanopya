@@ -289,8 +289,11 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['conf']);
 
+    my $conf = $args{conf};
     my $repos = $conf->{opennebula3_repositories};
     delete $conf->{opennebula3_repositories};
 
