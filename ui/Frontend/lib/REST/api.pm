@@ -174,7 +174,7 @@ sub db_to_json {
                 }
             }
             else {
-                $json->{$key} = $basedb->getAttr(name => $key);
+                $json->{$key} = jsonify($basedb->getAttr(name => $key));
             }
         }
     }
