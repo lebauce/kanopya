@@ -1,5 +1,5 @@
 NAME        = [% image_name %]
-DESCRIPTION = [% image_description %]
+DESCRIPTION = "[% image_description %]"
 TYPE        = [% image_type %]
 PERSISTENT  = [% image_persistent %]
 DEV_PREFIX  = [% image_devprefix %]

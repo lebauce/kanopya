@@ -2,19 +2,14 @@ NAME = [% name %]
 MEMORY = [% memory %]
 CPU = 1
 
-[% IF hypervisor_type && hypervisor_name %]
-REQUIREMENTS = "HYPERVISOR=\"[% hypervisor_type %]\" & NAME = \"[% hypervisor_name %]\""
-[% ELSIF hypervisor_type %]
-REQUIREMENTS = "HYPERVISOR=\"[% hypervisor_type %]\""
-[% ELSIF hypervisor_name %]
+[% IF hypervisor_name %]
 REQUIREMENTS = "NAME = \"[% hypervisor_name %]\""
 [% END %]
 
-[% IF hypervisor_type == "xen" %]
 RAW = [ type="xen", data="maxvcpus=24" ]
 RAW = [ type="xen", data="maxmem=48000" ]
 RAW = [ type="xen", data="vcpus=[% cpu %]" ]
-[% END %]
+
 
 OS = [
 	KERNEL = [% kernelpath %],
@@ -23,28 +18,12 @@ OS = [
 	KERNEL_CMD = "xencons=tty console=hvc0"
 ]
 
-DISK = [
-	TYPE = disk,
-	SOURCE = [% imagepath %],
-	CLONE = no,
-	DRIVER = "file:",
-	BUS = scsi,
-	TARGET = xvda
-]
-
+DISK = [ IMAGE = "[% image_name %]" ] 
+    
 [% FOREACH iface IN interfaces %]
 NIC = [
 	MAC = [% iface.mac %],
-        [% IF iface.vlan %]
-        VLAN = YES,
-	VLAN_ID = [% iface.vlan %],
-	[% IF iface.bridge %]
-	BRIDGE = [% iface.bridge %],
-	[% END %]
-        [% END %]
-	[% IF iface.phydev %]
-	PHYDEV = [% iface.phydev %],
-	[% END %]
+    NETWORK = "[% iface.network %]",
 	MODEL = ioemu
 ]
 [% END %]

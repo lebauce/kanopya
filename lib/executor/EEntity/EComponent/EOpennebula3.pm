@@ -516,7 +516,10 @@ sub startHost {
         image_source      => $repo{datastore_id}.'/'.$image_name.'.img',
     );
 
-    my $imageid = $self->oneimage_create(file => $image_templatefile);
+    my $imageid = $self->oneimage_create(
+        file               => $image_templatefile,
+        datastore_nameorid => $repo{datastore_id}
+    );
 
     # generate vnet for each interface and register them
 
@@ -549,7 +552,7 @@ sub startHost {
     # $result = $masternode_econtext->execute(command => $command);
 
     $self->_getEntity()->addVM(
-        host       => $args{host},
+        host       => $args{host}->_getEntity,
         id         => $vmid,
         hypervisor => $hypervisor
     );
@@ -865,9 +868,10 @@ sub generateImageTemplate {
     my ($self, %args) = @_;
     General::checkParams(
         args     => \%args, 
-        required => [ 'image_name','image_source', 'hypervisor_type']
+        required => [ 'image_name','image_source']
     );
-       
+    
+    my $hypervisor_type = $self->getHypervisorType();   
     my $data = {
         image_name        => $args{image_name},
         image_description => 'vm image',
@@ -878,10 +882,10 @@ sub generateImageTemplate {
         image_disktype    => 'FILE'
     };
     
-    if($args{hypervisor_type} eq 'xen') {
+    if($hypervisor_type eq 'xen') {
         $data->{image_driver} = '"file:"';
         $data->{image_target} = 'xvda';
-    } elsif($args{hypervisor_type} eq 'kvm') {
+    } elsif($hypervisor_type eq 'kvm') {
         $data->{image_driver} = 'raw';
         $data->{image_target} = 'sda';
     }
@@ -910,22 +914,24 @@ sub generateVnetTemplate {
     my ($self, %args) = @_;
     General::checkParams(
         args     => \%args, 
-        required => [ 'name','']
+        required => [ 'vnet_name','vnet_bridge', 'vnet_phydev','vnet_netaddress','vnet_mac']
     );
     
     my $data = {
-        vnet_name       => $args{name},
-        vnet_type       => 'RANGED',
-        vnet_bridge     => ,
-        vnet_vlanid     => ,
-        vnet_phydev     => ,
-        vnet_netaddress => '10.0.0.0/24',
+        vnet_name       => $args{vnet_name},
+        vnet_type       => 'FIXED',
+        vnet_bridge     => $args{vnet_bridge},
+        vnet_vlanid     => $args{vnet_vlanid},
+        vnet_phydev     => $args{vnet_phydev},
+        vnet_netaddress => $args{vnet_netaddress},
+        vnet_mac        => $args{vnet_mac}
     };
     
-    my $template_file = 'vnet-' . $args{name} . '.tt';
+    my $cluster = $self->_getEntity->getServiceProvider;
+    my $template_file = 'vnet-' . $args{vnet_name} . '.tt';
     my $file = $self->generateNodeFile(
-        cluster       => $self->_getEntity->getServiceProvider,
-        host          => $args{hypervisor},
+        cluster       => $cluster,
+        host          => $cluster->getMasterNode,
         file          => $template_file,
         template_dir  => '/templates/components/opennebula',
         template_file => 'vnet.tt',
@@ -954,6 +960,7 @@ sub generateXenVmTemplate {
         units => 'M'
     );
 
+
     my $tftp_conf = $self->{config}->{tftp}->{directory};
     my $cluster = Entity->get(id => $args{host}->getClusterId());
 
@@ -962,7 +969,7 @@ sub generateXenVmTemplate {
 
     my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
     my $image = $args{host}->getNodeSystemimage();
-    my $image_name = $image->getAttr(name => 'systemimage_name') . '.img';
+    my $image_name = $image->getAttr(name => 'systemimage_name');
     my $hostname = $args{host}->getAttr(name => 'host_hostname');
 
     my %repo = $self->_getEntity()->getImageRepository(
@@ -979,13 +986,20 @@ sub generateXenVmTemplate {
             my $vlan = $network->isa("Entity::Network::Vlan") ?
                            $network->getAttr(name => "vlan_number") : undef;
 
-            my $data = {
-                mac => $iface->getAttr(name => 'iface_mac_addr'),
-                bridge  => "br-" . ($vlan || "default"),
-                phydev  => "p" . $bridge->getAttr(name => "iface_name"),
-                vlan    => $vlan
+            # generate and register vnet
+            my $vnet_template = $self->generateVnetTemplate(
+                vnet_name       => $hostname.'-'.$iface->getAttr(name => 'iface_name'),
+                vnet_bridge     => "br-" . ($vlan || "default"),
+                vnet_phydev     => "p" . $bridge->getAttr(name => "iface_name"),
+                vnet_vlanid     => $vlan,
+                vnet_mac        => $iface->getAttr(name => 'iface_mac_addr'),
+                vnet_netaddress => $iface->getIPAddr
+            );
+            my $vnetid = $self->onevnet_create(file => $vnet_template);
+            push @$interfaces, { 
+                mac     => $iface->getAttr(name => 'iface_mac_addr'), 
+                network => $hostname.'-'.$iface->getAttr(name => 'iface_name'),
             };
-            push @{$interfaces}, $data;
         };
     }
 
@@ -996,10 +1010,10 @@ sub generateXenVmTemplate {
         name            => $hostname,
         memory          => $ram,
         cpu             => $args{host}->host_core,
-        kernelpath      => $repository_path . '/' . $kernel_filename,
-        initrdpath      => $repository_path . '/' . $initrd_filename,
-        imagepath       => $repository_path . '/' . $image_name,
-        bridge_iface    => ($args{hypervisor}->getIfaces(role => "vms"))[0]->iface_name,
+        kernelpath      => '/var/lib/one/datastores/'.$repo{datastore_id} .'/'. $kernel_filename,
+        initrdpath      => '/var/lib/one/datastores/'.$repo{datastore_id} .'/'. $initrd_filename,
+        image_name      => $image_name,
+        #bridge_iface    => ($args{hypervisor}->getIfaces(role => "vms"))[0]->iface_name,
         hypervisor_type => $self->_getEntity->hypervisor,
         hypervisor_name => $args{hypervisor}->host_hostname,
         interfaces      => $interfaces,
@@ -1019,6 +1033,7 @@ sub generateXenVmTemplate {
         src  => $file,
         dest => '/tmp'
     );
+    
 
     # If the kernel and the initramfs are not present in the
     # image repository, copy them into it
@@ -1126,7 +1141,7 @@ sub oneimage_create {
         required => ['datastore_nameorid','file']
     );
     
-    my $cmd = one_command("oneimage create $args{datastore_nameorid} $args{file}");
+    my $cmd = one_command("oneimage create -d $args{datastore_nameorid} $args{file}");
     my $result = $self->getEContext->execute(command => $cmd);
     if($result->{exitcode} != 0) {
         throw Kanopya::Exception::Execution(error => $result->{stdout});
