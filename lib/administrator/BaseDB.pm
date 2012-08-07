@@ -448,6 +448,7 @@ sub promote {
 
     # Merge the base object attributtes and new ones for attrs checking
     my %totalargs = (%args, $args{promoted}->getAttrs);
+    delete $totalargs{promoted};
 
     # Then extract only the attrs for new tables for insertion
     my $attrs = $class->checkAttrs(attrs => \%totalargs,
