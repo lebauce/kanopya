@@ -76,11 +76,9 @@ sub createDisk {
     if (! defined $noformat) {
         # Connect to the iSCSI target and format it locally
 
-        my $export = $self->createExport(container   => $container,
-                                         export_name => $args{name},
-                                         erollback   => $args{erollback});
-
-        my $container_access = EFactory::newEEntity(data => $export);
+        my $container_access = $self->createExport(container   => $container,
+                                                   export_name => $args{name},
+                                                   erollback   => $args{erollback});
 
         my $newdevice = $container_access->connect(econtext => $self->getExecutorEContext);
 
@@ -90,7 +88,7 @@ sub createDisk {
 
         $container_access->disconnect(econtext => $self->getExecutorEContext);
 
-        $self->removeExport(container_access => $export);
+        $self->removeExport(container_access => $container_access);
     }
 
     if (exists $args{erollback} and defined $args{erollback}){
