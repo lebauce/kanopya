@@ -36,6 +36,26 @@ CREATE TABLE `opennebula3_hypervisor` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `opennebula3_xen_hypervisor`
+--
+
+CREATE TABLE `opennebula3_xen_hypervisor` (
+  `opennebula3_xen_hypervisor_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`opennebula3_xen_hypervisor_id`),
+  FOREIGN KEY (`opennebula3_xen_hypervisor_id`) REFERENCES `opennebula3_hypervisor` (`opennebula3_hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `opennebula3_kvm_hypervisor`
+--
+
+CREATE TABLE `opennebula3_kvm_hypervisor` (
+  `opennebula3_kvm_hypervisor_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`opennebula3_kvm_hypervisor_id`),
+  FOREIGN KEY (`opennebula3_kvm_hypervisor_id`) REFERENCES `opennebula3_hypervisor` (`opennebula3_hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `opennebula3_vm`
 --
 

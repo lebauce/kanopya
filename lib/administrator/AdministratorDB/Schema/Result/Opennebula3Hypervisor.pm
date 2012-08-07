@@ -93,15 +93,49 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 opennebula3_kvm_hypervisor
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-19 15:18:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dIn+CQy71QyBHvz3DtEwwQ
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3KvmHypervisor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "opennebula3_kvm_hypervisor",
+  "AdministratorDB::Schema::Result::Opennebula3KvmHypervisor",
+  {
+    "foreign.opennebula3_kvm_hypervisor_id" => "self.opennebula3_hypervisor_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 opennebula3_xen_hypervisor
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3XenHypervisor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "opennebula3_xen_hypervisor",
+  "AdministratorDB::Schema::Result::Opennebula3XenHypervisor",
+  {
+    "foreign.opennebula3_xen_hypervisor_id" => "self.opennebula3_hypervisor_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-06 17:35:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0IyDdCOONg0FRWqDUEg+lg
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Hypervisor",
-  { "foreign.hypervisor_id" => "self.opennebula3_hypervisor_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+  { hypervisor_id => "opennebula3_hypervisor_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;

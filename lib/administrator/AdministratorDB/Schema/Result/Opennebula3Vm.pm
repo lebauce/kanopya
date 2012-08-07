@@ -100,8 +100,8 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::VirtualMachine",
-  { "foreign.virtual_machine_id" => "self.opennebula3_vm_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+  { virtual_machine_id => "opennebula3_vm_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;
