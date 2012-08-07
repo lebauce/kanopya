@@ -104,7 +104,7 @@ get '/components/:instanceid/saveconfig' => sub {
     
     my $msg = "conf saved";
     eval {
-        $component->setConf($conf);
+        $component->setConf(conf => $conf);
     };
     if ($@) {
         $msg = "Error while saving:\n $@";
