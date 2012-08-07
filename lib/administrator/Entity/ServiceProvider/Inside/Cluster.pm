@@ -594,6 +594,7 @@ sub configureBillingLimits {
             );
 
             AggregateCombination->new(
+                aggregate_combination_label               => "Billing" . $name,
                 aggregate_combination_service_provider_id => $self->getId,
                 aggregate_combination_formula             => 'id' . $cm->getId
             );
