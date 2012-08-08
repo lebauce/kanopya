@@ -400,7 +400,7 @@ sub addHypervisor {
     return $hypervisor_type->promote(
                promoted       => $args{host},
                opennebula3_id => $self->id,
-               onehost_id     => $args{id}
+               onehost_id     => $args{onehost_id}
            );
 }
 
