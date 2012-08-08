@@ -24,7 +24,9 @@ var mainmenu_def = {
             { label : 'PoolIPs', id : 'network_poolips', onLoad : function(cid) { require('KIM/poolips.js'); poolips_list(cid); } }
         ],
         'System'  : [
-            { label : 'Master Image', id : 'mater_image', onLoad : function(cid) { require('KIM/masterimage.js'); masterimagesMainView(cid); } }
+            { label : 'Master Images',  id : 'master_image',    onLoad : function(cid) { require('KIM/masterimage.js'); masterimagesMainView(cid); }    },
+            { label : 'System Images',  id : 'system_images'                                                                                            },
+            { label : 'Kernels',        id : 'kernels'                                                                                                  }
         ],
     },
     'Business' : {

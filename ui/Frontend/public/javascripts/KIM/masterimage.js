@@ -41,7 +41,8 @@ var MasterImage = (function() {
                             { name : 'component_category', index : 'component_category' },
                             { name : 'component_name', index : 'component_name' },
                             { name : 'component_version', index : 'component_version', width : '50' }
-                        ]
+                        ],
+                        action_delete           : 'no'
                     });
                 });
             })(this)
@@ -68,7 +69,7 @@ var MasterImage = (function() {
             return false;
         });
         $(dialog).dialog({
-            title       : 'Upload a new master image',
+            title       : 'Upload a master image',
             draggable   : false,
             resizable   : false,
             modal       : true,
