@@ -65,7 +65,7 @@ sub new {
     }
     else {
         General::checkParams(args => \%args, optional => { cluster_id            => undef,
-                                                           hypervisor_cluster_id => undef
+                                                           hypervisor_cluster_id => undef,
                                                            cloud_manager         => undef });
 
         $self->{_cloud_manager} = $args{cloud_manager};
