@@ -223,11 +223,16 @@ sub oneRun {
 
                 $adm->{db}->txn_commit;
                 $log->info("---- [$opclass] Execution reported ($delay s.) ----");
-                return;
+                
+                throw Kanopya::Exception::Execution::OperationReported(error => 'Operation reported');
             }
         };
         if ($@) {
             my $err_exec = $@;
+
+            if ($err_exec->isa('Kanopya::Exception::Execution::OperationReported')) {
+                return;
+            }
 
             # Rollback transaction
             $adm->{db}->txn_rollback;
