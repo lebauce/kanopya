@@ -21,6 +21,7 @@ use base "EEntity::EHost::EHypervisor::EOpennebula3Hypervisor";
 use strict;
 use warnings;
 
+use General;
 use Entity::Host::VirtualMachine::Opennebula3Vm;
 
 use Hash::Merge qw(merge);
@@ -45,6 +46,9 @@ sub getAvailableMemory {
 
     # Get the memory infos from xm infos
     my $result = $self->getEContext->execute(command => 'xm info');
+    if ($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stdout});
+    }
 
     # Total available memory is the sum of free, buffers and cached memory
     my @lines = split('\n', $result->{stdout});
@@ -98,6 +102,9 @@ sub getMemResources {
     General::checkParams(args => \%args, optional => { vm => undef } );
 
     my $result = $self->getEContext->execute(command => 'xentop -b -i 1 ');
+    if ($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stdout});
+    }
 
     my @lines = split('\n', $result->{stdout});
     shift @lines; # Remove first line (titles)
@@ -135,6 +142,9 @@ sub getCpuResources {
     General::checkParams(args => \%args, optional => { vm => undef } );
 
     my $result = $args{hypervisor}->getEContext->execute(command => 'xm list');
+    if ($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stdout});
+    }
 
     my @lines = split('\n', $result->{stdout});
     shift @lines; # Remove first line (titles)

@@ -21,6 +21,8 @@ use base "EEntity::EHost::EHypervisor::EOpennebula3Hypervisor";
 use strict;
 use warnings;
 
+use General;
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
 
@@ -57,7 +59,11 @@ sub getVmResources {
     for my $vm (@vms) {
         # Get the vm configuration in xml
         my $result = $self->getEContext->execute(command => 'virsh dumpxml one-' . $vm->onevm_id);
-        my $hxml   = XMLin($result->{stdout});
+        if ($result->{exitcode} != 0) {
+            throw Kanopya::Exception::Execution(error => $result->{stdout});
+        }
+
+        my $hxml = XMLin($result->{stdout});
 
         # Build the resssources hash according to required ressources
         my $vm_ressources = {};
