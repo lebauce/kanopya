@@ -90,7 +90,7 @@ sub create {
                          required => [ "disk_manager", "src_container", "erollback" ]);
 
     General::checkParams(args     => \%args,
-                         optional => { 'systemimage_size' => $args{src_container}->container_size });
+                         optional => { 'systemimage_size' => $args{src_container}->getAttr(name => 'container_size') });
 
     $log->info('Device creation for new systemimage');
 
