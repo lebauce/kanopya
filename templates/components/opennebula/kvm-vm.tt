@@ -1,6 +1,7 @@
 XNAME = [% name %]
 MEMORY = [% memory %]
 CPU = 1
+VCPU = [% cpu %]
 
 [% IF hypervisor_name %]
 REQUIREMENTS = "NAME = \"[% hypervisor_name %]\""
@@ -9,6 +10,7 @@ REQUIREMENTS = "NAME = \"[% hypervisor_name %]\""
 OS = [
 	ARCH = x86_64,
     ROOT = sda1,
+    BOOT = hd
 ]
 
 DISK = [ IMAGE_ID = [% image_id %] ]
@@ -17,7 +19,7 @@ DISK = [ IMAGE_ID = [% image_id %] ]
 NIC = [
 	MAC = [% iface.mac %],
     NETWORK_ID = [% iface.network_id %],
-	MODEL = ioemu
+	MODEL = virtio
 ]
 [% END %]
 

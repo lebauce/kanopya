@@ -1013,8 +1013,6 @@ sub generateXenVmTemplate {
         kernelpath      => '/var/lib/one/datastores/'.$repo{datastore_id} .'/'. $kernel_filename,
         initrdpath      => '/var/lib/one/datastores/'.$repo{datastore_id} .'/'. $initrd_filename,
         image_name      => $image_name,
-        #bridge_iface    => ($args{hypervisor}->getIfaces(role => "vms"))[0]->iface_name,
-        hypervisor_type => $self->_getEntity->hypervisor,
         hypervisor_name => $args{hypervisor}->host_hostname,
         interfaces      => $interfaces,
     };
@@ -1069,8 +1067,79 @@ sub generateKvmVmTemplate {
     my ($self, %args) = @_;
     General::checkParams(
         args     => \%args, 
-        required => [ '','']
+        required => [ 'hypervisor','host']
     );
+
+    # host_ram is stored in octect, so we convert it to megaoctect
+    my $ram = General::convertFromBytes(
+        value => $args{host}->getAttr(name => 'host_ram'),
+        units => 'M'
+    );
+
+    my $tftp_conf = $self->{config}->{tftp}->{directory};
+    my $cluster = Entity->get(id => $args{host}->getClusterId());
+
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
+    my $image = $args{host}->getNodeSystemimage();
+    my $image_name = $image->getAttr(name => 'systemimage_name');
+    my $hostname = $args{host}->getAttr(name => 'host_hostname');
+
+    my %repo = $self->_getEntity()->getImageRepository(
+                   container_access_id => $disk_params->{container_access_id}
+               );
+
+    my $repository_path = $self->_getEntity()->getAttr(name => 'image_repository_path') .
+                          '/' . $repo{repository_name};
+
+    my $interfaces = [];
+    my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
+    for my $iface ($args{host}->getIfaces()) {
+        for my $network ($iface->getInterface->getNetworks) {
+            my $vlan = $network->isa("Entity::Network::Vlan") ?
+                           $network->getAttr(name => "vlan_number") : undef;
+
+            # generate and register vnet
+            my $vnet_template = $self->generateVnetTemplate(
+                vnet_name       => $hostname.'-'.$iface->getAttr(name => 'iface_name'),
+                vnet_bridge     => "br-" . ($vlan || "default"),
+                vnet_phydev     => "p" . $bridge->getAttr(name => "iface_name"),
+                vnet_vlanid     => $vlan,
+                vnet_mac        => $iface->getAttr(name => 'iface_mac_addr'),
+                vnet_netaddress => $iface->getIPAddr
+            );
+            my $vnetid = $self->onevnet_create(file => $vnet_template);
+            push @$interfaces, { 
+                mac     => $iface->getAttr(name => 'iface_mac_addr'), 
+                network => $hostname.'-'.$iface->getAttr(name => 'iface_name'),
+            };
+        };
+    }
+
+    my $data = {
+        name            => $hostname,
+        memory          => $ram,
+        cpu             => $args{host}->host_core,
+        image_name      => $image_name,
+        hypervisor_name => $args{hypervisor}->host_hostname,
+        interfaces      => $interfaces,
+    };
+
+    my $template_file = 'vm-' . $hostname . '.tt';
+    my $file = $self->generateNodeFile(
+        cluster       => $self->_getEntity->getServiceProvider,
+        host          => $args{hypervisor},
+        file          => $template_file,
+        template_dir  => '/templates/components/opennebula',
+        template_file => 'kvm-vm.tt',
+        data         => $data,
+    );
+
+    $self->getEContext->send(
+        src  => $file,
+        dest => '/tmp'
+    );
+
+    return '/tmp/' . $template_file;
 }
 
 

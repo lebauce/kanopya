@@ -1,6 +1,7 @@
 NAME = [% name %]
 MEMORY = [% memory %]
 CPU = 1
+VCPU = [% cpu %]
 
 [% IF hypervisor_name %]
 REQUIREMENTS = "NAME = \"[% hypervisor_name %]\""
@@ -8,8 +9,6 @@ REQUIREMENTS = "NAME = \"[% hypervisor_name %]\""
 
 RAW = [ type="xen", data="maxvcpus=24" ]
 RAW = [ type="xen", data="maxmem=48000" ]
-RAW = [ type="xen", data="vcpus=[% cpu %]" ]
-
 
 OS = [
 	KERNEL = [% kernelpath %],
