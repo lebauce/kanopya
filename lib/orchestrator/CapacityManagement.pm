@@ -45,6 +45,7 @@ use Data::Dumper;
 use Clone qw(clone);
 use List::Util;
 use Administrator;
+use EFactory;
 use Entity::ServiceProvider::Inside::Cluster;
 # logger
 use Log::Log4perl "get_logger";
@@ -82,7 +83,8 @@ sub new {
 
             my $hypervisors = $self->{_cloud_manager}->getHypervisors();
             for my $hypervisor (@$hypervisors) {
-                $self->{_hvs_mem_available}->{$hypervisor->id} = $hypervisor->getAvailableMemory;
+                my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
+                $self->{_hvs_mem_available}->{$hypervisor->id} = $ehypervisor->getAvailableMemory;
             }
         }
     }

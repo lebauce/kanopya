@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package EEntity::EHost::EHypervisor::EOpennebula3Hypervisor;
-use base "EEntity::EHost::EHypervisor";
+package EEntity::EHost::EHypervisor::EOpennebula3Hypervisor::EOpennebula3XenHypervisor;;
+use base "EEntity::EHost::EHypervisor::EOpennebula3Hypervisor";
 
 use strict;
 use warnings;
