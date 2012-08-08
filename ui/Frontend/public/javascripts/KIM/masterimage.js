@@ -1,5 +1,6 @@
 
 require('jquery/jquery.form.js');
+require('common/formatters.js');
 
 var MasterImage = (function() {
 
@@ -90,7 +91,7 @@ var MasterImage = (function() {
                 { name : 'masterimage_name', index : 'masterimage_name' },
                 { name : 'masterimage_desc', index : 'masterimage_desc' },
                 { name : 'masterimage_os', index : 'masterimage_os' },
-                { name : 'masterimage_size', index : 'masterimage_size' }
+                { name : 'masterimage_size', index : 'masterimage_size', formatter : bytesToMegsFormatter }
             ],
             details                 : {
                 onSelectRow : function(eid) {

@@ -72,3 +72,8 @@ function datetimeformatter(timestamp) {
 function timeformatter(timestamp) {
     return ((datetimeformatter(timestamp)).split(' '))[1];
 }
+
+function bytesToMegsFormatter(size) {
+    require('common/general.js');
+    return (new String(convertUnits(size, 'B', 'M'))) + ' MB';
+}
