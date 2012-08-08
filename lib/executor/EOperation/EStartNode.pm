@@ -260,7 +260,8 @@ sub _generateNetConf {
     my $components = $self->{cluster_components};
     my $is_loadbalanced = 0;
     foreach my $component (values %$components) {
-        if($component->getClusterizationType() eq 'loadbalanced') {
+        my $clusterization_type = $component->getClusterizationType();
+        if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
             $is_loadbalanced = 1;
             last;
         }
