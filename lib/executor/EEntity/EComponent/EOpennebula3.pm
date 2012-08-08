@@ -514,9 +514,6 @@ sub startHost {
         datastore_nameorid => $repo{datastore_id}
     );
 
-    # generate vnet for each interface and register them
-
-
     # generate template in opennebula master node
     my $vm_templatefile;
     if($hypervisor_type eq 'kvm') {
@@ -561,7 +558,22 @@ sub stopHost {
     # retrieve vm info from opennebula
 
     my $id = $args{host}->onevm_id;
+    my $image = $args{host}->getNodeSystemimage();
+    
+    my $xml = $self->onevm_show(vm_nameorid => $id);
+    
+    # delete the vm
     $self->onevm_delete(vm_nameorid => $id);
+    
+    # delete the vnets
+    my @ifaces = $args{host}->getIfaces();
+    for my $iface (@ifaces) {
+        my $name = $xml->{NAME}.'-'.$iface->getAttr(name => 'iface_name');
+        $self->onevnet_delete(vnet_nameorid => $name);
+    }
+    # delete the image
+    my $name = $image->getAttr(name => 'systemimage_name');
+    $self->oneimage_delete(image_nameorid => $name);
     
     # In the case of OpenNebula, we delete the host once it's stopped
     $args{host}->setAttr(name  => 'active',
@@ -1144,7 +1156,7 @@ sub oneimage_delete {
         required => ['image_nameorid']
     );
     
-    my $cmd = one_command("oneimage create $args{image_nameorid}");
+    my $cmd = one_command("oneimage delete $args{image_nameorid}");
     my $result = $self->getEContext->execute(command => $cmd);
 }
 
@@ -1232,7 +1244,7 @@ sub onehost_create {
     if($hypervisor_type eq 'xen') {
         $cmd .= '-i im_xen -v vmm_xen -n 802.1Q';
     } elsif($hypervisor_type eq 'kvm') {
-        $cmd .= '-i im_kvm -v vmm_kvm -n 802.1Q none';
+        $cmd .= '-i im_kvm -v vmm_kvm -n 802.1Q';
     }
     
     my $command = one_command($cmd);
