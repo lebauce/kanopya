@@ -146,7 +146,7 @@ sub oneRun {
 
             # Probably a compilation error on the operation class.
             $workflow->cancel(config => $self->{config});
-            next;
+            return;
         }
 
         # Try to lock the context to check if entities are locked by others workflow
@@ -166,7 +166,7 @@ sub oneRun {
             # Unset the option include_blocked, to avoid
             # fetching this operation at the next loop.
             $self->{include_blocked} = 0;
-            next;
+            return;
         }
 
         # Process the operation
@@ -223,7 +223,7 @@ sub oneRun {
 
                 $adm->{db}->txn_commit;
                 $log->info("---- [$opclass] Execution reported ($delay s.) ----");
-                next;
+                return;
             }
         };
         if ($@) {
