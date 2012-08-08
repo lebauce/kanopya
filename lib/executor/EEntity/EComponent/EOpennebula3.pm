@@ -254,10 +254,10 @@ sub migrateHost {
     $self->propagateVLAN(host       => $args{host},
                          hypervisor => $args{hypervisor_dst});
 
-    my $command_to_exec = "onevm livemigrate $host_id $hypervisor_id" ;
-    my $command = $self->_oneadmin_command(command => $command_to_exec);
-    my $result = $masternode_econtext->execute(command => $command);
-    $log->debug('Migration command: '.$command_to_exec);
+    $self->onevm_livemigrate(
+        vm_nameorid   => $host_id,
+        host_nameorid => $hypervisor_id
+    );
 
     return $src_hypervisor;
 }
@@ -268,10 +268,7 @@ sub getVMState {
     General::checkParams(args     => \%args, required => ['host']);
 
     my $host_id = $args{host}->onevm_id;
-
-    my $command = $self->_oneadmin_command(command => "onevm show $host_id --xml");
-    my $result  = $self->getEContext->execute(command => $command);
-    my $hxml = XMLin($result->{stdout});
+    my $hxml = $self->onevm_show(vm_nameorid => $host_id);
 
     my $history = $hxml->{HISTORY_RECORDS}->{HISTORY};
     my $hypervisor_migr;
@@ -315,9 +312,7 @@ sub scale_memory {
     my $memory = $args{memory};
 
     my $host_id = $args{host}->onevm_id;
-    my $command = $self->_oneadmin_command(command => "onevm memset $host_id $memory");
-
-    $self->getEContext->execute(command => $command);
+    $self->onevm_memset(vm_nameorid => $host_id, ram => $memory);
 
     # Memroy scale checked in post requisite before saving in DB
     #$args{host}->updateMemory(memory => $memory);
@@ -351,8 +346,7 @@ sub restoreHost {
             }
             else{
                 if(defined $args{check_resubmit}){
-                    my $command = $self->_oneadmin_command(command => 'onevm resubmit '.$vm->onevm_id);
-                    my $result  = $self->getEContext->execute(command => $command);
+                    $self->onevm_resubmit(vm_nameorid => $vm->onevm_id);
                 }
             }
         }
@@ -404,9 +398,7 @@ sub scale_cpu {
     my $cpu_number = $args{cpu_number};
 
     my $host_id = $args{host}->onevm_id;
-    my $command = $self->_oneadmin_command(command => "onevm vcpuset $host_id $cpu_number");
-
-    $self->getEContext->execute(command => $command);
+    $self->onevm_vcpuset(vm_nameorid => $host_id, cpu => $cpu_number);
 
     #$args{host}->updateCPU(cpu_number => $cpu_number);
 }
@@ -548,8 +540,7 @@ sub startHost {
     # declare vm in database
     $log->info('vm id returned by opennebula: '.$vmid);
 
-    # $command = $self->_oneadmin_command(command => "onevm hold $id");
-    # $result = $masternode_econtext->execute(command => $command);
+    # $self->onevm_hold(vm_nameorid => $id);
 
     $self->_getEntity()->addVM(
         host       => $args{host}->_getEntity,
@@ -569,9 +560,8 @@ sub stopHost {
     # retrieve vm info from opennebula
 
     my $id = $args{host}->onevm_id;
-    my $command = $self->_oneadmin_command(command => "onevm delete $id");
-    my $result = $self->getEContext->execute(command => $command);
-
+    $self->onevm_delete(vm_nameorid => $id);
+    
     # In the case of OpenNebula, we delete the host once it's stopped
     $args{host}->setAttr(name  => 'active',
                          value => '0');
@@ -1399,6 +1389,17 @@ sub onevm_list {
     my $cmd = one_command("onevm list --xml");
     my $result = $self->getEContext->execute(command => $cmd);
     # TODO parse xml output and return hash structure
+}
+
+sub onevm_resubmit {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args, 
+        required => ['vm_nameorid']
+    );
+
+    my $cmd = one_command("onevm resubmit $args{vm_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
 }
 
 1;
