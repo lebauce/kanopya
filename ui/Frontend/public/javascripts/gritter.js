@@ -80,7 +80,10 @@ function updateWorkflowGritter(workflow) {
 function showWorkflowGritter(workflow) {
     var id = workflow.pk;
     var operations = get("/api/workflow/" + id + "/operations");
-    var title = "Running workflow '" + workflow.workflow_name + "'";
+    var title = "Running workflow";
+    if (workflow.workflow_name != null) {
+        title   += " '" + workflow.workflow_name + "'";
+    }
     var content = $("<div></div>");
     var ul = formatOperations(operations);
     if (operations.length == 0) {
