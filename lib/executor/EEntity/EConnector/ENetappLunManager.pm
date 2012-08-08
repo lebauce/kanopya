@@ -320,7 +320,7 @@ sub getLunId {
 
     for my $mapping (@mappings) {
         bless $mapping, "NaObject";
-        if ($mapping->path eq $args{lun}->getPath) {
+        if ($mapping->path eq $args{lun}->getContainer->getPath) {
             return $mapping->lun_id;
         }
     }

@@ -150,7 +150,7 @@ sub getLunId {
     my $emanager = EFactory::newEEntity(data => $self->getExportManager);
 
     return $emanager->getLunId(
-        lun  => $self->getContainer,
+        lun  => $self,
         host => $args{host}
     );
 }

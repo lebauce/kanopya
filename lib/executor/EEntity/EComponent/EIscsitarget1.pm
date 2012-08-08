@@ -394,4 +394,13 @@ sub generate {
     }
 }
 
+sub getLunId {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'lun', 'host' ]);
+
+    return $args{lun}->lun_name;
+}
+
 1;
