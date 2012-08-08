@@ -587,10 +587,7 @@ sub postStart {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     my $oneid = $args{host}->onevm_id;
-
-    my $command = $self->_oneadmin_command(command => "onevm show $oneid --xml");
-    my $result  = $self->getEContext->execute(command => $command);
-    my $hxml    = XMLin($result->{stdout});
+    my $hxml    = $self->onevm_show(vm_nameorid => $oneid);
 
     my $vnc_port = $hxml->{TEMPLATE}->{GRAPHICS}->{PORT};
 
