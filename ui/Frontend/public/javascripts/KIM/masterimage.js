@@ -18,6 +18,7 @@ var MasterImage = (function() {
     MasterImage.openUpload  = function() {
         var dialog  = $('<div>');
         var form    = $('<form>', { enctype : 'multipart/form-data' }).appendTo(dialog);
+        $(dialog).append('<br />');
         var load    = $('<div>').progressbar({ value : 0 }).appendTo(dialog); 
         $(form).append($('<input>', { type : 'file', name : 'file',  }));
         $(form).submit(function(event) {
@@ -30,7 +31,6 @@ var MasterImage = (function() {
                 uploadProgress  : function(e, position, total, percent) {
                     $(load).progressbar('value', percent);
                 },
-
             });
             return false;
         });
@@ -47,6 +47,29 @@ var MasterImage = (function() {
         });
     };
 
+    MasterImage.list        = function(cid) {
+        create_grid({
+            content_container_id    : cid,
+            grid_id                 : 'masterimages_list',
+            url                     : '/api/masterimage',
+            colNames                : [ 'Id', 'Name', 'Description', 'OS', 'Size' ],
+            colModel                : [
+                { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
+                { name : 'masterimage_name', index : 'masterimage_name' },
+                { name : 'masterimage_desc', index : 'masterimage_desc' },
+                { name : 'masterimage_os', index : 'masterimage_os' },
+                { name : 'masterimage_size', index : 'masterimage_size' }
+            ]
+        });
+    };
+
     return MasterImage;
 
 })();
+
+function masterimagesMainView(cid) {
+    MasterImage.list(cid);
+    var addMasterImageButton    = $('<a>', { text : 'Upload a master image' }).appendTo('#' + cid);
+    $(addMasterImageButton).button({ icons : { primary : 'ui-icon-arrowthickstop-1-n' } });
+    $(addMasterImageButton).bind('click', MasterImage.openUpload);
+}

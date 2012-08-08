@@ -11,6 +11,7 @@ use Monitoring;
 use REST::api;
 use Kanopya::Config;
 use KIM::Consommation;
+use KIM::MasterImage;
 
 our $VERSION = '0.1';
 

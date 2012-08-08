@@ -23,7 +23,9 @@ var mainmenu_def = {
             { label : 'Networks', id : 'network_vlans', onLoad : function(cid) { require('KIM/networks.js'); networks_list(cid); } },
             { label : 'PoolIPs', id : 'network_poolips', onLoad : function(cid) { require('KIM/poolips.js'); poolips_list(cid); } }
         ],
-        'System'  : [],
+        'System'  : [
+            { label : 'Master Image', id : 'mater_image', onLoad : function(cid) { require('KIM/masterimage.js'); masterimagesMainView(cid); } }
+        ],
     },
     'Business' : {
         'Policies'          : [ { label : 'Hosting',        id : 'hosting_policy',          onLoad : load_policy_content },
