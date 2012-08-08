@@ -15,6 +15,33 @@ var MasterImage = (function() {
         });
     }
 
+    MasterImage.prototype.details   = function() {
+        $.ajax({
+            url     : '/api/masterimage/' + this.id + '/getProvidedComponents',
+            type    : 'POST',
+            success : function(data) {
+                $('<div>', { id : 'masterimage_dialog' }).dialog({
+                    draggable   : false,
+                    resizable   : false,
+                    modal       : true,
+                    width       : 450,
+                    close       : function() { $(this).remove(); }
+                });
+                create_grid({
+                    content_container_id    : 'masterimage_dialog',
+                    grid_id                 : 'provided_components_list',
+                    data                    : data,
+                    colNames                : [ 'Category', 'Name', 'Version' ],
+                    colModel                : [
+                        { name : 'component_category', index : 'component_category' },
+                        { name : 'component_name', index : 'component_name' },
+                        { name : 'component_version', index : 'component_version', width : '50' }
+                    ]
+                });
+            }
+        });
+    };
+
     MasterImage.openUpload  = function() {
         var dialog  = $('<div>');
         var form    = $('<form>', { enctype : 'multipart/form-data' }).appendTo(dialog);
@@ -59,7 +86,13 @@ var MasterImage = (function() {
                 { name : 'masterimage_desc', index : 'masterimage_desc' },
                 { name : 'masterimage_os', index : 'masterimage_os' },
                 { name : 'masterimage_size', index : 'masterimage_size' }
-            ]
+            ],
+            details                 : {
+                onSelectRow : function(eid) {
+                    var mImg    = new MasterImage(eid);
+                    mImg.details();
+                }
+            }
         });
     };
 

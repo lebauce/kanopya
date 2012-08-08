@@ -74,6 +74,10 @@ sub methods {
         'setperm'    => {'description' => 'set permissions on this master image', 
                         'perm_holder' => 'entity',
         },
+        'getProvidedComponents' => {
+            'description'   => 'return provided components',
+            'perm_holder'   => 'entity'
+        }
     };
 }
 
