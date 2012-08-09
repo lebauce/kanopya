@@ -13,12 +13,12 @@ OS = [
     BOOT = hd
 ]
 
-DISK = [ IMAGE_ID = [% image_id %] ]
+DISK = [ IMAGE = "[% image_name %]" ]
 	
 [% FOREACH iface IN interfaces %]
 NIC = [
 	MAC = [% iface.mac %],
-    NETWORK_ID = [% iface.network_id %],
+    NETWORK = "[% iface.network %]",
 	MODEL = virtio
 ]
 [% END %]

@@ -1102,7 +1102,7 @@ sub generateKvmVmTemplate {
             my $vnet_template = $self->generateVnetTemplate(
                 vnet_name       => $hostname.'-'.$iface->getAttr(name => 'iface_name'),
                 vnet_bridge     => "br-" . ($vlan || "default"),
-                vnet_phydev     => "p" . $bridge->getAttr(name => "iface_name"),
+                vnet_phydev     => $bridge->getAttr(name => "iface_name"),
                 vnet_vlanid     => $vlan,
                 vnet_mac        => $iface->getAttr(name => 'iface_mac_addr'),
                 vnet_netaddress => $iface->getIPAddr
