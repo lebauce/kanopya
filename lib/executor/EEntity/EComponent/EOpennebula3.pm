@@ -603,7 +603,7 @@ sub postStart {
     $args{host}->setAttr(name => 'host_core', value => $args{host}->getTotalCpu);
 
     $log->info('Set Ram and Cpu from real info : ram <' . $args{host}->host_ram .
-               '> cpu <' . $args{host}->host_cpu . '>');
+               '> cpu <' . $args{host}->host_core . '>');
 
     $args{host}->save();
 }
@@ -700,8 +700,8 @@ sub forceDeploy {
         required => [ 'vm', 'hypervisor' ]
     );
     $self->onevm_deploy(
-        vmid   => $args{vm}->onevm_id, 
-        hostid => $args{hypervisor}->getId()->onehost_id
+        vm_nameorid   => $args{vm}->onevm_id,
+        host_nameorid => $args{hypervisor}->onehost_id
     );
 }
 
