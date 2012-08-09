@@ -22,6 +22,8 @@ use strict;
 use warnings;
 
 use General;
+use XML::Simple;
+use Hash::Merge qw(merge);
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
@@ -63,16 +65,22 @@ sub getVmResources {
             throw Kanopya::Exception::Execution(error => $result->{stdout});
         }
 
-        my $hxml = XMLin($result->{stdout});
+        my $parser = XML::Simple->new(NoAttr => 1);
+        my $hxml = $parser->XMLin($result->{stdout});
 
         # Build the resssources hash according to required ressources
         my $vm_ressources = {};
         for my $ressource (@{ $args{ressources} }) {
             $vm_ressources->{$vm->id}->{$ressource} = $hxml->{$ressources_keys->{$ressource}};
+
+            if ($ressource eq "ram") {
+                $vm_ressources->{$vm->id}->{$ressource} *= 1024;
+            }
         }
 
-        merge($vms_ressources, $vm_ressources);
+        $vms_ressources = merge($vms_ressources, $vm_ressources);
     }
+
     return $vms_ressources;
 };
 
