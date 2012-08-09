@@ -286,9 +286,10 @@ sub format_results {
 sub jsonify {
     my $var = shift;
 
-    eval {
+    # Jsonify the non scalar only
+    if (ref($var)) {
         if (ref($var) eq "HASH") {
-            return to_json($var);
+            return to_json($var, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
         }
         elsif ($var->can("toJSON")) {
             if ($var->isa("Operation")) {
@@ -300,9 +301,6 @@ sub jsonify {
                 return $var->toJSON;
             }
         }
-    };
-    if ($@) {
-        $log->error('Error while jsonify ' . ref($var) . ': ' . $@);
     }
     return $var;
 }
@@ -475,17 +473,15 @@ sub setupREST {
 
             my $ret = $obj->$method(%params);
 
-            eval {
-                if (ref($ret) eq "ARRAY") {
-                    my @jsons;
-                    for my $elem (@{$ret}) {
-                        push @jsons, jsonify($elem);
-                    }
-                    $ret = \@jsons;
-                } else {
-                    $ret = jsonify($ret);
+            if (ref($ret) eq "ARRAY") {
+                my @jsons;
+                for my $elem (@{$ret}) {
+                    push @jsons, jsonify($elem);
                 }
-            };
+                $ret = \@jsons;
+            } else {
+                $ret = jsonify($ret);
+            }
 
             return to_json($ret, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
         };
