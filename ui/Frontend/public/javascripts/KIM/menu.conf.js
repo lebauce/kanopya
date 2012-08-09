@@ -25,8 +25,7 @@ var mainmenu_def = {
         ],
         'System'  : [
             { label : 'Master Images',  id : 'master_image',    onLoad : function(cid) { require('KIM/masterimage.js'); masterimagesMainView(cid); }    },
-            { label : 'System Images',  id : 'system_images'                                                                                            },
-            { label : 'Kernels',        id : 'kernels'                                                                                                  }
+            { label : 'System Images',  id : 'system_images',   onLoad : function(cid) { require('KIM/systemimage.js'); systemimagesMainView(cid); }    }
         ],
     },
     'Business' : {
