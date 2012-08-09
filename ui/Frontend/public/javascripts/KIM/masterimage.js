@@ -2,50 +2,54 @@
 require('jquery/jquery.form.js');
 require('common/formatters.js');
 
-var MasterImage = (function() {
+require('common/model.js');
+
+var MasterImage = (function(_super) {
+    MasterImage.prototype   = new _super();
+    MasterImage.list        = _super.list;
+
+    MasterImage.prototype.type          = 'masterimage';
+    MasterImage.prototype.columnNames   = [ 'Id', 'Name', 'Description', 'OS', 'Size' ];
+    MasterImage.prototype.columnValues  = [
+        { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
+        { name : 'masterimage_name', index : 'masterimage_name' },
+        { name : 'masterimage_desc', index : 'masterimage_desc' },
+        { name : 'masterimage_os', index : 'masterimage_os' },
+        { name : 'masterimage_size', index : 'masterimage_size', formatter : bytesToMegsFormatter }
+    ];
+    MasterImage.prototype.details       = {
+        onSelectRow : function(eid) {
+            var mImg    = new MasterImage(eid);
+            mImg.detailsFunc();
+        }
+    };
 
     function MasterImage(id) {
-        this.id     = id;
-
-        this.conf   = {};
-        $.ajax({
-            url     : '/api/masterimage/' + id,
-            success : (function(that) {
-                return (function(data) {
-                    that.conf   = data;
-                });
-            })(this)
-        });
+        _super.call(this, id);
     }
 
-    MasterImage.prototype.details   = function() {
-        $.ajax({
-            url     : '/api/masterimage/' + this.id + '/getProvidedComponents',
-            type    : 'POST',
-            success : (function(that) {
-                return (function(data) {
-                    $('<div>', { id : 'masterimage_dialog' }).dialog({
-                        title       : that.conf.masterimage_name,
-                        draggable   : false,
-                        resizable   : false,
-                        modal       : true,
-                        width       : 450,
-                        close       : function() { $(this).remove(); }
-                    });
-                    create_grid({
-                        content_container_id    : 'masterimage_dialog',
-                        grid_id                 : 'provided_components_list',
-                        data                    : data,
-                        colNames                : [ 'Category', 'Name', 'Version' ],
-                        colModel                : [
-                            { name : 'component_category', index : 'component_category' },
-                            { name : 'component_name', index : 'component_name' },
-                            { name : 'component_version', index : 'component_version', width : '50' }
-                        ],
-                        action_delete           : 'no'
-                    });
-                });
-            })(this)
+    MasterImage.prototype.detailsFunc   = function() {
+        this.callRestFunction('getProvidedComponents', function(data) {
+            $('<div>', { id : 'masterimage_dialog' }).dialog({
+                title       : this.conf.masterimage_name,
+                draggable   : false,
+                resizable   : false,
+                modal       : true,
+                width       : 450,
+                close       : function() { $(this).remove(); }
+            });
+            create_grid({
+                content_container_id    : 'masterimage_dialog',
+                grid_id                 : 'provided_components_list',
+                data                    : data,
+                colNames                : [ 'Category', 'Name', 'Version' ],
+                colModel                : [
+                    { name : 'component_category', index : 'component_category' },
+                    { name : 'component_name', index : 'component_name' },
+                    { name : 'component_version', index : 'component_version', width : '50' }
+                ],
+                action_delete           : 'no'
+            });
         });
     };
 
@@ -81,31 +85,9 @@ var MasterImage = (function() {
         });
     };
 
-    MasterImage.list        = function(cid) {
-        create_grid({
-            content_container_id    : cid,
-            grid_id                 : 'masterimages_list',
-            url                     : '/api/masterimage',
-            colNames                : [ 'Id', 'Name', 'Description', 'OS', 'Size' ],
-            colModel                : [
-                { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
-                { name : 'masterimage_name', index : 'masterimage_name' },
-                { name : 'masterimage_desc', index : 'masterimage_desc' },
-                { name : 'masterimage_os', index : 'masterimage_os' },
-                { name : 'masterimage_size', index : 'masterimage_size', formatter : bytesToMegsFormatter }
-            ],
-            details                 : {
-                onSelectRow : function(eid) {
-                    var mImg    = new MasterImage(eid);
-                    mImg.details();
-                }
-            }
-        });
-    };
-
     return MasterImage;
 
-})();
+})(Model);
 
 function masterimagesMainView(cid) {
     MasterImage.list(cid);

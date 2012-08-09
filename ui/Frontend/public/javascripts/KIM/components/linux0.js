@@ -4,7 +4,7 @@ var Linux0      = (function(_super) {
     Linux0.prototype                    = new _super();
 
     function Linux0(id) {
-        Component.call(this, id);
+        _super.call(this, id);
         this.componentType  = 'linux0';
     }
 

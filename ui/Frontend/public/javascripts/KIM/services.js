@@ -2,38 +2,23 @@
 
 require('modalform.js');
 require('common/service_common.js');
+require('common/model.js');
 
 // Must progressively move functions in the Service class
-var Service = (function() {
-    function Service(id) {
-        this.id     = id;
-        this.attrs;
-        $.ajax({
-            url     : '/api/serviceprovider/' + this.id + '?expand=billinglimits',
-            success : function(data) {
-                this.attrs  = data;
-            }
-        });
-    }
+var Service = (function(_super) {
 
-    Service.prototype.callFunction  = function(funcName, callback, data) {
-        var theCallback = callback  || $.noop;
-        var theData     = data      || {};
-        $.ajax({
-            type        : 'POST',
-            url         : '/api/serviceprovider/' + this.id + '/' + funcName,
-            contentType : 'application/json',
-            data        : JSON.stringify(theData),
-            success     : theCallback
-        });
-    };
+    Service.prototype   = new _super();
+
+    function Service(id) {
+        _super.call(this, id, 'serviceprovider');
+    }
 
     Service.prototype.getMonthlyConsommationCSV = function() {
         window.open('/consommation/cluster/' + this.id);
     };
 
     return Service;
-})();
+})(Model);
 
 var ressources  = {};
 
