@@ -84,9 +84,12 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-        
-    if(not $conf->{pleskpanel10_id}) {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
+    if (not $conf->{pleskpanel10_id}) {
         # new configuration -> create
         $self->{_dbix}->create($conf);
     } else {

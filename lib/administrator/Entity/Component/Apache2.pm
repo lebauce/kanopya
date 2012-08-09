@@ -260,9 +260,11 @@ B<throws>  : None
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-    
-    $log->debug("APACHE2 configuration to save in db: ".Dumper $conf);
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     my $virtualhosts = $conf->{apache2_virtualhosts};
     delete $conf->{apache2_virtualhosts};
     

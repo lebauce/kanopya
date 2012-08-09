@@ -137,8 +137,6 @@ sub getConf {
 }
 
 sub setConf {
-    my $self = shift;
-    my ($conf) = @_;
 }
 
 sub getExportManagerFromBootPolicy {

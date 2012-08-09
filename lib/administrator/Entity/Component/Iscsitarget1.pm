@@ -123,8 +123,11 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my($conf) = @_;
-    
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     for my $target ( @{ $conf->{targets} } ) {
         LUN:
         for my $lun ( @{ $target->{luns} } ) {

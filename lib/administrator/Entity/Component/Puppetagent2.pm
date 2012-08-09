@@ -69,15 +69,20 @@ sub getConf {
 }
 
 sub setConf {
-    my ($self, $conf) = @_;
-    if($conf->{puppetagent2_mode}) {        
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
+    if ($conf->{puppetagent2_mode}) {        
         my $config = Kanopya::Config::get('executor');
         my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
         $conf->{puppetagent2_masterip} = $kanopya_cluster->getMasterNodeIp();
         $conf->{puppetagent2_masterfqdn} = $kanopya_cluster->getMasterNodeFQDN();
     }
     
-    if(not $conf->{puppetagent2_id}) {
+    if (not $conf->{puppetagent2_id}) {
         # new configuration -> creat
         $self->{_dbix}->create($conf);
     } else {

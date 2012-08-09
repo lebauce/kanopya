@@ -236,9 +236,11 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
+    my %args = @_;
 
-    # TODO input validation
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     for my $vg ( @{ $conf->{vgs} }) {
         for my $new_lv ( @{ $vg->{lvs} }) {
             if (keys %$new_lv) {

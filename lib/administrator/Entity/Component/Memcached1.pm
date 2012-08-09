@@ -83,11 +83,14 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-    
-    # delete old conf        
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    # delete old conf
+    my $conf = $args{conf};
     my $conf_row = $self->{_dbix};
-    $conf_row->delete() if (defined $conf_row); 
+    $conf_row->delete() if (defined $conf_row);
 
     # create
     $conf_row = $self->{_dbix}->create( $conf );

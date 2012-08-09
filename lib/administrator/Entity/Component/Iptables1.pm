@@ -77,8 +77,11 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-   #$log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper $conf);
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     my $iptables1_components= $self->{_dbix}->iptables1_sec_rule->iptables1_components;
     $iptables1_components->delete();
     my $components = $conf->{iptables1_components};

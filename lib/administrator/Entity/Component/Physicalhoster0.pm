@@ -74,15 +74,10 @@ sub getPolicyParams {
 }
 
 sub getConf {
-    my $self = shift;
-    my $conf = {};
-
-    return $conf;
+    return {};
 }
 
 sub setConf {
-    my $self = shift;
-    my ($conf) = @_;
 }
 
 sub getRemoteSessionURL {

@@ -298,15 +298,17 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-    if(not $conf->{keepalived_id}) {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
+    if (not $conf->{keepalived_id}) {
          # new configuration -> create    
          $self->{_dbix}->create($conf);
-         
-         
     } else {
         # old configuration -> update
-         $self->{_dbix}->update($conf);
+        $self->{_dbix}->update($conf);
     }
 }
 

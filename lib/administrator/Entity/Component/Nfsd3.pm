@@ -109,8 +109,11 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my($conf) = @_;
+    my %args = @_;
 
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     for my $export (@{ $conf->{exports} }) {
         my @containers = Entity::Container->search(hash => {});
 

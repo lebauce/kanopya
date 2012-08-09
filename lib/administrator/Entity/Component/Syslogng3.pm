@@ -115,9 +115,12 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-    
-    # delete old conf        
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    # delete old conf
+    my $conf = $args{conf};
     my $conf_row = $self->{_dbix};
     $conf_row->syslogng3_entries->delete_all;
     $conf_row->syslogng3_logs->delete_all;

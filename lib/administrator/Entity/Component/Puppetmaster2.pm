@@ -66,8 +66,13 @@ sub getConf {
 }
 
 sub setConf {
-    my ($self, $conf) = @_;
-    if(not $conf->{puppetmaster2_id}) {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
+    if (not $conf->{puppetmaster2_id}) {
         # new configuration -> create
         $self->{_dbix}->create($conf);
     } else {

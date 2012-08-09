@@ -105,16 +105,6 @@ sub getBaseConfiguration {
     };
 }
 
-#sub getConf {
-#    my $self = shift;
-#    my $conf = {};
-#    my $confindb = $self->{_dbix};
-#    if($confindb) {   
-#        #TODO build conf hash with db data    
-#    }
-#   return $conf;
-#}
-
 sub getConf {
     my $self = shift;
     my $slapd_conf = {
@@ -137,25 +127,21 @@ sub getConf {
          openldap1_rootpw  => $confindb->get_column('openldap1_rootpw')           
        };    
     }
-    $log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper $slapd_conf);
+
     return $slapd_conf; 
 }
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;   
-   
-    $log->debug(">>>>>>>>>>>>>>>>>>>>>>" . Dumper  $conf);  
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     my $csh = Crypt::SaltedHash->new(algorithm => 'SHA-1');
+    $csh->add($conf->{openldap1_rootpw});
 
-    #$conf->{openldap1_rootpw}='splendid';
-    my $a = $conf->{openldap1_rootpw}; 
-    $csh->add($a);
-
-    my $salted = $csh->generate;
-    print $salted;
-    $conf->{openldap1_rootpw} = $salted;
-
+    $conf->{openldap1_rootpw} = $csh->generate;
     $self->{_dbix}->update($conf);
 }    
 
