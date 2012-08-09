@@ -105,6 +105,9 @@ sub configureNode {
         $log->debug('generate /etc/libvirt/qemu.conf');
         $self->_generateQemuconf(%args);
         
+        $log->debug('generate /lib/udev/rules.d/60-qemu-kvm.rules');
+        $self->_generateQemuKvmUdev(%args);
+        
         $self->addInitScripts(
           mountpoint => $args{mount_point},
           scriptname => 'libvirt-bin',
@@ -798,6 +801,17 @@ sub _generateQemuconf {
         dest => $args{mount_point}.'/etc/libvirt'
     );
 }
+
+# generate /etc/libvirt/qemu.conf configuration file
+sub _generateQemuKvmUdev {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+
+    my $command = "echo 'KERNEL==\"kvm\", OWNER==\"oneadmin\", GROUP==\"kvm\", MODE==\"0660\"' > $args{mount_point}/lib/udev/rules.d/60-qemu-kvm.rules"; 
+    $self->getExecutorEContext->execute(command => $command);
+}
+
 
 # generate /etc/xen/xend-config.sxp configuration file
 sub _generateXenconf {
