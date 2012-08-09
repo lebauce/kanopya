@@ -170,8 +170,11 @@ sub createTimeDataStore{
 
     #execution of the command
     my $exec = `$cmd 2>&1`;
-    if ($exec =~ m/^ERROR.*/){
-        throw Kanopya::Exception::Internal(error => 'RRD creation failed: '.$exec);
+    if (not defined $exec or $exec =~ m/^ERROR.*/){
+        my $err = (defined $exec) ? $exec : 'Rddtool probably not installed.';
+        throw Kanopya::Exception::Internal(
+                  error => 'RRD creation failed: ' . $err
+              );
     }
 }
 
