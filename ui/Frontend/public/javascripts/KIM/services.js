@@ -54,7 +54,9 @@ function servicesList (container_id, elem_id) {
         success     : function(data) {
             ressources  = {};
             for (var i in data) if (data.hasOwnProperty(i)) {
-                ressources[data[i].pk]  = true;
+                if (data[i] != undefined) {
+                    ressources[data[i].pk] = true;
+                }
             }
         }
     });
@@ -81,11 +83,12 @@ function servicesList (container_id, elem_id) {
                     url     : '/api/cluster/' + rowid + '/service_template',
                     type    : 'GET',
                     success : function(serv_template) {
-                        $(grid).setCell(rowid, 'service_template_name', serv_template.service_name);
+                        var name;
+                        if (serv_template) name = serv_template.service_name;
+                        else               name = 'Internal';
+
+                        $(grid).setCell(rowid, 'service_template_name', name);
                     },
-                    error : function ()  {
-                        $(grid).setCell(rowid, 'service_template_name', 'internal');
-                    }
                 });
             }
         },
