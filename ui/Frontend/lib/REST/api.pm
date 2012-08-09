@@ -417,7 +417,7 @@ sub setupREST {
 
                             return to_json($json);
                         }
-                        else {
+                        elsif (defined $parent->$filter) {
                             my $dbix = $parent->$filter;
 
                             $obj = $dbix->has_relationship("class_type") ?
@@ -428,6 +428,9 @@ sub setupREST {
 
                             my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
                             return to_json(db_to_json($obj, \@expand));
+                        }
+                        else {
+                            return "null";
                         }
 
                         last RELATION;
