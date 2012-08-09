@@ -35,13 +35,17 @@ var Model   = (function() {
     }
 
     Model.list  = function(cid) {
+        /* Copy the columnNames and columnValues attributes avoiding create_grid from
+         * populating them via references */
+        var colNames    = (this.prototype.columnNames)  ? this.prototype.columnNames.slice(0)   : [];
+        var colModel    = (this.prototype.columnValues) ? this.prototype.columnValues.slice(0)  : [];
         create_grid({
             content_container_id    : cid,
             grid_id                 : this.prototype.type + '_list',
             url                     : '/api/' + this.prototype.type,
-            colNames                : this.prototype.columnNames    || [],
-            colModel                : this.prototype.columnValues   || [],
-            details                 : this.prototype.details        || { onSelectRow : $.noop }
+            colNames                : colNames,
+            colModel                : colModel,
+            details                 : this.prototype.details || { onSelectRow : $.noop }
         });
     };
 
