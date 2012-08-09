@@ -81,7 +81,8 @@ sub create {
     # automatically add System|Monitoragent|Logger components
     foreach my $compclass (qw/Entity::Component::Linux0
                               Entity::Component::Syslogng3
-                              Entity::Component::Snmpd5/) {
+                              Entity::Component::Snmpd5
+                              Entity::Component::Puppetagent2/) {
         my $location = General::getLocFromClass(entityclass => $compclass);
         eval { require $location; };
         $log->debug("trying to add $compclass to cluster");
