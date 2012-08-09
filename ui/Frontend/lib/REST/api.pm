@@ -287,11 +287,8 @@ sub jsonify {
     my $var = shift;
 
     # Jsonify the non scalar only
-    if (ref($var)) {
-        if (ref($var) eq "HASH") {
-            return to_json($var, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
-        }
-        elsif ($var->can("toJSON")) {
+    if (ref($var) and ref($var) ne "HASH") {
+        if ($var->can("toJSON")) {
             if ($var->isa("Operation")) {
                 return Operation->get(id => $var->getId)->toJSON;
             }
