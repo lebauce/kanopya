@@ -88,7 +88,7 @@ sub createHostCertificate {
     }
     
     # clean existing certificates information
-    $command = 'rm -r '.$args{mount_point} .'/var/lib/puppet/ssl/*';
+    $command = 'rm -rf '.$args{mount_point} .'/var/lib/puppet/ssl/*';
     $command .= ' && mkdir -p '.$args{mount_point} .'/var/lib/puppet/ssl/certs ';
     $command .= $args{mount_point} .'/var/lib/puppet/ssl/private_keys';    
     $self->getExecutorEContext->execute(command => $command);    
