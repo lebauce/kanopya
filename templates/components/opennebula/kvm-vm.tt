@@ -1,4 +1,4 @@
-XNAME = [% name %]
+NAME = [% name %]
 MEMORY = [% memory %]
 CPU = 1
 VCPU = [% cpu %]
