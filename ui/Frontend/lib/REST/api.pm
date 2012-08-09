@@ -10,6 +10,13 @@ use General;
 use Entity;
 use Operation;
 use Workflow;
+use Kanopya::Exceptions;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
+
+my $log = get_logger("administrator");
+my $errmsg;
 
 my $API_VERSION = "0.1";
 
@@ -279,19 +286,25 @@ sub format_results {
 sub jsonify {
     my $var = shift;
 
-    if ($var->can("toJSON")) {
-        if ($var->isa("Operation")) {
-            return Operation->get(id => $var->getId)->toJSON;
+    eval {
+        if (ref($var) eq "HASH") {
+            return to_json($var);
         }
-        elsif ($var->isa("Workflow")) {
-            return Workflow->get(id => $var->getId)->toJSON;
-        } else {
-            return $var->toJSON;
+        elsif ($var->can("toJSON")) {
+            if ($var->isa("Operation")) {
+                return Operation->get(id => $var->getId)->toJSON;
+            }
+            elsif ($var->isa("Workflow")) {
+                return Workflow->get(id => $var->getId)->toJSON;
+            } else {
+                return $var->toJSON;
+            }
         }
+    };
+    if ($@) {
+        $log->error('Error while jsonify ' . ref($var) . ': ' . $@);
     }
-    else {
-        return $var;
-    }
+    return $var;
 }
 
 sub setupREST {

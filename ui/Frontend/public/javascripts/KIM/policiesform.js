@@ -1112,7 +1112,13 @@ var PolicyForm = (function() {
                     $(this.content).find("div.ui-state-error").each(function() {
                         $(this).remove();
                     });
-                    var error = JSON.parse(data.responseText);
+                    var error;
+                    try {
+                        error = JSON.parse(data.responseText);
+                    }
+                    catch (err) {
+                        error = 'An error occurs, but can not be parsed...'
+                    }
                     $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all' }));
                     this.error(data);
                 }, this)
