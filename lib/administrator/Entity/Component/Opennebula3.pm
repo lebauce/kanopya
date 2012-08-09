@@ -472,6 +472,11 @@ sub getImageRepository {
     my $row = $self->{_dbix}->opennebula3_repositories->search( {
                   container_access_id => $args{container_access_id} }
               )->single;
+
+    if (not defined $row) {
+        throw Kanopya::Exception::Internal(error => "No repository configured for OpenNebula " . $self->id);
+    }
+
     return $row->get_columns();
 }
 
