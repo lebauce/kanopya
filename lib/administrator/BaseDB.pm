@@ -525,7 +525,20 @@ sub newDBix {
     my $subclass = defined $args{subclass} ? $args{subclass} : $class;
 
     my $dbixroot = $adm->_newDbix(table => _rootTable($subclass), row => $args{attrs});
-    $dbixroot->insert;
+
+    eval {
+        $dbixroot->insert;
+    };
+    if ($@) {
+        $errmsg = $@;
+        $log->error($errmsg);
+
+        # Try to extract the reason msg only
+        $errmsg =~ s/\[.*$//g;
+        $errmsg =~ s/^.*://g;
+        throw Kanopya::Exception::DB(error => "Unable to create a new $class: " .  $errmsg);
+    }
+
     my $id = $dbixroot->id;
 
     return {
