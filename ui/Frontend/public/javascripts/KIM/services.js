@@ -351,7 +351,7 @@ function nodedetailsaction(cid, eid) {
                 {
                     label   : 'Stop node',
                     icon    : 'stop',
-                    action  : '/api/serviceprovider/' + eid + '/removeNode',
+                    action  : '/api/serviceprovider/' + data.service_provider_id + '/removeNode',
                     data    : { host_id : data.host.pk }
                 },
                 {
