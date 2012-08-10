@@ -45,7 +45,8 @@ var Model   = (function() {
             url                     : '/api/' + this.prototype.type,
             colNames                : colNames,
             colModel                : colModel,
-            details                 : this.prototype.details || { onSelectRow : $.noop }
+            details                 : this.prototype.details        || { onSelectRow : $.noop },
+            afterInsertRow          : this.prototype.afterInsertRow || $.noop
         });
     };
 
