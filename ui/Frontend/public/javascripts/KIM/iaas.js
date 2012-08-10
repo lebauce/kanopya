@@ -163,6 +163,7 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
                 var current;
                 for (var i in hostdata.ifaces) if (hostdata.ifaces.hasOwnProperty(i)) {
                     var iface   = hostdata.ifaces[i];
+
                     if (interfaces[iface.interface.interface_role.interface_role_name] == null) {
                         current = $('<tr>').appendTo(networktable).append($('<td>', { text : iface.interface.interface_role.interface_role_name }));
                         interfaces[iface.interface.interface_role.interface_role_name]  = current;

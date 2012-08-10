@@ -45,15 +45,30 @@ function loadServicesDetails(cid, eid) {
         success : function(data) {
             for (var i in data) if (data.hasOwnProperty(i)) {
                 var tr  = $('<tr>').appendTo(managerstable);
-                $.ajax({
-                    url     : '/api/componenttype/' + data[i].component_type_id,
-                    success : function(line) {
-                        return (function(component_type) {
-                            $(line).append($('<th>', { text : component_type.component_category + ' : ' }))
-                                   .append($('<td>', { text : component_type.component_name }));
-                        });
-                    }(tr)
-                });
+
+                // Ugly test to handle both managers type component/connector
+                if (data[i].component_type_id) {
+                    $.ajax({
+                        url     : '/api/componenttype/' + data[i].component_type_id,
+                        success : function(line) {
+                            return (function(component_type) {
+                                $(line).append($('<th>', { text : component_type.component_category + ' : ' }))
+                                       .append($('<td>', { text : component_type.component_name }));
+                            });
+                        }(tr)
+                    });
+                } else {
+                    $.ajax({
+                        url     : '/api/connectortype/' + data[i].connector_type_id,
+                        success : function(line) {
+                            return (function(connector_type) {
+                                $(line).append($('<th>', { text : connector_type.connector_category + ' : ' }))
+                                       .append($('<td>', { text : connector_type.connector_name }));
+                            });
+                        }(tr)
+                    });
+
+                }
             }
         }
     });
