@@ -207,7 +207,12 @@ sub undo {
             $func->(@$args);
         };
         if ($@) {
-            $log->error("Rollback <$func> failed:\n$@");
+            # Here we do not display the rollback errors, 
+            # as some rollbacks could be inserted many times, and do the same job.
+            
+            # TODO: We need to remove inserted callback when we detect that it is useless.
+            #$log->error("Rollback <$func> falled:\n$@");
+            $log->error("Rollback <$func> falled.");
         }
 
         $current = $current->{prev_item};
