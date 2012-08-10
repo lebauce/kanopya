@@ -403,8 +403,7 @@ sub new {
         $attrs->{class_type_id} = $rs->get_column('class_type_id');
     };
     if ($@) {
-        $errmsg = "Unregistred or abstract class name <$class>, assuming it is not an Entity.";
-        $log->debug($errmsg);
+        # Unregistred or abstract class, assuming it is not an Entity.
     }
 
     my $self = $class->newDBix(attrs => $attrs);
@@ -462,8 +461,7 @@ sub promote {
         $self->save();
     };
     if ($@) {
-        $errmsg = "Unregistred or abstract class name <$class>, assuming it is not an Entity.";
-        $log->debug($errmsg);
+        # Unregistred or abstract class name <$class>, assuming it is not an Entity.
     }
     return $self;
 }
@@ -502,8 +500,7 @@ sub demote {
         $args{demoted}->save();
     };
     if ($@) {
-        $errmsg = "Unregistred or abstract class name <$class>, assuming it is not an Entity.";
-        $log->debug($errmsg);
+        # Unregistred or abstract class name <$class>, assuming it is not an Entity.
     }
     return $args{demoted};
 }
@@ -522,7 +519,6 @@ sub newDBix {
     };
     if ($@) {
         $errmsg = $@;
-        #$log->error($errmsg);
 
         # Try to extract the reason msg only
         $errmsg =~ s/\[.*$//g;
