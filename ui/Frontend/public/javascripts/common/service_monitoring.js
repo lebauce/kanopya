@@ -354,7 +354,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
       cont.append(graph_div);
       graph_div.load('/widgets/widget_nodes_bargraph.html', function() {
           $('.indicator_dropdown').remove();
-          $('.nodes_order_selection').remove();
+          $('.nodes_order_selection').hide();
           showNodemetricCombinationBarGraph(graph_div, nodeMetric_id, '', elem_id);
       });
     }
