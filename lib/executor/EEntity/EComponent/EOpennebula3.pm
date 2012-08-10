@@ -80,18 +80,6 @@ sub configureNode {
             $admin->getIPAddr(),
             $admin->getPoolip()->poolip_netmask,
         )->network();
-
-        my $exports = "/var/lib/one $network(rw,no_root_squash,no_subtree_check)\n";
-        my $cmd = "echo '$exports' > " .$args{mount_point}."/etc/exports";
-        $self->getExecutorEContext->execute(command => $cmd);
-        
-        #~ $cmd = 'mkdir -p '.$args{mount_point}.'/var/lib/one/datastores/0';
-        #~ $self->getExecutorEContext->execute(command => $cmd);
-
-    } else {
-        my $mount = $masternodeip.":/var/lib/one /var/lib/one nfs rw,sync,vers=3 0 0\n";
-        my $cmd = "echo '$mount' >> ".$args{mount_point}."/etc/fstab";
-        $self->getExecutorEContext->execute(command => $cmd);
     }
 
     # configure kvm hypervisor
