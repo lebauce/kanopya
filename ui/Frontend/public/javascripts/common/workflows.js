@@ -231,7 +231,7 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
                     { name : 'pk', index : 'pk', width : 30, sorttype : 'int' },
                     { name : 'workflow_def_name', index : 'workflow_def_name' }
                 ],
-                data                    : workflows
+                data                    : workflows,
             });
             $(dial).dialog("option", "position", $(dial).dialog("option", "position"));
             createSCOWorkflowDefButton(dial, workflowmanager.id, dial, workflowmanagerid, workflowmanager);
@@ -393,6 +393,7 @@ function    workflowslist(cid, eid) {
             create_grid({
                 content_container_id    : cid,
                 grid_id                 : 'workflowsgrid',
+                action_delete           : { url : '/api/workflow', method: 'cancel' },
                 data                    : data,
                 colNames                : [ 'Id', 'Name', 'State', 'Current Operation' ],
                 afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
