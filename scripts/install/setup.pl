@@ -453,7 +453,7 @@ sub welcome {
     getLicence();
     print "Do you accept the licence ? (y/n)\n";
     chomp($validate_licence= <STDIN>);
-    exit if ( $validate_licence ne 'y' );
+    exit 1 if ( $validate_licence ne 'y' );
     print "Please answer to the following questions\n";
 }
 
@@ -573,7 +573,7 @@ sub matchRegexp{
 
     if ((!defined $args{question} or !exists $args{question})){
         print "Error, did you modify init script ?\n";
-        exit;
+        exit 1;
     }
 
     default_error() if ( ! defined $questions->{$args{question}}->{pattern} );
@@ -593,7 +593,7 @@ sub checkPort{
 
     if ((!defined $args{question} or !exists $args{question})){
         print "Error, Do you modify init script ?\n";
-        exit;
+        exit 1;
     }
     if ($answers->{$args{question}} !~ m/\d+/) {
         print "port has to be a numerical value\n";
@@ -665,13 +665,13 @@ sub comparePassword {
 sub noMethodToTest {
     print "Error, param get not found in test table.\n";
     print "If you modified your init script or its xml, you may have broken your install";
-    exit;
+    exit 1;
 }
 
 # Default error message and exit
 sub default_error {
-        print "Error, did you modify init script ?\n";
-        exit;
+    print "Error, did you modify init script ?\n";
+    exit 1;
 }
 
 # Method for populate tftp directory
