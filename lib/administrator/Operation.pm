@@ -440,7 +440,7 @@ sub unlockContext {
             $entity->unlock(workflow => $self);
         };
         if ($@) {
-            $log->debug("Unable to unlock context param <$key>\n$@");
+            #$log->debug("Unable to unlock context param <$key>\n$@");
         }
     }
     $adm->{db}->txn_commit;
