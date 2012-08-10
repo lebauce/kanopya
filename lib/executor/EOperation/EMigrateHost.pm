@@ -62,16 +62,18 @@ sub prepare {
 
     General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
 
-    if ( not defined $self->{context}->{cloudmanager_comp}) {
-          $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(data => $self->{context}->{vm}->getHostManager());
+    if (not defined $self->{context}->{cloudmanager_comp}) {
+          $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(
+                                                      data => $self->{context}->{vm}->getHostManager()
+                                                  );
     }
 
     eval {
         # Check cloudCluster
-        if( not defined $self->{context}->{cluster}){
+        if (not defined $self->{context}->{cluster}){
             $self->{context}->{cluster} = Entity::ServiceProvider->get(
-                                                     id => $self->{context}->{host}->getClusterId()
-                                                 );
+                                              id => $self->{context}->{host}->getClusterId()
+                                          );
         }
         #TODO Check if a cloudmanager is in the cluster
         # Get OpenNebula Cluster (now fix but will be configurable)
@@ -87,17 +89,15 @@ sub prepare {
             host => $self->{context}->{vm},
         );
 
+        $log->info('Destination hv <' . $self->{context}->{host}->host_hostname .
+                   '> vs opennebula hv <' . $vm_state->{hypervisor} . '>');
 
-        $log->info('Destination hv <'.($self->{context}->{host}->host_hostname).'> vs opennebula hv <'.($vm_state->{hypervisor}).'>');
-
-        if ( $self->{context}->{host}->host_hostname eq $vm_state->{hypervisor}) {
+        if ($self->{context}->{host}->host_hostname eq $vm_state->{hypervisor}) {
             $log->info('VM is on the same hypervisor, no need to migrate');
             $self->{params}->{no_migration} = 1;
         }
         else {
-
             # Check if there is enough ressource in destination host
-
             my $vm_id      = $self->{context}->{vm}->getAttr(name => 'entity_id');
             my $cluster_id = $self->{context}->{vm}->getClusterId();
             my $hv_id      = $self->{context}->{'host'}->getId();
@@ -109,16 +109,16 @@ sub prepare {
 
             my $check = $cm->isMigrationAuthorized(vm_id => $vm_id, hv_id => $hv_id);
 
-            if($check == 0){
+            if ($check == 0){
                 my $errmsg = "Not enough ressource in HV $hv_id for VM $vm_id migration";
                 throw Kanopya::Exception::Internal(error => $errmsg);
             }
         }
     };
-    if($@) {
+    if ($@) {
         my $err = $@;
-        $errmsg = "Incorrect params dst<" . $self->{context}->{host}->getAttr(name => 'entity_id') .
-                  ">, host <" . $self->{context}->{vm}->getAttr(name => 'entity_id') . "\n" . $err;
+        $errmsg = "Incorrect params dst<" . $self->{context}->{host}->id .
+                  ">, host <" . $self->{context}->{vm}->id . "\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -127,21 +127,18 @@ sub prepare {
 sub execute {
     my $self = shift;
 
-
-    if (defined  $self->{params}->{no_migration} ) {
-        $log->info('no execution');
-        delete  $self->{params}->{no_migration};
+    if (defined $self->{params}->{no_migration} ) {
+        delete $self->{params}->{no_migration};
     }
     else {
-
         $self->{context}->{cloudmanager_comp}->migrateHost(
-                          host               => $self->{context}->{vm},
-                          hypervisor_dst     => $self->{context}->{host},
-                          hypervisor_cluster => $self->{context}->{cluster}
-                      );
+            host               => $self->{context}->{vm},
+            hypervisor_dst     => $self->{context}->{host},
+            hypervisor_cluster => $self->{context}->{cluster}
+        );
 
-         $log->info("VM <" . $self->{context}->{vm}->getAttr(name => 'entity_id') . "> is migrating to <" .
-               $self->{context}->{host}->getAttr(name => 'entity_id') . ">");
+        $log->info("VM <" . $self->{context}->{vm}->id .
+                   "> is migrating to <" . $self->{context}->{host}->id . ">");
     }
 }
 
@@ -152,31 +149,33 @@ sub finish{
   delete $self->{context}->{host};
 }
 
-
 sub postrequisites {
     my $self = shift;
 
     my $migr_state = $self->{context}->{cloudmanager_comp}->getVMState(
-        host => $self->{context}->{vm},
-    );
+                         host => $self->{context}->{vm},
+                     );
 
+    $log->info('Virtual machine <' . $self->{context}->{vm}->id . '> state: <'. $migr_state->{state} .
+               '>, current hypervisor: <' . $migr_state->{hypervisor} .
+               '>, dest hypervisor: <' . $self->{context}->{host}->host_hostname . '>');
 
-
-    $log->info('State <'.($migr_state->{state}).'> ; CURRENT_H = <'.($migr_state->{hypervisor}).'> ; DEST_H = <'.($self->{context}->{host}->getAttr(name => 'host_hostname')).'>');
     if ($migr_state->{state} eq 'runn') {
-        if ($migr_state->{hypervisor} eq $self->{context}->{host}->getAttr(name => 'host_hostname')) { # ON THE TARGETED HV
+        # ON THE TARGETED HV
+        if ($migr_state->{hypervisor} eq $self->{context}->{host}->host_hostname) {
 
             # After checking migration -> store migration in DB
             $log->info('Migration save in DB');
-            $self->{context}->{cloudmanager_comp}->_getEntity()->migrateHost(
-                                                host               => $self->{context}->{vm},
-                                                hypervisor_dst     => $self->{context}->{host},
-                                                hypervisor_cluster => $self->{context}->{cluster});
-
+            $self->{context}->{cloudmanager_comp}->_getEntity->migrateHost(
+                host               => $self->{context}->{vm},
+                hypervisor_dst     => $self->{context}->{host},
+                hypervisor_cluster => $self->{context}->{cluster}
+            );
             return 0;
         }
-        else { #VM IS RUNNING BUT NOT ON ITS HYPERVISOR
-            my $error = 'Migration of vm <'.($self->{context}->{vm}->getId()).'> : Failed. But VM Still Running';
+        else {
+            #VM IS RUNNING BUT NOT ON ITS HYPERVISOR
+            my $error = 'Migration of vm <' . $self->{context}->{vm}->id . '> failed, but still running...';
             Message->send(
                 from    => 'EMigrateHost',
                 level   => 'error',
@@ -185,8 +184,8 @@ sub postrequisites {
             throw Kanopya::Exception(error => $error);
         }
     }
-    elsif ($migr_state->{state} == 'migr') { # VM STILL MIGRATING
-        $log->info('Delay Migration');
+    elsif ($migr_state->{state} == 'migr') {
+        # VM STILL MIGRATING
         return 15;
     }
 }
