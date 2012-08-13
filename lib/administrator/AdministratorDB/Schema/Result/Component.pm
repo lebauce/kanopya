@@ -1,21 +1,17 @@
-use utf8;
 package AdministratorDB::Schema::Result::Component;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Component
-
-=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<component>
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Component
 
 =cut
 
@@ -97,17 +93,6 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
-
-=head1 PRIMARY KEY
-
-=over 4
-
-=item * L</component_id>
-
-=back
-
-=cut
-
 __PACKAGE__->set_primary_key("component_id");
 
 =head1 RELATIONS
@@ -157,6 +142,26 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Inside>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::Inside",
+  { inside_id => "service_provider_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
 =head2 component_template
 
 Type: belongs_to
@@ -190,6 +195,26 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::ComponentType",
   { component_type_id => "component_type_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 tier
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Tier>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "tier",
+  "AdministratorDB::Schema::Result::Tier",
+  { tier_id => "tier_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 dhcpd3
@@ -324,6 +349,21 @@ __PACKAGE__->might_have(
   "lvm2",
   "AdministratorDB::Schema::Result::Lvm2",
   { "foreign.lvm2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 mailnotifier0
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Mailnotifier0>
+
+=cut
+
+__PACKAGE__->might_have(
+  "mailnotifier0",
+  "AdministratorDB::Schema::Result::Mailnotifier0",
+  { "foreign.mailnotifier0_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -477,26 +517,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Inside>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::Inside",
-  { inside_id => "service_provider_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
 =head2 snmpd5
 
 Type: might_have
@@ -527,37 +547,15 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 tier
 
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Tier>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "tier",
-  "AdministratorDB::Schema::Result::Tier",
-  { tier_id => "tier_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-06-14 15:52:19
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/KoQlMf4P0QcBgq3PBV8LQ
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-13 17:11:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:biZ58gSQwmj9DskhdlRgjg
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.component_id" },
-    { cascade_copy => 0, cascade_delete => 1 }
+  { entity_id => "component_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;

@@ -87,7 +87,8 @@ INSERT INTO `class_type` VALUES
 (84, 'Entity::Host::Hypervisor'),
 (85, 'Entity::Host::VirtualMachine'),
 (86, 'Entity::Host::Hypervisor::Opennebula3Hypervisor'),
-(87, 'Entity::Host::VirtualMachine::Opennebula3Vm');
+(87, 'Entity::Host::VirtualMachine::Opennebula3Vm'),
+(88, 'Entity::Component::Mailnotifier0');
 
 --
 -- entity comment list
@@ -445,7 +446,9 @@ INSERT INTO `component_type` VALUES
 (18,'Puppetmaster','2','Configurationserver'),
 (19,'Kanopyacollector','1','Collectormanager'),
 (20, 'Keepalived','1','LoadBalancer'),
-(21, 'Kanopyaworkflow','0','Workflowmanager');
+(21, 'Kanopyaworkflow','0','Workflowmanager'),
+(22, 'Mailnotifier','0','Notifier');
+
 --
 -- connectors type list
 --
@@ -725,6 +728,15 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 29, NULL);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 9, NULL, NULL);
 INSERT INTO `linux0` VALUES(@eid);
+SET @eid := @eid +1;
+
+--
+-- Mailnotifier0
+--
+
+INSERT INTO `entity` VALUES (@eid, 88, NULL);
+INSERT INTO `component` VALUES(@eid, @admin_cluster, 22, NULL, NULL);
+INSERT INTO `mailnotifier0` VALUES(@eid, 'localhost', NULL, NULL, 0);
 SET @eid := @eid +1;
 
 
