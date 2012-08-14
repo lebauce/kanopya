@@ -94,7 +94,10 @@ INSERT INTO `class_type` VALUES
 (91, 'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm'),
 (92, 'Entity::ServiceTemplate'),
 (93, 'Entity::Policy'),
-(94, 'Entity::Operation');
+(94, 'Entity::Operation'),
+(95, 'Entity::Host::Hypervisor::Vsphere5Hypervisor'),
+(96, 'Entity::Host::VirtualMachine::Vsphere5Vm'),
+(97, 'Entity::Component::Vsphere5');
 
 --
 -- entity comment list
@@ -425,7 +428,8 @@ INSERT INTO `component_type` VALUES
 (21, 'Kanopyaworkflow','0','Workflowmanager'),
 (22, 'Mailnotifier','0','Notificationmanager'),
 (23, 'Memcached','1','Cache'),
-(24, 'Php','5','Lib');
+(24, 'Php','5','Lib'),
+(25, 'Vsphere', '5', 'Cloudmanager');
 
 --
 -- connectors type list
