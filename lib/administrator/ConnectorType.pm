@@ -18,10 +18,8 @@
 package ConnectorType;
 use base 'BaseDB';
 
-use Data::Dumper;
-use Log::Log4perl 'get_logger';
-
-my $log = get_logger('administrator');
+use strict;
+use warnings;
 
 use constant ATTR_DEF => {
     connector_name        => {
@@ -45,3 +43,5 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+1;

@@ -20,7 +20,7 @@ use Log::Log4perl "get_logger";
 use General;
 use Data::Dumper;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 # generate de script iptables dans /etc/init.d/firewall

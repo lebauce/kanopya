@@ -34,7 +34,7 @@ use Entity::Container;
 use Entity::ServiceProvider;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("executor");
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
     container_id => {

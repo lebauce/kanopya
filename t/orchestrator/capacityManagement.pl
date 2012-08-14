@@ -13,7 +13,7 @@ use Clone qw(clone);
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});
-my $log = get_logger("administrator");
+my $log = get_logger("");
 
 #my $infra = manualInfra();
 my $infra = automaticInfra();

@@ -40,7 +40,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use Entity::ServiceProvider::Inside::Cluster;
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 our $VERSION = "1.00";

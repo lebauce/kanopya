@@ -21,7 +21,7 @@ use AggregateCombination;
 use base 'BaseDB';
 # logger
 use Log::Log4perl "get_logger";
-my $log = get_logger("orchestrator");
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
     aggregate_condition_id               =>  {pattern       => '^.*$',

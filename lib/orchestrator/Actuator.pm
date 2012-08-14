@@ -24,7 +24,7 @@ use Monitor::Retriever;
 use Log::Log4perl "get_logger";
 
 
-my $log = get_logger("orchestrator");
+my $log = get_logger("");
 
 sub new {
     my $class = shift;

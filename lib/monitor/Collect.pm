@@ -21,12 +21,6 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
-use Data::Dumper;
-use Log::Log4perl 'get_logger';
-use EntityComment;
-
-my $log = get_logger('administrator');
-
 use constant ATTR_DEF => {
     indicatorset_id => {
         pattern      => '^\d+$',
@@ -39,7 +33,6 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
 };
-
 
 sub getAttrDef { return ATTR_DEF; }
 

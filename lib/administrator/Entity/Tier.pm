@@ -34,7 +34,7 @@ use Data::Dumper;
 
 our $VERSION = "1.00";
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 use constant ATTR_DEF => {
     tier_name               =>  {pattern        => '^\w*$',

@@ -43,7 +43,7 @@ use Template;
 use AggregateRule;
 use NodemetricRule;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 our $VERSION = '1.00';
 

@@ -49,7 +49,7 @@ use Entity::Systemimage;
 use EFactory;
 
 my $dir = Kanopya::Config::getKanopyaDir();
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 our $VERSION = '1.00';
 

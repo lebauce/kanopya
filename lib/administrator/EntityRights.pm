@@ -44,7 +44,7 @@ use Data::Dumper;
 use General;
 our $VERSION = "1.00";
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 =head2 _getEntityIds

@@ -30,7 +30,7 @@ use Kanopya::Config;
 
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("orchestrator");
+my $log = get_logger("");
 my $results_log = get_logger("results");
 
 sub new {

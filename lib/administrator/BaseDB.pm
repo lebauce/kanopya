@@ -14,7 +14,7 @@ use warnings;
 
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 my %class_type_cache;
 

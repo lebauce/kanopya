@@ -24,7 +24,7 @@ use Kanopya::Exceptions;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 =head2 createDisk

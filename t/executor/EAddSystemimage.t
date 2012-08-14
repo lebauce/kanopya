@@ -1,5 +1,4 @@
 use Data::Dumper;
-use Log::Log4perl "get_logger";
 use Test::More 'no_plan';
 
 use Log::Log4perl qw(:easy);

@@ -27,7 +27,7 @@ use Entity::Host::VirtualMachine::Opennebula3Vm;
 use Hash::Merge qw(merge);
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("executor");
+my $log = get_logger("");
 
 
 my $ressources_methods = {

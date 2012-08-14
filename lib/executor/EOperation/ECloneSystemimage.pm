@@ -51,7 +51,7 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 use Template;
 
-my $log = get_logger('executor');
+my $log = get_logger("");
 my $errmsg;
 our $VERSION = '1.00';
 

@@ -49,7 +49,7 @@ use Hash::Merge;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 our $VERSION = '1.00';
 my $errmsg;
 

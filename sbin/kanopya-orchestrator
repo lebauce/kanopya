@@ -43,7 +43,7 @@ use Log::Log4perl "get_logger";
 
 my $dir = Kanopya::Config::getKanopyaDir();
 Log::Log4perl->init($dir.'/kanopya/conf/orchestrator-log.conf');
-my $log = get_logger("orchestrator");
+my $log = get_logger("");
 
 
 my $running = 1;

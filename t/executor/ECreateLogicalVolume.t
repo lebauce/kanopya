@@ -1,8 +1,6 @@
 #!/usr/bin/perl -w
 use Data::Dumper;
-use Log::Log4perl "get_logger";
 use Test::More 'no_plan';
-
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/test.log', layout=>'%F %L %p %m%n'});

@@ -20,7 +20,7 @@ use warnings;
 use base 'BaseDB';
 use NodemetricRule;
 use Log::Log4perl "get_logger";
-my $log = get_logger("orchestrator");
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
     externalnode_id         =>  {pattern       => '^.*$',

@@ -30,7 +30,7 @@ use NetAddr::IP;
 use File::Copy;
 use Hash::Merge qw(merge);
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 ###############################

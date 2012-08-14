@@ -19,7 +19,7 @@ use Data::Dumper;
 use strict;
 use warnings;
 
-my $log = get_logger("orchestrator");
+my $log = get_logger("");
 
 sub new {
     my $class = shift;

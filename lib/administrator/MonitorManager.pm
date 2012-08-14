@@ -25,7 +25,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use General;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 =head2 MonitorManager::new (%args)

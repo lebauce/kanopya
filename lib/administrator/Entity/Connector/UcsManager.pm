@@ -34,7 +34,7 @@ use Log::Log4perl "get_logger";
 use constant ATTR_DEF => {};
 
 my ($schema, $config, $oneinstance);
-my $log = get_logger("administrator");
+my $log = get_logger("");
 
 sub getAttrDef { return ATTR_DEF; }
 

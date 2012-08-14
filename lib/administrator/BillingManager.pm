@@ -35,7 +35,7 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Billinglimit;
 use Monitor::Retriever;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 
 my $retriever = Monitor::Retriever->new;
 

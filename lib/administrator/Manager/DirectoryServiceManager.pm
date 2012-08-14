@@ -27,7 +27,7 @@ use General;
 use Hash::Merge;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("administrator");
+my $log = get_logger("");
 use Data::Dumper;
 
 sub methods {

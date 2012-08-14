@@ -24,7 +24,7 @@ use base 'BaseDB';
 
 # logger
 use Log::Log4perl "get_logger";
-my $log = get_logger("aggregator");
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
     clustermetric_service_provider_id          =>  {pattern       => '^.*$',

@@ -18,7 +18,7 @@ use warnings;
 use Data::Dumper;
 use List::Util qw(min max sum);
 use Log::Log4perl "get_logger";
-my $log = get_logger("MVAModel");
+my $log = get_logger("");
 
 use base "Model";
 

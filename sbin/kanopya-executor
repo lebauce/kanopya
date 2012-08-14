@@ -44,7 +44,7 @@ use Error qw(:try);
 
 my $dir = Kanopya::Config::getKanopyaDir();
 Log::Log4perl->init($dir.'/kanopya/conf/executor-log.conf');
-my $log = get_logger('executor');
+my $log = get_logger("");
 
 
 my $running = 1;

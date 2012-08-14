@@ -32,7 +32,7 @@ use Log::Log4perl 'get_logger';
 
 use POSIX qw[strftime];
 
-my $log = get_logger('administrator');
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
     policy_name => {

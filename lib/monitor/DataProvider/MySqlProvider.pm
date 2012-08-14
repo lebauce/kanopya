@@ -45,7 +45,7 @@ use warnings;
 use DBI;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("monitor");
+my $log = get_logger("");
 
 =head2 new
     

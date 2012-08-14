@@ -22,7 +22,7 @@ use Log::Log4perl 'get_logger';
 use General;
 use Kanopya::Exceptions;
 
-my $log = get_logger('executor');
+my $log = get_logger("");
 
 =head2 mkfs
 

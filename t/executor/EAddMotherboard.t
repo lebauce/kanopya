@@ -1,13 +1,8 @@
 use Data::Dumper;
-use Log::Log4perl "get_logger";
 use Test::More 'no_plan';
 
-#Log::Log4perl->init('../Conf/log.conf');
-#my $log = get_logger("executor");
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});
-
-
 
 my $admtest = "AdminTest";
 my $exectest = "ExecTest";

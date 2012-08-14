@@ -10,7 +10,7 @@ use Workflow;
 use OperationParameter;
 use Kanopya::Exceptions;
 
-my $log = get_logger('administrator');
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
     class_type_id => {

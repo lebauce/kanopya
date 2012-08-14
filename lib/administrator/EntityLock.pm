@@ -27,7 +27,7 @@ use General;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {

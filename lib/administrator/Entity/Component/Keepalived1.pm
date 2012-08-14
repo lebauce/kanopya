@@ -61,7 +61,7 @@ use Data::Dumper;
 
 use EFactory;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {

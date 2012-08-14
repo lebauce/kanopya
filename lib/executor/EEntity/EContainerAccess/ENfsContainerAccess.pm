@@ -39,7 +39,7 @@ use Log::Log4perl "get_logger";
 use Operation;
 use Data::Dumper;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 
 =head2 mount
 

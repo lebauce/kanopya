@@ -54,7 +54,7 @@ use String::Random;
 use Date::Simple (':all');
 use Template;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 my $config = {

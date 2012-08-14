@@ -35,7 +35,7 @@ use Net::Ping;
 use IO::Socket;
 
 my $errmsg;
-my $log = get_logger("statemanager");
+my $log = get_logger("");
 
 sub new {
     my $class = shift;

@@ -26,7 +26,7 @@ use Kanopya::Exceptions;
 use General;
 use Parse::BooleanLogic;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 =head2 RulesManager::new (%args)

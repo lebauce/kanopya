@@ -30,7 +30,7 @@ use Data::Dumper;
 use Hash::Merge qw( merge);
 use Log::Log4perl 'get_logger';
 use WorkflowStep;
-my $log = get_logger('administrator');
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {};

@@ -30,7 +30,7 @@ use Administrator;
 use Entity::Container;
 use Entity::NfsContainerAccessClient;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {};

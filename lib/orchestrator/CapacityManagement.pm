@@ -49,7 +49,7 @@ use EFactory;
 use Entity::ServiceProvider::Inside::Cluster;
 # logger
 use Log::Log4perl "get_logger";
-my $log = get_logger("administrator");
+my $log = get_logger("");
 
 sub new {
     my $class = shift;

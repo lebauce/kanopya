@@ -51,7 +51,7 @@ use Entity;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 our $VERSION = '1.00';
 

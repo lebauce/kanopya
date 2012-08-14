@@ -9,7 +9,7 @@ use NodemetricCombination;
 use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("webui");
+my $log = get_logger("");
 
 prefix '/monitoring';
 

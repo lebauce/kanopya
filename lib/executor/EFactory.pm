@@ -50,7 +50,7 @@ use Kanopya::Exceptions;
 use Entity::ServiceProvider::Inside::Cluster;
 use Net::IP qw(:PROC);
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };

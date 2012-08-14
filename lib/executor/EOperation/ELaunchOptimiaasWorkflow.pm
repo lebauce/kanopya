@@ -44,7 +44,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use CapacityManagement;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 our $VERSION = '1.00';
 

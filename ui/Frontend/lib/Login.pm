@@ -6,7 +6,7 @@ use Dancer::Plugin::EscapeHTML;
 use Log::Log4perl "get_logger";
 use Administrator;
 
-my $log = get_logger('webui');
+my $log = get_logger("");
 
 get qr(/.*) => sub {
     my $eid  = session('EID');

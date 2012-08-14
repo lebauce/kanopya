@@ -25,7 +25,7 @@ use Entity;
 use EFactory;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("executor");
+my $log = get_logger("");
 
 
 =head2 getTotalMemory

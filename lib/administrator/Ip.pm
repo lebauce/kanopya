@@ -21,12 +21,6 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
-use Data::Dumper;
-use Log::Log4perl 'get_logger';
-use EntityComment;
-
-my $log = get_logger('administrator');
-
 use constant ATTR_DEF => {
     ip_addr => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',

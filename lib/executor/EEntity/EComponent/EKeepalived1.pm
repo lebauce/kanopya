@@ -21,7 +21,7 @@ use General;
 
 
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 # called when a node is added to a cluster

@@ -49,7 +49,7 @@ use Entity::Masterimage;
 use File::Basename;
 
 our $VERSION = '1.00';
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 =head2 prepare

@@ -58,7 +58,7 @@ use Data::Dumper;
 
 #use enum qw( :STATE_ UP DOWN STARTING STOPPING BROKEN );
 
-my $log = get_logger("monitor");
+my $log = get_logger("");
 
 =head2 new
     

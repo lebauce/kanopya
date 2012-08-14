@@ -27,7 +27,7 @@ use Kanopya::Exceptions;
 use General;
 use String::Random 'random_regex';
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 =head2 NetworkManager::new (%args)

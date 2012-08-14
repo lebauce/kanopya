@@ -19,7 +19,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use General;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 # generate configuration files on node

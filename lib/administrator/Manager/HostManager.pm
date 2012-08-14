@@ -30,7 +30,7 @@ use Entity::Processormodel;
 use Entity::Hostmodel;
 use Entity::Kernel;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant BOOT_POLICIES => {

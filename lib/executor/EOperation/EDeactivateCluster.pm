@@ -46,7 +46,7 @@ use Kanopya::Exceptions;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 our $VERSION = '1.00';
 

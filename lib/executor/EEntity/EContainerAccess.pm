@@ -30,7 +30,7 @@ use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 our $VERSION = '1.00';

@@ -45,7 +45,7 @@ use Kanopya::Exceptions;
 use String::Random;
 use Message;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 our $VERSION = '1.00';
 

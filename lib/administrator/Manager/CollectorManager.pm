@@ -28,7 +28,7 @@ use Kanopya::Exceptions;
 use General;
 use Indicator;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 
 =head2 checkManagerParams
 
