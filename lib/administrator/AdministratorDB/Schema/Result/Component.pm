@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::Component;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Component
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Component
+=head1 TABLE: C<component>
 
 =cut
 
@@ -93,6 +97,17 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</component_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("component_id");
 
 =head1 RELATIONS
@@ -142,26 +157,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Inside>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::Inside",
-  { inside_id => "service_provider_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
 =head2 component_template
 
 Type: belongs_to
@@ -195,26 +190,6 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::ComponentType",
   { component_type_id => "component_type_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 tier
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Tier>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "tier",
-  "AdministratorDB::Schema::Result::Tier",
-  { tier_id => "tier_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
 );
 
 =head2 dhcpd3
@@ -517,6 +492,26 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Inside>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::Inside",
+  { inside_id => "service_provider_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
 =head2 snmpd5
 
 Type: might_have
@@ -547,9 +542,44 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 tier
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-13 17:11:14
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:biZ58gSQwmj9DskhdlRgjg
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Tier>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "tier",
+  "AdministratorDB::Schema::Result::Tier",
+  { tier_id => "tier_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+=head2 vsphere5
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Vsphere5>
+
+=cut
+
+__PACKAGE__->might_have(
+  "vsphere5",
+  "AdministratorDB::Schema::Result::Vsphere5",
+  { "foreign.vsphere5_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-14 19:34:39
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bEVo5vOacR5unUcc38mTiA
 
 __PACKAGE__->belongs_to(
   "parent",
