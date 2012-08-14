@@ -22,4 +22,17 @@ use base "Manager::HostManager";
 use strict;
 use warnings;
 
+
+=head2 checkHostManagerParams
+
+=cut
+
+sub checkHostManagerParams {
+    my $self = shift;                                                                                                                                                                                             
+    my %args = @_; 
+
+    General::checkParams(args => \%args, required => [ 'ram', 'core' ]); 
+}
+
+
 1;
