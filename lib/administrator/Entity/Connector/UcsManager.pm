@@ -20,6 +20,7 @@ use base "Manager::HostManager";
 use Administrator;
 use Manager::HostManager;
 use Entity::Processormodel;
+use Entity::Host;
 use Entity::Hostmodel;
 use Entity::Network;
 use Entity::Network::Vlan;
