@@ -795,8 +795,7 @@ CREATE TABLE `vlan` (
   `vlan_id`     int(8) unsigned,
   `vlan_number` int unsigned NOT NULL,
   PRIMARY KEY (`vlan_id`),
-  FOREIGN KEY (`vlan_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`vlan_number`)
+  FOREIGN KEY (`vlan_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
