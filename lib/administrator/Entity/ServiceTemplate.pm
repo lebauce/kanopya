@@ -15,13 +15,13 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package ServiceTemplate;
-use base 'BaseDB';
+package Entity::ServiceTemplate;
+use base 'Entity';
 
 use strict;
 use warnings;
 
-use Policy;
+use Entity::Policy;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
@@ -106,7 +106,7 @@ sub new {
             }
             $policy_args->{policy_type} = $policy_type;
 
-            my $policy = Policy->new(%$policy_args);
+            my $policy = Entity::Policy->new(%$policy_args);
             $args{$policy_type . '_policy_id'} = $policy->getAttr(name => 'policy_id');
         }
         $attrs->{$policy_type . '_policy_id'} = $args{$policy_type . '_policy_id'};
@@ -125,7 +125,7 @@ sub getPolicies () {
     for my $policy_type (@$POLICY_TYPES) {
         # For instance do not handle orchestration policy
         if ($self->getAttr(name => $policy_type . '_policy_id')) {
-            push @$policies, Policy->get(id => $self->getAttr(name => $policy_type . '_policy_id'));
+            push @$policies, Entity::Policy->get(id => $self->getAttr(name => $policy_type . '_policy_id'));
         }
     }
     return $policies;

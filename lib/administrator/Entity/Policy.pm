@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Policy;
-use base 'BaseDB';
+package Entity::Policy;
+use base 'Entity';
 
 use strict;
 use warnings;
@@ -85,7 +85,7 @@ sub new {
 
     # If policy_id defined, this is a policy update.
     if ($policy_id) {
-        $self = Policy->get(id => $policy_id);
+        $self = Entity::Policy->get(id => $policy_id);
 
         # Set the policy atrributtes
         for my $name (keys %$attrs) {
