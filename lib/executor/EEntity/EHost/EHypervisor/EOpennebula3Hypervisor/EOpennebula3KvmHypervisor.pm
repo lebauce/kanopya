@@ -30,8 +30,8 @@ my $log = get_logger("");
 
 
 my $ressources_keys = {
-    ram => 'memory',
-    cpu => 'vcpu',
+    ram => { name => 'currentMemory/content', factor => 1024 },
+    cpu => { name => 'vcpu/current', factor => 1 }
 };
 
 =head2 getVmResources
@@ -65,17 +65,17 @@ sub getVmResources {
             throw Kanopya::Exception::Execution(error => $result->{stdout});
         }
 
-        my $parser = XML::Simple->new(NoAttr => 1);
+        my $parser = XML::Simple->new();
         my $hxml = $parser->XMLin($result->{stdout});
 
         # Build the resssources hash according to required ressources
         my $vm_ressources = {};
         for my $ressource (@{ $args{ressources} }) {
-            $vm_ressources->{$vm->id}->{$ressource} = $hxml->{$ressources_keys->{$ressource}};
-
-            if ($ressource eq "ram") {
-                $vm_ressources->{$vm->id}->{$ressource} *= 1024;
+            my $value = $hxml;
+            for my $selector (split('/', $ressources_keys->{$ressource}->{name})) {
+                $value = $value->{$selector};
             }
+            $vm_ressources->{$vm->id}->{$ressource} = $value * $ressources_keys->{$ressource}->{factor};
         }
 
         $vms_ressources = merge($vms_ressources, $vm_ressources);
