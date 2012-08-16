@@ -529,7 +529,14 @@ sub startHost {
     # declare vm in database
     $log->info('vm id returned by opennebula: '.$vmid);
 
-    # $self->onevm_hold(vm_nameorid => $id);
+    # deploy the VM as the OpenNebula's scheduler sometimes refuse to deploy it
+    my $cmd = one_command("onevm deploy " . $args{host}->host_hostname .
+                          " " . $hypervisor->host_hostname);
+
+    my $result = $self->getEContext->execute(command => $cmd);
+    if ($result->{exitcode} != 0) {
+       throw Kanopya::Exception::Execution(error => $result->{stdout});
+    }
 
     $self->_getEntity()->addVM(
         host       => $args{host}->_getEntity,
