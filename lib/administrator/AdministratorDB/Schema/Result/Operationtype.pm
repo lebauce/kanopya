@@ -50,6 +50,21 @@ __PACKAGE__->add_unique_constraint("operationtype_name", ["operationtype_name"])
 
 =head1 RELATIONS
 
+=head2 notification_subscriptions
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NotificationSubscription>
+
+=cut
+
+__PACKAGE__->has_many(
+  "notification_subscriptions",
+  "AdministratorDB::Schema::Result::NotificationSubscription",
+  { "foreign.operationtype_id" => "self.operationtype_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 old_operations
 
 Type: has_many
@@ -96,8 +111,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-22 15:21:26
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SeyvimhxYIUxkH1HOwq8Ww
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-14 11:51:25
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+r6mriiZ7E1H8QAZovWOiw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

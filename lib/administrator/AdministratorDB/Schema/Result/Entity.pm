@@ -419,6 +419,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 notification_subscription_subscribers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NotificationSubscription>
+
+=cut
+
+__PACKAGE__->has_many(
+  "notification_subscription_subscribers",
+  "AdministratorDB::Schema::Result::NotificationSubscription",
+  { "foreign.subscriber_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 notification_subscription_entities
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NotificationSubscription>
+
+=cut
+
+__PACKAGE__->has_many(
+  "notification_subscription_entities",
+  "AdministratorDB::Schema::Result::NotificationSubscription",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 poolip
 
 Type: might_have
@@ -540,8 +570,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-18 11:47:00
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:I9VZtZzRag/M+kp+7fswTw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-14 11:51:25
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dACDCRIme7UuUyWHI4bQqQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

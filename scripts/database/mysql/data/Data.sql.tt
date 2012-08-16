@@ -88,7 +88,9 @@ INSERT INTO `class_type` VALUES
 (85, 'Entity::Host::VirtualMachine'),
 (86, 'Entity::Host::Hypervisor::Opennebula3Hypervisor'),
 (87, 'Entity::Host::VirtualMachine::Opennebula3Vm'),
-(88, 'Entity::Component::Mailnotifier0');
+(88, 'Entity::Component::Mailnotifier0'),
+(89, 'Entity::ServiceTemplate'),
+(90, 'Entity::Policy');
 
 --
 -- entity comment list
@@ -447,7 +449,7 @@ INSERT INTO `component_type` VALUES
 (19,'Kanopyacollector','1','Collectormanager'),
 (20, 'Keepalived','1','LoadBalancer'),
 (21, 'Kanopyaworkflow','0','Workflowmanager'),
-(22, 'Mailnotifier','0','Notifier');
+(22, 'Mailnotifier','0','Notificationmanager');
 
 --
 -- connectors type list
@@ -734,11 +736,11 @@ SET @eid := @eid +1;
 -- Mailnotifier0
 --
 
--- INSERT INTO `entity` VALUES (@eid, 88, NULL);
--- INSERT INTO `component` VALUES(@eid, @admin_cluster, 22, NULL, NULL);
--- INSERT INTO `mailnotifier0` VALUES(@eid, 'localhost', NULL, NULL, 0);
--- SET @eid := @eid +1;
-
+INSERT INTO `entity` VALUES (@eid, 88, NULL);
+INSERT INTO `component` VALUES(@eid, @admin_cluster, 22, NULL, NULL);
+INSERT INTO `mailnotifier0` VALUES(@eid, 'localhost', NULL, NULL, 0);
+SET @mailnotifier := @eid;
+SET @eid := @eid +1;
 
 --
 -- Scopes
@@ -757,10 +759,11 @@ INSERT INTO `scope_parameter` VALUES (2,1,'node_hostname');
 INSERT INTO `scope_parameter` VALUES (3,2,'service_provider_name');
 
 --
--- Initial Host manager for kanopya cluster
+-- Initial managers for kanopya cluster
 --
 
 INSERT INTO `service_provider_manager` VALUES (1, @admin_cluster, 'host_manager', @physical_hoster, null);
+INSERT INTO `service_provider_manager` VALUES (2, @admin_cluster, 'notification_manager', @mailnotifier, null);
 
 
 --
@@ -1049,12 +1052,41 @@ INSERT INTO `param_preset` VALUES (63, "default_gateway", 1, 23);
 -- Default orchestration policy
 INSERT INTO `param_preset` VALUES (64, "orchestration", NULL, NULL);
 
-INSERT INTO `policy` VALUES (1, 1, 'Default physical host', "Hosting policy for default physical hosts.", 'hosting');
-INSERT INTO `policy` VALUES (2, 10, 'Kanopya LVM disk exported via ISCSI', "Datastore on Kanopya cluster for PXE boot via ISCSI.", 'storage');
-INSERT INTO `policy` VALUES (3, 18, 'Default network configuration', "Default network configuration, with admin and public interfaces.", 'network');
-INSERT INTO `policy` VALUES (4, 29, 'Cluster manual scalability', "Manual scalability.", 'scalability');
-INSERT INTO `policy` VALUES (5, 33, 'Debian squeeze', "Hosting policy for standard physical hosts.", 'system');
-INSERT INTO `policy` VALUES (6, 62, 'Empty billing configuration', "Empty billing configuration", 'billing');
-INSERT INTO `policy` VALUES (7, 64, 'Empty orchestration configuration', "Empty orchestration configuration", 'orchestration');
+INSERT INTO `entity` VALUES (@eid, 90, NULL);
+INSERT INTO `policy` VALUES (@eid, 1, 'Default physical host', "Hosting policy for default physical hosts.", 'hosting');
+SET @hosting_policy := @eid;
+SET @eid := @eid +1;
 
-INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5, 6, 7);
+INSERT INTO `entity` VALUES (@eid, 90, NULL);
+INSERT INTO `policy` VALUES (@eid, 10, 'Kanopya LVM disk exported via ISCSI', "Datastore on Kanopya cluster for PXE boot via ISCSI.", 'storage');
+SET @storage_policy := @eid;
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 90, NULL);
+INSERT INTO `policy` VALUES (@eid, 18, 'Default network configuration', "Default network configuration, with admin and public interfaces.", 'network');
+SET @network_policy := @eid;
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 90, NULL);
+INSERT INTO `policy` VALUES (@eid, 29, 'Cluster manual scalability', "Manual scalability.", 'scalability');
+SET @scala_policy := @eid;
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 90, NULL);
+INSERT INTO `policy` VALUES (@eid, 33, 'Debian squeeze', "Hosting policy for standard physical hosts.", 'system');
+SET @system_policy := @eid;
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 90, NULL);
+INSERT INTO `policy` VALUES (@eid, 62, 'Empty billing configuration', "Empty billing configuration", 'billing');
+SET @billing_policy := @eid;
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 90, NULL);
+INSERT INTO `policy` VALUES (@eid, 64, 'Empty orchestration configuration', "Empty orchestration configuration", 'orchestration');
+SET @orches_policy := @eid;
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 89, NULL);
+INSERT INTO `service_template` VALUES (@eid, 'Standard physical cluster', "Service template for standard physical cluster declaration.", @hosting_policy, @storage_policy, @network_policy, @scala_policy, @system_policy, @billing_policy, @orches_policy);
+SET @eid := @eid +1;
