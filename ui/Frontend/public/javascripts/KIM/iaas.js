@@ -227,8 +227,8 @@ function load_iaas_content (container_id) {
                                 if (managers[j].host_type === "Virtual Machine") {
                                     data[i].cloudmanager    = managers[j];
                                     iaas.push(data[i]);
+                                    break;
                                 }
-                                break;
                             }
                         }
                     }
