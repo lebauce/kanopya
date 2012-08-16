@@ -209,7 +209,7 @@ function create_grid(options) {
                 remove_action += '<div class="ui-pg-div ui-inline-del"';
                 remove_action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
                 remove_action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
-                remove_action += 'onclick="removeGridEntry(\'' +  options.grid_id + '\',' + row.pk + ',\'' + delete_url_base + '\'';
+                remove_action += 'onclick="removeGridEntry(\'' +  options.grid_id + '\',' + row.pk + ',\'' + delete_url_base;
 
                 if (delete_method_call) {
                     remove_action += ',\'' + delete_method_call;
