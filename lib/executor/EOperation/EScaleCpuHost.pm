@@ -146,7 +146,7 @@ sub _cancel {
 
     $self->{context}->{host}->updateCPU(cpu_number => $self->{context}->{host}->getTotalCpu);
 
-    $log->info('Last cpu update <' . $self->{context}->{host}->host_cpu . '>');
+    $log->info('Last cpu update <' . $self->{context}->{host}->host_core . '>');
 }
 
 =head1 DIAGNOSTICS
