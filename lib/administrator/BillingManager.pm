@@ -37,8 +37,6 @@ use Monitor::Retriever;
 
 my $log = get_logger("");
 
-my $retriever = Monitor::Retriever->new;
-
 my $EVERY_DAY = 1;
 my $EVERY_MONTH = 2;
 
@@ -70,6 +68,7 @@ sub clusterBilling {
     my $cluster_name = $cluster->getAttr(name => "cluster_name");
     my $adm = Administrator->new();
     my $timestamp = $from->epoch();
+    my $retriever = Monitor::Retriever->new;
 
     # Get all the limit types for this cluster
     my @limit_types = $adm->{db}->resultset("Billinglimit")->search(
