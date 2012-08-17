@@ -28,6 +28,8 @@ use Entity;
 use ERollback;
 use EFactory;
 use Operation;
+use Operationtype;
+use Entity::ServiceProvider::Inside::Cluster;
 
 use Kanopya::Config;
 use Kanopya::Exceptions;
@@ -118,7 +120,94 @@ sub postrequisites {
     return 0;
 }
 
-#interface
+sub validation {
+    my $self = shift;
+    my %args = @_;
+
+    my $adm    = Administrator->new();
+    my $config = General::getTemplateConfiguration();
+
+    $adm->{db}->txn_begin;
+
+    # Search for all context entites if notification/validation required
+    my $validation = 0;
+    for my $entity (values %{ $self->getParams->{context} }) {
+        $log->debug("Check if notification/validation required for $entity <" . $entity->id . ">");
+
+        # Arg, the foreign key on operationtype is not on the primary key...
+        my $operationtype = Operationtype->find(hash => { operationtype_name => $self->type });
+        my @subscribtions = NotificationSubscription->search(hash => {
+                                entity_id        => $entity->id,
+                                operationtype_id => $operationtype->id,
+                            });
+
+        for my $subscribtion (@subscribtions) {
+            # Try to get the notification manager to use
+            my $notifier;
+            eval {
+                my $component = $subscribtion->service_provider->getManager(
+                                    manager_type => 'notification_manager'
+                                );
+
+                $notifier = EFactory::newEEntity(data => $component);
+            };
+            if ($@) {
+                $log->debug("Unable to get the notification manager for service provider <" .
+                            ref($subscribtion->service_provider) . ">, skip notification...");
+                next;
+            }
+
+            # Create Template object
+            my $template = Template->new($config);
+            my $templatedata = { operation  => $self->type };
+
+            # TODO: We do not have a mechanism to retreive the url of the web ui...
+            #       So try to get the public ip of the kanopya master node, but the port is still hard core.
+            my $kanopya = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
+
+            my $ip;
+            eval {
+                $ip = $kanopya->getMasterNode->getPublicIp;
+            };
+            if ($@) {
+                $log->warn("Unable to get the master kanopya public ip, use the admin ip.");
+                $ip = $kanopya->getMasterNode->getAdminIp;
+            }
+
+            my $input;
+            my $baseurl = "http://" . $ip . ":5000/validation/operation/" . $self->id;
+            if ($subscribtion->validation) {
+                $input = "validationmail";
+                $templatedata->{validation_url} = $baseurl . '/validate';
+                $templatedata->{deny_url} = $baseurl . '/deny';
+                $validation = 1;
+
+            } else {
+                $input = "notificationmail";
+            }
+
+            my $subject = '';
+            $template->process($input . 'subject.tt', $templatedata, \$subject)
+                or throw Kanopya::Exception::Internal(
+                     error => "Error when processing template " . $input . 'subject.tt'
+                 );
+
+            my $message = '';
+            $template->process($input . '.tt', $templatedata, \$message)
+                or throw Kanopya::Exception::Internal(
+                     error => "Error when processing template " . $input . '.tt'
+                 );
+
+            # TODO: Use multi recipient send, instead of sending one mail per subcriber
+            $notifier->notify(user => $subscribtion->subscriber, subject => $subject, message => $message);
+        }
+    }
+
+    $adm->{db}->txn_commit;
+
+    return not $validation;
+}
+
 sub _cancel {}
 sub finish {}
 sub execute {}
