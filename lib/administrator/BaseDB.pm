@@ -182,7 +182,7 @@ sub _parentClass {
 
 =head2
 
-    Reùove the top of hierarchy class
+    Remove the top of hierarchy class
 
 =cut
 
@@ -560,12 +560,18 @@ sub fromDBIx {
     General::checkParams(args => \%args, required => [ 'row' ]);
 
     my $name = classFromDbix($args{row}->result_source);
+
     requireClass($name);
 
-    return bless {
-        _dbix      => $args{row},
-        _entity_id => $args{row}->id
-    }, $name;
+    # We need to use prefetch to get the parent/childs attrs,
+    # and use the concrete class type. Use 'get' for instance.
+
+#    return bless {
+#        _dbix      => $args{row},
+#        _entity_id => $args{row}->id
+#    }, $name;
+
+     return $name->get(id => $args{row}->id);
 }
 
 =head2
