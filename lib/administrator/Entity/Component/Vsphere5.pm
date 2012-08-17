@@ -17,7 +17,7 @@
 
 package Entity::Component::Vsphere5;
 use base "Entity::Component";
-use base "Manager::HostManager";
+use base "Manager::HostManager::VirtualMachineManager";
 
 use strict;
 use warnings;

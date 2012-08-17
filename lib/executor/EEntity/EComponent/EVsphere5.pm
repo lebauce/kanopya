@@ -17,7 +17,7 @@
 package EEntity::EComponent::EVsphere5;
 
 use base "EEntity::EComponent";
-use base "EManager::EHostManager";
+use base "EManager::EHostManager::EVirtualMachineManager";
 
 use strict;
 use warnings;

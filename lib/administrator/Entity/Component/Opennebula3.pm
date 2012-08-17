@@ -52,7 +52,7 @@ This Entity is empty but present methods to set configuration.
 
 package Entity::Component::Opennebula3;
 use base "Entity::Component";
-use base "Manager::HostManager";
+use base "Manager::HostManager::VirtualMachineManager";
 
 use strict;
 use warnings;
@@ -334,37 +334,6 @@ sub getTemplateDataOnedInitScript {
 
 sub getHostConstraints {
     return "physical";
-}
-
-sub createVirtualHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ], optional => { 'ifaces' => 0 });
-
-    # Use the first kernel found...
-    my $kernel = Entity::Kernel->find(hash => {});
-
-    my $vm = Entity::Host::VirtualMachine->new(
-                 host_manager_id    => $self->id,
-                 host_serial_number => "Virtual Host managed by component " . $self->id,
-                 kernel_id          => $kernel->id,
-                 host_ram           => $args{ram},
-                 host_core          => $args{core},
-                 active             => 1,
-             );
-
-    my $adm = Administrator->new();
-    foreach (0 .. $args{ifaces}-1) {
-        $vm->addIface(
-            iface_name     => 'eth' . $_,
-            iface_mac_addr => $adm->{manager}->{network}->generateMacAddress(),
-            iface_pxe      => 0,
-        );
-    }
-
-    $log->debug("Return host with <" . $vm->id . ">");
-    return $vm;
 }
 
 ### hypervisors manipulation ###

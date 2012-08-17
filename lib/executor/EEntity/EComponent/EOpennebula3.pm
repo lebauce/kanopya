@@ -13,7 +13,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EOpennebula3;
 use base "EEntity::EComponent";
-use base "EManager::EHostManager";
+use base "EManager::EHostManager::EVirtualMachineManager";
 
 use strict;
 use warnings;
@@ -574,35 +574,6 @@ sub postStart {
     }
 
     $args{host}->save();
-}
-
-sub getFreeHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "ram", "core", "ifaces" ]);
-
-    if ($args{ram_unit}) {
-        $args{ram} = General::convertToBytes(value => $args{ram}, units => $args{ram_unit});
-        delete $args{ram_unit};
-    }
-
-    $log->info("Looking for a virtual host");
-    my $host = eval{
-        return $self->_getEntity->createVirtualHost(
-                   core   => $args{core},
-                   ram    => $args{ram},
-                   ifaces => $args{ifaces},
-               );
-    };
-    if ($@) {
-        $errmsg = "Component OpenNebula3 <" . $self->_getEntity->getAttr(name => 'component_id') .
-                  "> No capabilities to host this vm core <$args{core}> and ram <$args{ram}>:\n" . $@;
-        # We can't create virtual host for some reasons (e.g can't meet constraints)
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    return $host;
 }
 
 sub applyVLAN {
