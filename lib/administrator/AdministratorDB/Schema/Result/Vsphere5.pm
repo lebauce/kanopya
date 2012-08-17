@@ -30,6 +30,18 @@ __PACKAGE__->table("vsphere5");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 vsphere5_pwd
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 68
+
+=head2 vsphere5_login
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 128
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -40,6 +52,10 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "vsphere5_pwd",
+  { data_type => "char", is_nullable => 1, size => 68 },
+  "vsphere5_login",
+  { data_type => "char", is_nullable => 1, size => 128 },
 );
 
 =head1 PRIMARY KEY
@@ -102,8 +118,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-14 19:34:40
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qHiHJ3fQNFaMBurxxiXVGw
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-16 16:50:57
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MbJ+/TMQMtgsf3qODfVV5Q
 
 __PACKAGE__->belongs_to(
   "parent",
