@@ -127,7 +127,7 @@ sub cancel {
         priority => 1,
         type     => 'CancelWorkflow',
         params   => {
-            workflow_id => $self->getAttr(name => 'workflow_id'),
+            workflow_id => $self->id,
         }
     );
 }
