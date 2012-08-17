@@ -117,6 +117,12 @@ sub execute {
     $log->info("Cluster <" . $self->{context}->{cluster}->getAttr(name => "cluster_name") . "> is now added");
 }
 
+sub finish {
+    my $self = shift;
+
+    delete $self->{context}->{service_template};
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
