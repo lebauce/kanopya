@@ -34,70 +34,96 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-            user_login            => {pattern            => '^\w*$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 0},
-            user_desc            => {pattern            => '^.*$', # Impossible to check char used because of \n doesn't match with \w
-                                        is_mandatory    => 0,
-                                        is_extended     => 0,
-                                        is_editable        => 1},
-            user_password        => {pattern            => '^.*$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 1},
-            user_firstname        => {pattern            => '^\w*$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 0},
-            user_lastname        => {pattern            => '^\w*$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 0},
-            user_email            => {pattern            => '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 1},    
-            user_creationdate    => {pattern            => '^.*$',
-                                        is_mandatory    => 0,
-                                        is_extended        => 0,
-                                        is_editable        => 0},
-            user_lastaccess        => {pattern            => '^\w*$',
-                                        is_mandatory    => 0,
-                                        is_extended        => 0,
-                                        is_editable        => 1},    
+    user_login => {
+        pattern      => '^\w*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    user_desc => {
+        # Impossible to check char used because of \n doesn't match with \w
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    user_password => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    user_firstname => {
+        pattern      => '^\w*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    user_lastname => {
+        pattern      => '^\w*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    user_email => {
+        pattern      => '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    user_creationdate => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    user_lastaccess => {
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 1
+    },
 };
 
 sub primarykey { return 'user_id' }
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new user', 
-                        'perm_holder' => 'mastergroup',
+        create => {
+            description => 'create a new user',
+            perm_holder => 'mastergroup',
         },
-        'get'        => {'description' => 'view this user', 
-                        'perm_holder' => 'entity',
+        get => {
+            description => 'view this user',
+            perm_holder => 'entity',
         },
-        'update'    => {'description' => 'save changes applied on this user', 
-                        'perm_holder' => 'entity',
+        update => {
+            description => 'save changes applied on this user',
+            perm_holder => 'entity',
         },
-        'remove'    => {'description' => 'delete this user', 
-                        'perm_holder' => 'entity',
+        remove => {
+            description => 'delete this user',
+            perm_holder => 'entity',
         },
-        'setperm'    => {'description' => 'set permissions on this user', 
-                        'perm_holder' => 'entity',
+        setperm => {
+            description => 'set permissions on this user',
+            perm_holder => 'entity',
         },
-        'getProfiles' => {'description' => 'get user profiles', 
-                        'perm_holder' => 'entity',
+        getProfiles => {
+            description => 'get user profiles',
+            perm_holder => 'entity',
         },
-         'setProfiles' => {'description' => 'set user profiles', 
-                        'perm_holder' => 'entity',
+        setProfiles => {
+            description => 'set user profiles',
+            perm_holder => 'entity',
         },
-        'getExtensions' => {'description' => 'get extended user attributes', 
-                        'perm_holder' => 'entity',
+        getExtensions => {
+            description => 'get extended user attributes',
+            perm_holder => 'entity',
         },
-         'setExtension' => {'description' => 'create or update extended user attribute', 
-                        'perm_holder' => 'entity',
+        setExtension => {
+            description => 'create or update extended user attribute',
+            perm_holder => 'entity',
         },
     };
 }
