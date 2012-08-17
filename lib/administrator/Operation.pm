@@ -42,6 +42,7 @@ use General;
 use Workflow;
 use ParamPreset;
 use Kanopya::Exceptions;
+use NotificationSubscription;
 
 use DateTime;
 use Hash::Merge;
@@ -52,6 +53,70 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 our $VERSION = '1.00';
 my $errmsg;
+
+use constant ATTR_DEF => {
+    type => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    state => {
+        pattern      => '^ready|processing|prereported|postreported|waiting_validation|' .
+                        'validated|blocked|cancelled|succeeded$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    workflow_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    user_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    priority => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    creation_date => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    creation_time => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    hoped_execution_time => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    execution_rank => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+};
+
+sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        validate => {
+            description => 'Validate the operation execution.',
+            perm_holder => 'entity'
+        },
+        deny => {
+            description => 'Deny the operation execution.',
+            perm_holder => 'entity'
+        }
+    };
+}
 
 sub enqueue {
     my $class = shift;
@@ -158,7 +223,7 @@ sub getNextOp {
     my $class = shift;
     my %args = @_;
 
-    my $states = [ "ready", "processing", "prereported", "postreported" ];
+    my $states = [ "ready", "processing", "prereported", "postreported", "validated" ];
     if ($args{include_blocked}) {
         push @$states, "blocked";
     }
@@ -447,6 +512,21 @@ sub unlockContext {
         }
     }
     $adm->{db}->txn_commit;
+}
+
+sub validate {
+    my $self = shift;
+    my %args = @_;
+
+    $self->setAttr(name => 'state', value => 'validated');
+    $self->save();
+}
+
+sub deny {
+    my $self = shift;
+    my %args = @_;
+
+    $self->workflow->cancel();
 }
 
 1;
