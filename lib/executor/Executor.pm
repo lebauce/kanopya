@@ -150,11 +150,26 @@ sub oneRun {
         }
 
         # Try to lock the context to check if entities are locked by others workflow
+        if ($op->state eq 'validated') {
+            $op->setState(state => 'ready');
+        }
+        else {
+            $log->debug("Calling validation of operation $opclass.");
+
+            if (not $op->validation()) {
+                $op->setState(state => 'waiting_validation');
+
+                $log->info("---- [$opclass] Operation waiting validation. ----");
+                return;
+            }
+        }
+
+        # Try to lock the context to check if entities are locked by others workflow
         eval {
             $log->debug("Calling lock of operation $opclass.");
             $operation->lockContext();
 
-            if ($op->getAttr(name => 'state') eq 'blocked') {
+            if ($op->state eq 'blocked') {
                 $op->setState(state => 'ready');
             }
         };
@@ -175,8 +190,7 @@ sub oneRun {
             $adm->{db}->txn_begin;
 
             # If the operation never been processed, check its prerequisite
-            if ($op->getAttr(name => 'state') eq 'ready' or
-                $op->getAttr(name => 'state') eq 'prereported') {
+            if ($op->state eq 'ready' or $op->state eq 'prereported') {
 
                 $log->debug("Calling prerequisite of operation $opclass.");
                 $delay = $op->prerequisites();
@@ -199,8 +213,7 @@ sub oneRun {
             }
 
             # If the operation has been processed, check its postrequisite
-            if ($op->getAttr(name => 'state') eq 'processing' or
-                $op->getAttr(name => 'state') eq 'postreported') {
+            if ($op->state eq 'processing' or $op->state eq 'postreported') {
 
                 $log->debug("Calling postrequisite of operation $opclass.");
                 $delay = $op->postrequisites();
@@ -214,10 +227,10 @@ sub oneRun {
 
                 $op->report(duration => $delay);
 
-                if ($op->getAttr(name => 'state') eq 'ready') {
+                if ($op->state eq 'ready') {
                     $op->setState(state => 'prereported');
                 }
-                elsif ($op->getAttr(name => 'state') eq 'processing') {
+                elsif ($op->state eq 'processing') {
                     $op->setState(state => 'postreported');
                 }
 
