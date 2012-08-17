@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 3 july 2010
+
 package Entity::ServiceProvider::Inside::Cluster;
 use base 'Entity::ServiceProvider::Inside';
 
@@ -33,11 +33,11 @@ use Workflow;
 use NodemetricCombination;
 use Clustermetric;
 use AggregateCombination;
-use Policy;
+use Entity::Policy;
 use Administrator;
 use General;
 use ServiceProviderManager;
-use ServiceTemplate;
+use Entity::ServiceTemplate;
 use VerifiedNoderule;
 use Indicator;
 use Indicatorset;
@@ -326,19 +326,20 @@ sub create {
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
     # Prepare the configuration pattern from the service template
+    my $service_template;
     if (defined $params{service_template_id}) {
         # ui related, we get the completed values as flatened values from the form
         # so we need to transform all the flatened params to a configuration pattern.
         my %flatened_params = %params;
         %params = ();
 
-        my $service_template = ServiceTemplate->get(id => $flatened_params{service_template_id});
+        $service_template = Entity::ServiceTemplate->get(id => $flatened_params{service_template_id});
         for my $policy (@{ $service_template->getPolicies }) {
             # Register policy ids in the params
             push @{ $params{policies} }, $policy->getAttr(name => 'policy_id');
 
             # Rebuild params as a configuration pattern
-            my $pattern = Policy->buildPatternFromHash(policy_type => $policy->getAttr(name => 'policy_type'), hash => \%flatened_params);
+            my $pattern = Entity::Policy->buildPatternFromHash(policy_type => $policy->getAttr(name => 'policy_type'), hash => \%flatened_params);
             %params = %{ $merge->merge(\%params, \%$pattern) };
         }
     }
@@ -348,7 +349,7 @@ sub create {
 
     # Firstly apply the policies presets on the cluster creation paramters.
     for my $policy_id (@{ $params{policies} }) {
-        my $policy = Policy->get(id => $policy_id);
+        my $policy = Entity::Policy->get(id => $policy_id);
 
         # Load params preset into hash
         my $policy_presets = $policy->getParamPreset->load();
@@ -370,14 +371,22 @@ sub create {
 
     $class->checkConfigurationPattern(attrs => \%params, composite => \%composite_params);
 
+    my $op_params = {
+        cluster_params => \%params,
+        presets        => \%composite_params,
+    };
+
+    # If hte cluster created from a service template, add it in the context
+    # to handle notification/validation on cluster instanciation.
+    if ($service_template) {
+        $op_params->{context}->{service_template} = $service_template;
+    }
+
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(
         priority => 200,
         type     => 'AddCluster',
-        params   => {
-            cluster_params => \%params,
-            presets        => \%composite_params,
-        },
+        params   => $op_params
     );
 }
 
@@ -1017,25 +1026,23 @@ sub getComponentByInstanceId{
 
 sub getMasterNode {
     my $self = shift;
-    my $node_instance_rs = $self->{_dbix}->parent->search_related(
-                               "nodes", { master_node => 1 }
-                           )->single;
 
-    if(defined $node_instance_rs) {
-        my $host = { _dbix => $node_instance_rs->host };
-        bless $host, "Entity::Host";
-        return $host;
-    } else {
-        $log->debug("No Master node found for this cluster");
-        return;
-    }
+    my $masternode = Externalnode::Node->find(hash => {
+                         inside_id   => $self->id,
+                         master_node => 1
+                     });
+
+    return $masternode->host;
 }
 
 sub getMasterNodeIp {
     my $self = shift;
-    my $master = $self->getMasterNode();
 
-    if ($master) {
+    my $master;
+    eval {
+         $master = $self->getMasterNode();
+    };
+    if (not $@) {
         my $node_ip = $master->getAdminIp;
 
         $log->debug("Master node found and its ip is $node_ip");
