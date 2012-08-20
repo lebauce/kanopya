@@ -49,7 +49,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
 use AdministratorDB::Schema;
-use EntityRights;
+use Entityright;
 use Kanopya::Exceptions;
 use Kanopya::Config;
 use General;
@@ -58,8 +58,8 @@ use DateTime;
 use NetworkManager;
 use RulesManager;
 use MonitorManager;
-use EntityRights::User;
-use EntityRights::System;
+use Entityright::User;
+use Entityright::System;
 
 our $VERSION = "1.00";
 
@@ -147,7 +147,7 @@ sub authenticate {
         throw Kanopya::Exception::AuthenticationFailed(error => $errmsg);
     } else {
         $log->info("Authentication succeed for login ".$args{login});
-        #$rchecker = EntityRights::build(dbixuser => $user_data, schema => $schema);
+        #$rchecker = Entityright::build(dbixuser => $user_data, schema => $schema);
         $ENV{EID} = $user_data->id;
     }
 }
@@ -169,16 +169,16 @@ sub authenticate {
     }
 }
 
-=head2 Administrator::buildEntityRights (%args)
+=head2 Administrator::buildEntityright (%args)
 
-    desc : instanciate an EntityRights::User/System depending on
+    desc : instanciate an Entityright::User/System depending on
             environment variable $ENV{EID}
     args : schema : AdministratorDB::Schema instance
-    return : EntityRights::User or EntityRights::System
+    return : Entityright::User or Entityright::System
 
 =cut
 
-sub buildEntityRights {
+sub buildEntityright {
     my %args =  @_;
 
     General::checkParams(args => \%args, required => ['schema']);
@@ -186,11 +186,11 @@ sub buildEntityRights {
     my $user = $args{schema}->resultset('User')->find($ENV{EID});
 
     if($user->get_column('user_system')) {
-        #$log->debug("EntityRights build a new EntityRights::System with EID ".$ENV{EID});
-        return EntityRights::System->new(user_id => $user->id, schema => $args{schema});
+        #$log->debug("Entityright build a new Entityright::System with EID ".$ENV{EID});
+        return Entityright::System->new(user_id => $user->id, schema => $args{schema});
     } else {
-        #$log->debug("EntityRights build a new EntityRights::User with EID ".$ENV{EID});
-        return EntityRights::User->new(user_id => $user->id, schema => $args{schema});
+        #$log->debug("Entityright build a new Entityright::User with EID ".$ENV{EID});
+        return Entityright::User->new(user_id => $user->id, schema => $args{schema});
     }
 }
 
@@ -216,7 +216,7 @@ sub new {
 
     if (defined $oneinstance) {
         if ($oneinstance->{EID} != $ENV{EID}) {
-            $oneinstance->{_rightchecker} = buildEntityRights(schema => $schema);
+            $oneinstance->{_rightchecker} = buildEntityright(schema => $schema);
             $oneinstance->{EID} = $ENV{EID};
         }
 
@@ -226,7 +226,7 @@ sub new {
     $log->debug("Administrator instance created");
 
     my $self = {
-        _rightchecker => buildEntityRights(schema => $schema),
+        _rightchecker => buildEntityright(schema => $schema),
         db => $schema,
         manager => {}
     };
