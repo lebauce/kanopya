@@ -25,7 +25,7 @@ use Kanopya::Exceptions;
 use Entity::Component;
 use Entity::Host;
 use Entity::Systemimage;
-use Operation;
+use Entity::Operation;
 use Administrator;
 use General;
 
@@ -144,7 +144,7 @@ sub create {
     #}
 
     $log->debug("New Operation Create with attrs : " . %params);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'AddTier',
         params   => \%params,
@@ -170,7 +170,7 @@ sub remove {
     my %params;
     $params{'tier_id'}= $self->getAttr(name =>"tier_id");
     $log->debug("New Operation Remove Tier with attrs : " . %params);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveTier',
         params   => \%params,
@@ -181,7 +181,7 @@ sub activate {
     my $self = shift;
 
     $log->debug("New Operation ActivateTier with tier_id : " . $self->getAttr(name=>'tier_id'));
-    Operation->enqueue(priority => 200,
+    Entity::Operation->enqueue(priority => 200,
                    type     => 'ActivateTier',
                    params   => {tier_id => $self->getAttr(name=>'tier_id')});
 }
@@ -190,7 +190,7 @@ sub deactivate {
     my $self = shift;
 
     $log->debug("New Operation DeactivateTier with tier_id : " . $self->getAttr(name=>'tier_id'));
-    Operation->enqueue(priority => 200,
+    Entity::Operation->enqueue(priority => 200,
                    type     => 'DeactivateTier',
                    params   => {tier_id => $self->getAttr(name=>'tier_id')});
 }

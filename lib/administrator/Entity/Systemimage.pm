@@ -24,7 +24,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Administrator;
-use Operation;
+use Entity::Operation;
 use General;
 
 use Entity::Container;
@@ -126,7 +126,7 @@ sub getSystemimage {
 #    my ($class, %params) = @_;
 #
 #    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
-#    Operation->enqueue(
+#    Entity::Operation->enqueue(
 #        priority => 200,
 #        type     => 'AddSystemimage',
 #        params   => \%params,
@@ -144,7 +144,7 @@ sub installComponent {
     General::checkParams(args=>\%args,required=>["component_type_id"]);
     
     $log->debug("New Operation InstallComponentOnSystemImage");
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'InstallComponentOnSystemImage',
         params   => {
@@ -184,7 +184,7 @@ sub remove {
     my $self = shift;
     
     $log->debug("New Operation RemoveSystemimage with systemimage_id : <".$self->getAttr(name=>"systemimage_id").">");
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveSystemimage',
         params   => {
@@ -213,7 +213,7 @@ sub getAttrDef{
 #    }
 #    $args{systemimage_id} = $sysimg_id;
 #    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%args));
-#    Operation->enqueue(priority => 200,
+#    Entity::Operation->enqueue(priority => 200,
 #                       type     => 'CloneSystemimage',
 #                       params   => \%args);
 #       
@@ -224,7 +224,7 @@ sub getAttrDef{
 #    
 #    my  $adm = Administrator->new();
 #    $log->debug("New Operation ActivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
-#    Operation->enqueue(priority => 200,
+#    Entity::Operation->enqueue(priority => 200,
 #                   type     => 'ActivateSystemimage',
 #                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
 #}
@@ -234,7 +234,7 @@ sub getAttrDef{
 #    
 #    my  $adm = Administrator->new();
 #    $log->debug("New Operation DeactivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
-#    Operation->enqueue(priority => 200,
+#    Entity::Operation->enqueue(priority => 200,
 #                   type     => 'DeactivateSystemimage',
 #                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
 #}

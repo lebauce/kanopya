@@ -60,6 +60,7 @@ use General;
 use Administrator;
 use Kanopya::Exceptions;
 
+use Entity::Operation;
 use Entity::Container;
 use Entity::ContainerAccess::IscsiContainerAccess;
 
@@ -245,7 +246,7 @@ sub createExport {
                          required => [ "container", "export_name", "typeio", "iomode" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'CreateExport',
         params   => {

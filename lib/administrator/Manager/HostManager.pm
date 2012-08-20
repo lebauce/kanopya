@@ -29,6 +29,7 @@ use Entity::Powersupplycard;
 use Entity::Processormodel;
 use Entity::Hostmodel;
 use Entity::Kernel;
+use Entity::Operation;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -161,7 +162,7 @@ sub createHost {
                          required => [ "host_core", "kernel_id", "host_serial_number", "host_ram" ]);
 
     $log->debug("New Operation AddHost with attrs : " . Dumper(%args));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'AddHost',
         params   => {
@@ -182,7 +183,7 @@ sub removeHost {
     $log->debug("New Operation RemoveHost with host_id : <" .
                 $args{host}->getAttr(name => "host_id") . ">");
 
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveHost',
         params   => {

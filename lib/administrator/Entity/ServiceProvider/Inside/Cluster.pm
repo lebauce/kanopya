@@ -28,7 +28,7 @@ use Externalnode::Node;
 use Entity::Systemimage;
 use Entity::Tier;
 use Externalnode::Node;
-use Operation;
+use Entity::Operation;
 use Workflow;
 use NodemetricCombination;
 use Clustermetric;
@@ -391,7 +391,7 @@ sub create {
     }
 
     $log->debug("New Operation Create with attrs : " . %params);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'AddCluster',
         params   => $op_params
@@ -781,7 +781,7 @@ sub remove {
     my $adm = Administrator->new();
 
     $log->debug("New Operation Remove Cluster with cluster id : " .  $self->getAttr(name => 'cluster_id'));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveCluster',
         params   => {
@@ -796,7 +796,7 @@ sub forceStop {
     my $self = shift;
 
     $log->debug("New Operation Force Stop Cluster with cluster: " . $self->getAttr(name => "cluster_id"));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'ForceStopCluster',
         params   => {
@@ -813,7 +813,7 @@ sub activate {
     my $self = shift;
 
     $log->debug("New Operation ActivateCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'ActivateCluster',
         params   => {
@@ -828,7 +828,7 @@ sub deactivate {
     my $self = shift;
 
     $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'DeactivateCluster',
         params   => {
@@ -1304,7 +1304,7 @@ sub stop {
     my $self = shift;
 
     $log->debug("New Operation StopCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
-    return Operation->enqueue(
+    return Entity::Operation->enqueue(
         priority => 200,
         type     => 'StopCluster',
         params   => {

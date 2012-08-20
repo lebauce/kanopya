@@ -59,6 +59,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Manager::HostManager;
+use Entity::Operation;
 use Entity::ContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::Host::Hypervisor::Opennebula3Hypervisor;
@@ -438,7 +439,7 @@ sub migrate {
 
     General::checkParams(args => \%args, required => [ 'host_id', 'hypervisor_id' ]);
 
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         type        => 'MigrateHost',
         priority    => 200,
         params      => {

@@ -24,7 +24,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Operation;
+use Entity::Operation;
 use General;
 use Externalnode::Node;
 
@@ -664,7 +664,7 @@ sub remove {
 
     $log->debug("New Operation RemoveHost with host_id : <" . $self->getAttr(name => "host_id") . ">");
 
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveHost',
         params   => {
@@ -719,7 +719,7 @@ sub activate{
     my $self = shift;
 
     $log->debug("New Operation ActivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'ActivateHost',
         params   => {
@@ -734,7 +734,7 @@ sub deactivate{
     my $self = shift;
 
     $log->debug("New Operation EDeactivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'DeactivateHost',
         params   => {

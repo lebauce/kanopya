@@ -21,6 +21,7 @@ use base "Manager";
 use strict;
 use warnings;
 
+use Entity::Operation;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -82,7 +83,7 @@ sub removeExport {
     General::checkParams(args => \%args, required => [ "container_access" ]);
 
     $log->debug("New Operation RemoveExport with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveExport',
         params   => {

@@ -144,7 +144,7 @@ sub create {
     my ($class, %params) = @_;
 
     $log->debug("New Operation Create with attrs : " . %params);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'AddInfrastructure',
         params   => \%params,
@@ -170,7 +170,7 @@ sub remove {
     my %params;
     $params{'infrastructure_id'}= $self->getAttr(name =>"infrastructure_id");
     $log->debug("New Operation Remove Infrastructure with attrs : " . %params);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveInfrastructure',
         params   => \%params,
@@ -184,7 +184,7 @@ sub forceStop {
     my %params;
     $params{'infrastructure_id'}= $self->getAttr(name =>"infrastructure_id");
     $log->debug("New Operation Force Stop Infrastructure with attrs : " . %params);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'ForceStopInfrastructure',
         params   => \%params,
@@ -195,7 +195,7 @@ sub activate {
     my $self = shift;
 
     $log->debug("New Operation ActivateInfrastructure with infrastructure_id : " . $self->getAttr(name=>'infrastructure_id'));
-    Operation->enqueue(priority => 200,
+    Entity::Operation->enqueue(priority => 200,
                    type     => 'ActivateInfrastructure',
                    params   => {infrastructure_id => $self->getAttr(name=>'infrastructure_id')});
 }
@@ -204,7 +204,7 @@ sub deactivate {
     my $self = shift;
 
     $log->debug("New Operation DeactivateInfrastructure with infrastructure_id : " . $self->getAttr(name=>'infrastructure_id'));
-    Operation->enqueue(priority => 200,
+    Entity::Operation->enqueue(priority => 200,
                    type     => 'DeactivateInfrastructure',
                    params   => {infrastructure_id => $self->getAttr(name=>'infrastructure_id')});
 }
@@ -387,7 +387,7 @@ sub start {
     my $self = shift;
 
     $log->debug("New Operation StartInfrastructure with infrastructure_id : " . $self->getAttr(name=>'infrastructure_id'));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'StartInfrastructure',
         params   => { infrastructure_id => $self->getAttr(name =>"infrastructure_id") },
@@ -402,7 +402,7 @@ sub stop {
     my $self = shift;
 
     $log->debug("New Operation StopInfrastructure with infrastructure_id : " . $self->getAttr(name=>'infrastructure_id'));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'StopInfrastructure',
         params   => { infrastructure_id => $self->getAttr(name =>"infrastructure_id") },
