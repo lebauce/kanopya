@@ -11,6 +11,7 @@ use Message;
 use Entity::Gp;
 use OperationParameter;
 use Kanopya::Exceptions;
+use Entity::Operation;
 
 my $log = get_logger('administrator');
 
@@ -163,44 +164,70 @@ sub addPerm {
     my %args = @_;
     my $class = ref $self;
 
-    General::checkParams(args => \%args, required => ['method', 'entity_id']);
+    General::checkParams(args => \%args, required => [ 'method', 'consumer' ]);
 
     my $adm = Administrator->new();
 
-    if($class) {
-        # addPerm call from an instance of type $class
-          my $granted = $adm->getRightChecker->checkPerm(entity_id => $self->{_entity_id}, method => 'setPerm');
-              if(not $granted) {
-               throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{entity_id}");
-           }
-           #
+    if ($class) {
+        # Consumed is an entity instance
         $adm->getRightChecker->addPerm(
-            consumer_id => $args{entity_id},
-            consumed_id => $self->{_entity_id},
-            method         => $args{method},
+            consumer_id => $args{consumer}->id,
+            consumed_id => $self->id,
+            method      => $args{method},
         );
     }
     else {
-        # addPerm call from class $self
+        # Consumed is an entity type
         my @list = split(/::/, "$self");
         my $mastergroup = pop(@list);
-        my $entity_id = $adm->{db}->resultset('Gp')->find({ gp_name => $mastergroup })->id;
-        my $granted = $adm->getRightChecker->checkPerm(entity_id => $entity_id, method => 'setPerm');
-              if(not $granted) {
-               throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{id}");
-           }
+        my $entity_id = Entity::Gp->find(hash => { gp_name => $mastergroup })->id;
 
         $adm->getRightChecker->addPerm(
-            consumer_id => $args{entity_id},
+            consumer_id => $args{consumer}->id,
             consumed_id => $entity_id,
-            method         => $args{method},
+            method      => $args{method},
         );
+    }
+}
 
+=head2 removePerm
+
+=cut
+
+sub removePerm {
+    my $self = shift;
+    my %args = @_;
+    my $class = ref $self;
+
+    General::checkParams(args => \%args, required => [ 'method' ], optional => { 'consumer' => undef });
+
+    my $adm = Administrator->new();
+
+    if ($class) {
+        # Consumed is an entity instance
+        $adm->getRightChecker->removePerm(
+            consumer_id => defined $args{consumer} ? $args{consumer}->id : undef,
+            consumed_id => $self->id,
+            method      => $args{method},
+        );
+    }
+    else {
+        # Consumed is an entity type
+        my @list = split(/::/, "$self");
+        my $mastergroup = pop(@list);
+        my $entity_id = Entity::Gp->find(hash => { gp_name => $mastergroup })->id;
+
+        $adm->getRightChecker->removePerm(
+            consumer_id => defined $args{consumer} ? $args{consumer}->id : undef,
+            consumed_id => $entity_id,
+            method      => $args{method},
+        );
     }
 }
 
 sub activate {
     my $self = shift;
+
     if (defined $self->ATTR_DEF->{active}) {
         $self->{_dbix}->update({active => "1"});
 #        $self->setAttr(name => 'active', value => 1);
@@ -297,7 +324,7 @@ sub getWorkflows {
                    });
 
     for my $context (@contexes) {
-        my $workflow = Operation->get(id => $context->getAttr(name => 'operation_id'))->getWorkflow;
+        my $workflow = Entity::Operation->get(id => $context->getAttr(name => 'operation_id'))->getWorkflow;
         if ($workflow->getAttr(name => 'state') eq 'running') {
             push @workflows, $workflow;
         }
