@@ -159,7 +159,7 @@ sub validation {
 
             # Create Template object
             my $template = Template->new($config);
-            my $templatedata = { operation  => $self->type };
+            my $templatedata = { operation  => $self->label };
 
             # TODO: We do not have a mechanism to retreive the url of the web ui...
             #       So try to get the public ip of the kanopya master node, but the port is still hard core.
