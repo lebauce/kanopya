@@ -35,12 +35,8 @@ kanopya-state-manager
 
 use strict;
 use warnings;
-
 use Kanopya::Config;
 use StateManager;
-
-use Error qw(:try);
-
 use Log::Log4perl "get_logger";
 
 my $dir = Kanopya::Config::getKanopyaDir();
@@ -51,13 +47,12 @@ my $log = get_logger("");
 my $running = 1;
 
 sub signalHandler {
-    my $sig = shift;
-    $log->info($sig." received : stopping main loop");
+    my ($sig) = @_;
+    $log->debug($sig." received : stopping main loop");
     $running = 0;
 }
 
 $SIG{TERM} = \&signalHandler;
-#$SIG{SEGV} = \&segfaultHandler;
 
 eval {
     my $statemanager = StateManager->new();
@@ -67,11 +62,10 @@ eval {
     $statemanager->run(\$running);
 };
 if ($@) {
-    $log->error("error in state-manager instanciation: $@");
-    die "Catch error in StateManager instanciation: $@";
+    $log->error("$@");
 };
 
-$log->info("kanopya-state-manager end.");
+$log->warn("kanopya-state-manager stopped");
 
 
 __END__

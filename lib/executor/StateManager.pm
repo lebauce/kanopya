@@ -38,7 +38,7 @@ my $errmsg;
 my $log = get_logger("");
 
 sub new {
-    my $class = shift;
+    my ($class) = @_;
     my $self = {};
 
     bless $self, $class;
@@ -62,8 +62,7 @@ StateManager->run() run the state manager server.
 =cut
 
 sub run {
-    my $self = shift;
-    my $running = shift;
+    my ($self, $running) = @_;
 
     my $adm = Administrator->new();
 
@@ -73,14 +72,16 @@ sub run {
     while ($$running) {
         # Check all nodes services availability
         my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
-
-        $log->info('Check service availability for ' . scalar(@clusters) . ' clusters...');
+        CLUSTER:
         foreach my $cluster (@clusters) {
 
-            $log->debug('Check service availability for cluster : ' . $cluster->cluster_name . '.');
             my $nodes = $cluster->getHosts();
-
             my $services_available = 1;
+            if(!scalar(values %$nodes)) {
+                next CLUSTER;
+            }
+            $log->info('---------------------------------------------');
+            $log->info('***** Check ['.$cluster->cluster_name.'] service availability on '.scalar(values %$nodes).' nodes *****');
             foreach my $node (values %$nodes) {
                 my $ehost = EFactory::newEEntity(data => $node);
 
@@ -96,7 +97,7 @@ sub run {
 
                 if (! $pingable and $hoststate eq 'up') {
                     my $msg = "Node " . $node->host_hostname . " unreachable in cluster :" . $cluster->cluster_name;
-                    $log->info($msg);
+                    $log->warn($msg);
 
                     Message->send(from => 'StateManager', level => 'info', content => $msg);
 
@@ -122,13 +123,13 @@ sub run {
                     my $ecomponent = EFactory::newEEntity(data => $component);
                     my $component_name = $component->getComponentAttr->{component_name};
 
-                    $log->debug("Check the availability of the component : " . $component_name);
+                    $log->debug("Check component availability : " . $component_name);
 
                     if (! $ecomponent->isUp(host => $ehost, cluster => $cluster)) {
-                        my $msg = "A component (" . $component_name .
-                                  ") is not available on node (" . $node->host_hostname .
+                        my $msg = $component_name .
+                                  " not available on node (" . $node->host_hostname .
                                   ") in cluster (" . $cluster->cluster_name . ")";
-                        $log->info($msg);
+                        $log->warn($msg);
 
                         Message->send(from => 'StateManager', level => 'info', content => $msg);
 
