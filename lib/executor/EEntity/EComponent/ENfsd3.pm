@@ -81,7 +81,7 @@ sub createExport {
     my $container_access = EFactory::newEEntity(data => $entity);
     my $client = $self->addExportClient(export  => $container_access,
                                         host    => $args{client_name},
-                                        options => $args{client_options};
+                                        options => $args{client_options});
 
     $self->generateExports(data => $self->getTemplateDataExports());
     if (exists $args{erollback}) {
