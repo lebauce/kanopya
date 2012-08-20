@@ -90,7 +90,8 @@ INSERT INTO `class_type` VALUES
 (87, 'Entity::Host::VirtualMachine::Opennebula3Vm'),
 (88, 'Entity::Component::Mailnotifier0'),
 (89, 'Entity::ServiceTemplate'),
-(90, 'Entity::Policy');
+(90, 'Entity::Policy'),
+(91, 'Entity::Operation');
 
 --
 -- entity comment list

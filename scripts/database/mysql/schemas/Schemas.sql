@@ -596,7 +596,7 @@ CREATE TABLE `operationtype` (
 -- Operation class
 
 CREATE TABLE `operation` (
-  `operation_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `operation_id` int(8) unsigned NOT NULL,
   `type` char(64) NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
   `state` char(32) NOT NULL DEFAULT 'pending',
@@ -607,6 +607,7 @@ CREATE TABLE `operation` (
   `hoped_execution_time` int(4) unsigned DEFAULT NULL,
   `execution_rank` int(8) unsigned NOT NULL,
   PRIMARY KEY (`operation_id`),
+  FOREIGN KEY (`operation_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`execution_rank`, `workflow_id`),
   KEY (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,

@@ -449,6 +449,36 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 operation
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Operation>
+
+=cut
+
+__PACKAGE__->might_have(
+  "operation",
+  "AdministratorDB::Schema::Result::Operation",
+  { "foreign.operation_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 policy
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Policy>
+
+=cut
+
+__PACKAGE__->might_have(
+  "policy",
+  "AdministratorDB::Schema::Result::Policy",
+  { "foreign.policy_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 poolip
 
 Type: might_have
@@ -524,6 +554,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_template
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
+
+=cut
+
+__PACKAGE__->might_have(
+  "service_template",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
+  { "foreign.service_template_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 systemimage
 
 Type: might_have
@@ -570,8 +615,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-14 11:51:25
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dACDCRIme7UuUyWHI4bQqQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-20 12:11:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:glRH6/AB42/6yGgq/WSAPg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
