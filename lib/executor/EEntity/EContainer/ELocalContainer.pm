@@ -25,7 +25,6 @@ use EEntity::EContainerAccess::ELocalContainerAccess;
 use File::Basename;
 
 use Log::Log4perl "get_logger";
-use Operation;
 
 use Data::Dumper;
 my $log = get_logger("executor");
