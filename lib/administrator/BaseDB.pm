@@ -9,7 +9,6 @@ use POSIX qw(ceil);
 use Hash::Merge;
 use Class::ISA;
 
-
 use warnings;
 
 use Log::Log4perl "get_logger";
@@ -17,6 +16,10 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 my %class_type_cache;
+
+use constant ATTR_DEF => {};
+
+sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
@@ -26,6 +29,7 @@ sub methods {
         }
     };
 }
+
 
 =head2
 
@@ -583,11 +587,14 @@ sub fromDBIx {
 
 sub getAttr {
     my $self = shift;
+    my $class = ref($self);
     my %args = @_;
+
     my $dbix = $self->{_dbix};
+    my $attr = $class->getAttrDef()->{$args{name}};
     my $value = undef;
     my $found = 1;
-    
+
     General::checkParams(args => \%args, required => ['name']);
 
     # Recursively search in the dbix objets, following
@@ -610,10 +617,16 @@ sub getAttr {
             }
             last;
         }
+        elsif ($self->can($args{name}) and defined $attr and $attr->{is_virtual}) {
+            my $method = $args{name};
+            $value = $self->$method();
+            last;
+        }
         elsif ($dbix->can('parent')) {
             $dbix = $dbix->parent;
             next;
-        } else {
+        }
+        else {
             $found = 0;
             last;
         }
