@@ -586,6 +586,7 @@ CREATE TABLE `node` (
 CREATE TABLE `operationtype` (
   `operationtype_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `operationtype_name` char(64) DEFAULT NULL,
+  `operationtype_label` char(128) DEFAULT NULL,
   PRIMARY KEY (`operationtype_id`),
   UNIQUE KEY (`operationtype_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

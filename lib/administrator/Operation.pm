@@ -40,6 +40,7 @@ use warnings;
 
 use General;
 use Workflow;
+use Operationtype;
 use ParamPreset;
 use Kanopya::Exceptions;
 use NotificationSubscription;
@@ -101,6 +102,12 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    label => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_virtual   => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -116,6 +123,22 @@ sub methods {
             perm_holder => 'entity'
         }
     };
+}
+
+
+=head2 label
+
+    Method for virtual attribute 'label'
+
+=cut
+
+sub label {
+    my $self = shift;
+    my %args = @_;
+
+    my $type = Operationtype->find(hash => { operationtype_name => $self->type });
+
+    return $type->operationtype_label ? $type->operationtype_label : $self->type;
 }
 
 sub enqueue {

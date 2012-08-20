@@ -32,6 +32,12 @@ __PACKAGE__->table("operationtype");
   is_nullable: 1
   size: 64
 
+=head2 operationtype_label
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 128
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -44,6 +50,8 @@ __PACKAGE__->add_columns(
   },
   "operationtype_name",
   { data_type => "char", is_nullable => 1, size => 64 },
+  "operationtype_label",
+  { data_type => "char", is_nullable => 1, size => 128 },
 );
 __PACKAGE__->set_primary_key("operationtype_id");
 __PACKAGE__->add_unique_constraint("operationtype_name", ["operationtype_name"]);
@@ -111,8 +119,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-14 11:51:25
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+r6mriiZ7E1H8QAZovWOiw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-17 16:07:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3m9xfs6KwWSVWt5ZHk+QEg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
