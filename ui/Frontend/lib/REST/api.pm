@@ -8,7 +8,7 @@ prefix undef;
 
 use General;
 use Entity;
-use Operation;
+use Entity::Operation;
 use Workflow;
 use Kanopya::Exceptions;
 
@@ -105,7 +105,7 @@ my %resources = (
     "puppetmaster2"            => "Entity::Component::Puppetmaster2",
     "openldap1"                => "Entity::Component::Openldap1",
     "openssh5"                 => "Entity::Component::Openssh5",
-    "operation"                => "Operation",
+    "operation"                => "Entity::Operation",
     "outside"                  => "Entity::ServiceProvider::Outside",
     "sco"                      => "Entity::Connector::Sco",
     "scom"                     => "Entity::Connector::Scom",
@@ -289,8 +289,8 @@ sub jsonify {
     # Jsonify the non scalar only
     if (ref($var) and ref($var) ne "HASH") {
         if ($var->can("toJSON")) {
-            if ($var->isa("Operation")) {
-                return Operation->get(id => $var->getId)->toJSON;
+            if ($var->isa("Entity::Operation")) {
+                return Entity::Operation->get(id => $var->getId)->toJSON;
             }
             elsif ($var->isa("Workflow")) {
                 return Workflow->get(id => $var->getId)->toJSON;
@@ -340,12 +340,12 @@ sub setupREST {
 #                        my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
 #                        $location =~ s/\:\:/\//g;
 #                        require $location;
-#                        $obj = Operation->enqueue(
+#                        $obj = Entity::Operation->enqueue(
 #                            priority => 200,
 #                            type     => 'Add' . ucfirst($resource),
 #                            params   => $hash
 #                        );
-#                        $obj = Operation->get(id => $obj->getId)->toJSON;
+#                        $obj = Entity::Operation->get(id => $obj->getId)->toJSON;
 #                    };
 #
 #                    if ($@) {

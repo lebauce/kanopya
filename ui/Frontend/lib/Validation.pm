@@ -5,7 +5,7 @@ use Dancer::Plugin::Ajax;
 use Data::Dumper;
 
 use Administrator;
-use Operation;
+use Entity::Operation;
 
 use Log::Log4perl "get_logger";
 
@@ -17,7 +17,8 @@ get '/operation/:spid/:action' => sub {
     my $operation = params->{spid};
     my $action    = params->{action};
 
-    Operation->get(id => $operation)->$action();
+    Entity::Operation->get(id => $operation)->methodCall(method => $action);
+
     return redirect '/';
 };
 
