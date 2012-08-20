@@ -1032,7 +1032,6 @@ sub delete {
 
         } else { last; }
     }
-
     $dbix->delete;
 }
 
@@ -1043,7 +1042,8 @@ sub delete {
 =cut
 
 sub toString{
-    return "";
+    my $self = shift;
+    return ref($self);
 }
 
 =head2
