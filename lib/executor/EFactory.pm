@@ -47,7 +47,6 @@ use Entity;
 use EEntity;
 
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
 use Net::IP qw(:PROC);
 
 my $log = get_logger("executor");
@@ -58,10 +57,10 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 sub newEOperation{
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'op', 'config' ]);
+    General::checkParams(args => \%args, required => [ 'op' ]);
 
     my $data = $args{op};
-    my $class = "EOperation::E". $args{op}->getAttr(name => 'type');
+    my $class = "EEntity::EOperation::E". $args{op}->getAttr(name => 'type');
 #    $log->debug("EOperation class is $class");
     my $location = General::getLocFromClass(entityclass => $class);
 
@@ -73,7 +72,7 @@ sub newEOperation{
     }
 
 #    $log->info("$class instanciated");
-    return $class->new(data => $args{op}, config => $args{config}, context => $args{context});
+    return $class->new(data => $args{op}, context => $args{context});
 }
 
 =head2 newEEntity

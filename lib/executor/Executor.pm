@@ -49,7 +49,7 @@ use Kanopya::Config;
 use Kanopya::Exceptions;
 use Administrator;
 use EFactory;
-use Operation;
+use Entity::Operation;
 use EWorkflow;
 use Message;
 
@@ -120,7 +120,7 @@ sub oneRun {
     my $self = shift;
     my $adm = Administrator->new();
 
-    my $operation = Operation->getNextOp(include_blocked => $self->{include_blocked});
+    my $operation = Entity::Operation->getNextOp(include_blocked => $self->{include_blocked});
 
     my ($op, $opclass, $workflow, $delay, $errors);
     if ($operation){
@@ -128,7 +128,7 @@ sub oneRun {
 
         # Initialize EOperation and context
         eval {
-            $op = EFactory::newEOperation(op => $operation, config => $self->{config});
+            $op = EFactory::newEOperation(op => $operation);
             $opclass = ref($op);
 
             $log->info("---- [$opclass] retrieved ; execution processing ----");
