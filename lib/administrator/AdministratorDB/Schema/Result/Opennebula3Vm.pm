@@ -78,6 +78,21 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 opennebula3_kvm_vm
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3KvmVm>
+
+=cut
+
+__PACKAGE__->might_have(
+  "opennebula3_kvm_vm",
+  "AdministratorDB::Schema::Result::Opennebula3KvmVm",
+  { "foreign.opennebula3_kvm_vm_id" => "self.opennebula3_vm_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 opennebula3
 
 Type: belongs_to
