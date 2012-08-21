@@ -120,13 +120,54 @@ sub new {
     my $admin = Administrator->new();
     my $component_type_id = $admin->{db}->resultset('ComponentType')->search( {
                                 component_name    => $component_name,
-		                component_version => $component_version
+		                        component_version => $component_version
                             })->single->id;
 
     $config->{component_type_id} = $component_type_id;
     my $self = $class->SUPER::new(%$config);
     bless $self, $class;
     return $self;
+}
+
+=head2 getConf
+
+    Generic method for getting simple component configuration
+
+=cut
+
+sub getConf {
+    my $self = shift;
+    my $conf = {};
+
+    return $self->toJSON;
+}
+
+=head2 setConf
+
+    Generic method for setting simple component configuration.
+    If a value differs from db contents, the attr is set, and
+    the object saved.
+
+=cut
+
+sub setConf {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $current_conf = $self->toJSON;
+
+    my $updated = 0;
+    for my $attr (keys %$current_conf) {
+        if ($current_conf->{$attr} ne $args{conf}->{$attr}) {
+            $self->setAttr(name => $attr, value => $args{conf}->{$attr});
+            $updated = 1;
+        }
+    }
+    if ($updated) {
+        $self->save();
+    }
 }
 
 =head2 getGenericMasterGroupName
