@@ -102,6 +102,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 vsphere5_repositories
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Vsphere5Repository>
+
+=cut
+
+__PACKAGE__->has_many(
+  "vsphere5_repositories",
+  "AdministratorDB::Schema::Result::Vsphere5Repository",
+  { "foreign.vsphere5_id" => "self.vsphere5_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 vsphere5_vms
 
 Type: has_many
@@ -118,8 +133,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-16 16:50:57
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MbJ+/TMQMtgsf3qODfVV5Q
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-20 17:02:17
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KIpDgBjXgWh9TBMpWvTD+Q
 
 __PACKAGE__->belongs_to(
   "parent",

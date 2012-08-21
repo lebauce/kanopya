@@ -25,6 +25,8 @@ use warnings;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
+use Vsphere5Repository;
+use Entity::ContainerAccess;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -52,6 +54,102 @@ sub checkHostManagerParams {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'ram', 'core' ]); 
+}
+
+###########################
+## configuration methods ##
+###########################
+
+=head 2 setConf
+
+    Desc: Define the component configuration
+    Args: \%conf
+
+=cut
+
+sub setConf {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
+
+    if (defined $conf->{login}) {
+        $self->setAttr(name => 'vsphere5_login', value => $conf->{login});
+        $self->save();
+    }
+    if (defined $conf->{password}) {
+        $self->setAttr(name => 'vsphere5_pwd', value => $conf->{password});
+        $self->save();
+    }
+}
+
+
+=head 2 getConf
+
+    Desc: Give the component configuration
+    Return: \%conf
+
+=cut
+
+sub getConf {
+    my ($self,%args) = @_;
+
+    my %conf;
+
+    $conf{login}    = $self->vsphere5_login;
+    $conf{password} = $self->vsphere5_pwd;
+
+    return \%conf;
+}
+
+=head2 addRepository
+
+    Desc: Create a new repository for vSphere usage
+    Args: $repository_name, $container_access 
+    Return: newly created repository object
+
+=cut
+
+sub addRepository {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['repository_name', 'container_access']); 
+
+    my $container_access_id = $args{container_access}->getId;
+
+    my $repository = Vsphere5Repository->new(vsphere5_id         => $self->getId,
+                                             repository_name     => $args{repository_name}, 
+                                             container_access_id => $container_access_id,
+                     );
+
+    return $repository;
+}
+
+=head2 getRepository
+
+    Desc: get a repository corresponding to a container access
+    Args: $container_access,
+    Return: $repository object
+
+=cut
+
+sub getRepository {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['container_access']); 
+
+    my $container_access_id = $args{container_access}->getId;
+
+    my $repository = Vsphere5Repository->find(hash => {
+                         container_access_id => $container_access_id } 
+                     );
+
+    if (! defined $repository) {
+        throw Kanopya::Exception::Internal(error => "No repository configured for Vsphere  " .$self->id);
+    }
+ 
+    return $repository;
 }
 
 1;

@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::ContainerAccess;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::ContainerAccess
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::ContainerAccess
+=head1 TABLE: C<container_access>
 
 =cut
 
@@ -100,24 +104,20 @@ __PACKAGE__->add_columns(
   "export_manager_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
-__PACKAGE__->set_primary_key("container_access_id");
 
-=head1 RELATIONS
+=head1 PRIMARY KEY
 
-=head2 container_access
+=over 4
 
-Type: belongs_to
+=item * L</container_access_id>
 
-Related object: L<AdministratorDB::Schema::Result::Entity>
+=back
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "container_access",
-  "AdministratorDB::Schema::Result::Entity",
-  { entity_id => "container_access_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
+__PACKAGE__->set_primary_key("container_access_id");
+
+=head1 RELATIONS
 
 =head2 container
 
@@ -134,19 +134,19 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 file_containers
+=head2 container_access
 
-Type: has_many
+Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::FileContainer>
+Related object: L<AdministratorDB::Schema::Result::Entity>
 
 =cut
 
-__PACKAGE__->has_many(
-  "file_containers",
-  "AdministratorDB::Schema::Result::FileContainer",
-  { "foreign.container_access_id" => "self.container_access_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+__PACKAGE__->belongs_to(
+  "container_access",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "container_access_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 file_container_access
@@ -163,6 +163,21 @@ __PACKAGE__->might_have(
   {
     "foreign.file_container_access_id" => "self.container_access_id",
   },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 file_containers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::FileContainer>
+
+=cut
+
+__PACKAGE__->has_many(
+  "file_containers",
+  "AdministratorDB::Schema::Result::FileContainer",
+  { "foreign.container_access_id" => "self.container_access_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -213,14 +228,31 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 vsphere5_repositories
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-10 14:42:11
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:S23VmZWz/gww5DZCelXTXA
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Vsphere5Repository>
+
+=cut
+
+__PACKAGE__->has_many(
+  "vsphere5_repositories",
+  "AdministratorDB::Schema::Result::Vsphere5Repository",
+  { "foreign.container_access_id" => "self.container_access_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-20 17:02:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:i94NymfudxVX/o+JzMgDjw
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
   { "foreign.entity_id" => "self.container_access_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+  { cascade_copy => 0, cascade_delete => 1 } 
 );
+
 
 1;
