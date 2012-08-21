@@ -1,0 +1,26 @@
+<h2>Configuration for component Mailnotifier</h2>
+
+<form>
+    <table>
+        <thead>
+            <tr>
+                <th>SMTP server</th>
+                <th>Account login</th>
+                <th>Account password</th>
+                <th>Use SSL</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="text" value="{{:smtp_server}}" name="smtp_server" size="25" /></td>
+                <td><input type="text" value="{{:smtp_login}}" name="smtp_login" size="25" /></td>
+                <td><input type="password" value="{{:smtp_passwd}}" name="smtp_passwd" size="25" /></td>
+                <td><input type="checkbox" {{if use_ssl == 1}} checked="checked" {{/if}} name="use_ssl" /></td>
+                <td>
+                    <input type="hidden" value="{{:mailnotifier0_id}}" name="linux0_mount_id" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</form>
