@@ -178,12 +178,9 @@ sub getNextOp {
         { order_by => [ { -asc => 'priority' }, { -asc => 'operation_id' } ]}
     )->next();
     if (! defined $opdata){
-        #$log->info("No operation in queue");
         return;
     }
     my $op = Operation->get(id => $opdata->get_column("operation_id"));
-
-    $log->info("Operation execution: ".$op->getAttr(name => 'type'));
     return $op;
 }
 
@@ -228,7 +225,7 @@ sub delete {
     $params_rs->delete;
     $self->{_dbix}->delete();
 
-    $log->info(ref($self)." deleted from database (removed from execution list)");
+    $log->debug(ref($self)." deleted from database (removed from execution list)");
 }
 
 sub getWorkflow {

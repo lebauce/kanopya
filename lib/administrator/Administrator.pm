@@ -87,7 +87,7 @@ sub loadConfig {
         ! defined $config->{internalnetwork}->{mask})
         {
             $errmsg = "Administrator->new need internalnetwork definition in config file!";
-            #$log->error($errmsg);
+            $log->error($errmsg);
             throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
         }
 
@@ -105,11 +105,10 @@ sub loadConfig {
         ! defined exists $config->{dbconf}->{port})
         {
             $errmsg = "Administrator::loadConfig need db definition in config file!";
-            #$log->error($errmsg);
+            $log->error($errmsg);
             throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
         }
 
-    #$log->info("Administrator configuration loaded");
     return "dbi:" . $config->{dbconf}->{type} .
             ":" . $config->{dbconf}->{name} .
             ":" . $config->{dbconf}->{host} .
@@ -144,9 +143,10 @@ sub authenticate {
 
     if(not defined $user_data) {
         $errmsg = "Authentication failed for login ".$args{login};
+        $log->error($errmsg);
         throw Kanopya::Exception::AuthenticationFailed(error => $errmsg);
     } else {
-        $log->info("Authentication succeed for login ".$args{login});
+        $log->debug("Authentication succeed for login ".$args{login});
         #$rchecker = EntityRights::build(dbixuser => $user_data, schema => $schema);
         $ENV{EID} = $user_data->id;
     }
@@ -279,7 +279,7 @@ sub getRow {
     
     if (not $dbix) {
         $errmsg = "Administrator->getRow : no row found with id $args{id} in table $args{table}";
-        $log->error($errmsg);
+        $log->warn($errmsg);
         throw Kanopya::Exception::Internal::NotFound(error => $errmsg);
     }
     

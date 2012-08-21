@@ -33,20 +33,18 @@ EContext::Local offers execute method via system builtin function
 
 =cut
 package EContext::Local;
+use base "EContext";
 
 use strict;
 use warnings;
-use Data::Dumper;
-use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
-
-use base "EContext";
 use Kanopya::Exceptions;
+use General;
 
-my $log = get_logger("");
+use Log::Log4perl "get_logger";
+my $log = get_logger("command");
 my $errmsg;
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = "1.00";
 
 =head2 $localcontext
 
@@ -63,21 +61,17 @@ my $localcontext;
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     # do not reinstanciate local context, reuse 
     if(defined $localcontext) {
-        $log->debug("EContext::Local instance retrieved");
         return $localcontext;
     }
 
     my $self = $class->SUPER::new(%args);
-
     bless $self, $class;
     $localcontext = $self;
 
-    $log->debug("new EContext::Local instance");
     return $self;
 }
 
@@ -95,13 +89,8 @@ execute ( command )
 =cut
 
 sub execute {
-    my $self = shift;
-    my %args = @_;
-    if(! exists $args{command} or ! defined $args{command}) {
-        $errmsg = "EContext::Local->execute need a command named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
-    }
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['command']);
     
     # command must no contain stderr redirection !
     if($args{command} =~ m/2>/) {
@@ -112,19 +101,20 @@ sub execute {
         
     my $result = {};
     my $command = $args{command};
-    $log->debug("Command execute is : <$command>");
+    $log->info("Running command: $command");
     $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin'; 
     my $stdout = `$command 2> /tmp/EContext.stderr`;
     $result->{exitcode} = $?;
     $result->{stdout} = $stdout;
+    chop($stdout);
     $result->{stderr} = `cat /tmp/EContext.stderr`;
-    $log->debug("Command stdout is : '$result->{stdout}'");
-    $log->debug("Command stderr is : '$result->{stderr}'");
-    $log->debug("Command exitcode is : '$result->{exitcode}'");
-    #if($result->{stderr}) {
-        #throw Kanopya::Exception::Execution(
-            #error => "EContext::Local->execute : got stderr: $result->{stderr}");
-    #}
+    my $stderr = $result->{stderr};
+    chop($stderr);
+    $log->debug("Command stdout is : '$stdout'");
+    if($result->{exitcode} != 0) {
+        $log->warn("Command stderr: $stderr");
+        $log->warn("Command exitcode: $result->{exitcode}");
+    }
     return $result;    
 }
 
@@ -141,15 +131,9 @@ send(src => $srcfullpath, dest => $destfullpath)
 =cut
 
 sub send {
-    my $self = shift;
-    my %args = @_;
-    #TODO check to be sure src and dest are full path to files
-    if((! exists $args{src} or ! defined $args{src}) ||
-       (! exists $args{dest} or ! defined $args{dest})) {
-        $errmsg = "EContext::Local->execute need a src and dest named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
-    }
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['src','dest']);
+    
     if(not -e $args{src}) {
         $errmsg = "EContext::Local->execute src file $args{src} no found";
         $log->error($errmsg);
@@ -158,13 +142,18 @@ sub send {
     # TODO faire plus de test sur la destination
     my $result = {};
     my $command = "cp $args{src} $args{dest}";
-    $log->debug("send Command is : <$command>");
+    $log->info("Running command: $command");
     $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin'; 
     my $stdout = `$command 2> /tmp/EContext.stderr`;
+    $result->{exitcode} = $?;
     $result->{stdout} = $stdout;
     $result->{stderr} = `cat /tmp/EContext.stderr`;
-    $log->debug("Command stdout is : '$result->{stdout}'");
-    $log->debug("Command stderr is : '$result->{stderr}'");
+    my $stderr = $result->{stderr};
+    chop($stderr);
+    if($result->{exitcode} != 0) {
+        $log->warn("Command stderr: $stderr");
+        $log->warn("Command exitcode: $result->{exitcode}");
+    }
     return $result;
 }
 

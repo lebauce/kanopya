@@ -44,15 +44,14 @@ if ($^O eq 'linux') {
     require Net::SSH::Perl;
 }
 use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
 
 use General;
 use Kanopya::Exceptions;
 
-my $log = get_logger("");
+my $log = get_logger("command");
 my $errmsg;
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = "1.00";
 
 
 =head2 new
@@ -62,12 +61,11 @@ constructor
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
-    my $self = $class->SUPER::new(%args);
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'ip' ]);
 
+    my $self = $class->SUPER::new(%args);
     $self->{ip} = $args{ip};
 
     # is the host available on ssh port 22
@@ -76,7 +74,7 @@ sub new {
     if(not $p->ping($args{ip}, 2)) {
         $p->close();
         $errmsg = "EContext::SSH->new : can't contact $args{ip} on port 22";
-        $log->error($errmsg);
+        $log->debug($errmsg);
         throw Kanopya::Exception::Network(error => $errmsg);
     }
     $p->close();
@@ -92,7 +90,7 @@ sub new {
 =cut
 
 sub _init {
-    my $self = shift;
+    my ($self) = @_;
     $log->debug("Initialise ssh connection to $self->{ip}");
     my %opts = (
         user        => 'root',                   # user login
@@ -131,9 +129,10 @@ execute ( command )
 =cut
 
 sub execute {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+    
     General::checkParams(args => \%args, required => ['command']);
+    
     if($args{command} =~ m/2>/) {
         $errmsg = "EContext::SSH->execute : command must not contain stderr redirection (2>)!";
         $log->error($errmsg);
@@ -141,20 +140,19 @@ sub execute {
     }
 
     if(not exists $self->{ssh}) {
-        $log->debug("Initialize ssh connection on $self->{ip}");
         $self->_init();
     }
 
     my $result = {};
     my $command = $args{command};
-    $log->debug("Command execute is : <$command>");
+    $log->info("Running command on $self->{ip}: $command");
     my ($stdout, $stderr) = $self->{ssh}->capture2($command);
 
     $result->{stdout} = $stdout;
     $result->{stderr} = $stderr;
     $result->{exitcode} = 0;
-    $log->debug("Command stdout is : '$result->{stdout}'");
-    $log->debug("Command stderr is : '$result->{stderr}'");
+    chop($stdout);
+    chop($stderr);
     my $error = $self->{ssh}->error;
     if($error) {
          if($error =~ /child exited with code (\d)/) {
@@ -165,8 +163,13 @@ sub execute {
              $log->error($errmsg);
              throw Kanopya::Exception::Execution(error => $errmsg);
          }
+    } else {
+        $log->debug("Command stdout is : '$stdout'");
+        if($result->{exitcode} != 0) {
+            $log->warn("Command stderr: $stderr");
+            $log->warn("Command exitcode: $result->{exitcode}");
+        }
     }
-    $log->debug("Command exitcode is : '$result->{exitcode}'");
     return $result;
 }
 
@@ -183,8 +186,7 @@ send(src => $srcfullpath, dest => $destfullpath)
 =cut
 
 sub send {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => %args, required => ['src', 'dest']);
     #TODO check to be sure src and dest are full path to files
@@ -196,7 +198,6 @@ sub send {
     }
 
     if(not exists $self->{ssh}) {
-        $log->debug("Initialize ssh connection on $self->{ip}");
         $self->_init();
     }
 

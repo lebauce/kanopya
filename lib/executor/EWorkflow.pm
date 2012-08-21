@@ -19,13 +19,10 @@ package EWorkflow;
 
 use strict;
 use warnings;
-
 use Kanopya::Exceptions;
 use Operation;
 use EFactory;
-
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -33,13 +30,12 @@ my $errmsg;
 use vars qw ( $AUTOLOAD );
 
 sub _getWorkflow{
-    my $self = shift;
+    my ($self) = @_;
     return $self->{_workflow};
 }
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'data', 'config' ]);
 
@@ -50,13 +46,11 @@ sub new {
     };
 
     bless $self, $class;
-
     return $self;
 }
 
 sub cancel {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     # TODO: filter on states to get operation to cancel only.
     my @operations = Operation->search(hash => {
@@ -80,15 +74,14 @@ sub cancel {
 }
 
 sub getEContext {
-    my $self = shift;
+    my ($self) = @_;
 
     return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
                                  ip_destination => $self->{_executor}->getMasterNodeIp());
 }
 
 sub AUTOLOAD {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
@@ -96,9 +89,7 @@ sub AUTOLOAD {
     return $self->_getWorkflow->$method(%args);
 }
 
-sub DESTROY {
-    my $self = shift;
-    my %args = @_;
-}
+# DESTROY definition required for AUTOLOAD
+sub DESTROY {}
 
 1;

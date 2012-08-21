@@ -34,7 +34,6 @@ use Data::Dumper;
 use General;
 use Log::Log4perl "get_logger";
 
-
 my $log = get_logger("");
 my $errmsg;
 
@@ -49,8 +48,7 @@ my $VERSION = "1.00";
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class) = @_;
         
     my $self = {
         function    => undef,
@@ -63,9 +61,7 @@ sub new {
     return $self;
 }
 
-sub print {
-    
-}
+sub print {}
 
 =head2 add
 
@@ -74,27 +70,18 @@ sub print {
 =cut
 
 sub add {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
     General::checkParams(args => \%args,
                          required => ['function', 'parameters']);
-
-#    $self->{last_inserted} = undef;
-    $log->debug("add rollback func $args{function}");
 
     if (not defined $self->{function}) {
         $self->{function} = $args{function};
         $self->{parameters} = $args{parameters};
         $self->{last_inserted} = $self;
-
-        $log->debug("First rollback <" . $self->{function} . "> inserted.");
     }
     else {
         if ($self->{before}){
-            $log->debug("Before defined <" . $self->{before}->{function}. ">, try to insert <" .
-                        $args{function} . "> before it.");
-
             my $eroll = $self->find(erollback => $self->{before});
             my $previous = $eroll->{prev_item};
 
@@ -107,16 +94,6 @@ sub add {
             if ($previous) {
                 $previous->{next_item} = $eroll->{prev_item};
             }
-#            else {
-#                $self->{function}   = $eroll->{prev_item}->{function};
-#                $self->{parameters} = $eroll->{prev_item}->{parameters};
-#                $self->{prev_item}  = $eroll->{prev_item}->{prev_item};
-#                $self->{next_item}  = $eroll->{prev_item}->{next_item};
-#            }
-
-            $log->debug("Rollback <" . $eroll->{prev_item}->{function} . "> inserted before <" .
-                        $eroll->{function} . ">.");
-
             $self->{last_inserted} = $eroll->{prev_item};
             $self->{before} = undef;
         }
@@ -133,10 +110,6 @@ sub add {
                 $next->{prev_item} = $eroll->{next_item};
             }
             $self->{last_inserted} = $eroll->{next_item};
-
-            $log->debug("Rollback <".$eroll->{next_item}->{function}. "> inserted after <" .
-                        $self->{after}->{function} . ">");
-
             $self->{after} = undef;
         }
         else {
@@ -149,11 +122,12 @@ sub add {
             $self->{last_inserted} = $last->{next_item};
         }
     }
+    $log->debug('One function added to rollback');
 }
 
 sub find {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+
     General::checkParams(args => \%args,
                          required => ['erollback']);
     my $tmp = $self;
@@ -168,8 +142,7 @@ sub find {
 }
 
 sub insertNextErollBefore{
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['erollback']);
 
@@ -179,16 +152,15 @@ sub insertNextErollBefore{
 }
 
 sub insertNextErollAfter{
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+
     General::checkParams(args => \%args,
                          required => ['erollback']);
     $self->{after} = $args{erollback};
 }
 
 sub getLastInserted{
-    my $self = shift;
-    $log->debug("Get last inserted in rollback <" . $self->{last_inserted}->{function} . ">");
+    my ($self) = @_;
     return $self->{last_inserted};
 }
 
@@ -197,7 +169,7 @@ sub getLastInserted{
 =cut
 
 sub _last {
-    my $self = shift;
+    my ($self) = @_;
     my $tmp = $self;
 
     while ($tmp->{'next_item'}) {
@@ -206,16 +178,15 @@ sub _last {
     return $tmp;
 }
 
-=head2 recursive_del
+=head2 _recursive_del
 
 =cut
 
-sub recursive_del {
-    my $self = shift;
+sub _recursive_del {
+    my ($self) = @_;
     if ($self->{next_item}) {
-        $self->{next_item}->recursive_del();
+        $self->{next_item}->_recursive_del();
     }
-    $self->DESTROY();
 }
 
 =head2 undo
@@ -223,7 +194,7 @@ sub recursive_del {
 =cut
 
 sub undo {
-    my $self = shift;
+    my ($self) = @_;
     my $current = $self->_last;
 
     while ($current && $current->{function}) {
@@ -241,14 +212,10 @@ sub undo {
 
         $current = $current->{prev_item};
     }
-    $self->recursive_del;
+    $self->_recursive_del;
 }
 
-=head2 DESTROY
 
-=cut
-
-sub DESTROY {}
 
 1;
 

@@ -142,7 +142,7 @@ sub prerequisites {
     $self->{context}->{host}->setState(state => "up");
     $self->{context}->{host}->setNodeState(state => "in");
 
-    $log->debug("Host <$host_id> in cluster <$cluster_id> is 'up', preparing PostStartNode.");
+    $log->debug("Host <$host_id> in cluster <$cluster_id> is 'up'");
 
     return 0;
 }

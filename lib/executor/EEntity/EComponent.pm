@@ -115,43 +115,29 @@ sub postStartNode {}
 sub preStartNode{}
 sub preStopNode{return 0;}
 sub postStopNode{}
-sub cleanNode {
-#    my $class = shift;
-#    my %args = @_;
-#
-#    General::checkParams(args => \%args,
-#                         required => ['host', ]);
-
-}
+sub cleanNode {}
 
 sub isUp {
-    my $self = shift;
-    my %args = @_;
-    my $availability = 1;
-
+    my ($self, %args) = @_;
     General::checkParams( args => \%args, required => ['cluster', 'host' ] );
-
+    
+    my $availability = 1;
     my $execution_list = $self->{_entity}->getExecToTest();
     my $net_conf = $self->{_entity}->getNetConf();
 
     # Test executable
-    $log->debug("Test component " . ref $self);
     foreach my $i (keys %$execution_list) {
         my $ret;
         eval {
             $ret = $args{host}->getEContext->execute(command => $execution_list->{$i}->{cmd});
-            $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");
-            $log->debug("Value returned are <$ret->{stdout}> and has to match $execution_list->{$i}->{answer}")
         };
         if ($@ || (not defined $ret->{stdout}) || $ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
             return 0;
         }
     }
-#    my $scanner = new Nmap::Scanner;
-#    $scanner->max_rtt_timeout(200);
+
     my $ip = $args{host}->getAdminIp;
-#    $scanner->add_target($ip);
-#        $scanner->fast_scan();
+    my $econtext = $self->getExecutorEContext;
 
     # Test Services
     while(my ($port, $protocols) = each %$net_conf) {
@@ -166,9 +152,9 @@ sub isUp {
                 $cmd .= "-sT ";
             }
             $cmd .= "-p $port $ip | grep $port | cut -d\" \" -f2";
-            my $port_state = `$cmd`;
+            my $result = $econtext->execute(command => $cmd);
+            my $port_state = $result->{stdout};
             chomp($port_state);
-            $log->debug("Check host <$ip> on port $port ($proto) is <$port_state>");
             if ($port_state eq "closed"){
                 return 0;
             }
@@ -176,36 +162,14 @@ sub isUp {
     }
     return 1;
 }
-    # Test Services
-#    foreach my $j (keys %$net_conf) {
-#        my $cmd = "nmap ";
-#        if ($net_conf->{$j} eq "udp") {
-#            $cmd .= "-sU ";
-##            $scanner->udp_scan();
-#        }
-#        else {
-#            $cmd .= "-sT ";
-##            $scanner->tcp_connect_scan();
-#        }
-#        $cmd .= "-p $j $ip | grep $j | cut -d\" \" -f1";
-##        $scanner->add_scan_port($j);
-##        my $results = $scanner->scan();
-##        my $port_state = $results->get_host_list()->get_next()->get_port_list()->get_next()->state();
-#        my $port_state = `$cmd`;
-#        $log->debug("Check host <$ip> on port $j ($net_conf->{$j}) is <$port_state>");
-#        if ($port_state eq "closed"){
-#            return 0;
-#        }
-##        $scanner->reset_scan_ports();
-#     }
-#    return 1;
+
 
 =head2 getEContext
 
 =cut
 
 sub getEContext {
-    my $self = shift;
+    my ($self) = @_;
 
     my $service_provider = $self->getServiceProvider;
     return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),

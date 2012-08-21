@@ -313,6 +313,8 @@ sub lock {
             throw Kanopya::Exception::Execution::Locked(
                       error => "Entity <" . $self->getId . "> already locked."
                   );
+        } else {
+            $log->debug("Entity <" . $self->getId . "> already locked on workflow <$workflow_id>");
         }
     }
 }

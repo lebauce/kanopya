@@ -72,6 +72,7 @@ sub getHost {
 
     if (scalar @valid_hosts == 0) {
         my $errmsg = "no free host respecting constraints";
+        $log->warn($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 

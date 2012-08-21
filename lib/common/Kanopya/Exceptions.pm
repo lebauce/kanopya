@@ -159,8 +159,8 @@ Kanopya::Exception->Trace(0);
 sub Kanopya::Exception::full_message {
      my $self = shift;
 
-    my $except_string = "## EXCEPTION : " . $self->description . " ##";
-    $except_string .= "\n" . $self->message if ($self->message ne "");
+    my $except_string = $self->description . ":";
+    $except_string .= $self->message if ($self->message ne "");
 
     # Show fields
     for my $field ( $self->Fields ) {

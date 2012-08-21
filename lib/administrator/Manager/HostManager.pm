@@ -95,21 +95,22 @@ sub addHost {
     }
 
     # Add power supply card if required
-    eval {
-        General::checkParams(args => \%args, required => [ "powersupplycard_id",
-                                                           "powersupplyport_number" ]);
+    if(exists $args{powersupplycard_id}) {
+        eval {
+            General::checkParams(args => \%args, required => [ "powersupplycard_id",
+                                                               "powersupplyport_number" ]);
 
-        my $powersupplycard = Entity::Powersupplycard->get(id => $args{powersupplycard_id});
-        my $powersupply_id  = $powersupplycard->addPowerSupplyPort(
-                                  powersupplyport_number => $args{powersupplyport_number}
-                              );
+            my $powersupplycard = Entity::Powersupplycard->get(id => $args{powersupplycard_id});
+            my $powersupply_id  = $powersupplycard->addPowerSupplyPort(
+                                      powersupplyport_number => $args{powersupplyport_number}
+                                  );
 
-        $host->setAttr(name  => 'host_powersupply_id', value => $powersupply_id);
-    };
-    if($@) {
-        $log->info("No power supply card provided for host <" . $host->getAttr(name => 'host_id') . ">")
+            $host->setAttr(name  => 'host_powersupply_id', value => $powersupply_id);
+        };
+        if($@) {
+            $log->info("No power supply card provided for host <" . $host->getAttr(name => 'host_id') . ">")
+        }
     }
-
     # Set initial state to down
     $host->setAttr(name => 'host_state', value => 'down:' . time);
 

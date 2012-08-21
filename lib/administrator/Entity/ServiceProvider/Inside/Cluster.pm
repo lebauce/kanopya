@@ -899,21 +899,14 @@ sub getComponents {
 	);
 
     my %comps;
-    $log->debug("Category is $args{category}");
     while ( my $component_row = $components_rs->next ) {
         my $comp_id           = $component_row->get_column('component_id');
         my $comptype_category = $component_row->get_column('component_category');
         my $comptype_name     = $component_row->get_column('component_name');
         my $comptype_version  = $component_row->get_column('component_version');
 
-        $log->debug("Component name: $comptype_name");
-        $log->debug("Component version: $comptype_version");
-        $log->debug("Component category: $comptype_category");
-        $log->debug("Component id: $comp_id");
-
         if (($args{category} eq "all")||
             ($args{category} eq $comptype_category)){
-            $log->debug("One component instance found with " . ref($component_row));
             my $class= "Entity::Component::" . $comptype_name . $comptype_version;
             my $loc = General::getLocFromClass(entityclass=>$class);
             eval { require $loc; };
@@ -936,8 +929,7 @@ sub getComponents {
 =cut
 
 sub getComponent{
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['name','version']);
 
@@ -957,8 +949,6 @@ sub getComponent{
                                   join => [ "component_type" ] }
                             );
 
-        $log->debug("Name is $args{name}, version is $args{version}");
-
         $component_row = $components_rs->next;
     };
     if (not defined $component_row or $@) {
@@ -967,9 +957,6 @@ sub getComponent{
                            "not installed on this cluster:\n$@"
               );
     }
-
-    $log->debug("Comp name is " . $component_row->get_column('component_name'));
-    $log->debug("Component found with " . ref($component_row));
 
     my $comp_category = $component_row->get_column('component_category');
     my $comp_id       = $component_row->id;
@@ -1032,13 +1019,11 @@ sub getMasterNode {
 }
 
 sub getMasterNodeIp {
-    my $self = shift;
+    my ($self) = @_;
     my $master = $self->getMasterNode();
 
     if ($master) {
         my $node_ip = $master->getAdminIp;
-
-        $log->debug("Master node found and its ip is $node_ip");
         return $node_ip;
     }
 }
@@ -1144,7 +1129,7 @@ sub removeComponent {
 =cut
 
 sub getHosts {
-    my $self = shift;
+    my ($self) = @_;
 
     my %hosts;
     eval {
@@ -1155,7 +1140,6 @@ sub getHosts {
             eval {
                 $hosts{$host_id} = $host;
             };
-            $log->debug("Host $host_id found in cluster " . $self->getId);
         }
     };
     if ($@) {

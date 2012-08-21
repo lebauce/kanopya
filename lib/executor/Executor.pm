@@ -70,7 +70,7 @@ Executor::new creates a new executor object.
 =cut
 
 sub new {
-    my $class = shift;
+    my ($class) = @_;
     my $self = {};
 
     bless $self, $class;
@@ -96,8 +96,7 @@ Executor->run() run the executor server.
 =cut
 
 sub run {
-    my $self = shift;
-    my $running = shift;
+    my ($self, $running) = @_;
     
     Message->send(
         from    => 'Executor',
@@ -117,41 +116,51 @@ sub run {
 }
 
 sub oneRun {
-    my $self = shift;
+    my ($self) = @_;
     my $adm = Administrator->new();
 
     my $operation = Operation->getNextOp(include_blocked => $self->{include_blocked});
 
-    my ($op, $opclass, $workflow, $delay, $errors);
+    my ($op, $opclass, $workflow, $delay, $logprefix);
     if ($operation){
+        $log->info("\n\n");
         $workflow = EWorkflow->new(data => $operation->getWorkflow, config => $self->{config}) ;
+        my $workflow_name = $workflow->getAttr(name => 'workflow_name');
+        $workflow_name = defined $workflow_name ? $workflow_name : 'Anonymous';
+        my $workflow_id = $workflow->getAttr(name => 'workflow_id');
+        
 
         # Initialize EOperation and context
         eval {
             $op = EFactory::newEOperation(op => $operation, config => $self->{config});
             $opclass = ref($op);
+            my $op_type = $op->getAttr(name => 'type');
+            my $op_id = $op->getAttr(name => 'operation_id');
+            $logprefix = "[$workflow_name workflow <$workflow_id> -";
+            $logprefix .= " Operation $op_type <$op_id>]";
 
-            $log->info("---- [$opclass] retrieved ; execution processing ----");
+            $log->info("---- $logprefix ----");
             Message->send(
                 from    => 'Executor',
                 level   => 'info',
                 content => "Operation Processing [$opclass]..."
             );
 
-            $log->debug("Calling check of operation $opclass.");
+            $log->info("$opclass Check step");
             $op->check();
         };
         if ($@) {
-            $log->error("Error during operation context initilisation:\n$@");
+            $log->error("$opclass context initilisation failed:$@");
 
             # Probably a compilation error on the operation class.
+            $log->info("Cancelling $workflow_name workflow <$workflow_id>");
             $workflow->cancel(config => $self->{config});
             return;
         }
 
         # Try to lock the context to check if entities are locked by others workflow
         eval {
-            $log->debug("Calling lock of operation $opclass.");
+            $log->debug("Locking context for $opclass");
             $operation->lockContext();
 
             if ($op->getAttr(name => 'state') eq 'blocked') {
@@ -178,7 +187,7 @@ sub oneRun {
             if ($op->getAttr(name => 'state') eq 'ready' or
                 $op->getAttr(name => 'state') eq 'prereported') {
 
-                $log->debug("Calling prerequisite of operation $opclass.");
+                $log->info("$opclass Prerequisites step");
                 $delay = $op->prerequisites();
 
                 # If the prerequisite are validated, process the operation
@@ -190,10 +199,10 @@ sub oneRun {
                     # Start transaction for processing
                     $adm->{db}->txn_begin;
 
-                    $log->debug("Calling prepare of operation $opclass.");
+                    $log->info("$opclass Prepare step");
                     $op->prepare();
 
-                    $log->debug("Calling execute of operation $opclass.");
+                    $log->info("$opclass Process step");
                     $op->process();
                 }
             }
@@ -202,7 +211,7 @@ sub oneRun {
             if ($op->getAttr(name => 'state') eq 'processing' or
                 $op->getAttr(name => 'state') eq 'postreported') {
 
-                $log->debug("Calling postrequisite of operation $opclass.");
+                $log->info("$opclass Postrequisites step");
                 $delay = $op->postrequisites();
             }
 
@@ -222,7 +231,6 @@ sub oneRun {
                 }
 
                 $adm->{db}->txn_commit;
-                $log->info("---- [$opclass] Execution reported ($delay s.) ----");
                 
                 throw Kanopya::Exception::Execution::OperationReported(error => 'Operation reported');
             }
@@ -231,12 +239,17 @@ sub oneRun {
             my $err_exec = $@;
 
             if ($err_exec->isa('Kanopya::Exception::Execution::OperationReported')) {
+                $log->info("--- $logprefix Processing REPORTED ($delay s.)");
                 return;
+            } else {
+                $log->error("--- $logprefix Processing FAILED : $err_exec");
             }
+
+            $log->info("$opclass rollback processing");
+            $op->{erollback}->undo();
 
             # Rollback transaction
             $adm->{db}->txn_rollback;
-            $log->info("Rollback, Cancel workflow will be call");
 
             # Cancelling the workflow
             eval {
@@ -247,45 +260,44 @@ sub oneRun {
 
                 # Try to cancel all workflow operations, and delete them.
                 # Context entities will be unlocked by this call
+                $log->info("Cancelling $workflow_name workflow $workflow_id");
                 $workflow->cancel(config => $self->{config});
 
 #                $adm->{db}->txn_commit;
             };
             if ($@){
                 my $err_rollback = $@;
-                $log->error("Error during workflow cancel :\n$err_rollback");
-
-                $errors .= $err_rollback;
+                $log->error("Workflow cancel failed:$err_rollback");
             }
+            
             if (!(ref($err_exec) eq "HASH") or !$err_exec->{hidden}){
                 Message->send(
                     from    => 'Executor',
                     level   => 'error',
                     content => "[$opclass] Execution Aborted : $err_exec"
                 );
-                $log->error("Error during execution : $err_exec");
+                
             }
             else {
                 $log->info("Warning : $err_exec");
             }
-            $errors .= $err_exec;
+            
         }
         else {
             # Finishing the operation.
             eval {
+                $log->info("$opclass Finish step");
                 $op->finish();
             };
             if ($@) {
                 my $err_finish = $@;
-                $log->error("Error during operation finish :\n$err_finish");
-
-                $errors .= $err_finish;
+                $log->error("Finish failed :$err_finish");
             }
 
             # Commit transaction
             $adm->{db}->txn_commit;
 
-            $log->info("---- [$opclass] Execution succeed ----");
+            $log->info("---- $logprefix Processing SUCCEED ----");
             Message->send(
                 from    => 'Executor',
                 level   => 'info',
@@ -294,13 +306,12 @@ sub oneRun {
 
             # Unlock the context to update it.
             eval {
+                $log->debug("Unlocking context for $opclass");
                 $operation->unlockContext();
             };
             if ($@) {
                 my $err_unlock = $@;
-                $log->error("Error during context unlock :\n$err_unlock");
-
-                $errors .= $err_unlock;
+                $log->error("Context unlock failed:$err_unlock");
             }
 
             eval {
@@ -310,8 +321,6 @@ sub oneRun {
             if ($@) {
                 my $err_prepare = $@;
                 $log->error("Error during workflow prepare :\n$err_prepare");
-
-                $errors .= $err_prepare;
             }
         }
 
@@ -322,10 +331,6 @@ sub oneRun {
     else {
         sleep 5;
     }
-
-    if (defined $errors) {
-        throw Kanopya::Exception::Execution(error => $errors);
-    };
 }
 
 =head2 execnrun
@@ -335,8 +340,7 @@ Executor->execnround((run => $nbrun)) run the executor server for only one round
 =cut
 
 sub execnround {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     while ($args{run}) {
         $args{run} -= 1;

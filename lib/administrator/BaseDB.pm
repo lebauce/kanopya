@@ -2,6 +2,8 @@
 
 package BaseDB;
 
+use strict;
+use warnings;
 use Data::Dumper;
 use Administrator;
 use General;
@@ -9,12 +11,11 @@ use POSIX qw(ceil);
 use Hash::Merge;
 use Class::ISA;
 
-
-use warnings;
+use vars qw ( $AUTOLOAD );
 
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("");
+my $log = get_logger("basedb");
 my $errmsg;
 my %class_type_cache;
 
@@ -282,9 +283,8 @@ sub classFromDbix {
 =cut
 
 sub checkAttr {
-    my $self = shift;
+    my ($self, %args) = @_;
     my $class = ref($self) || $self;
-    my %args = @_;
 
     General::checkParams(args => \%args, required => ['name']);
 
@@ -316,9 +316,8 @@ sub checkAttr {
 =cut
 
 sub checkAttrs {
-    my $self = shift;
+    my ($self, %args) = @_;
     my $class = ref($self) || $self;
-    my %args = @_;
     my $final_attrs = {};
     my $attributes_def = $class->getAttrDefs();
     
@@ -392,11 +391,8 @@ sub checkAttrs {
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
-
+    my ($class, %args) = @_;
     my $attrs = $class->checkAttrs(attrs => \%args);
-
     my $adm = Administrator->new();
 
     # Get the class_type_id for class name
@@ -424,8 +420,7 @@ sub new {
 =cut
 
 sub promote {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'promoted' ]);
 
@@ -480,8 +475,7 @@ sub promote {
 =cut
 
 sub demote {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'demoted' ]);
 
@@ -515,15 +509,12 @@ sub demote {
 }
 
 sub newDBix {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'attrs' ]);
 
     my $adm = Administrator->new();
-
     my $subclass = defined $args{subclass} ? $args{subclass} : $class;
-
     my $dbixroot = $adm->_newDbix(table => _rootTable($subclass), row => $args{attrs});
 
     eval {
@@ -531,7 +522,7 @@ sub newDBix {
     };
     if ($@) {
         $errmsg = $@;
-        $log->error($errmsg);
+        #$log->error($errmsg);
 
         # Try to extract the reason msg only
         $errmsg =~ s/\[.*$//g;
@@ -576,8 +567,7 @@ sub fromDBIx {
 =cut
 
 sub getAttr {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     my $dbix = $self->{_dbix};
     my $value = undef;
     my $found = 1;
@@ -629,7 +619,7 @@ sub getAttr {
 =cut
 
 sub getAttrs {
-    my $self = shift;
+    my ($self) = @_;
     my $dbix = $self->{_dbix};
      
    # build hash corresponding to class table (with local changes)
@@ -658,8 +648,7 @@ sub getAttrs {
 =cut
 
 sub setAttr {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['name']);
 
@@ -704,8 +693,7 @@ sub setAttr {
 =cut
 
 sub get {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => ['id']);
 
@@ -768,7 +756,7 @@ sub getClassType {
 =cut
 
 sub getJoin {
-    my $class = shift;
+    my ($class) = @_;
 
     my $parent_join;
     my @hierarchy = split(/::/, $class);
@@ -795,8 +783,7 @@ sub getJoin {
 =cut
 
 sub getJoinQuery {
-    my $class = shift;
-    my @comps = @_;
+    my ($class, @comps) = @_;
 
     my $adm = Administrator->new();
     my $source = $adm->{db}->source(_buildClassNameFromString($class));
@@ -834,8 +821,7 @@ sub getJoinQuery {
 =cut
 
 sub search {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
     my @objs = ();
 
     General::checkParams(args => \%args, required => ['hash']);
@@ -929,9 +915,7 @@ sub search {
 =cut
 
 sub find {
-    my $class = shift;
-    my %args = @_;
-    my @objs = ();
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => ['hash']);
 
@@ -954,7 +938,7 @@ sub find {
 =cut
 
 sub save {
-    my $self = shift;
+    my ($self) = @_;
     my $dbix = $self->{_dbix};
 
     my $id;
@@ -979,8 +963,7 @@ sub save {
 =cut
 
 sub delete {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     my $dbix = $self->{_dbix};
 
     if (defined $args{trunc}) {
@@ -1012,7 +995,7 @@ sub delete {
 
 =cut
 
-sub toString{
+sub toString {
     return "";
 }
 
@@ -1104,8 +1087,7 @@ sub toJSON {
 =cut
 
 sub AUTOLOAD {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
         
     my @autoload = split(/::/, $AUTOLOAD);
     my $accessor = $autoload[-1];
@@ -1113,7 +1095,7 @@ sub AUTOLOAD {
     return $self->getAttr(name => $accessor);
 }
 
-sub DESTROY {
-}
+# DESTROY definition required by AUTOLOAD
+sub DESTROY {}
 
 1;

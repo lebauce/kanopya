@@ -60,12 +60,13 @@ sub prerequisites {
     foreach my $key (keys %$components) {
         my $ready = $components->{$key}->readyNodeAddition(host_id => $host_id);
         if (not $ready) {
-            $log->debug("Cluster <$cluster_id> not ready for node addition, retrying in $delay seconds");
+            my $component_class = ref($components->{$key});
+            $log->info("Component $component_class on Cluster <$cluster_id> not ready for node addition");
             return $delay;
         }
     }
 
-    $log->debug("Cluster <$cluster_id> ready for node addition, preparing StartNode.");
+    $log->debug("Cluster <$cluster_id> ready for node addition");
     return 0;
 }
 

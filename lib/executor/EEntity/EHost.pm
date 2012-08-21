@@ -105,8 +105,7 @@ sub ping {
 }
 
 sub checkUp {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $ip = $self->getAdminIp;
     my $ping = Net::Ping->new();
@@ -116,8 +115,6 @@ sub checkUp {
     if ($pingable) {
         eval {
             $self->getEContext;
-
-            $log->debug("In checkUP test if host <$ip> is pingable <$pingable>\n");
         };
         if ($@) {
             $log->info("Ehost->checkUp for host <$ip>, host pingable but not sshable");

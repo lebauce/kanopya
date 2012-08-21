@@ -138,7 +138,6 @@ sub newEContext {
     #Create EContext::Local or EContext::SSH
     if($args{ip_source} eq $args{ip_destination}) {
         # EContext::Local
-        $log->debug("ip_source & ip_destination are the same, using EContext::Local");
         use EContext::Local;
         return EContext::Local->new(local => $args{ip_source});
     } else {
