@@ -1,0 +1,12 @@
+An operation "[% operation %]" is waiting your approval.
+
+To validate the execution of this operation, click on the following validation link:
+
+[% validation_url %]
+
+You can deny this validation by clicking on the following link:
+
+[% deny_url %]
+
+
+Kanopya execution system.
