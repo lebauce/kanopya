@@ -32,12 +32,12 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     smtp_server => {
-        pattern      => '^\d*$',
+        pattern      => '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
         is_mandatory => 1,
         is_extended  => 0
     },
     smtp_login => {
-        pattern      => '^\w*$',
+        pattern      => '^.*$',
         is_mandatory => 0,
         is_extended  => 0
     },
