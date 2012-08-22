@@ -84,4 +84,38 @@ sub getVmResources {
     return $vms_ressources;
 };
 
+=head2 pinVCpu
+
+    Pin a VM VCPU on hyoervisor's CPU 0
+
+=cut
+
+sub pinVCpu {
+    my $self    = shift;
+    my %args    = @_;
+
+    General::checkParams(args => \%args, required => [ 'vm', 'vcpu' ]);
+
+    my $command = "virsh vcpupin one-$args{vm}->onevm_id $args{vcpu} 0";
+
+    $self->getEContext->execute("$command");
+}
+
+=head2 unpinVCPU
+    
+    Unpin a VM VCPU from hypervisor's CPU 0
+
+=cut
+
+sub unpinVCpu {
+    my $self    = shift;
+    my %args    = @_;
+
+    General::checkParams(args => \%args, required => [ 'vm', 'vcpu' ]);
+
+    my $command = "virsh vcpupin one-$args{vm}->onevm_id $args{vcpu} 0-" . ($self->host_core - 1);
+
+    $self->getEContext->execute("$command");
+}
+
 1;
