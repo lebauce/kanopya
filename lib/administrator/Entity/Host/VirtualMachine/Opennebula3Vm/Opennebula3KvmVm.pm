@@ -41,4 +41,20 @@ sub methods {
     return {};
 }
 
+=head2 updateCPU
+
+=cut
+
+sub updateCPU {
+    my $self    = shift;
+    my %args    = @_;
+
+    General::checkParams(args => \%args, required => [ 'cpu_number' ]);
+
+    if ($args{cpu_number} > $self->opennebula3_kvm_vm_cores) {
+        $self->setAttr(name => 'opennebula3_kvm_vm_cores', value => $args{cpu_number});
+    }
+    $self->SUPER::updateCPU(%args);
+}
+
 1;
