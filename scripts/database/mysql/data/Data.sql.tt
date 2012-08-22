@@ -734,10 +734,10 @@ SET @eid := @eid +1;
 -- Mailnotifier0
 --
 
-INSERT INTO `entity` VALUES (@eid, 88, NULL);
-INSERT INTO `component` VALUES(@eid, @admin_cluster, 22, NULL, NULL);
-INSERT INTO `mailnotifier0` VALUES(@eid, 'localhost', NULL, NULL, 0);
-SET @eid := @eid +1;
+-- INSERT INTO `entity` VALUES (@eid, 88, NULL);
+-- INSERT INTO `component` VALUES(@eid, @admin_cluster, 22, NULL, NULL);
+-- INSERT INTO `mailnotifier0` VALUES(@eid, 'localhost', NULL, NULL, 0);
+-- SET @eid := @eid +1;
 
 
 --
