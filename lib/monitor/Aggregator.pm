@@ -26,7 +26,7 @@ use Clustermetric;
 use Kanopya::Config;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("aggregator");
+my $log = get_logger("");
 
 sub getMethods {
   return {
