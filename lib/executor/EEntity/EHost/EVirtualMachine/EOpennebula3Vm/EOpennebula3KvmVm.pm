@@ -25,64 +25,33 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 
-sub _onOffCpu {
-    my $self    = shift;
-    my %args    = @_;
-
-    General::checkParams(args => \%args, required => [ 'cpu', 'online' ]);
-
-    my $command = "echo $args{online} > /sys/devices/system/cpu/cpu$args{cpu}/online";
-
-    $self->getEContext->execute(command => "$command");
-}
-
-=head2 unplugCpu
-
-    Unplug a CPU by echoing 0 in his `online` file
-
-=cut
-
-sub unplugCpu {
-    my $self    = shift;
-    my %args    = @_;
-
-    General::checkParams(args => \%args, required => [ 'cpu' ]);
-
-    $self->_onOffCpu(cpu => $args{cpu}, online => 0);
-}
-
-=head2 plugCpu
-
-    Plug a CPU by echoing 1 in his `online` file
-
-=cut
-
-sub plugCpu {
-    my $self    = shift;
-    my %args    = @_;
-
-    General::checkParams(args => \%args, required => [ 'cpu' ]);
-
-    $self->_onOffCpu(cpu => $args{cpu}, online => 1);
-}
-
 =hea2 updateCpus
 
 =cut
 
 sub updateCpus {
     my $self    = shift;
+    my %args    = @_;
 
+    General::checkParams(args => \%args, optional => { cpus => $self->host_core });
+ 
     my $i       = 0;
+    my $cmd     = "";
     while ($i < $self->opennebula3_kvm_vm_cores) {
-        if ($i < $self->host_core) {
-            $self->plugCpu(cpu => $i);
+        if ($i < $args{cpus}) {
+            $cmd  .= "echo 1 > /sys/devices/system/cpu/cpu$i/online ; ";
         }
         else {
-            $self->unplugCpu(cpu => $i);
+            $cmd  .= "echo 0 > /sys/devices/system/cpu/cpu$i/online ; ";
         }
         ++$i;
     }
+    $self->getEContext->execute("$cmd");
+    
+    (EFactory::newEEntity(data => $self->hypervisor))->updatePinning(
+        vm      => $self,
+        cpus    => $args{cpus}
+    );
 }
 
 1;
