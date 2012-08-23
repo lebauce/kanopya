@@ -889,7 +889,7 @@ sub generateImageTemplate {
         $data->{image_target} = 'xvda';
     } elsif($hypervisor_type eq 'kvm') {
         $data->{image_driver} = 'raw';
-        $data->{image_target} = 'sda';
+        $data->{image_target} = 'vda';
     }
     
     my $cluster = $self->_getEntity->getServiceProvider;
