@@ -208,6 +208,7 @@ function create_grid(options) {
                 remove_action += '</div>';
                 return remove_action;
             }});
+
     } else if (options.treeGrid === true) {
         // TreeGrids strangely want an additional column so we push an empty one...
         options.colNames.push('');
