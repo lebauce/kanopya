@@ -10,8 +10,10 @@ use Workflow;
 use Message;
 use Entity::Gp;
 use OperationParameter;
+use Operationtype;
 use Kanopya::Exceptions;
 use Entity::Operation;
+use NotificationSubscription;
 
 my $log = get_logger('administrator');
 
@@ -34,7 +36,11 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         getWorkflows => {
-            description => 'getWorkflows',
+            description => 'get the current workflows about this entity.',
+            perm_holder => 'entity'
+        },
+        subscribe => {
+            description => 'subscribe to notification about this entity.',
             perm_holder => 'entity'
         }
     };
@@ -224,6 +230,30 @@ sub removePerm {
         );
     }
 }
+
+=head2 subscribe
+
+=cut
+
+sub subscribe {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'subscriber_id', 'operationtype' ],
+                         optional => { 'service_provider_id' => 1,
+                                       'validation'          => 0 });
+
+    my $operationtype = Operationtype->find(hash => { operationtype_name => $args{operationtype} });
+    NotificationSubscription->new(
+        entity_id           => $self->id,
+        subscriber_id       => $args{subscriber_id},
+        operationtype_id    => $operationtype->id,
+        service_provider_id => $args{service_provider_id},
+        validation          => $args{validation},
+    );
+}
+
 
 sub activate {
     my $self = shift;
