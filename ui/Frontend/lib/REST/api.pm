@@ -87,7 +87,7 @@ my %resources = (
     "nodemetriccondition"      => "NodemetricCondition",
     "nodemetricrule"           => "NodemetricRule",
     "node"                     => "Externalnode::Node",
-    "nodemetriccombination"    => "NodemetricCombination",
+    "notificationsubscription" => "NotificationSubscription",
     "openiscsi2"               => "Entity::Component::Openiscsi2",
     "opennebula3"              => "Entity::Component::Opennebula3",
     "parampreset"              => "ParamPreset",
@@ -106,6 +106,7 @@ my %resources = (
     "openldap1"                => "Entity::Component::Openldap1",
     "openssh5"                 => "Entity::Component::Openssh5",
     "operation"                => "Entity::Operation",
+    "operationtype"            => "Operationtype",
     "outside"                  => "Entity::ServiceProvider::Outside",
     "sco"                      => "Entity::Connector::Sco",
     "scom"                     => "Entity::Connector::Scom",
@@ -403,8 +404,6 @@ sub setupREST {
 
                 RELATION:
                 while (1) {
-                    return undef if not defined $parent->$filter;
-
                     if ($parent->result_source->has_relationship($filter)) {
                         # TODO: prefetch filter so that we can just bless it
                         # $obj = bless { _dbix => $parent->$filter }, "Entity";
