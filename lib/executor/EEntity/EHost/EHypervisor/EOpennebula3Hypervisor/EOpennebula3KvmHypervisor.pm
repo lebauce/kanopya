@@ -95,8 +95,12 @@ sub updatePinning {
     General::checkParams(
         args        => \%args,
         required    => [ 'vm' ],
-        optional    => { cpus => $args{vm}->host_core }
+        optional    => { cpus => -1 }
     );
+
+    if ($args{cpus} == -1) {
+        $args{cpus} = $args{vm}->host_core;
+    }
 
     my $i   = 0;
     my $cmd = "";
