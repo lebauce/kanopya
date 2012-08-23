@@ -391,6 +391,7 @@ sub becomeNode {
     );
 
     my $cluster = Entity::ServiceProvider->get(id => $args{inside_id});
+    $log->info("Associate host ifaces with service network interfaces");
     $self->associateInterfaces(cluster => $cluster);
 
     return $node->id;

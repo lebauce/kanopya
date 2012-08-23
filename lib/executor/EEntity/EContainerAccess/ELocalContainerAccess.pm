@@ -103,7 +103,7 @@ sub connect {
             throw Kanopya::Exception::Execution(error => $result->{stderr});
         }
     }
-    $log->info("Return file loop dev (<$device>).");
+    $log->debug("Return file loop dev (<$device>).");
     $self->setAttr(name  => 'device_connected', value => $device);
 
     if (exists $args{erollback} and defined $args{erollback}){

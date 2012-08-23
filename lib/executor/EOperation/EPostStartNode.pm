@@ -120,7 +120,7 @@ sub prerequisites {
         $self->{context}->{host}->getEContext;
     };
     if ($@) {
-        $log->debug("Could not connect to host <$host_id> from cluster <$cluster_id> with ip <$node_ip>.");
+        $log->info("Host <$host_id> not yet reachable at <$node_ip>");
         return $delay;
     }
 
@@ -133,7 +133,7 @@ sub prerequisites {
         my $ecomponent = EFactory::newEEntity(data => $components->{$key});
 
         if (not $ecomponent->isUp(host => $self->{context}->{host}, cluster => $self->{context}->{cluster})) {
-            $log->debug("Component <$component_name> on host <$host_id> from cluster <$cluster_id> not up.");
+            $log->info("Component <$component_name> not yet operational on host <$host_id>");
             return $delay;
         }
     }
@@ -142,7 +142,7 @@ sub prerequisites {
     $self->{context}->{host}->setState(state => "up");
     $self->{context}->{host}->setNodeState(state => "in");
 
-    $log->debug("Host <$host_id> in cluster <$cluster_id> is 'up'");
+    $log->debug("Host <$host_id> is 'up'");
 
     return 0;
 }

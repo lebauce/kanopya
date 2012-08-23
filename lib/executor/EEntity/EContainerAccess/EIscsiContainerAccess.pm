@@ -57,12 +57,12 @@ sub connect {
     my $port   = $self->getAttr(name => 'container_access_port');
     my $lun    = $self->getAttr(name => 'lun_name');
 
-    $log->info("Creating open iscsi node <$target> from <$ip:$port>.");
+    $log->debug("Creating open iscsi node <$target> from <$ip:$port>.");
 
     my $create_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o new";
     $args{econtext}->execute(command => $create_node_cmd);
 
-    $log->info("Loging in node <$target> (<$ip:$port>).");
+    $log->debug("Loging in node <$target> (<$ip:$port>).");
 
     my $login_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -l";
     $args{econtext}->execute(command => $login_node_cmd);
@@ -83,12 +83,12 @@ sub connect {
             }
             $retry -= 1;
 
-            $log->info("Device not found yet (<$device>), sleeping 1s and retry.");
+            $log->debug("Device not found yet (<$device>), sleeping 1s and retry.");
             sleep 1;
         }
     } while ($result->{exitcode} != 0);
 
-    $log->info("Device found (<$device>).");
+    $log->debug("Device found (<$device>).");
     $self->setAttr(name => 'device_connected', value => $device);
     $self->save();
 
@@ -118,12 +118,12 @@ sub disconnect {
     my $ip     = $self->getAttr(name => 'container_access_ip');
     my $port   = $self->getAttr(name => 'container_access_port');
 
-    $log->info("Logout from node <$target>");
+    $log->debug("Logout from node <$target>");
 
     my $logout_cmd = "iscsiadm -m node -U manual";
     $args{econtext}->execute(command => $logout_cmd);
 
-    $log->info("Deleting node <$target> (<$ip:$port>).");
+    $log->debug("Deleting node <$target> (<$ip:$port>).");
 
     my $delete_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o delete";
     $args{econtext}->execute(command => $delete_node_cmd);

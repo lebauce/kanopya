@@ -185,7 +185,7 @@ sub prepare {
         }
         # Else if it is the first node, or the cluster si policy is dedicated, create a new one.
         elsif (($self->{params}->{node_number} == 1) or (not $self->{context}->{cluster}->getAttr(name => 'cluster_si_shared'))) {
-            $log->info("Create new systemimage instance <$systemimage_name>");
+            $log->info("A new systemimage instance <$systemimage_name> must be created");
 
             my $systemimage_desc = 'System image for node ' . $self->{params}->{node_number}  .' in cluster ' .
                                    $self->{context}->{cluster}->getAttr(name => 'cluster_name') . '.';
@@ -229,6 +229,7 @@ sub execute {
 
     # Create system image for node if required.
     if ($self->{params}->{create_systemimage}) {
+        $log->info("Beginning system image creation...");
         $self->{context}->{systemimage}->createFromMasterimage(
             masterimage    => $self->{context}->{masterimage},
             disk_manager   => $self->{context}->{disk_manager},

@@ -94,7 +94,7 @@ sub _matchHostConstraints {
     for my $constraint ('core', 'ram') {
         if (defined $args{$constraint}) {
             my $host_value = $host->getAttr(name => "host_$constraint");
-            $log->info("constraint '$constraint' ($host_value) >= $args{$constraint}");
+            $log->debug("constraint '$constraint' ($host_value) >= $args{$constraint}");
             if ($host_value < $args{$constraint}) {
                 return 0;
             }

@@ -53,10 +53,10 @@ sub copy {
     my $source_access = $self;
     my $dest_access   = $args{dest};
 
-    $log->info('Try to connect to the source container...');
+    $log->debug('Try to connect to the source container...');
     my $source_device = $source_access->tryConnect(econtext  => $args{econtext},
                                                    erollback => $args{erollback});
-    $log->info('Try to connect to the destination container...');
+    $log->debug('Try to connect to the destination container...');
     my $dest_device = $dest_access->tryConnect(econtext  => $args{econtext},
                                                erollback => $args{erollback});
 
@@ -105,11 +105,11 @@ sub copy {
         }
 
         # Disconnect the containers.
-        $log->info('Try to disconnect from the source container...');
+        $log->debug('Try to disconnect from the source container...');
         $source_access->tryDisconnect(econtext  => $args{econtext},
                                       erollback => $args{erollback});
 
-        $log->info('Try to disconnect from the destination container...');
+        $log->debug('Try to disconnect from the destination container...');
         $dest_access->tryDisconnect(econtext  => $args{econtext},
                                     erollback => $args{erollback});
     }
@@ -119,12 +119,12 @@ sub copy {
         my $source_mountpoint = $source_access->getContainer->getMountPoint;
         my $dest_mountpoint   = $dest_access->getContainer->getMountPoint;
 
-        $log->info('Mounting source container <' . $source_mountpoint . '>');
+        $log->debug('Mounting source container <' . $source_mountpoint . '>');
         $source_access->mount(mountpoint => $source_mountpoint,
                               econtext   => $args{econtext},
                               erollback  => $args{erollback});
 
-        $log->info('Mounting destination container <' . $dest_mountpoint . '>');
+        $log->debug('Mounting destination container <' . $dest_mountpoint . '>');
         $dest_access->mount(mountpoint => $dest_mountpoint,
                             econtext   => $args{econtext},
                             erollback  => $args{erollback});
@@ -172,7 +172,7 @@ sub mount {
     $command = "mkdir -p $args{mountpoint}";
     $args{econtext}->execute(command => $command);
 
-    $log->info("Mounting <$device> on <$args{mountpoint}>.");
+    $log->debug("Mounting <$device> on <$args{mountpoint}>.");
 
     $command = "mount $device $args{mountpoint}";
     $result  = $args{econtext}->execute(command => $command);
@@ -183,7 +183,7 @@ sub mount {
               );
     }
 
-    $log->info("Device <$device> mounted on <$args{mountpoint}>.");
+    $log->debug("Device <$device> mounted on <$args{mountpoint}>.");
     
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
@@ -207,7 +207,7 @@ sub umount {
 
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
-    $log->info("Unmonting (<$args{mountpoint}>)");
+    $log->debug("Unmonting (<$args{mountpoint}>)");
 
     $command = "sync";
     $args{econtext}->execute(command => $command);

@@ -104,7 +104,7 @@ sub assignIpToIface {
                 }
                 $ip->setAttr(name  => 'iface_id', value => $args{iface}->getAttr(name => 'entity_id'));
                 $ip->save();
-
+                $log->info("Ip ".$ip->ip_addr." assigned to iface ".$args{iface}->iface_name);
                 $assigned = 1;
                 last;
             }

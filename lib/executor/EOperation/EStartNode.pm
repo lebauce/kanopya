@@ -61,12 +61,12 @@ sub prerequisites {
         my $ready = $components->{$key}->readyNodeAddition(host_id => $host_id);
         if (not $ready) {
             my $component_class = ref($components->{$key});
-            $log->info("Component $component_class on Cluster <$cluster_id> not ready for node addition");
+            $log->info("Component $component_class not ready for node addition");
             return $delay;
         }
     }
 
-    $log->debug("Cluster <$cluster_id> ready for node addition");
+    $log->info("Cluster <$cluster_id> ready for node addition");
     return 0;
 }
 
@@ -113,7 +113,7 @@ sub execute {
     my $self = shift;
 
     # Firstly compute the node configuration
-    $log->info("Compute node configuration for host <" . $self->{context}->{host}->getAttr(name => "entity_id"));
+    
     if ((exists $self->{context}->{powersupplycard} and defined $self->{context}->{powersupplycard}) and
         (exists $self->{params}->{powersupplyport_number} and defined $self->{params}->{powersupplyport_number})) {
         my $powersupply_id = $self->{context}->{powersupplycard}->addPowerSupplyPort(
@@ -127,18 +127,18 @@ sub execute {
     # Mount the containers on the executor.
     my $mountpoint = $self->{context}->{container}->getMountPoint;
 
-    $log->info('Mounting the container <' . $mountpoint . '>');
+    $log->debug('Mounting the container <' . $mountpoint . '>');
     $self->{context}->{container_access}->mount(mountpoint => $mountpoint,
                                                 econtext   => $self->getEContext,
                                                 erollback  => $self->{erollback});
 
-    $log->info("Generate Network Conf");
+    $log->info("Operate Network Configuration");
     $self->_generateNetConf(mount_point => $mountpoint);
 
-    $log->info("Generate ntpdate Conf");
+    $log->debug("Generate ntpdate Conf");
     $self->_generateNtpdateConf(mount_point => $mountpoint);
 
-    $log->info("Generate Boot Conf");
+    $log->info("Operate Boot Configuration");
     my ($access_mode, $mount_options) = $self->{context}->{cluster}->getAttr(name => 'cluster_si_shared')
                       ? ("ro", "ro,noatime,nodiratime") : ("rw", "defaults");
 
@@ -151,6 +151,8 @@ sub execute {
 
     my $components = $self->{cluster_components};
     my $puppet_definitions = "";
+    
+    $log->info("Operate components configuration");
     foreach my $i (keys %$components) {
         my $ecomponent = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is " . ref($ecomponent));
@@ -305,12 +307,11 @@ sub _generateNetConf {
                                 address => $iface->getIPAddr,
                                 netmask => $pool->poolip_netmask,
                                 gateway => $gateway };
+            $log->info("Iface ".$iface->iface_name." configured via static file");
         }
 
         # Apply VLAN's
-        $log->info("Applying VLANS");
         for my $network ($interface->getNetworks) {
-            $log->info("Network " . $network);
             if ($network->isa("Entity::Network::Vlan")) {
                 $log->info("Apply VLAN on " . $iface->getAttr(name => 'iface_name'));
                 my $ehost_manager = EFactory::newEEntity(data => $self->{context}->{host}->getHostManager);
@@ -404,7 +405,7 @@ sub _generateBootConf {
                 command => "touch $args{mount_point}/etc/iscsi.initramfs"
             );
 
-            $log->info("Generate Initiator Conf");
+            $log->debug("Generate Initiator Conf");
 
             # Here we compute an iscsi initiator name for the node
             my $date = today();
@@ -518,7 +519,7 @@ sub _generatePXEConf {
     ## Here we create a dedicated initramfs for the node
     # we create a temporary working directory for the initrd
 
-    $log->info('Dedicated initramfs build');
+    $log->info('Build dedicated initramfs');
     my $initrddir = "/tmp/$clustername-$hostname";
     my $cmd = "mkdir -p $initrddir";
     $self->getEContext->execute(command => $cmd);
@@ -603,7 +604,7 @@ sub _generatePXEConf {
 
     # Generate new configuration file
     $self->{context}->{dhcpd_component}->reload(erollback => $self->{erollback});
-    $log->info('Adming dhcp server updated');
+    $log->info('Kanopya dhcp server reconfigured');
 
     # Here we generate pxelinux.cfg for the host
     my $rand    = new String::Random;
@@ -635,7 +636,7 @@ sub _generatePXEConf {
     unlink "/tmp/$tmpfile";
 
     # Update Host internal ip
-    $log->info("Get subnet <$subnet> and have host ip <$pxeiface->getIPAddr>");
+    $log->debug("Get subnet <$subnet> and have host ip <$pxeiface->getIPAddr>");
     my %subnet_hash = $self->{context}->{dhcpd_component}->getSubNet(dhcpd3_subnet_id => $subnet);
 }
 

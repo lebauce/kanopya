@@ -155,7 +155,7 @@ sub lvCreate{
         $args{lvm2_lv_size} = General::convertToBytes(value => $value, units => $unit);
     };
     if ($@) {
-        $log->info("Given size $args{lvm2_lv_size} is already in bytes.");
+        $log->debug("Given size $args{lvm2_lv_size} is already in bytes.");
     }
 
     $log->debug("lvm2_lv_name is $args{lvm2_lv_name}, " .
@@ -166,7 +166,7 @@ sub lvCreate{
     my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $args{lvm2_vg_id} });
     my $res   = $vg_rs->lvm2_lvs->create(\%args);
 
-    $log->info("lvm2 logical volume $args{lvm2_lv_name} saved to database");
+    $log->debug("lvm2 logical volume $args{lvm2_lv_name} saved to database");
 
     $res->discard_changes;
     my $container = Entity::Container::LvmContainer->new(

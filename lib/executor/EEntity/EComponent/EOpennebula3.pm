@@ -60,7 +60,7 @@ sub configureNode {
 
     if(not $masternodeip) {
         # we start the first node so we start opennebula services
-        $log->info('opennebula frontend configuration');
+        $log->debug('opennebula frontend configuration');
         $log->debug('generate /etc/one/oned.conf');
 
         $self->_generateOnedConf(%args);

@@ -111,10 +111,9 @@ sub execute {
     my $stderr = $result->{stderr};
     chop($stderr);
     $log->debug("Command stdout is : '$stdout'");
-    if($result->{exitcode} != 0) {
-        $log->warn("Command stderr: $stderr");
-        $log->warn("Command exitcode: $result->{exitcode}");
-    }
+    $log->debug("Command stderr: $stderr");
+    $log->debug("Command exitcode: $result->{exitcode}");
+
     return $result;    
 }
 
@@ -150,10 +149,9 @@ sub send {
     $result->{stderr} = `cat /tmp/EContext.stderr`;
     my $stderr = $result->{stderr};
     chop($stderr);
-    if($result->{exitcode} != 0) {
-        $log->warn("Command stderr: $stderr");
-        $log->warn("Command exitcode: $result->{exitcode}");
-    }
+    $log->debug("Command stderr: $stderr");
+    $log->debug("Command exitcode: $result->{exitcode}");
+    
     return $result;
 }
 

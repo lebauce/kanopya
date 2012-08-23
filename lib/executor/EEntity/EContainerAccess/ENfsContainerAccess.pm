@@ -70,7 +70,7 @@ sub mount {
                            $cmd_res->{'stderr'}
               );
     }
-    $log->info("NFS export $target mounted on <$args{mountpoint}>.");
+    $log->debug("NFS export $target mounted on <$args{mountpoint}>.");
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(

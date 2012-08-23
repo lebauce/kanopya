@@ -277,10 +277,10 @@ sub getDevice {
         throw Kanopya::Exception(error => $errmsg);
     }
 
-    $log->info("Retrieve container");
+    $log->debug("Retrieve container");
     my $device = Entity::Container->get(id => $self->getAttr(name => 'container_id'));
 
-    $log->info("Systemimage container retrieved from database");
+    $log->debug("Systemimage container retrieved from database");
     return $device;
 }
 

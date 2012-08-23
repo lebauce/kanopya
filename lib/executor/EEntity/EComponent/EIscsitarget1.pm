@@ -93,7 +93,7 @@ sub createExport {
 
     $self->generate();
 
-    $log->info("Added iSCSI Export of device <$device> with target <$disk_targetname>");
+    $log->debug("Added iSCSI Export of device <$device> with target <$disk_targetname>");
 
     if (exists $args{erollback}) {
         $args{erollback}->add(
@@ -165,7 +165,7 @@ sub generateTargetname {
     my $res = "iqn." . $today->year . "-" . $today->format("%m") .
               ".com.hedera-technology.nas:$args{name}";
 
-    $log->info("TargetName generated is $res");
+    $log->debug("TargetName generated is $res");
     return $res;
 }
 

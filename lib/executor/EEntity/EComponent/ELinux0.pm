@@ -29,9 +29,9 @@ sub addNode {
     General::checkParams(args     => \%args,
                          required => ['cluster','host','mount_point']);
 
-    $log->info("Configuration files generation");
+    $log->debug("Configuration files generation");
     my $files = $self->generateConfiguration(%args); 
-    $log->info("System image preconfiguration");
+    $log->debug("System image preconfiguration");
     $self->preconfigureSystemimage(%args, files => $files);
 }
 
@@ -147,7 +147,7 @@ sub _generateHosts {
 
     General::checkParams(args => \%args, required => [ 'cluster','host', 'kanopya_domainname' ]);
 
-    $log->info('Generate /etc/hosts file');
+    $log->debug('Generate /etc/hosts file');
 
     my $nodes = $args{cluster}->getHosts();
     my @hosts_entries = ();

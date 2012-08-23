@@ -56,7 +56,6 @@ sub new {
     $self->{internalnetwork} = $args{internalnetwork};
     $self->{dmznetwork} = $args{dmznetwork};
     bless $self, $class;
-    $log->info("New Network Manager Loaded");
     return $self;
 }
 

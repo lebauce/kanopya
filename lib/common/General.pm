@@ -233,7 +233,7 @@ sub convertSizeFormat {
     }
     if($args{size} !~ /^(\d+)([BKMGTPE])$/) {
         $errmsg = "convertSizeFormat bad size argument $args{size} ; must be XY where X is a positive number and Y a character among B, K, M, G, T, P or E";
-        $log->error($errmsg);
+        $log->warn($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
      
     }

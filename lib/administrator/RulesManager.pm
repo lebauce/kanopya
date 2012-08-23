@@ -53,7 +53,6 @@ sub new {
         parser => Parse::BooleanLogic->new( operators => [qw(& |)] ),
     };
     bless $self, $class;
-    $log->info("New Rules Manager Loaded");
     return $self;
 }
 

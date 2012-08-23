@@ -92,7 +92,7 @@ sub create {
     General::checkParams(args     => \%args,
                          optional => { 'systemimage_size' => $args{src_container}->getAttr(name => 'container_size') });
 
-    $log->info('Device creation for new systemimage');
+    $log->debug('Container creation for new systemimage');
 
     # Creation of the device based on distribution device
     my $container = $args{disk_manager}->createDisk(
@@ -104,7 +104,7 @@ sub create {
                     );
 
     # Copy of distribution data to systemimage devices
-    $log->info('Fill the container with source data for new systemimage');
+    $log->debug('Fill the container with source data for new systemimage');
 
     $args{src_container}->copy(dest      => $container,
                                econtext  => $self->getExecutorEContext,
@@ -116,7 +116,7 @@ sub create {
     $self->setAttr(name => "active", value => 0);
     $self->save();
 
-    $log->info('System image <' . $self->getAttr(name => 'systemimage_name') . '> is added');
+    $log->info('System image <' . $self->getAttr(name => 'systemimage_name') . '> creation complete');
 
     return $self->getAttr(name => "systemimage_id");
 }

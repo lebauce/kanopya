@@ -51,7 +51,6 @@ sub new {
     $self->{db} = $args{schemas};
     
     bless $self, $class;
-    $log->info("New Monitor Manager Loaded");
     return $self;
 }
 
