@@ -36,6 +36,10 @@ function StateFormatter(cell, options, row) {
     return "<img src='/images/icons/down.png' title='" + curr_state + "' />";
 }
 
+function booleanFormatter(cell, options, row) {
+    return cell == 0 ? 'no' : 'yes';
+}
+
 function serviceStateFormatter(cell, options, row) {
     if (cell == 'enabled') {
         return "<img src='/images/icons/up.png' title='enabled' />";
