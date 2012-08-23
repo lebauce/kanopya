@@ -40,7 +40,6 @@ function networks_associatepoolipbutton_action(network, associated, cid) {
             var dial            = $('<div>').dialog({
                 modal       : true,
                 resizable   : false,
-                draggable   : false,
                 close       : function() { $(this).remove(); },
                 title       : 'Associate a Pool IP',
                 buttons     : {

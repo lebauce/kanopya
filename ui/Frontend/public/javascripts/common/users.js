@@ -85,7 +85,6 @@ function Users() {
                 title : "Select user's profile(s)",
                 modal : true,
                 resizable       : false,
-                draggable       : false,
                 width           : 500,
                 closeOnEscape   : false,
                 buttons: [

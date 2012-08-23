@@ -239,7 +239,6 @@ function runScaleWorkflow(type, eid, spid) {
     $('<label>', { text : type + ' amount : ', for : type }).appendTo(cont);
     var inp     = $('<input>', { id : type }).appendTo(cont);
     $(cont).dialog({
-        draggable       : false,
         resizable       : false,
         modal           : true,
         close           : function() { $(this).remove(); },
@@ -294,7 +293,6 @@ function migrate(spid, eid) {
                     }
                     $(cont).dialog({
                         modal       : true,
-                        draggable   : false,
                         resizable   : false,
                         close       : function() { $(this).remove(); },
                         buttons     : {

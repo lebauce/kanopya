@@ -35,7 +35,6 @@ var Component = (function() {
         });
 
         $(container).dialog({
-            draggable   : false,
             resizable   : false,
             modal       : true,
             close       : function() { $(this).remove(); },

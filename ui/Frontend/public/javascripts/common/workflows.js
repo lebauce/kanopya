@@ -83,7 +83,6 @@ function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
         form.dialog({
             width           : 600,
             modal           : true,
-            draggable       : false,
             resizable       : false,
             closeOnEscape   : false,
             title           : 'Create a Workflow Definition',
@@ -214,7 +213,6 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
     $(dial).dialog({
         close       : function() { $(this).remove(); },
         width       : 626,
-        draggable   : false,
         resizable   : false,
         modal       : true,
         title       : workflowmanager.service_provider_name + ' - ' + workflowmanager.name
@@ -359,7 +357,6 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
                             });
                         }
                         $(dial).dialog({
-                            draggable       : false,
                             resizable       : false,
                             closeOnEscape   : false,
                             modal           : true,

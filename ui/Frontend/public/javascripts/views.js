@@ -104,7 +104,6 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
             width: 800,
             height: 500,
             resizable: false,
-            draggable: true,
             close: function(event, ui) {
                 $('.last_content').addClass('current_content').removeClass('last_content');
                 $(this).remove(); // detail modals are never closed, they are destroyed

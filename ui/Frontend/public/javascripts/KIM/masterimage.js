@@ -32,7 +32,6 @@ var MasterImage = (function(_super) {
         this.callRestFunction('getProvidedComponents', function(data) {
             $('<div>', { id : 'masterimage_dialog' }).dialog({
                 title       : this.conf.masterimage_name,
-                draggable   : false,
                 resizable   : false,
                 modal       : true,
                 width       : 450,
@@ -74,7 +73,6 @@ var MasterImage = (function(_super) {
         });
         $(dialog).dialog({
             title       : 'Upload a master image',
-            draggable   : false,
             resizable   : false,
             modal       : true,
             close       : function() { $(this).remove(); },

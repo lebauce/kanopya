@@ -40,7 +40,6 @@ $(document).ready(function () {
                 .append($("<input>", { type : 'password', name : 'password', id : 'passwordInput' }))));
             $(form).dialog({
                 resizable       : false,
-                draggable       : false,
                 closeOnEscape   : false,
                 close           : function() { $(this).remove(); },
                 modal           : true,

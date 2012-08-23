@@ -440,7 +440,6 @@ var ModalForm = (function() {
             title           : this.title,
             modal           : true,
             resizable       : false,
-            draggable       : false,
             width           : 500,
             buttons         : buttons,
             closeOnEscape   : false

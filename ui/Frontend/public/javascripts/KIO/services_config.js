@@ -287,7 +287,6 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
             $("<div>").append($(select)).append(fieldset).appendTo('body').dialog({
                 title           : mode_config ? connectortype + ' configuration' : 'Link to a ' + connectortype,
                 closeOnEscape   : false,
-                draggable       : false,
                 resizable       : false,
                 modal           : true,
                 buttons         : {
@@ -318,7 +317,6 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                                 var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
                                 dialog.css('text-align', 'center');
                                 dialog.appendTo("body").dialog({
-                                    draggable   : false,
                                     resizable   : false,
                                     title       : ""
                                 });

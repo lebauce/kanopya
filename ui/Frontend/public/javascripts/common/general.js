@@ -34,7 +34,6 @@ function callMethodWithPassword( options ) {
         modal           : true,
         title           : options.dialog_title,
         resizable       : false,
-        draggable       : false,
         closeOnEscape   : false,
         buttons         : {
             'Ok'    : function() {
@@ -45,7 +44,6 @@ function callMethodWithPassword( options ) {
                 if (passwd !== "" && passwd !== undefined) {
                     // Display waiting popup
                     var waitingPopup    = $("<div>", { text : 'Waiting...' }).css('text-align', 'center').dialog({
-                        draggable   : false,
                         resizable   : false,
                         onClose     : function() { $(this).remove(); }
                     });

@@ -139,7 +139,6 @@ function addTechnicalServiceButton(container) {
                 var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
                 dialog.css('text-align', 'center');
                 dialog.appendTo("body").dialog({
-                    draggable   : false,
                     resizable   : false,
                     title       : ""
                 });
