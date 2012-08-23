@@ -149,6 +149,7 @@ chomp(@kanopya_pvs);
 print "creating the logging directory...";
 $answers->{log_directory} .= '/' if($answers->{log_directory} !~ /\/$/);
 make_path("$answers->{log_directory}", { verbose => 1, mode => 0757 });
+make_path("$answers->{log_directory}workflows", { verbose => 1, mode => 0757 });
 # Give write access to nobody /!\ TEMPORARY
 print "done\n";
 

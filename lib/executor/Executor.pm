@@ -57,6 +57,8 @@ use XML::Simple;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
+use Log::Log4perl::Layout;
+use Log::Log4perl::Appender;
 my $log = get_logger("");
 
 our $VERSION = '1.00';
@@ -85,6 +87,7 @@ sub new {
               );
 
     $self->{include_blocked} = 1;
+    $self->{last_workflow_id} = -1;
 
     return $self;
 }
@@ -129,6 +132,24 @@ sub oneRun {
         $workflow_name = defined $workflow_name ? $workflow_name : 'Anonymous';
         my $workflow_id = $workflow->getAttr(name => 'workflow_id');
         
+        # init log appender for this workflow if this one is not the same as the last executed
+        if($workflow_id != $self->{last_workflow_id}) {
+            my $appenders = Log::Log4perl->appenders();
+        
+            if(exists $appenders->{'WORKFLOW'}) {
+                $log->eradicate_appender('WORKFLOW');
+            }    
+        
+            my $layout = Log::Log4perl::Layout::PatternLayout->new("%d %c %p> %M - %m%n");
+            my $file_appender = Log::Log4perl::Appender->new(
+                              "Log::Dispatch::File",
+                              name      => "WORKFLOW",
+                              filename  => $self->{config}->{logdir}."workflows/$workflow_id.log");
+            $file_appender->layout($layout);
+            $log->add_appender($file_appender);
+            $self->{last_workflow_id} = $workflow_id;
+        }
+
 
         # Initialize EOperation and context
         eval {
@@ -146,7 +167,7 @@ sub oneRun {
                 content => "Operation Processing [$opclass]..."
             );
 
-            $log->info("$opclass Check step");
+            $log->info("Check step");
             $op->check();
         };
         if ($@) {
@@ -187,7 +208,7 @@ sub oneRun {
             if ($op->getAttr(name => 'state') eq 'ready' or
                 $op->getAttr(name => 'state') eq 'prereported') {
 
-                $log->info("$opclass Prerequisites step");
+                $log->info("Prerequisites step");
                 $delay = $op->prerequisites();
 
                 # If the prerequisite are validated, process the operation
@@ -199,10 +220,10 @@ sub oneRun {
                     # Start transaction for processing
                     $adm->{db}->txn_begin;
 
-                    $log->info("$opclass Prepare step");
+                    $log->info("Prepare step");
                     $op->prepare();
 
-                    $log->info("$opclass Process step");
+                    $log->info("Process step");
                     $op->process();
                 }
             }
@@ -211,7 +232,7 @@ sub oneRun {
             if ($op->getAttr(name => 'state') eq 'processing' or
                 $op->getAttr(name => 'state') eq 'postreported') {
 
-                $log->info("$opclass Postrequisites step");
+                $log->info("Postrequisites step");
                 $delay = $op->postrequisites();
             }
 
@@ -286,7 +307,7 @@ sub oneRun {
         else {
             # Finishing the operation.
             eval {
-                $log->info("$opclass Finish step");
+                $log->info("Finish step");
                 $op->finish();
             };
             if ($@) {
