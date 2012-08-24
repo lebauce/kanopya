@@ -69,18 +69,34 @@ sub run {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'name','entity_id' ]);
+    General::checkParams(args => \%args, required => [ 'name' ], optional => { 'rule' => undef });
 
     my $def = WorkflowDef->find(hash => { workflow_def_name => $args{name} });
     my $workflow = Workflow->new(workflow_name => $args{name}, entity_id => $args{entity_id});
     delete $args{name};
     delete $args{entity_id};
 
-    my $steps = $def->{_dbix}->workflow_steps;
-    while (my $step = $steps->next) {
+    my @steps = WorkflowStep->search(hash => { workflow_def_id => $def->id });
+
+    my @operationtypes;
+    for my $step (@steps) {
+        push @operationtypes, $step->operationtype->operationtype_name;
+    }
+
+    # If a rule is defined, the workflow is triggered from a rule,
+    # So add the rule in the context, and prepend the operation EProcessRule.
+    if (defined $args{rule}) {
+        $args{params}->{context}->{rule} = $args{rule};
+
+        unshift(@operationtypes, 'ProcessRule');
+    }
+
+    # TODO: Use transaction or operation states to not pop operations
+    #       while the whole workflow has been enqeued.
+    for my $operationtype (@operationtypes) {
         $workflow->enqueue(
             priority => 200,
-            type     => $step->operationtype->get_column('operationtype_name'),
+            type     => $operationtype,
             %args
         );
         if (defined $args{params}) {
