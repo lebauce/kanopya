@@ -18,15 +18,20 @@ use warnings;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
-    workflow_def_id              =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    operationtype_id                          =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
+    workflow_def_id => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    operationtype_id => {
+        pattern       => '^.*$',
+        is_mandatory  => 1,
+        is_extended   => 0,
+        is_editable   => 1
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
 1;
