@@ -179,8 +179,7 @@ sub _cancel {
         $self->{context}->{host}->setAttr(name  => 'host_hostname',
                                           value => undef);
         $self->{context}->{host}->setState(state => 'down');
-        $self->{context}->{host_manager}->stopHost(host => $self->{context}->{host});
-
+        $self->{context}->{host}->stop();
     }
 }
 
