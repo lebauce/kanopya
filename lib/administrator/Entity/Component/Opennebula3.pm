@@ -328,16 +328,6 @@ sub getTemplateDataOnedInitScript {
     return $data;
 }
 
-sub getTemplateDataLibvirtbin {
-    my $self = shift;
-    return {};
-}
-
-sub getTemplateDataLibvirtd {
-    my $self = shift;
-    return {};
-}
-
 sub getHostConstraints {
     return "physical";
 }

@@ -83,16 +83,10 @@ sub configureNode {
     }
 
     # configure kvm hypervisor
-    if($hypervisor_type eq 'kvm') {
+    if ($hypervisor_type eq 'kvm') {
         $log->debug('generate /etc/default/libvirt-bin');
         $self->_generateLibvirtbin(%args);
 
-        $log->debug('generate /etc/libvirt/libvirtd.conf');
-        $self->_generateLibvirtdconf(%args);
-
-        $log->debug('generate /etc/libvirt/qemu.conf');
-        $self->_generateQemuconf(%args);
-        
         $log->debug('generate /lib/udev/rules.d/60-qemu-kvm.rules');
         $self->_generateQemuKvmUdev(%args);
         
@@ -729,75 +723,6 @@ sub _generateOnedConf {
     );
 }
 
-# generate /etc/default/libvirt-bin configuration file
-sub _generateLibvirtbin {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    my $cluster = $self->_getEntity->getServiceProvider;
-    my $data = $self->_getEntity()->getTemplateDataLibvirtbin();
-    my $file = $self->generateNodeFile(
-        cluster       => $cluster,
-        host          => $args{host},
-        file          => '/etc/default/libvirt-bin',
-        template_dir  => "/templates/components/opennebula",
-        template_file => 'libvirt-bin.tt',
-        data          => $data
-    );
-
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/default'
-    );
-}
-
-# generate /etc/libvirt/libvirtd.conf configuration file
-sub _generateLibvirtdconf {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    my $data = $self->_getEntity()->getTemplateDataLibvirtd();
-    $data->{listen_ip_address} = $args{host}->getAdminIp;
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/libvirt/libvirtd.conf',
-        template_dir  => '/templates/components/opennebula',
-        template_file => 'libvirtd.conf.tt',
-        data          => $data
-    );
-
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/libvirt'
-    );
-}
-
-# generate /etc/libvirt/qemu.conf configuration file
-sub _generateQemuconf {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    my $data = {};
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/libvirt/qemu.conf',
-        template_dir  => '/templates/components/opennebula',
-        template_file => 'qemu.conf.tt',
-        data          => $data
-    );
-
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/libvirt'
-    );
-}
-
-# generate /etc/libvirt/qemu.conf configuration file
 sub _generateQemuKvmUdev {
     my ($self, %args) = @_;
 
