@@ -390,6 +390,20 @@ sub scale_cpu {
     my $cpu_number = $args{cpu_number};
 
     my $host_id = $args{host}->onevm_id;
+    my $hyptype = $self->getHypervisorType;
+    if ($hyptype eq 'kvm') {
+        if ($args{host}->opennebula3_kvm_vm_cores > $args{host}->host_core) {
+            my $ehost   = EFactory::newEEntity(data => $args{host});
+            if ($cpu_number <= $args{host}->opennebula3_kvm_vm_cores) {
+                $ehost->updateCpus(cpus => $cpu_number);
+                return;
+            }
+            else {
+                $ehost->updateCpus;
+                $cpu_number -= $args{host}->opennebula3_kvm_vm_cores;
+            }
+        }
+    }
     $self->onevm_vcpuset(vm_nameorid => $host_id, cpu => $cpu_number);
 
     #$args{host}->updateCPU(cpu_number => $cpu_number);
