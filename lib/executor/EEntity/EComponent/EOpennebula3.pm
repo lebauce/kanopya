@@ -588,11 +588,14 @@ sub postStart {
 
     # Check final RAM and CPU and store
     $args{host}->setAttr(name => 'vnc_port',  value => $vnc_port);
-    $args{host}->setAttr(name => 'host_ram',  value => $args{host}->getTotalMemory);
-    $args{host}->setAttr(name => 'host_core', value => $args{host}->getTotalCpu);
 
-    $log->info('Set Ram and Cpu from real info : ram <' . $args{host}->host_ram .
-               '> cpu <' . $args{host}->host_core . '>');
+    if ($self->getHypervisorType() eq 'xen') {
+        $args{host}->setAttr(name => 'host_ram',  value => $args{host}->getTotalMemory);
+        $args{host}->setAttr(name => 'host_core', value => $args{host}->getTotalCpu);
+
+        $log->info('Set Ram and Cpu from real info : ram <' . $args{host}->host_ram .
+                   '> cpu <' . $args{host}->host_core . '>');
+    }
 
     $args{host}->save();
 }
