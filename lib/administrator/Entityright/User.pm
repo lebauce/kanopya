@@ -47,6 +47,8 @@ use Log::Log4perl "get_logger";
 
 our $VERSION = "1.00";
 
+use Log::Log4perl "get_logger";
+
 my $log = get_logger("");
 my $errmsg;
 
