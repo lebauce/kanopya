@@ -123,6 +123,7 @@ sub _constructInfra{
     else {
         throw Kanopya::Exception(error => 'No cluster or hypervisor id, Capacity Manager cannot construct infra');
     }
+
     # Get the list of all hypervisors
     my @hypervisors_r = $opennebula->getHypervisors();
     my $master_hv;
@@ -384,6 +385,10 @@ sub getHypervisorIdForVM{
     my $wanted_values      = $args{wanted_values};
     my $blacklisted_hv_ids = $args{blacklisted_hv_ids};
     my $selected_hv_ids    = $args{selected_hv_ids};
+
+    if (! $self->{_infra}->{hvs}) {
+        throw Kanopya::Exception::Internal(error => "Could not find an usable hypervisor");
+    }
 
     if (! defined $selected_hv_ids){
         my @keys_array = keys %{$self->{_infra}->{hvs}};
