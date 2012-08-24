@@ -44,8 +44,6 @@ sub addNode {
         
 }
 
-sub removeNode {}
-
 sub reload {
     my $self = shift;
     my %args = @_;

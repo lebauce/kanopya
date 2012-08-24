@@ -109,13 +109,23 @@ sub generateFile {
 }
 
 sub addNode {}
-sub removeNode {}
 sub stopNode {}
 sub postStartNode {}
 sub preStartNode{}
 sub preStopNode{return 0;}
 sub postStopNode{}
-sub cleanNode {}
+
+sub cleanNode {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args,
+                         required => [ 'host' ]);
+
+    eval { $self->preStopNode(%args); };
+    eval { $self->stopNode(%args); };
+    eval { $self->postStopNode(%args); };
+}
 
 sub isUp {
     my ($self, %args) = @_;

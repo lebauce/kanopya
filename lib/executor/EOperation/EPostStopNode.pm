@@ -210,10 +210,9 @@ sub execute {
         my $comp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($comp));
 
-        $comp->removeNode(
+        $comp->postStopNode(
             host        => $self->{context}->{host},
             cluster     => $self->{context}->{cluster},
-            mount_point => ''
         );
     }
     

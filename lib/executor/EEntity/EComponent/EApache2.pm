@@ -99,8 +99,6 @@ sub addNode {
     );
 }
 
-sub removeNode {}
-
 sub reload {
     my ($self, %args) = @_;
     my $command = "invoke-rc.d apache2 restart";

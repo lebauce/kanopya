@@ -93,8 +93,6 @@ sub addNode {
                                 
 }
 
-sub removeNode {}
-
 # Reload process
 sub reload {
     my $self = shift;
