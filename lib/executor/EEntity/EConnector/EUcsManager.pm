@@ -165,9 +165,19 @@ sub getFreeHost {
 
             return $host;
         }
+        else {
+            $log->debug("Blade " . $blade->{dn} . " is not usable");
+        }
     }
 
-    throw Kanopya::Exception::Internal(error => "No blade without a service profile attached were found");
+    $log->info("No blade without a service profile attached were found");
+    return undef;
+
+    # We faced a very odd bug here : if we raise an exception
+    # the 'onerun' method of the executor catches it, but $@ is
+    # undefined !
+
+    # throw Kanopya::Exception::Internal(error => "No blade without a service profile attached were found");
 }
 
 =head2 applyVLAN
