@@ -313,14 +313,22 @@ sub getLunId {
 
     General::checkParams(args => \%args, required => [ 'lun', 'host' ]);
 
+    $log->debug("Looking for the id of LUN " . $args{lun}->id . " for host " . $args{host}->id);
+
+    # Accept both Container and ContainerAccess
+    if ($args{lun}->isa("EEntity::EContainerAccess::EIscsiContainerAccess") ||
+        $args{lun}->isa("Entity:ContainerAccess::IscsiContainerAccess")) {
+        $args{lun} = $args{lun}->getContainer;
+    }
+
     my $api = $self->_getEntity();
     my @mappings = $api->lun_initiator_list_map_info(
-                       'initiator' => $args{host}->getAttr(name => "host_initiatorname")
+                       'initiator' => lc($args{host}->host_initiatorname)
                    )->child_get("lun-maps")->children_get;
 
     for my $mapping (@mappings) {
         bless $mapping, "NaObject";
-        if ($mapping->path eq $args{lun}->getContainer->getPath) {
+        if ($mapping->path eq $args{lun}->getPath) {
             return $mapping->lun_id;
         }
     }

@@ -128,6 +128,35 @@ sub execute {
     my $econtext = $self->getEContext();
     $econtext->execute(command => "mkdir -p $dir");
 
+    $log->debug('Giving access to the system image to the node');
+
+    # Here we compute an iscsi initiator name for the node
+    my $date = today();
+    my $year = $date->year;
+    my $month = $date->month;
+    if (length($month) == 1) {
+        $month = '0' . $month;
+    }
+
+    my $initiatorname = 'iqn.' . $year . '-' . $month . '.';
+    $initiatorname .= $self->{context}->{cluster}->cluster_name;
+    $initiatorname .= '.' . $self->{context}->{host}->host_hostname;
+    $initiatorname .= ':' . time();
+
+    $self->{context}->{host}->setAttr(name  => "host_initiatorname",
+                                      value => $initiatorname);
+    $self->{context}->{host}->save();
+
+    my $container_access = pop @{ $self->{context}->{systemimage}->container->getAccesses };
+    my $export_manager = EFactory::newEEntity(data => $container_access->getExportManager);
+    my $export = EFactory::newEEntity(data => $container_access);
+    my $options = $self->{context}->{cluster}->cluster_si_shared ? "ro" : "rw";
+    $export_manager->addExportClient(
+        export  => $export,
+        host    => $self->{context}->{host},
+        options => $options
+    );
+
     $self->{context}->{host}->setNodeState(state => "pregoingin");
 }
 

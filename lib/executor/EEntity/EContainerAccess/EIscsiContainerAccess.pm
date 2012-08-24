@@ -52,10 +52,15 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
+    my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
+                                 hash => { cluster_name => 'Kanopya' }
+                          );
+    my $executor = Entity->get(id => $kanopya_cluster->getMasterNode->host->id);
+
     my $target = $self->getAttr(name => 'container_access_export');
     my $ip     = $self->getAttr(name => 'container_access_ip');
     my $port   = $self->getAttr(name => 'container_access_port');
-    my $lun    = $self->getAttr(name => 'lun_name');
+    my $lun    = "lun-" . $self->getLunId(host => $executor);
 
     $log->debug("Creating open iscsi node <$target> from <$ip:$port>.");
 

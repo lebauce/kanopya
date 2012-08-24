@@ -124,6 +124,9 @@ sub execute {
                                           value => $powersupply_id);
     }
 
+    my $mount_options = $self->{context}->{cluster}->getAttr(name => 'cluster_si_shared')
+                      ? "ro,noatime,nodiratime" : "defaults";
+
     # Mount the containers on the executor.
     my $mountpoint = $self->{context}->{container}->getMountPoint;
 
@@ -139,10 +142,6 @@ sub execute {
     $self->_generateNtpdateConf(mount_point => $mountpoint);
 
     $log->info("Operate Boot Configuration");
-    my ($access_mode, $mount_options) = $self->{context}->{cluster}->getAttr(name => 'cluster_si_shared')
-                      ? ("ro", "ro,noatime,nodiratime") : ("rw", "defaults");
-
-    # Apply node boot configuration
     $self->_generateBootConf(mount_point => $mountpoint,
                              filesystem => $self->{context}->{container}->getAttr(
                                                name => 'container_filesystem'
@@ -199,14 +198,6 @@ sub execute {
     $self->{context}->{container_access}->umount(mountpoint => $mountpoint,
                                                  econtext   => $self->getEContext,
                                                  erollback  => $self->{erollback});
-
-    # Give access to the system image to the node
-    $log->info('Giving access to the system image to the node');
-    $self->{context}->{export_manager}->addExportClient(
-        export  => $self->{context}->{container_access},
-        host    => $self->{context}->{host},
-        options => $access_mode
-    );
 
     # Create node instance
     $self->{context}->{host}->setNodeState(state => "goingin");
@@ -296,18 +287,31 @@ sub _generateNetConf {
         $iface->assignIp();
 
         # Only add non pxe iface to /etc/network/interfaces
-        if ($iface->hasIp and not $iface->getAttr(name => 'iface_pxe')) {
-            my $pool = $iface->getPoolip;
-            my $gateway = $interface->hasDefaultGateway() ? $pool->poolip_gateway : undef;
-            if($is_loadbalanced and not $is_masternode) {
-                $gateway = $self->{context}->{cluster}->getMasterNodeIp
+        if (not $iface->getAttr(name => 'iface_pxe')) {
+            my ($gateway, $netmask, $ip, $method);
+
+            if ($iface->hasIp) {
+                my $pool = $iface->getPoolip;
+                $netmask = $pool->poolip_netmask;
+                $ip = $iface->getIPAddr;
+                $gateway = $interface->hasDefaultGateway() ? $pool->poolip_gateway : undef;
+                $method = "static";
+                if ($is_loadbalanced and not $is_masternode) {
+                    $gateway = $self->{context}->{cluster}->getMasterNodeIp
+                }
             }
-            
-            push @net_ifaces, { name    => $iface->iface_name,
-                                address => $iface->getIPAddr,
-                                netmask => $pool->poolip_netmask,
-                                gateway => $gateway };
-            $log->info("Iface ".$iface->iface_name." configured via static file");
+            else {
+                $method = "manual";
+            }
+
+            push @net_ifaces, { method  => $method,
+                                name    => $iface->iface_name,
+                                address => $ip,
+                                netmask => $netmask,
+                                gateway => $gateway,
+                                role    => $interface_role_name };
+
+            $log->info("Iface " .$iface->iface_name . " configured via static file");
         }
 
         # Apply VLAN's
@@ -407,24 +411,8 @@ sub _generateBootConf {
 
             $log->debug("Generate Initiator Conf");
 
-            # Here we compute an iscsi initiator name for the node
-            my $date = today();
-            my $year = $date->year;
-            my $month = $date->month;
-            if (length($month) == 1) {
-                $month = '0' . $month;
-            }
-            my $initiatorname = 'iqn.' . $year . '-' . $month . '.';
-            $initiatorname .= $self->{context}->{cluster}->getAttr(name => 'cluster_name');
-            $initiatorname .= '.' . $self->{context}->{host}->getAttr(name => 'host_hostname');
-            $initiatorname .= ':' . time();
-
-            my $lun_number = $self->{context}->{container_access}->getLunId(host => $self->{context}->{host})
-                             || "lun-0";
-
-            # Set initiatorName
-            $self->{context}->{host}->setAttr(name  => "host_initiatorname",
-                                              value => $initiatorname);
+            my $initiatorname = $self->{context}->{host}->host_initiatorname;
+            my $lun_number = $self->{context}->{container_access}->getLunId(host => $self->{context}->{host});
 
             $self->getEContext->execute(
                 command => "echo \"InitiatorName=$initiatorname\" > " .
@@ -444,7 +432,7 @@ sub _generateBootConf {
                 target        => $targetname,
                 ip            => $self->{context}->{container_access}->getAttr(name => 'container_access_ip'),
                 port          => $self->{context}->{container_access}->getAttr(name => 'container_access_port'),
-                lun           => $lun_number,
+                lun           => "lun-" . $lun_number,
                 mount_opts    => $args{options},
                 mounts_iscsi  => [],
                 additional_devices => "",
