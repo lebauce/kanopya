@@ -274,7 +274,7 @@ sub getWorkflows {
     my $self = shift;
     my %args = @_;
 
-    my @workflows = ();
+    my $workflows = {};
 
     # TODO: join tables workflow and workflow_parameter to get
     #       paramters of running workflow only.
@@ -284,12 +284,14 @@ sub getWorkflows {
                    });
 
     for my $context (@contexes) {
-        my $workflow = Operation->get(id => $context->getAttr(name => 'operation_id'))->getWorkflow;
-        if ($workflow->getAttr(name => 'state') eq 'running') {
-            push @workflows, $workflow;
+        my $workflow = $context->operation->getWorkflow;
+        if ($workflow->state eq 'running' and not exists $workflows->{$workflow->id}) {
+            $workflows->{$workflow->id} = $workflow;
         }
     }
-    return wantarray ? @workflows : \@workflows;
+    
+    my @workflow_list = values %$workflows;
+    return wantarray ? @workflow_list : \@workflow_list;
 }
 
 sub lock {
