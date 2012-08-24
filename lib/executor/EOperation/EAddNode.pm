@@ -219,6 +219,11 @@ sub execute {
         # Just call Master node addition, other node will be add by the state manager
         $self->{context}->{host} = $self->{context}->{cluster}->addNode();
     }
+
+    if (not defined $self->{context}->{host}) {
+        throw Kanopya::Exception::Internal(error => "Could not find a usable host");
+    }
+
     $self->{context}->{host}->setState(state => "locked");
 
     # If it is the first node, the cluster is starting
