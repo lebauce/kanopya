@@ -289,7 +289,7 @@ sub getConf {
             aggregate_totalsize => General::bytesToHuman(value => $aggr->size_total, precision => 5),
             aggregate_sizeused  => General::bytesToHuman(value => $aggr->size_used, precision => 5),
             aggregate_volumes   => [],
-            entity_comment      => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
+            entity_comment      => "",
         };
         # run through each vol on xml/rpc fill and get comment from db
         foreach my $volume (@vol_object) {
@@ -303,7 +303,7 @@ sub getConf {
                     volume_totalsize => General::bytesToHuman(value => $volume->size_total, precision => 5),
                     volume_sizeused  => General::bytesToHuman(value => $volume->size_used, precision => 5),
                     volume_luns      => [],
-                    entity_comment   => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
+                    entity_comment   => "",
                 };
                 foreach my $lun (@lun_object) {
                     my $name = $vol_key;
@@ -316,7 +316,7 @@ sub getConf {
                             lun_state       => $lun->state,
                             lun_totalsize   => General::bytesToHuman(value => $lun->size, precision => 5),
                             lun_sizeused    => General::bytesToHuman(value => $lun->size_used, precision => 5),
-                            entity_comment   => EntityComment->find( hash => {entity_comment_id => $entity_id})->getAttr(name => 'entity_comment'),
+                            entity_comment   => "",
                         };
                         push @{$tmp2->{volume_luns}}, $tmp3;
                     }
