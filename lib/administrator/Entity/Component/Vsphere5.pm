@@ -114,13 +114,11 @@ sub getConf {
 sub addRepository {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['repository_name', 'container_access']); 
+    General::checkParams(args => \%args, required => ['repository_name', 'container_access_id']);
 
-    my $container_access_id = $args{container_access}->getId;
-
-    my $repository = Vsphere5Repository->new(vsphere5_id         => $self->getId,
+    my $repository = Vsphere5Repository->new(vsphere5_id         => $self->id,
                                              repository_name     => $args{repository_name}, 
-                                             container_access_id => $container_access_id,
+                                             container_access_id => $args{container_access_id},
                      );
 
     return $repository;
@@ -137,12 +135,10 @@ sub addRepository {
 sub getRepository {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['container_access']); 
-
-    my $container_access_id = $args{container_access}->getId;
+    General::checkParams(args => \%args, required => ['container_access_id']);
 
     my $repository = Vsphere5Repository->find(hash => {
-                         container_access_id => $container_access_id } 
+                         container_access_id => $args{container_access_id} }
                      );
 
     if (! defined $repository) {

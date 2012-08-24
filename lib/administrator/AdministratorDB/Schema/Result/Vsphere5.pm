@@ -87,6 +87,21 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 vsphere5_datacenters
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Vsphere5Datacenter>
+
+=cut
+
+__PACKAGE__->has_many(
+  "vsphere5_datacenters",
+  "AdministratorDB::Schema::Result::Vsphere5Datacenter",
+  { "foreign.vsphere5_id" => "self.vsphere5_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 vsphere5_hypervisors
 
 Type: has_many
@@ -133,8 +148,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-20 17:02:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KIpDgBjXgWh9TBMpWvTD+Q
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-23 17:42:38
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1x9ezT9ZY1yBA6DedltHwA
 
 __PACKAGE__->belongs_to(
   "parent",
