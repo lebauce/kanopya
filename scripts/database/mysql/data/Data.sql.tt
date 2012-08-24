@@ -394,7 +394,8 @@ INSERT INTO `operationtype` VALUES
 (47,'UpdatePuppetCluster', NULL),
 (48,'UpdateComponent', NULL),
 (49,'LaunchScaleInWorkflow', 'Configuring scale in node'),
-(50,'LaunchOptimiaasWorkflow', NULL);
+(50,'LaunchOptimiaasWorkflow', NULL),
+(51,'ProcessRule', 'Processing triggered rule');
 
 --
 -- components type list
