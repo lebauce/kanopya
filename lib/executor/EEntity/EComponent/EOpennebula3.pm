@@ -501,12 +501,12 @@ sub startHost {
 
     # generate template in opennebula master node
     my $vm_templatefile;
-    if($hypervisor_type eq 'kvm') {
+    if ($hypervisor_type eq 'kvm') {
         $vm_templatefile = $self->generateKvmVmTemplate(
             host       => $args{host},
             hypervisor => $hypervisor,
         );
-    } elsif($hypervisor_type eq 'xen') {
+    } elsif ($hypervisor_type eq 'xen') {
         $vm_templatefile = $self->generateXenVmTemplate(
             host       => $args{host},
             hypervisor => $hypervisor,
@@ -739,9 +739,9 @@ sub _generateXenconf {
 
     General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
 
-    # TODO recup de l'interface pour les vms
+    # TODO: Remove me
     my $data = {
-             vmiface => 'eth1',
+        vmiface      => 'eth1',
         min_mem_dom0 => '1024'
     };
 
@@ -922,7 +922,7 @@ sub generateXenVmTemplate {
 
             # generate and register vnet
             my $vnet_template = $self->generateVnetTemplate(
-                vnet_name       => $hostname.'-'.$iface->getAttr(name => 'iface_name'),
+                vnet_name       => $hostname . '-' . $iface->getAttr(name => 'iface_name'),
                 vnet_bridge     => "br-" . ($vlan || "default"),
                 vnet_phydev     => "p" . $bridge->getAttr(name => "iface_name"),
                 vnet_vlanid     => $vlan,

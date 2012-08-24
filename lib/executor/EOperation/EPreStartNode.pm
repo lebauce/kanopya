@@ -171,7 +171,6 @@ sub _cancel {
     }
 
     if ($self->{context}->{host}) {
-
         my $dir = $self->{config}->{clusters}->{directory};
         $dir .= '/' . $self->{context}->{cluster}->getAttr(name => 'cluster_name');
         $dir .= '/' . $self->{context}->{host}->getAttr(name => 'host_hostname');
