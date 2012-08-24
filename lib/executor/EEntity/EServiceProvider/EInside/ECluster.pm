@@ -142,8 +142,8 @@ sub addNode {
     my $ehost_manager = EFactory::newEEntity(data => $host_manager);
     my $host = $ehost_manager->getFreeHost(%$host_manager_params);
 
-    $log->debug("Host manager <" . $self->getManager(manager_type => 'disk_manager')->getId .
-                "> returned free host " . $host->getAttr(name => 'host_id'));
+    $log->debug("Host manager <" . $host_manager->id .
+                "> returned free host " . (ref $host));
 
     return $host;
 }
