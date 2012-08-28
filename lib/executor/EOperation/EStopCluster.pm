@@ -63,7 +63,6 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    $log->info("getting cluster's nodes");
     my $hosts = $self->{context}->{cluster}->getHosts();
 
     if(not scalar keys %$hosts) {

@@ -110,7 +110,7 @@ sub new {
         my $initial_state  = $execution_rank ? "pending" : "ready";
         my $user_id        = $adm->{_rightchecker}->{user_id};
 
-        $log->info("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
+        $log->debug("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
 
         my $row = {
             type                 => $args{type},
@@ -138,8 +138,6 @@ sub new {
     }
 
     $adm->{db}->txn_commit;
-
-    $log->info(ref($self)." saved to database (added in execution list)");
 
     return $self;
 }

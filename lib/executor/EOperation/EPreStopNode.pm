@@ -168,7 +168,7 @@ sub execute {
     $self->SUPER::execute();
 
     my $components = $self->{context}->{cluster}->getComponents(category => "all");
-    $log->info('Processing cluster components configuration for this node');
+    $log->info('Inform cluster components about node removal');
 
     foreach my $i (keys %$components) {
         my $comp = EFactory::newEEntity(data => $components->{$i});
