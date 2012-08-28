@@ -87,7 +87,7 @@ sub createExport {
                      container_access_port   => 3260,
                      typeio                  => $args{typeio},
                      iomode                  => $args{iomode},
-                     lun_name                => "lun-0"
+                     lun_name                => "0"
                  );
     my $container_access = EFactory::newEEntity(data => $entity);
 

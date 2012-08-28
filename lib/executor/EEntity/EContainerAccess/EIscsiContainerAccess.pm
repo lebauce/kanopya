@@ -60,19 +60,31 @@ sub connect {
     my $target = $self->getAttr(name => 'container_access_export');
     my $ip     = $self->getAttr(name => 'container_access_ip');
     my $port   = $self->getAttr(name => 'container_access_port');
-    my $lun    = "lun-" . $self->getLunId(host => $executor);
+    my $lun    = $self->getLunId(host => $executor);
 
     $log->debug("Creating open iscsi node <$target> from <$ip:$port>.");
 
     my $create_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o new";
-    $args{econtext}->execute(command => $create_node_cmd);
+    my $result = $args{econtext}->execute(command => $create_node_cmd);
+
+    if($result->{exitcode} != 0) {
+        my $logger = get_logger("command");
+        $logger->error($result->{stderr});
+        throw Kanopya::Exception::Execution(error => $result->{stderr});
+    }
 
     $log->debug("Loging in node <$target> (<$ip:$port>).");
 
     my $login_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -l";
-    $args{econtext}->execute(command => $login_node_cmd);
+    $result = $args{econtext}->execute(command => $login_node_cmd);
 
-    my $device = '/dev/disk/by-path/ip-' . $ip . ':' . $port . '-iscsi-' . $target . '-' . $lun;
+     if($result->{exitcode} != 0) {
+        my $logger = get_logger("command");
+        $logger->error($result->{stderr});
+        throw Kanopya::Exception::Execution(error => $result->{stderr});
+    }
+
+    my $device = '/dev/disk/by-path/ip-' . $ip . ':' . $port . '-iscsi-' . $target . '-lun-' . $lun;
 
     my $result;
     my $retry = 20;
