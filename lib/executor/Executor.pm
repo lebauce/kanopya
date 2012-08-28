@@ -267,8 +267,9 @@ sub oneRun {
             }
 
             $log->info("$opclass rollback processing");
-            $op->{erollback}->undo();
-
+            if(defined $op->{erollback}) {
+                $op->{erollback}->undo();
+            }
             # Rollback transaction
             $adm->{db}->txn_rollback;
 
