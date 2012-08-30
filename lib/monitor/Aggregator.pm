@@ -42,19 +42,15 @@ sub getMethods {
 }
 
 # Constructor
-
 sub new {
     my $class = shift;
     my %args = @_;
     my $self = {};
     bless $self, $class;
 
-    # Load conf
-    my $conf = Kanopya::Config::get('aggregator');
-    $self->{_time_step} = $conf->{time_step};
-
     # Get Administrator
-    my ($login, $password) = ($conf->{user}->{name}, $conf->{user}->{password});
+    my $conf               = getAggregatorConf();
+    my ($login, $password) = ($conf->{user_name}, $conf->{user_password});
     Administrator::authenticate( login => $login, password => $password );
     $self->{_admin} = Administrator->new();
 
@@ -253,7 +249,9 @@ sub _computeCombinationAndFeedTimeDB {
                 $log->info("*** [WARNING] No statvalue computed for clustermetric " . $clustermetric->getId);
             }
         } else {
-             $log->info("*** [WARNING] No datas received for clustermetric " . $clustermetric->getId);
+            # This case is current and produce lot of log
+            # TODO better handling (and user feedback) of missing data
+            $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric->getId);
         }
     }
 }
@@ -284,10 +282,13 @@ sub run {
         my $update_duration = time() - $start_time;
         $log->info( "Manage duration : $update_duration seconds" );
 
-        if ($update_duration > $self->{_time_step}) {
+        my $conf      = getAggregatorConf();
+        my $time_step = $conf->{time_step}; 
+
+        if ($update_duration > $time_step) {
             $log->warn("aggregator duration > aggregator time step (conf)");
         } else {
-            sleep($self->{_time_step} - $update_duration);
+            sleep($time_step - $update_duration);
         }
     }
 
@@ -301,8 +302,8 @@ sub run {
 =head2 updateAggregatorConf
 
     Class : Public
-
     Desc : update values in the aggregator.conf file 
+    Args: $collect_frequency and/or $storage_duration
 
 =cut
 
@@ -331,7 +332,6 @@ sub updateAggregatorConf {
 =head2 getAggregatorConf
 
     Class : Public
-
     Desc : get public values from aggregator.conf file
 
 =cut
@@ -341,6 +341,8 @@ sub getAggregatorConf {
     return {
         time_step           => $conf->{time_step},
         storage_duration    => $conf->{storage_duration}{duration},
+        user_name           => $conf->{user}{name},
+        user_password       => $conf->{user}{password},
     }
 }
 

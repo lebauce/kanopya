@@ -34,9 +34,13 @@ sub getKanopyaDir {
 
 sub get {
     my ($subsystem) = @_;
+
     # use a copy of the structure to avoid accidental global modifications 
     my $copy = dclone($config);
     if(defined $subsystem && exists $copy->{$subsystem}) {
+        # Reload config from file (allow several processes/workers to have the same data)
+        $copy->{$subsystem} = XMLin($config->{$subsystem . '_path'});
+
         return $copy->{$subsystem};
     } else {
         return $copy;

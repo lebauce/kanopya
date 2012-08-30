@@ -11,6 +11,8 @@
         data_sql             = "kanopya\scripts\database\mysql\data\Data.sql"
         schema_sql           = "kanopya\scripts\database\mysql\schemas\Schemas.sql"
         services_dir         = "kanopya\sbin\win32\" />
+    <default_conf
+        product              = "KIO" />
     <services 
         kanopya_aggregator   = "kanopya-aggregator.pl"
         kanopya_executor     = "kanopya-executor.pl"

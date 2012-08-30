@@ -4,8 +4,6 @@ $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
     if (obj.widget.element.find('.nmHistogram').length == 0) {return;}
 
-    console.log('Load content of widget histo ' + obj.widget.id);
-
      var sp_id = obj.widget.metadata.service_id;
      fillNodeMetricList2(
              obj.widget,
@@ -21,6 +19,7 @@ function fillNodeMetricList2 (widget, sp_id) {
     indic_list.change(function () {
         showNodemetricCombinationHistogram(this, this.options[this.selectedIndex].id, this.options[this.selectedIndex].value, part_number, sp_id);
         widget.addMetadataValue('nodemetric_id', this.options[this.selectedIndex].id);
+        widgetUpdateTitle(widget, this.options[this.selectedIndex].value);
     });
 
     $.get('/api/serviceprovider/' + sp_id + '/nodemetric_combinations', function (data) {
@@ -60,8 +59,9 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nod
     var params = {id:nodemetric_combination_id,pn:part_number};
     //graph_div.html('');
     $.getJSON(nodes_view_histogram, params, function(data) {
-        if (data.error){ alert (data.error); }
-        else {
+        if (data.error){
+            graph_container_div.append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: data.error}));
+        } else {
             graph_div.css('display', 'block');
             nodemetricCombinationHistogram(data.nbof_nodes_in_partition, data.partitions, graph_div_id, data.nodesquantity, nodemetric_combination_label);
         }

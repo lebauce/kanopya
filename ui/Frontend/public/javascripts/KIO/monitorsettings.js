@@ -1,5 +1,63 @@
 
 function loadMonitorSettings(cid, eid) {
+    loadAggregatorSettings(cid, eid);
+    $('#' + cid).append('<hr>');
+    loadOrchestratorSettings(cid, eid);
+}
+
+function loadOrchestratorSettings(cid, eid) {
+    var container = $('#' + cid);
+
+    // Retrieve current aggregator conf
+    var time_step;
+    $.ajax({
+        url     :'/api/orchestrator/getOrchestratorConf',
+        type    : 'POST',
+        async   : false,
+        success : function(data) {
+            time_step           = data.time_step;
+        }
+    });
+
+    // Frequency select
+    var select_freq = $('<select>', {id : 'orch_freq'});
+    for (var i=1; i<60; i++) {
+        select_freq.append($('<option>', { value: i, html: i}))
+    }
+
+    // Set input to current values
+    var freq_minutes = time_step / 60;
+    select_freq.find('[value="' + freq_minutes + '"]').attr('selected', 'selected');
+
+    // Display settings
+    var table   = $("<table>").css("width", "100%").appendTo(container);
+    $(table).append($("<tr>").append($("<td>", { colspan : 2, class : 'table-title', text : "Orchestrator settings" })));
+    $(table).append($("<tr>").append($("<td>", { text : 'Frequency :', width : '200' })).append($("<td>").append(select_freq).append(' min')));
+    $(table).append($("<tr>", { height : '15' }).append($("<td>", { colspan : 2 })));
+
+    // Save settings button
+    var update_button = $('<button>', {html : 'Apply'})
+                        .button({ icons : { primary : 'ui-icon-wrench'} })
+                        .click( function() {
+                            var orch_freq    = $('#orch_freq :selected').val();
+                            orch_freq        *= 60;
+
+                            $.ajax({
+                                url     :'/api/orchestrator/updateOrchestratorConf',
+                                type    : 'POST',
+                                async   : false,
+                                data    : {
+                                    time_step   : orch_freq,
+                                },
+                            });
+                            // Update current conf
+                            time_step           = orch_freq;
+                            alert('ok');
+                        });
+    container.append(update_button);
+}
+
+function loadAggregatorSettings(cid, eid) {
     var container = $('#' + cid);
 
     // Retrieve current aggregator conf
@@ -39,7 +97,7 @@ function loadMonitorSettings(cid, eid) {
     var duration_timescale;
     var duration_amount;
 
-    if (storage_duration / month_seconds >= 1) {
+    if (storage_duration % month_seconds == 0) {
         duration_timescale  = month_seconds;
         duration_amount     = storage_duration / month_seconds;
     } else {

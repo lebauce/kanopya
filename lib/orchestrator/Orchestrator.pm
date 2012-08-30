@@ -65,6 +65,18 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 
+sub getMethods {
+  return {
+    'updateOrchestratorConf'  => {
+      'description' => 'Update orchestrator conf',
+      'perm_holder' => 'entity'
+    },
+    'getOrchestratorConf'  => {
+      'description' => 'Get orchestrator conf',
+      'perm_holder' => 'entity'
+    }
+  }
+}
 
 =head2 new
 
@@ -1335,13 +1347,13 @@ sub run {
     my $self = shift;
     my $running = shift;
 
-    # Load conf
-    my $conf = Kanopya::Config::get('orchestrator');
-    $self->{_time_step} = $conf->{time_step};
-
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
 
     while ( $$running ) {
+        # Load conf
+        my $conf = Kanopya::Config::get('orchestrator');
+        $self->{_time_step} = $conf->{time_step};
+
         my $start_time = time();
         $self->manage_aggregates();
 
@@ -1355,6 +1367,49 @@ sub run {
     }
 
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
+}
+
+=head2 updateOrchestratorConf
+
+    Class : Public
+    Desc  : update values in the orchestrator.conf file 
+    Args  : $time_step
+
+=cut
+
+sub updateOrchestratorConf {
+    my ($class, %args) = @_; 
+
+    if ((not defined $args{time_step})) {
+        throw Kanopya::Exception::Internal(
+            error => 'An orchestration frequency must be provided for update'
+        );  
+    } 
+
+    #get orchestrator configuration
+    my $configuration = Kanopya::Config::get('orchestrator'); 
+
+    if (defined $args{time_step}) {
+        $configuration->{time_step} = $args{time_step};
+        Kanopya::Config::set(subsystem => 'orchestrator', config => $configuration);
+    }
+
+}
+
+=head2 getOrchestratorConf
+
+    Class : Public
+    Desc  : get public values from orchestrator.conf file
+
+=cut
+
+sub getOrchestratorConf {
+
+    my $conf = Kanopya::Config::get('orchestrator');
+    return {
+        time_step           => $conf->{time_step},
+    }
+
 }
 
 1;

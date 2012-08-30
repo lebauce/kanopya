@@ -31,6 +31,13 @@ function setGraphResizeHandlers (graph_div_id, graph) {
     });
 }
 
+// Update title, keeping first part (widget type) and adding conf part
+function widgetUpdateTitle(widget, conf) {
+    var sep = ' - ';
+    var split_title = widget.title.split(sep);
+    widget.setTitle(split_title[0] + sep + conf);
+}
+
 function setGraphDatePicker(widget_elem, widget) {
     var now = new Date();
     var start = new Date();

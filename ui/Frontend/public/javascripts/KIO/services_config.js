@@ -213,9 +213,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
         success     : function(data) {
             // we skip all managers of the Kanopya cluster (id=1)
             for (var i in data) if (data.hasOwnProperty(i)) {
-                console.log(i);
                 if (data[i].service_provider_id == 1) {
-                    console.log('delete');
                     data.splice(i,1);
                 }
             }

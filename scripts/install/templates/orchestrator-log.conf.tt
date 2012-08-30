@@ -2,6 +2,7 @@ log4perl.rootLogger=INFO, A1
 log4perl.logger.basedb=INFO, A1
 log4perl.logger.command=WARN, A1
 log4perl.logger.timedata=DEBUG, A1
+log4perl.logger.orchestrator=WARN, A1
 
 log4perl.appender.A1=Log::Dispatch::File
 log4perl.appender.A1.filename=[% logdir %]orchestrator.log

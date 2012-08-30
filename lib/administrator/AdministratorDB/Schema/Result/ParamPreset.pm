@@ -34,9 +34,8 @@ __PACKAGE__->table("param_preset");
 
 =head2 value
 
-  data_type: 'char'
+  data_type: 'text'
   is_nullable: 1
-  size: 128
 
 =head2 relation
 
@@ -58,7 +57,7 @@ __PACKAGE__->add_columns(
   "name",
   { data_type => "char", is_nullable => 1, size => 128 },
   "value",
-  { data_type => "char", is_nullable => 1, size => 128 },
+  { data_type => "text", is_nullable => 1 },
   "relation",
   {
     data_type => "integer",

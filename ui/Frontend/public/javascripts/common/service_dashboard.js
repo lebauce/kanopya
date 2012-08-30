@@ -103,12 +103,21 @@ function initServiceDashboard() {
                  ]
         }); // end dashboard call
 
+        s_dashboard.element.live('widgetInitialized',function(e, obj){
+            // Update the next id for future added widget
+            var widget_id = parseInt(obj.widget.id);
+
+            if (startId <= widget_id) {
+                startId = widget_id + 1;
+            }
+        });
+
         // binding for a widgets is added to the dashboard
         s_dashboard.element.live('dashboardAddWidget',function(e, obj){
             var widget = obj.widget;
 
             s_dashboard.addWidget({
-                "id":startId++,
+                "id":startId,
                 "title":widget.title,
                 "url":widget.url,
                 "column":widget.column || 'first',
@@ -127,14 +136,6 @@ function initServiceDashboard() {
 
         // binding for widget loaded
         s_dashboard.element.live('widgetLoaded',function(e, obj){
-
-            var widgetEl = obj.widget.element;
-
-            // Update the next id for future added widget
-            var widget_id = parseInt(obj.widget.id);
-            if (startId <= widget_id) {
-                startId = widget_id + 1;
-            }
 
             obj.widget.addMetadataValue("service_id", service_id);
 

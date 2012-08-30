@@ -91,6 +91,9 @@ function createUpdateNodeButton(container, elem_id, grid) {
                     url          : '/api/externalcluster/' + elem_id + '/updateNodes',
                     success      : function(data) {
                         $(grid).trigger("reloadGrid");
+                        if (data.node_count) {
+                            alert(data.node_count + ' nodes retrieved');
+                        }
                     }
             });
         });
@@ -100,10 +103,6 @@ function createUpdateNodeButton(container, elem_id, grid) {
     }
     // Finally, append the button in the DOM tree
     $(container).append(button);
-}
-
-function scoConfigurationDialog(elem_id, sco_id) {
-  console.log(sco_id);
 }
 
 function loadServicesRessources (container_id, elem_id) {
@@ -125,10 +124,9 @@ function loadServicesRessources (container_id, elem_id) {
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             addRessourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, 'external');
         },
-        colNames: [ 'id', 'State', 'Hostname', 'Rules State' ],
+        colNames: [ 'id', 'Hostname', 'Rules State' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'externalnode_state', index: 'externalnode_state', width: 90, formatter: StateFormatter },
             { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 200 },
             { name: 'rulesstate', index: 'rulestate' }
         ],

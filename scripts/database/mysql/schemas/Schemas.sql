@@ -1682,7 +1682,7 @@ CREATE TABLE `policy` (
 CREATE TABLE `param_preset` (
   `param_preset_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `name` char(128) DEFAULT NULL,
-  `value` char(128) DEFAULT NULL,
+  `value` text DEFAULT NULL,
   `relation` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`param_preset_id`),
   KEY (`relation`),

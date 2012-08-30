@@ -4,8 +4,6 @@ $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
     if (obj.widget.element.find('.clusterCombinationView').length == 0) {return;}
 
-    console.log('Load content of widget service metric historical ' + obj.widget.id);
-    
      var sp_id = obj.widget.metadata.service_id;
      fillServiceMetricCombinationList(
              obj.widget,
@@ -34,6 +32,7 @@ function fillServiceMetricCombinationList (widget, sp_id) {
                 sp_id
         );
         widget.addMetadataValue('aggregate_combination_id', this.options[this.selectedIndex].id);
+        widgetUpdateTitle(widget, metric_name);
     });
 
     $.get('/api/serviceprovider/' + sp_id + '/aggregate_combinations', function (data) {
@@ -77,8 +76,9 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
     
     var params = {id:combi_id,start:start,stop:stop};
     $.getJSON(clustersview_url, params, function(data) {
-        if (data.error) { alert (data.error); }
-        else {
+        if (data.error) {
+            graph_container.append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: data.error}));
+        } else {
             var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot()\"/>';
             var div_id = 'cluster_combination_graph_' + widget_id;
             var div = '<div id=\"'+div_id+'\"></div>';
@@ -118,7 +118,7 @@ function timedGraph(first_graph_line, min, max, label, unit, div_id) {
                     markSize: 10,
                     showGridline: false,
                     angle: -60,
-                    formatString: '%m-%d-%Y %H:%M'
+                    formatString: '%m-%d-%y %H:%M'
                 },
                 min:min,
                 max:max,

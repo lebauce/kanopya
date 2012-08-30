@@ -280,7 +280,7 @@ sub updateNodes {
      eval {
         $nodes = $ds_manager->getNodes(%args);
      } or do {
-        return {error => $@};
+        return {error => "$@"};
      };
 
      my @created_nodes;
