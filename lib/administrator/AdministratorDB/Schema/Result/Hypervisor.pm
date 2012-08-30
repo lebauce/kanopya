@@ -71,6 +71,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 vsphere5_hypervisor
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Vsphere5Hypervisor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "vsphere5_hypervisor",
+  "AdministratorDB::Schema::Result::Vsphere5Hypervisor",
+  { "foreign.vsphere5_hypervisor_id" => "self.hypervisor_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 virtual_machines
 
 Type: has_many

@@ -88,7 +88,6 @@ sub prerequisites {
                                 value => $host_manager_params->{ram},
                                 units => $host_manager_params->{ram_unit},
                             );
-
         my $cm = CapacityManagement->new(
                      cluster_id    => $cluster->getId(),
                      cloud_manager => $self->{context}->{host_manager},

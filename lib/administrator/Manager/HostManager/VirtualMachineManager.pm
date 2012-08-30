@@ -56,4 +56,14 @@ sub createVirtualHost {
     return $vm;
 }
 
+=head2 getHostType
+
+    Desc: return the type of the host managed by this host manager
+
+=cut
+
+sub getHostType {
+    return "Virtual Machine";
+}
+
 1;

@@ -26,6 +26,8 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
 use Vsphere5Repository;
+use Entity::Host::VirtualMachine::Vsphere5Vm;
+use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::ContainerAccess;
 
 my $log = get_logger("administrator");
@@ -82,6 +84,12 @@ sub setConf {
         $self->setAttr(name => 'vsphere5_pwd', value => $conf->{password});
         $self->save();
     }
+    if (defined $conf->{repositories}) {
+        while (my ($repo,$container) = each (%{$conf->{repositories}})) {
+            $self->addRepository(repository_name     => $repo,
+                                 container_access_id => $container->{container_access_id});
+        }
+    }
 }
 
 
@@ -96,12 +104,31 @@ sub getConf {
     my ($self,%args) = @_;
 
     my %conf;
+    my @repos = Vsphere5Repository->search(hash => { vsphere5_id => $self->id });
 
-    $conf{login}    = $self->vsphere5_login;
-    $conf{password} = $self->vsphere5_pwd;
+    $conf{login}        = $self->vsphere5_login;
+    $conf{password}     = $self->vsphere5_pwd;
+    $conf{repositories} = \@repos;
 
     return \%conf;
 }
+
+=head2 getHypervisors
+
+    Desc: Return the list of hypervisors managed by the component
+    Return: \@hypervisors
+
+=cut
+
+sub getHypervisors {
+    my $self = shift;
+
+    my @hypervisors = Entity::Host::Hypervisor::Vsphere5Hypervisor->search(
+                          hash => { vsphere5_id => $self->id} );
+
+    return wantarray ? @hypervisors : \@hypervisors;
+}
+
 
 =head2 addRepository
 
@@ -146,6 +173,58 @@ sub getRepository {
     }
  
     return $repository;
+}
+
+#######################
+## vm's manipulation ##
+#######################
+
+=head2 addVM
+
+    Desc: register a new vsphere VM into kanopya 
+    Args: $host, $hypervisor, $guest_id
+    Return: an instance of vsphere5_vm 
+
+=cut
+
+sub addVM {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'guest_id' ]);
+
+    my $vsphere5vm = Entity::Host::VirtualMachine::Vsphere5Vm->promote(
+                         promoted          => $args{host},
+                         vsphere5_id       => $self->id,
+                         vsphere5_guest_id => $args{guest_id},
+                     );
+
+    return $vsphere5vm;
+}
+
+###############################
+## hypervisors' manipulation ##
+###############################
+
+=head2 addHypervisor
+
+    Desc: register a new vsphere hypervisor into kanopya 
+    Args: $host,$datacenter_id
+    Return: a new instance of vsphere5_hypervisor 
+
+=cut
+
+sub addHypervisor {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'datacenter_id' ]);
+
+    my $hypervisor_type = 'Entity::Host::Hypervisor::Vsphere5Hypervisor';
+
+    return $hypervisor_type->promote(
+               promoted                => $args{host},
+               vsphere5_id             => $self->id,
+               vsphere5_datacenter_id  => $args{datacenter_id}
+           ); 
 }
 
 1;

@@ -13,3 +13,26 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera <>Technology <dev@hederatech.com>.
+
+package EEntity::EHost::EHypervisor::EVsphere5Hypervisor;
+use base "EEntity::EHost::EHypervisor";
+
+use strict;
+use warnings;
+use Data::Dumper;
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("executor");
+
+
+=head2 getAvailableMemory
+
+    Desc: Give the available memory amount.
+
+=cut
+
+sub getAvailableMemory {
+    return 99999999999999;
+}
+
+1;
