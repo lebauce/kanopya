@@ -425,12 +425,12 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
     $('<div id="node_accordion_container">').appendTo(divacc);
     // Display nodemetric conditions
-    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_conditions_' + elem_id;
+    var serviceNodemetricConditionsGridId = 'service_ressources_nodemetric_conditions_' + elem_id;
     create_grid( {
         caption: 'Conditions',
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions',
         content_container_id: 'node_accordion_container',
-        grid_id: loadServicesMonitoringGridId,
+        grid_id: serviceNodemetricConditionsGridId,
         afterInsertRow: function(grid, rowid, rowdata) {
             $.ajax({
                 url     : '/api/nodemetriccombination/' + rowdata.nodemetric_condition_combination_id,
@@ -456,12 +456,12 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     
     // Display nodemetric rules
     $("<p>").appendTo('#node_accordion_container');
-    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_rules_' + elem_id;
+    var serviceNodemetricRulesGridId = 'service_ressources_nodemetric_rules_' + elem_id;
     create_grid( {
         caption: 'Rules',
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_rules',
         content_container_id: 'node_accordion_container',
-        grid_id: loadServicesMonitoringGridId,
+        grid_id: serviceNodemetricRulesGridId,
         grid_class: 'service_ressources_nodemetric_rules',
         afterInsertRow: function(grid, rowid, rowdata) {
             // Formula
@@ -499,17 +499,19 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                                             url     : '/api/workflowdef/' + data.workflow_def_id,
                                             success : function(wfdef) {
                                                 $(p).html($(p).html() + '<br /><br />Associated workflow : ' + wfdef.workflow_def_name);
+                                                appendWorkflowActionsButtons(p, cid, eid, data.workflow_def_id, elem_id);
                                             }
                                         });
+                                    } else {
+                                        createWorkflowRuleAssociationButton(cid, eid, 1, elem_id);
                                     }
                                 }
                             });
-                            require('common/workflows.js');
-                            createWorkflowRuleAssociationButton(cid, eid, 1, elem_id);
                         }},
                         { label : 'Nodes', id : 'nodes', onLoad : function(cid, eid) { rule_nodes_tab(cid, eid, elem_id); }, hidden : mode_policy },
                     ],
-            title : { from_column : 'nodemetric_rule_label' }
+            title : { from_column : 'nodemetric_rule_label' },
+            onClose : function() {$('#'+serviceNodemetricRulesGridId).trigger('reloadGrid')}
         },
         action_delete: {
             url : '/api/nodemetricrule',
@@ -521,12 +523,12 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
     $('<div id="service_accordion_container">').appendTo(divacc);
     // Display service conditions :
-    var loadServicesMonitoringGridId = 'service_ressources_aggregate_conditions_' + elem_id;
+    var serviceAggregateConditionsGridId = 'service_ressources_aggregate_conditions_' + elem_id;
     create_grid( {
         caption: 'Conditions',
         url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions',
         content_container_id: 'service_accordion_container',
-        grid_id: loadServicesMonitoringGridId,
+        grid_id: serviceAggregateConditionsGridId,
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             $.ajax({
                 url     : '/api/aggregatecombination/' + rowdata.aggregate_combination_id,
@@ -553,13 +555,13 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
 
     // Display services rules :
     $("<p>").appendTo('#service_accordion_container');
-    var loadServicesMonitoringGridId = 'service_ressources_aggregate_rules_' + elem_id;
+    var serviceAggregateRulesGridId = 'service_ressources_aggregate_rules_' + elem_id;
     create_grid( {
         caption: 'Rules',
         url: '/api/serviceprovider/' + elem_id + '/aggregate_rules',
         grid_class: 'service_ressources_aggregate_rules',
         content_container_id: 'service_accordion_container',
-        grid_id: loadServicesMonitoringGridId,
+        grid_id: serviceAggregateRulesGridId,
         colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description', 'trigger'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
@@ -597,15 +599,18 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                                             url     : '/api/workflowdef/' + data.workflow_def_id,
                                             success : function(wfdef) {
                                                 $(p).html($(p).html() + '<br /><br />Associated workflow : ' + wfdef.workflow_def_name);
+                                                appendWorkflowActionsButtons(p, cid, eid, data.workflow_def_id, elem_id);
                                             }
                                         });
+                                    } else {
+                                        createWorkflowRuleAssociationButton(cid, eid, 2, elem_id);
                                     }
                         }
                     });
-                    createWorkflowRuleAssociationButton(cid, eid, 2, elem_id);
                }},
             ],
-            title   : { from_column : 'aggregate_rule_label' }
+            title   : { from_column : 'aggregate_rule_label' },
+            onClose : function() {$('#'+serviceAggregateRulesGridId).trigger('reloadGrid')}
         },
         action_delete: {
             url : '/api/aggregaterule',

@@ -239,6 +239,67 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
     });
 }
 
+function workflowRuleConfigure(wfdef_id) {
+    var dial    = $("<div>");
+    var form    = $("<table>", { width : '100%' }).appendTo($("<form>").appendTo(dial));
+    var param_preset;
+
+    function    validateTheForm() {
+        var specparamsinputs    = $("input.input_specific_param");
+        $(specparamsinputs).each(function() {
+            param_preset.specific[$(this).attr('name')]    = $(this).val();
+        });
+        $.ajax({
+            url         : '/api/workflowdef/' + wfdef_id + '/updateParamPreset',
+            type        : 'POST',
+            contentType : 'application/json',
+            data        : JSON.stringify({params : param_preset}),
+            success     : function() {
+                  $(dial).dialog('close');
+            }
+        });
+    }
+
+    $.ajax({
+        type    :'POST',
+        url     : 'api/workflowdef/' + wfdef_id + '/getParamPreset',
+        success : function(data) {
+            param_preset = data;
+            if (data.specific === null) {
+                alert('This workflow has no parameter');
+                return;
+            }
+            $.each(data.specific, function(k,v) {
+                var line    = $("<tr>").appendTo(form);
+                $(line).append($("<td>").append($("<label>", {
+                    for     : 'input_specific_param_' + k,
+                    text    : k
+                })));
+                $(line).append($("<td>", { align : "right" }).append($("<input>", {
+                    type    : 'test',
+                    name    : k,
+                    value   : v,
+                    id      : 'input_specific_param_' + k,
+                    class   : 'input_specific_param'
+                })));
+            });
+
+            $(dial).dialog({
+                resizable       : false,
+                closeOnEscape   : false,
+                modal           : true,
+                width           : '400px',
+                close           : function() { $(this).remove(); },
+                buttons         : {
+                    'Cancel'    : function() { $(this).dialog('close'); },
+                    'Ok'        : validateTheForm
+                }
+            });
+        }
+    });
+
+}
+
 function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
     var dial    = $("<div>");
     var form    = $("<table>", { width : '100%' }).appendTo($("<form>").appendTo(dial));
@@ -376,10 +437,41 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
     });
 }
 
+function    workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
+    $.ajax({
+        url         : '/api/serviceprovider/' + serviceprovider_id + '/getManager',
+        type        : 'POST',
+        contentType : 'application/json',
+        data        : JSON.stringify({ 'manager_type' : 'workflow_manager' }),
+        success     : function(manager) {
+            var params = {
+                    workflow_def_id : wfdef_id,
+                    rule_id         : rule_id
+            };
+            $.ajax({
+                url         : '/api/entity/' + manager.pk + '/deassociateWorkflow',
+                type        : 'POST',
+                contentType : 'application/json',
+                data        : JSON.stringify(params),
+                success    : function(a) {
+                        reload_content(cid, rule_id);
+                }
+            });
+        }
+    });
+}
+
 function    createWorkflowRuleAssociationButton(cid, eid, scid, serviceprovider_id) {
     var button  = $("<a>", { text : 'Associate a Workflow' }).button();
     button.bind('click', function() { workflowRuleAssociation(eid, scid, cid, serviceprovider_id); });
     $('#' + cid).append(button);
+}
+
+function    appendWorkflowActionsButtons(elem, cid, rule_id, wfdef_id, serviceprovider_id) {
+    $(elem).append($("<a>", { text : 'Configure', style : 'margin-left: 15px;' }).button({ icons : { primary : 'ui-icon-wrench' } })
+                .bind('click', function(event) {workflowRuleConfigure(wfdef_id)}));
+    $(elem).append($("<a>", { text : 'Deassociate', style : 'margin-left: 15px;' }).button({ icons : { primary : 'ui-icon-trash' } })
+                .bind('click', function(event) {workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id)}));
 }
 
 function    workflowslist(cid, eid) {

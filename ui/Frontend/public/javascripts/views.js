@@ -104,12 +104,12 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
             height: 500,
             resizable: false,
             close: function(event, ui) {
+                if (details_info.onClose) {details_info.onClose()}
                 $('.last_content').addClass('current_content').removeClass('last_content');
                 $(this).remove(); // detail modals are never closed, they are destroyed
             },
             buttons: {
                 Ok: function() {
-                    //loading_start();
                     $(this).dialog('close');
                     
                 },
