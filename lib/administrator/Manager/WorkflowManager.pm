@@ -58,6 +58,10 @@ sub methods {
     'associateWorkflow'     => {
         'description'   => 'associateWorkflow',
         'perm_holder'   => 'entity'
+    },
+    'deassociateWorkflow'     => {
+        'description'   => 'deassociateWorkflow',
+        'perm_holder'   => 'entity'
     }
   };
 }
@@ -123,6 +127,34 @@ sub createWorkflow {
     );
 
     return $workflow;
+}
+
+=head2 deassociateWorkflow
+    Desc: remove the instance of WorkflowDef associated to a rule
+
+    Args:
+          $rule_id
+          $workflow_def_id
+
+=cut
+
+sub deassociateWorkflow {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'rule_id', 'workflow_def_id' ]);
+
+    my $workflow_def    = WorkflowDef->find(hash => {workflow_def_id => $args{workflow_def_id}});
+    my $workflow_params = $workflow_def->getParamPreset();
+
+    # Unlink workflow to rule
+    $self->_linkWorkflowToRule(
+               workflow => undef,
+               rule_id  => $args{rule_id},
+               scope_id => $workflow_params->{internal}->{scope_id}
+           );
+
+    # Delete workflow def
+    $workflow_def->delete();
 }
 
 =head2 associateWorkflow
@@ -201,9 +233,11 @@ sub associateWorkflow {
 }
 
 =head2 _linkWorkflowToRule
-    Desc: link a workflow to a rule
+    Desc: link or unlink a workflow to a rule
 
-    Args: $workflow (object), $rule_id, $scope_id
+    Args:   $workflow (object to bind or undef for unbind current workflow)
+            $rule_id
+            $scope_id
 
     Return:
 =cut
@@ -211,7 +245,7 @@ sub associateWorkflow {
 sub _linkWorkflowToRule {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'workflow', 'rule_id', 'scope_id' ]);
+    General::checkParams(args => \%args, required => [ 'rule_id', 'scope_id' ], optional => { 'workflow' => undef });
 
     my $workflow = $args{workflow};
     my $rule_id  = $args{rule_id};
@@ -219,7 +253,7 @@ sub _linkWorkflowToRule {
     my $rule;
 
     #get workflow def id
-    my $workflow_def_id = $workflow->getAttr(name => 'workflow_def_id');
+    my $workflow_def_id = defined $workflow ? $workflow->getAttr(name => 'workflow_def_id') : undef;
 
     #we get the scope name
     my $scope      = Scope->find(hash => {scope_id => $scope_id});

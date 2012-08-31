@@ -43,6 +43,14 @@ sub methods {
       'description' => 'setParamPreset',
       'perm_holder' => 'entity'
     },
+    'updateParamPreset'    => {
+      'description' => 'updateParamPreset',
+      'perm_holder' => 'entity'
+    },
+    'getParamPreset'    => {
+      'description' => 'getParamPreset',
+      'perm_holder' => 'entity'
+    },
     'addStep'           => {
       'description' => 'addStep',
       'perm_holder' => 'entity'
@@ -87,12 +95,30 @@ sub setParamPreset {
 
     General::checkParams(args => \%args, required => [ "params" ]);
 
+    # TODO remove current paramPreset if exists (or use updateParamPreset)
+
     my $preset = ParamPreset->new(name => 'workflow_def_params', params => $args{params});
     $self->setAttr(name  => 'param_preset_id',
                    value => $preset->getAttr(name => 'param_preset_id'));
     $self->save();
 }
 
+sub updateParamPreset{
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ "params" ]);
+
+    my $preset;
+    eval {
+        $preset = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
+    };
+    if ($@) {
+        $errmsg = 'could not retrieve any param preset for workflow: '.$@;
+        $log->error($errmsg);
+    } else {
+        $preset->update( params => $args{params} );
+    }
+}
 
 sub getParamPreset{
     my ($self,%args) = @_;
@@ -107,6 +133,28 @@ sub getParamPreset{
     } else {
         return $preset->load();
     }
+}
+
+=head2 delete
+
+    Class : Public
+
+    Desc : This method delete WorkflowDef and its associated params preset
+
+=cut
+
+sub delete {
+    my ($self,%args) = @_;
+
+    my $preset;
+    eval {
+        $preset = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
+    };
+    if (not $@) {
+        $preset->delete();
+    }
+
+    $self->SUPER::delete();
 }
 
 1;
