@@ -197,7 +197,9 @@ sub getPolicyParams {
     General::checkParams(args => \%args, required => [ 'policy_type' ]);
 
     if ($args{policy_type} eq 'hosting') {
-        return [ { name => 'core',     label => 'Initial CPU number', pattern => '^[0-9]+$' },
+        return [ { name => 'max_core', label => 'Maximum CPU number', pattern => '^[0-9]+$' },
+                 { name => 'core',     label => 'Initial CPU number', pattern => '^[0-9]+$' },
+                 { name => 'max_ram',  label => 'Maximum RAM amount', pattern => '^[0-9]+$' },
                  { name => 'ram',      label => 'Initial RAM amount', pattern => '^[0-9]+$' },
                  { name => 'ram_unit', label => 'RAM unit',   values => [ 'M', 'G' ] } ];
     }

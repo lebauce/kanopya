@@ -1,5 +1,5 @@
 NAME = [% name %]
-MEMORY = 48000
+MEMORY = [% maxmem %]
 CPU = 1
 
 [% IF hypervisor_name %]
@@ -8,7 +8,7 @@ REQUIREMENTS = "NAME = \"[% hypervisor_name %]\""
 
 RAW = [
     TYPE = "kvm",
-    DATA = "<vcpu current='[% cpu %]'>16</vcpu>"
+    DATA = "<vcpu current='[% cpu %]'>[% maxcpu %]</vcpu>"
 ]
 
 RAW = [

@@ -1009,12 +1009,24 @@ sub generateKvmVmTemplate {
 
     # host_ram is stored in octect, so we convert it to megaoctect
     my $ram = General::convertFromBytes(
-        value => $args{host}->getAttr(name => 'host_ram'),
+        value => $args{host}->host_ram,
         units => 'M'
     );
 
     my $tftp_conf = $self->{config}->{tftp}->{directory};
     my $cluster = Entity->get(id => $args{host}->getClusterId());
+
+    # get the maximum memory from the hosting policy
+    my $host_params = $cluster->getManagerParameters(manager_type => 'host_manager');
+    my $maxcpu = $host_params->{max_core} || $args{host}->host_core;
+
+    my $maxram = General::convertFromBytes(
+        value => General::convertToBytes(
+                     value => $host_params->{max_ram} || 0,
+                     units => $host_params->{ram_unit}
+                 ) || $args{host}->host_ram,
+        units => 'M'
+    );
 
     my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
     my $image = $args{host}->getNodeSystemimage();
@@ -1055,6 +1067,8 @@ sub generateKvmVmTemplate {
     my $data = {
         name            => $hostname,
         memory          => $ram,
+        maxmem          => $maxram,
+        maxcpu          => $maxcpu,
         cpu             => $args{host}->host_core,
         image_name      => $image_name,
         hypervisor_name => $args{hypervisor}->host_hostname,
@@ -1068,7 +1082,7 @@ sub generateKvmVmTemplate {
         file          => $template_file,
         template_dir  => '/templates/components/opennebula',
         template_file => 'kvm-vm.tt',
-        data         => $data,
+        data          => $data,
     );
 
     $self->getEContext->send(
