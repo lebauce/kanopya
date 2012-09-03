@@ -143,7 +143,7 @@ sub updatePinning {
         }
         ++$i;
     }
-    $self->getEContext->execute("$cmd");
+    $self->getEContext->execute(command => "$cmd");
 }
 
 1;

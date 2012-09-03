@@ -25,7 +25,7 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 
-=hea2 updateCpus
+=head2 updateCpus
 
 =cut
 
@@ -34,7 +34,7 @@ sub updateCpus {
     my %args    = @_;
 
     General::checkParams(args => \%args, optional => { cpus => $self->host_core });
- 
+
     my $i       = 0;
     my $cmd     = "";
     while ($i < $self->opennebula3_kvm_vm_cores) {
@@ -46,12 +46,26 @@ sub updateCpus {
         }
         ++$i;
     }
-    $self->getEContext->execute("$cmd");
-    
-    (EFactory::newEEntity(data => $self->hypervisor))->updatePinning(
+    $self->getEContext->execute(command => "$cmd");
+
+    my $hypervisor = Entity->get(id => $self->hypervisor->id);
+    (EFactory::newEEntity(data => $hypervisor))->updatePinning(
         vm      => $self,
         cpus    => $args{cpus}
     );
+}
+
+=head2
+
+=cut
+
+sub postStart {
+    my $self = shift;
+    my %args = @_;
+
+    $self->updateCpus();
+
+    return $self->SUPER::postStart(%args);
 }
 
 1;

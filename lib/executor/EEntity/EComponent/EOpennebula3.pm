@@ -383,19 +383,19 @@ sub scale_cpu {
     my $host_id = $args{host}->onevm_id;
     my $hyptype = $self->getHypervisorType;
     if ($hyptype eq 'kvm') {
-        my $ehost   = EFactory::newEEntity(data => $args{host});
         if ($cpu_number <= $args{host}->opennebula3_kvm_vm_cores) {
-            $ehost->updateCpus(cpus => $cpu_number);
+            $args{host}->updateCpus(cpus => $cpu_number);
             return;
         }
         else {
-            $ehost->updateCpus;
-            $cpu_number -= $args{host}->opennebula3_kvm_vm_cores;
+            $args{host}->updateCpus;
+            return;
         }
     }
-    $self->onevm_vcpuset(vm_nameorid => $host_id, cpu => $cpu_number);
 
-    #$args{host}->updateCPU(cpu_number => $cpu_number);
+    # This line is never called as the VM are created with the maximum
+    # number of VCPUs and scaled down at startup due to a bug in libvirtd
+    $self->onevm_vcpuset(vm_nameorid => $host_id, cpu => $cpu_number);
 }
 
 
@@ -1079,7 +1079,7 @@ sub generateKvmVmTemplate {
         memory          => $ram,
         maxmem          => $maxram,
         maxcpu          => $maxcpu,
-        cpu             => $args{host}->host_core,
+        cpu             => $maxcpu,
         image_name      => $image_name,
         hypervisor_name => $args{hypervisor}->host_hostname,
         interfaces      => $interfaces,

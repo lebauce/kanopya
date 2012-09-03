@@ -425,7 +425,12 @@ sub addVM {
                        );
 
     if ($self->hypervisor eq 'kvm') {
-        $opennebulavm->setAttr(name => 'opennebula3_kvm_vm_cores', value => $opennebulavm->host_core);
+        my $cluster = Entity->get(id => $args{host}->getClusterId());
+        my $host_params = $cluster->getManagerParameters(manager_type => 'host_manager');
+
+        $opennebulavm->setAttr(name => 'opennebula3_kvm_vm_cores',
+                               value => $host_params->{max_core} || $args{host}->host_core);
+
     }
     $opennebulavm->setAttr(name => 'hypervisor_id', value => $args{hypervisor}->id);
     $opennebulavm->save();
