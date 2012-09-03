@@ -84,9 +84,6 @@ sub configureNode {
 
     # configure kvm hypervisor
     if ($hypervisor_type eq 'kvm') {
-        $log->debug('generate /etc/default/libvirt-bin');
-        $self->_generateLibvirtbin(%args);
-
         $log->debug('generate /lib/udev/rules.d/60-qemu-kvm.rules');
         $self->_generateQemuKvmUdev(%args);
         
