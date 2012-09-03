@@ -449,7 +449,9 @@ INSERT INTO `component_type` VALUES
 (19,'Kanopyacollector','1','Collectormanager'),
 (20, 'Keepalived','1','LoadBalancer'),
 (21, 'Kanopyaworkflow','0','Workflowmanager'),
-(22, 'Mailnotifier','0','Notifier');
+(22, 'Mailnotifier','0','Notifier'),
+(23, 'Memcached','1','Cache'),
+(24, 'Php','5','Lib');
 
 --
 -- connectors type list
