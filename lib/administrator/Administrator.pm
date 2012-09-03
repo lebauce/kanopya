@@ -183,6 +183,7 @@ sub commitTransaction {
         eval {
             $log->debug("Committing transaction to database");
             $self->{db}->txn_commit;
+            last;
         };
         if ($@) {
             $log->error("Transaction commit failed: $@");
