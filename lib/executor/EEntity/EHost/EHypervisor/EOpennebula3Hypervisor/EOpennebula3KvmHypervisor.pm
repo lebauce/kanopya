@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 use General;
+use List::Util qw(reduce);
 use XML::Simple;
 use Hash::Merge qw(merge);
 
@@ -33,6 +34,33 @@ my $ressources_keys = {
     ram => { name => 'currentMemory/content', factor => 1024 },
     cpu => { name => 'vcpu/current', factor => 1 }
 };
+
+
+sub getAvailableMemory {
+    my ($self, %args) = @_ ;
+
+    my @vms = $self->virtual_machines;
+    my $command = '';
+    my $onevm_id;
+    for my $vm (@vms) {
+        $onevm_id = $vm->opennebula3_vm->onevm_id;
+        $command .= "virsh dumpxml one-$onevm_id | grep currentMemory; "
+    }
+
+    my $result = $self->getEContext->execute(command => $command);
+
+    my $parser = XML::Simple->new();
+    my $stdout = '<root>' . $result->{stdout} . '</root>';
+    my $res_array = $parser->XMLin($stdout, ForceArray => 'currentMemory')->{currentMemory};
+    my $mem = 0;
+    for my $res (@$res_array) {
+        $mem += $res->{content} * 1024;
+    }
+
+    return $self->host_ram - $mem;
+
+}
+
 
 =head2 getVmResources
 
