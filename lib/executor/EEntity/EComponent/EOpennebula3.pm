@@ -174,8 +174,6 @@ sub postStartNode {
         $linux0->setConf(conf => { linux_mountdefs => \@mountentries});
     }
 
-
-
     # hypervisor declaration
     my $hostname = $args{host}->getAttr(name => 'host_hostname');
     my $hostid = $self->onehost_create(hostname => $hostname);
@@ -424,23 +422,9 @@ sub isUp {
         required => [ 'cluster', 'host' ]
     );
 
-    #~ my $hypervisor_type = $self->getHypervisorType();
-    #~
     my $hostip = $args{host}->getAdminIp;
     my $masternodeip = $args{cluster}->getMasterNodeIp();
-#~
-    #~ my $hypervisor_status = 1;
-    #~ eval {
-        #~ # Skip ths test if the cluster has no master node yet.
-        #~ $self->getEContext;
-#~
-        #~ $hypervisor_status = $self->retrieveOpennebulaHypervisorStatus(host => $args{host});
-    #~ };
-#~
-    #~ if ($hypervisor_status == 0) {
-        #~ return 0;
-    #~ }
-#~
+
     if((defined $masternodeip) && ($masternodeip eq $hostip)) {
         # host is the opennebula frontend
         # we must test opennebula port reachability
@@ -454,19 +438,6 @@ sub isUp {
             return 0;
         }
     }
-    #~ else {
-        #~ # host is an hypervisor node
-        #~ # we must test libvirtd port reachability
-        #~ my $port = 16509;
-        #~ my $proto = 'tcp';
-        #~ my $cmd = "nmap -n -sT -p $port $hostip | grep $port | cut -d\" \" -f2";
-        #~ my $port_state = `$cmd`;
-        #~ chomp($port_state);
-        #~ $log->debug("Check host <$hostip> on port $port ($proto) is <$port_state>");
-        #~ if ($port_state eq "closed"){
-            #~ return 0;
-        #~ }
-    #~ }
 
     return 1;
 }
@@ -1333,10 +1304,10 @@ sub onehost_enable {
 sub onevm_create {
     my ($self,%args) = @_;
     General::checkParams(
-        args     => \%args, 
+        args     => \%args,
         required => ['file']
     );
-    
+
     my $cmd = one_command("onevm create $args{file}");
     my $result = $self->getEContext->execute(command => $cmd);
     if($result->{exitcode} != 0) {
@@ -1350,10 +1321,10 @@ sub onevm_create {
 sub onevm_delete {
     my ($self,%args) = @_;
     General::checkParams(
-        args     => \%args, 
+        args     => \%args,
         required => ['vm_nameorid']
     );
-    
+
     my $cmd = one_command("onevm delete $args{vm_nameorid}");
     my $result = $self->getEContext->execute(command => $cmd);
 }
@@ -1361,10 +1332,10 @@ sub onevm_delete {
 sub onevm_deploy {
     my ($self,%args) = @_;
     General::checkParams(
-        args     => \%args, 
+        args     => \%args,
         required => ['vm_nameorid', 'host_nameorid']
     );
-    
+
     my $cmd = one_command("onevm deploy $args{vm_nameorid} $args{host_nameorid}");
     my $result = $self->getEContext->execute(command => $cmd);
 }
@@ -1372,10 +1343,10 @@ sub onevm_deploy {
 sub onevm_hold {
     my ($self,%args) = @_;
     General::checkParams(
-        args     => \%args, 
+        args     => \%args,
         required => ['vm_nameorid']
     );
-    
+
     my $cmd = one_command("onevm hold $args{vm_nameorid}");
     my $result = $self->getEContext->execute(command => $cmd);
 }
@@ -1383,23 +1354,23 @@ sub onevm_hold {
 sub onevm_show {
     my ($self,%args) = @_;
     General::checkParams(
-        args     => \%args, 
+        args     => \%args,
         required => ['vm_nameorid']
     );
-    
+
     my $cmd = one_command("onevm show $args{vm_nameorid} --xml");
     my $result = $self->getEContext->execute(command => $cmd);
-    my $xml = XMLin($result->{stdout}); 
+    my $xml = XMLin($result->{stdout});
     return $xml;
 }
 
 sub onevm_livemigrate {
     my ($self,%args) = @_;
     General::checkParams(
-        args     => \%args, 
+        args     => \%args,
         required => ['vm_nameorid','host_nameorid']
     );
-    
+
     my $cmd = one_command("onevm livemigrate $args{vm_nameorid} $args{host_nameorid}");
     my $result = $self->getEContext->execute(command => $cmd);
 }
@@ -1407,10 +1378,10 @@ sub onevm_livemigrate {
 sub onevm_memset {
     my ($self,%args) = @_;
     General::checkParams(
-        args     => \%args, 
+        args     => \%args,
         required => ['vm_nameorid','ram']
     );
-    
+
     my $cmd = one_command("onevm memset $args{vm_nameorid} $args{ram}");
     my $result = $self->getEContext->execute(command => $cmd);
 }
@@ -1418,10 +1389,10 @@ sub onevm_memset {
 sub onevm_vcpuset {
     my ($self,%args) = @_;
     General::checkParams(
-        args     => \%args, 
+        args     => \%args,
         required => ['vm_nameorid','cpu']
     );
-    
+
     my $cmd = one_command("onevm vcpuset $args{vm_nameorid} $args{cpu}");
     my $result = $self->getEContext->execute(command => $cmd);
 }
@@ -1437,7 +1408,7 @@ sub onevm_list {
 sub onevm_resubmit {
     my ($self,%args) = @_;
     General::checkParams(
-        args     => \%args, 
+        args     => \%args,
         required => ['vm_nameorid']
     );
 
