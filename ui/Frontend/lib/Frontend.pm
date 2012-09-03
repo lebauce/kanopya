@@ -12,6 +12,7 @@ use REST::api;
 use Kanopya::Config;
 use KIM::Consommation;
 use KIM::MasterImage;
+use KIM::WorkflowLogs;
 
 our $VERSION = '0.1';
 
