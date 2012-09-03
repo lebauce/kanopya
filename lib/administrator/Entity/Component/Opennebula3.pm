@@ -412,12 +412,20 @@ sub addVM {
 
     General::checkParams(args => \%args, required => [ 'hypervisor', 'host', 'id' ]);
 
-    my $opennebulavm = Entity::Host::VirtualMachine::Opennebula3Vm->promote(
+    my $vmtype  = 'Entity::Host::VirtualMachine::Opennebula3Vm';
+    if ($self->hypervisor eq 'kvm') {
+        $vmtype .= '::Opennebula3KvmVm';
+    }
+
+    my $opennebulavm = $vmtype->promote(
                            promoted       => $args{host},
                            opennebula3_id => $self->id,
                            onevm_id       => $args{id},
                        );
 
+    if ($self->hypervisor eq 'kvm') {
+        $opennebulavm->setAttr(name => 'opennebula3_kvm_vm_cores', value => $opennebulavm->host_core);
+    }
     $opennebulavm->setAttr(name => 'hypervisor_id', value => $args{hypervisor}->id);
     $opennebulavm->save();
 

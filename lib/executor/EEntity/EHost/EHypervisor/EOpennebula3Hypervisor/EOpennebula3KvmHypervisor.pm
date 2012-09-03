@@ -112,4 +112,38 @@ sub getVmResources {
     return $vms_ressources;
 };
 
+=head2 updatePinning
+
+=cut
+
+sub updatePinning {
+    my $self    = shift;
+    my %args    = @_;
+
+    General::checkParams(
+        args        => \%args,
+        required    => [ 'vm' ],
+        optional    => { cpus => -1 }
+    );
+
+    if ($args{cpus} == -1) {
+        $args{cpus} = $args{vm}->host_core;
+    }
+
+    my $i   = 0;
+    my $cmd = "";
+    while ($i < $args{vm}->opennebula3_kvm_vm_cores) {
+        if ($i < $args{cpus}) {
+            $cmd    .= "virsh vcpupin one-" . $args{vm}->onevm_id
+                . " " . $i . " 0-" . ($self->host_core - 1) . " ; ";
+        }
+        else {
+            $cmd    .= "virsh vcpupin one-" . $args{vm}->onevm_id
+                . " " . $i . " 0 ; ";
+        }
+        ++$i;
+    }
+    $self->getEContext->execute("$cmd");
+}
+
 1;

@@ -90,7 +90,8 @@ INSERT INTO `class_type` VALUES
 (87, 'Entity::Host::VirtualMachine::Opennebula3Vm'),
 (88, 'Entity::Host::VirtualMachine::Opennebula3KvmHypervisor'),
 (89, 'Entity::Host::VirtualMachine::Opennebula3XenHypervisor'),
-(90, 'Entity::Component::Mailnotifier0');
+(90, 'Entity::Component::Mailnotifier0'),
+(91, 'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm');
 
 --
 -- entity comment list
