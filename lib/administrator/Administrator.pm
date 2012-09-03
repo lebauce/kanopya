@@ -109,6 +109,10 @@ sub loadConfig {
             throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
         }
 
+    if (! defined ($config->{dbconf}->{txn_commit_retry})) {
+        $config->{dbconf}->{txn_commit_retry} = 10;
+    }
+
     return "dbi:" . $config->{dbconf}->{type} .
             ":" . $config->{dbconf}->{name} .
             ":" . $config->{dbconf}->{host} .
@@ -152,6 +156,52 @@ sub authenticate {
     }
 }
 
+=head2
+
+    Desc: start database transaction
+
+=cut
+
+sub beginTransaction {
+    my $self = shift;
+
+    $log->debug("Beginning database transaction");
+    $self->{db}->txn_begin;
+}
+
+=head2
+
+    Desc: try to close the transaction a few times to avoid transaction lock timeout
+
+=cut
+
+sub commitTransaction {
+    my $self = shift;
+    my $counter = 0;
+
+    while ($counter++ < $config->{dbconf}->{txn_commit_retry}) {
+        eval {
+            $log->debug("Committing transaction to database");
+            $self->{db}->txn_commit;
+        };
+        if ($@) {
+            $log->error("Transaction commit failed: $@");
+        }
+    }
+}
+
+=head2
+
+    Desc: rollback database transaction
+
+=cut
+
+sub rollbackTransaction {
+    my $self = shift;
+
+    $log->debug("Rollbacking database transaction");
+    $self->{db}->txn_rollback;
+}
 
 # Configuration loading and database connection are automaticaly done during
 # module loading.

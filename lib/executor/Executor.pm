@@ -202,7 +202,7 @@ sub oneRun {
         # Process the operation
         eval {
             # Start transaction for prerequisite/postrequisite
-            $adm->{db}->txn_begin;
+            $adm->beginTransaction;
 
             # If the operation never been processed, check its prerequisite
             if ($op->getAttr(name => 'state') eq 'ready' or
@@ -215,10 +215,10 @@ sub oneRun {
                 if (not $delay) {
                     $op->setState(state => 'processing');
 
-                    $adm->{db}->txn_commit;
+                    $adm->commitTransaction;
 
                     # Start transaction for processing
-                    $adm->{db}->txn_begin;
+                    $adm->beginTransaction;
 
                     $log->info("Prepare step");
                     $op->prepare();
@@ -251,8 +251,8 @@ sub oneRun {
                     $op->setState(state => 'postreported');
                 }
 
-                $adm->{db}->txn_commit;
-                
+                $adm->commitTransaction;
+
                 throw Kanopya::Exception::Execution::OperationReported(error => 'Operation reported');
             }
         };
@@ -271,7 +271,7 @@ sub oneRun {
                 $op->{erollback}->undo();
             }
             # Rollback transaction
-            $adm->{db}->txn_rollback;
+            $adm->rollbackTransaction;
 
             # Cancelling the workflow
             eval {
@@ -317,7 +317,7 @@ sub oneRun {
             }
 
             # Commit transaction
-            $adm->{db}->txn_commit;
+            $adm->commitTransaction;
 
             $log->info("---- $logprefix Processing SUCCEED ----");
             Message->send(

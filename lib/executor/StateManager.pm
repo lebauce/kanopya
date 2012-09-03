@@ -85,7 +85,7 @@ sub run {
             foreach my $node (values %$nodes) {
                 my $ehost = EFactory::newEEntity(data => $node);
 
-                $adm->{db}->txn_begin;
+                $adm->beginTransaction;
 
                 # Firstly try to ping the node
                 my $pingable;
@@ -106,7 +106,7 @@ sub run {
                     $ehost->setNodeState(state => 'broken');
                     $cluster->setState(state => 'warning');
 
-                    $adm->{db}->txn_commit;
+                    $adm->commitTransaction;
                     next;
                 }
                 elsif ($pingable and $hoststate eq 'broken') {
@@ -143,7 +143,7 @@ sub run {
                     # Set the node state to broken
                     $ehost->setNodeState(state => 'broken');
                     $cluster->setState(state => 'warning');
-                    $adm->{db}->txn_commit;
+                    $adm->commitTransaction;
                     next;
                 }
                 elsif ($node_available and $nodestate eq 'broken') {
@@ -151,10 +151,10 @@ sub run {
                     $ehost->setNodeState(state => 'in');
                 }
 
-                $adm->{db}->txn_commit;
+                $adm->commitTransaction;
             }
 
-            $adm->{db}->txn_begin;
+            $adm->beginTransaction;
 
             my ($clusterstate, $clustertimestamp) = $cluster->getState;
             if ($services_available and $clusterstate eq 'warning') {
@@ -162,7 +162,7 @@ sub run {
                 $cluster->setState(state => 'up');
             }
 
-            $adm->{db}->txn_commit;
+            $adm->commitTransaction;
        }
        sleep 20;
    }

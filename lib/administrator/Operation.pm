@@ -103,7 +103,7 @@ sub new {
     my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef;
 
     # Get the next execution rank within the creation transation.
-    $adm->{db}->txn_begin;
+    $adm->beginTransaction;
 
     eval {
         my $execution_rank = $class->getNextRank(workflow_id => $args{workflow_id});
@@ -137,7 +137,7 @@ sub new {
         $self->setParams(params => $args{params});
     }
 
-    $adm->{db}->txn_commit;
+    $adm->commitTransaction;
 
     return $self;
 }
@@ -403,10 +403,10 @@ sub lockContext {
     my $self = shift;
     my %args = @_;
 
+    my $entity;
     my $adm = Administrator->new();
 
-    $adm->{db}->txn_begin;
-    my $entity;
+    $adm->beginTransaction;
     eval {
         for $entity (values %{ $self->getParams->{context} }) {
             $log->debug("Trying to lock entity <$entity>");
@@ -417,7 +417,7 @@ sub lockContext {
         $adm->{db}->txn_rollback;
         throw $@;
     }
-    $adm->{db}->txn_commit;
+    $adm->commitTransaction;
 }
 
 sub unlockContext {
@@ -430,7 +430,7 @@ sub unlockContext {
     # could be deleted by the operation, so no need to unlock them.
     my $params = $self->getParams(skip_not_found => 1);
 
-    $adm->{db}->txn_begin;
+    $adm->beginTransaction;
     for my $key (keys %{ $params->{context} }) {
         my $entity = $params->{context}->{$key};
         $log->debug("Trying to unlock entity <$key>:<$entity>");
@@ -441,7 +441,7 @@ sub unlockContext {
             #$log->debug("Unable to unlock context param <$key>\n$@");
         }
     }
-    $adm->{db}->txn_commit;
+    $adm->commitTransaction;
 }
 
 1;
