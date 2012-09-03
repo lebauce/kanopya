@@ -66,6 +66,7 @@ use Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3XenHypervisor;
 use Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3KvmHypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Host::VirtualMachine::Opennebula3Vm;
+use Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
