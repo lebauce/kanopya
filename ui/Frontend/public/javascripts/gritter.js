@@ -153,8 +153,8 @@ function updateMessages( show_gritters ) {
         return;
     }
 
-    $.getJSON("/api/workflow?state=pending", function (pending) {
-        $.getJSON("/api/workflow?state=running", function (running) {
+    $.getJSON("/api/workflow?state=pending&rows=5", function (pending) {
+        $.getJSON("/api/workflow?state=running&rows=5", function (running) {
             var workflows = pending.concat(running);
             for (var i = 0; i < workflows.length; i++) if (workflows.hasOwnProperty(i) && workflows[i] != null) {
                 var gritter = $('.gritter-item-workflow-' + workflows[i].pk);
