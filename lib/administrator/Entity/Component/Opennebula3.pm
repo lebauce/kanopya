@@ -430,17 +430,15 @@ sub migrate {
 
     General::checkParams(args => \%args, required => [ 'host_id', 'hypervisor_id' ]);
 
-    Operation->enqueue(
-        type        => 'MigrateHost',
-        priority    => 200,
-        params      => {
-            context => {
-                vm                => Entity->get(id => $args{host_id}),
-                host              => Entity->get(id => $args{hypervisor_id}),
-                cloudmanager_comp => $self
-            }
+    my $wf_params = {
+        context => {
+            vm   => Entity->get(id => $args{host_id}),
+            host => Entity->get(id => $args{hypervisor_id}),
+            cloudmanager_comp => $self
         }
-    );
+    };
+    
+    return Workflow->run(name => 'MigrateWorkflow', params => $wf_params);
 }
 
 # Execute host migration to a new hypervisor

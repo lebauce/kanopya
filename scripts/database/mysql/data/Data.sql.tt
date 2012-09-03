@@ -410,7 +410,8 @@ INSERT INTO `workflow_def` VALUES
 (1,'AddNode', NULL),
 (2,'StopNode', NULL),
 (3,'OptimiaasWorkflow', NULL),
-(4,'ScaleInWorkflow',NULL);
+(4,'ScaleInWorkflow', NULL),
+(5,'MigrateWorkflow', NULL);
 
 INSERT INTO `workflow_step` VALUES
 (1, 1, 42),
@@ -421,7 +422,8 @@ INSERT INTO `workflow_step` VALUES
 (6, 2, 21),
 (7, 2, 26),
 (8, 3, 50),
-(9, 4, 49);
+(9, 4, 49),
+(10, 5, 37);
 
 --
 -- components type list
