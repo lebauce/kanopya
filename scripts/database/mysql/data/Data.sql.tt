@@ -1040,11 +1040,24 @@ INSERT INTO `param_preset` VALUES (61, "scope_id", 2, 60 );
 
 UPDATE `kanopya`.`workflow_def` SET `param_preset_id` = '56' WHERE `workflow_def`.`workflow_def_name` = 'AddNode';
 
+-- workflow StopNode param preset
+INSERT INTO `param_preset` VALUES (62, 'workflow_def_params', NULL, NULL);
+INSERT INTO `param_preset` VALUES (63, 'automatic', NULL, 62);
+INSERT INTO `param_preset` VALUES (64, "context", NULL, 63);
+INSERT INTO `param_preset` VALUES (65, "cluster", NULL, 64);
+INSERT INTO `param_preset` VALUES (66, "internal", NULL, 62);
+INSERT INTO `param_preset` VALUES (67, "scope_id", 2, 66);
+
+UPDATE `kanopya`.`workflow_def` SET `param_preset_id` = '62' WHERE `workflow_def`.`workflow_def_name` = 'StopNode';
+
 -- associate native kanopya workflows to native kanopya workflow manager
 SELECT @wf_manager_id:= component_id FROM `component` where component_type_id='21' and service_provider_id=@admin_cluster;
 
 INSERT INTO `workflow_def_manager` VALUES (1,@wf_manager_id,1);
-INSERT INTO `workflow_def_manager` VALUES (2,@wf_manager_id,4);
+INSERT INTO `workflow_def_manager` VALUES (2,@wf_manager_id,2);
+INSERT INTO `workflow_def_manager` VALUES (3,@wf_manager_id,3);
+INSERT INTO `workflow_def_manager` VALUES (4,@wf_manager_id,4);
+INSERT INTO `workflow_def_manager` VALUES (5,@wf_manager_id,5);
 
 -- Default billing policy
 INSERT INTO `param_preset` VALUES (62, "billing_policy", NULL, NULL);
