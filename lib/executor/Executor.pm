@@ -100,7 +100,7 @@ Executor->run() run the executor server.
 
 sub run {
     my ($self, $running) = @_;
-    
+
     Message->send(
         from    => 'Executor',
         level   => 'info',
@@ -131,15 +131,15 @@ sub oneRun {
         my $workflow_name = $workflow->getAttr(name => 'workflow_name');
         $workflow_name = defined $workflow_name ? $workflow_name : 'Anonymous';
         my $workflow_id = $workflow->getAttr(name => 'workflow_id');
-        
+
         # init log appender for this workflow if this one is not the same as the last executed
         if($workflow_id != $self->{last_workflow_id}) {
             my $appenders = Log::Log4perl->appenders();
-        
+
             if(exists $appenders->{'WORKFLOW'}) {
                 $log->eradicate_appender('WORKFLOW');
-            }    
-        
+            }
+
             my $layout = Log::Log4perl::Layout::PatternLayout->new("%d %c %p> %M - %m%n");
             my $file_appender = Log::Log4perl::Appender->new(
                               "Log::Dispatch::File",
@@ -291,19 +291,19 @@ sub oneRun {
                 my $err_rollback = $@;
                 $log->error("Workflow cancel failed:$err_rollback");
             }
-            
+
             if (!(ref($err_exec) eq "HASH") or !$err_exec->{hidden}){
                 Message->send(
                     from    => 'Executor',
                     level   => 'error',
                     content => "[$opclass] Execution Aborted : $err_exec"
                 );
-                
+
             }
             else {
                 $log->info("Warning : $err_exec");
             }
-            
+
         }
         else {
             # Finishing the operation.
