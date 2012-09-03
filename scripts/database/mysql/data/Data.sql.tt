@@ -1007,7 +1007,8 @@ INSERT INTO `param_preset` VALUES (37, "managers", NULL, 33);
 -- disk_manager
 INSERT INTO `param_preset` VALUES (38, "disk_manager", NULL, 37);
 INSERT INTO `param_preset` VALUES (39, "manager_params", NULL, 38);
-INSERT INTO `param_preset` VALUES (40, "systemimage_size", 5368709120, 39);
+INSERT INTO `param_preset` VALUES (40, "systemimage_size", 5, 39);
+INSERT INTO `param_preset` VALUES (40, "systemimage_size_unit", "G", 39);
 -- preinstalled component
 INSERT INTO `param_preset` VALUES (41, "components", NULL, 33);
 SET @cid = (SELECT component_type_id FROM `component_type` WHERE component_name = "Puppetagent" AND component_version = 2);

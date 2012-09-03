@@ -42,6 +42,7 @@ use Entity;
 use Entity::Gp;
 use EFactory;
 use EEntity::EContainer::ELocalContainer;
+use General;
 
 use Log::Log4perl "get_logger";
 
@@ -95,9 +96,11 @@ sub create {
     $log->debug('Container creation for new systemimage');
 
     # Creation of the device based on distribution device
+    my $unit = exists $args{systemimage_size_unit} ? $args{systemimage_size_unit} : 'B'; 
     my $container = $args{disk_manager}->createDisk(
                         name       => $self->getAttr(name => 'systemimage_name'),
-                        size       => $args{systemimage_size},
+                        size       => General::convertToBytes(value => $args{systemimage_size},
+                                                              units => $unit),
                         filesystem => $args{src_container}->getAttr(name => 'container_filesystem'),
                         erollback  => $args{erollback},
                         %args
