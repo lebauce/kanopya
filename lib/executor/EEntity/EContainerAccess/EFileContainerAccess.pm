@@ -102,7 +102,7 @@ sub disconnect {
 
     my $device = $self->getAttr(name => 'device_connected');
 
-    my $counter = 5;
+    my $counter = 30;
     while($counter != 0) {
         $command = "losetup -d $device";
         $result  = $args{econtext}->execute(command => $command);
