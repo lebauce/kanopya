@@ -140,7 +140,7 @@ sub postrequisites {
        delete $self->{params}->{time};
     }
 
-    my $precision = 0.05;
+    my $precision = 0.00;
     $log->info('one ram <' . $vm_ram . '> asked ram <' . ($self->{params}->{memory} * 1024 * 1024) . '> ');
     if (($vm_ram >= $self->{params}->{memory} * 1024 * 1024 * (1 - $precision)) &&
         ($vm_ram <= $self->{params}->{memory} * 1024 * 1024 * (1 + $precision))) {
