@@ -25,14 +25,13 @@ use General;
 use List::Util qw(reduce);
 use XML::Simple;
 use Hash::Merge qw(merge);
-
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
 my $resources_keys = {
-    ram => { name => 'currentMemory/content', factor => 1024 },
-    cpu => { name => 'vcpu/content', factor => 1 }
+    ram => { name => 'currentMemory/0/content', factor => 1024 },
+    cpu => { name => 'vcpu/0/content', factor => 1 }
 };
 
 
@@ -94,19 +93,23 @@ sub getVmResources {
         }
 
         my $parser = XML::Simple->new();
-        my $hxml = $parser->XMLin($result->{stdout});
+        my $hxml = $parser->XMLin($result->{stdout}, ForceArray => 1);
 
         # Build the resssources hash according to required resources
         my $vm_resources = {};
         for my $resource (@{ $args{resources} }) {
             my $value = $hxml;
             for my $selector (split('/', $resources_keys->{$resource}->{name})) {
-                $value = $value->{$selector};
+                if (ref($value) eq "ARRAY") {
+                    $value = $value->[$selector];
+                } else {
+                    $value = $value->{$selector};
+                }
             }
             $vm_resources->{$vm->id}->{$resource} = $value * $resources_keys->{$resource}->{factor};
 
             if ($resource eq "cpu") {
-                my $pins = $hxml->{cputune}->{vcpupin};
+                my $pins = $hxml->{cputune}->[0]->{vcpupin};
                 for my $pinning (@{$pins}) {
                     if ($pinning->{cpuset} eq '0') {
                         $vm_resources->{$vm->id}->{$resource} -= 1;
