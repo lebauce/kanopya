@@ -30,9 +30,9 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
-my $ressources_keys = {
+my $resources_keys = {
     ram => { name => 'currentMemory/content', factor => 1024 },
-    cpu => { name => 'vcpu/current', factor => 1 }
+    cpu => { name => 'vcpu/content', factor => 1 }
 };
 
 
@@ -64,7 +64,7 @@ sub getAvailableMemory {
 
 =head2 getVmResources
 
-    Return virtual machines ressources. If no resssource type(s)
+    Return virtual machines resources. If no resssource type(s)
     specified in parameters, return all know ressouces.
 
 =cut
@@ -74,7 +74,7 @@ sub getVmResources {
 
     General::checkParams(
         args     => \%args,
-        optional => { vm => undef, ressources => [ 'ram', 'cpu' ] }
+        optional => { vm => undef, resources => [ 'ram', 'cpu' ] }
     );
 
     # If no vm specified, get resssources for all hypervisor vms.
@@ -85,7 +85,7 @@ sub getVmResources {
         push @vms, $args{vm};
     }
 
-    my $vms_ressources = {};
+    my $vms_resources = {};
     for my $vm (@vms) {
         # Get the vm configuration in xml
         my $result = $self->getEContext->execute(command => 'virsh dumpxml one-' . $vm->onevm_id);
@@ -96,20 +96,29 @@ sub getVmResources {
         my $parser = XML::Simple->new();
         my $hxml = $parser->XMLin($result->{stdout});
 
-        # Build the resssources hash according to required ressources
-        my $vm_ressources = {};
-        for my $ressource (@{ $args{ressources} }) {
+        # Build the resssources hash according to required resources
+        my $vm_resources = {};
+        for my $resource (@{ $args{resources} }) {
             my $value = $hxml;
-            for my $selector (split('/', $ressources_keys->{$ressource}->{name})) {
+            for my $selector (split('/', $resources_keys->{$resource}->{name})) {
                 $value = $value->{$selector};
             }
-            $vm_ressources->{$vm->id}->{$ressource} = $value * $ressources_keys->{$ressource}->{factor};
+            $vm_resources->{$vm->id}->{$resource} = $value * $resources_keys->{$resource}->{factor};
+
+            if ($resource eq "cpu") {
+                my $pins = $hxml->{cputune}->{vcpupin};
+                for my $pinning (@{$pins}) {
+                    if ($pinning->{cpuset} eq '0') {
+                        $vm_resources->{$vm->id}->{$resource} -= 1;
+                    }
+                }
+            }
         }
 
-        $vms_ressources = merge($vms_ressources, $vm_ressources);
+        $vms_resources = merge($vms_resources, $vm_resources);
     }
 
-    return $vms_ressources;
+    return $vms_resources;
 };
 
 =head2 updatePinning
