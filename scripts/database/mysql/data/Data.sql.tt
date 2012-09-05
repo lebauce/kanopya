@@ -403,16 +403,19 @@ INSERT INTO `operationtype` VALUES
 (48,'UpdateComponent'),
 (49,'LaunchScaleInWorkflow'),
 (50,'LaunchOptimiaasWorkflow');
+
 --
 -- Workflows definition
+-- WARNING : some workflow defs are inserted by populate_db.pl
+-- TODO : insert all workflows using populate_db.pl
 --
 
 INSERT INTO `workflow_def` VALUES
-(1,'AddNode', NULL),
-(2,'StopNode', NULL),
-(3,'OptimiaasWorkflow', NULL),
-(4,'ScaleInWorkflow', NULL),
-(5,'MigrateWorkflow', NULL);
+(1,'AddNode', NULL, NULL),
+(2,'StopNode', NULL, NULL),
+(3,'OptimiaasWorkflow', NULL, NULL),
+(5,'MigrateWorkflow', NULL, NULL);
+
 
 INSERT INTO `workflow_step` VALUES
 (1, 1, 42),
@@ -423,7 +426,6 @@ INSERT INTO `workflow_step` VALUES
 (6, 2, 21),
 (7, 2, 26),
 (8, 3, 50),
-(9, 4, 49),
 (10, 5, 37);
 
 --
@@ -1018,20 +1020,6 @@ SET @cid = (SELECT component_type_id FROM `component_type` WHERE component_name 
 INSERT INTO `param_preset` VALUES (44, "keepalived", NULL, 41);
 INSERT INTO `param_preset` VALUES (45, "component_type", @cid, 44);
 
--- workflow scalein param preset
-INSERT INTO `param_preset` values (46, "workflow_def_params", NULL, NULL);
-INSERT INTO `param_preset` values (47, "specific", NULL, 46 );
-INSERT INTO `param_preset` values (48, "scalein_type", NULL, 47 );
-INSERT INTO `param_preset` values (49, "scalein_value", NULL, 47 );
-INSERT INTO `param_preset` values (50, "automatic", NULL, 46 );
-INSERT INTO `param_preset` values (51, "context", NULL, 50 );
-INSERT INTO `param_preset` values (52, "cloudmanager_comp", NULL, 51 );
-INSERT INTO `param_preset` values (53, "host", NULL, 51 );
-INSERT INTO `param_preset` values (54, "internal", NULL, 46 );
-INSERT INTO `param_preset` values (55, "scope_id", 1, 54 );
-
-UPDATE `kanopya`.`workflow_def` SET `param_preset_id` = '46' WHERE `workflow_def`.`workflow_def_name` = 'ScaleInWorkflow';
-
 -- workflow AddNode param preset
 INSERT INTO `param_preset` VALUES (56, 'workflow_def_params', NULL, NULL);
 INSERT INTO `param_preset` VALUES (57, 'automatic', NULL, 56);
@@ -1058,7 +1046,6 @@ SELECT @wf_manager_id:= component_id FROM `component` where component_type_id='2
 INSERT INTO `workflow_def_manager` VALUES (1,@wf_manager_id,1);
 INSERT INTO `workflow_def_manager` VALUES (2,@wf_manager_id,2);
 INSERT INTO `workflow_def_manager` VALUES (3,@wf_manager_id,3);
-INSERT INTO `workflow_def_manager` VALUES (4,@wf_manager_id,4);
 INSERT INTO `workflow_def_manager` VALUES (5,@wf_manager_id,5);
 
 -- Default billing policy

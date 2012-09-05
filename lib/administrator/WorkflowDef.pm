@@ -35,6 +35,11 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
+    workflow_def_origin => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
 };
 
 sub methods {

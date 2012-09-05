@@ -79,7 +79,7 @@ sub checkWorkflowManagerParams {
     instanciation, but also for workflow definition (with defined specific
     parameters)
 
-    Args: $workflow_name (string), \%workflow_params
+    Args: $workflow_name (string), \%workflow_params, $workflow_def_origin (id)
 
     Return: created workflow (object)
 =cut
@@ -89,8 +89,6 @@ sub createWorkflow {
 
     General::checkParams(args => \%args, required => [ 'workflow_name' ]);
 
-    my $service_provider_id = $self->getServiceProvider()
-                                ->getAttr(name => 'service_provider_id');
     my $workflow_def_name   = $args{workflow_name};
     my %workflow_def_params;
     my $workflow;
@@ -111,11 +109,15 @@ sub createWorkflow {
         }
 
         $workflow = WorkflowDef->new(
-                        workflow_def_name => $workflow_def_name,
-                        params            => \%workflow_def_params,
+                        workflow_def_name   => $workflow_def_name,
+                        workflow_def_origin => $args{workflow_def_origin},
+                        params              => \%workflow_def_params,
                     );
     } else {
-        $workflow = WorkflowDef->new(workflow_def_name => $workflow_def_name);
+        $workflow = WorkflowDef->new(
+                        workflow_def_name   => $workflow_def_name,
+                        workflow_def_origin => $args{workflow_def_origin}
+                    );
     }
 
     #now associating the new workflow to the manager
@@ -218,8 +220,9 @@ sub associateWorkflow {
     $workflow_params->{internal}->{association} = 1;
 
     my $workflow = $self->createWorkflow(
-                       workflow_name => $args{new_workflow_name},
-                       params        => $workflow_params,
+                       workflow_name        => $args{new_workflow_name},
+                       params               => $workflow_params,
+                       workflow_def_origin  => $workflow_def_id
                    );
 
     #Then we finally link the workflow to the rule

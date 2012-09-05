@@ -704,10 +704,12 @@ CREATE TABLE `workflow_def` (
   `workflow_def_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `workflow_def_name` char(64) DEFAULT NULL,
   `param_preset_id` int(8) unsigned DEFAULT NULL,
+  `workflow_def_origin` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`workflow_def_id`),
   UNIQUE KEY (`workflow_def_name`),
   KEY (`param_preset_id`),
-  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`workflow_def_origin`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
