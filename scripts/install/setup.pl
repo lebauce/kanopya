@@ -326,6 +326,12 @@ print "components DB schemas loaded\n";
 print "inserting initial data...";
 system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{data_sql}") == 0 or die "error while inserting initial data: $!";
 print "done\n";
+
+# Populate DB with more data (perl script instead of sql)
+print "populate database...";
+system ("perl $conf_vars->{populate_db_script} admin $answers->{dbpassword1}") == 0 or die "error while populate db: $!";
+print "done\n";
+
 #######################
 #Services manipulation#
 #######################

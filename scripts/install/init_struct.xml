@@ -9,7 +9,8 @@
     schemas_dir="/opt/kanopya/scripts/database/mysql/schemas"
     data_dir="/opt/kanopya/scripts/database/mysql/data/"
     data_sql="/opt/kanopya/scripts/database/mysql/data/Data.sql"
-    schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"/>
+    schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"
+    populate_db_script="/opt/kanopya/scripts/database/mysql/sbin/populate_db.pl"/>
   <default_conf
     product="KIM"/>
   <genfiles>
