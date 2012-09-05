@@ -405,30 +405,6 @@ INSERT INTO `operationtype` VALUES
 (50,'LaunchOptimiaasWorkflow');
 
 --
--- Workflows definition
--- WARNING : some workflow defs are inserted by populate_db.pl
--- TODO : insert all workflows using populate_db.pl
---
-
-INSERT INTO `workflow_def` VALUES
-(1,'AddNode', NULL, NULL),
-(2,'StopNode', NULL, NULL),
-(3,'OptimiaasWorkflow', NULL, NULL),
-(5,'MigrateWorkflow', NULL, NULL);
-
-
-INSERT INTO `workflow_step` VALUES
-(1, 1, 42),
-(2, 1, 23),
-(3, 1, 24),
-(4, 1, 27),
-(5, 2, 25),
-(6, 2, 21),
-(7, 2, 26),
-(8, 3, 50),
-(10, 5, 37);
-
---
 -- components type list
 --
 
@@ -954,115 +930,12 @@ INSERT INTO `entityright` VALUES (@id, @HostGroup_eid , @Visitor_eid, 'get');SET
 INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
 
---
--- Services and policies
---
 
--- Presets for policy: Default physical host
-INSERT INTO `param_preset` VALUES (1, "hosting_policy", NULL, NULL);
-INSERT INTO `param_preset` VALUES (2, "managers", NULL, 1);
--- host_manager
-INSERT INTO `param_preset` VALUES (3, "host_manager", NULL, 2);
-INSERT INTO `param_preset` VALUES (4, "manager_type", "host_manager", 3);
-INSERT INTO `param_preset` VALUES (5, "manager_id", @physical_hoster, 3);
-INSERT INTO `param_preset` VALUES (6, "manager_params", NULL, 3);
-INSERT INTO `param_preset` VALUES (7, "ram", 1024, 6);
-INSERT INTO `param_preset` VALUES (8, "ram_unit", "M", 6);
-INSERT INTO `param_preset` VALUES (9, "cpu", 1, 6);
 
--- Presets for policy: Kanopya LVM disk exported via ISCSI
-INSERT INTO `param_preset` VALUES (10, "storage_policy", NULL, NULL);
-INSERT INTO `param_preset` VALUES (11, "managers", NULL, 10);
--- disk_manager
-INSERT INTO `param_preset` VALUES (12, "disk_manager", NULL, 11);
-INSERT INTO `param_preset` VALUES (13, "manager_type", "disk_manager", 12);
-INSERT INTO `param_preset` VALUES (14, "manager_id", @lvm_component, 12);
--- export_manager
-INSERT INTO `param_preset` VALUES (15, "export_manager", NULL, 11);
-INSERT INTO `param_preset` VALUES (16, "manager_type", "export_manager", 15);
-INSERT INTO `param_preset` VALUES (17, "manager_id", @iscsi_component, 15);
 
--- Presets for policy: Default network configuration
-INSERT INTO `param_preset` VALUES (18, "network_policy", NULL, NULL);
-INSERT INTO `param_preset` VALUES (19, "cluster_nameserver1", "127.0.0.1", 18);
-INSERT INTO `param_preset` VALUES (20, "cluster_nameserver2", "127.0.0.1", 18);
-INSERT INTO `param_preset` VALUES (21, "cluster_domainname", "hedera-technology.com", 18);
-INSERT INTO `param_preset` VALUES (22, "interfaces", NULL, 18);
--- interface 'admin'
-INSERT INTO `param_preset` VALUES (23, "admin", NULL, 22);
-INSERT INTO `param_preset` VALUES (24, "interface_role", @adminrole, 23);
-INSERT INTO `param_preset` VALUES (25, "interface_networks", NULL, 23);
-INSERT INTO `param_preset` VALUES (26, NULL, @admin_network, 25);
 
--- Presets for policy: Cluster manual scalability
-INSERT INTO `param_preset` VALUES (29, "scalability_policy", NULL, NULL);
-INSERT INTO `param_preset` VALUES (30, "cluster_min_node", 1, 29);
-INSERT INTO `param_preset` VALUES (31, "cluster_max_node", 10, 29);
-INSERT INTO `param_preset` VALUES (32, "cluster_priority", 1, 29);
 
--- Presets for policy: Debian squeeze
-INSERT INTO `param_preset` VALUES (33, "system_policy", NULL, NULL);
-INSERT INTO `param_preset` VALUES (34, "cluster_si_shared", 0, 33);
-INSERT INTO `param_preset` VALUES (35, "cluster_si_persistent", 0, 33);
-INSERT INTO `param_preset` VALUES (36, "kernel_id", @kernel, 33);
-INSERT INTO `param_preset` VALUES (37, "managers", NULL, 33);
--- disk_manager
-INSERT INTO `param_preset` VALUES (38, "disk_manager", NULL, 37);
-INSERT INTO `param_preset` VALUES (39, "manager_params", NULL, 38);
-INSERT INTO `param_preset` VALUES (40, "systemimage_size", 5, 39);
-INSERT INTO `param_preset` VALUES (40, "systemimage_size_unit", "G", 39);
--- preinstalled component
-INSERT INTO `param_preset` VALUES (41, "components", NULL, 33);
-SET @cid = (SELECT component_type_id FROM `component_type` WHERE component_name = "Puppetagent" AND component_version = 2);
-INSERT INTO `param_preset` VALUES (42, "puppetagent", NULL, 41);
-INSERT INTO `param_preset` VALUES (43, "component_type", @cid, 42);
-SET @cid = (SELECT component_type_id FROM `component_type` WHERE component_name = "Keepalived" AND component_version = 1);
-INSERT INTO `param_preset` VALUES (44, "keepalived", NULL, 41);
-INSERT INTO `param_preset` VALUES (45, "component_type", @cid, 44);
 
--- workflow AddNode param preset
-INSERT INTO `param_preset` VALUES (56, 'workflow_def_params', NULL, NULL);
-INSERT INTO `param_preset` VALUES (57, 'automatic', NULL, 56);
-INSERT INTO `param_preset` VALUES (58, "context", NULL, 57 );
-INSERT INTO `param_preset` VALUES (59, "cluster", NULL, 58 );
-INSERT INTO `param_preset` VALUES (60, "internal", NULL, 56 );
-INSERT INTO `param_preset` VALUES (61, "scope_id", 2, 60 );
 
-UPDATE `kanopya`.`workflow_def` SET `param_preset_id` = '56' WHERE `workflow_def`.`workflow_def_name` = 'AddNode';
 
--- workflow StopNode param preset
-INSERT INTO `param_preset` VALUES (62, 'workflow_def_params', NULL, NULL);
-INSERT INTO `param_preset` VALUES (63, 'automatic', NULL, 62);
-INSERT INTO `param_preset` VALUES (64, "context", NULL, 63);
-INSERT INTO `param_preset` VALUES (65, "cluster", NULL, 64);
-INSERT INTO `param_preset` VALUES (66, "internal", NULL, 62);
-INSERT INTO `param_preset` VALUES (67, "scope_id", 2, 66);
 
-UPDATE `kanopya`.`workflow_def` SET `param_preset_id` = '62' WHERE `workflow_def`.`workflow_def_name` = 'StopNode';
-
--- associate native kanopya workflows to native kanopya workflow manager
-SELECT @wf_manager_id:= component_id FROM `component` where component_type_id='21' and service_provider_id=@admin_cluster;
-
-INSERT INTO `workflow_def_manager` VALUES (1,@wf_manager_id,1);
-INSERT INTO `workflow_def_manager` VALUES (2,@wf_manager_id,2);
-INSERT INTO `workflow_def_manager` VALUES (3,@wf_manager_id,3);
-INSERT INTO `workflow_def_manager` VALUES (5,@wf_manager_id,5);
-
--- Default billing policy
-INSERT INTO `param_preset` VALUES (62, "billing_policy", NULL, NULL);
-
--- Network policy update
-INSERT INTO `param_preset` VALUES (63, "default_gateway", 1, 23);
-
--- Default orchestration policy
-INSERT INTO `param_preset` VALUES (64, "orchestration", NULL, NULL);
-
-INSERT INTO `policy` VALUES (1, 1, 'Default physical host', "Hosting policy for default physical hosts.", 'hosting');
-INSERT INTO `policy` VALUES (2, 10, 'Kanopya LVM disk exported via ISCSI', "Datastore on Kanopya cluster for PXE boot via ISCSI.", 'storage');
-INSERT INTO `policy` VALUES (3, 18, 'Default network configuration', "Default network configuration, with admin and public interfaces.", 'network');
-INSERT INTO `policy` VALUES (4, 29, 'Cluster manual scalability', "Manual scalability.", 'scalability');
-INSERT INTO `policy` VALUES (5, 33, 'Debian squeeze', "Hosting policy for standard physical hosts.", 'system');
-INSERT INTO `policy` VALUES (6, 62, 'Empty billing configuration', "Empty billing configuration", 'billing');
-INSERT INTO `policy` VALUES (7, 64, 'Empty orchestration configuration', "Empty orchestration configuration", 'orchestration');
-
-INSERT INTO `service_template` VALUES (1, 'Standard physical cluster', "Service template for standard physical cluster declaration.", 1, 2, 3, 4, 5, 6, 7);
