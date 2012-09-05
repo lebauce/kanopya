@@ -1,5 +1,6 @@
 require('jquery/jquery.form.js');
 require('jquery/jquery.form.wizard.js');
+require('common/general.js');
 
 function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
 
@@ -239,6 +240,52 @@ function    workflowdetails(workflowmanagerid, workflowmanager) {
     });
 }
 
+/*
+ * Add unit info for a input field
+ * if unit is 'byte' then add a dropdown list to chose unit (KB,MB,GB,..)
+ * Use getUnitMultiplicator() to retrieve selected byte unit to apply to input value
+ */
+
+function addFieldUnit(field_info, row, id, selected_unit) {
+    if (field_info && field_info.unit) {
+        if (field_info.unit == 'byte') {
+            var select_unit     = $('<select>', {'id' : id});
+            //var unit_options    = {'B' : 1, 'KB' : 1024, 'MB' : 1024*1024, 'GB' : 1024*1024*1024};
+            var unit_options    = {'MB' : 1024*1024, 'GB' : 1024*1024*1024};
+            $.each(unit_options, function(label, byte) { select_unit.append($('<option>', { value: byte, html: label}))});
+            $(row).append($("<td>").append( select_unit ));
+            if (selected_unit) {
+                select_unit.find('[value="'+ unit_options[selected_unit] +'"]').attr('selected', 'selected');
+            }
+        } else {
+            $(row).append($("<td>").append( field_info.unit ));
+        }
+    }
+}
+
+// Retrieve selected unit (see addFieldUnit())
+function getUnitMultiplicator(id) {
+    var select_unit = $('#' + id)[0];
+    if (select_unit !== undefined) {
+        return $(select_unit).attr('value');
+    }
+    return 1;
+}
+
+/*
+ * Return the final value from user input and selected unit
+ * Manage the case where input can contain '+' and '-'
+ */
+
+function getRawValue(val, unit_field_id) {
+    var prefix = val.substr(0,1);
+    if (prefix == '+' || prefix == '-') {
+        val = val.substr(1);
+        return prefix + (val * getUnitMultiplicator(unit_field_id));
+    }
+    return val * getUnitMultiplicator(unit_field_id);
+}
+
 function workflowRuleConfigure(wfdef_id) {
     var dial    = $("<div>");
     var form    = $("<table>", { width : '100%' }).appendTo($("<form>").appendTo(dial));
@@ -247,7 +294,7 @@ function workflowRuleConfigure(wfdef_id) {
     function    validateTheForm() {
         var specparamsinputs    = $("input.input_specific_param");
         $(specparamsinputs).each(function() {
-            param_preset.specific[$(this).attr('name')]    = $(this).val();
+            param_preset.specific[$(this).attr('name')] = getRawValue($(this).val(), 'unit_' + $(this).attr('name'));
         });
         $.ajax({
             url         : '/api/workflowdef/' + wfdef_id + '/updateParamPreset',
@@ -269,32 +316,57 @@ function workflowRuleConfigure(wfdef_id) {
                 alert('This workflow has no parameter');
                 return;
             }
-            $.each(data.specific, function(k,v) {
-                var line    = $("<tr>").appendTo(form);
-                $(line).append($("<td>").append($("<label>", {
-                    for     : 'input_specific_param_' + k,
-                    text    : k
-                })));
-                $(line).append($("<td>", { align : "right" }).append($("<input>", {
-                    type    : 'test',
-                    name    : k,
-                    value   : v,
-                    id      : 'input_specific_param_' + k,
-                    class   : 'input_specific_param'
-                })));
-            });
+            $.get(
+                    'api/workflowdef/' + wfdef_id + '/workflow_def_origin',
+                    function(wf_origin) {
+                        $.post(
+                                'api/workflowdef/' + wf_origin.pk + '/getParamPreset',
+                                function (origin_params) {
+                                    $.each(data.specific, function(k,v) {
+                                        var field_info  = origin_params.specific[k];
+                                        var line        = $("<tr>").appendTo(form);
+                                        $(line).append($("<td>").append($("<label>", {
+                                            for     : 'input_specific_param_' + k,
+                                            text    : (field_info ? field_info.label : k) + ' : '
+                                        })));
+                                        var value = v;
+                                        var selected_unit;
+                                        if (field_info && field_info.unit && field_info.unit == 'byte') {
+                                            var prefix = value.substr(0,1);
+                                            if (prefix == '+' || prefix == '-') {
+                                                value = value.substr(1);
+                                            } else {
+                                                prefix = '';
+                                            }
+                                            var readable_value = getReadableSize(value);
+                                            value           = prefix + readable_value.value;
+                                            selected_unit   = readable_value.unit;
+                                        }
+                                        $(line).append($("<td>", { align : "right" }).append($("<input>", {
+                                            type    : 'test',
+                                            name    : k,
+                                            value   : value,
+                                            id      : 'input_specific_param_' + k,
+                                            class   : 'input_specific_param'
+                                        })));
+                                        addFieldUnit(origin_params.specific[k], line, 'unit_' + k, selected_unit);
+                                    });
 
-            $(dial).dialog({
-                resizable       : false,
-                closeOnEscape   : false,
-                modal           : true,
-                width           : '400px',
-                close           : function() { $(this).remove(); },
-                buttons         : {
-                    'Cancel'    : function() { $(this).dialog('close'); },
-                    'Ok'        : validateTheForm
-                }
-            });
+                                    $(dial).dialog({
+                                        resizable       : false,
+                                        closeOnEscape   : false,
+                                        modal           : true,
+                                        width           : '400px',
+                                        close           : function() { $(this).remove(); },
+                                        buttons         : {
+                                            'Cancel'    : function() { $(this).dialog('close'); },
+                                            'Ok'        : validateTheForm
+                                        }
+                                    });
+                                }
+                        );
+                    }
+            );
         }
     });
 
@@ -329,7 +401,7 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
                     var line    = $("<tr>").appendTo(form);
                     $(line).append($("<td>").append($("<label>", {
                         for     : 'input_specific_param_' + j,
-                        text    : j
+                        text    : (specparams[j] ? specparams[j].label : j) + ' : '
                     })));
                     $(line).append($("<td>", { align : "right" }).append($("<input>", {
                         type    : 'test',
@@ -337,6 +409,7 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
                         id      : 'input_specific_param_' + j,
                         class   : 'input_specific_param'
                     })));
+                    addFieldUnit(specparams[j], line, 'unit_' + j, 'MB');
                 }
                 break;
             }
@@ -352,7 +425,7 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
         };
         var specparamsinputs    = $("input.input_specific_param");
         $(specparamsinputs).each(function() {
-            params.specific_params[$(this).attr('name')]    = $(this).val();
+            params.specific_params[$(this).attr('name')] = getRawValue($(this).val(), 'unit_' + $(this).attr('name'));
         });
         $.ajax({
             url         : '/api/entity/' + manager.pk + '/associateWorkflow',
@@ -421,6 +494,7 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
                             resizable       : false,
                             closeOnEscape   : false,
                             modal           : true,
+                            width           : '400px',
                             close           : function() { $(this).remove(); },
                             buttons         : {
                                 'Cancel'    : function() { $(this).dialog('close'); },
