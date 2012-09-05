@@ -145,6 +145,27 @@ function convertUnits(value, unitIn, unitOut) {
     return toReturnValue;
 }
 
+/*
+* getReadableSize is used to convert value in bytes in the most appropriate unit
+* Args :
+*   - sizeInBytes     : value in bytes unit
+*/
+
+function getReadableSize(sizeInBytes) {
+
+    var i = 0;
+    var byteUnits = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    while (sizeInBytes > 1024) {
+        sizeInBytes = sizeInBytes / 1024;
+        i++;
+    }
+
+    return {
+        value   : Math.max(sizeInBytes, 0.1).toFixed(1),
+        unit    : byteUnits[i]
+    };
+};
+
 function ucfirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
