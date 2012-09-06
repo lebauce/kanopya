@@ -20,10 +20,10 @@ var Service = (function(_super) {
     return Service;
 })(Model);
 
-var ressources  = {};
+var resources  = {};
 
 function    servicesListFilter(elem) {
-    if (ressources.hasOwnProperty(elem.pk)) {
+    if (resources.hasOwnProperty(elem.pk)) {
         return false;
     } else {
         return true;
@@ -37,10 +37,10 @@ function servicesList (container_id, elem_id) {
         contentType : 'application/json',
         data        : JSON.stringify({ category : 'Cloudmanager' }),
         success     : function(data) {
-            ressources  = {};
+            resources  = {};
             for (var i in data) if (data.hasOwnProperty(i)) {
                 if (data[i] != undefined) {
-                    ressources[data[i].pk] = true;
+                    resources[data[i].pk] = true;
                 }
             }
         }
@@ -159,8 +159,8 @@ function servicesList (container_id, elem_id) {
     createAddServiceButton(container_id, grid);
 }
 
-function loadServicesRessources (container_id, elem_id) {
-    var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
+function loadServicesResources (container_id, elem_id) {
+    var loadServicesResourcesGridId = 'service_resources_list_' + elem_id;
     var nodemetricrules;
     var container = $('#'+container_id);
 
@@ -184,8 +184,8 @@ function loadServicesRessources (container_id, elem_id) {
     create_grid( {
         url: '/api/node?inside_id=' + elem_id,
         content_container_id: container_id,
-        grid_id: loadServicesRessourcesGridId,
-        grid_class: 'service_ressources_list',
+        grid_id: loadServicesResourcesGridId,
+        grid_class: 'service_resources_list',
         rowNum : 25,
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             addRessourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, '');
@@ -225,7 +225,7 @@ function loadServicesRessources (container_id, elem_id) {
             tabs : [
                         { label : 'General', id : 'generalnodedetails', onLoad : nodedetailsaction },
                         { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid); } },
-                        { label : 'Monitoring', id : 'ressource_monitoring', onLoad : NodeIndicatorDetailsHistorical },
+                        { label : 'Monitoring', id : 'resource_monitoring', onLoad : NodeIndicatorDetailsHistorical },
                         { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
                     ],
             title : { from_column : 'externalnode_hostname' }

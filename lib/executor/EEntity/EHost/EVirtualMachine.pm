@@ -37,8 +37,8 @@ my $log = get_logger("");
 sub getTotalMemory {
     my ($self, %args) = @_;
 
-    my $vm_ressources = $self->getHypervisor->getVmResources(vm => $self, ressources => [ 'ram' ]);
-    return $vm_ressources->{$self->id}->{ram};
+    my $vm_resources = $self->getHypervisor->getVmResources(vm => $self, resources => [ 'ram' ]);
+    return $vm_resources->{$self->id}->{ram};
 }
 
 =head2 getTotalCpu
@@ -50,8 +50,8 @@ sub getTotalMemory {
 sub getTotalCpu {
     my ($self, %args) = @_;
 
-    my $vm_ressources = $self->getHypervisor->getVmResources(vm => $self, ressources => [ 'cpu' ]);
-    return $vm_ressources->{$self->id}->{cpu};
+    my $vm_resources = $self->getHypervisor->getVmResources(vm => $self, resources => [ 'cpu' ]);
+    return $vm_resources->{$self->id}->{cpu};
 }
 
 =head2 getHypervisor

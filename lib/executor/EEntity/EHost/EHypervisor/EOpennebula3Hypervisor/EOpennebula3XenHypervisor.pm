@@ -30,7 +30,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
-my $ressources_methods = {
+my $resources_methods = {
     ram => \&getMemResources,
     cpu => \&getCpuResources,
 };
@@ -66,7 +66,7 @@ sub getAvailableMemory {
 
 =head2 getVmResources
 
-    Return virtual machines ressources. If no resssource type(s)
+    Return virtual machines resources. If no resssource type(s)
     specified in parameters, return all know ressouces.
 
 =cut
@@ -76,23 +76,23 @@ sub getVmResources {
 
     General::checkParams(
         args     => \%args,
-        optional => { vm => undef, ressources => [ 'ram', 'cpu' ] }
+        optional => { vm => undef, resources => [ 'ram', 'cpu' ] }
     );
 
-    # Call the corressponding method for all required ressources,
+    # Call the corressponding method for all required resources,
     # and merge them into the result hash.
-    my $vms_ressources = {};
-    for my $ressource (@{ $args{ressources} }) {
-        merge($vms_ressources, $ressources_methods->{$ressource}->(vm => $args{vm}));
+    my $vms_resources = {};
+    for my $resource (@{ $args{resources} }) {
+        merge($vms_resources, $resources_methods->{$resource}->(vm => $args{vm}));
     }
-    return $vms_ressources;
+    return $vms_resources;
 };
 
 =head2 getMemResources
 
-    Return specified virtual machine memory ressources.
+    Return specified virtual machine memory resources.
     If no vm specified in parameters, return all hosted vm
-    memory ressources.
+    memory resources.
 
 =cut
 
@@ -130,9 +130,9 @@ sub getMemResources {
 
 =head2 getCpuResources
 
-    Return specified virtual machine cpu ressources.
+    Return specified virtual machine cpu resources.
     If no vm specified in parameters, return all hosted vm
-    cpu ressources.
+    cpu resources.
 
 =cut
 

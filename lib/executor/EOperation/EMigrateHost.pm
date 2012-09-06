@@ -97,7 +97,7 @@ sub prepare {
             $self->{params}->{no_migration} = 1;
         }
         else {
-            # Check if there is enough ressource in destination host
+            # Check if there is enough resource in destination host
             my $vm_id      = $self->{context}->{vm}->getAttr(name => 'entity_id');
             my $cluster_id = $self->{context}->{vm}->getClusterId();
             my $hv_id      = $self->{context}->{'host'}->getId();
@@ -110,7 +110,7 @@ sub prepare {
             my $check = $cm->isMigrationAuthorized(vm_id => $vm_id, hv_id => $hv_id);
 
             if ($check == 0){
-                my $errmsg = "Not enough ressource in HV $hv_id for VM $vm_id migration";
+                my $errmsg = "Not enough resource in HV $hv_id for VM $vm_id migration";
                 throw Kanopya::Exception::Internal(error => $errmsg);
             }
         }

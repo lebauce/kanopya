@@ -105,8 +105,8 @@ function createUpdateNodeButton(container, elem_id, grid) {
     $(container).append(button);
 }
 
-function loadServicesRessources (container_id, elem_id) {
-    var loadServicesRessourcesGridId = 'service_ressources_list_' + elem_id;
+function loadServicesResources (container_id, elem_id) {
+    var loadServicesResourcesGridId = 'service_resources_list_' + elem_id;
     var nodemetricrules;
 
     $.ajax({
@@ -118,11 +118,11 @@ function loadServicesRessources (container_id, elem_id) {
     create_grid( {
         url: '/api/externalnode?service_provider_id=' + elem_id,
         content_container_id: container_id,
-        grid_id: loadServicesRessourcesGridId,
-        grid_class: 'service_ressources_list',
+        grid_id: loadServicesResourcesGridId,
+        grid_class: 'service_resources_list',
         rowNum : 25,
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
-            addRessourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, 'external');
+            addResourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, 'external');
         },
         colNames: [ 'id', 'Hostname', 'Rules State' ],
         colModel: [
@@ -138,7 +138,7 @@ function loadServicesRessources (container_id, elem_id) {
         },
     } );
 
-    createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesRessourcesGridId));
-    //reload_grid(loadServicesRessourcesGridId,'/api/externalnode?outside_id=' + elem_id);
+    createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesResourcesGridId));
+    //reload_grid(loadServicesResourcesGridId,'/api/externalnode?outside_id=' + elem_id);
     $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
 }

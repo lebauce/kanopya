@@ -27,7 +27,7 @@ my $log = get_logger("");
 
 =head2 getVmResources
 
-    Return virtual machines ressources. If no resssource type(s)
+    Return virtual machines resources. If no resssource type(s)
     specified in parameters, return all know ressouces.
 
 =cut
@@ -37,7 +37,7 @@ sub getVmResources {
 
     General::checkParams(
         args     => \%args,
-        optional => { vm => undef, ressources => [ 'ram', 'cpu' ] }
+        optional => { vm => undef, resources => [ 'ram', 'cpu' ] }
     );
 
     throw Kanopya::Exception::NotImplemented();

@@ -369,7 +369,7 @@ sub _applyMigrationPlan{
     Class : Public
 
     Desc : Return the hypervisor ID in which to place the vm. Choose the hypervisor
-    with enough ressource with minimum size (in order to optimize infrastructure usage)
+    with enough resource with minimum size (in order to optimize infrastructure usage)
 
 
 =cut
@@ -420,9 +420,9 @@ sub getHypervisorIdForVM{
 
     Desc : Try to scale the memory of a VM.
     The increasing contains 3 steps :
-    1. Increases the size if the current HV of the VM contains enough ressource
+    1. Increases the size if the current HV of the VM contains enough resource
     2. Migrate the VM in a HV with enought space if the VM does not
-       contain enough ressource
+       contain enough resource
     3. Migrate another VM of the same HV which free enough space for the scale-in
 
 
@@ -509,9 +509,9 @@ sub scaleMemoryHost{
 
     Desc : Try to scale de num of CPU of a VM.
     The increasing contains 3 steps :
-    1. Increases the size if the current HV of the VM contains enough ressource
+    1. Increases the size if the current HV of the VM contains enough resource
     2. Migrate the VM in a HV with enought space if the VM does not
-       contain enough ressource
+       contain enough resource
     3. Migrate another VM of the same HV which free enough space for the scale-in
 
 
