@@ -47,7 +47,7 @@ function orchestrationPolicyForm(policy_opts, sp_id, edit_mode, grid) {
         },
         formwizardParams  : {
             inDuration   : 0,
-            outDUration  : 0,
+            outDuration  : 0,
             inAnimation  : {},
             outAnimation : {},
         },
