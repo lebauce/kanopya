@@ -155,7 +155,7 @@ function getReadableSize(sizeInBytes) {
 
     var i = 0;
     var byteUnits = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    while (sizeInBytes > 1024) {
+    while (sizeInBytes >= 1024) {
         sizeInBytes = sizeInBytes / 1024;
         i++;
     }
@@ -165,6 +165,52 @@ function getReadableSize(sizeInBytes) {
         unit    : byteUnits[i]
     };
 };
+
+/*
+ * Add unit info for a input field
+ * if unit is 'byte' then add a dropdown list to chose unit (KB,MB,GB,..)
+ * Use getUnitMultiplicator() to retrieve selected byte unit to apply to input value
+ */
+
+function addFieldUnit(field_info, cont, id, selected_unit) {
+    if (field_info && field_info.unit) {
+        if (field_info.unit == 'byte') {
+            var select_unit     = $('<select>', {'id' : id});
+            //var unit_options    = {'B' : 1, 'KB' : 1024, 'MB' : 1024*1024, 'GB' : 1024*1024*1024};
+            var unit_options    = {'MB' : 1024*1024, 'GB' : 1024*1024*1024};
+            $.each(unit_options, function(label, byte) { select_unit.append($('<option>', { value: byte, html: label}))});
+            $(cont).append( select_unit );
+            if (selected_unit) {
+                select_unit.find('[value="'+ unit_options[selected_unit] +'"]').attr('selected', 'selected');
+            }
+        } else {
+            $(cont).append( field_info.unit );
+        }
+    }
+}
+
+// Retrieve selected unit (see addFieldUnit())
+function getUnitMultiplicator(id) {
+    var select_unit = $('#' + id)[0];
+    if (select_unit !== undefined) {
+        return $(select_unit).attr('value');
+    }
+    return 1;
+}
+
+/*
+ * Return the final value from user input and selected unit
+ * Manage the case where input can contain '+' and '-'
+ */
+
+function getRawValue(val, unit_field_id) {
+    var prefix = val.substr(0,1);
+    if (prefix == '+' || prefix == '-') {
+        val = val.substr(1);
+        return prefix + (val * getUnitMultiplicator(unit_field_id));
+    }
+    return val * getUnitMultiplicator(unit_field_id);
+}
 
 function ucfirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
