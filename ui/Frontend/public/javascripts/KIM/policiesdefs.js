@@ -367,8 +367,14 @@ var policies = {
             composite   : 'billing_limits',
             type        : 'text',
             label       : 'Value',
-            pattern     : '^[0-9]+$',
-            is_mandatory: 1
+            pattern     : '^[0-9.]+$',
+            is_mandatory: 1,
+            unit        : {
+                depends : 'limit_type',
+                value   : {
+                    'cpu'   : 'core(s)',
+                    'ram'   : 'byte'
+            }}
         },
         limit_repeats   : {
             step        : 'Limits',

@@ -42,6 +42,10 @@ var PolicyForm = (function() {
         for (var elem in this.fields) {
             this.handleField(elem);
         }
+
+        // input_trigger is the class for select element which has a onChange event
+        // The callback could modify other fields of the form so we trigger change after all fields are created
+        this.form.find('.input_trigger').change();
     }
 
     PolicyForm.prototype.handleField = function(elem) {
@@ -288,6 +292,10 @@ var PolicyForm = (function() {
                     }
                 }
             }
+            if (this.fields[elementName].onChange) {
+                input.change(this.fields[elementName].onChange);
+                input.addClass('input_trigger');
+            }
         }
 
         this.validateRules[elementName] = {};
@@ -352,6 +360,41 @@ var PolicyForm = (function() {
                 minuteGrid  : 10,
                 closeText   : 'Close'
             });
+        }
+
+        if (element.unit) {
+            var unit_cont = $('<span>');
+            var unit_field_id ='unit_' + $(input).attr('id');
+            $(input).parent().append(unit_cont);
+
+            var current_unit;
+            if (typeof element.unit === 'object') {
+                // the unit depends on another field
+                // Get the closest input with rel = element.unit.depends, and bind change function
+                var trigger_input = $(input).closest('tr').prevAll('tr').find('[rel="' + element.unit.depends + '"]').first();
+                trigger_input.change( function() {
+                    $(unit_cont).empty();
+                    current_unit = element.unit.value[$(this).val()];
+                    addFieldUnit({ unit : current_unit }, unit_cont, unit_field_id);
+                });
+                trigger_input.change();
+            } else {
+                addFieldUnit(element, unit_cont, unit_field_id);
+                current_unit = element.unit;
+            }
+
+            // Set the serialize attribute to manage convertion from (selected) unit to final value
+            // Warning : this will override serialize attribute if defined in policiesdefs
+            this.fields[elementName].serialize = function(val, elem) {
+                return val * getUnitMultiplicator('unit_' + $(elem).attr('id'));
+            }
+
+            // If exist a value then convert it in human readable
+            if (current_unit === 'byte') {
+                var readable_value = getReadableSize($(input).val());
+                $(input).val( readable_value.value );
+                $(unit_cont).find('option:contains("' + readable_value.unit + '")').attr('selected', 'selected');
+            }
         }
 
         return tr;
@@ -907,7 +950,6 @@ var PolicyForm = (function() {
                         that.handleField(event.data.elem);
                     });
                 }
-
                 fieldsToInsert[field] = undefined;
             }
         }
@@ -1029,7 +1071,7 @@ var PolicyForm = (function() {
                     $(this).val(1);
                 }
                 if (that.fields[id].serialize != null && $(this).val() !== '') {
-                    $(this).val(that.fields[id].serialize($(this).val()));
+                    $(this).val(that.fields[id].serialize($(this).val(), this));
                 }
             }
             $(this).removeClass('wizard-ignore');
