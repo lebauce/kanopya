@@ -79,6 +79,12 @@ sub run {
             my $nodes = $cluster->getHosts();
             my $services_available = 1;
             if(!scalar(values %$nodes)) {
+                # we deactive all alerts for this cluster
+                my @alerts = Alert->search(hash => { alert_active => 1, entity_id => $cluster->id });
+                for my $alert(@alerts) {
+                    $alert->mark_resolved;
+                }
+                
                 next CLUSTER;
             }
             $log->info('---------------------------------------------');
