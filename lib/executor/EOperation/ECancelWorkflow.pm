@@ -60,7 +60,7 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    $self->{context}->{workflow}->cancel(config => $self->{config});
+    $self->{context}->{workflow}->cancel(config => $self->{config}, state => 'cancelled');
 }
 
 sub finish {

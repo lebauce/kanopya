@@ -51,6 +51,7 @@ sub new {
 
 sub cancel {
     my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['state']);
 
     # TODO: filter on states to get operation to cancel only.
     my @operations = Operation->search(hash => {
@@ -70,7 +71,7 @@ sub cancel {
         $operation->delete();
     }
 
-    $self->setState(state => 'cancelled');
+    $self->setState(state => $args{state});
 }
 
 sub getEContext {

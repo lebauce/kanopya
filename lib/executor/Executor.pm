@@ -175,7 +175,7 @@ sub oneRun {
 
             # Probably a compilation error on the operation class.
             $log->info("Cancelling $workflow_name workflow <$workflow_id>");
-            $workflow->cancel(config => $self->{config});
+            $workflow->cancel(config => $self->{config}, state => 'failed');
             return;
         }
 
@@ -283,7 +283,7 @@ sub oneRun {
                 # Try to cancel all workflow operations, and delete them.
                 # Context entities will be unlocked by this call
                 $log->info("Cancelling $workflow_name workflow $workflow_id");
-                $workflow->cancel(config => $self->{config});
+                $workflow->cancel(config => $self->{config}, state => 'failed');
 
 #                $adm->{db}->txn_commit;
             };
