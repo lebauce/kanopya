@@ -193,11 +193,10 @@ sub db_to_json {
 
 sub handle_null_param {
     my $param = shift;
-
-    if (!$param) {
+    if (! defined $param || !length($param)) {
         return undef;
     }
-    elsif ($param eq "''") {
+    elsif (($param eq "''") or ($param eq "\"\"")) {
         return '';
     }
     else {
