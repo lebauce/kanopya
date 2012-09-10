@@ -362,6 +362,10 @@ var PolicyForm = (function() {
             });
         }
 
+        // manage unit
+        // - simple value to display beside field
+        // - unit selector when unit is 'byte' (MB, GB) and display current value with the more appropriate value
+        // - unit depending on value of another field
         if (element.unit) {
             var unit_cont = $('<span>');
             var unit_field_id ='unit_' + $(input).attr('id');

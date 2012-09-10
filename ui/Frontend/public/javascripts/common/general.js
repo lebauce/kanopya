@@ -148,20 +148,21 @@ function convertUnits(value, unitIn, unitOut) {
 /*
 * getReadableSize is used to convert value in bytes in the most appropriate unit
 * Args :
-*   - sizeInBytes     : value in bytes unit
+*   - sizeInBytes           : value in bytes unit
+*   - exactValue (option)   : if defined then return non floatting exact value (e.g 1153433600 B => 1100 MB instead of 1.1 GB)
 */
 
-function getReadableSize(sizeInBytes) {
+function getReadableSize(sizeInBytes, exactValue) {
 
     var i = 0;
     var byteUnits = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    while (sizeInBytes >= 1024) {
+    while ((exactValue && sizeInBytes % 1024 == 0) || (!exactValue && sizeInBytes >= 1024)) {
         sizeInBytes = sizeInBytes / 1024;
         i++;
     }
 
     return {
-        value   : Math.max(sizeInBytes, 0.1).toFixed(1),
+        value   : Math.max(sizeInBytes, 0.1).toFixed(exactValue ? 0 : 1),
         unit    : byteUnits[i]
     };
 };

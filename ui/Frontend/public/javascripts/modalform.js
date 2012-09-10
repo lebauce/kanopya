@@ -218,6 +218,33 @@ var ModalForm = (function() {
         if ($(input).attr('type') === 'date') {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
         }
+
+        // manage unit
+        // - simple value to display beside field
+        // - unit selector when unit is 'byte' (MB, GB) and display current value with the more appropriate value
+        // See policiesform for management of unit depending on value of another field
+        if (field.unit) {
+            var unit_cont = $('<span>');
+            var unit_field_id ='unit_' + $(input).attr('id');
+            $(input).parent().append(unit_cont);
+
+            var current_unit;
+            addFieldUnit(field, unit_cont, unit_field_id);
+            current_unit = field.unit;
+
+            // Set the serialize attribute to manage convertion from (selected) unit to final value
+            // Warning : this will override serialize attribute if defined
+            this.fields[elementName].serialize = function(val, elem) {
+                return val * getUnitMultiplicator('unit_' + $(elem).attr('id'));
+            }
+
+            // If exist a value then convert it in human readable
+            if (current_unit === 'byte' && $(input).val()) {
+                var readable_value = getReadableSize($(input).val(), 1);
+                $(input).val( readable_value.value );
+                $(unit_cont).find('option:contains("' + readable_value.unit + '")').attr('selected', 'selected');
+            }
+        }
     }
     
     ModalForm.prototype.newDropdownElement = function(elementName, element, current, values) {
@@ -319,6 +346,10 @@ var ModalForm = (function() {
                 } else if (checkbox.attr('value') === 'off') {
                     checkbox.attr('value', '0');
                 }
+            }
+            if (this.fields[field].serialize != null) {
+                var input = $(form).find('input[name="' + field + '"]');
+                $(input).val(this.fields[field].serialize($(input).val(), input));
             }
         }
     }
