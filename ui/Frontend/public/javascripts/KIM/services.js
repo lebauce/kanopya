@@ -233,7 +233,7 @@ function loadServicesResources (container_id, elem_id) {
 
 function runScaleWorkflow(type, eid, spid) {
     var cont    = $('<div>');
-    $('<label>', { text : type + ' amount : ', for : type }).appendTo(cont);
+    $('<label>', { text : type + ' amount ' + (type == 'Memory' ? '(in MB)' : '') + ' : ', for : type }).appendTo(cont);
     var inp     = $('<input>', { id : type }).appendTo(cont);
     $(cont).dialog({
         resizable       : false,
@@ -256,7 +256,7 @@ function runScaleWorkflow(type, eid, spid) {
                                 contentType : 'application/json', 
                                 data        : JSON.stringify({  
                                     host_id         : eid,
-                                    scalein_value   : amount,
+                                    scalein_value   : amount * (type == 'Memory' ? 1024 * 1024 : 1),
                                     scalein_type    : type.toLowerCase()
                                 }),
                                 success     : function() { $(cont).dialog('close'); }

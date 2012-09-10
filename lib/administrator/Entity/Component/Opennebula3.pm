@@ -522,7 +522,8 @@ sub scaleHost {
         }
     };
 
-    Workflow->run(name => 'ScaleInWorkflow', params => $wf_params);
+    Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
+                  params => $wf_params);
 }
 
 =head1 DIAGNOSTICS

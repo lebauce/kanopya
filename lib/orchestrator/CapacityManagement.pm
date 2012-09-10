@@ -452,9 +452,6 @@ sub scaleMemoryHost{
         $log->warn("*** Wrong format for scale in memory value (typed : $args{memory})*** ");
         return $self->{_operationPlan};
     }
-    else {
-        $mem_input *= 1024 * 1024; #GIVEN IN MB
-    }
 
     # Compute absolute memory instead of relative
     my $memory;
@@ -481,13 +478,13 @@ sub scaleMemoryHost{
                              content => "Scale in memory value must be strictly positive (typed : $args{memory}");
         $log->warn("*** Cannot Scale Ram to a negative value (typed : $args{memory})*** ");
     }
-    elsif ($args{memory_limit} && ($memory > $args{memory_limit}*1024*1024)) {
+    elsif ($args{memory_limit} && ($memory > $args{memory_limit})) {
             $self->{_admin}->addMessage(
                                 from    => 'Capacity Management',
                                 level   => 'info',
-                                content => "Scale in is limited to <".($args{memory_limit}*1024*1024)."> B, (<$memory> B requested)",
+                                content => "Scale in is limited to <".($args{memory_limit})."> B, (<$memory> B requested)",
                              );
-        $log->warn("Scale in is limited to <".($args{memory_limit}*1024*1024)."> B, (<$memory> B requested)");
+        $log->warn("Scale in is limited to <".($args{memory_limit})."> B, (<$memory> B requested)");
     }
     else {
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
@@ -752,7 +749,7 @@ sub _scaleOnNewHV {
                     context => {
                         host => Entity->get(id => $vm_id),
                     },
-                    memory  => $new_value / (1024*1024),
+                    memory  => $new_value,
                 }
             };
         }
@@ -898,7 +895,7 @@ sub _scaleOrder{
                     context => {
                         host => Entity->get(id => $vm_id),
                     },
-                    memory  => $new_value / (1024*1024),
+                    memory  => $new_value,
                 }
             };
         }

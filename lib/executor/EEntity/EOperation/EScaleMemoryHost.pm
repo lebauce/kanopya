@@ -78,7 +78,7 @@ sub prepare {
                     vm_id           => $vm_id,
                     hv_id           => $hv_id,
                     resource_type   => 'ram',
-                    wanted_resource => $self->{params}->{memory} * 1024 * 1024, #GIVEN IN MB MUST BE IN B
+                    wanted_resource => $self->{params}->{memory},
                 );
 
     my $mem_limit = $self->{context}->{host}->node->parent->service_provider->getLimit(type => 'ram');
@@ -141,9 +141,9 @@ sub postrequisites {
     }
 
     my $precision = 0.00;
-    $log->info('one ram <' . $vm_ram . '> asked ram <' . ($self->{params}->{memory} * 1024 * 1024) . '> ');
-    if (($vm_ram >= $self->{params}->{memory} * 1024 * 1024 * (1 - $precision)) &&
-        ($vm_ram <= $self->{params}->{memory} * 1024 * 1024 * (1 + $precision))) {
+    $log->info('one ram <' . $vm_ram . '> asked ram <' . ($self->{params}->{memory}) . '> ');
+    if (($vm_ram >= $self->{params}->{memory} * (1 - $precision)) &&
+        ($vm_ram <= $self->{params}->{memory} * (1 + $precision))) {
         return 0;
     }
     elsif ($time < 3*10) {

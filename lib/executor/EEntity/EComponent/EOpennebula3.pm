@@ -290,13 +290,9 @@ sub scale_memory {
 
     General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
 
-    my $memory = $args{memory};
-
     my $host_id = $args{host}->onevm_id;
-    $self->onevm_memset(vm_nameorid => $host_id, ram => $memory);
 
-    # Memroy scale checked in post requisite before saving in DB
-    #$args{host}->updateMemory(memory => $memory);
+    $self->onevm_memset(vm_nameorid => $host_id, ram => $args{memory} / 1024 / 1024);
 }
 
 sub restoreHost {
