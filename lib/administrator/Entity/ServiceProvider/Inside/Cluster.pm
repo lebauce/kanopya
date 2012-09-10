@@ -672,9 +672,9 @@ sub configureOrchestration {
         my $wf_id      = $rule->workflow_def_id; # The wf id from the policy
         if ($wf_id) {
             # Get original workflow def and params (from policy)
-            my $wf_def     = $rule->workflow_def;
-            my $wf_params  = $wf_def->getParamPreset();
-            my $wf_name    = $wf_def->workflow_def_name;
+            my $wf_def      = $rule->workflow_def;
+            my $wf_params   = $wf_def->getParamPreset();
+            my $wf_name     = $wf_def->workflow_def_name;
 
             # Replacing in workflow name the id of original rule (from policy) with id of this rule
             # TODO change associated workflow naming convention (currently: <ruleid>_<origin_wf_def_name>) UGLY!
@@ -683,7 +683,7 @@ sub configureOrchestration {
             # Associate to the rule a copy of the policy workflow
             $workflow_manager->associateWorkflow(
                 'new_workflow_name'         => $wf_name,
-                'origin_workflow_def_id'    => $wf_id,
+                'origin_workflow_def_id'    => $wf_def->workflow_def_origin,
                 'specific_params'           => $wf_params->{specific} || {},
                 'rule_id'                   => $rule_id,
             );

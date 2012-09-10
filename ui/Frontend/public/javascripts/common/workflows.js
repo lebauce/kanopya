@@ -280,7 +280,7 @@ function workflowRuleConfigure(wfdef_id) {
                                         var line        = $("<tr>").appendTo(form);
                                         $(line).append($("<td>").append($("<label>", {
                                             for     : 'input_specific_param_' + k,
-                                            text    : (field_info ? field_info.label : k) + ' : '
+                                            text    : (field_info ? (field_info.label ? field_info.label : k) : k) + ' : '
                                         })));
                                         var value = v;
                                         var selected_unit;
