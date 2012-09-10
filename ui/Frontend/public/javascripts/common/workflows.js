@@ -2,9 +2,8 @@ require('jquery/jquery.form.js');
 require('jquery/jquery.form.wizard.js');
 require('common/general.js');
 
-function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
-
-    function    createParameterList(parameters) {
+function createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
+    function createParameterList(parameters) {
         var list    = $("<ul>").css({
             'margin'        : '0 0 0 15px',
             'padding'       : '0',
@@ -43,7 +42,7 @@ function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
         }
     });
 
-    function    createModal() {
+    function createModal() {
         var form        = $("<form>", { id : "workflow_def_creation", action : "/api/workflowdef", method : "POST" });
         var mod         = $("<table>", { width : "100%" }).appendTo(form);
 
@@ -135,7 +134,7 @@ function    createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
     $(button).bind('click', createModal).appendTo(container);
 }
 
-function    deleteWorkflowDef(workflowdef_id) {
+function deleteWorkflowDef(workflowdef_id) {
     $.ajax({
         url     : '/api/workflowdef/' + workflowdef_id,
         type    : 'get',
@@ -165,7 +164,7 @@ function    deleteWorkflowDef(workflowdef_id) {
     });
 }
 
-function    sco_workflow(container_id) {
+function sco_workflow(container_id) {
     var container       = $("#" + container_id);
     var connectorTypeId;
     $.ajax({
@@ -206,7 +205,7 @@ function    sco_workflow(container_id) {
     $(container).append(createWorkflowRuleAssociationButton())
 }
 
-function    workflowdetails(workflowmanagerid, workflowmanager) {
+function workflowdetails(workflowmanagerid, workflowmanager) {
     var dial    = $("<div>", {
         id      : "workflowmanagerdetailsdialog",
         width   : "600px"
@@ -328,7 +327,7 @@ function workflowRuleConfigure(wfdef_id) {
 
 }
 
-function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
+function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
     var dial    = $("<div>");
     var form    = $("<table>", { width : '100%' }).appendTo($("<form>").appendTo(dial));
     var wfdefs  = [];
@@ -374,7 +373,7 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
         }
     }
 
-    function    validateTheForm() {
+    function validateTheForm() {
         var params              = {
             new_workflow_name       : eid + '_' + $("input#input_origin_workflow_name").val(),
             origin_workflow_def_id  : $("input#input_origin_workflow_id").val(),
@@ -469,7 +468,7 @@ function    workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
     });
 }
 
-function    workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
+function workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
     $.ajax({
         url         : '/api/serviceprovider/' + serviceprovider_id + '/getManager',
         type        : 'POST',
@@ -493,20 +492,20 @@ function    workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id
     });
 }
 
-function    createWorkflowRuleAssociationButton(cid, eid, scid, serviceprovider_id) {
+function createWorkflowRuleAssociationButton(cid, eid, scid, serviceprovider_id) {
     var button  = $("<a>", { text : 'Associate a Workflow' }).button();
     button.bind('click', function() { workflowRuleAssociation(eid, scid, cid, serviceprovider_id); });
     $('#' + cid).append(button);
 }
 
-function    appendWorkflowActionsButtons(elem, cid, rule_id, wfdef_id, serviceprovider_id) {
+function appendWorkflowActionsButtons(elem, cid, rule_id, wfdef_id, serviceprovider_id) {
     $(elem).append($("<a>", { text : 'Configure', style : 'margin-left: 15px;' }).button({ icons : { primary : 'ui-icon-wrench' } })
                 .bind('click', function(event) {workflowRuleConfigure(wfdef_id)}));
     $(elem).append($("<a>", { text : 'Deassociate', style : 'margin-left: 15px;' }).button({ icons : { primary : 'ui-icon-trash' } })
                 .bind('click', function(event) {workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id)}));
 }
 
-function    workflowslist(cid, eid) {
+function workflowslist(cid, eid) {
     $.ajax({
         url     : '/api/serviceprovider/' + eid + '/getWorkflows',
         type    : 'POST',
@@ -541,7 +540,55 @@ function    workflowslist(cid, eid) {
     });
 }
 
-function    workflowsoverview(cid, eid) {
+function runningworkflowslist(cid, eid) {
+    create_grid({
+        url                  : '/api/workflow?state=running&entity_id='+eid,   
+        caption              : 'Running workflows',
+        content_container_id : cid,
+        grid_id              : 'runningworkflowsgrid',
+        action_delete        : { url : '/api/workflow', method: 'cancel' },
+        colNames             : [ 'Id', 'Name', 'Current Operation', 'Step' ],
+        afterInsertRow       : function(grid, rowid, rowdata, rowelem) {
+            $.ajax({
+                url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
+                type    : 'POST',
+                success : function(data) {
+                    rowelem.currentOperation    = data.type;
+                    $(grid).setCell(rowid, 'currentOperation', rowelem.currentOperation);
+                }
+            });
+        },
+        colModel                : [
+            { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
+            { name : 'workflow_name', index : 'workflow_name' },
+            { name : 'currentOperation', index : 'currentOperation' },
+            { name : 'step', index : 'step' }
+        ]
+    });
+    $('<br />').appendTo('#'+cid);
+}
+
+function historicworkflowslist(cid, eid) {
+    create_grid({
+        url                     : '/api/workflow?state=<>,running&entity_id='+eid,   
+        caption                 : 'History',
+        content_container_id    : cid,
+        grid_id                 : 'historicworkflowsgrid',
+        action_delete           : 'no',
+        colNames                : [ 'Id', 'Name', 'State' ],
+        colModel                : [
+            { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
+            { name : 'workflow_name', index : 'workflow_name', width: 10 },
+            { name : 'state', index : 'state', width: 10 }
+        ],
+        details                 : { onSelectRow : function(wid) {
+                                                    var url = "/workflows/"+wid+"/log";
+                                                    window.open(url, "workflow log", "menubar=no, status=no, width=640, height=800,");
+        }}
+    });
+}
+
+function workflowsoverview(cid, eid) {
   create_grid({
         url                     : '/api/workflow',
         grid_id                 : 'workflowslistgrid',

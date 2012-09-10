@@ -58,7 +58,7 @@ var mainmenu_def = {
                                {label : 'Ressources', id : 'service_ressources', onLoad : function(cid, eid) { require('KIM/services.js'); loadServicesRessources(cid, eid);}},
                                {label : 'Monitoring', id : 'service_monitoring', onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid);}},
                                {label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid);}},
-                               {label : 'Workflows', id : 'workflows', onLoad : function(cid, eid) { require('common/workflows.js'); workflowslist(cid, eid); } },
+                               {label : 'Events & Alerts', id : 'events_alerts', onLoad : function(cid, eid) { require('common/service_eventsalerts.js'); loadServiceEventsAlerts(cid, eid); } },
                                {label : 'Billing', id : 'billing', onLoad : function(cid, eid) { require('KIM/billing.js'); billinglist(cid, eid); } }
                                ]
                 }
