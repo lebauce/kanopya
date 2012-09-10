@@ -128,6 +128,7 @@ my %resources = (
     "vlan"                     => "Entity::Network::Vlan",
     "workflow"                 => "Workflow",
     "workflowdef"              => "WorkflowDef",
+    "alert"                    => "Alert",
 );
 
 sub db_to_json {

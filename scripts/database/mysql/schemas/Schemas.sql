@@ -693,7 +693,9 @@ CREATE TABLE `workflow` (
   `workflow_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `workflow_name` char(64) DEFAULT NULL,
   `state` char(32) NOT NULL DEFAULT 'running',
-  PRIMARY KEY (`workflow_id`)
+  `entity_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`workflow_id`),
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -726,6 +728,25 @@ CREATE TABLE `workflow_step` (
   KEY (`operationtype_id`),
   FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `alert`
+--
+
+CREATE TABLE `alert` (
+  `alert_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `alert_date` date NOT NULL,
+  `alert_time` time NOT NULL,
+  `alert_message` char(255) NOT NULL,
+  `alert_active` int(1) unsigned NOT NULL DEFAULT 1,
+  `entity_id` int(8) unsigned NOT NULL,
+  `alert_signature` char(255) NOT NULL,
+  PRIMARY KEY (`alert_id`),
+  UNIQUE KEY (`alert_signature`),
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 
 --
 -- Table structure for table `systemimage`
