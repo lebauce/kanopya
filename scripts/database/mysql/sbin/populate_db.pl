@@ -8,8 +8,8 @@ use ComponentType;
 use Entity::Component;
 use WorkflowDef;
 use Operationtype;
-use Policy;
-use ServiceTemplate;
+use Entity::Policy;
+use Entity::ServiceTemplate;
 use Entity::InterfaceRole;
 use Entity::Network;
 use Entity::Kernel;
@@ -135,7 +135,7 @@ sub populate_policies {
     my $type_id = ComponentType->find(hash => { component_name => 'Physicalhoster' })->id;
     my $physicalhoster = Entity::Component->find( hash => { component_type_id => $type_id, service_provider_id => 1 } );
     
-    $policies{hosting} = Policy->new(
+    $policies{hosting} = Entity::Policy->new(
         policy_name => 'Default physical host',
         policy_desc => 'Hosting policy for default physical hosts',
         policy_type => 'hosting',
@@ -151,7 +151,7 @@ sub populate_policies {
     my $iscsit_type_id = ComponentType->find(hash => { component_name => 'Iscsitarget' })->id;
     my $iscsitarget = Entity::Component->find( hash => { component_type_id => $iscsit_type_id, service_provider_id => 1 } );
     
-    $policies{storage} = Policy->new(
+    $policies{storage} = Entity::Policy->new(
         policy_name => 'Kanopya LVM disk exported via ISCSI',
         policy_desc => 'Datastore on Kanopya cluster for PXE boot via ISCSI',
         policy_type => 'storage',
@@ -162,7 +162,7 @@ sub populate_policies {
     # network
     my $interfacerole = Entity::InterfaceRole->find(hash => {interface_role_name => 'admin'});
     my $network = Entity::Network->find(hash => {network_name => 'admin'});
-    $policies{network} = Policy->new(
+    $policies{network} = Entity::Policy->new(
         policy_name => 'Default network configuration',
         policy_desc => 'Default network configuration, with admin and public interfaces',
         policy_type => 'network',
@@ -175,7 +175,7 @@ sub populate_policies {
     );
     
     # scalability
-    $policies{scalability} = Policy->new(
+    $policies{scalability} = Entity::Policy->new(
         policy_name => 'Cluster manual scalability',
         policy_desc => 'Manual scalability',
         policy_type => 'scalability',
@@ -188,7 +188,7 @@ sub populate_policies {
     my $puppettypeid = ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
     my $keepalivedtypeid = ComponentType->find(hash => { component_name => 'Keepalived' })->id;
     my $kernel = Entity::Kernel->find(hash => {kernel_name => '2.6.32-5-xen-amd64'});
-    $policies{system} = Policy->new(
+    $policies{system} = Entity::Policy->new(
         policy_name => 'Debian squeeze',
         policy_desc => 'System policy for standard physical hosts',
         policy_type => 'system',
@@ -202,14 +202,14 @@ sub populate_policies {
     );
     
     # billing
-    $policies{billing} = Policy->new(
+    $policies{billing} = Entity::Policy->new(
         policy_name => 'Empty billing configuration',
         policy_desc => 'Empty billing configuration',
         policy_type => 'billing',
     );
     
     # orchestration
-    $policies{orchestration} = Policy->new(
+    $policies{orchestration} = Entity::Policy->new(
         policy_name => 'Empty orchestration configuration',
         policy_desc => 'Empty orchestration configuration',
         policy_type => 'orchestration',
@@ -221,7 +221,7 @@ sub populate_policies {
 sub populate_servicetemplates {
     my ($policies) = @_;
     # Standard physical cluster
-    my $template = ServiceTemplate->new(
+    my $template = Entity::ServiceTemplate->new(
         service_name => 'Standard physical cluster',
         service_desc => 'Service template for standard physical cluster declaration',
         hosting_policy_id => $policies->{hosting}->id,
