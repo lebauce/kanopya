@@ -12,7 +12,7 @@ function host_addbutton_action(e) {
             host_hostname       : { label : 'Hostname' },
             host_desc           : { label : 'Description', type : 'textarea' },
             host_core           : { label : 'Core Number' },
-            host_ram            : { label : 'RAM Amount' },
+            host_ram            : { label : 'RAM Amount', unit : 'byte' },
             kernel_id           : { label : 'Default Kernel', display : 'kernel_name' },
             host_serial_number  : { label : 'Serial number' },
             host_manager_id     : { label : '', value : g_host_manager_id, type : 'hidden' }
