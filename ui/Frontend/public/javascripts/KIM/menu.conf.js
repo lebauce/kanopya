@@ -55,7 +55,7 @@ var mainmenu_def = {
                 { label : 'Overview', id : 'service_overview', onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid);}},
                 { label : 'Details', id : 'service_details', onLoad : function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid);}},
                 { label : 'Configuration', id : 'service_configuration', onLoad : function(cid, eid) { require('KIM/services_config.js'); loadServicesConfig(cid, eid);}},
-                { label : 'Ressources', id : 'service_ressources', onLoad : function(cid, eid) { require('KIM/services.js'); loadServicesRessources(cid, eid);}},
+                { label : 'Resources', id : 'service_resources', onLoad : function(cid, eid) { require('KIM/services.js'); loadServicesResources(cid, eid);}},
                 { label : 'Monitoring', id : 'service_monitoring', onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid);}},
                 { label : 'Rules', id : 'service_rules', onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid);}},
                 { label : 'Events & Alerts', id : 'events_alerts', onLoad : function(cid, eid) { require('common/service_eventsalerts.js'); loadServiceEventsAlerts(cid, eid); } },
@@ -66,7 +66,7 @@ var mainmenu_def = {
     'Administration'    : {
         'Kanopya'          : [
             { label : 'Configuration', id : 'service_configuration', onLoad : function(cid) { require('KIM/services_config.js'); loadServicesConfig(cid, 1);}},
-            { label : 'Ressources', id : 'service_ressources', onLoad : function(cid) { require('KIM/services.js'); loadServicesRessources(cid, 1);}},
+            { label : 'Resources', id : 'service_resources', onLoad : function(cid) { require('KIM/services.js'); loadServicesResources(cid, 1);}},
         ],
         'Right Management' : [
             { label : 'Users', id : 'users', onLoad : users.load_content },

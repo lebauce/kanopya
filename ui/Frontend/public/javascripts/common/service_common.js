@@ -51,10 +51,10 @@ function addServiceExtraData(grid, rowid, rowdata, rowelem, ext) {
     });
 }
 
-//Callback for service ressources grid
+//Callback for service resources grid
 //Add extra info to each row for specific columns
 //Extra column is 'rulesstate'
-function addRessourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, sp_id, ext) {
+function addResourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, sp_id, ext) {
     for (var i in nodemetricrules) if (nodemetricrules.hasOwnProperty(i)) {
         var     ok          = $('<span>', { text : 0, rel : 'ok', css : {'padding-right' : '10px'} });
         var     notok       = $('<span>', { text : 0, rel : 'notok', css : {'padding-right' : '10px'} });

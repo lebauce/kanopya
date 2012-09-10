@@ -140,5 +140,5 @@ function loadServicesResources (container_id, elem_id) {
 
     createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesResourcesGridId));
     //reload_grid(loadServicesResourcesGridId,'/api/externalnode?outside_id=' + elem_id);
-    $('service_ressources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
+    $('service_resources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
 }

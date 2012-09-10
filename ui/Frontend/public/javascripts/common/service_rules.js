@@ -77,12 +77,12 @@ function nodemetricconditionmodal(elem_id, editid) {
                             nodemetric_rule_state               : 'enabled'
                         },
                         success : function() {
-                            $('#service_ressources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
+                            $('#service_resources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
                         }
                     });
                 }
             }
-            $('#service_ressources_nodemetric_conditions_' + elem_id).trigger('reloadGrid');
+            $('#service_resources_nodemetric_conditions_' + elem_id).trigger('reloadGrid');
         }
     };
     if (editid !== undefined) {
@@ -137,7 +137,7 @@ function createNodemetricRule(container_id, elem_id) {
             $("div#waiting_default_insert").dialog("destroy");
         },
         callback    : function() {
-            $('#service_ressources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
+            $('#service_resources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
         }
     };
 
@@ -280,12 +280,12 @@ function serviceconditionmodal(elem_id, editid) {
                             aggregate_rule_state                : elem.state
                         },
                         success : function() {
-                            $('#service_ressources_aggregate_rules_' + elem_id).trigger('reloadGrid');
+                            $('#service_resources_aggregate_rules_' + elem_id).trigger('reloadGrid');
                         }
                     });
                 }
             }
-            $('#service_ressources_aggregate_conditions_' + elem_id).trigger('reloadGrid');
+            $('#service_resources_aggregate_conditions_' + elem_id).trigger('reloadGrid');
         }
     };
     if (editid !== undefined) {
@@ -341,7 +341,7 @@ function createServiceRule(container_id, elem_id) {
             $("div#waiting_default_insert").dialog("destroy");
         },
         callback    : function() {
-            $('#service_ressources_aggregate_rules_' + elem_id).trigger('reloadGrid');
+            $('#service_resources_aggregate_rules_' + elem_id).trigger('reloadGrid');
         }
     };
 
@@ -425,7 +425,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
     $('<div id="node_accordion_container">').appendTo(divacc);
     // Display nodemetric conditions
-    var serviceNodemetricConditionsGridId = 'service_ressources_nodemetric_conditions_' + elem_id;
+    var serviceNodemetricConditionsGridId = 'service_resources_nodemetric_conditions_' + elem_id;
     create_grid( {
         caption: 'Conditions',
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions',
@@ -456,13 +456,13 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     
     // Display nodemetric rules
     $("<p>").appendTo('#node_accordion_container');
-    var serviceNodemetricRulesGridId = 'service_ressources_nodemetric_rules_' + elem_id;
+    var serviceNodemetricRulesGridId = 'service_resources_nodemetric_rules_' + elem_id;
     create_grid( {
         caption: 'Rules',
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_rules',
         content_container_id: 'node_accordion_container',
         grid_id: serviceNodemetricRulesGridId,
-        grid_class: 'service_ressources_nodemetric_rules',
+        grid_class: 'service_resources_nodemetric_rules',
         afterInsertRow: function(grid, rowid, rowdata) {
             // Formula
             var id  = $(grid).getCell(rowid, 'pk');
@@ -523,7 +523,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
     $('<div id="service_accordion_container">').appendTo(divacc);
     // Display service conditions :
-    var serviceAggregateConditionsGridId = 'service_ressources_aggregate_conditions_' + elem_id;
+    var serviceAggregateConditionsGridId = 'service_resources_aggregate_conditions_' + elem_id;
     create_grid( {
         caption: 'Conditions',
         url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions',
@@ -555,11 +555,11 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
 
     // Display services rules :
     $("<p>").appendTo('#service_accordion_container');
-    var serviceAggregateRulesGridId = 'service_ressources_aggregate_rules_' + elem_id;
+    var serviceAggregateRulesGridId = 'service_resources_aggregate_rules_' + elem_id;
     create_grid( {
         caption: 'Rules',
         url: '/api/serviceprovider/' + elem_id + '/aggregate_rules',
-        grid_class: 'service_ressources_aggregate_rules',
+        grid_class: 'service_resources_aggregate_rules',
         content_container_id: 'service_accordion_container',
         grid_id: serviceAggregateRulesGridId,
         colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description', 'trigger'],

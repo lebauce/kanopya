@@ -855,8 +855,8 @@ var PolicyForm = (function() {
             var display = datavalues[value].pk;
 
             if (this.fields[name].display_func && this.fields[name].entity) {
-                var ressource_name = this.ajaxCall('POST', '/api/' +  this.fields[name].entity + '/' + datavalues[value].pk + '/' + this.fields[name].display_func);
-                if (ressource_name) display = ressource_name;
+                var resource_name = this.ajaxCall('POST', '/api/' +  this.fields[name].entity + '/' + datavalues[value].pk + '/' + this.fields[name].display_func);
+                if (resource_name) display = resource_name;
             } else if (datavalues[value].name) {
                 display = datavalues[value].name;
             }

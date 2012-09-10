@@ -185,7 +185,7 @@ function loadServicesResources (container_id, elem_id) {
         grid_class: 'service_resources_list',
         rowNum : 25,
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
-            addRessourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, '');
+            addResourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, '');
 
             // Core and ram info
             var host_id  = $(grid).getCell(rowid, 'host_id');

@@ -101,7 +101,7 @@ function createServiceMetric(container_id, elem_id, ext, options) {
             $("div#waiting_default_insert").dialog("destroy");
         },
         callback    : function(elem, form) {
-                $("#service_ressources_clustermetrics_"  + elem_id).trigger('reloadGrid');
+                $("#service_resources_clustermetrics_"  + elem_id).trigger('reloadGrid');
                 if ($(form).find('#input_createcombination').attr('checked')) {
                     $.ajax({
                         url     : '/api/aggregatecombination',
@@ -112,7 +112,7 @@ function createServiceMetric(container_id, elem_id, ext, options) {
                             aggregate_combination_formula             : 'id' + elem.pk,
                         },
                         success : function() {
-                            $("#service_ressources_aggregate_combinations_" + elem_id).trigger('reloadGrid');
+                            $("#service_resources_aggregate_combinations_" + elem_id).trigger('reloadGrid');
                         }
                     });
                 }
@@ -148,7 +148,7 @@ function createServiceConbination(container_id, elem_id, options) {
         name        : 'aggregatecombination',
         fields      : service_fields,
         callback    : function() {
-            $('#service_ressources_aggregate_combinations_' + elem_id).trigger('reloadGrid');
+            $('#service_resources_aggregate_combinations_' + elem_id).trigger('reloadGrid');
         },
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
@@ -246,7 +246,7 @@ function createNodemetricCombination(container_id, elem_id, ext, options) {
             $("div#waiting_default_insert").dialog("destroy");
         },
         callback    : function() {
-            $('#service_ressources_nodemetric_combination_' + elem_id).trigger('reloadGrid');
+            $('#service_resources_nodemetric_combination_' + elem_id).trigger('reloadGrid');
         },
         beforeSubmit: (options && options.beforeSubmit) || $.noop,
     };
@@ -396,7 +396,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     var container = $("#" + container_id);
     
     $("<p>", { html : "Nodemetric Combinations  : " }).appendTo('#service_monitoring_accordion_container');
-    var loadServicesMonitoringGridId = 'service_ressources_nodemetric_combination_' + elem_id;
+    var loadServicesMonitoringGridId = 'service_resources_nodemetric_combination_' + elem_id;
     create_grid( {
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_combinations',
         content_container_id: 'node_monitoring_accordion_container',
@@ -431,7 +431,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
     $('<div id="service_monitoring_accordion_container">').appendTo(divacc);
    
-    var loadServicesMonitoringGridId = 'service_ressources_clustermetrics_' + elem_id;
+    var loadServicesMonitoringGridId = 'service_resources_clustermetrics_' + elem_id;
     create_grid( {
         caption : 'Metrics',
         url: '/api/serviceprovider/' + elem_id + '/clustermetrics',
@@ -458,7 +458,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     createServiceMetric('service_monitoring_accordion_container', elem_id, (external !== '') ? true : false);
     
     $("<p>").appendTo('#service_monitoring_accordion_container');
-    var loadServicesMonitoringGridId = 'service_ressources_aggregate_combinations_' + elem_id;
+    var loadServicesMonitoringGridId = 'service_resources_aggregate_combinations_' + elem_id;
     create_grid( {
         caption: 'Metric combinations',
         url: '/api/serviceprovider/' + elem_id + '/aggregate_combinations',

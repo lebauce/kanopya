@@ -16,7 +16,7 @@ function vmdetails(spid) {
         tabs : [
             { label : 'General', id : 'generalnodedetails', onLoad : nodedetailsaction },
             { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid); } },
-            { label : 'Monitoring', id : 'ressource_monitoring', onLoad : function(cid, eid) { NodeIndicatorDetailsHistorical(cid, eid, spid); } },
+            { label : 'Monitoring', id : 'resource_monitoring', onLoad : function(cid, eid) { NodeIndicatorDetailsHistorical(cid, eid, spid); } },
             { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, spid); } },
         ],
         title : { from_column : 'externalnode_hostname' }
