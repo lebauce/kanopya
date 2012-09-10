@@ -695,7 +695,7 @@ CREATE TABLE `workflow` (
   `workflow_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `workflow_name` char(64) DEFAULT NULL,
   `state` char(32) NOT NULL DEFAULT 'running',
-  `entity_id` int(8) unsigned NOT NULL,
+  `entity_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`workflow_id`),
   FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

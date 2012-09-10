@@ -45,7 +45,7 @@ use constant ATTR_DEF => {
     },
     entity_id => {
         pattern      => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
 };
