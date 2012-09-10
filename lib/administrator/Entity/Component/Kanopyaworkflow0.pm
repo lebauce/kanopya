@@ -99,47 +99,4 @@ sub _defineFinalParams{
     return $workflow_params;
 }
 
-sub runWorkflow_old {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [
-                                            'workflow_def_id',
-                                         ]);
-    my $workflow_def_id = $args{workflow_def_id};
-    my $workflow        = $self->getWorkflowDef(
-                              workflow_def_id => $workflow_def_id
-                          );
-    my $workflow_name   = $workflow->getAttr(
-                              name => 'workflow_def_name'
-                          );
-
-    #gather the workflow params
-    my $all_params = $self->_getAllParams(
-                        workflow_def_id => $workflow_def_id
-                     );
-
-    #resolve the automatic params values
-    # NOT FULLY FUNCTIONNAL YET
-    my $automatic_values = $self->_getAutomaticValues(
-                                automatic_params => $all_params->{automatic},
-                                sp_id            => $args{service_provider_id},
-                                %args,
-                           );
-    #replace the undefined automatic params with the defined ones
-    $all_params->{automatic} = $automatic_values;
-
-    #run the workflow with fully the defined param
-    my $workflow_params = merge(
-    $all_params->{automatic},
-    $all_params->{specific},
-    );
-
-
-    $log->info('*************************************************');
-    $log->info(Dumper keys %$workflow_params);
-
-    Workflow->run(name => $workflow_name, params => $workflow_params);
-}
-
-
 1;
