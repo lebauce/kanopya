@@ -25,6 +25,7 @@ use Kanopya::Exceptions;
 use Entity::ServiceProvider::Inside::Cluster;
 
 use Message;
+use Alert;
 use EFactory;
 
 use Log::Log4perl "get_logger";
@@ -89,6 +90,15 @@ sub run {
 
                 # Firstly try to ping the node
                 my $pingable;
+                my $hostname = $ehost->getAttr(name => 'host_hostname');
+                my $hostmsg = "Host $hostname not reachable";
+                # search if an alert exists
+                my $hostalert =  eval { Alert->find(hash => { 
+                                                          alert_active => 1, 
+                                                          alert_message => $hostmsg,
+                                                          entity_id => $cluster->id }) 
+                            };
+                
                 eval {
                    $pingable = $ehost->checkUp();
                 };
@@ -98,8 +108,13 @@ sub run {
                 if (! $pingable and $hoststate eq 'up') {
                     my $msg = "Node " . $node->host_hostname . " unreachable in cluster :" . $cluster->cluster_name;
                     $log->warn($msg);
-
                     Message->send(from => 'StateManager', level => 'info', content => $msg);
+
+                    # create an alert if not already created
+                    if(not $hostalert) {
+                        Alert->new(entity_id => $cluster->id, alert_message => $hostmsg, alert_signature => $hostmsg);
+                        $log->warn($msg);
+                    }
 
                     # Set the host and node states to broken
                     $ehost->setState(state => 'broken');
@@ -112,8 +127,12 @@ sub run {
                 elsif ($pingable and $hoststate eq 'broken') {
                     # Host has been repaired
                     my ($prevstate, $prevtimestamp) = $ehost->getPrevState;
-
                     $ehost->setState(state => $prevstate);
+                    
+                    # disable the alert if it exists
+                    if($hostalert) {
+                        $hostalert->mark_resolved;
+                    }
                 }
 
                 # Then check the node component availability
@@ -125,17 +144,36 @@ sub run {
 
                     $log->debug("Check component availability : " . $component_name);
 
+                    # search if an alert exists
+                    my $compmsg = "Component $component_name unreachable on Host $hostname";
+                    my $compalert =  eval { Alert->find(hash => { 
+                                                          alert_active => 1, 
+                                                          alert_message => $compmsg,
+                                                          entity_id => $cluster->id }) 
+                            };
+
                     if (! $ecomponent->isUp(host => $ehost, cluster => $cluster)) {
                         my $msg = $component_name .
                                   " not available on node (" . $node->host_hostname .
                                   ") in cluster (" . $cluster->cluster_name . ")";
-                        $log->warn($msg);
+                        #$log->warn($msg);
 
-                        Message->send(from => 'StateManager', level => 'info', content => $msg);
+                        #Message->send(from => 'StateManager', level => 'info', content => $msg);
+
+                        # create an alert if not already created
+                        if(not $compalert) {
+                            Alert->new(entity_id => $cluster->id, alert_message => $compmsg, alert_signature => $compmsg);
+                            $log->warn($msg);
+                        }
 
                         $node_available = 0;
                         $services_available = 0;
                         last;
+                    } else {
+                        # disable the alert if it exists
+                        if($compalert) {
+                            $compalert->mark_resolved;
+                        }
                     }
                 }
                 my ($nodestate, $nodetimestamp) = $ehost->getNodeState;
@@ -149,6 +187,7 @@ sub run {
                 elsif ($node_available and $nodestate eq 'broken') {
                     # Set the node is repaired
                     $ehost->setNodeState(state => 'in');
+                    
                 }
 
                 $adm->commitTransaction;
