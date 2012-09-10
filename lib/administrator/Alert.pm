@@ -47,7 +47,7 @@ sub new {
 
 sub mark_resolved {
     my ($self) = @_;
-    $self->setAttr(alert_active => 0);
+    $self->setAttr(name => 'alert_active', value => 0);
     $self->save;
 }
 
