@@ -539,10 +539,25 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workflows
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-18 11:47:00
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:I9VZtZzRag/M+kp+7fswTw
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Workflow>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflows",
+  "AdministratorDB::Schema::Result::Workflow",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-09-07 12:17:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:y7Xm+06tqUu4pODIsAGpOA
+
+
+# You can replace this text with custom content, and it will be preserved on regeneration
 1;

@@ -39,6 +39,13 @@ __PACKAGE__->table("workflow");
   is_nullable: 0
   size: 32
 
+=head2 entity_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -58,10 +65,32 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
     size => 32,
   },
+  "entity_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 __PACKAGE__->set_primary_key("workflow_id");
 
 =head1 RELATIONS
+
+=head2 aggregate_rules
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::AggregateRule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "aggregate_rules",
+  "AdministratorDB::Schema::Result::AggregateRule",
+  { "foreign.workflow_id" => "self.workflow_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 entity_locks
 
@@ -108,10 +137,45 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 entity
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-06-12 10:46:46
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5pifrGf9leFRuakFzUvYvw
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "entity",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "entity_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+=head2 workflow_noderules
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowNoderule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_noderules",
+  "AdministratorDB::Schema::Result::WorkflowNoderule",
+  { "foreign.workflow_id" => "self.workflow_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-09-07 12:17:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ngnnmUzXo+THOBB2ttAnyQ
+
+
+# You can replace this text with custom content, and it will be preserved on regeneration
 1;

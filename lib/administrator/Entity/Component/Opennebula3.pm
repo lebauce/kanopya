@@ -439,20 +439,23 @@ sub addVM {
 }
 
 sub migrate {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host_id', 'hypervisor_id' ]);
-
+    my $hypervisor = Entity->get(id => $args{hypervisor_id});
     my $wf_params = {
         context => {
             vm   => Entity->get(id => $args{host_id}),
-            host => Entity->get(id => $args{hypervisor_id}),
+            host => $hypervisor,
             cloudmanager_comp => $self
         }
     };
     
-    return Workflow->run(name => 'MigrateWorkflow', params => $wf_params);
+    return Workflow->run(
+        name      => 'MigrateWorkflow', 
+        entity_id => $hypervisor->getClusterId(),
+        params    => $wf_params
+    );
 }
 
 # Execute host migration to a new hypervisor

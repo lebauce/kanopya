@@ -1237,6 +1237,7 @@ sub addNode {
 
     return Workflow->run(
         name => 'AddNode',
+        entity_id => $self->id,
         params   => {
             context => {
                 cluster => $self,
@@ -1282,6 +1283,7 @@ sub removeNode {
     my $host =  Entity->get(id => $args{host_id});
     Workflow->run(
         name => 'StopNode',
+        entity_id => $self->id,
         params   => {
             context => {
                 cluster => $self,

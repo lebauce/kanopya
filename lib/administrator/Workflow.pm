@@ -43,6 +43,11 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    entity_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -64,11 +69,12 @@ sub run {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'name' ]);
+    General::checkParams(args => \%args, required => [ 'name','entity_id' ]);
 
     my $def = WorkflowDef->find(hash => { workflow_def_name => $args{name} });
-    my $workflow = Workflow->new(workflow_name => $args{name});
+    my $workflow = Workflow->new(workflow_name => $args{name}, entity_id => $args{entity_id});
     delete $args{name};
+    delete $args{entity_id};
 
     my $steps = $def->{_dbix}->workflow_steps;
     while (my $step = $steps->next) {
@@ -96,8 +102,7 @@ sub enqueue {
 }
 
 sub getCurrentOperation {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $adm = Administrator->new();
 

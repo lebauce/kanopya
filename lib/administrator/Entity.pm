@@ -271,27 +271,31 @@ sub setComment {
 }
 
 sub getWorkflows {
-    my $self = shift;
-    my %args = @_;
-
-    my $workflows = {};
+    my ($self, %args) = @_;
+    my $hash = {};
+    if(defined $args{state})  {
+        $hash->{state} = $args{state};
+    }
+    
+    $hash->{entity_id} = $self->id;
+    my @workflows = Workflow->search(hash => $hash);
 
     # TODO: join tables workflow and workflow_parameter to get
     #       paramters of running workflow only.
-    my @contexes = OperationParameter->search(hash => {
-                       tag   => 'context',
-                       value => $self->getId
-                   });
-
-    for my $context (@contexes) {
-        my $workflow = $context->operation->getWorkflow;
-        if ($workflow->state eq 'running' and not exists $workflows->{$workflow->id}) {
-            $workflows->{$workflow->id} = $workflow;
-        }
-    }
+    #my @contexes = OperationParameter->search(hash => {
+                       #tag   => 'context',
+                       #value => $self->getId
+                   #});
+#
+    #for my $context (@contexes) {
+        #my $workflow = $context->operation->getWorkflow;
+        #if ($workflow->state eq 'running' and not exists $workflows->{$workflow->id}) {
+            #$workflows->{$workflow->id} = $workflow;
+        #}
+    #}
     
-    my @workflow_list = values %$workflows;
-    return wantarray ? @workflow_list : \@workflow_list;
+    #my @workflow_list = values %$workflows;
+    return wantarray ? @workflows : \@workflows;
 }
 
 sub lock {
