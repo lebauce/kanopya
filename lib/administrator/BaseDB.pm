@@ -10,23 +10,37 @@ use General;
 use POSIX qw(ceil);
 use Hash::Merge;
 use Class::ISA;
-
-use vars qw ( $AUTOLOAD );
-
+use vars qw($AUTOLOAD);
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("basedb");
 my $errmsg;
 my %class_type_cache;
 
+use constant ATTR_DEF => {};
+
+sub getAttrDef { return ATTR_DEF; }
+
 sub methods {
     return {
-        'toString'  => {
-            'description' => 'toString',
-            'perm_holder' => 'entity'
-        }
+        toString => {
+            description => 'toString',
+            perm_holder => 'entity'
+        },
+        create => {
+            description => 'create a new object',
+            perm_holder => 'mastergroup',
+        },
+        remove => {
+            description => 'remove an object',
+            perm_holder => 'mastergroup',
+        },
+        methodCall => {
+            description => 'Call an object method',
+        },
     };
 }
+
 
 =head2
 
@@ -183,7 +197,7 @@ sub _parentClass {
 
 =head2
 
-    Reùove the top of hierarchy class
+    Remove the top of hierarchy class
 
 =cut
 
@@ -398,7 +412,7 @@ sub new {
     # Get the class_type_id for class name
     eval {
         my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                     hash  => { class_type => $class })->single;
+                                        hash  => { class_type => $class })->single;
 
         $attrs->{class_type_id} = $rs->get_column('class_type_id');
     };
@@ -547,12 +561,18 @@ sub fromDBIx {
     General::checkParams(args => \%args, required => [ 'row' ]);
 
     my $name = classFromDbix($args{row}->result_source);
+
     requireClass($name);
 
-    return bless {
-        _dbix      => $args{row},
-        _entity_id => $args{row}->id
-    }, $name;
+    # We need to use prefetch to get the parent/childs attrs,
+    # and use the concrete class type. Use 'get' for instance.
+
+#    return bless {
+#        _dbix      => $args{row},
+#        _entity_id => $args{row}->id
+#    }, $name;
+
+     return $name->get(id => $args{row}->id);
 }
 
 =head2
@@ -563,11 +583,15 @@ sub fromDBIx {
 =cut
 
 sub getAttr {
-    my ($self, %args) = @_;
+    my $self = shift;
+    my $class = ref($self);
+    my %args = @_;
+
     my $dbix = $self->{_dbix};
+    my $attr = $class->getAttrDef()->{$args{name}};
     my $value = undef;
     my $found = 1;
-    
+
     General::checkParams(args => \%args, required => ['name']);
 
     # Recursively search in the dbix objets, following
@@ -590,10 +614,16 @@ sub getAttr {
             }
             last;
         }
+        elsif ($self->can($args{name}) and defined $attr and $attr->{is_virtual}) {
+            my $method = $args{name};
+            $value = $self->$method();
+            last;
+        }
         elsif ($dbix->can('parent')) {
             $dbix = $dbix->parent;
             next;
-        } else {
+        }
+        else {
             $found = 0;
             last;
         }
@@ -981,7 +1011,6 @@ sub delete {
 
         } else { last; }
     }
-
     $dbix->delete;
 }
 
@@ -992,7 +1021,8 @@ sub delete {
 =cut
 
 sub toString {
-    return "";
+    my $self = shift;
+    return ref($self);
 }
 
 =head2
@@ -1070,8 +1100,54 @@ sub toJSON {
     else {
         $hash->{pk} = $self->getId;
     }
-
     return $hash;
+}
+
+=head2
+
+    Generic creation method.
+
+=cut
+
+sub create {
+    my $class = shift;
+    my %args = @_;
+
+    $class->new(%args);
+}
+
+=head2
+
+    Generic deletion method.
+
+=cut
+
+sub remove {
+    my $self = shift;
+    my %args = @_;
+
+    $self->delete();
+}
+
+=head2
+
+    Method used by the api as entry point for methods calls.
+    It is convenient for centralizing permmissions checking.
+
+=cut
+
+sub methodCall {
+    my $self = shift;
+    my $class = ref $self;
+    my %args = @_;
+
+    my $adm = Administrator->new();
+
+    General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
+
+    # Call the requested method
+    my $method = $args{method};
+    return $self->$method(%{$args{params}});
 }
 
 =head2
@@ -1083,8 +1159,9 @@ sub toJSON {
 =cut
 
 sub AUTOLOAD {
-    my ($self, %args) = @_;
-        
+    my $self = shift;
+    my %args = @_;
+
     my @autoload = split(/::/, $AUTOLOAD);
     my $accessor = $autoload[-1];
 
@@ -1092,6 +1169,6 @@ sub AUTOLOAD {
 }
 
 # DESTROY definition required by AUTOLOAD
-sub DESTROY {}
+sub DESTROY { }
 
 1;

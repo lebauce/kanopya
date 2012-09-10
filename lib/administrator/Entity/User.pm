@@ -21,11 +21,15 @@ use base "Entity";
 
 use strict;
 use warnings;
+
 use Administrator;
 use Digest::MD5 "md5_hex";
 use DateTime;
 use Kanopya::Exceptions;
 use General;
+use Profile;
+use Entity::Gp;
+
 use Log::Log4perl "get_logger";
 
 our $VERSION = "1.00";
@@ -34,70 +38,96 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-            user_login            => {pattern            => '^\w*$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 0},
-            user_desc            => {pattern            => '^.*$', # Impossible to check char used because of \n doesn't match with \w
-                                        is_mandatory    => 0,
-                                        is_extended     => 0,
-                                        is_editable        => 1},
-            user_password        => {pattern            => '^.*$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 1},
-            user_firstname        => {pattern            => '^\w*$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 0},
-            user_lastname        => {pattern            => '^\w*$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 0},
-            user_email            => {pattern            => '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$',
-                                        is_mandatory    => 1,
-                                        is_extended        => 0,
-                                        is_editable        => 1},    
-            user_creationdate    => {pattern            => '^.*$',
-                                        is_mandatory    => 0,
-                                        is_extended        => 0,
-                                        is_editable        => 0},
-            user_lastaccess        => {pattern            => '^\w*$',
-                                        is_mandatory    => 0,
-                                        is_extended        => 0,
-                                        is_editable        => 1},    
+    user_login => {
+        pattern      => '^\w*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    user_desc => {
+        # Impossible to check char used because of \n doesn't match with \w
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    user_password => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    user_firstname => {
+        pattern      => '^\w*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    user_lastname => {
+        pattern      => '^\w*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    user_email => {
+        pattern      => '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    user_creationdate => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    user_lastaccess => {
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 1
+    },
 };
 
 sub primarykey { return 'user_id' }
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new user', 
-                        'perm_holder' => 'mastergroup',
+        create => {
+            description => 'create a new user',
+            perm_holder => 'mastergroup',
         },
-        'get'        => {'description' => 'view this user', 
-                        'perm_holder' => 'entity',
+        get => {
+            description => 'view this user',
+            perm_holder => 'entity',
         },
-        'update'    => {'description' => 'save changes applied on this user', 
-                        'perm_holder' => 'entity',
+        update => {
+            description => 'save changes applied on this user',
+            perm_holder => 'entity',
         },
-        'remove'    => {'description' => 'delete this user', 
-                        'perm_holder' => 'entity',
+        remove => {
+            description => 'delete this user',
+            perm_holder => 'entity',
         },
-        'setperm'    => {'description' => 'set permissions on this user', 
-                        'perm_holder' => 'entity',
+        setperm => {
+            description => 'set permissions on this user',
+            perm_holder => 'entity',
         },
-        'getProfiles' => {'description' => 'get user profiles', 
-                        'perm_holder' => 'entity',
+        getProfiles => {
+            description => 'get user profiles',
+            perm_holder => 'entity',
         },
-         'setProfiles' => {'description' => 'set user profiles', 
-                        'perm_holder' => 'entity',
+        setProfiles => {
+            description => 'set user profiles',
+            perm_holder => 'entity',
         },
-        'getExtensions' => {'description' => 'get extended user attributes', 
-                        'perm_holder' => 'entity',
+        getExtensions => {
+            description => 'get extended user attributes',
+            perm_holder => 'entity',
         },
-         'setExtension' => {'description' => 'create or update extended user attribute', 
-                        'perm_holder' => 'entity',
+        setExtension => {
+            description => 'create or update extended user attribute',
+            perm_holder => 'entity',
         },
     };
 }
@@ -127,12 +157,6 @@ sub getUsers {
 
 sub create {
     my ($class, %args) = @_;
-    my $admin = Administrator->new();
-    my $mastergroup_eid = $class->getMasterGroupEid();
-    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
-    }
 
     my $self = $class->SUPER::new(%args);
     $self->{_dbix}->user_password( md5_hex($self->{_dbix}->user_password) );
@@ -145,7 +169,6 @@ sub create {
 
 sub new {
     my $self = shift;
-    my $admin = Administrator->new();
     $self->create();
 }
 
@@ -155,12 +178,6 @@ sub new {
 
 sub update {
     my $self = shift;
-    my $adm = Administrator->new();
-    # update method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
-    }
     # TODO update implementation
 }
 
@@ -170,14 +187,6 @@ sub update {
 
 sub remove {
     my $self = shift;
-    my $adm = Administrator->new();
-    # delete method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(
-            error => "Permission denied to delete user with id ".$self->getAttr(name =>'user_id')
-        );
-    }
     $self->SUPER::delete();
 }
 
@@ -185,18 +194,22 @@ sub setProfiles {
     my ($self, %args) = @_; 
     my $adm = Administrator->new;
     $self->{_dbix}->user_profiles->delete_all;
-    foreach my $profile (@{$args{profile_names}}) {
-        my $row = $adm->{db}->resultset('Profile')->find(
-            {profile_name => $profile},
-            {key => 'profile_name'}
-        );
-        if(defined $row) {
-            $self->{_dbix}->user_profiles->create(
-                { profile_id => $row->id }
-            );
-        } else {
-            my $msg = "Unknown profile $profile";
-            throw Kanopya::Exception::Internal::IncorrectParam(error => $msg);
+    foreach my $profile_name (@{$args{profile_names}}) {
+        eval {
+            my $profile = Profile->find(hash => { profile_name => $profile_name } );
+
+            # Link the user to the profile
+            $self->{_dbix}->user_profiles->create({ profile_id => $profile->id });
+
+            # Automatically add the user in the groups associated to this profile
+            my $rs = $profile->{_dbix}->profile_gps;
+            while (my $row = $rs->next) {
+                my $gp = Entity::Gp->get(id => $row->gp->id);
+                $gp->appendEntity(entity => $self);
+            }
+        };
+        if ($@) {
+            throw Kanopya::Exception::Internal::IncorrectParam(error => "Unknown profile $profile_name");
         }
     }
 }

@@ -80,6 +80,18 @@ sub new {
     return $class->SUPER::new(%args, connector_type_id => $connector_type_id );
 }
 
+=head2 getGenericMasterGroupName
+
+    Get an alternative group name if the correponding group 
+    of the concrete class of the entity do not exists.
+
+=cut
+
+sub getGenericMasterGroupName {
+    my $self = shift;
+    return 'Connector';
+}
+
 sub getConnectorTypes {
     my $admin = Administrator->new();
     

@@ -32,6 +32,12 @@ __PACKAGE__->table("operationtype");
   is_nullable: 1
   size: 64
 
+=head2 operationtype_label
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 128
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -44,11 +50,28 @@ __PACKAGE__->add_columns(
   },
   "operationtype_name",
   { data_type => "char", is_nullable => 1, size => 64 },
+  "operationtype_label",
+  { data_type => "char", is_nullable => 1, size => 128 },
 );
 __PACKAGE__->set_primary_key("operationtype_id");
 __PACKAGE__->add_unique_constraint("operationtype_name", ["operationtype_name"]);
 
 =head1 RELATIONS
+
+=head2 notification_subscriptions
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NotificationSubscription>
+
+=cut
+
+__PACKAGE__->has_many(
+  "notification_subscriptions",
+  "AdministratorDB::Schema::Result::NotificationSubscription",
+  { "foreign.operationtype_id" => "self.operationtype_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 old_operations
 
@@ -96,8 +119,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-22 15:21:26
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SeyvimhxYIUxkH1HOwq8Ww
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-17 16:07:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3m9xfs6KwWSVWt5ZHk+QEg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

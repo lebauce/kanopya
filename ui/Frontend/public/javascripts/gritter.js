@@ -48,9 +48,14 @@ function formatOperations(operations) {
             state = operation.state;
         }
 
+        var label = operation.type;
+        if (operation.label != undefined) {
+            label = operation.label;
+        }
+
         ul.append($("<li></li>")
                        .append(
-                           $("<div>" + operation.type + "</div>")
+                           $("<div>" + label + "</div>")
                                .addClass("operation_type")
                        )
                        .append(

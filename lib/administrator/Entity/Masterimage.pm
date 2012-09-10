@@ -24,7 +24,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Administrator;
-use Operation;
+use Entity::Operation;
 use General;
 
 use Entity::Container;
@@ -119,7 +119,7 @@ sub remove {
     my $id = $self->getAttr(name=> 'masterimage_id');
     
     $log->debug("New Operation RemoveMasterimage with masterimage_id : <".$id.">");
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveMasterimage',
         params  => {

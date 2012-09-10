@@ -24,7 +24,7 @@ use warnings;
 use WorkflowDef;
 use ParamPreset;
 use Kanopya::Exceptions;
-use Operation;
+use Entity::Operation;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
@@ -95,7 +95,7 @@ sub enqueue {
     my $self = shift;
     my %args = @_;
 
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         workflow_id => $self->getAttr(name => 'workflow_id'),
         %args,
     );
@@ -114,7 +114,7 @@ sub getCurrentOperation {
 
     my $op;
     eval {
-        $op = Operation->get(id => $current->get_column("operation_id"));
+        $op = Entity::Operation->get(id => $current->get_column("operation_id"));
     };
     if ($@) {
         throw Kanopya::Exception::Internal::NotFound(
@@ -128,11 +128,11 @@ sub cancel {
     my $self = shift;
     my %params;
 
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 1,
         type     => 'CancelWorkflow',
         params   => {
-            workflow_id => $self->getAttr(name => 'workflow_id'),
+            workflow_id => $self->id,
         }
     );
 }
@@ -178,12 +178,12 @@ sub finish {
     my $self = shift;
     my %args = @_;
 
-    my @operations = Operation->search(hash => {
+    my @operations = Entity::Operation->search(hash => {
                          workflow_id => $self->getAttr(name => 'workflow_id'),
                      });
 
     for my $operation (@operations) {
-        $operation->delete();
+        $operation->remove();
     }
     $self->setState(state => 'done');
 }

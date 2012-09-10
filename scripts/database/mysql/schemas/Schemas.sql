@@ -587,6 +587,7 @@ CREATE TABLE `node` (
 CREATE TABLE `operationtype` (
   `operationtype_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `operationtype_name` char(64) DEFAULT NULL,
+  `operationtype_label` char(128) DEFAULT NULL,
   PRIMARY KEY (`operationtype_id`),
   UNIQUE KEY (`operationtype_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -596,7 +597,7 @@ CREATE TABLE `operationtype` (
 -- Operation class
 
 CREATE TABLE `operation` (
-  `operation_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `operation_id` int(8) unsigned NOT NULL,
   `type` char(64) NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
   `state` char(32) NOT NULL DEFAULT 'pending',
@@ -607,6 +608,7 @@ CREATE TABLE `operation` (
   `hoped_execution_time` int(4) unsigned DEFAULT NULL,
   `execution_rank` int(8) unsigned NOT NULL,
   PRIMARY KEY (`operation_id`),
+  FOREIGN KEY (`operation_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`execution_rank`, `workflow_id`),
   KEY (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
@@ -767,7 +769,6 @@ CREATE TABLE `systemimage` (
 
 
 -- network tables
-
 
 --
 -- Table structure for table `poolip`
@@ -1005,6 +1006,17 @@ CREATE TABLE `user_profile` (
   PRIMARY KEY (`profile_id`,`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`profile_id`) REFERENCES `profile` (`profile_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `profile_gp`
+
+CREATE TABLE `profile_gp` (
+  `profile_id` int(8) unsigned NOT NULL,
+  `gp_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`profile_id`,`gp_id`),
+  FOREIGN KEY (`profile_id`) REFERENCES `profile` (`profile_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`gp_id`) REFERENCES `gp` (`gp_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1546,6 +1558,28 @@ CREATE TABLE `entityright` (
   FOREIGN KEY (`entityright_consumer_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `notification_subscription`
+--
+
+CREATE TABLE `notification_subscription` (
+  `notification_subscription_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `subscriber_id` int(8) unsigned NOT NULL,
+  `entity_id` int(8) unsigned NOT NULL,
+  `operationtype_id` int(8) unsigned NOT NULL,
+  `service_provider_id` int(8) unsigned NOT NULL,
+  `validation` int(1) unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`notification_subscription_id`),
+  UNIQUE KEY (`subscriber_id`, `entity_id`, `operationtype_id`),
+  KEY (`subscriber_id`),
+  FOREIGN KEY (`subscriber_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`entity_id`),
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`operationtype_id`),
+  FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `externalcluster`
@@ -1658,7 +1692,7 @@ CREATE TABLE `billinglimit` (
 --
 
 CREATE TABLE `service_template` (
-  `service_template_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `service_template_id` int(8) unsigned NOT NULL,
   `service_name` char(64) NOT NULL,
   `service_desc` char(255) DEFAULT NULL,
   `hosting_policy_id` int(8) unsigned NOT NULL,
@@ -1669,6 +1703,7 @@ CREATE TABLE `service_template` (
   `billing_policy_id` int(8) unsigned DEFAULT NULL,
   `orchestration_policy_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_template_id`),
+  FOREIGN KEY (`service_template_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`hosting_policy_id`),
   FOREIGN KEY (`hosting_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`storage_policy_id`),
@@ -1688,12 +1723,13 @@ CREATE TABLE `service_template` (
 --
 
 CREATE TABLE `policy` (
-  `policy_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `policy_id` int(8) unsigned NOT NULL,
   `param_preset_id` int(8) unsigned DEFAULT NULL,
   `policy_name` char(64) NOT NULL,
   `policy_desc` char(255) DEFAULT NULL,
   `policy_type` char(64) NOT NULL,
   PRIMARY KEY (`policy_id`),
+  FOREIGN KEY (`policy_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`param_preset_id`),
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

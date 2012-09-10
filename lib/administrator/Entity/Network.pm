@@ -31,17 +31,17 @@ use constant ATTR_DEF => {
 
 sub methods {
     return {
-        'associatePoolip' => {
-            'description' => 'update network_poolip by adding network_id, poolipid',
-            'perm_holder' => 'entity',
+        associatePoolip => {
+            description => 'update network_poolip by adding network_id, poolipid',
+            perm_holder => 'entity',
         },
-        'getassociatedPoolip' => {
-            'description' => 'return list of poolip_id soociated to network',
-            'perm_holder' => 'entity',
+        getassociatedPoolip => {
+            description => 'list poolip_id associated to network',
+            perm_holder => 'entity',
         },
-        'dissociatePoolip' => {
-            'description' => 'dissociate a pool ip from a network',
-            'perm_holder' => 'entity',
+        dissociatePoolip => {
+            description => 'dissociate a pool ip from a network',
+            perm_holder => 'entity',
         },
     };
 }
@@ -73,12 +73,6 @@ sub associatePoolip {
 
     General::checkParams(args => \%args, required => [ 'poolip' ]);
 
-    my $adm = Administrator->new();
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id},
-                                                   method    => 'associatePoolip');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to associate pool ip to this network");
-    }
     my $poolip;
     if (ref($args{poolip}) eq 'Entity::Poolip') {
         $poolip = $args{poolip};
@@ -121,13 +115,6 @@ sub dissociatePoolip {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'poolip' ]);
-
-    my $adm = Administrator->new();
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id},
-                                                   method    => 'dissociatePoolip');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to dissociate pool ip to this network");
-    }
 
     my $poolip;
     if (ref($args{poolip}) eq 'Entity::Poolip') {

@@ -59,7 +59,14 @@ var Component = (function() {
 
         $(form).find(':input').each(function(that) {
             return (function() {
-                that.conf[$(this).attr('name')] = $(this).val();
+                var value;
+                if ($(this).attr('type') == 'checkbox') {
+                    value = $(this).attr('checked') === undefined ? 0 : 1;
+                } else {
+                    value = $(this).val();
+                }
+
+                that.conf[$(this).attr('name')] = value;
             });
         }(this));
 

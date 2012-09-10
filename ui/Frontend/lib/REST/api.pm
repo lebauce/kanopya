@@ -8,7 +8,7 @@ prefix undef;
 
 use General;
 use Entity;
-use Operation;
+use Entity::Operation;
 use Workflow;
 use Kanopya::Exceptions;
 
@@ -87,7 +87,7 @@ my %resources = (
     "nodemetriccondition"      => "NodemetricCondition",
     "nodemetricrule"           => "NodemetricRule",
     "node"                     => "Externalnode::Node",
-    "nodemetriccombination"    => "NodemetricCombination",
+    "notificationsubscription" => "NotificationSubscription",
     "openiscsi2"               => "Entity::Component::Openiscsi2",
     "opennebula3"              => "Entity::Component::Opennebula3",
     "parampreset"              => "ParamPreset",
@@ -95,7 +95,7 @@ my %resources = (
     "php5"                     => "Entity::Component::Php5",
     "physicalhoster0"          => "Entity::Component::Physicalhoster0",
     "pleskpanel10"             => "Entity::ParallelsProduct::Pleskpanel10",
-    "policy"                   => "Policy",
+    "policy"                   => "Entity::Policy",
     "poolip"                   => "Entity::Poolip",
     "powersupplycard"          => "Entity::Powersupplycard",
     "powersupplycardmodel"     => "Entity::Powersupplycardmodel",
@@ -105,7 +105,8 @@ my %resources = (
     "puppetmaster2"            => "Entity::Component::Puppetmaster2",
     "openldap1"                => "Entity::Component::Openldap1",
     "openssh5"                 => "Entity::Component::Openssh5",
-    "operation"                => "Operation",
+    "operation"                => "Entity::Operation",
+    "operationtype"            => "Operationtype",
     "orchestrator"             => "Orchestrator",
     "outside"                  => "Entity::ServiceProvider::Outside",
     "sco"                      => "Entity::Connector::Sco",
@@ -116,7 +117,7 @@ my %resources = (
     "snmpd5"                   => "Entity::Component::Snmpd5",
     "serviceprovider"          => "Entity::ServiceProvider",
     "serviceprovidermanager"   => "ServiceProviderManager",
-    "servicetemplate"          => "ServiceTemplate",
+    "servicetemplate"          => "Entity::ServiceTemplate",
     "syslogng3"                => "Entity::Component::Syslogng3",
     "systemimage"              => "Entity::Systemimage",
     "tier"                     => "Entity::Tier",
@@ -290,8 +291,8 @@ sub jsonify {
     # Jsonify the non scalar only
     if (ref($var) and ref($var) ne "HASH") {
         if ($var->can("toJSON")) {
-            if ($var->isa("Operation")) {
-                return Operation->get(id => $var->getId)->toJSON;
+            if ($var->isa("Entity::Operation")) {
+                return Entity::Operation->get(id => $var->getId)->toJSON;
             }
             elsif ($var->isa("Workflow")) {
                 return Workflow->get(id => $var->getId)->toJSON;
@@ -331,26 +332,30 @@ sub setupREST {
                 }
 
                 if ($class->can('create')) {
-                    $obj = jsonify($class->create(params));
+                    $obj = jsonify($class->methodCall(method => 'create', params => $params));
                 }
                 else {
-                    eval {
-                        my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
-                        $location =~ s/\:\:/\//g;
-                        require $location;
-                        $obj = Operation->enqueue(
-                            priority => 200,
-                            type     => 'Add' . ucfirst($resource),
-                            params   => $hash
-                        );
-                        $obj = Operation->get(id => $obj->getId)->toJSON;
-                    };
+                    # We probably do not want to directly enqueue operations,
+                    # as permissions are checked from methods calls.
 
-                    if ($@) {
-                        $obj = $class->new(params)->toJSON();
-                    };
+#                    eval {
+#                        my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
+#                        $location =~ s/\:\:/\//g;
+#                        require $location;
+#                        $obj = Entity::Operation->enqueue(
+#                            priority => 200,
+#                            type     => 'Add' . ucfirst($resource),
+#                            params   => $hash
+#                        );
+#                        $obj = Entity::Operation->get(id => $obj->getId)->toJSON;
+#                    };
+#
+#                    if ($@) {
+#                        $obj = $class->new(params)->toJSON();
+#                    };
+
+                     $obj = $class->new(params)->toJSON();
                 }
-
                 return to_json($obj);
             },
 
@@ -359,7 +364,7 @@ sub setupREST {
                 require (General::getLocFromClass(entityclass => $class));
 
                 my $obj = $class->get(id => params->{id});
-                $obj->can("remove") ? $obj->remove() : $obj->delete();
+                $obj->can("remove") ? $obj->methodCall(method => 'remove') : $obj->delete();
 
                 return to_json( { status => "success" } );
             },
@@ -469,7 +474,7 @@ sub setupREST {
                 %params = params;
             }
 
-            my $ret = $obj->$method(%params);
+            my $ret = $obj->methodCall(method => $method, params => \%params);
 
             if (ref($ret) eq "ARRAY") {
                 my @jsons;

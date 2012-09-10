@@ -47,52 +47,63 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    gp_name     => {pattern      => '^\w*$',
-                    is_mandatory => 1,
-                    is_extended  => 0,
-                    is_editable  => 1
-                },
-    gp_desc     => {pattern      => '^[\w\s]*$', 
-                    is_mandatory => 0,
-                    is_extended  => 0,
-                    is_editable  => 1
-                },
-    gp_system   => {pattern      => '^\d$',
-                    is_mandatory => 1,
-                    is_extended  => 0,
-                    is_editable  => 0
-                },    
-    gp_type     => {pattern      => '^\w*$',
-                    is_mandatory => 1,
-                    is_extended  => 0,
-                    is_editable  => 0
-                },
+    gp_name => {
+        pattern      => '^\w*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    gp_desc => {
+        pattern      => '^[\w\s]*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    gp_system => {
+        pattern      => '^\d$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    gp_type => {
+        pattern      => '^\w*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'create'       => {'description' => 'create a new group', 
-                           'perm_holder' => 'mastergroup',
+        create => {
+            description => 'create a new group',
+            perm_holder => 'mastergroup',
         },
-        'get'          => {'description' => 'view this group', 
-                           'perm_holder' => 'entity',
+        get => {
+            description => 'view this group',
+            perm_holder => 'entity',
         },
-        'update'       => {'description' => 'save changes applied on this group', 
-                           'perm_holder' => 'entity',
+        update => {
+            description => 'save changes applied on this group',
+            perm_holder => 'entity',
         },
-        'remove'       => {'description' => 'delete this group', 
-                           'perm_holder' => 'entity',
+        remove => {
+            description => 'delete this group',
+            perm_holder => 'entity',
         },
-        'setperm'      => {'description' => 'set permission on this group', 
-                           'perm_holder' => 'entity',
+        setperm => {
+            description => 'set permission on this group',
+            perm_holder => 'entity',
         },
-        'appendEntity' => {'description' => 'add an element to group',
-                           'perm_holder' => 'entity',
+        appendEntity => {
+            description => 'add an element to group',
+            perm_holder => 'entity',
         },                    
-        'removeEntity' => {'description' => 'remove an element from a group',
-                           'perm_holder' => 'entity',
+        removeEntity => {
+            description => 'remove an element from a group',
+            perm_holder => 'entity',
         }, 
     };
 }
@@ -119,12 +130,7 @@ sub getGroups {
 
 sub create {
     my ($class, %args) = @_;
-    my $admin = Administrator->new();
-    my $mastergroup_eid = $class->getMasterGroupEid();
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new group");
-       }
+
     my $self = $class->SUPER::new(%args);
     return $self;
 }
@@ -141,14 +147,7 @@ sub update {}
 
 sub remove {
     my ($self) = @_;
-    my $adm = Administrator->new();
-    # delete method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(
-            error => "Permission denied to delete group with id ".$self->getAttr(name =>'group_id')
-        );
-    }
+
     $self->SUPER::delete();
 }
 

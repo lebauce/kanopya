@@ -20,7 +20,7 @@ package EWorkflow;
 use strict;
 use warnings;
 use Kanopya::Exceptions;
-use Operation;
+use Entity::Operation;
 use EFactory;
 use Log::Log4perl "get_logger";
 
@@ -54,7 +54,7 @@ sub cancel {
     General::checkParams(args => \%args, required => ['state']);
 
     # TODO: filter on states to get operation to cancel only.
-    my @operations = Operation->search(hash => {
+    my @operations = Entity::Operation->search(hash => {
                          workflow_id => $self->getAttr(name => 'workflow_id'),
                      });
 
@@ -62,13 +62,13 @@ sub cancel {
         if ($operation->getAttr(name => 'state') ne 'pending') {
             eval {
                 $operation->unlockContext();
-                EFactory::newEOperation(op => $operation, config => $self->{config})->cancel();
+                EFactory::newEOperation(op => $operation)->cancel();
             };
             if ($@){
                 $log->error("Error during operation cancel :\n$@");
             }
         }
-        $operation->delete();
+        $operation->remove();
     }
 
     $self->setState(state => $args{state});

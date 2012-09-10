@@ -72,6 +72,9 @@ sub checkManagerParams {
     elsif ($args{manager_type} eq 'workflow_manager') {
         return $self->checkWorkflowManagerParams(%{ $args{manager_params} });
     }
+    elsif ($args{manager_type} eq 'notification_manager') {
+        return $self->checkNotificationManagerParams(%{ $args{manager_params} });
+    }
 }
 
 1;

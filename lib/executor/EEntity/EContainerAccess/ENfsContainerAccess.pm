@@ -36,7 +36,6 @@ use strict;
 use warnings;
 
 use Log::Log4perl "get_logger";
-use Operation;
 use Data::Dumper;
 
 my $log = get_logger("");

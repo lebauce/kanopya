@@ -23,6 +23,7 @@ use warnings;
 use strict;
 
 use Manager::HostManager;
+use Entity::Operation;
 use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::NetappAggregate;
@@ -156,7 +157,7 @@ sub createDisk {
                          required => [ "name", "size", "filesystem", "aggregate_id" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'CreateDisk',
         params   => {
@@ -187,7 +188,7 @@ sub createExport {
                          required => [ "container", "export_name" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'CreateExport',
         params   => {
@@ -196,7 +197,7 @@ sub createExport {
                 container      => $args{container},
             },
             manager_params => {
-                export_name         => $args{export_name},
+                export_name => $args{export_name},
             },
         },
     );

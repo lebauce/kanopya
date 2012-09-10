@@ -24,7 +24,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Administrator;
-use Operation;
+use Entity::Operation;
 use General;
 
 use Entity::Container;
@@ -124,16 +124,9 @@ sub getSystemimage {
 #
 #sub create {
 #    my ($class, %params) = @_;
-#    
-#    my $admin = Administrator->new();
-#    my $mastergroup_eid = $class->getMasterGroupEid();
-#       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-#       if(not $granted) {
-#           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new system image");
-#       }
 #
 #    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
-#    Operation->enqueue(
+#    Entity::Operation->enqueue(
 #        priority => 200,
 #        type     => 'AddSystemimage',
 #        params   => \%params,
@@ -151,7 +144,7 @@ sub installComponent {
     General::checkParams(args=>\%args,required=>["component_type_id"]);
     
     $log->debug("New Operation InstallComponentOnSystemImage");
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'InstallComponentOnSystemImage',
         params   => {
@@ -179,12 +172,7 @@ sub installedComponentLinkCreation {
 
 sub update {
     my $self = shift;
-    my $adm = Administrator->new();
-    # update method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
-    }
+
     # TODO update implementation
 }
 
@@ -196,7 +184,7 @@ sub remove {
     my $self = shift;
     
     $log->debug("New Operation RemoveSystemimage with systemimage_id : <".$self->getAttr(name=>"systemimage_id").">");
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveSystemimage',
         params   => {
@@ -225,7 +213,7 @@ sub getAttrDef{
 #    }
 #    $args{systemimage_id} = $sysimg_id;
 #    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%args));
-#    Operation->enqueue(priority => 200,
+#    Entity::Operation->enqueue(priority => 200,
 #                       type     => 'CloneSystemimage',
 #                       params   => \%args);
 #       
@@ -236,7 +224,7 @@ sub getAttrDef{
 #    
 #    my  $adm = Administrator->new();
 #    $log->debug("New Operation ActivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
-#    Operation->enqueue(priority => 200,
+#    Entity::Operation->enqueue(priority => 200,
 #                   type     => 'ActivateSystemimage',
 #                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
 #}
@@ -246,7 +234,7 @@ sub getAttrDef{
 #    
 #    my  $adm = Administrator->new();
 #    $log->debug("New Operation DeactivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
-#    Operation->enqueue(priority => 200,
+#    Entity::Operation->enqueue(priority => 200,
 #                   type     => 'DeactivateSystemimage',
 #                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
 #}

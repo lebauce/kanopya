@@ -49,7 +49,7 @@ use Kanopya::Config;
 use Kanopya::Exceptions;
 use Administrator;
 use EFactory;
-use Operation;
+use Entity::Operation;
 use EWorkflow;
 use Message;
 
@@ -122,7 +122,7 @@ sub oneRun {
     my ($self) = @_;
     my $adm = Administrator->new();
 
-    my $operation = Operation->getNextOp(include_blocked => $self->{include_blocked});
+    my $operation = Entity::Operation->getNextOp(include_blocked => $self->{include_blocked});
 
     my ($op, $opclass, $workflow, $delay, $logprefix);
     if ($operation){
@@ -153,7 +153,7 @@ sub oneRun {
 
         # Initialize EOperation and context
         eval {
-            $op = EFactory::newEOperation(op => $operation, config => $self->{config});
+            $op = EFactory::newEOperation(op => $operation);
             $opclass = ref($op);
             my $op_type = $op->getAttr(name => 'type');
             my $op_id = $op->getAttr(name => 'operation_id');
@@ -180,11 +180,26 @@ sub oneRun {
         }
 
         # Try to lock the context to check if entities are locked by others workflow
+        if ($op->state eq 'validated') {
+            $op->setState(state => 'ready');
+        }
+        else {
+            $log->debug("Calling validation of operation $opclass.");
+
+            if (not $op->validation()) {
+                $op->setState(state => 'waiting_validation');
+
+                $log->info("---- [$opclass] Operation waiting validation. ----");
+                return;
+            }
+        }
+
+        # Try to lock the context to check if entities are locked by others workflow
         eval {
             $log->debug("Locking context for $opclass");
             $operation->lockContext();
 
-            if ($op->getAttr(name => 'state') eq 'blocked') {
+            if ($op->state eq 'blocked') {
                 $op->setState(state => 'ready');
             }
         };
@@ -205,8 +220,7 @@ sub oneRun {
             $adm->beginTransaction;
 
             # If the operation never been processed, check its prerequisite
-            if ($op->getAttr(name => 'state') eq 'ready' or
-                $op->getAttr(name => 'state') eq 'prereported') {
+            if ($op->state eq 'ready' or $op->state eq 'prereported') {
 
                 $log->info("Prerequisites step");
                 $delay = $op->prerequisites();
@@ -229,8 +243,7 @@ sub oneRun {
             }
 
             # If the operation has been processed, check its postrequisite
-            if ($op->getAttr(name => 'state') eq 'processing' or
-                $op->getAttr(name => 'state') eq 'postreported') {
+            if ($op->state eq 'processing' or $op->state eq 'postreported') {
 
                 $log->info("Postrequisites step");
                 $delay = $op->postrequisites();
@@ -244,10 +257,10 @@ sub oneRun {
 
                 $op->report(duration => $delay);
 
-                if ($op->getAttr(name => 'state') eq 'ready') {
+                if ($op->state eq 'ready') {
                     $op->setState(state => 'prereported');
                 }
-                elsif ($op->getAttr(name => 'state') eq 'processing') {
+                elsif ($op->state eq 'processing') {
                     $op->setState(state => 'postreported');
                 }
 

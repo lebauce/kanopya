@@ -2,12 +2,12 @@ require('common/general.js');
 
 function getComponentTypes() {
     return {
-        'Linux'     : 'linux0'
+        'Linux'        : 'linux0',
+        'Mailnotifier' : 'mailnotifier0'
     };
 }
 
 function loadServicesConfig(cid, eid) {
-
         create_grid({
             url: '/api/component?service_provider_id=' + eid,
             content_container_id: cid,

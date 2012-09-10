@@ -419,6 +419,66 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 notification_subscription_subscribers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NotificationSubscription>
+
+=cut
+
+__PACKAGE__->has_many(
+  "notification_subscription_subscribers",
+  "AdministratorDB::Schema::Result::NotificationSubscription",
+  { "foreign.subscriber_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 notification_subscription_entities
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NotificationSubscription>
+
+=cut
+
+__PACKAGE__->has_many(
+  "notification_subscription_entities",
+  "AdministratorDB::Schema::Result::NotificationSubscription",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 operation
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Operation>
+
+=cut
+
+__PACKAGE__->might_have(
+  "operation",
+  "AdministratorDB::Schema::Result::Operation",
+  { "foreign.operation_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 policy
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Policy>
+
+=cut
+
+__PACKAGE__->might_have(
+  "policy",
+  "AdministratorDB::Schema::Result::Policy",
+  { "foreign.policy_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 poolip
 
 Type: might_have
@@ -494,6 +554,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_template
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
+
+=cut
+
+__PACKAGE__->might_have(
+  "service_template",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
+  { "foreign.service_template_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 systemimage
 
 Type: might_have
@@ -557,7 +632,6 @@ __PACKAGE__->has_many(
 
 # Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-09-07 12:17:16
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:y7Xm+06tqUu4pODIsAGpOA
-
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 1;

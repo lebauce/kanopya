@@ -220,6 +220,7 @@ function create_grid(options) {
                 console.log(remove_action);
                 return remove_action;
             }});
+
     } else if (options.treeGrid === true) {
         // TreeGrids strangely want an additional column so we push an empty one...
         options.colNames.push('');

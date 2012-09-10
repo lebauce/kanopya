@@ -23,7 +23,7 @@ __PACKAGE__->table("service_template");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 service_name
@@ -70,6 +70,19 @@ __PACKAGE__->table("service_template");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_nullable: 1
+
+=head2 billing_policy_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
+=head2 orchestration_policy_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 1
 
@@ -80,7 +93,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "service_name",
@@ -116,12 +129,7 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "system_policy_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "billing_policy_id",
   {
     data_type => "integer",
@@ -154,6 +162,21 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Result::Cluster",
   { "foreign.service_template_id" => "self.service_template_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_template
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_template",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "service_template_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 hosting_policy
@@ -231,7 +254,7 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 system_policy
+=head2 billing_policy
 
 Type: belongs_to
 
@@ -240,9 +263,29 @@ Related object: L<AdministratorDB::Schema::Result::Policy>
 =cut
 
 __PACKAGE__->belongs_to(
-  "system_policy",
+  "billing_policy",
   "AdministratorDB::Schema::Result::Policy",
-  { policy_id => "system_policy_id" },
+  { policy_id => "billing_policy_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+=head2 orchestration_policy
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Policy>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "orchestration_policy",
+  "AdministratorDB::Schema::Result::Policy",
+  { policy_id => "orchestration_policy_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
@@ -252,9 +295,14 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-28 18:08:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HxcT/iQG4ZNvsRVl6BoZdg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-14 15:34:03
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zenaRB3TdZKYaTtnVOfHEw
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "service_template_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

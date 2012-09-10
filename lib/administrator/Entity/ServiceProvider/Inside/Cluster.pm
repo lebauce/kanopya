@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 3 july 2010
+
 package Entity::ServiceProvider::Inside::Cluster;
 use base 'Entity::ServiceProvider::Inside';
 
@@ -28,16 +28,16 @@ use Externalnode::Node;
 use Entity::Systemimage;
 use Entity::Tier;
 use Externalnode::Node;
-use Operation;
+use Entity::Operation;
 use Workflow;
 use NodemetricCombination;
 use Clustermetric;
 use AggregateCombination;
-use Policy;
+use Entity::Policy;
 use Administrator;
 use General;
 use ServiceProviderManager;
-use ServiceTemplate;
+use Entity::ServiceTemplate;
 use VerifiedNoderule;
 use Indicator;
 use Indicatorset;
@@ -172,50 +172,65 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new cluster',
-                        'perm_holder' => 'mastergroup',
+        create => {
+            description => 'create a new cluster',
+            perm_holder => 'mastergroup',
         },
-        'get'        => {'description' => 'view this cluster',
-                        'perm_holder' => 'entity',
+        get => {
+            description => 'view this cluster',
+            perm_holder => 'entity',
         },
-        'update'    => {'description' => 'save changes applied on this cluster',
-                        'perm_holder' => 'entity',
+        update => {
+            description => 'save changes applied on this cluster',
+            perm_holder => 'entity',
         },
-        'remove'    => {'description' => 'delete this cluster',
-                        'perm_holder' => 'entity',
+        remove => {
+            description => 'delete this cluster',
+            perm_holder => 'entity',
         },
-        'addNode'    => {'description' => 'add a node to this cluster',
-                        'perm_holder' => 'entity',
+        addNode => {
+            description => 'add a node to this cluster',
+            perm_holder => 'entity',
         },
-        'removeNode'=> {'description' => 'remove a node from this cluster',
-                        'perm_holder' => 'entity',
+        removeNode => {
+            description => 'remove a node from this cluster',
+            perm_holder => 'entity',
         },
-        'activate'=> {'description' => 'activate this cluster',
-                        'perm_holder' => 'entity',
+        activate => {
+            description => 'activate this cluster',
+            perm_holder => 'entity',
         },
-        'deactivate'=> {'description' => 'deactivate this cluster',
-                        'perm_holder' => 'entity',
+        deactivate => {
+            description => 'deactivate this cluster',
+            perm_holder => 'entity',
         },
-        'start'=> {'description' => 'start this cluster',
-                        'perm_holder' => 'entity',
+        start => {
+            description => 'start this cluster',
+            perm_holder => 'entity',
         },
-        'stop'=> {'description' => 'stop this cluster',
-                        'perm_holder' => 'entity',
+        stop => {
+            description => 'stop this cluster',
+            perm_holder => 'entity',
         },
-        'forceStop'=> {'description' => 'force stop this cluster',
-                        'perm_holder' => 'entity',
+        forceStop => {
+            description => 'force stop this cluster',
+            perm_holder => 'entity',
         },
-        'setperm'    => {'description' => 'set permissions on this cluster',
-                        'perm_holder' => 'entity',
+        setperm => {
+            description => 'set permissions on this cluster',
+            perm_holder => 'entity',
         },
-        'addComponent'    => {'description' => 'add a component to this cluster',
-                        'perm_holder' => 'entity',
+        addComponent => {
+            description => 'add a component to this cluster',
+            perm_holder => 'entity',
         },
-        'removeComponent'    => {'description' => 'remove a component from this cluster',
-                        'perm_holder' => 'entity',
+        removeComponent => {
+            description => 'remove a component from this cluster',
+            perm_holder => 'entity',
         },
-        'configureComponents'    => {'description' => 'configure components of this cluster',
-                        'perm_holder' => 'entity',
+        configureComponents => {
+            description => 'configure components of this cluster',
+            perm_holder => 'entity',
         },
     };
 }
@@ -315,30 +330,24 @@ sub checkConfigurationPattern {
 sub create {
     my ($class, %params) = @_;
 
-    my $admin = Administrator->new();
-    my $mastergroup_eid = $class->getMasterGroupEid();
-    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-    if (not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
-    }
-
     # Override params with poliies param presets
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
     # Prepare the configuration pattern from the service template
+    my $service_template;
     if (defined $params{service_template_id}) {
         # ui related, we get the completed values as flatened values from the form
         # so we need to transform all the flatened params to a configuration pattern.
         my %flatened_params = %params;
         %params = ();
 
-        my $service_template = ServiceTemplate->get(id => $flatened_params{service_template_id});
+        $service_template = Entity::ServiceTemplate->get(id => $flatened_params{service_template_id});
         for my $policy (@{ $service_template->getPolicies }) {
             # Register policy ids in the params
             push @{ $params{policies} }, $policy->getAttr(name => 'policy_id');
 
             # Rebuild params as a configuration pattern
-            my $pattern = Policy->buildPatternFromHash(policy_type => $policy->getAttr(name => 'policy_type'), hash => \%flatened_params);
+            my $pattern = Entity::Policy->buildPatternFromHash(policy_type => $policy->getAttr(name => 'policy_type'), hash => \%flatened_params);
             %params = %{ $merge->merge(\%params, \%$pattern) };
         }
     }
@@ -348,7 +357,7 @@ sub create {
 
     # Firstly apply the policies presets on the cluster creation paramters.
     for my $policy_id (@{ $params{policies} }) {
-        my $policy = Policy->get(id => $policy_id);
+        my $policy = Entity::Policy->get(id => $policy_id);
 
         # Load params preset into hash
         my $policy_presets = $policy->getParamPreset->load();
@@ -370,14 +379,22 @@ sub create {
 
     $class->checkConfigurationPattern(attrs => \%params, composite => \%composite_params);
 
+    my $op_params = {
+        cluster_params => \%params,
+        presets        => \%composite_params,
+    };
+
+    # If hte cluster created from a service template, add it in the context
+    # to handle notification/validation on cluster instanciation.
+    if ($service_template) {
+        $op_params->{context}->{service_template} = $service_template;
+    }
+
     $log->debug("New Operation Create with attrs : " . %params);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'AddCluster',
-        params   => {
-            cluster_params => \%params,
-            presets        => \%composite_params,
-        },
+        params   => $op_params
     );
 }
 
@@ -550,8 +567,7 @@ sub configureInterfaces {
                             $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
                         };
                         if($@) {
-                            my $msg = '>>>>> interface '.$interface->getAttr(name => 'interface_id');
-                            $msg .= 'already associated with network'.$network_id;
+                            my $msg = 'Interface <' .$interface->id . '> already associated with network <' . $network_id . '>';
                             $log->debug($msg);
                         }
                     }
@@ -752,12 +768,7 @@ sub _translateFormula {
 
 sub update {
     my $self = shift;
-    my $adm = Administrator->new();
-    # update method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
-       }
+
     # TODO update implementation
 }
 
@@ -769,14 +780,8 @@ sub remove {
     my $self = shift;
     my $adm = Administrator->new();
 
-    # delete method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'delete');
-    if (not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this entity");
-    }
-
     $log->debug("New Operation Remove Cluster with cluster id : " .  $self->getAttr(name => 'cluster_id'));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveCluster',
         params   => {
@@ -789,16 +794,9 @@ sub remove {
 
 sub forceStop {
     my $self = shift;
-    my $adm = Administrator->new();
-
-    # delete method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'forceStop');
-    if (not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to force stop this entity");
-    }
 
     $log->debug("New Operation Force Stop Cluster with cluster: " . $self->getAttr(name => "cluster_id"));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'ForceStopCluster',
         params   => {
@@ -815,7 +813,7 @@ sub activate {
     my $self = shift;
 
     $log->debug("New Operation ActivateCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'ActivateCluster',
         params   => {
@@ -830,7 +828,7 @@ sub deactivate {
     my $self = shift;
 
     $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'DeactivateCluster',
         params   => {
@@ -1004,25 +1002,23 @@ sub getComponentByInstanceId{
 
 sub getMasterNode {
     my $self = shift;
-    my $node_instance_rs = $self->{_dbix}->parent->search_related(
-                               "nodes", { master_node => 1 }
-                           )->single;
 
-    if(defined $node_instance_rs) {
-        my $host = { _dbix => $node_instance_rs->host };
-        bless $host, "Entity::Host";
-        return $host;
-    } else {
-        $log->debug("No Master node found for this cluster");
-        return;
-    }
+    my $masternode = Externalnode::Node->find(hash => {
+                         inside_id   => $self->id,
+                         master_node => 1
+                     });
+
+    return $masternode->host;
 }
 
 sub getMasterNodeIp {
-    my ($self) = @_;
-    my $master = $self->getMasterNode();
+    my $self = shift;
+    my $master;
 
-    if ($master) {
+    eval {
+         $master = $self->getMasterNode();
+    };
+    if (not $@) {
         my $node_ip = $master->getAdminIp;
         return $node_ip;
     }
@@ -1223,18 +1219,6 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
-    my $adm = Administrator->new();
-
-    # Check Rights
-    # addNode method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id},
-                                                   method    => 'addNode');
-    if (not $granted) {
-        throw Kanopya::Exception::Permission::Denied(
-                  error => "Permission denied to add a node to this cluster"
-              );
-    }
-
     return Workflow->run(
         name => 'AddNode',
         entity_id => $self->id,
@@ -1272,15 +1256,7 @@ sub removeNode {
 
     General::checkParams(args => \%args, required => ['host_id']);
 
-    my $adm = Administrator->new();
-    # removeNode method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeNode');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a node from this cluster");
-    }
-
-
-    my $host =  Entity->get(id => $args{host_id});
+    my $host = Entity->get(id => $args{host_id});
     Workflow->run(
         name => 'StopNode',
         entity_id => $self->id,
@@ -1300,13 +1276,6 @@ sub removeNode {
 sub start {
     my $self = shift;
 
-    my $adm = Administrator->new();
-    # start method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'start');
-    if (not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to start this cluster");
-    }
-
     $self->setState(state => 'starting');
 
     # Enqueue operation AddNode.
@@ -1320,15 +1289,8 @@ sub start {
 sub stop {
     my $self = shift;
 
-    my $adm = Administrator->new();
-    # stop method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'stop');
-    if (not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to stop this cluster");
-    }
-
     $log->debug("New Operation StopCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
-    return Operation->enqueue(
+    return Entity::Operation->enqueue(
         priority => 200,
         type     => 'StopCluster',
         params   => {

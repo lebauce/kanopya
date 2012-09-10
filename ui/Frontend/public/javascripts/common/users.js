@@ -11,7 +11,7 @@ function Users() {
                 // TODO remove after right management review/check
                 user_system: {
                     type: 'hidden',
-                    value: 1
+                    value: 0
                 },
                 user_firstname: {
                     label: 'First Name',

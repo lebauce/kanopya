@@ -1,5 +1,6 @@
 require('KIM/policiesdefs.js');
 require('KIM/policiesform.js');
+require('common/notification_subscription.js');
 
 var service_template = {
     service_name : {
@@ -126,10 +127,25 @@ function load_service_template_content (container_id) {
         url: '/api/servicetemplate',
         content_container_id: container_id,
         grid_id: 'service_template_list',
-        colNames: [ 'ID', 'Name', 'Description' ],
-        colModel: [ { name:'service_template_id', index:'service_template_id', width:60, sorttype:"int", hidden:true, key:true},
-                    { name:'service_name', index:'service_name', width:300 },
-                    { name:'service_desc', index:'service_desc', width:500 } ]
+        colNames: [ 'ID', 'Name', 'Description', '' ],
+        colModel: [ { name: 'service_template_id', index:'service_template_id', width:60, sorttype:"int", hidden:true, key:true},
+                    { name: 'service_name', index: 'service_name', width:300 },
+                    { name: 'service_desc', index: 'service_desc', width:500 },
+                    { name: 'subscribe', index : 'subscribe', width : 40, align : 'center', nodetails : true }],
+        afterInsertRow: function(grid, rowid, rowdata, rowelem) {
+            var cell            = $(grid).find('tr#' + rowid).find('td[aria-describedby="service_template_list_subscribe"]');
+            var subscribeButton = $('<div>').button({ text : false, icons : { primary : 'ui-icon-mail-closed' } }).appendTo(cell);
+            $(subscribeButton).attr('style', 'margin-top:5px;');
+            $(subscribeButton).click(function() {
+                var details = {
+                    tabs : [
+                        { label : 'Notification subscriptions', id : 'subscription', onLoad : function(cid, eid) { loadSubscriptionModal(cid, eid, 'AddCluster'); } },
+                    ],
+                    title : 'Notification subscriptions',
+                };
+                show_detail('entity_subscription_list', 'entity_subscription_list', rowelem.pk, rowdata, details);
+            });
+        }
     } );
 
     createAddServiceTemplateButton(container_id, grid);

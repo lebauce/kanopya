@@ -25,10 +25,18 @@ use strict;
 use warnings;
  
 use constant ATTR_DEF => {
-    operationtype_name  =>  {pattern        => '^.*$',
-                             is_mandatory   => 1,
-                             is_extended    => 0,
-                             is_editable    => 0},
+    operationtype_name => {
+        pattern        => '^.*$',
+        is_mandatory   => 1,
+        is_extended    => 0,
+        is_editable    => 0
+    },
+    operationtype_label => {
+        pattern        => '^.*$',
+        is_mandatory   => 1,
+        is_extended    => 0,
+        is_editable    => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

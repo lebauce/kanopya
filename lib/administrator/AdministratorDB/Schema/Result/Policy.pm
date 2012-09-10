@@ -23,7 +23,7 @@ __PACKAGE__->table("policy");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 param_preset_id
@@ -31,7 +31,7 @@ __PACKAGE__->table("policy");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 policy_name
 
@@ -48,7 +48,7 @@ __PACKAGE__->table("policy");
 =head2 policy_type
 
   data_type: 'char'
-  is_nullable: 1
+  is_nullable: 0
   size: 64
 
 =cut
@@ -58,7 +58,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "param_preset_id",
@@ -66,18 +66,33 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
   "policy_name",
   { data_type => "char", is_nullable => 0, size => 64 },
   "policy_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
   "policy_type",
-  { data_type => "char", is_nullable => 1, size => 64 },
+  { data_type => "char", is_nullable => 0, size => 64 },
 );
 __PACKAGE__->set_primary_key("policy_id");
 
 =head1 RELATIONS
+
+=head2 policy
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "policy",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "policy_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 =head2 param_preset
 
@@ -91,7 +106,12 @@ __PACKAGE__->belongs_to(
   "param_preset",
   "AdministratorDB::Schema::Result::ParamPreset",
   { param_preset_id => "param_preset_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 service_template_hosting_policies
@@ -154,7 +174,7 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 service_template_system_policies
+=head2 service_template_billing_policies
 
 Type: has_many
 
@@ -163,16 +183,36 @@ Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
 =cut
 
 __PACKAGE__->has_many(
-  "service_template_system_policies",
+  "service_template_billing_policies",
   "AdministratorDB::Schema::Result::ServiceTemplate",
-  { "foreign.system_policy_id" => "self.policy_id" },
+  { "foreign.billing_policy_id" => "self.policy_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_template_orchestration_policies
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_template_orchestration_policies",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
+  { "foreign.orchestration_policy_id" => "self.policy_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-06-12 10:46:46
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xD4u90MCM08kCzYF4PvuJg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-14 15:34:03
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DfooDB9np38sPy5nKNJfBg
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "policy_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

@@ -56,17 +56,17 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'findManager'   => {
-            'description'   => 'findManager',
-            'perm_holder'   => 'entity'
+        findManager => {
+            description => 'findManager',
+            perm_holder => 'mastergroup'
         },
-        'getManager'    => {
-            'description'   => 'getManager',
-            'perm_holder'   => 'entity'
+        getManager => {
+            description => 'getManager',
+            perm_holder => 'entity'
         },
-        'getServiceProviders' => {
-            'description'   => 'getServiceProviders',
-            'perm_holder'   => 'entity'
+        getServiceProviders => {
+            description => 'getServiceProviders',
+            perm_holder => 'mastergroup',
         },
         'addManager'    => {
             'description'   => 'addManager',

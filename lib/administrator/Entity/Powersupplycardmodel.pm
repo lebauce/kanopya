@@ -78,14 +78,8 @@ sub getPowersupplycardmodels {
 
 sub create {
     my $self = shift;
-    my $adm = Administrator->new();
-    my $mastergroup_eid = $self->getMasterGroupEid();
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new powersupply card model");
-       }
        
-       $self->save();
+    $self->save();
 }
 
 =head2 update
@@ -100,12 +94,7 @@ sub update {}
 
 sub remove {
     my $self = shift;
-    my $adm = Administrator->new();
-    # delete method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this powersupply card model");
-    }
+
     $self->SUPER::delete();
 }
 

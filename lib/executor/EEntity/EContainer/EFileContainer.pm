@@ -22,7 +22,6 @@ use strict;
 use warnings;
 
 use Log::Log4perl "get_logger";
-use Operation;
 
 my $log = get_logger("");
 

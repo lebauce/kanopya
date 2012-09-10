@@ -18,10 +18,12 @@ use warnings;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
-    profile_name => { pattern      => '^.*$',
-                      is_mandatory => 1,
-                      is_extended  => 0,
-                      is_editable  => 1},
+    profile_name => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
