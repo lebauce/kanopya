@@ -6,7 +6,7 @@ use XML::Simple;
 
 use Kanopya::Exceptions;
 use Administrator;
-use Operation;
+use Entity::Operation;
 use General;
 
 use Log::Log4perl qw(:easy);
@@ -34,7 +34,7 @@ my $adm = Administrator::authenticate(
 );
 
 eval {
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'DeployMasterimage',
         params   => { file_path => "$arg", keep_file => 1 },
