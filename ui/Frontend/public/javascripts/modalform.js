@@ -298,7 +298,7 @@ var ModalForm = (function() {
                 float   : 'right'
             });
             $(helpElem).qtip({
-                content : help,
+                content : help.replace("\n", "<br />", 'g'),
                 position: {
                     corner  : {
                         target  : 'rightMiddle',

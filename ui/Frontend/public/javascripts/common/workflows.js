@@ -305,6 +305,9 @@ function workflowRuleConfigure(wfdef_id) {
                                         var unit_cont = $('<td>');
                                         $(line).append(unit_cont);
                                         addFieldUnit(origin_params.specific[k], unit_cont, 'unit_' + k, selected_unit);
+                                        if (origin_params.specific[k].description) {
+                                            $(line).append(ModalForm.prototype.createHelpElem(origin_params.specific[k].description));
+                                        }
                                     });
 
                                     $(dial).dialog({
@@ -367,6 +370,9 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
                     var unit_cont = $('<td>');
                     $(line).append(unit_cont);
                     addFieldUnit(specparams[j], unit_cont, 'unit_' + j, 'MB');
+                    if (specparams[j].description) {
+                        $(line).append(ModalForm.prototype.createHelpElem(specparams[j].description));
+                    }
                 }
                 break;
             }
