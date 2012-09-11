@@ -128,9 +128,12 @@ sub updateParamPreset{
 sub getParamPreset{
     my ($self,%args) = @_;
 
+    my $param_preset_id = $self->getAttr(name => 'param_preset_id');
+    return {} if ! $param_preset_id;
+
     my $preset;
     eval {
-        $preset = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
+        $preset = ParamPreset->get(id => $param_preset_id);
     };
     if ($@) {
         $errmsg = 'could not retrieve any param preset for workflow: '.$@;
