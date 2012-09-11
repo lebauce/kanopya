@@ -1712,6 +1712,8 @@ CREATE TABLE `service_template` (
   FOREIGN KEY (`network_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`scalability_policy_id`),
   FOREIGN KEY (`scalability_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`system_policy_id`),
+  FOREIGN KEY (`system_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`billing_policy_id`),
   FOREIGN KEY (`billing_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`orchestration_policy_id`),
