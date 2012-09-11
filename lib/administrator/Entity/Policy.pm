@@ -204,7 +204,7 @@ sub buildPatternFromHash {
                   }
             }
             # Can we handle these params whithout hard code  ?
-            elsif ($name =~ /(systemimage_size|systemimage_size_unit)/) {
+            elsif ($name =~ /systemimage_size/) {
                 $pattern{managers}->{disk_manager}->{manager_params}->{$name} = $args{hash}->{$name};
             }
             # Handle orchestration data (already well formatted metrics and rules)

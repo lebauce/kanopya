@@ -96,11 +96,9 @@ sub create {
     $log->debug('Container creation for new systemimage');
 
     # Creation of the device based on distribution device
-    my $unit = exists $args{systemimage_size_unit} ? $args{systemimage_size_unit} : 'B'; 
     my $container = $args{disk_manager}->createDisk(
                         name       => $self->getAttr(name => 'systemimage_name'),
-                        size       => General::convertToBytes(value => $args{systemimage_size},
-                                                              units => $unit),
+                        size       => $args{systemimage_size},
                         filesystem => $args{src_container}->getAttr(name => 'container_filesystem'),
                         erollback  => $args{erollback},
                         %args

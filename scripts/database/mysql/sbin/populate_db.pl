@@ -192,8 +192,7 @@ sub populate_policies {
         cluster_si_shared     => 0,
         cluster_si_persistent => 0,
         kernel_id => $kernel->id,
-        systemimage_size      => 5,
-        systemimage_size_unit => 'G',
+        systemimage_size      => 5 * (1024**3), # 5GB
         component_type_0 => $puppettypeid,
         component_type_1 => $keepalivedtypeid,
     );

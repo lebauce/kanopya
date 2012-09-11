@@ -217,7 +217,6 @@ function create_grid(options) {
                 remove_action += '\')" style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
                 remove_action += '<span class="ui-icon ui-icon-trash"></span>';
                 remove_action += '</div>';
-                console.log(remove_action);
                 return remove_action;
             }});
 

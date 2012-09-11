@@ -231,16 +231,8 @@ var policies = {
             step         : 'Policy',
             label        : 'System image size',
             type         : 'text',
-            pattern      : '^[0-9]+$',
-        },
-        systemimage_size_unit : {
-            step         : 'Policy',
-            label        : 'System image size unit',
-            type         : 'select',
-            options     : {
-                'M' : 'M',
-                'G' : 'G',
-            },
+            pattern      : '^[0-9.]+$',
+            unit         : 'byte'
         },
         cluster_si_shared : {
             step         : 'Policy',

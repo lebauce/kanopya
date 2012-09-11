@@ -394,10 +394,15 @@ var PolicyForm = (function() {
             }
 
             // If exist a value then convert it in human readable
-            if (current_unit === 'byte') {
+            if (current_unit === 'byte' && $(input).val()) {
                 var readable_value = getReadableSize($(input).val());
                 $(input).val( readable_value.value );
                 $(unit_cont).find('option:contains("' + readable_value.unit + '")').attr('selected', 'selected');
+            }
+
+            // If field is disabled then disable the unit selector
+            if ($(input).attr('disabled') === 'disabled') {
+                $('#' + unit_field_id).attr('disabled', 'disabled');
             }
         }
 
