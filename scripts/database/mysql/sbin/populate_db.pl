@@ -36,13 +36,14 @@ sub populate_workflow_def {
     my $wf_manager_component_type_id = ComponentType->find( hash => { component_category => 'Workflowmanager' } )->id;
     my $kanopya_wf_manager           = Entity::Component->find( hash => { component_type_id => $wf_manager_component_type_id, service_provider_id => 1 } );
     my $scale_op_id                  = Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
-    
+    my $scale_amount_desc            = "Format:\n - '+value' to increase\n - '-value' to decrease\n - 'value' to set";
+
     # ScaleIn cpu workflow def
     my $scale_cpu_wf = $kanopya_wf_manager->createWorkflow(
         workflow_name => 'ScaleInCPU',
         params => {
             specific => {
-                scalein_value => { label => 'Nb core' },
+                scalein_value => { label => 'Nb core', description => $scale_amount_desc},
             },
             internal => {
                 scope_id => 1,
@@ -60,7 +61,7 @@ sub populate_workflow_def {
         workflow_name => 'ScaleInMemory',
         params => {
             specific => {
-                scalein_value => { label => 'Amount', unit => 'byte' },
+                scalein_value => { label => 'Amount', unit => 'byte', description => $scale_amount_desc},
             },
             internal => {
                 scope_id => 1,
