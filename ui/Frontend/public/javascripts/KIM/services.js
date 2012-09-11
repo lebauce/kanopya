@@ -234,8 +234,11 @@ function loadServicesResources (container_id, elem_id) {
 
 function runScaleWorkflow(type, eid, spid) {
     var cont    = $('<div>');
-    $('<label>', { text : type + ' amount ' + (type == 'Memory' ? '(in MB)' : '') + ' : ', for : type }).appendTo(cont);
-    var inp     = $('<input>', { id : type }).appendTo(cont);
+    $('<label>', { text : type + ' amount : ', for : type }).appendTo(cont);
+    var inp         = $('<input>', { id : type }).appendTo(cont);
+    var unit_cont   = $('<span>').appendTo(cont);
+    addFieldUnit({ unit : (type == 'Memory' ? 'byte' : 'core(s)') }, unit_cont, 'scale_amount_unit');
+
     $(cont).dialog({
         resizable       : false,
         modal           : true,
@@ -244,6 +247,7 @@ function runScaleWorkflow(type, eid, spid) {
             'Ok'        : function() {
                 var amount  = $(inp).val();
                 if (amount != null && amount !== "") {
+                    amount = getRawValue(amount, 'scale_amount_unit');
                     $.ajax({
                         async       : false,
                         url         : '/api/serviceprovider/' + spid + '/getManager',
@@ -257,7 +261,7 @@ function runScaleWorkflow(type, eid, spid) {
                                 contentType : 'application/json', 
                                 data        : JSON.stringify({  
                                     host_id         : eid,
-                                    scalein_value   : amount * (type == 'Memory' ? 1024 * 1024 : 1),
+                                    scalein_value   : amount,
                                     scalein_type    : type.toLowerCase()
                                 }),
                                 success     : function() { $(cont).dialog('close'); }
