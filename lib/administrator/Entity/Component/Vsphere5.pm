@@ -26,6 +26,7 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
 use Vsphere5Repository;
+use Vsphere5Datacenter;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::ContainerAccess;
@@ -149,6 +150,26 @@ sub addRepository {
                      );
 
     return $repository;
+}
+
+=head2 addDatacenter
+
+    Desc: register a new vsphere datacenter
+    Args: $datacenter_name,
+
+=cut
+
+sub addDatacenter {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['datacenter_name']);
+
+    my $datacenter = Vsphere5Datacenter->new(
+                         vsphere5_datacenter_name => $args{datacenter_name},
+                         vsphere5_id              => $self->id,
+                     );
+
+    return $datacenter;
 }
 
 =head2 getRepository
