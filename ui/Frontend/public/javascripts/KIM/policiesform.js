@@ -893,7 +893,7 @@ var PolicyForm = (function() {
                 prefix  : this.fields[name].prefix,
                 disable_filled : this.fields[name].disable_filled,
                 hide_filled    : this.fields[name].hide_filled,
-                is_mandatory   : (this.fields[name].is_mandatory && this.fields[name].hide_filled),
+                is_mandatory   : (this.fields[name].is_mandatory && this.fields[name].handle_mandatory),
             }
 
             var tr = undefined;

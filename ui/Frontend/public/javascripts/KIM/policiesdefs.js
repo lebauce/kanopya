@@ -374,7 +374,8 @@ var policies = {
                 value   : {
                     'cpu'   : 'core(s)',
                     'ram'   : 'byte'
-            }}
+                }
+            }
         },
         limit_repeats   : {
             step        : 'Limits',
