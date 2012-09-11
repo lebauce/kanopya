@@ -83,13 +83,11 @@ sub populate_workflow_def {
         params => {
             automatic => {
                 context => {
-                    cluster => {
-                        internal => { scope_id => 2 }
-                    }
+                    cluster => undef
                 }
-            }
+            },
+            internal => { scope_id => 2 }
         }
-            
     );
     $addnode_wf->addStep(operationtype_id => $addnode_op_id);
     $addnode_wf->addStep(operationtype_id => $prestart_op_id);
@@ -105,13 +103,11 @@ sub populate_workflow_def {
         params => {
             automatic => {
                 context => {
-                    cluster => {
-                        internal => { scope_id => 2 }
-                    }
+                    cluster => undef
                 }
-            }
+            },
+            internal => { scope_id => 2 }
         }
-            
     );
     $stopnode_wf->addStep(operationtype_id => $prestop_op_id);
     $stopnode_wf->addStep(operationtype_id => $stop_op_id);
