@@ -169,7 +169,7 @@ var policies = {
         network_interface : {
             step         : 'Interfaces',
             type         : 'composite',
-            set          : 'interfaces',
+            set          : 'Interfaces',
             add_label    : 'Add a network interface',
         },
         interface_role : {
@@ -256,7 +256,7 @@ var policies = {
             type         : 'select',
             entity       : 'componenttype',
             display      : 'component_name',
-            set          : 'components',
+            set          : 'Components',
             add_label    : 'Add a component',
         },
     },
@@ -316,7 +316,7 @@ var policies = {
         billing_limits  : {
             step        : 'Limits',
             type        : 'composite',
-            set         : 'limits',
+            set         : 'Limits',
             add_label   : 'Add a limit',
             is_mandatory: 1
         },

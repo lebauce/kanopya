@@ -51,6 +51,18 @@ var PolicyForm = (function() {
     PolicyForm.prototype.handleField = function(elem) {
         // If this is a set, add a button to allow to add elements to the set
         if (this.fields[elem].set && !this.fields[elem].composite && !this.fields[elem].triggered) {
+            var set_table = $("<table>", { id: 'fieldset_' + this.fields[elem].set }).css('width', '100%');
+            var set_tr = $("<tr>").css('position', 'relative');
+            var set_td = $("<td>", { colspan: 2 });
+
+            set_tr.appendTo(this.findContainer(this.fields[elem].step));
+            set_tr.append(set_td);
+
+            var fieldset = $("<fieldset>").appendTo(set_td);
+            fieldset.css('border-color', '#ddd');
+            fieldset.append($("<legend>", { text : this.fields[elem].set }).css('font-weight', 'bold'));
+            fieldset.append(set_table);
+
             var add_button = $("<input>", { text : this.fields[elem].add_label, id : 'add_button_' + elem, type: 'button', class : 'wizard-ignore' });
 
             var that = this;
@@ -70,7 +82,12 @@ var PolicyForm = (function() {
                 });
             });
 
-            this.findContainer(this.fields[elem].step).append(add_button);
+            $(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
+            if ($(this.content).height() > $(window).innerHeight() - 200) {
+                $(this.content).css('height', $(window).innerHeight() - 200);
+            }
+
+            fieldset.append(add_button);
             add_button.val(this.fields[elem].add_label);
 
             // If we have values for a set element, add the elements with values.
@@ -125,7 +142,7 @@ var PolicyForm = (function() {
         }
 
         if (this.fields[elem].set && !noset) {
-            var container = this.findContainer(this.fields[elem].step);
+            var container = this.findContainer(this.fields[elem].step, this.fields[elem].set);
 
             if (! this.fields[elem].disable_filled) {
                 var remove_button = $("<input>", { text : 'Remove', class : 'wizard-ignore ', type: 'button' });
@@ -332,7 +349,7 @@ var PolicyForm = (function() {
 
         // Finally, insert DOM elements in the form
         var tr;
-        var container = this.findContainer(field.step);
+        var container = this.findContainer(field.step, field.set);
         if (input.is("textarea")) {
             tr = this.insertTextarea(input, label, container, field.help || element.description, after);
         } else {
@@ -410,7 +427,7 @@ var PolicyForm = (function() {
     }
 
     PolicyForm.prototype.newDropdownElement = function(elementName, options, current, after) {
-        var container = this.findContainer(this.fields[elementName].step);
+        var container = this.findContainer(this.fields[elementName].step, this.fields[elementName].set);
         var input_name = elementName;
 
         /* Arg */
@@ -436,8 +453,10 @@ var PolicyForm = (function() {
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
         if (this.fields[elementName].is_mandatory == true) {
-            $(label).append(' *');
+            $(label).append(' * : ');
             this.validateRules[elementName].required = true;
+        } else {
+            $(label).append(' : ');
         }
         // Check if the field must be validated by a regular expression
         if ($(input).attr('type') !== 'checkbox' && this.fields[elementName].pattern !== undefined) {
@@ -978,7 +997,8 @@ var PolicyForm = (function() {
         });
     }
 
-    PolicyForm.prototype.findContainer = function(step) {
+    PolicyForm.prototype.findContainer = function(step, set) {
+        var container;
         if (step !== undefined) {
             var table = this.stepTables[step];
             if (table === undefined) {
@@ -987,10 +1007,15 @@ var PolicyForm = (function() {
                $(table).css('width', '100%').addClass('step');
                this.stepTables[step] = table;
             }
-            return table;
+            container = table;
         } else {
-            return this.table;
+            container = this.table;
         }
+
+        if (set !== undefined) {
+            return container.find('#fieldset_' + set);
+        }
+        return container;
     }
 
     PolicyForm.prototype.createHelpElem = function(help) {
@@ -1217,7 +1242,7 @@ var PolicyForm = (function() {
                 title           : this.title,
                 modal           : true,
                 resizable       : false,
-                width           : 500,
+                width           : 550,
                 buttons         : buttons,
                 closeOnEscape   : false,
         };
