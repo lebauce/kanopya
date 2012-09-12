@@ -1002,11 +1002,17 @@ sub getComponentByInstanceId{
 
 sub getMasterNode {
     my $self = shift;
+    my $masternode;
 
-    my $masternode = Externalnode::Node->find(hash => {
-                         inside_id   => $self->id,
-                         master_node => 1
-                     });
+    eval {
+        $masternode = Externalnode::Node->find(hash => {
+                          inside_id   => $self->id,
+                          master_node => 1
+                      } );
+    };
+    if ($@) {
+        return undef;
+    }
 
     return $masternode->host;
 }
@@ -1015,21 +1021,18 @@ sub getMasterNodeIp {
     my $self = shift;
     my $master;
 
-    eval {
-         $master = $self->getMasterNode();
-    };
-    if (not $@) {
-        my $node_ip = $master->getAdminIp;
-        return $node_ip;
+    $master = $self->getMasterNode();
+    if (defined ($master)) {
+        return $master->getAdminIp;
     }
+
+    return;
 }
 
 sub getMasterNodeFQDN {
-    my ($self) = @_;
-    my $domain = $self->getAttr(name => 'cluster_domainname');
-    my $master = $self->getMasterNode();
-    my $hostname = $master->getAttr(name => 'host_hostname');
-    return $hostname.'.'.$domain;
+    my $self = shift;
+
+    return $self->getMasterNode()->host_hostname . '.' . $self->cluster_domainname;
 }
 
 sub getMasterNodeId {
@@ -1039,6 +1042,8 @@ sub getMasterNodeId {
     if (defined ($host)) {
         return $host->getAttr(name => "host_id");
     }
+
+    return;
 }
 
 sub getMasterNodeSystemimage {
