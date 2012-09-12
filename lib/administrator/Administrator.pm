@@ -212,7 +212,10 @@ sub rollbackTransaction {
 {
     eval {
         my $dbi = loadConfig();
-        $schema = AdministratorDB::Schema->connect($dbi, $config->{dbconf}->{user}, $config->{dbconf}->{password}, {});
+        $schema = AdministratorDB::Schema->connect($dbi,
+                                                   $config->{dbconf}->{user},
+                                                   $config->{dbconf}->{password},
+                                                   { mysql_enable_utf8 => 1 });
     };
 
     if ($@) {
