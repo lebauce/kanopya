@@ -44,6 +44,14 @@ __PACKAGE__->table("vsphere5");
 
 =cut
 
+=head2 vsphere5_url
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 128
+
+=cut
+
 __PACKAGE__->add_columns(
   "vsphere5_id",
   {
@@ -55,6 +63,8 @@ __PACKAGE__->add_columns(
   "vsphere5_pwd",
   { data_type => "char", is_nullable => 1, size => 68 },
   "vsphere5_login",
+  { data_type => "char", is_nullable => 1, size => 128 },
+  "vsphere5_url",
   { data_type => "char", is_nullable => 1, size => 128 },
 );
 

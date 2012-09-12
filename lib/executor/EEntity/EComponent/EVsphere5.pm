@@ -35,11 +35,16 @@ my $log = get_logger("executor");
 my $errmsg;
 
 sub new {
-    my ($self,%args) = @_;
+    my ($class,%args) = @_;
 
-    $self->SUPER::new();
+    my $self = $class->SUPER::new(%args);
 
-    $self->connect(\%args);
+    $self->connect(
+        user_name => $self->vsphere5_login,
+        password  => $self->vsphere5_pwd,
+        url       => 'https://'.$self->vsphere5_url);
+
+    return $self;
 }
 
 ######################
@@ -107,7 +112,6 @@ sub addRepository {
     my $export_full_path    = $container_access->container_access_export;
     my @export_path         = split (':', $export_full_path);
 
-    #TODO check if a vsphere connection is open
     my $view = Vim::find_entity_view(view_type => 'HostSystem');
 
     my $datastore = HostNasVolumeSpec->new( accessMode => 'readWrite',
@@ -148,6 +152,8 @@ sub startHost {
     my $hypervisor = $args{hypervisor};
     my $guest_id   = 'debian6Guest';
 
+    $log->info('Start host on < hypervisor '. $hypervisor->id.' >');
+
     if (!defined $hypervisor) {
         my $errmsg = "Cannot add node in cluster ".$args{host}->getClusterId().", no hypervisor available";
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -173,6 +179,9 @@ sub startHost {
     $host_conf{memory}     = $host_params->{ram};
     $host_conf{cores}      = $host_params->{core};
     $host_conf{network}    = 'VM Network';
+
+    $log->debug('new VM configuration parameters: ');
+    $log->debug(Dumper %host_conf);
 
     #Create vm in vsphere
     $self->createVm(host_conf => \%host_conf);

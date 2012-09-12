@@ -44,6 +44,11 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_extended  => 0
+    },
+    vsphere5_url => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
     }
 };
 
