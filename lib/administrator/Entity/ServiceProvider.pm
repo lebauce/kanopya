@@ -394,6 +394,8 @@ sub getLimit {
 
     General::checkParams(args => \%args, required => [ "type" ]);
 
+    # Firtly get billing limit
+    #
     # TODO: Use only one request
     my @limits = Entity::Billinglimit->search(hash => {
                      service_provider_id => $self->getId,
@@ -401,14 +403,48 @@ sub getLimit {
                      type                => $args{type},
                  });
 
-    my $value;
+    my $billing_limit_value;
     my $now = time() * 1000;
     for my $limit (@limits) {
         if (($limit->start < $now) && ($limit->ending > $now)) {
-            $value = $value ? min($value, $limit->value) : $limit->value;
+            $billing_limit_value = $billing_limit_value ? min($billing_limit_value, $limit->value) : $limit->value;
         }
     }
 
+    # Get Limit from host_manager
+    my $host_params = $self->getManagerParameters(manager_type => 'host_manager');
+
+    my $host_limit_value;
+
+    if ($args{type} eq 'ram') {
+        if(defined $host_params->{max_ram}) {
+            $host_limit_value = General::convertToBytes(
+                               value => $host_params->{max_ram},
+                               units => $host_params->{ram_unit}
+                            );
+        }
+        else {
+            $log->info('host limit ram undef');
+        }
+    }
+    elsif ($args{type} eq 'cpu') {
+        $host_limit_value = $host_params->{max_core};
+    }
+
+    $log->debug('sp <'.($self->getId).'> Type <'.($args{type}).'> Billing limit <'.($billing_limit_value).'> host limit <'.($host_limit_value).'>');
+
+    my $value;
+    if (defined $billing_limit_value){
+        if ( defined $host_limit_value ) {
+            $value = min( $billing_limit_value, $host_limit_value  );
+        }
+        else {
+            $value = $billing_limit_value;
+        }
+    }
+    else {
+        $value = $host_limit_value;
+    }
     return $value;
 }
 
