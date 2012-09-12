@@ -36,11 +36,10 @@ sub checkStoppable {
         my $cluster = Entity->get(id => $self->node->inside_id);
         $log->info(ref $cluster);
         my $opennebula3   = $cluster->getComponent(name => "Opennebula", version => "3");
-        my $e_opennebula3 = EFactory::newEEntity(data => $opennebula3);
 
         my $cm = CapacityManagement->new(
             hypervisor_cluster_id  => $self->node->inside_id,
-            hvs_mem_available      => $e_opennebula3->getHostsMemAvailable()
+            cloud_manager => $opennebula3,
         );
         my $flushRes = $cm->flushHypervisor(hv_id => $self->getId());
         if ($flushRes->{num_failed} == 0) {
