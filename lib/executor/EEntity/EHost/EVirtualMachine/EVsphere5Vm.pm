@@ -13,3 +13,32 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera <>Technology <dev@hederatech.com>.
+
+package EEntity::EHost::EVirtualMachine::EVsphere5Vm;
+use base "EEntity::EHost::EVirtualMachine";
+
+use strict;
+use warnings;
+
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("executor");
+
+=head2 checkUp
+
+    Desc: return the state of the VM
+
+=cut
+
+sub checkUp {
+    my $self = shift;
+
+#    my $vm_state = $self->{host_manager}->getVMState(host => $self);
+
+#    $log->info('Vm <'.$self->{host}->getId().'> vsphere status <'.($vm_state->{state}).'>');
+
+    return 1;
+    #return $self->SUPER::checkUp();
+}
+
+1;
