@@ -297,16 +297,6 @@ sub getNode {
     return $self->node;
 }
 
-sub setNodeNumber {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['node_number']);
-
-    $self->node->setAttr(name => 'node_number', value => $args{'node_number'});
-    $self->node->save();
-}
-
 sub getPrevNodeState {
     my $self = shift;
     my $state = $self->node->node_prev_state;
