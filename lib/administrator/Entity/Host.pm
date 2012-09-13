@@ -316,9 +316,10 @@ sub setNodeState {
     my $new_state = $args{state};
     my $current_state = $self->getNodeState();
 
-    $self->node->setAttr(name => 'node_prev_state', value => $current_state);
-    $self->node->setAttr(name => 'node_state', value => $new_state . ":" . time);
-    $self->node->save();
+    my $node = $self->node;
+    $node->setAttr(name => 'node_prev_state', value => $current_state);
+    $node->setAttr(name => 'node_state', value => $new_state . ":" . time);
+    $node->save();
 }
 
 =head2 updateCPU
@@ -386,16 +387,18 @@ sub becomeNode {
     return $node->id;
 }
 
-sub becomeMasterNode{
+sub becomeMasterNode {
     my $self = shift;
+    my $node = $self->node;
 
-    if(not defined $self->node) {
+    if (not defined $node) {
         $errmsg = "Entity::Host->becomeMasterNode :Host " . $self->id . " is not a node!";
         $log->error($errmsg);
         throw Kanopya::Exception::DB(error => $errmsg);
     }
-    $self->node->setAttr(name => 'master_node', value => 1);
-    $self->node->save();
+
+    $node->setAttr(name => 'master_node', value => 1);
+    $node->save();
 }
 
 =head2 Entity::Host->stopToBeNode (%args)
