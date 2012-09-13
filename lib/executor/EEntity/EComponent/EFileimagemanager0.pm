@@ -60,7 +60,7 @@ sub createDisk {
                      container_size       => $args{size},
                      container_filesystem => $args{filesystem},
                      container_freespace  => 0,
-                     container_device     => $args{name} . '.img',
+                     container_device     => $args{name} . '.raw',
                  );
     my $container = EFactory::newEEntity(data => $entity);
 
@@ -173,7 +173,7 @@ sub fileCreate{
     $econtainer_access->mount(mountpoint => $mountpoint,
                               econtext   => $self->getEContext);
 
-    my $file_image_path = "$mountpoint/$args{file_name}.img";
+    my $file_image_path = "$mountpoint/$args{file_name}.raw";
 
     $log->debug("Container access mounted, trying to create $file_image_path, size $args{file_size}.");
 
