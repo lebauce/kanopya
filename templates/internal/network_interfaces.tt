@@ -14,7 +14,8 @@ iface lo inet loopback
 
 [% FOREACH interface=interfaces %]
 auto [% interface.name %]
-iface [% interface.name %] inet static
+iface [% interface.name %] inet [% interface.method %]
+[% IF interface.method == "static" %]
       address [% interface.address %]
       netmask [% interface.netmask %]
       [% IF interface.gateway %]
@@ -26,6 +27,11 @@ iface [% interface.name %] inet static
       bridge_fd [% interface.bridge_fd %]
       bridge_maxwait [% interface.bridge_maxwait %]
       [% END %]
-
+[% ELSIF interface.method == "manual" %]
+      up ifconfig $IFACE 0.0.0.0 up
+      [% IF interface.role == "vms" %]
+      post-up ethtool -K $IFACE lro off
+      [% END %]
+[% END %]
 [% END %]
 
