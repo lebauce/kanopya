@@ -381,7 +381,6 @@ sub getHypervisorIdForVM{
     # Option : blacklisted_hv_ids
     # Option : selected_hv_ids
     # Wanted values : { cpu => num_of_proc, ram => value_in_bytes}
-    $log->info('Wanted values'. Dumper $args{wanted_values});
     my $wanted_values      = $args{wanted_values};
     my $blacklisted_hv_ids = $args{blacklisted_hv_ids};
     my $selected_hv_ids    = $args{selected_hv_ids};
@@ -410,7 +409,7 @@ sub getHypervisorIdForVM{
         wanted_metrics   => $wanted_values,
     );
 
-    $log->info('Selected hv <'.(Dumper $hv).'>');
+    $log->debug('Selected hv <' . $hv->{hv_id} . '>');
     return $hv->{hv_id};
 }
 
