@@ -70,7 +70,11 @@ sub prepare {
     my $vm_id = $self->{context}->{host}->getId;
     my $hv_id = $self->{context}->{host}->hypervisor->getId;
 
-    my $cm    = CapacityManagement->new(cluster_id => $self->{context}->{host}->getClusterId());
+    my $cm    = CapacityManagement->new(
+        cluster_id    => $self->{context}->{host}->getClusterId(),
+        cloud_manager => $self->{context}->{cloudmanager_comp},
+    );
+
     my $check = $cm->isScalingAuthorized(
                     vm_id           => $vm_id,
                     hv_id           => $hv_id,
