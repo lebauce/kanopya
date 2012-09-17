@@ -22,6 +22,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
+use CapacityManagement;
 
 my $log = get_logger("");
 
