@@ -53,7 +53,7 @@ sub methods {
         },
         'migrate'       => {
             'description'   => "migrate a host",
-            'perm_holrder'  => "entity"
+            'perm_holder'  => "entity"
         }
     };
 }
@@ -205,9 +205,9 @@ sub getFreeHosts {
     my ($self) = @_;
 
     my $where = {
-        active          => 1, 
+        active          => 1,
         host_state      => {-like => 'down:%'},
-        host_manager_id => $self->getAttr(name => 'entity_id')      
+        host_manager_id => $self->getAttr(name => 'entity_id')
     };
 
     my @hosts = Entity::Host->getHosts(hash => $where);
