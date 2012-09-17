@@ -148,6 +148,16 @@ sub methods {
     };
 }
 
+
+sub getOvercommitmentFactors {
+    my ($self) = @_;
+    return {
+        overcommitment_cpu_factor    => $self->overcommitment_cpu_factor,
+        overcommitment_memory_factor => $self->overcommitment_memory_factor,
+    }
+}
+
+
 =head2 getHypervisors
 
 =cut
