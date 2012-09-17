@@ -124,6 +124,16 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
+    },
+    overcommitment_cpu_factor => {
+        pattern     => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    overcommitment_memory_factor => {
+        pattern     => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
     }
 };
 
