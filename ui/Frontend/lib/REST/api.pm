@@ -130,6 +130,7 @@ my %resources = (
     "workflow"                 => "Workflow",
     "workflowdef"              => "WorkflowDef",
     "alert"                    => "Alert",
+    "mailnotifier0"            => "Entity::Component::Mailnotifier0",
 );
 
 sub db_to_json {
