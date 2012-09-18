@@ -29,6 +29,7 @@ use Entity::Host;
 use Entity::Kernel;
 use Template;
 use General;
+use Message;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -134,6 +135,9 @@ sub execute {
     $self->{context}->{container_access}->mount(mountpoint => $mountpoint,
                                                 econtext   => $self->getEContext,
                                                 erollback  => $self->{erollback});
+
+    $log->info("Operate user account creation");
+    $self->_generateUserAccount(mount_point => $mountpoint);
 
     $log->info("Operate Network Configuration");
     $self->_generateNetConf(mount_point => $mountpoint);
@@ -242,6 +246,46 @@ sub finish {
     delete $self->{context}->{container_access};
     delete $self->{context}->{export_manager};
     delete $self->{context}->{systemimage};
+}
+
+sub _generateUserAccount {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'mount_point' ]);
+    my $user = $self->{context}->{cluster}->user;
+    my $login = $user->getAttr(name => 'user_login');
+    my $password = $user->getAttr(name => 'user_password');
+    
+    # create user account and add sudoers entry if necessary
+    my $cmd = "cat ".$args{mount_point}."/etc/passwd | cut -d: -f1 | grep ^$login\$";
+    my $result = $self->getEContext->execute(command => $cmd);
+    if($result->{stdout}) {
+        $log->info("User account $login already exists");
+        Message->send(from => 'Executor', level => 'info', 
+                      content => "User account $login already exists");
+    } else {
+        # create the user account
+        my $cmd = "chroot ".$args{mount_point}." useradd -m -p '$password' $login";
+        my $result = $self->getEContext->execute(command => $cmd);
+        # add a sudoers file
+        $cmd = "umask 227 && echo '$login ALL=(ALL) ALL' > ".$args{mount_point}."/etc/sudoers.d/$login";
+        $result = $self->getEContext->execute(command => $cmd);
+        # add ssh pub key
+        my $sshkey = $user->getAttr(name => 'user_sshkey');
+        if(defined $sshkey) {
+            my $dir = $args{mount_point}."/home/$login/.ssh";
+            # retrieve uid,gid
+            #$cmd = "grep $login ".$args{mount_point}."/etc/passwd | cut -d: -f3,4";
+            #$result = $self->getEContext->execute(command => $cmd);
+            #my ($uid, $gid) = split(':', $result->{stdout});
+            # create ssh directory and authorized_keys file
+            $cmd = "mkdir $dir";
+            $result = $self->getEContext->execute(command => $cmd);
+            $cmd = "umask 177 && echo '$sshkey' > $dir/authorized_keys";
+            $result = $self->getEContext->execute(command => $cmd);
+            $cmd = "chroot $args{mount_point} chown -R $login.$login /home/$login/.ssh ";
+            $result = $self->getEContext->execute(command => $cmd);
+        }
+    }
 }
 
 sub _generateNetConf {
