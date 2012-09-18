@@ -71,7 +71,7 @@ var FormWizardBuilder = (function() {
         }
 
         // Firstly merge the attrdef with possible raw attrdef given in params
-        jQuery.extend(true, this.attributedefs, this.rawattrdef);
+        jQuery.extend(true, attributes, this.rawattrdef);
 
         // Building a new hash according to the orderer list of displayed attrs
         for (displayed in this.displayed) {

@@ -19,7 +19,7 @@ function host_addbutton_action(e) {
 }
 
 function hosts_list(cid, host_manager_id) {
-    g_host_manager_id   = host_manager_id;
+    g_host_manager_id = host_manager_id;
     create_grid({
         content_container_id    : cid,
         grid_id                 : 'hosts_list',
