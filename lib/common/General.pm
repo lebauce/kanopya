@@ -44,11 +44,19 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Kanopya::Config;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
+
+sub cryptPassword {
+    my %args = @_;
+    my $salt = Kanopya::Config::get('libkanopya')->{crypt}->{salt};
+    my $cryptpasswd = crypt($args{password}, '$6$'.$salt.'$');
+    return $cryptpasswd;
+}
 
 =head2 getTemplateConfiguration
 
