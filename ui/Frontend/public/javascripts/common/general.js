@@ -199,6 +199,21 @@ function getUnitMultiplicator(id) {
     return 1;
 }
 
+/* Compute the html input type corresponding to
+ * the database attribute type.
+ */
+function toInputType(type) {
+    var types = { integer  : 'text',
+                  string   : 'text',
+                  text     : 'textarea',
+                  boolean  : 'checkbox',
+                  enum     : 'select',
+                  relation : 'select',
+                  date     : 'date' };
+
+    return types[type] !== undefined ? types[type] : type;
+}
+
 /*
  * Return the final value from user input and selected unit
  * Manage the case where input can contain '+' and '-'
