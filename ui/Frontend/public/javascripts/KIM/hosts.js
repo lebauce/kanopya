@@ -4,18 +4,16 @@ require('modalform.js');
 var g_host_manager_id = undefined;
 
 function host_addbutton_action(e) {
-    (new ModalForm({
-        title   : 'Create a host',
-        name    : 'host',
-        id      : (!(e instanceof Object)) ? e : undefined,
-        fields  : {
-            host_hostname       : { label : 'Hostname' },
-            host_desc           : { label : 'Description', type : 'textarea' },
-            host_core           : { label : 'Core Number' },
-            host_ram            : { label : 'RAM Amount', unit : 'byte' },
-            kernel_id           : { label : 'Default Kernel', display : 'kernel_name' },
-            host_serial_number  : { label : 'Serial number' },
-            host_manager_id     : { label : '', value : g_host_manager_id, type : 'hidden' }
+    (new FormWizardBuilder({
+        title      : 'Create a host',
+        type       : 'host',
+        id         : (!(e instanceof Object)) ? e : undefined,
+        displayed  : [ 'host_desc', 'host_core', 'host_ram', 'kernel_id', 'host_serial_number' ],
+        relations  : { 'ifaces' : [ 'iface_name', 'iface_mac_addr', 'iface_pxe' ] },
+        rawattrdef : {
+            'host_manager_id' : {
+                'value' : g_host_manager_id,
+            }
         }
     })).start();
 }

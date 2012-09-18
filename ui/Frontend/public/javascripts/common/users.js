@@ -1,126 +1,38 @@
-require('modalform.js');
 require('detailstable.js');
+require('common/formatters.js');
+require('modalform.js');
 
-/* users class */
+var g_user_id = undefined;
 
+function user_addbutton_action(e, displayed) {
+    // When called from user details, e is the user id, event instead.
+    var displayed;
+    if (e instanceof Object && e.data.displayed !== undefined) {
+        displayed = e.data.displayed;
+    } else {
+        displayed = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
+                      'user_login', 'user_password', 'user_lastaccess', 'user_creationdate']
+    }
+
+    (new FormWizardBuilder({
+        title      : 'Add a user',
+        type       : 'user',
+        id         : (!(e instanceof Object)) ? e : undefined,
+        displayed  : displayed,
+    })).start();
+}
+
+///* users class */
 function Users() {
     Users.prototype.load_content = function(container_id, elem_id) {
-        function createAddUserButton(container) {
-            var user_fields = {
-                // By default users are sytem users (no right check)
-                // TODO remove after right management review/check
-                user_system: {
-                    type: 'hidden',
-                    value: 0
-                },
-                user_firstname: {
-                    label: 'First Name',
-                    type: 'text'
-                },
-                user_lastname: {
-                    label: 'Last Name'
-                },
-                user_email: {
-                    label: 'Email'
-                },
-                user_desc: {
-                    label: 'Description',
-                    type: 'textarea'
-                },
-                user_login: {
-                    label: 'Login'
-                },
-                user_password: {
-                    label: 'Password',
-                    type: 'password'
-                },
-            };
-            var user_opts = {
-                title: 'Add a user',
-                name: 'user',
-                fields: user_fields,
-                callback    : function(data) {
-                    createAddProfileForm(data.pk);
-                },
-            };
-                            
-            var button = $("<button>", {html : 'Add a user'}).button({
-                icons   : { primary : 'ui-icon-plusthick' }
-            });
-            button.bind('click', function() {
-                new ModalForm(user_opts).start();
-            });   
-            $(container).append(button);
-        }
-
-        function createAddProfileForm(user_id) {
-            /* retrieve profiles list  */
-            var profiles_data = [];
-            var container = $('<div>', {id: 'profiles_list'});
-            var table = $('<table>',  {id: 'profiles_table'});
-            table.appendTo(container);
-            
-            var grid = table.jqGrid({
-                datatype: 'local',
-                colNames:['profile','description'],
-                colModel :[ 
-                  {name:'profile_name', index:'profile_name', width:150, align:'left'}, 
-                  {name:'profile_desc', index:'profile_desc', width:300, sortable:false} 
-                ],
-                multiselect: true,
-                rowNum:10,
-                sortname: 'profile_name',
-                sortorder: 'desc',
-                viewrecords: true,
-                gridview: true,
-                autoencode: true,
-            }); 
-
-            $.getJSON('/api/profile', {}, function(data) { 
-                for(var i=0;i<=data.length;i++) grid.jqGrid('addRowData',i+1,data[i]);
-                grid.trigger("reloadGrid");
-            });
-    
-            container.dialog({
-                title : "Select user's profile(s)",
-                modal : true,
-                resizable       : false,
-                width           : 500,
-                closeOnEscape   : false,
-                buttons: [
-                    {
-                        text: "Ok",
-                        click: function() { 
-                            var selRowIds = table.getGridParam('selarrrow');
-                            if(selRowIds.length) { 
-                                var profile_names = [];
-                                for(index in selRowIds) {
-                                    profile_names.push(grid.getRowData(selRowIds[index]).profile_name);
-                                }
-                                $.ajax({
-                                  type: 'POST', 
-                                    async: false, 
-                                    url: '/api/user/'+ user_id +'/setProfiles', 
-                                    data: JSON.stringify( { profile_names: profile_names } ), 
-                                    contentType: 'application/json',
-                                    dataType: 'json', 
-                                });
-                            }
-                            
-                            $(this).dialog("close"); 
-                            $(this).dialog("destroy");
-                            reload_grid('users_list', '/api/user');
-                        }
-                    }
-                ]
-            });
-        }
-    
         var container = $('#' + container_id);
+
+        g_user_id = elem_id;
         create_grid({
             url: '/api/user',
             content_container_id: container_id,
             grid_id: 'users_list',
+            details: { onSelectRow : user_addbutton_action },
             colNames: [ 'user id', 'first name', 'last name', 'login', 'email' ],
             colModel: [
                 { name: 'user_id', index: 'user_id', width: 60, sorttype: "int", hidden: true, key: true },
@@ -130,9 +42,14 @@ function Users() {
                 { name: 'user_email', index: 'user_email', width: 200}
             ]
         });
-        createAddUserButton(container);
+        var user_addbutton  = $('<a>', { text : 'Add a user' }).appendTo('#' + container_id)
+                                  .button({ icons : { primary : 'ui-icon-plusthick' } });
+
+        var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
+                               'user_login', 'user_password' ];
+        $(user_addbutton).bind('click', { displayed : creation_attrs }, user_addbutton_action);
     }
-    
+  
     Users.prototype.load_details = function(container_id, elem_id) {
         var users_opts = {
             name   : 'user',
@@ -209,13 +126,8 @@ function Users() {
     }
     
 }
-    
+  
 var users = new Users();
-
-
-
-
-
 
 /* groups functions */
 
