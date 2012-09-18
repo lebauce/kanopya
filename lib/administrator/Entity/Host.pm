@@ -1,5 +1,3 @@
-# Host.pm - Object class of Ḿotherboard (Administrator side)
-
 #    Copyright © 2011-2012 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -70,69 +68,102 @@ It could be :
 
 use constant ATTR_DEF => {
     host_manager_id => {
-        pattern => '^[0-9\.]*$',
+        label        => 'Host manager',
+        type         => 'relation',
+        pattern      => '^[0-9\.]*$',
         is_mandatory => 1,
-        is_extended => 0
+        is_editable  => 0,
     },
     hostmodel_id => {
+        label        => 'Board model',
+        type         => 'relation',
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     processormodel_id => {
+        label        => 'Processor model',
+        type         => 'relation',
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     kernel_id => {
+        label        => 'Specific kernel',
+        type         => 'relation',
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1,
     },
     host_serial_number => {
+        label        => 'Serial number',
+        type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1,
     },
     host_powersupply_id => {
+        label        => 'Power supply card',
+        type         => 'relation',
         pattern      => '^\w*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     host_desc => {
+        label        => 'Description',
+        type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     active => {
+        label        => 'Active',
+        type         => 'boolean',
         pattern      => '^[01]$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 0,
     },
     host_hostname => {
+        label        => 'Hostname',
+        type         => 'string',
         pattern      => '^\w*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 0,
     },
     host_ram => {
+        label        => 'RAM capability',
+        type         => 'integer',
+        unit         => 'byte',
         pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1,
     },
     host_core => {
+        label        => 'CPU capability',
+        type         => 'integer',
         pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1,
     },
     host_initiatorname => {
+        label        => 'Iscsi initiator name',
+        type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     host_state => {
+        label        => 'Host state',
+        type         => 'string',
         pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*|locked:\d*|broken:\d*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 0,
+    },
+    ifaces => {
+        label        => 'Network interfaces',
+        type         => 'relation',
+        is_mandatory => 0,
+        is_editable  => 0,
     },
 };
 
@@ -140,52 +171,65 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new host',
-                        'perm_holder' => 'mastergroup',
+        create => {
+            description => 'create a new host',
+            perm_holder => 'mastergroup',
         },
-        'get'        => {'description' => 'view this host',
-                        'perm_holder' => 'entity',
+        get => {
+            description => 'view this host',
+            perm_holder => 'entity',
         },
-        'update'    => {'description' => 'save changes applied on this host',
-                        'perm_holder' => 'entity',
+        update => {
+            description => 'save changes applied on this host',
+            perm_holder => 'entity',
         },
-        'remove'    => {'description' => 'delete this host',
-                        'perm_holder' => 'entity',
+        remove => {
+            description => 'delete this host',
+            perm_holder => 'entity',
         },
-        'activate'=> {'description' => 'activate this host',
-                        'perm_holder' => 'entity',
+        activate => {
+            description => 'activate this host',
+            perm_holder => 'entity',
         },
-        'deactivate'=> {'description' => 'deactivate this host',
-                        'perm_holder' => 'entity',
+        deactivate => {
+            description => 'deactivate this host',
+            perm_holder => 'entity',
         },
-        'addHarddisk'=> {'description' => 'add a hard disk to this host',
-                        'perm_holder' => 'entity',
+        addHarddisk => {
+            description => 'add a hard disk to this host',
+            perm_holder => 'entity',
         },
-        'removeHarddisk'=> {'description' => 'remove a hard disk from this host',
-                        'perm_holder' => 'entity',
+        removeHarddisk => {
+            description => 'remove a hard disk from this host',
+            perm_holder => 'entity',
         },
-        'removeIface'=> {'description' => 'remove an interface from this host',
-                        'perm_holder' => 'entity',
+        removeIface => {
+            description => 'remove an interface from this host',
+            perm_holder => 'entity',
         },
-        'addIface'=> {'description' => 'add one or more interface to  this host',
-                        'perm_holder' => 'entity',
+        addIface => {
+            description => 'add one or more interface to  this host',
+            perm_holder => 'entity',
         },
-        'getAdminIp'=> {'description' => 'get ip address for administration interface',
-                        'perm_holder' => 'entity',
+        getAdminIp => {
+            description => 'get ip address for administration interface',
+            perm_holder => 'entity',
         },
-        'getIfaces'=> {'description' => 'get network interfaces',
-                        'perm_holder' => 'entity',
+        getIfaces => {
+            description => 'get network interfaces',
+            perm_holder => 'entity',
         },
-        'setperm'    => {'description' => 'set permissions on this host',
-                        'perm_holder' => 'entity',
+        setperm => {
+            description => 'set permissions on this host',
+            perm_holder => 'entity',
         },
-        'getRemoteSessionURL'   => {
-            'description'   => 'get the url for remote session',
-            'perm_holder'   => 'entity'
+        getRemoteSessionURL => {
+            description => 'get the url for remote session',
+            perm_holder => 'entity'
         },
-        'getHostType'           => {
-            'description'   => 'get the host type from host manager',
-            'perm_holder'   => 'entity'
+        getHostType => {
+            description => 'get the host type from host manager',
+            perm_holder => 'entity'
         }
     };
 }

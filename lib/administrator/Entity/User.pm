@@ -39,12 +39,16 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     user_login => {
+        label        => 'Login',
+        type         => 'string',
         pattern      => '^\w*$',
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 0
     },
     user_desc => {
+        label        => 'Description',
+        type         => 'text',
         # Impossible to check char used because of \n doesn't match with \w
         pattern      => '^.*$',
         is_mandatory => 0,
@@ -52,40 +56,52 @@ use constant ATTR_DEF => {
         is_editable  => 1
     },
     user_password => {
+        label        => 'Password',
+        type         => 'password',
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 1
     },
     user_firstname => {
+        label        => 'First name',
+        type         => 'string',
         pattern      => '^\w*$',
         is_mandatory => 1,
         is_extended  => 0,
-        is_editable  => 0
+        is_editable  => 1
     },
     user_lastname => {
+        label        => 'Last name',
+        type         => 'string',
         pattern      => '^\w*$',
         is_mandatory => 1,
         is_extended  => 0,
-        is_editable  => 0
+        is_editable  => 1
     },
     user_email => {
+        label        => 'Email',
+        type         => 'string',
         pattern      => '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$',
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 1
     },
     user_creationdate => {
+        label        => 'Account creation date',
+        type         => 'date',
         pattern      => '^.*$',
         is_mandatory => 0,
         is_extended  => 0,
         is_editable  => 0
     },
     user_lastaccess => {
+        label        => 'Last access',
+        type         => 'date',
         pattern      => '^\w*$',
         is_mandatory => 0,
         is_extended  => 0,
-        is_editable  => 1
+        is_editable  => 0,
     },
 };
 

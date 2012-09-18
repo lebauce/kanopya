@@ -30,23 +30,34 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     iface_name => {
+        label        => 'Interface name',
+        type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
+        is_editable  => 1,
     },
     iface_mac_addr => {
+        label        => 'MAC adress',
+        type         => 'string',
         pattern      => '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:' .
                         '[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',
         is_mandatory => 1,
+        is_editable  => 1,
     },
     iface_pxe => {
+        label        => 'PXE enabled',
+        type         => 'boolean',
         pattern      => '^[01]$',
         is_mandatory => 1,
+        is_editable  => 1,
     },
     host_id => {
+        type         => 'relation',
         pattern      => '^\d+$',
         is_mandatory => 1,
     },
     interface_id => {
+        type         => 'relation',
         pattern      => '^\d+$',
         is_mandatory => 0,
     },
