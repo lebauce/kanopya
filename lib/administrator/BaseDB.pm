@@ -116,9 +116,11 @@ sub getAttrDefs {
         my @relnames = $schema->relationships();
         for my $relname (@relnames) {
             my $relinfo = $schema->relationship_info($relname);
-            if (($relname ne "parent") &&
-                ($relinfo->{attrs}->{is_foreign_key_constraint}) &&
-                ($schema->has_column($relname . "_id"))) {
+            if ($relname ne "parent" &&
+                $relinfo->{attrs}->{is_foreign_key_constraint} &&
+                $schema->has_column($relname . "_id") &&
+                not defined ($relname . "_id")) {
+
                 $attr_def->{$relname . "_id"} = {
                     pattern      => '^\d*$',
                     is_mandatory => 0,
@@ -348,6 +350,7 @@ sub checkAttrs {
         foreach my $module (keys %$attributes_def) {
             if (exists $attributes_def->{$module}->{$attr}){
                 my $value = $attrs->{$attr};
+
                 if (((not defined $value) and $attributes_def->{$module}->{$attr}->{is_mandatory}) or
                     ((defined $value) and $value !~ m/($attributes_def->{$module}->{$attr}->{pattern})/)) {
                     $errmsg = "$class"."->checkAttrs detect a wrong value ($value) for param : $attr on class $module";
@@ -794,7 +797,6 @@ sub getJoin {
         $parent_join = $adm->{db}->source($hierarchy[$n - 1])->has_relationship("parent") ?
                            ($parent_join ? { parent => $parent_join } : { "parent" => undef }) :
                            $parent_join;
-
         $n -= 1;
     }
 
@@ -1081,7 +1083,11 @@ sub toJSON {
                     $hash->{relations}->{$relname} = $relinfo;
                     $hash->{relations}->{$relname}->{from} = $hierarchy[$n];
                     $hash->{relations}->{$relname}->{resource} = $resource;
-                    delete $hash->{attributes}->{$relname . "_id"};
+
+                    # We must have relation attrs within attrdef to keep
+                    # informations as label, is_editable and is_mandatory.
+
+                    # delete $hash->{attributes}->{$relname . "_id"};
                 }
             }
 
@@ -1089,7 +1095,7 @@ sub toJSON {
             pop @hierarchy;
         }
 
-        $hash->{methods}    = $self->getMethods;
+        $hash->{methods} = $self->getMethods;
 
         $hash->{pk} = {
             pattern      => '^\d*$',
@@ -1099,8 +1105,34 @@ sub toJSON {
     }
     else {
         $hash->{pk} = $self->getId;
+
+        my $label = $self->getLabelAttr(attrs => $hash);
+        $hash->{label} = $label ? $self->getAttr(name => $label) : $self->getId;
     }
+
     return $hash;
+}
+
+=head2
+
+    Get the name of the attribute that identify the object.
+
+=cut
+
+sub getLabelAttr {
+    my ($self, %args) = @_;
+    my $class = ref ($self) || $self;
+
+    General::checkParams(args => \%args, optional => { 'attrs' => $class->getAttrDefs });
+
+    my @keys = keys %{$args{attrs}};
+
+    my @attrs = grep { $_ =~ m/.*_name$/ } @keys;
+
+    if (scalar @attrs) {
+        return $attrs[0];
+    }
+    return undef;
 }
 
 =head2
