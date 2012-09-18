@@ -34,19 +34,6 @@ use Kanopya::Exceptions;
 my $log = get_logger("executor");
 my $errmsg;
 
-sub new {
-    my ($class,%args) = @_;
-
-    my $self = $class->SUPER::new(%args);
-
-    $self->connect(
-        user_name => $self->vsphere5_login,
-        password  => $self->vsphere5_pwd,
-        url       => 'https://'.$self->vsphere5_url);
-
-    return $self;
-}
-
 ######################
 # connection methods #
 ######################
@@ -84,11 +71,35 @@ sub disconnect {
         Util::disconnect();
     };
     if ($@) {
-        $errmsg = 'Could not disconnect to vCenter server: '.$@;
+        $errmsg = 'Could not disconnect from vCenter server: '.$@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
+
+=head2 negociateConnection
+
+    Desc: Check if a connection is established and create one if not
+
+=cut
+
+sub negociateConnection {
+    my ($self,%args) = @_;
+
+    $self->connect(
+        user_name => $self->vsphere5_login,
+        password  => $self->vsphere5_pwd,
+        url       => 'https://'.$self->vsphere5_url);
+
+}
+
+###########################
+# vsphere objects methods #
+###########################
+
+=head2
+
+=cut
 
 #########################
 # configuration methods #
@@ -105,14 +116,20 @@ sub disconnect {
 sub addRepository {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['repository_name', 'container_access']);
+    General::checkParams(args => \%args, required => ['host', 
+                                                      'repository_name', 
+                                                      'container_access']);
 
+    my $hypervisor_name     = $args{host}->host_hostname;
     my $container_access    = $args{container_access};
     my $container_access_ip = $container_access->container_access_ip;
     my $export_full_path    = $container_access->container_access_export;
     my @export_path         = split (':', $export_full_path);
 
-    my $view = Vim::find_entity_view(view_type => 'HostSystem');
+    my $view = Vim::find_entity_view(view_type => 'HostSystem',
+                                     filter    => { 
+                                         'name' => $hypervisor_name,
+                                     });
 
     my $datastore = HostNasVolumeSpec->new( accessMode => 'readWrite',
                                             remoteHost => $container_access_ip,
@@ -146,11 +163,12 @@ sub addRepository {
 sub startHost {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['hypervisor', 'host' ]);
+    General::checkParams(args => \%args, required => ['hypervisor', 'host']);
 
+    $log->debug("Calling startHost on EVSphere $self");
     my $host       = $args{host};
     my $hypervisor = $args{hypervisor};
-    my $guest_id   = 'debian6Guest';
+    my $guest_id   = 'debian6_64Guest';
 
     $log->info('Start host on < hypervisor '. $hypervisor->id.' >');
 
@@ -158,9 +176,12 @@ sub startHost {
         my $errmsg = "Cannot add node in cluster ".$args{host}->getClusterId().", no hypervisor available";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
+
     my %host_conf;
     my $cluster     = Entity->get(id => $host->getClusterId());
+    my $image       = $args{host}->getNodeSystemimage();
+    my $image_name  = $image->systemimage_name.'.raw';
+    my $image_size  = $image->container->container_size;
     my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
     my $host_params = $cluster->getManagerParameters(manager_type => 'host_manager');
     my $repository  = $self->getRepository(
@@ -169,26 +190,27 @@ sub startHost {
     my $datacenter  = Vsphere5Datacenter->find(hash => { 
                           vsphere5_datacenter_id => $hypervisor->vsphere5_datacenter_id
                       });
-
     
     $host_conf{hostname}   = $host->host_hostname;
     $host_conf{hypervisor} = $hypervisor->host_hostname;
     $host_conf{datacenter} = $datacenter->vsphere5_datacenter_name;
     $host_conf{guest_id}   = $guest_id;
     $host_conf{datastore}  = $repository->repository_name;
+    $host_conf{img_name}   = $image_name;
+    $host_conf{img_size}   = $image_size;
     $host_conf{memory}     = $host_params->{ram};
     $host_conf{cores}      = $host_params->{core};
     $host_conf{network}    = 'VM Network';
 
     $log->debug('new VM configuration parameters: ');
-    $log->debug(Dumper %host_conf);
+    $log->debug(Dumper \%host_conf);
 
     #Create vm in vsphere
     $self->createVm(host_conf => \%host_conf);
 
     #Declare the vsphere5 vm in Kanopya
     $self->addVM(
-        host     => $host,
+        host     => $host->_getEntity(),
         guest_id => $guest_id,
     );
 
@@ -217,11 +239,20 @@ sub createVm {
 
     my %host_conf = %{$args{host_conf}};
     my $ds_path   = '['.$host_conf{datastore}.']';
+    my $img_name  = $host_conf{img_name};
+    my $img_size  = $host_conf{img_size};
+    my $path      = $ds_path.' '.$img_name;
     my $host_view;
     my $datacenter_view;
     my $vm_folder_view;
     my $comp_res_view;
     my @vm_devices;
+
+    $log->info('trying to get Hypervisor ' .$host_conf{hypervisor}. ' view from vsphere');
+    $self->connect(
+        user_name => $self->vsphere5_login,
+        password  => $self->vsphere5_pwd,
+        url       => 'https://'.$self->vsphere5_url);
 
     #retrieve host view
     eval {
@@ -239,7 +270,7 @@ sub createVm {
     #retrieve datacenter view
     eval {
         $datacenter_view = Vim::find_entity_view(view_type => 'Datacenter',
-                                                 filter    => { 
+                                                 filter    => {
                                                      name => $host_conf{datacenter}
                                                 });
     };
@@ -250,21 +281,41 @@ sub createVm {
     }
 
     #Generate vm's devices specifications
-    my $controller_vm_dev_conf_spec = create_conf_spec();
-
+    my $controller_vm_dev_conf_spec;
+    eval {
+        $controller_vm_dev_conf_spec = create_conf_spec();
+    };
+    if ($@) {
+        $errmsg  = 'Error creating the virtual machine controller configuration';
+        $errmsg .= ': '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
     push(@vm_devices, $controller_vm_dev_conf_spec);
 
-    my $disk_vm_dev_conf_spec =
-        create_virtual_disk(ds_path => $ds_path, disksize => '4294999');
-
+    my $disk_vm_dev_conf_spec;
+    eval {
+        $disk_vm_dev_conf_spec =
+            create_virtual_disk(path => $path, disksize => $img_size);
+    };
+    if ($@) {
+        $errmsg  = 'Error creating the virtual machine disk configuration';
+        $errmsg .= ': '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
     push(@vm_devices, $disk_vm_dev_conf_spec);
 
-    my %net_settings = get_network(network_name => $host_conf{network},
-                                   poweron      => 0,
-                                   host_view    => $host_view);
-
+    my %net_settings;
+    eval {
+        %net_settings = get_network(network_name => $host_conf{network},
+                                    poweron      => 0,
+                                    host_view    => $host_view);
+    };
+    if ($@) {
+        $errmsg  = 'Error creating the virtual machine network configuration';
+        $errmsg .= ': '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
     push(@vm_devices, $net_settings{network_conf});
-
 
     my $files = VirtualMachineFileInfo->new(logDirectory      => undef,
                                             snapshotDirectory => undef,
@@ -301,12 +352,12 @@ sub createVm {
     }
 
     #finally create the VM
-    eval { 
+    eval {
         $vm_folder_view->CreateVM(config => $vm_config_spec,
                                   pool   => $comp_res_view->resourcePool);
     };
     if ($@) {
-        $errmsg  = 'Error creating the virtual machine on host '.$host_conf{hypervisor};;
+        $errmsg  = 'Error creating the virtual machine on host '.$host_conf{hypervisor};
         $errmsg .= ': '.$@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -345,7 +396,7 @@ sub powerOnVm {
 
 sub create_conf_spec {
     my $controller =
-        VirtualBusLogicController->new(key => 0,
+        VirtualLsiLogicController->new(key => 0,
                                        device => [0],
                                        busNumber => 0,
                                        sharedBus => VirtualSCSISharing->new('noSharing')
@@ -361,13 +412,14 @@ sub create_conf_spec {
 }
 
 sub create_virtual_disk {
-   my %args = @_;
-   my $ds_path  = $args{ds_path};
+   my %args     = @_;
+   my $path     = $args{path};
    my $disksize = $args{disksize};
 
+   $DB::single = 1;
    my $disk_backing_info =
        VirtualDiskFlatVer2BackingInfo->new(diskMode => 'persistent',
-                                           fileName => $ds_path);
+                                           fileName => $path);
 
    my $disk = VirtualDisk->new(backing       => $disk_backing_info,
                                controllerKey => 0,
@@ -378,7 +430,6 @@ sub create_virtual_disk {
    my $disk_vm_dev_conf_spec =
        VirtualDeviceConfigSpec->new(
            device        => $disk,
-           fileOperation => VirtualDeviceConfigSpecFileOperation->new('create'),
            operation     => VirtualDeviceConfigSpecOperation->new('add')
        );
 
