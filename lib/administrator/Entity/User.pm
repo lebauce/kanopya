@@ -23,7 +23,6 @@ use strict;
 use warnings;
 
 use Administrator;
-use Digest::MD5 "md5_hex";
 use DateTime;
 use Kanopya::Exceptions;
 use General;
@@ -87,6 +86,14 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 1
     },
+    user_sshkey => {
+        label        => 'SSH Public key',
+        type         => 'text',
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 1
+    },
     user_creationdate => {
         label        => 'Account creation date',
         type         => 'date',
@@ -101,11 +108,9 @@ use constant ATTR_DEF => {
         pattern      => '^\w*$',
         is_mandatory => 0,
         is_extended  => 0,
-        is_editable  => 0,
+        is_editable  => 0
     },
 };
-
-sub primarykey { return 'user_id' }
 
 sub methods {
     return {
@@ -173,9 +178,9 @@ sub getUsers {
 
 sub create {
     my ($class, %args) = @_;
-
     my $self = $class->SUPER::new(%args);
-    $self->{_dbix}->user_password( md5_hex($self->{_dbix}->user_password) );
+    my $cryptpasswd = General::cryptPassword(password => $self->{_dbix}->user_password);
+    $self->{_dbix}->user_password($cryptpasswd);
     my $dt = DateTime->now->set_time_zone('local');
     $self->{_dbix}->user_creationdate("$dt");
     $self->{_dbix}->user_lastaccess(undef);
@@ -195,6 +200,23 @@ sub new {
 sub update {
     my $self = shift;
     # TODO update implementation
+}
+
+
+=head2 setAttr
+
+    overide setAttr to crypt password
+
+=cut 
+
+sub setAttr {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['name']);
+    my $value;
+    if($args{name} eq 'user_password') {
+        $args{value} = General::cryptPassword(password => $args{value});
+    }
+    $self->SUPER::setAttr(%args);
 }
 
 =head2 remove

@@ -43,7 +43,7 @@ __PACKAGE__->table("user");
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 255
 
 =head2 user_firstname
 
@@ -62,6 +62,11 @@ __PACKAGE__->table("user");
   data_type: 'char'
   is_nullable: 1
   size: 255
+
+=head2 user_sshkey
+
+  data_type: 'text'
+  is_nullable: 1
 
 =head2 user_creationdate
 
@@ -100,13 +105,15 @@ __PACKAGE__->add_columns(
   "user_login",
   { data_type => "char", is_nullable => 0, size => 32 },
   "user_password",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 255 },
   "user_firstname",
   { data_type => "char", is_nullable => 1, size => 64 },
   "user_lastname",
   { data_type => "char", is_nullable => 1, size => 64 },
   "user_email",
   { data_type => "char", is_nullable => 1, size => 255 },
+  "user_sshkey",
+  { data_type => "text", is_nullable => 1 },
   "user_creationdate",
   { data_type => "date", is_nullable => 1 },
   "user_lastaccess",
@@ -230,13 +237,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-06-06 18:14:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:C784XTsBimwwIIl6CnVclQ
-
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-09-18 11:31:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2kcGbzpSqLin+XEN5dDz7g
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "user_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
+
+# You can replace this text with custom content, and it will be preserved on regeneration
 1;

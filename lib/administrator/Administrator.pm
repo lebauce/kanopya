@@ -44,7 +44,6 @@ package Administrator;
 
 use strict;
 use warnings;
-use Digest::MD5 "md5_hex";
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
@@ -141,7 +140,7 @@ sub authenticate {
     my $user_data = $schema->resultset('User')->search(
         {
             user_login => $args{login},
-            user_password => md5_hex($args{password}),
+            user_password => General::cryptPassword(password => $args{password}),
         }
     )->single;
 
