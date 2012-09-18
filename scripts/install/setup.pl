@@ -86,6 +86,7 @@ welcome();
 #Ask questions to users
 getConf();
 #Function used to generate conf files
+$answers->{crypt_salt} = join '', ('.','/',0..9,'A'..'Z','a'..'z')[rand 64, rand 64];
 genConf();
 
 # creating the graph directory to avoid bug in createUser function
@@ -252,7 +253,7 @@ my %datas = (
     kanopya_hostname         => $hostname,
     kanopya_initiator        => $kanopya_initiator,
     mb_hw_address            => $internal_net_interface_mac_add,
-    admin_password           => $answers->{dbpassword1},
+    admin_password           => crypt($answers->{dbpassword1}, '$6$'.$answers->{crypt_salt}.'$'),
     admin_kernel             => $release,
     tmstp                    => time()
 );
