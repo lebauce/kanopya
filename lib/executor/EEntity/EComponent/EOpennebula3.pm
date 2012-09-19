@@ -1035,6 +1035,18 @@ sub generateKvmVmTemplate {
                 else { $exception->rethrow(); }
             }
 
+            my $ip;
+            eval {
+                $ip = $iface->getIPAddr();
+            };
+            if ($@) {
+                my $exception = $@;
+                if (Kanopya::Exception::Internal::NotFound->caught()) {
+                    next;
+                }
+                else { $exception->rethrow(); }
+            }
+
             # generate and register vnet
             my $vnet_template = $self->generateVnetTemplate(
                 vnet_name       => $hostname.'-'.$iface->getAttr(name => 'iface_name'),

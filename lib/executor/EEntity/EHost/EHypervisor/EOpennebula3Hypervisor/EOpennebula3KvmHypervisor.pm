@@ -56,7 +56,7 @@ sub getAvailableMemory {
         $mem += $res->{content} * 1024;
     }
 
-    return $self->host_ram - $mem;
+    return $self->host_ram * $self->opennebula3->overcommitment_memory_factor - $mem;
 
 }
 

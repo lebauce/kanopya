@@ -124,6 +124,16 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
+    },
+    overcommitment_cpu_factor => {
+        pattern     => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    overcommitment_memory_factor => {
+        pattern     => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
     }
 };
 
@@ -137,6 +147,16 @@ sub methods {
         },
     };
 }
+
+
+sub getOvercommitmentFactors {
+    my ($self) = @_;
+    return {
+        overcommitment_cpu_factor    => $self->overcommitment_cpu_factor,
+        overcommitment_memory_factor => $self->overcommitment_memory_factor,
+    }
+}
+
 
 =head2 getHypervisors
 

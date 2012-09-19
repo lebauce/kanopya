@@ -157,6 +157,22 @@ __PACKAGE__->add_columns(
     extra => { list => [0 .. 3] },
     is_nullable => 0,
   },
+  "overcommitment_cpu_factor",
+  {
+    data_type => "double",
+    default_value => 1,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
+  "overcommitment_memory_factor",
+  {
+    data_type => "double",
+    default_value => 1,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
+
+
 );
 __PACKAGE__->set_primary_key("opennebula3_id");
 

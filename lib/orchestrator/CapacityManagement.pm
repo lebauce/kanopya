@@ -85,9 +85,21 @@ sub new {
             for my $hypervisor (@$hypervisors) {
                 my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
                 $self->{_hvs_mem_available}->{$hypervisor->id} = $ehypervisor->getAvailableMemory;
+
+                # Manage CPU Overcommitment when cloud_manager is defined
+                $log->info('cpu factor '.($self->{_cloud_manager}->getOvercommitmentFactors()->{overcommitment_cpu_factor}));
+
+                $self->{_infra}->{hvs}->{$hypervisor->id}
+                                      ->{hv_capa}
+                                      ->{cpu} *= $self->{_cloud_manager}
+                                                      ->getOvercommitmentFactors()->{overcommitment_cpu_factor};
+
+
+
             }
         }
     }
+    $log->debug(Dumper $self->{_infra});
     return $self;
 }
 
@@ -166,7 +178,6 @@ sub _constructInfra{
         master_hv => $master_hv,
     };
 
-    $log->debug(Dumper $current_infra);
     return $current_infra;
 }
 
