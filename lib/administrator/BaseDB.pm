@@ -25,7 +25,7 @@ sub methods {
     return {
         toString => {
             description => 'toString',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
         },
         create => {
             description => 'create a new object',
@@ -96,56 +96,53 @@ sub getAttrDefs {
     while(@classes) {
         my $attr_def = {};
         my $currentclass = join('::', @classes);
+
         if ($currentclass ne "BaseDB") {
             requireClass($currentclass);
-
             eval {
                 $attr_def = $currentclass->getAttrDef();
             };
-        }
 
-        my $schema;
-        eval {
-            $schema = $class->{_dbix}->result_source();
-        };
-        if ($@) {
-            my $adm = Administrator->new();
-            $schema = $adm->{db}->source(_buildClassNameFromString($currentclass));
-        }
-
-        my @relnames = $schema->relationships();
-        for my $relname (@relnames) {
-            my $relinfo = $schema->relationship_info($relname);
-            if ($relname ne "parent" &&
-                $relinfo->{attrs}->{is_foreign_key_constraint} &&
-                $schema->has_column($relname . "_id") &&
-                not defined ($relname . "_id")) {
-
-                $attr_def->{$relname . "_id"} = {
-                    pattern      => '^\d*$',
-                    is_mandatory => 0,
-                    is_extended  => 0
-                };
+            my $schema;
+            eval {
+                $schema = $class->{_dbix}->result_source();
+            };
+            if ($@) {
+                my $adm = Administrator->new();
+                $schema = $adm->{db}->source(_buildClassNameFromString($currentclass));
             }
-        }
 
-        for my $column ($schema->columns) {
-            if (not defined ($attr_def->{$column})) {
-                $attr_def->{$column} = {
-                    pattern      => '^.*$',
-                    is_mandatory => 0,
-                    is_extended  => 0
-                };
+            my @relnames = $schema->relationships();
+            for my $relname (@relnames) {
+                my $relinfo = $schema->relationship_info($relname);
+                if ($relname ne "parent" &&
+                    $relinfo->{attrs}->{is_foreign_key_constraint} &&
+                    $schema->has_column($relname . "_id") && not defined ($relname . "_id")) {
+
+                    $attr_def->{$relname . "_id"} = {
+                        pattern      => '^\d*$',
+                        is_mandatory => 0,
+                        is_extended  => 0
+                    };
+                }
+            }
+
+            for my $column ($schema->columns) {
+                if (not defined ($attr_def->{$column})) {
+                    $attr_def->{$column} = {
+                        pattern      => '^.*$',
+                        is_mandatory => 0,
+                        is_extended  => 0
+                    };
+                }
             }
         }
 
         if ($attr_def) {
             $result->{$currentclass} = $attr_def;
         }
-
         pop @classes;
     }
-
     return $result;
 }
 
@@ -575,7 +572,15 @@ sub fromDBIx {
 #        _entity_id => $args{row}->id
 #    }, $name;
 
-     return $name->get(id => $args{row}->id);
+     # If the primary key is multiple, gevie the array ref to the get function
+     my $id;
+     my @multiple_id = $args{row}->id;
+     if (scalar(@multiple_id) > 1) {
+         $id = \@multiple_id;
+     } else {
+         $id = $multiple_id[0];
+     }
+     return $name->get(id => $id);
 }
 
 =head2

@@ -312,20 +312,16 @@ sub getRow {
 	my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['id', 'table']);
-
-    if ((! exists $args{table} or ! defined $args{table}) ||
-        (! exists $args{id} or ! defined $args{id})) {
-            $errmsg = "Administrator->getRow need a table and id named argument!";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => [ 'id', 'table' ]);
 
     my $dbix;
     eval {
-        $dbix = $self->{db}->resultset( $args{table} )->find( $args{id} );
+        if (ref($args{id}) eq 'ARRAY') {
+            $dbix = $self->{db}->resultset( $args{table} )->find(@{$args{id}});
+        } else {
+            $dbix = $self->{db}->resultset( $args{table} )->find($args{id});
+        }
 	};
-    
     if ($@) {
         $errmsg = "Administrator->getRow error ".$@;
         $log->error($errmsg);
@@ -337,7 +333,7 @@ sub getRow {
         $log->warn($errmsg);
         throw Kanopya::Exception::Internal::NotFound(error => $errmsg);
     }
-    
+
     return $dbix;
 }	
 
