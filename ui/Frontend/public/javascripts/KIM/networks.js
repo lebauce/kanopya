@@ -38,7 +38,6 @@ function networks_associatepoolipbutton_action(network, associated, cid) {
     if (!associated) {
         associated = new Array();
     }
-
     $.ajax({
         url     : '/api/poolip',
         success : function(poolips) {
@@ -88,9 +87,9 @@ function networks_details_poolips(cid, eid) {
             isvlan  = true;
         }
     }
-    var     expand  = (!isvlan) ? 'network_poolips,network_poolips.poolip' : 'parent,parent.network_poolips,parent.network_poolips.poolip';
+
     $.ajax({
-        url     : '/api/network/' + eid + '?expand=' + expand,
+        url     : '/api/network/' + eid + '?expand=network_poolips,network_poolips.poolip',
         success : function(data) {
             create_grid({
                 data                    : data.network_poolips,
@@ -110,7 +109,7 @@ function networks_details_poolips(cid, eid) {
             var associatepoolipbutton   = $('<a>', { text : 'Associate a Pool IP' }).appendTo('#' + cid)
                                             .button({ icons : { primary : 'ui-icon-plusthick' } });
             $(associatepoolipbutton).bind('click', function() {
-                var pips    = (isvlan) ? data.parent.network_poolips : data.network_poolips;
+                var pips = data.network_poolips;
                 networks_associatepoolipbutton_action(eid, pips, cid);
             });
 

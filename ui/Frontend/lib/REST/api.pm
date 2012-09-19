@@ -154,14 +154,16 @@ sub db_to_json {
         }
     }
 
+    # Usefull for including relation object contents
     if (defined ($expand) and $expand) {
-        my $exp     = [];
+        my $expands     = [];
         my $subexp  = {};
+
         for my $key (@$expand) {
             my @key     = split('\.', $key);
             my $size    = @key;
             if ($size == 1) {
-                push(@$exp, $key);
+                push(@$expands, $key);
             }
             else {
                 if (not exists($subexp->{$key[0]})) {
@@ -170,12 +172,24 @@ sub db_to_json {
                 push(@{$subexp->{$key[0]}}, ($#key == 1) ? $key[1] : join('.', @key[1..$#key]));
             }
         }
-        for my $key (@$exp) {
-            if ($basedb->{_dbix}->result_source->has_relationship($key)) {
+
+        for my $key (@$expands) {
+            # Search for $key in relations, possibly in upper classes
+            my $is_relation;
+            my $dbix = $basedb->{_dbix};
+            while ($dbix) {
+                if ($dbix->result_source->has_relationship($key)) {
+                    $is_relation = $dbix->result_source->relationship_info($key)->{attrs}->{accessor};
+                    last;
+                }
+                $dbix = $dbix->result_source->has_relationship('parent') ? $dbix->parent : undef;
+            }
+
+            if ($is_relation) {
                 my $nextexpand  = $subexp->{$key} || [];
-                if ($basedb->{_dbix}->result_source->relationship_info($key)->{attrs}->{accessor} eq "multi") {
+                if ($is_relation eq 'multi') {
                     my $children = [];
-                    for my $item ($basedb->{_dbix}->$key) {
+                    for my $item ($dbix->$key) {
                         push @$children, db_to_json($item, $nextexpand);
                     }
                     $json->{$key} = $children;
@@ -189,7 +203,6 @@ sub db_to_json {
             }
         }
     }
-
     return $json;
 }
 
@@ -313,7 +326,6 @@ sub setupREST {
         resource "api/$resource" =>
             get    => sub {
                 content_type 'application/json';
-
                 require (General::getLocFromClass(entityclass => $class));
 
                 my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
@@ -492,7 +504,6 @@ sub setupREST {
 
         get '/api/' . $resource . '/?' => sub {
             content_type 'application/json';
-
             require (General::getLocFromClass(entityclass => $class));
 
             my $objs = [];
