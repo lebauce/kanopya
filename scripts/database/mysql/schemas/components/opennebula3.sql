@@ -7,7 +7,7 @@ SET foreign_key_checks=0;
 --
 
 CREATE TABLE `opennebula3` (
-  `opennebula3_id` int(8) unsigned NOT NULL,  
+  `opennebula3_id` int(8) unsigned NOT NULL,
   `install_dir` char(255) NOT NULL DEFAULT '/srv/cloud/one',
   `host_monitoring_interval` int unsigned NOT NULL DEFAULT 600,
   `vm_polling_interval` int unsigned NOT NULL DEFAULT 600,
@@ -17,6 +17,8 @@ CREATE TABLE `opennebula3` (
   `port` int unsigned NOT NULL DEFAULT 2633,
   `hypervisor` char(255) NOT NULL DEFAULT 'xen',
   `debug_level` enum('0','1','2','3') NOT NULL DEFAULT '3',
+  `overcommitment_cpu_factor` double unsigned NOT NULL DEFAULT '1',
+  `overcommitment_memory_factor` double unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`opennebula3_id`),
   CONSTRAINT FOREIGN KEY (`opennebula3_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
