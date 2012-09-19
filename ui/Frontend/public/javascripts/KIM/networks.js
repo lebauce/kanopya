@@ -34,6 +34,11 @@ function networks_addbutton_action(e, isvlan) {
 }
 
 function networks_associatepoolipbutton_action(network, associated, cid) {
+    // Workaround, caller sometimes give 'null' as associated value.
+    if (!associated) {
+        associated = new Array();
+    }
+
     $.ajax({
         url     : '/api/poolip',
         success : function(poolips) {
