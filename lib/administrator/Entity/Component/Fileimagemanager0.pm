@@ -38,7 +38,13 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    image_type => {
+        pattern      => '^raw|vmdk$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
