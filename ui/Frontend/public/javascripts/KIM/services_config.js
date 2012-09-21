@@ -15,12 +15,10 @@ var ComponentsFields = {
                         'smtp_server','smtp_connect_timeout',
                         'daemon_method','lvs_id'],      
     'mysql5'        : ['mysql5_bindaddress','mysql5_port','mysql5_datadir'] ,
-    'opennebula3'   : ['install_dir','host_monitoring_interval',
-                       'host_monitoring_interval','vm_dir',
-                       'scripts_remote_dir','image_repository_path',
-                       'port','hypervisor','debug_level',
-                       'overcommitment_cpu_factor','overcommitment_memory_factor'], 
-     
+    'opennebula3'   : ['host_monitoring_interval', 'vm_polling_interval',
+                       'port', 'hypervisor', 'debug_level',
+                       'overcommitment_cpu_factor',
+                       'overcommitment_memory_factor' ]
 };
 
 function getComponentTypes() {

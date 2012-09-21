@@ -142,8 +142,8 @@ use constant ATTR_DEF => {
         type         => 'enum',
         options      => ['0','1','2','3'],
         pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_editable  => 0
+        is_mandatory => 1,
+        is_editable  => 1
     },
     overcommitment_cpu_factor => {
         label        => 'Overcommitment cpu factor',
