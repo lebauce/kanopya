@@ -48,7 +48,37 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    puppetagent2_options => {
+        label         => 'Puppet agent options',
+        type          => 'string',
+        pattern       => '^.*$',
+        is_mandatory  => 0,
+        is_editable   => 1,
+    },
+    puppetagent2_mode => {
+        label         => 'Puppet Master to use',
+        type          => 'enum',
+        options       => ['kanopya','custom'],
+        pattern       => '^.*$',
+        is_mandatory  => 1,
+        is_editable   => 1,
+    },
+    puppetagent2_masterip => {
+        label         => 'Puppet Master IP',
+        type          => 'string',
+        pattern       => '^.*$',
+        is_mandatory  => 0,
+        is_editable   => 1,
+    },
+    puppetagent2_masterfqdn => {
+        label         => 'Puppet Master FQDN',
+        type          => 'string',
+        pattern       => '^.*$',
+        is_mandatory  => 0,
+        is_editable   => 1,
+    },
+};
 sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
@@ -58,12 +88,7 @@ sub getConf {
     if($confindb) {
         %conf = $confindb->get_columns();
     } else {
-        %conf = {
-            puppetagent2_options    => '',
-            puppetagent2_mode       => 'kanopya',
-            puppetagent2_masterip   => '',
-            puppetagent2_masterfqdn => '' 
-        };
+        %conf = %{getBaseConfiguration()};
     }
     return \%conf; 
 }
@@ -75,7 +100,7 @@ sub setConf {
     General::checkParams(args => \%args, required => ['conf']);
 
     my $conf = $args{conf};
-    if ($conf->{puppetagent2_mode}) {        
+    if ($conf->{puppetagent2_mode} eq 'kanopya') {        
         my $config = Kanopya::Config::get('executor');
         my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
         $conf->{puppetagent2_masterip} = $kanopya_cluster->getMasterNodeIp();
@@ -103,7 +128,14 @@ sub getHostsEntries {
     return [ $entry ];
 }
 
-
+sub getBaseConfiguration {
+	return {
+        puppetagent2_options    => '',
+        puppetagent2_mode       => 'kanopya',
+        puppetagent2_masterip   => '',
+        puppetagent2_masterfqdn => '' 
+    };
+}
 
 =head1 DIAGNOSTICS
 
