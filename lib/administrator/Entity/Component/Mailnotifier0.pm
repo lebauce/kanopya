@@ -36,30 +36,39 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1,
     },
     smtp_login => {
         label        => 'Account login',
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     smtp_passwd => {
         label        => 'Account password',
         type         => 'password',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     use_ssl => {
-        label        => 'Account password',
+        label        => 'Use SSL',
         type         => 'checkbox',
         pattern      => '^[01]$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
 };
+
+sub getBaseConfiguration {
+    return {
+        smtp_server => '',
+        smtp_login  => '',
+        smtp_passwd => '',
+        use_ssl     => 0
+    };
+}
 
 sub getAttrDef { return ATTR_DEF; }
 

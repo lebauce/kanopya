@@ -81,63 +81,103 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     install_dir => {
+        label        => 'Installation directory',
+        type         => 'string',
         pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 0
     },
     host_monitoring_interval => {
+        label        => 'Host monitoring interval',
+        type         => 'string',
         pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1
     },
     vm_polling_interval => {
+        label        => 'VM polling interval',
+        type         => 'string',
         pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1
     },
     vm_dir => {
+        label        => 'VM directory',
+        type         => 'string',
         pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 0
     },
     scripts_remote_dir => {
+        label        => 'Scripts remote directory',
+        type         => 'string',
         pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 0
     },
     image_repository_path => {
+        label        => 'Images repository path',
+        type         => 'string',
         pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 0
     },
     port => {
+        label        => 'Port',
+        type         => 'string',
         pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1
     },
     hypervisor => {
+        label        => 'Hypervisor',
+        type         => 'enum',
+        options      => ['kvm','xen'],
         pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1
     },
     debug_level => {
+        label        => 'Debug level',
+        type         => 'enum',
+        options      => ['0','1','2','3'],
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 0
     },
     overcommitment_cpu_factor => {
+        label        => 'Overcommitment cpu factor',
+        type         => 'string',
         pattern     => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1
     },
     overcommitment_memory_factor => {
+        label        => '0vercommitment memory factor',
+        type         => 'string',
         pattern     => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1
     }
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getBaseConfiguration {
+    return {
+        install_dir => '/srv/cloud/one',
+        host_monitoring_interval => '600',
+        vm_polling_interval => '600',
+        vm_dir => '/srv/cloud/one/var',
+        scripts_remote_dir => '/var/tmp/one',
+        image_repository_path => '/srv/cloud/images',
+        port => '2633',
+        hypervisor => 'kvm',
+        debug_level => '3',
+        overcommitment_cpu_factor => '1',
+        overcommitment_memory_factor => '1'
+    };
+}
 
 sub methods {
     return {

@@ -64,7 +64,24 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    php5_session_handler => {
+        label => 'Session handler',
+        type => 'enum',
+        options => ['files','memcache'],
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1,
+    },
+    php5_session_path => {
+        label => 'Session path for files handler',
+        type => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1,
+    }
+};
+
 sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
@@ -101,6 +118,7 @@ sub setConf {
 sub getBaseConfiguration {
     return {
         php5_session_path => "/var/lib/php5",
+        php5_session_handler => 'files'
     };
 }
 

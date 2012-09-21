@@ -64,21 +64,27 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	mysql5_port        => { pattern        => '^\d*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-    mysql5_datadir     => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-    mysql5_bindaddress => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
+	mysql5_port        => { 
+        label          => 'Port',
+        type           => 'string',
+        pattern        => '^\d*$',
+        is_mandatory   => 1,
+        is_editable    => 1
+    },
+    mysql5_datadir     => { 
+        label          => 'Data directory',
+        type           => 'string',
+        pattern        => '^.*$',
+        is_mandatory   => 1,
+        is_editable    => 1
+    },
+    mysql5_bindaddress => { 
+        label          => 'Bind address',
+        type           => 'string',
+        pattern        => '^.*$',
+        is_mandatory   => 1,
+        is_editable    => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

@@ -64,7 +64,16 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    memcached1_port => {
+        label => 'Port',
+        type => 'string',
+        pattern      => '^[0-9]+$',
+        is_mandatory => 1,
+        is_editable  => 1,
+    },
+};
+
 sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
@@ -94,6 +103,12 @@ sub setConf {
 
     # create
     $conf_row = $self->{_dbix}->create( $conf );
+}
+
+sub getBaseConfiguration {
+    return {
+        memcached1_port => '11211'
+    };
 }
 
 # Commented because we want check this component only on master node

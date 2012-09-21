@@ -64,27 +64,36 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    apache2_loglevel   => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-
-    apache2_serverroot => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                           },
-    apache2_ports      => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-    apache2_sslports   => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
+    apache2_loglevel   => { 
+        label        => 'Log level',
+        type         => 'enum',
+        options      => ['debug','info','notice','warn','error','crit',
+                         'alert','emerg'], 
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1,
+    },
+    apache2_serverroot => { 
+        label        => 'Server root',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    apache2_ports      => { 
+        label        => 'HTTP Port',
+        type         => 'string',
+        pattern        => '^.*$',
+        is_mandatory   => 1,
+        is_editable    => 1
+    },
+    apache2_sslports   => { 
+        label        => 'SSL Port',
+        type         => 'string',
+        pattern        => '^.*$',
+        is_mandatory   => 0,
+        is_editable    => 1
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

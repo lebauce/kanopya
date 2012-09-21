@@ -379,7 +379,9 @@ var FormWizardBuilder = (function() {
             }
 
             // Disable empty non mandatory fields
-            if ($(input).val() === '' && ! this.attributedefs[field].is_mandatory) {
+            if (toInputType(this.attributedefs[field].type) === 'select'
+                && $(input).val() === '' 
+                && ! this.attributedefs[field].is_mandatory) {
                 $(input).attr('disabled', 'disabled');
             }
         }

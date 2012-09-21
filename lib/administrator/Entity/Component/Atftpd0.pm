@@ -62,7 +62,38 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    atftpd0_options => { 
+        label        => 'Daemon options',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1,
+    },
+    atftpd0_repository => { 
+        label        => 'Repository path',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    atftpd0_use_inetd => {
+        label        => 'Use inetd',
+        type         => 'enum',
+        options      => ['TRUE','FALSE'],
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    atftpd0_logfile => {
+        label        => 'Log file path',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+};
+
 sub getAttrDef { return ATTR_DEF; }
 
 sub getConf{
@@ -94,6 +125,16 @@ sub getExecToTest {
                          return_code => '0'}
     };
 }
+
+sub getBaseConfiguration {
+    return {
+        atftpd0_options    => '--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5',
+        atftpd0_repository => '/tftp',
+        atftpd0_use_inetd  => 'FALSE',
+        atftpd0_logfile    => '/var/log/atftpd.log',
+    };
+}
+
 
 =head1 DIAGNOSTICS
 

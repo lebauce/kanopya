@@ -66,46 +66,53 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     notification_email_from => {
+        label           => 'Email from',
+        type            => 'string',
         pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 0
+        is_mandatory    => 1,
+        is_editable     => 1
     },
     notification_email      => {
-    
+        label           => 'Notification email',
+        type            => 'string',
         pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 0
+        is_mandatory    => 1,
+        is_editable     => 1
     },
     daemon_method           => {
+        label           => 'Daemon method',
+        type            => 'enum',
+        options         => ['master','backup','both'],
         pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 0
+        is_mandatory    => 1,
+        is_editable     => 1
     },
     smtp_connect_timeout    => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 0
+        label           => 'Connect timeout',
+        type            => 'string',
+        pattern         => '^[0-9]+$',
+        is_mandatory    => 1,
+        is_editable     => 1
     },
     smtp_server             => {
+        label           => 'SMTP server',
+        type            => 'string',
         pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 0
+        is_mandatory    => 1,
+        is_editable     => 1
     },
     lvs_id                  => {
+        label           => 'Lvs identificator',
+        type            => 'string',
         pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
+        is_mandatory    => 1,
         is_editable     => 0
     },
     iface                   => {
+        label           => 'Interface',
+        type            => 'string',
         pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
+        is_mandatory    => 1,
         is_editable     => 0
     }
 };
