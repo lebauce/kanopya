@@ -66,17 +66,20 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	monitor_server_ip   => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-
-    snmpd_options => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                           },
+	monitor_server_ip => { 
+        label        => 'SNMP Server IP',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    snmpd_options => { 
+        label        => 'SNMP agent options',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
 };
 
 
