@@ -188,6 +188,7 @@ function addFieldUnit(field_info, cont, id, selected_unit) {
             $(cont).append( field_info.unit );
         }
     }
+    return select_unit;
 }
 
 // Retrieve selected unit (see addFieldUnit())
@@ -199,7 +200,8 @@ function getUnitMultiplicator(id) {
     return 1;
 }
 
-/* Compute the html input type corresponding to
+/* 
+ * Compute the html input type corresponding to
  * the database attribute type.
  */
 function toInputType(type) {
@@ -208,8 +210,7 @@ function toInputType(type) {
                   text     : 'textarea',
                   boolean  : 'checkbox',
                   enum     : 'select',
-                  relation : 'select',
-                  date     : 'date' };
+                  relation : 'select' };
 
     return types[type] !== undefined ? types[type] : type;
 }
@@ -226,6 +227,29 @@ function getRawValue(val, unit_field_id) {
         return prefix + (val * getUnitMultiplicator(unit_field_id));
     }
     return val * getUnitMultiplicator(unit_field_id);
+}
+
+function ajax(method, route, data) {
+    var response;
+    try {
+        $.ajax({
+            type        : method,
+            async       : false,
+            url         : route,
+            data        : data,
+            dataTYpe    : 'json',
+            error       : function(xhr, status, error) {
+                console.log('Ajax call failled: ' + xhr.status);
+            },
+            success     : $.proxy(function(d) {
+                response = d;
+            }, this)
+        });
+    }
+    catch (error) {
+        console.log('Ajax call failled: ' + error.message);
+    }
+    return response;
 }
 
 function ucfirst(str) {
