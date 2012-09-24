@@ -762,16 +762,6 @@ sub _translateFormula {
     return join('',@array);
 }
 
-=head2 update
-
-=cut
-
-sub update {
-    my $self = shift;
-
-    # TODO update implementation
-}
-
 =head2 remove
 
 =cut

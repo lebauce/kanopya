@@ -69,32 +69,6 @@ sub getProcessormodels {
     return $class->search(%args);
 }
 
-=head2 create
-
-=cut
-
-sub create {
-    my $self = shift;
-
-    $self->save();
-}
-
-=head2 update
-
-=cut
-
-sub update {}
-
-=head2 remove
-
-=cut 
-
-sub remove {
-    my $self = shift;
-
-    $self->SUPER::delete();
-}
-
 sub getAttrDef{
     return ATTR_DEF;
 }

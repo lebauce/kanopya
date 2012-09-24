@@ -58,6 +58,8 @@ use constant ATTR_DEF => {
     },
 };
 
+sub getAttrDef{ return ATTR_DEF; }
+
 sub primarykey { return 'systemimage_id'; }
 
 sub methods {
@@ -166,16 +168,6 @@ sub installedComponentLinkCreation {
     $self->{_dbix}->components_installed->create(\%args);
 }
 
-=head2 update
-
-=cut
-
-sub update {
-    my $self = shift;
-
-    # TODO update implementation
-}
-
 =head2 remove
 
 =cut
@@ -194,50 +186,6 @@ sub remove {
         }
     );
 }
-
-sub getAttrDef{
-    return ATTR_DEF;
-}
-
-#sub clone {
-#    my $self = shift;
-#    my %args = @_;
-#    
-#    General::checkParams(args => \%args, required=>[ "systemimage_name", "systemimage_desc" ]);
-#
-#    my $sysimg_id = $self->getAttr(name => 'systemimage_id');
-#    if (! defined $sysimg_id) {
-#        $errmsg = "Entity::Systemimage->clone needs a systemimage_id parameter!";
-#        $log->error($errmsg);
-#        throw Kanopya::Exception::Internal(error => $errmsg);
-#    }
-#    $args{systemimage_id} = $sysimg_id;
-#    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%args));
-#    Entity::Operation->enqueue(priority => 200,
-#                       type     => 'CloneSystemimage',
-#                       params   => \%args);
-#       
-#}
-
-#sub activate{
-#    my $self = shift;
-#    
-#    my  $adm = Administrator->new();
-#    $log->debug("New Operation ActivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
-#    Entity::Operation->enqueue(priority => 200,
-#                   type     => 'ActivateSystemimage',
-#                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
-#}
-
-#sub deactivate{
-#    my $self = shift;
-#    
-#    my  $adm = Administrator->new();
-#    $log->debug("New Operation DeactivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
-#    Entity::Operation->enqueue(priority => 200,
-#                   type     => 'DeactivateSystemimage',
-#                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
-#}
 
 =head2 toString
 

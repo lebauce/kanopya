@@ -124,33 +124,6 @@ sub getGroups {
     return $class->search(%args);
 }
 
-=head2 create
-
-=cut
-
-sub create {
-    my ($class, %args) = @_;
-
-    my $self = $class->SUPER::new(%args);
-    return $self;
-}
-
-=head2 update
-
-=cut
-
-sub update {}
-
-=head2 remove
-
-=cut
-
-sub remove {
-    my ($self) = @_;
-
-    $self->SUPER::delete();
-}
-
 =head2 getSize
 
     Class : public
