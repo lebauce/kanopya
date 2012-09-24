@@ -10,8 +10,10 @@ function user_addbutton_action(e, displayed) {
     if (e instanceof Object && e.data.displayed !== undefined) {
         displayed = e.data.displayed;
     } else {
-        displayed = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
-                      'user_login', 'user_password', 'user_lastaccess', 'user_creationdate']
+        displayed = [ 'user_firstname', 'user_lastname', 'user_email', 
+                      'user_desc', 'user_login', 'user_password', 
+                      'user_lastaccess', 'user_creationdate',
+                      'user_sshkey' ]
     }
 
     (new FormWizardBuilder({
@@ -46,7 +48,7 @@ function Users() {
                                   .button({ icons : { primary : 'ui-icon-plusthick' } });
 
         var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
-                               'user_login', 'user_password' ];
+                               'user_login', 'user_password','user_sshkey' ];
         $(user_addbutton).bind('click', { displayed : creation_attrs }, user_addbutton_action);
     }
   
