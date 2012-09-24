@@ -34,106 +34,144 @@ var FormWizardBuilder = (function() {
         }
 
         // Initialize the from
-        this.form       = $("<form>", { method : method, action : action });
-        this.table      = $("<table>").css('width', '100%').appendTo($(this.form));
-        this.stepTables = [];
+        this.form   = $("<form>", { method : method, action : action });
+        this.table = $("<table>");
+        this.tables = [];
 
         this.form.appendTo(this.content).append(this.table);
 
         this.attributedefs = {};
 
         // Retrieve data structure and values from api
-        var attributes;
-        var relations;
-        $.ajax({
-            type        : 'GET',
-            url         : '/api/attributes/' + this.type,
-            dataType    : 'json',
-            async       : false,
-            success     : $.proxy(function(data) {
-                attributes = data.attributes;
-                relations  = data.relations;
-            }, this)
-        });
+        var response = ajax('GET', '/api/attributes/' + this.type);
+        var attributes = response.attributes;
+        var relations  = response.relations;
+
+        this.table.css('width', 500);
 
         // If it is an update form, retrieve old datas from api
         var values = {};
-        if (this.id != null) {
-            $.ajax({
-                type        : 'GET',
-                async       : false,
-                url         : '/api/' + this.type + '/' + this.id,
-                dataType    : 'json',
-                success     : function(data) {
-                    values = data;
+        if (this.id) {
+            var url = '/api/' + this.type + '/' + this.id;
+
+            // For each relation 1-N, use expand to get related entries with object values
+            if (this.relations) {
+                var expands = [];
+                for (relation in this.relations) if (this.relations.hasOwnProperty(relation)) {
+                    expands.push(relation);
                 }
-            });
+                url += '?expand=' + expands.join(',');
+            }
+            values = ajax('GET', url);
         }
 
         // Firstly merge the attrdef with possible raw attrdef given in params
         jQuery.extend(true, attributes, this.rawattrdef);
 
+        // Build the form section corresponding to the object/class attributes
+        this.buildFromAttrDef(attributes, this.displayed, values, relations);
+
+        // For each relation 1-N, list all entries, add input to create an entry
+        for (relation_name in this.relations) if (this.relations.hasOwnProperty(relation_name)) {
+            var relationdef = relations[relation_name];
+
+            // Get the relation type attrdef
+            var response = ajax('GET', '/api/attributes/' + relationdef.resource);
+            var rel_attributedefs = response.attributes;
+            var rel_relationdefs  = response.relations;
+
+            // Tag attr defs as belongs to a relation
+            for (var name in rel_attributedefs) {
+                rel_attributedefs[name].belongs_to = relation_name;
+            }
+
+            // If creation, find the foreign key name to remove the attr from relation attrs
+            var foreign;
+            for (var cond in relationdef.cond) if (cond.indexOf('foreign.') >= 0) {
+                foreign = cond.substring(8);
+            }
+            if (!foreign) {
+                throw new Error("FormWizardBuilder: Could not find the foreign key for relation " + relation_name);
+            }
+            if (!this.id) {
+                delete rel_attributedefs[foreign];
+            } else {
+                rel_attributedefs[foreign].value = this.id;
+            }
+
+            // Build in one line the form inputs corresponding to the relation
+            var add_button = $("<input>", { text : 'Add', class : 'wizard-ignore', type: 'button' });
+            var add_button_line = $("<tr>").css('position', 'relative');
+            $("<td>", { colspan : 2 }).append(add_button).appendTo(add_button_line);
+            this.findTable(this.attributedefs[relation_name].label || relation_name, this.attributedefs[relation_name].step).append(add_button_line);
+
+            var _this = this;
+            add_button.bind('click', function() {
+                _this.buildFromAttrDef(rel_attributedefs, _this.relations[relation_name], {},
+                                       rel_relationdefs, _this.attributedefs[relation_name].label || relation_name);
+
+            });
+            add_button.button({ icons : { primary : 'ui-icon-plusthick' } });
+            add_button.val('Add');
+
+            // For each relation entries, add filled inputs in one line
+            for (var entry in values[relation_name]) {
+                this.buildFromAttrDef(rel_attributedefs, this.relations[relation_name],
+                                      values[relation_name][entry], rel_relationdefs,
+                                      this.attributedefs[relation_name].label || relation_name);
+            }
+        }
+    }
+
+    FormWizardBuilder.prototype.buildFromAttrDef = function(attributes, displayed, values, relations, listing) {
+        var ordered_attributes = {};
+
         // Building a new hash according to the orderer list of displayed attrs
-        for (displayed in this.displayed) {
-            this.attributedefs[this.displayed[displayed]] = attributes[this.displayed[displayed]];
-            delete attributes[this.displayed[displayed]];
+        for (name in displayed) {
+            ordered_attributes[displayed[name]] = attributes[displayed[name]];
+            delete attributes[displayed[name]];
         }
         for (hidden in attributes) {
             attributes[hidden].hidden = true;
-            this.attributedefs[hidden] = attributes[hidden];
+            ordered_attributes[hidden] = attributes[hidden];
         }
 
+        // Extends the global attribute def hash with the new one.
+        jQuery.extend(true, this.attributedefs, ordered_attributes);
+
         // For each attributes, add an input to the form
-        for (var attr in this.attributedefs) if (this.attributedefs.hasOwnProperty(attr)) {
-            var value = values[attr] || this.attributedefs[attr].value;
+        for (var name in ordered_attributes) if (ordered_attributes.hasOwnProperty(name)) {
+            var value = this.attributedefs[name].value || values[name] || undefined;
 
             // Get options for select inputs
-            if (this.attributedefs[attr].type === 'relation' ||
-                this.attributedefs[attr].type === 'enum') {
-                this.buildSelectOptions(attr, value, relations);
+            if (this.attributedefs[name].type === 'relation' && this.attributedefs[name].relation === 'single' &&
+                this.attributedefs[name].options === undefined) {
+                this.attributedefs[name].options = this.buildSelectOptions(name, value, relations);
             }
 
             // Finally create the input field with label
-            this.newFormInput(attr, this.attributedefs[attr], value);
+            this.newFormInput(name, value, listing);
         }
 
-        // For each relation 1-N, list all entries, add input to create an entry
-        for (relation in this.relations) if (this.relations.hasOwnProperty(relation)) {
-            var relationdef = relations[relation]
-
-            // Get the relation type attrdef
-            var relation_attrdefs;
-            var relation_reldefs;
-            $.ajax({
-                type     : 'GET',
-                async    : false,
-                url      : '/api/attributes/' + relationdef.resource,
-                dataType : 'json',
-                success  : function(data) {
-                    relation_attrdefs = data.attributes;
-                }
-            });
+        if ($(this.content).height() > $(window).innerHeight() - 200) {
+            $(this.content).css('height', $(window).innerHeight() - 200);
         }
     }
 
     FormWizardBuilder.prototype.buildSelectOptions = function(name, value, relations) {
-        var options = undefined;
-        if (this.attributedefs[name].type === 'relation') {
-            options = this.getForeignValues(name, this.attributedefs[name], relations);
+        var options = this.getForeignValues(name, relations);
 
-            // If there is no options but a fixed value,
-            // add the value to options.
-            if (options === undefined && value !== undefined) {
-                options = [ value ];
-            }
-
-        } else if (this.attributedefs[name].type === 'enum') {
-            options = this.attributedefs[name].options ? this.attributedefs[name].options : [];
+        // If there is no options but a fixed value,
+        // add the value to options.
+        if (options === undefined && value !== undefined) {
+            options = [ value ];
         }
-        this.attributedefs[name].options = options !== undefined ? options : [];
+        return options !== undefined ? options : [];
     }
 
-    FormWizardBuilder.prototype.newFormInput = function(name, attr, value) {
+    FormWizardBuilder.prototype.newFormInput = function(name, value, listing) {
+        var attr = this.attributedefs[name];
+
         // Create input and label DOM elements
         var label = $("<label>", { for : 'input_' + name, text : name });
 
@@ -158,9 +196,9 @@ var FormWizardBuilder = (function() {
                 var optionvalue = attr.options[i].pk || attr.options[i];
                 var optiontext  = attr.options[i].label || attr.options[i].pk || attr.options[i];
                 var option = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
-//                if (this.fields[elementName].formatter != null) {
-//                    $(option).text(this.fields[elementName].formatter($(option).text()));
-//                }
+                if (attr.formatter != null) {
+                    $(option).text(attr.formatter($(option).text()));
+                }
 
                 // Set current option to value if defined
                 if (optionvalue === value) {
@@ -181,16 +219,13 @@ var FormWizardBuilder = (function() {
         // Set the input attributes
         $(input).attr({ name : name, id : 'input_' + name, rel : name });
 
-//        if (this.fields[elem].skip == true) {
-//            $(input).addClass('wizard-ignore');
-//            $(input).attr('name', '');
-//        }
-
         // Check if the attr is mandatory
         this.validateRules[name] = {};
         if (attr.is_mandatory == true) {
             $(label).append(' *');
-            this.validateRules[name].required = true;
+            if ($(input).attr('type') !== 'checkbox') {
+                this.validateRules[name].required = true;
+            }
 
         } else if (toInputType(attr.type) === 'select') {
             var option = $("<option>", { value : '', text : '-' }).prependTo(input);
@@ -210,21 +245,20 @@ var FormWizardBuilder = (function() {
         // Insert value if any
         if (value !== undefined) {
             if (input.is('input')) {
-                if (input.attr('attr') == 'checkbox' && value == true) {
-                    $(input).attr('checked', 'checked');
+                if (input.attr('type') == 'checkbox') {
+                    if (value == true) {
+                        $(input).attr('checked', 'checked');
+                    }
                 } else {
                     $(input).attr('value', value);
                 }
-
             } else if (input.is('textarea')) {
                 $(input).text(value);
             }
         }
 
-        $(label).text($(label).text() + " : ");
-
         // Finally, insert DOM elements in the form
-        this.insertInput(input, label, this.findContainer(attr.step), attr.help || attr.description);
+        this.insertInput(input, label, this.findTable(listing, attr.step), attr.help || attr.description, listing);
 
         // Disable the field if required
         if (this.mustDisableField(name) === true) {
@@ -235,7 +269,8 @@ var FormWizardBuilder = (function() {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
         }
 
-        /* Unit management
+        /*
+         * Unit management
          * - simple value to display beside attr
          * - unit selector when unit is 'byte' (MB, GB) and display current
          *   value with the more appropriate value
@@ -248,7 +283,7 @@ var FormWizardBuilder = (function() {
             $(input).parent().append(unit_cont);
 
             var current_unit;
-            addFieldUnit(attr, unit_cont, unit_field_id);
+            addFieldUnit(attr, unit_cont, unit_field_id).addClass('wizard-ignore');
             current_unit = attr.unit;
 
             // Set the serialize attribute to manage convertion from (selected) unit to final value
@@ -269,14 +304,99 @@ var FormWizardBuilder = (function() {
         }
     }
 
-    FormWizardBuilder.prototype.insertInput = function(input, label, container, help) {
+    FormWizardBuilder.prototype.insertInput = function(input, label, table, help, listing) {
         var linecontainer;
+
+        if (listing) {
+            // TOTO: Handle all special caracters as accent, etc
+            listing = listing.replace(' ', '_');
+
+            var listing_size;
+            if (input.attr('type') === 'checkbox') {
+                listing_size = 50;
+            } else {
+                listing_size = input.width() - 50;
+            }
+            input.width(listing_size);
+
+            // Search for the line that contains labels for this listing
+            var labelsline = $(table).find('tr.labels_' + listing).get(0);
+            if (! labelsline) {
+                // Add an empty line if not exists
+                labelsline = $("<tr>").css('position', 'relative')
+                labelsline.addClass('labels_' + listing);
+                labelsline.appendTo(table);
+                // Add a column for actions
+                labeltd = $("<td>", { align : 'center' });
+                labeltd.appendTo(labelsline);
+            }
+
+            var line = $(table).find('tr.' + listing).get(0);
+
+            // Search for the label of the current field within the labels line
+            var labeltd = $(labelsline).find('td.label_' + $(input).attr('name')).get(0);
+            if (! labeltd) {
+                // The label for this column does not exists yet,
+                // we are building the first line of the listing.
+                labeltd = $("<td>", { align : 'center' }).append(label);
+                labeltd.addClass('label_' + $(input).attr('name'));
+                labeltd.appendTo(labelsline);
+
+            } else {
+                // The labels line has been filled, so we can use
+                // the number of columns to kown when swithing to next line.
+                if ($(line).children('td').length >= $(labelsline).children('td').length) {
+                    $(line).removeClass(listing);
+                    line = undefined;
+                };
+            }
+
+            // Build a new line if required
+            if (! line) {
+                line = $("<tr>").css('position', 'relative')
+                line.addClass(listing);
+                line.appendTo(table);
+
+                // Add a button to remove the line
+                var removeButton = $('<a>').button({ icons : { primary : 'ui-icon-closethick' }, text : false });
+                removeButton.addClass('wizard-ignore');
+                removeButton.bind('click', function () {
+                    $(line).remove();
+                    if ($(table).find('tr').length <= 2) {
+                        $(labelsline).remove();
+                    }
+                });
+                var td = $("<td>", { align : 'left' });
+                td.append(removeButton);
+                line.append(td);
+            }
+
+            var inputcontainer = $("<td>", { align : 'center' }).append(input);
+
+            // Hide the line if required
+            if ($(input).attr('type') === 'hidden') {
+                $(inputcontainer).css('display', 'none');
+                $(labeltd).css('display', 'none');
+            }
+
+            inputcontainer.appendTo(line);
+
+            return;
+        }
+
+        $(label).text($(label).text() + " : ");
 
         // Add the line to the container
         if (input.is("textarea")) {
-            var labelcontainer = $("<td>", { align : 'rigth', colspan : '2' }).append(label);
-            var inputcontainer = $("<td>", { align : 'rigth', colspan : '2' }).append(input);
-            $("<tr>").append($(labelcontainer).append(this.createHelpElem(help))).appendTo(container);
+            var labelcontainer = $("<td>", { align : 'left', colspan : '2' }).append(label);
+            var inputcontainer = $("<td>", { align : 'left', colspan : '2' }).append(input);
+            var labelline = $("<tr>").append($(labelcontainer).append(this.createHelpElem(help))).appendTo(table);
+
+            // Hide the label if required
+            if ($(input).attr('type') === 'hidden') {
+                $(labelline).css('display', 'none');
+            }
+
             linecontainer = $("<tr>").append(inputcontainer);
             $(input).css('width', '100%');
 
@@ -285,7 +405,7 @@ var FormWizardBuilder = (function() {
             $("<td>", { align : 'left' }).append(label).appendTo(linecontainer);
             $("<td>", { align : 'right' }).append(input).append(this.createHelpElem(help)).appendTo(linecontainer);
         }
-        linecontainer.appendTo(container);
+        linecontainer.appendTo(table);
 
         // Hide the line if required
         if ($(input).attr('type') === 'hidden') {
@@ -312,28 +432,19 @@ var FormWizardBuilder = (function() {
                 _this.validateRules[$(this).attr('name')] = {};
                 _this.validateRules[$(this).attr('name')].confirm_password = $(input);
             });
-            lineclone.appendTo(container);
+            lineclone.appendTo(table);
         }
     }
 
-    FormWizardBuilder.prototype.getForeignValues = function(name, attr, relationdefs) {
+    FormWizardBuilder.prototype.getForeignValues = function(name, relationdefs) {
         var datavalues = undefined;
 
         for (relation in relationdefs) {
             for (prop in relationdefs[relation].cond) {
                 if (relationdefs[relation].cond.hasOwnProperty(prop)) {
                     if (relationdefs[relation].cond[prop] === 'self.' + name) {
-                        var cond = attr.cond || "";
                         relation = relationdefs[relation].resource;
-                        $.ajax({
-                            type     : 'GET',
-                            async    : false,
-                            url      : '/api/' + relation + cond,
-                            dataType : 'json',
-                            success  : $.proxy(function(d) {
-                                datavalues = d;
-                            }, this)
-                        });
+                        datavalues = ajax('GET', '/api/' + relation);
                         break;
                     }
                     break;
@@ -347,75 +458,123 @@ var FormWizardBuilder = (function() {
         if (this.attributedefs[name].disabled == true) {
             return true;
         }
-        if ($(this.form).attr('method').toUpperCase() === 'PUT' && this.attributedefs[name].is_editable != true) {
+        if ($(this.form).attr('method').toUpperCase() === 'PUT' && this.attributedefs[name].is_editable != true &&
+            !(this.attributedefs[name].is_primary == true && this.attributedefs[name].belongs_to != undefined)) {
             return true;
         }
         return false;
     }
 
     FormWizardBuilder.prototype.beforeSerialize = function(form, options) {
-        for (var field in this.attributedefs) {
-            var input = $(form).find('#input_' + field);
-
+        var _this = this;
+        $(form).find(':input').not('.wizard-ignore').each(function () {
             // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
-            if (input.attr('type') === 'checkbox') {
-                if (input.attr('value') === 'on') {
-                    if (input.attr('checked')) {
-                        input.attr('value', '1');
-                    } else {
-                        input.attr('value', '0');
-                    }
-                } else if (input.attr('value') === 'off') {
-                    input.attr('value', '0');
+            if ($(this).attr('type') === 'checkbox') {
+                if ($(this).attr('value') === 'on' && $(this).attr('checked')) {
+                    $(this).attr('value', '1');
+                } else {
+                    $(this).attr('value', '0');
+                    // Check the checkbox if we want the value submited
+                    $(this).attr('checked', 'checked');
                 }
 
             // Disable password confirmation inputs
-            } else if (input.attr('type') === 'password') {
-                $('#' + input.attr('id') + '_confirm').attr('disabled', 'disabled');
+            } else if ($(this).attr('type') === 'password') {
+                $('#' + $(this).attr('id') + '_confirm').attr('disabled', 'disabled');
             }
 
-            if (this.attributedefs[field].serialize != null) {
-                $(input).val(this.attributedefs[field].serialize($(input).val(), input));
+            if (_this.attributedefs[$(this).attr('name')].serialize != null) {
+                $(this).val(_this.attributedefs[$(this).attr('name')].serialize($(this).val(), $(this)));
             }
 
             // Disable empty non mandatory fields
-            if (toInputType(this.attributedefs[field].type) === 'select'
-                && $(input).val() === '' 
-                && ! this.attributedefs[field].is_mandatory) {
-                $(input).attr('disabled', 'disabled');
+            if (toInputType(this.attributedefs[field].type) === 'select' &&
+                $(this).val() === '' && ! _this.attributedefs[$(this).attr('name')].is_mandatory) {
+                $(this).attr('disabled', 'disabled');
             }
-        }
+        });
     }
 
     FormWizardBuilder.prototype.handleBeforeSubmit = function(arr, $form, opts) {
-        // Add data to submit for each unchecked checkbox
-        // Because by default no data are posted for unchecked box
-        $form.find(':checkbox').each(function() {
-            if ($(this).val() == 0) {
-                arr.push({name: $(this).attr('name'), value: 0});
-            }
-        });
+        // Building a hash representing the object with its relations
+        var data = {};
+        var rel_attr_names = [];
+        for (var index in arr) {
+            var attr = arr[index];
 
-        var b = this.beforeSubmit(arr, $form, opts, this);
-        if (b) {
-            var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
-            buttonsdiv.find('button').each(function() {
-                $(this).attr('disabled', 'disabled');
+            // If the attr is an attr of a relation,
+            // move value in the corresponding sub hash
+            var hash_to_fill;
+            if (this.attributedefs[attr.name].belongs_to) {
+                var rel_list = data[this.attributedefs[attr.name].belongs_to];
+
+                if (rel_list === undefined) {
+                    data[this.attributedefs[attr.name].belongs_to] = [];
+                    rel_list = data[this.attributedefs[attr.name].belongs_to];
+                }
+
+                // If attr not in the array, we are completing an entry
+                if ($.inArray(attr.name, rel_attr_names) < 0 && rel_attr_names.length) {
+                    rel_attr_names.push(attr.name);
+
+                // If not, we are starting a new entry
+                } else {
+                    rel_attr_names = [attr.name]
+                    rel_list.push({});
+                }
+                hash_to_fill = rel_list[rel_list.length - 1];
+
+            } else {
+                hash_to_fill = data;
+            }
+            hash_to_fill[attr.name] = attr.value;
+        }
+
+        var submit = this.beforeSubmit(data, $form, opts, this);
+        if (submit !== false) {
+//            var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
+//            buttonsdiv.find('button').each(function() {
+//                $(this).attr('disabled', 'disabled');
+//            });
+
+            // We submit the from ourself because we want the data into json,
+            // as we need to submit relations in a subhash.
+            $.ajax({
+                url         : $(this.form).attr('action'),
+                type        : $(this.form).attr('method').toUpperCase(),
+                contentType : 'application/json',
+                data        : JSON.stringify(data),
+                success     : $.proxy(this.onSuccess, this),
+                error       : $.proxy(this.onError, this),
             });
         }
-        return b;
+
+        return submit === false;
     }
 
-    FormWizardBuilder.prototype.findContainer = function(step) {
-        if (step !== undefined) {
-            var table = this.stepTables[step];
+    FormWizardBuilder.prototype.findTable = function(tag, step) {
+        if (tag !== undefined) {
+            tag.replace(' ', '_');
+
+            var table = this.tables[tag];
             if (table === undefined) {
-               var table = $("<table>", { id : this.name + '_step' + step }).appendTo(this.form);
-               table.attr('rel', step);
-               $(table).css('width', '100%').addClass('step');
-               this.stepTables[step] = table;
+                var table = $("<table>", { id : this.name + '_tag_' + tag });
+
+                var fieldset = $("<fieldset>").appendTo(this.form);
+                var legend   = $("<legend>", { text : tag }).css('font-weight', 'bold');
+                fieldset.css('border-color', '#ddd');
+                fieldset.append(legend);
+                fieldset.append(table);
+
+                $(table).css('width', '100%');
+                if (step !== undefined) {
+                    table.attr('rel', step);
+                    $(table).addClass('step');
+                }
+                this.tables[tag] = table;
             }
             return table;
+
         } else {
             return this.table;
         }
@@ -465,32 +624,23 @@ var FormWizardBuilder = (function() {
 
     FormWizardBuilder.prototype.createHelpElem = function(help) {
         if (help !== undefined) {
-            var helpElem        = $("<span>", { class : 'ui-icon ui-icon-info' });
-            $(helpElem).css({
-                cursor  : 'help',
-                margin  : '2px 0 0 2px',
-                float   : 'right'
-            });
+            var helpElem = $("<span>", { class : 'ui-icon ui-icon-info' });
+            $(helpElem).css({ cursor : 'help', margin : '2px 0 0 2px', float : 'right' });
             $(helpElem).qtip({
-                content : help.replace("\n", "<br />", 'g'),
-                position: {
-                    corner  : {
+                content  : help.replace("\n", "<br />", 'g'),
+                position : {
+                    corner : {
                         target  : 'rightMiddle',
                         tooltip : 'leftMiddle'
                     }
                 },
-                style   : {
-                    tip : { corner  : 'leftMiddle' }
-                }
+                style : { tip : { corner  : 'leftMiddle' } }
             });
             return helpElem;
 
         } else {
-            return $("<span>").css({ display       : 'block',
-                                     width         : '16px',
-                                     'margin-left' : '2px',
-                                     height        : '1px',
-                                     float         : 'right' });
+            return $("<span>").css({ display : 'block', width : '16px', 'margin-left' : '2px',
+                                     height : '1px', float : 'right' });
         }
     }
 
@@ -531,36 +681,12 @@ var FormWizardBuilder = (function() {
             formOptions         : {
                 beforeSerialize : $.proxy(this.beforeSerialize, this),
                 beforeSubmit    : $.proxy(this.handleBeforeSubmit, this),
-                success         : $.proxy(function(data) {
-                    // Ugly but must delete all DOM elements
-                    // but formwizard is using the element after this
-                    // callback, so we delay the deletion
-                    this.closeDialog();
-                    this.callback(data, this.form);
-                }, this),
-                error           : $.proxy(function(data) {
-                    var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
-                    buttonsdiv.find('button').each(function() {
-                        $(this).removeAttr('disabled', 'disabled');
-                    });
-                    $(this.content).find("div.ui-state-error").each(function() {
-                        $(this).remove();
-                    });
-                    var error = {};
-                    try {
-                        error = JSON.parse(data.responseText);
-                    }
-                    catch (err) {
-                        error.reason = 'An error occurs, but can not be parsed...'
-                    }
-
-                    $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all' }));
-                    this.error(data);
-                }, this)
+                success         : $.proxy(this.onSuccess, this),
+                error           : $.proxy(this.onSuccess, this),
             }
         });
 
-        var steps = $(this.form).children("table");
+        var steps = $(this.form).children("table.step")
         if (steps.length > 1) {
             $(steps).each(function() {
                 if (!$(this).html()) {
@@ -578,6 +704,34 @@ var FormWizardBuilder = (function() {
         }
     }
 
+    FormWizardBuilder.prototype.onSuccess = function(data) {
+        // Ugly but must delete all DOM elements
+        // but formwizard is using the element after this
+        // callback, so we delay the deletion
+        this.closeDialog();
+        this.callback(data, this.form);
+    }
+
+    FormWizardBuilder.prototype.onError = function(data) {
+        var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
+        buttonsdiv.find('button').each(function() {
+            $(this).removeAttr('disabled', 'disabled');
+        });
+        $(this.content).find("div.ui-state-error").each(function() {
+            $(this).remove();
+        });
+        var error = {};
+        try {
+            error = JSON.parse(data.responseText);
+        }
+        catch (err) {
+            error.reason = 'An error occurs, but can not be parsed...'
+        }
+
+        $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all' }));
+        this.error(data);
+    }
+
     FormWizardBuilder.prototype.openDialog = function() {
         var buttons = {
             'Cancel'    : $.proxy(this.cancel, this),
@@ -593,7 +747,10 @@ var FormWizardBuilder = (function() {
             title           : this.title,
             modal           : true,
             resizable       : false,
-            width           : 550,
+            position        : 'top',
+            width           : 'auto',
+            minWidth        : 550,
+//            maxHeight       : 550,
             buttons         : buttons,
             closeOnEscape   : false
         });
