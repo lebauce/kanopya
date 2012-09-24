@@ -97,9 +97,81 @@ sub negociateConnection {
 # vsphere objects methods #
 ###########################
 
-=head2
+=head2 getView
+
+    Desc: get a vsphere managed object view
+    Args: $mor (managed object reference)
+    Return: $view
 
 =cut
+
+sub getView {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['mo_ref']);
+
+    my $view = Vim::get_view(mo_ref => $args{mo_ref});
+
+    return $view;
+}
+
+
+=head2 findEntityView
+
+    Desc: find a view of a specified managed object type
+    Args: $view_type (HostSystem,VirtualMachine,Datacenter,Folder,ResourcePool,
+                        ClusterComputeResource or ComputeResource),
+          %hash_filter, @array_property, $begin_entity view
+    Return: the managed entity view
+
+=cut
+
+sub findEntityView {
+    my ($self,%args) = @_;
+
+    #Check of Global parameters
+    General::checkParams(args     => \%args,
+                         required => ['view_type','hash_filter'],
+                         optional => {
+                             'array_property' => undef,
+                             'begin_entity'   => undef,
+                         });
+
+    #Check of Filter parameters
+    General::checkParams(args     => $args{hash_filter},
+                         required => ['name'],);
+
+    my $hash_filter  = $args{hash_filter};
+    my $view_type    = $args{view_type};
+    my $begin_entity = $args{begin_entity};
+
+    my @array_property = undef;
+    if ($args{array_property}) {
+        @array_property = @{$args{array_property}};
+    }
+
+    my $view;
+    eval {
+        if (defined $begin_entity) {
+            $view = Vim::find_entity_view(view_type      => $view_type,
+                                          filter         => $hash_filter,
+                                          properties     => @array_property,
+                                          begin_entity   => $begin_entity,);
+        }
+        else {
+            $view = Vim::find_entity_view(view_type      => $view_type,
+                                          filter         => $hash_filter,
+                                          properties     => @array_property,);
+        }
+    };
+    if ($@) {
+        $errmsg = 'Could not get entity '.$hash_filter->{name}.' of type '.$view_type.': '.$@."\n";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    return $view;
+}
 
 #########################
 # configuration methods #
@@ -387,7 +459,7 @@ sub powerOnVm {
  
     #maybe find a better way to do that? 
     foreach my $vm (@$host_vms) {
-        my $guest = Vim::get_view (mo_ref => $vm);
+        my $guest = Vim::get_view(mo_ref => $vm);
         if ($guest->name eq $vm_name) {
             $guest->PowerOnVM();
         }
