@@ -156,7 +156,7 @@ sub setConf {
 
     General::checkParams(args => \%args, required => ['conf']);
 
-    my $current_conf = $self->toJSON;
+    my $current_conf = $self->getConf;
 
     my $updated = 0;
     for my $attr (keys %$current_conf) {
