@@ -337,15 +337,17 @@ sub setupREST {
                 content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
-                my $obj = { };
-                my $hash = { };
-                my $params = params;
-                for my $attr (keys %$params) {
-                    $hash->{$attr} = params->{$attr};
+                my $obj = {};
+                my $hash = {};
+                my %params = params;
+                if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
+                    %params = %{from_json(request->body)};
+                } else {
+                    %params = params;
                 }
 
                 if ($class->can('create')) {
-                    $obj = jsonify($class->methodCall(method => 'create', params => $params));
+                    $obj = jsonify($class->methodCall(method => 'create', params => \%params));
                 }
                 else {
                     # We probably do not want to directly enqueue operations,
@@ -367,7 +369,7 @@ sub setupREST {
 #                        $obj = $class->new(params)->toJSON();
 #                    };
 
-                     $obj = $class->new(params)->toJSON();
+                     $obj = $class->new(%params)->toJSON();
                 }
                 return to_json($obj);
             },
@@ -386,15 +388,15 @@ sub setupREST {
                 content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
+                my %params = params;
                 my $obj = $class->get(id => params->{id});
-                my $params = params;
-                for my $attr (keys %$params) {
-                    if ($attr ne "id") {
-                        $obj->setAttr(name  => $attr,
-                                      value => params->{$attr});
-                    }
+                if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
+                    %params = %{from_json(request->body)};
+                } else {
+                    %params = params;
                 }
-                $obj->save();
+
+                $obj->methodCall(method => 'update', params => \%params);
 
                 return to_json( { status => "success" } );
             };
