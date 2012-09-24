@@ -122,7 +122,6 @@ sub getAttrDefs {
                     $attr_def->{$relname . "_id"} = {
                         pattern      => '^\d*$',
                         is_mandatory => 0,
-                        is_extended  => 0
                     };
                 }
             }
@@ -132,9 +131,12 @@ sub getAttrDefs {
                     $attr_def->{$column} = {
                         pattern      => '^.*$',
                         is_mandatory => 0,
-                        is_extended  => 0
                     };
                 }
+            }
+
+            for my $column (@{$schema->_primaries}) {
+                $attr_def->{$column}->{is_primary} = 1;
             }
         }
 
@@ -144,148 +146,6 @@ sub getAttrDefs {
         pop @classes;
     }
     return $result;
-}
-
-=head2
-
-    Get the primary key column name
-
-=cut
-
-sub getPrimaryKey {
-    my $self = shift;
-
-    return ($self->{_dbix}->result_source->primary_columns)[0];
-}
-
-=head2
-
-    Get the primary key of the object
-
-=cut
-
-sub getId {
-    my $self = shift;
-
-    return $self->id;
-}
-
-=head2
-
-    Get the primary key of the object
-
-=cut
-
-sub id {
-    my $self = shift;
-
-    return $self->{_dbix}->get_column($self->getPrimaryKey);
-}
-
-=head2
-
-    Return the parent class name
-
-=cut
-
-sub _parentClass {
-    my ($class) = @_;
-    $class =~ s/\:\:[a-zA-Z0-9]+$//g;
-    return $class;
-}
-
-=head2
-
-    Remove the top of hierarchy class
-
-=cut
-
-sub _childClass {
-    my ($class) = @_;
-    $class =~ s/^[a-zA-Z0-9]+\:\://g;
-    return $class;
-}
-
-=head2
-
-    Return the class name without its hierarchy
-
-=cut
-
-sub _buildClassNameFromString {
-    my ($class) = @_;
-    $class =~ s/.*\:\://g;
-    return $class;
-}
-
-=head2
-
-    Get the class name at the top of the hierarchy
-    of a full class name
-
-=cut
-
-sub _rootTable {
-    my ($class) = @_;
-    $class =~ s/\:\:.*$//g;
-    return $class;
-}
-
-=head2
-
-    Convert a class name to table name
-
-=cut
-
-sub _classToTable {
-    my ($class) = @_;
-
-    $class =~ s/([A-Z])/_$1/g;
-    my $table = lc( substr($class, 1) );
-
-    return $table;
-}
-
-=head2
-
-    Normalize the specified name by removing underscores
-    and upper casing the characters that follows
-
-=cut
-
-sub normalizeName {
-    my $name = shift;
-    my $i = 0;
-    while ($i < length($name)) {
-        if (substr($name, $i, 1) eq "_") {
-            $name = substr($name, 0, $i) . ucfirst(substr($name, $i + 1, 1)) . substr($name, $i + 2)
-        }
-        $i += 1;
-    }
-
-    return ucfirst($name);
-};
-
-=head2
-
-    Returns the name of the Kanopya class for the
-    specified DBIx table schema
-
-=cut
-
-sub classFromDbix {
-    my $source = shift;
-    my $args = @_;
-
-    my $name = ucfirst($source->from);
-
-    while (1) {
-        last if not $source->has_relationship("parent");
-        $source = $source->related_source("parent");
-        $name = ucfirst($source->from) . "::" . $name;
-    }
-
-    return normalizeName($name);
 }
 
 =head2
@@ -406,10 +266,19 @@ sub checkAttrs {
 
 sub new {
     my ($class, %args) = @_;
+
+    # Extrating relation from attrs
+    my $relations = {};
+    for my $attr (keys %args) {
+        if (ref($args{$attr}) eq 'ARRAY') {
+            $relations->{$attr} = delete $args{$attr};
+        }
+    }
+
     my $attrs = $class->checkAttrs(attrs => \%args);
-    my $adm = Administrator->new();
 
     # Get the class_type_id for class name
+    my $adm = Administrator->new();
     eval {
         my $rs = $adm->_getDbixFromHash(table => "ClassType",
                                         hash  => { class_type => $class })->single;
@@ -421,9 +290,76 @@ sub new {
     }
 
     my $self = $class->newDBix(attrs => $attrs);
-
     bless $self, $class;
+
+    # Populate relations
+    for my $relation (keys %$relations) {
+        my $infos = $self->{_dbix}->relationship_info($relation);
+        my @conds = keys %{$infos->{cond}};
+        my $fk = getForeignKeyFromCond(cond => $conds[0]);
+
+        my $relationclass = classFromDbix($self->{_dbix}->$relation->result_source);
+
+        requireClass($relationclass);
+        for my $entry (@{$relations->{$relation}}) {
+            $entry->{$fk} = $self->id;
+            $relationclass->new(%$entry);
+        }
+    }
     return $self;
+}
+
+=head2
+
+    Update an instance by setting values for attribute taht differs,
+    also handle the update of relations.
+
+=cut
+
+sub update {
+    my ($self, %args) = @_;
+
+    # Extrating relation from attrs
+    my $relations = {};
+    for my $attr (keys %args) {
+        if (ref($args{$attr}) eq 'ARRAY') {
+            $relations->{$attr} = delete $args{$attr};
+        }
+    }
+    delete $args{id};
+
+    my $updated = 0;
+    for my $attr (keys %args) {
+        my $currentvalue = $self->getAttr(name => $attr);
+        if ("$args{$attr}" ne "$currentvalue") {
+            $self->setAttr(name => $attr, value => $args{$attr});
+
+            if (not $updated) { $updated = 1; }
+        }
+    }
+    if ($updated) { $self->save(); }
+
+    # Populate relations
+    for my $relation (keys %$relations) {
+        my $schema = $self->{_dbix}->$relation->result_source;
+        my $relationclass = classFromDbix($schema);
+
+        # TODO: Handle multiple parimary keys
+        my $primary_key = @{$schema->_primaries}[0];
+
+        requireClass($relationclass);
+        for my $entry (@{$relations->{$relation}}) {
+            my $id = delete $entry->{$primary_key};
+            if ($id) {
+                # We have the relation id, it is a relation update
+                $relationclass->get(id => $id)->update(%$entry);
+            }
+            else {
+                # Id do not exists, it is a relation creation
+                $relationclass->new(%$entry);
+            }
+        }
+    }
 }
 
 =head2
@@ -1167,6 +1103,158 @@ sub remove {
     my %args = @_;
 
     $self->delete();
+}
+
+
+=head2
+
+    Get the primary key column name
+
+=cut
+
+sub getPrimaryKey {
+    my $self = shift;
+
+    return ($self->{_dbix}->result_source->primary_columns)[0];
+}
+
+=head2
+
+    Get the primary key of the object
+
+=cut
+
+sub getId {
+    my $self = shift;
+
+    return $self->id;
+}
+
+=head2
+
+    Get the primary key of the object
+
+=cut
+
+sub id {
+    my $self = shift;
+
+    return $self->{_dbix}->get_column($self->getPrimaryKey);
+}
+
+=head2
+
+    Return the parent class name
+
+=cut
+
+sub _parentClass {
+    my ($class) = @_;
+    $class =~ s/\:\:[a-zA-Z0-9]+$//g;
+    return $class;
+}
+
+=head2
+
+    Remove the top of hierarchy class
+
+=cut
+
+sub _childClass {
+    my ($class) = @_;
+    $class =~ s/^[a-zA-Z0-9]+\:\://g;
+    return $class;
+}
+
+=head2
+
+    Return the class name without its hierarchy
+
+=cut
+
+sub _buildClassNameFromString {
+    my ($class) = @_;
+    $class =~ s/.*\:\://g;
+    return $class;
+}
+
+sub getForeignKeyFromCond {
+    my (%args) = @_;
+    
+    General::checkParams(args => \%args, required => [ 'cond' ]);
+    
+    $args{cond} =~ s/.*foreign\.//g;
+    return $args{cond};
+}
+
+=head2
+
+    Get the class name at the top of the hierarchy
+    of a full class name
+
+=cut
+
+sub _rootTable {
+    my ($class) = @_;
+    $class =~ s/\:\:.*$//g;
+    return $class;
+}
+
+=head2
+
+    Convert a class name to table name
+
+=cut
+
+sub _classToTable {
+    my ($class) = @_;
+
+    $class =~ s/([A-Z])/_$1/g;
+    my $table = lc( substr($class, 1) );
+
+    return $table;
+}
+
+=head2
+
+    Normalize the specified name by removing underscores
+    and upper casing the characters that follows
+
+=cut
+
+sub normalizeName {
+    my $name = shift;
+    my $i = 0;
+    while ($i < length($name)) {
+        if (substr($name, $i, 1) eq "_") {
+            $name = substr($name, 0, $i) . ucfirst(substr($name, $i + 1, 1)) . substr($name, $i + 2)
+        }
+        $i += 1;
+    }
+
+    return ucfirst($name);
+};
+
+=head2
+
+    Returns the name of the Kanopya class for the
+    specified DBIx table schema
+
+=cut
+
+sub classFromDbix {
+    my $source = shift;
+    my $args = @_;
+
+    my $name = ucfirst($source->from);
+
+    while (1) {
+        last if not $source->has_relationship("parent");
+        $source = $source->related_source("parent");
+        $name = ucfirst($source->from) . "::" . $name;
+    }
+
+    return normalizeName($name);
 }
 
 =head2
