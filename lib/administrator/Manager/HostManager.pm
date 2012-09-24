@@ -85,10 +85,7 @@ sub addHost {
     # Instanciate new Host Entity
     my $host;
     eval {
-        $host = Entity::Host->new(
-                    host_manager_id => $host_manager_id,
-                    %args
-                );
+        $host = Entity::Host->new(host_manager_id => $host_manager_id, %args);
     };
     if($@) {
         my $errmsg = "Wrong host attributes detected\n" . $@;
@@ -162,6 +159,18 @@ sub createHost {
     General::checkParams(args     => \%args,
                          required => [ "host_core", "kernel_id", "host_serial_number", "host_ram" ]);
 
+    my $composite_params = {};
+    if (defined $args{ifaces}) {
+        # Make a hash from the iface list, as composite params
+        # are in store as param presets, and it do not support array yet.
+        my $index = 0;
+        for my $iface (@{$args{ifaces}}) {
+            $composite_params->{ifaces}->{'iface_' . $index} = $iface;
+            $index++;
+        }
+        delete $args{ifaces};
+    }
+
     $log->debug("New Operation AddHost with attrs : " . Dumper(%args));
     Entity::Operation->enqueue(
         priority => 200,
@@ -170,6 +179,7 @@ sub createHost {
             context  => {
                 host_manager => $self,
             },
+            presets  => $composite_params,
             %args
         }
     );

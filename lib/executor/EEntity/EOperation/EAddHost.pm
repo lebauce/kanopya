@@ -69,6 +69,15 @@ sub prepare {
     $self->SUPER::prepare();
 
     General::checkParams(args => $self->{context}, required => [ "host_manager" ]);
+
+    # Restore the list of ifaces
+    if (defined $self->{params}->{ifaces}) {
+        my @ifaces;
+        for my $iface (keys %{$self->{params}->{ifaces}}) {
+            push @ifaces, $self->{params}->{ifaces}->{$iface};
+        }
+        $self->{params}->{ifaces} = \@ifaces;
+    }
 }
 
 sub execute {
