@@ -70,6 +70,7 @@ use constant ATTR_DEF => {
     host_manager_id => {
         label        => 'Host manager',
         type         => 'relation',
+        relation     => 'single',
         pattern      => '^[0-9\.]*$',
         is_mandatory => 1,
         is_editable  => 0,
@@ -77,6 +78,7 @@ use constant ATTR_DEF => {
     hostmodel_id => {
         label        => 'Board model',
         type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_editable  => 1,
@@ -84,6 +86,7 @@ use constant ATTR_DEF => {
     processormodel_id => {
         label        => 'Processor model',
         type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_editable  => 1,
@@ -91,6 +94,7 @@ use constant ATTR_DEF => {
     kernel_id => {
         label        => 'Specific kernel',
         type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1,
@@ -105,6 +109,7 @@ use constant ATTR_DEF => {
     host_powersupply_id => {
         label        => 'Power supply card',
         type         => 'relation',
+        relation     => 'single',
         pattern      => '^\w*$',
         is_mandatory => 0,
         is_editable  => 1,
@@ -132,6 +137,7 @@ use constant ATTR_DEF => {
     },
     host_ram => {
         label        => 'RAM capability',
+        description  => 'Memory capability of the physical host',
         type         => 'integer',
         unit         => 'byte',
         pattern      => '^\d*$',
@@ -162,6 +168,7 @@ use constant ATTR_DEF => {
     ifaces => {
         label        => 'Network interfaces',
         type         => 'relation',
+        relation     => 'multi',
         is_mandatory => 0,
         is_editable  => 0,
     },
@@ -239,8 +246,8 @@ sub methods {
 =cut
 
 sub create {
-    my $class   = shift;
-    my %args    = @_;
+    my $class = shift;
+    my %args  = @_;
 
     General::checkParams(args   => \%args,
                          required => ['host_manager_id', 'host_core', 'kernel_id',
@@ -686,12 +693,6 @@ sub getFreeHosts {
     }
     return @free;
 }
-
-=head2 update
-
-=cut
-
-sub update {}
 
 =head2 remove
 
