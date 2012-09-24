@@ -48,20 +48,23 @@ sub createDisk {
 
     my $container_access = Entity::ContainerAccess->get(id => $args{container_access_id});
 
+
     $self->fileCreate(container_access => $container_access,
                       file_name        => $args{name},
                       file_size        => $args{size},
-                      file_filesystem  => $args{filesystem});
+                      file_filesystem  => $args{filesystem},
+                      file_type        => $self->image_type);
+
 
     my $entity = Entity::Container::FileContainer->new(
-                     disk_manager_id      => $self->getAttr(name => 'fileimagemanager0_id'),
+                     disk_manager_id      => $self->id,
                      container_access_id  => $args{container_access_id},
                      container_name       => $args{name},
                      container_size       => $args{size},
                      container_filesystem => $args{filesystem},
                      container_freespace  => 0,
-                     container_device     => $args{name} . '.raw',
-                 );
+                     container_device     => $args{name} . '.'. $self->image_type,
+                );
     my $container = EFactory::newEEntity(data => $entity);
 
     if (exists $args{erollback} and defined $args{erollback}){
@@ -69,7 +72,7 @@ sub createDisk {
             function   => $self->can('removeDisk'),
             parameters => [ $self, "container", $container ]
         );
-    }
+     }
 
     return $container;
 }
@@ -145,7 +148,7 @@ sub removeExport {
 
     if (! $args{container_access}->isa("EEntity::EContainerAccess::EFileContainerAccess")) {
         throw Kanopya::Exception::Execution(
-                  error => "ContainerAccess must be a EEntity::EContainerAccess::EFileContainerAccess, not " . 
+                  error => "ContainerAccess must be a EEntity::EContainerAccess::EFileContainerAccess, not " .
                            ref($args{container_access})
               );
     }
@@ -154,16 +157,19 @@ sub removeExport {
 }
 
 =head2 fileCreate
-    
+
+    Desc: create an empty file that will be of the type managed by the component
+
 =cut
 
-sub fileCreate{
+sub fileCreate {
     my $self = shift;
     my %args = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ "container_access", "file_name",
-                                       "file_size", "file_filesystem" ]);
+                         required => [ 'container_access', 'file_name',
+                                       'file_size', 'file_filesystem',
+                                       'file_type' ]);
 
     # Firstly mount the container access on the executor.
     my $mountpoint = $args{container_access}->getContainer->getMountPoint .
@@ -173,37 +179,75 @@ sub fileCreate{
     $econtainer_access->mount(mountpoint => $mountpoint,
                               econtext   => $self->getEContext);
 
-    my $file_image_path = "$mountpoint/$args{file_name}.raw";
+    my $file_image_path = "$mountpoint/$args{file_name}.$args{file_type}";
 
     $log->debug("Container access mounted, trying to create $file_image_path, size $args{file_size}.");
 
-    my ($command, $result);
-    eval {
+    if ($args{file_type} eq 'img') {
 
-        $command = "dd if=/dev/zero of=$file_image_path bs=1 count=1 seek=$args{file_size}";
-        $result  = $self->getEContext->execute(command => $command);
+        my ($command, $result);
+        eval {
 
-        if ($result->{stderr} and ($result->{exitcode} != 0)) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
+            $command = "dd if=/dev/zero of=$file_image_path bs=1 count=1 seek=$args{file_size}";
+            $result  = $self->getEContext->execute(command => $command);
+
+            if ($result->{stderr} and ($result->{exitcode} != 0)) {
+                throw Kanopya::Exception::Execution(error => $result->{stderr});
+            }
+
+            $command = "sync";
+            $self->getEContext->execute(command => $command);
+        
+            $command = "chmod 777 $file_image_path";
+            $self->getEContext->execute(command => $command);
+        };
+        if ($@) {
+            $econtainer_access->umount(mountpoint => $mountpoint,
+                                       econtext   => $self->getEContext);
+
+            throw Kanopya::Exception::Execution(
+                error => "Unable to create file <$file_image_path> with size <$args{file_size}>: $@"
+            );
         }
 
-        $command = "sync";
-        $self->getEContext->execute(command => $command);
-        
-        $command = "chmod 777 $file_image_path";
-        $self->getEContext->execute(command => $command);
-    };
-    if ($@) {
         $econtainer_access->umount(mountpoint => $mountpoint,
                                    econtext   => $self->getEContext);
-
-        throw Kanopya::Exception::Execution(
-                  error => "Unable to create file <$file_image_path> with size <$args{file_size}>: $@"
-              );
     }
+    elsif ($args{file_type} eq 'vmdk') {
+        my $file_image_path = "$mountpoint/$args{file_name}.vmdk";
 
-    $econtainer_access->umount(mountpoint => $mountpoint,
-                               econtext   => $self->getEContext);
+        $log->debug("Container access mounted, trying to create $file_image_path, size $args{file_size}.");
+
+        my ($command, $result);
+        eval {
+
+            $command = 'qemu-img create -f vmdk '. $file_image_path .' '. $args{file_size};
+
+            $result  = $self->getEContext->execute(command => $command);
+
+            if ($result->{stderr} and ($result->{exitcode} != 0)) {
+                throw Kanopya::Exception::Execution(error => $result->{stderr});
+            }
+
+            $command = "sync";
+            $self->getEContext->execute(command => $command);
+
+            $command = "chmod 777 $file_image_path";
+            $self->getEContext->execute(command => $command);
+        };
+        if ($@) {
+            $econtainer_access->umount(mountpoint => $mountpoint,
+                                       econtext   => $self->getEContext);
+
+            throw Kanopya::Exception::Execution(
+                error => "Unable to create file <$file_image_path> with size <$args{file_size}>: $@"
+            );
+
+        }
+
+        $econtainer_access->umount(mountpoint => $mountpoint,
+                                   econtext   => $self->getEContext);
+    }
 }
 
 =head2 fileRemove

@@ -44,8 +44,8 @@ our $VERSION = '1.00';
 =cut
 
 sub copy {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
@@ -159,8 +159,8 @@ sub copy {
 =cut
 
 sub mount {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
@@ -201,8 +201,8 @@ sub mount {
 =cut
 
 sub umount {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
@@ -249,8 +249,7 @@ sub umount {
 =cut
 
 sub connect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -264,8 +263,7 @@ sub connect {
 =cut
 
 sub disconnect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -273,8 +271,8 @@ sub disconnect {
 }
 
 sub getPartitionStart {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
@@ -299,8 +297,8 @@ sub getPartitionStart {
 }
 
 sub getPartitionCount {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
@@ -319,8 +317,8 @@ sub getPartitionCount {
 }
 
 sub connectPartition {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
@@ -364,8 +362,8 @@ sub connectPartition {
 }
 
 sub disconnectPartition {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
@@ -387,8 +385,7 @@ sub disconnectPartition {
 }
 
 sub tryConnect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -401,8 +398,7 @@ sub tryConnect {
 }
 
 sub tryDisconnect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -415,8 +411,7 @@ sub tryDisconnect {
 }
 
 sub tryConnectPartition {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -429,8 +424,7 @@ sub tryConnectPartition {
 }
 
 sub tryDisconnectPartition {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -443,8 +437,7 @@ sub tryDisconnectPartition {
 }
 
 sub getPreferredBlockSize {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     return '1M';
 }

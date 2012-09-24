@@ -39,8 +39,7 @@ our $VERSION = '1.00';
 =cut
 
 sub copy {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
 
@@ -81,8 +80,7 @@ sub copy {
 =cut
 
 sub createDefaultExport {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $export_manager = EFactory::newEEntity(data => $self->getDefaultExportManager());
 
@@ -101,8 +99,7 @@ sub createDefaultExport {
 =cut
 
 sub removeDefaultExport {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'container_access' ]);
 
@@ -114,8 +111,7 @@ sub removeDefaultExport {
 }
 
 sub getDefaultExportManager {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     throw Kanopya::Exception::NotImplemented();
 }

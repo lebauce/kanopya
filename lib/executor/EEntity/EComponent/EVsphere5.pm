@@ -252,7 +252,7 @@ sub startHost {
     my %host_conf;
     my $cluster     = Entity->get(id => $host->getClusterId());
     my $image       = $args{host}->getNodeSystemimage();
-    my $image_name  = $image->systemimage_name.'.raw';
+    #my $image_name  = $image->systemimage_name.'.raw';
     my $image_size  = $image->container->container_size;
     my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
     my $host_params = $cluster->getManagerParameters(manager_type => 'host_manager');

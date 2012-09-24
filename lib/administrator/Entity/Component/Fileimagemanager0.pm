@@ -40,7 +40,7 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     image_type => {
-        pattern      => '^raw|vmdk$',
+        pattern      => '^img|vmdk$',
         is_mandatory => 0,
         is_extended  => 0
     },

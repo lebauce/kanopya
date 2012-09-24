@@ -467,7 +467,7 @@ sub startHost {
 
     my $image_templatefile = $self->generateImageTemplate(
         image_name        => $image_name,
-        image_source      => $repo{datastore_id}.'/'.$image_name.'.raw',
+        image_source      => $repo{datastore_id}.'/'.$image_name.'.img',
     );
 
     my $imageid = $self->oneimage_create(
@@ -747,7 +747,7 @@ sub generateDatastoreTemplate {
 }
 
 # generate image template and push it on opennebula master node
-# image_source is $datastore_id/$image_file.raw
+# image_source is $datastore_id/$image_file.img
 sub generateImageTemplate {
     my ($self, %args) = @_;
     General::checkParams(
