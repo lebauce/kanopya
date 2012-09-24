@@ -53,11 +53,13 @@ use constant ATTR_DEF => {
     },
     host_id => {
         type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d+$',
         is_mandatory => 1,
     },
     interface_id => {
         type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d+$',
         is_mandatory => 0,
     },
