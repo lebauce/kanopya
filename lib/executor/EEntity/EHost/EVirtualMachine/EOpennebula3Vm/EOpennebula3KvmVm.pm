@@ -68,4 +68,28 @@ sub postStart {
     return $self->SUPER::postStart(%args);
 }
 
+sub getRamUsedByVm {
+    my ($self,%args) = @_;
+    my $e_hypervisor = EFactory::newEEntity(data => $self->hypervisor);
+
+    #this command get the pid of the kvm process then get the RAM used and SWAP used by this process
+    my $cmd = 'cat /proc/$(cat /var/run/libvirt/qemu/one-'.($self->onevm_id).'.pid)/status | grep "VmRSS\|VmSwap"';
+
+    my $stdout = $e_hypervisor->getEContext->execute(command => "$cmd")->{stdout};
+
+    my @lines = split('\n',$stdout);
+
+    my $mem;
+    for my $line (@lines) {
+        my @line_split = split('\s+',$line);
+        $mem->{$line_split[0]} =  $line_split[1] * 1024; #Value given in kB, converted in bytes
+
+      }
+    return {
+        mem_ram  => $mem->{'VmRSS:'},
+        mem_swap => $mem->{'VmSwap:'},
+        total    => $mem->{'VmRSS:'} + $mem->{'VmSwap:'},
+    }
+}
+
 1;
