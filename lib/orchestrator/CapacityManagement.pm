@@ -69,12 +69,24 @@ sub new {
                                                            hypervisor_cluster_id => undef,
                                                            cloud_manager         => undef });
 
-        $self->{_cloud_manager} = $args{cloud_manager};
-        $self->{_cluster_id} = $args{cluster_id};
-        $self->{_hypervisor_cluster_id} = $args{hypervisor_cluster_id};
-        $self->{_admin} = Administrator->new();
-        $self->{_infra} = $self->_constructInfra();
-        $self->{_operationPlan} = [];
+        if (defined $args{cloud_manager}){
+            $self->{_cloud_manager} = $args{cloud_manager};
+        }
+        elsif ( defined $self->{_cluster_id} ) {
+            my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_cluster_id});
+            $self->{_cloud_manager} = $cluster->getManager(manager_type => 'host_manager');
+        }
+        elsif ( defined  $self->{_hypervisor_cluster_id} ) {
+            my $hypervisor = Entity->get(id => $self->{_hypervisor_cluster_id});
+            $self->{_cloud_manager} = $hypervisor->getComponent(name => 'Opennebula', version => 3);
+        }
+        else {
+            throw Kanopya::Exception(error => 'No cloud manager, nor cluster, nor hypervisor id, Capacity Manager cannot construct infra');
+        }
+
+        $self->{_admin}                 = Administrator->new();
+        $self->{_infra}                 = $self->_constructInfra();
+        $self->{_operationPlan}         = [];
 
         # Get availble memory for all cloud manager hosts (hypervisors)
         $self->{_hvs_mem_available} = undef;
