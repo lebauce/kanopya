@@ -850,11 +850,17 @@ sub _getHvSizeRemaining {
     }
 
     my $size_rem = {
-        ram   => $remaining_ram,
-        cpu   => $remaining_cpu,
-        ram_p => $remaining_ram / $all_the_ram,
-        cpu_p => $remaining_cpu / $all_the_cpu,
+        ram           => $remaining_ram,
+        cpu           => $remaining_cpu,
+        ram_p         => $remaining_ram / $all_the_ram,
+        cpu_p         => $remaining_cpu / $all_the_cpu,
+        ram_effective => $infra->{hvs}->{$hv_id}->{hv_capa}->{ram_effective},
     };
+
+    if (defined  $infra->{hvs}->{$hv_id}->{hv_capa}->{ram_free_effective}) {
+       $size_rem->{ram_free_effective} = $infra->{hvs}->{$hv_id}->{hv_capa}->{ram_free_effective};
+    }
+
     return $size_rem;
 }
 
@@ -965,10 +971,10 @@ sub _migrateVmModifyInfra{
     $log->info("Infra modified => migration <$vm_id> (ram: ".($self->{_infra}->{vms}->{$vm_id}->{'ram'}).") from <$hv_from_id> to <$hv_dest_id>");
     # Modify available memory
     if (defined $self->{_hvs_mem_available}) {
-        $log->info(Dumper $self->{_hvs_mem_available});
+        $log->debug(Dumper $self->{_hvs_mem_available});
         $self->{_hvs_mem_available}->{$hv_dest_id} -= $self->{_infra}->{vms}->{$vm_id}->{'ram'};
         $self->{_hvs_mem_available}->{$hv_from_id} += $self->{_infra}->{vms}->{$vm_id}->{'ram'};
-        $log->info(Dumper $self->{_hvs_mem_available});
+        $log->debug(Dumper $self->{_hvs_mem_available});
     }
 }
 
