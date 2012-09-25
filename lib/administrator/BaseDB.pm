@@ -120,6 +120,8 @@ sub getAttrDefs {
                     $schema->has_column($relname . "_id") && not defined ($relname . "_id")) {
 
                     $attr_def->{$relname . "_id"} = {
+                        type         => 'relation',
+                        relation     => $relinfo->{attrs}->{accessor},
                         pattern      => '^\d*$',
                         is_mandatory => 0,
                     };
@@ -132,11 +134,10 @@ sub getAttrDefs {
                         pattern      => '^.*$',
                         is_mandatory => 0,
                     };
+                    if (grep { $_ eq $column } @{$schema->_primaries}) {
+                        $attr_def->{$column}->{is_primary} = 1;
+                    }
                 }
-            }
-
-            for my $column (@{$schema->_primaries}) {
-                $attr_def->{$column}->{is_primary} = 1;
             }
         }
 
@@ -977,23 +978,22 @@ sub toString {
 
 sub toJSON {
     my ($self, %args) = @_;
+    my $class = ref ($self) || $self;
+
     my $pk;
     my $hash = {};
-    my $class = ref ($self) || $self;
     my $attributes;
+    my $conreteclass = $class;
     my $merge = Hash::Merge->new();
 
-    eval {
-        $attributes = $class->getAttrDefs();
-    };
-    if ($@) {
-        $attributes = $self->getAttrDefs();
-    }
-
+    $attributes = $class->getAttrDefs();
     foreach my $class (keys %$attributes) {
         foreach my $attr (keys %{$attributes->{$class}}) {
             if (defined $args{model}) {
-                $hash->{attributes}->{$attr} = $attributes->{$class}->{$attr};
+                # Only add primary key attrs from the lower class in the hierarchy
+                if (not ($attributes->{$class}->{$attr}->{is_primary} and $class ne $conreteclass)) {
+                    $hash->{attributes}->{$attr} = $attributes->{$class}->{$attr};
+                }
             }
             else {
                 if ((not $args{no_empty}) or (defined $self->getAttr(name => $attr))) {
@@ -1016,11 +1016,14 @@ sub toJSON {
             my @relnames = $parent->relationships();
             for my $relname (@relnames) {
                 my $relinfo = $parent->relationship_info($relname);
-                if ((scalar (grep { $_ eq (split('::', $relinfo->{source}))[-1] } @hierarchy) == 0) and
-                    ($relinfo->{attrs}->{is_foreign_key_constraint}) or
-                    ($relinfo->{attrs}->{accessor} eq "multi")) {
+
+                if (scalar (grep { $_ eq (split('::', $relinfo->{source}))[-1] } @hierarchy) == 0 and
+                    $relinfo->{attrs}->{is_foreign_key_constraint} or
+                    $relinfo->{attrs}->{accessor} eq "multi") {
+
                     my $resource = lc((split("::", $relinfo->{class}))[-1]);
                     $resource =~ s/_//g;
+
                     $hash->{relations}->{$relname} = $relinfo;
                     $hash->{relations}->{$relname}->{from} = $hierarchy[$n];
                     $hash->{relations}->{$relname}->{resource} = $resource;
@@ -1034,11 +1037,8 @@ sub toJSON {
                     }
                 }
             }
-
-            my $klass = join("::", @hierarchy);
             pop @hierarchy;
         }
-
         $hash->{methods} = $self->getMethods;
 
         $hash->{pk} = {
