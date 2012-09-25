@@ -160,7 +160,9 @@ sub getAvailableMemory {
     }
 
     # Return the free memory in bytes
-    return $free * 1024;
+    return {
+        mem_effectively_available => $free * 1024,
+    }
 }
 
 =head2 getTotalMemory
