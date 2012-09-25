@@ -530,7 +530,8 @@ get '/api/attributes/:resource' => sub {
 
     require (General::getLocFromClass(entityclass => $class));
 
-    return to_json($class->toJSON(model => 1));
+    return to_json($class->toJSON(  model => 1,
+                                    no_relations => params->{no_relations}));
 };
 
 get '/api' => sub {

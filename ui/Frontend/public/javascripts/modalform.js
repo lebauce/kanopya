@@ -655,7 +655,9 @@ var ModalForm = (function() {
         // Retrieve data structure from REST
         $.ajax({
             type        : 'GET',
-            url         : '/api/attributes/' + this.baseName,
+            // no_relations option allow to keep old field management (see below)
+            // TODO : review fields management and use generic FormWizardBuilder instead of this class (ModalForm)
+            url         : '/api/attributes/' + this.baseName + '?no_relations=1',
             dataType    : 'json',
             async       : false,
             success     : $.proxy(function(data) {
