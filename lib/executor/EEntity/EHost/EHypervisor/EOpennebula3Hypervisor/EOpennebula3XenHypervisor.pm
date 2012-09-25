@@ -60,7 +60,12 @@ sub getAvailableMemory {
         $value =~ s/\s+//;
 
         # Return the free memory in bytes
-        if ($key eq 'free_memory') { return $value * 1024 * 1024 }
+        if ($key eq 'free_memory') {
+          return {
+            mem_effectively_available   => $self->SUPER::getAvailableMemory->{mem_effectively_available},
+            mem_theoretically_available => $value * 1024 * 1024
+          }
+        }
     }
 }
 
