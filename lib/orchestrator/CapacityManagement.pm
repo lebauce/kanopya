@@ -147,21 +147,8 @@ sub _constructInfra{
     General::checkParams(args => \%args, required => []);
     # OPTION : hv_capacities
 
-    my $opennebula;
-    if ( defined $self->{_cluster_id} ) {
-        my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_cluster_id});
-        $opennebula    = $cluster->getManager(manager_type => 'host_manager');
-    }
-    elsif ( defined  $self->{_hypervisor_cluster_id} ) {
-        my $hypervisor = Entity->get(id => $self->{_hypervisor_cluster_id});
-        $opennebula    = $hypervisor->getComponent(name => 'Opennebula', version => 3);
-    }
-    else {
-        throw Kanopya::Exception(error => 'No cluster or hypervisor id, Capacity Manager cannot construct infra');
-    }
-
     # Get the list of all hypervisors
-    my @hypervisors_r = $opennebula->getHypervisors();
+    my @hypervisors_r = $self->{_cloud_manager}->getHypervisors();
     my $master_hv;
 
     my ($hvs, $vms);
