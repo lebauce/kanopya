@@ -98,8 +98,9 @@ sub prerequisites {
                                 # blacklisted_hv_ids => $self->{params}->{blacklisted_hv_ids},
                                 selected_hv_ids => \@hv_in_ids,
                                 wanted_values   => {
-                                    ram => $converted_ram,
-                                    cpu => $host_manager_params->{core},
+                                    ram           => $converted_ram,
+                                    cpu           => $host_manager_params->{core},
+                                    ram_effective => 1*1024*1024*1024 # Even if there is memory overcommitment VM needs effectively 1GB to boot the OS
                                 }
         );
 
