@@ -353,7 +353,7 @@ sub getConf {
 sub setConf {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['conf']);
 
     my $conf = $args{conf};
@@ -499,6 +499,18 @@ sub addVM {
     return $opennebulavm;
 }
 
+sub optimiaas {
+    my ($self, %args) = @_;
+    my $wf_params = {
+        context => {
+            cloudmanager_comp => $self,
+        }
+    };
+
+    return Workflow->run(name => 'OptimiaasWorkflow', params => $wf_params);
+
+}
+
 sub migrate {
     my ($self, %args) = @_;
 
@@ -512,9 +524,9 @@ sub migrate {
             cloudmanager_comp => $self
         }
     };
-    
+
     return Workflow->run(
-        name      => 'MigrateWorkflow', 
+        name      => 'MigrateWorkflow',
         entity_id => $hypervisor->getClusterId(),
         params    => $wf_params
     );
