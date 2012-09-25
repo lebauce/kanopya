@@ -19,17 +19,20 @@ my $log = get_logger("");
 
 use constant ATTR_DEF => {
     class_type_id => {
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
     },
     entity_comment_id => {
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
     },
 };
-
 
 sub getAttrDef { return ATTR_DEF; }
 
