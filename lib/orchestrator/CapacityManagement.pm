@@ -90,25 +90,37 @@ sub new {
 
         # Get availble memory for all cloud manager hosts (hypervisors)
         $self->{_hvs_mem_available} = undef;
-        if (defined $self->{_cloud_manager}) {
-            $self->{_hvs_mem_available} = {};
 
-            my $hypervisors = $self->{_cloud_manager}->getHypervisors();
-            for my $hypervisor (@$hypervisors) {
-                my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
-                $self->{_hvs_mem_available}->{$hypervisor->id} = $ehypervisor->getAvailableMemory;
+        my $overcommitment_factors =  $self->{_cloud_manager}->getOvercommitmentFactors();
+        $log->info('Overcommitment cpu    factor <'.($overcommitment_factors->{overcommitment_cpu_factor}).'>');
+        $log->info('Overcommitment memory factor <'.($overcommitment_factors->{overcommitment_memory_factor}).'>');
 
-                # Manage CPU Overcommitment when cloud_manager is defined
-                $log->info('cpu factor '.($self->{_cloud_manager}->getOvercommitmentFactors()->{overcommitment_cpu_factor}));
+        $self->{_hvs_mem_available} = {};
 
-                $self->{_infra}->{hvs}->{$hypervisor->id}
-                                      ->{hv_capa}
-                                      ->{cpu} *= $self->{_cloud_manager}
-                                                      ->getOvercommitmentFactors()->{overcommitment_cpu_factor};
+        # Add extra information to hypervisors
+        my $hypervisors = $self->{_cloud_manager}->getHypervisors();
+        for my $hypervisor (@$hypervisors) {
+            my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
+            my $hypervisor_available_memory = $ehypervisor->getAvailableMemory;
 
+            $self->{_hvs_mem_available}->{$hypervisor->id} = $hypervisor_available_memory->{mem_theoretically_available};
+            $self->{_infra}->{hvs}->{$hypervisor->id}->{hv_capa}->{ram_effective} = $hypervisor_available_memory->{mem_effectively_available};
 
+        # Manage CPU Overcommitment when cloud_manager is defined
 
-            }
+            $self->{_infra}->{hvs}->{$hypervisor->id}
+                                  ->{hv_capa}->{cpu} *= $overcommitment_factors->{overcommitment_cpu_factor};
+        }
+
+        # Add extra information to VMs
+
+        my @vm_ids = keys %{$self->{_infra}->{vms}};
+        for my $vm_id (@vm_ids) {
+            $log->debug("try to get vm Entity $vm_id");
+            my $vm   = Entity->get(id => $vm_id);
+            my $e_vm = EFactory::newEEntity(data => $vm);
+            #TODO: This can take some time => need a method whichs retrieve information in one shot
+            $self->{_infra}->{vms}->{$vm_id}->{ram_effective} = $e_vm->getRamUsedByVm->{total};
         }
     }
     $log->debug(Dumper $self->{_infra});
