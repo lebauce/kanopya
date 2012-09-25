@@ -469,7 +469,8 @@ var FormWizardBuilder = (function() {
         var _this = this;
         $(form).find(':input').not('.wizard-ignore').each(function () {
             // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
-            if ($(this).attr('type') === 'checkbox') {
+            if (toInputType(_this.attributedefs[$(this).attr('name')].type) === 'checkbox') {
+
                 if ($(this).attr('value') === 'on' && $(this).attr('checked')) {
                     $(this).attr('value', '1');
                 } else {
@@ -487,9 +488,11 @@ var FormWizardBuilder = (function() {
                 $(this).val(_this.attributedefs[$(this).attr('name')].serialize($(this).val(), $(this)));
             }
 
-            // Disable empty non mandatory fields
-            if (toInputType(this.attributedefs[field].type) === 'select' &&
-                $(this).val() === '' && ! _this.attributedefs[$(this).attr('name')].is_mandatory) {
+            // Disable empty non mandatory fields, only if there are select or not editable.
+            if ($(this).val() === '' && ! _this.attributedefs[$(this).attr('name')].is_mandatory &&
+                (toInputType(_this.attributedefs[$(this).attr('name')].type) === 'select' ||
+                 ! _this.attributedefs[$(this).attr('name')].is_editable)) {
+
                 $(this).attr('disabled', 'disabled');
             }
         });
