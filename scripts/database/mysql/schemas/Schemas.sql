@@ -1677,7 +1677,7 @@ CREATE TABLE `billinglimit` (
   `ending` BIGINT(16) NOT NULL,
   `type` CHAR(32) NOT NULL,
   `soft` BOOLEAN NOT NULL,
-  `value` int(8),
+  `value` bigint unsigned,
   `service_provider_id` int(8) unsigned NOT NULL,
   `repeats` int(16) NOT NULL,
   `repeat_day` int(16) NOT NULL,
