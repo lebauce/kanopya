@@ -56,7 +56,10 @@ sub getAvailableMemory {
         $mem += $res->{content} * 1024;
     }
 
-    return $self->host_ram * $self->opennebula3->overcommitment_memory_factor - $mem;
+    return {
+        mem_effectively_available   => $self->SUPER::getAvailableMemory->{mem_effectively_available},
+        mem_theoretically_available => $self->host_ram * $self->opennebula3->overcommitment_memory_factor - $mem,
+    }
 
 }
 
