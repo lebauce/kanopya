@@ -1091,8 +1091,11 @@ sub toJSON {
 
                     # We must have relation attrs within attrdef to keep
                     # informations as label, is_editable and is_mandatory.
+                    # Except if we explicitly don't want it (no_relations option)
 
-                    # delete $hash->{attributes}->{$relname . "_id"};
+                    if ($args{no_relations}) {
+                        delete $hash->{attributes}->{$relname . "_id"};
+                    }
                 }
             }
 
