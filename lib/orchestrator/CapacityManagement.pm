@@ -262,25 +262,23 @@ sub isMigrationAuthorized{
     my $hv_id = $args{hv_id};
 
     my $infra  = $self->{_infra};
-    my $cpu    = $infra->{vms}->{$vm_id}->{cpu};
-    my $ram    = $infra->{vms}->{$vm_id}->{ram};
+
+    my @resources = keys %{$infra->{vms}->{$vm_id}};
 
     my $remaining_resources = $self->_getHvSizeRemaining(
         infra => $infra,
         hv_id => $hv_id,
     );
 
-    if($cpu > $remaining_resources->{cpu}){
-        $log->info("Not enough CPU to migrate VM $vm_id ($cpu CPU) in HV $hv_id (".$remaining_resources->{cpu}." CPU)");
-        return 0;
+    for my $resource (@resources) {
+        $log->info("Check $resource, good if :  ".$infra->{vms}->{$vm_id}->{$resource}.' < '.$remaining_resources->{$resource});
+
+        if( $infra->{vms}->{$vm_id}->{$resource} > $remaining_resources->{$resource}  ) {
+            $log->info("Not enough $resource to migrate VM $vm_id (".$infra->{vms}->{$vm_id}->{$resource}.") in HV $hv_id (".$remaining_resources->{$resource} );
+            return 0;
+        }
     }
-    elsif($ram > $remaining_resources->{ram}){
-        $log->info("Not enough MEM to migrate VM $vm_id ($ram MB) in HV $hv_id (".$remaining_resources->{ram}." MB)");
-        return 0;
-    }
-    else{
-        return 1;
-    }
+    return 1;
 }
 
 =head2 optimIaas
@@ -1078,15 +1076,17 @@ sub _findMinHVidRespectCapa{
 
         my $total_score = $size_remaining->{cpu_p} + $size_remaining->{ram_p};
 
-        $log->info(Dumper $size_remaining);
-        $log->info('HV <'.$hv_id.'> RAM wanted <'.($wanted_metrics->{ram}).'> got '.($size_remaining->{ram}));
-        $log->info('HV <'.$hv_id.'> CPU wanted <'.($wanted_metrics->{cpu}).'> got '.($size_remaining->{cpu}));
+        $log->info('HV <'.$hv_id.'> Wanted RAM <'.($wanted_metrics->{ram}).'> got <'.($size_remaining->{ram}).' ('.(100*$size_remaining->{ram_p}).'%) > & CPU <'.($wanted_metrics->{cpu}).'> got <'.($size_remaining->{cpu}).' ('.(100*$size_remaining->{cpu_p}).'%) >');
 
-         if(
-               $wanted_metrics->{ram} <= $size_remaining->{ram}
-            && $wanted_metrics->{cpu} <= $size_remaining->{cpu}
-        ){
+        my $condition = 1;
+        for my $metric (keys %$wanted_metrics) {
+            if(defined $size_remaining->{$metric}) {
+                $log->info("Check $metric, ok if $wanted_metrics->{$metric} <= $size_remaining->{$metric}");
+                $condition &&= $wanted_metrics->{$metric} <= $size_remaining->{$metric};
+            }
+        }
 
+        if($condition){
             if(defined $rep->{min_size_remaining}){
                 if($total_score < $rep->{min_size_remaining}){
                     $rep->{min_size_remaining} = $total_score;
