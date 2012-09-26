@@ -68,7 +68,7 @@ use constant ATTR_DEF => {
     linux0s_mount => {
         label => 'Filesystems mounts',
         type => 'relation',
-        relation => 'multi'
+        relation => 'single_multi'
     },
 };
 
