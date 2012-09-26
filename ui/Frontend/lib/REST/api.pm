@@ -131,6 +131,7 @@ my %resources = (
     "workflowdef"              => "WorkflowDef",
     "alert"                    => "Alert",
     "mailnotifier0"            => "Entity::Component::Mailnotifier0",
+    "linux0"                   => "Entity::Component::Linux0",
 );
 
 sub db_to_json {
@@ -336,7 +337,6 @@ sub setupREST {
             create => sub {
                 content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
-
                 my $obj = {};
                 my $hash = {};
                 my %params = params;
@@ -497,8 +497,10 @@ sub setupREST {
                     push @jsons, jsonify($elem);
                 }
                 $ret = \@jsons;
-            } else {
+            } elsif ($ret) {
                 $ret = jsonify($ret);
+            } else {
+                $ret = jsonify({});
             }
 
             return to_json($ret, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
