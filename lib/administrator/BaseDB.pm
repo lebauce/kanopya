@@ -35,6 +35,10 @@ sub methods {
             description => 'remove an object',
             perm_holder => 'mastergroup',
         },
+        update => {
+            description => 'update an object',
+            perm_holder => 'mastergroup',
+        },
         methodCall => {
             description => 'Call an object method',
         },
@@ -304,7 +308,7 @@ sub new {
         requireClass($relationclass);
         for my $entry (@{$relations->{$relation}}) {
             $entry->{$fk} = $self->id;
-            $relationclass->new(%$entry);
+            $relationclass->create(%$entry);
         }
     }
     return $self;
@@ -357,7 +361,7 @@ sub update {
             }
             else {
                 # Id do not exists, it is a relation creation
-                $relationclass->new(%$entry);
+                $relationclass->create(%$entry);
             }
         }
     }
