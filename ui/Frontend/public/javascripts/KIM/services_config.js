@@ -55,10 +55,17 @@ function loadServicesConfig(cid, eid) {
                     var componentType   = (getComponentTypes())[e.component_type_id];
                     if (componentType != undefined) {
                         (new FormWizardBuilder({
-                            title      : componentType + ' configuration',
-                            type       : componentType,
-                            id         : e.pk,
-                            displayed  : ComponentsFields[componentType],
+                            title          : componentType + ' configuration',
+                            type           : componentType,
+                            id             : e.pk,
+                            valuesCallback : function (type, id) {
+                                return ajax('POST', '/api/' + componentType + '/' + e.pk + '/getConf');
+                            },
+                            submitCallback : function (data, $form, opts, onsuccess, onerror) {
+                                console.log('submitCallback')
+                                return ajax('POST', '/api/' + componentType + '/' + e.pk + '/setConf', { conf : data }, onsuccess, onerror);
+                            },
+                            displayed      : ComponentsFields[componentType],
                         })).start();
                     }
                 }

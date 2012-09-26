@@ -52,17 +52,7 @@ var FormWizardBuilder = (function() {
         // If it is an update form, retrieve old datas from api
         var values = {};
         if (this.id) {
-            var url = '/api/' + this.type + '/' + this.id;
-
-            // For each relation 1-N, use expand to get related entries with object values
-            if (this.relations) {
-                var expands = [];
-                for (relation in this.relations) if (this.relations.hasOwnProperty(relation)) {
-                    expands.push(relation);
-                }
-                url += '?expand=' + expands.join(',');
-            }
-            values = ajax('GET', url);
+            values = this.getValues(this.type, this.id);
         }
 
         // Firstly merge the attrdef with possible raw attrdef given in params
@@ -155,6 +145,7 @@ var FormWizardBuilder = (function() {
 
         if ($(this.content).height() > $(window).innerHeight() - 200) {
             $(this.content).css('height', $(window).innerHeight() - 200);
+            $(this.content).css('width', $(this.content).width() + 15);
         }
     }
 
@@ -427,6 +418,7 @@ var FormWizardBuilder = (function() {
                 lineclone.find("label").each(function() {
                     $(this).text('Confirm ' + $(this).text());
                 });
+                $(this).addClass('wizard-ignore');
 
                 // Set a validation rule to compare with password
                 _this.validateRules[$(this).attr('name')] = {};
@@ -533,26 +525,41 @@ var FormWizardBuilder = (function() {
             hash_to_fill[attr.name] = attr.value;
         }
 
-        var submit = this.beforeSubmit(data, $form, opts, this);
-        if (submit !== false) {
-//            var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
-//            buttonsdiv.find('button').each(function() {
-//                $(this).attr('disabled', 'disabled');
-//            });
+        this.submitCallback(data, $form, opts, $.proxy(this.onSuccess, this), $.proxy(this.onError, this));
 
-            // We submit the from ourself because we want the data into json,
-            // as we need to submit relations in a subhash.
-            $.ajax({
-                url         : $(this.form).attr('action'),
-                type        : $(this.form).attr('method').toUpperCase(),
-                contentType : 'application/json',
-                data        : JSON.stringify(data),
-                success     : $.proxy(this.onSuccess, this),
-                error       : $.proxy(this.onError, this),
-            });
+        return false;
+    }
+
+    FormWizardBuilder.prototype.submit = function(data, $form, opts) {
+//      var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
+//      buttonsdiv.find('button').each(function() {
+//          $(this).attr('disabled', 'disabled');
+//      });
+
+        // We submit the from ourself because we want the data into json,
+        // as we need to submit relations in a subhash.
+        $.ajax({
+            url         : $(this.form).attr('action'),
+            type        : $(this.form).attr('method').toUpperCase(),
+            contentType : 'application/json',
+            data        : JSON.stringify(data),
+            success     : $.proxy(this.onSuccess, this),
+            error       : $.proxy(this.onError, this),
+        });
+    }
+
+    FormWizardBuilder.prototype.getValues = function(type, id) {
+        var url = '/api/' + type + '/' + id;
+
+        // For each relation 1-N, use expand to get related entries with object values
+        if (this.relations) {
+            var expands = [];
+            for (relation in this.relations) if (this.relations.hasOwnProperty(relation)) {
+                expands.push(relation);
+            }
+            url += '?expand=' + expands.join(',');
         }
-
-        return submit === false;
+        return ajax('GET', url);
     }
 
     FormWizardBuilder.prototype.findTable = function(tag, step) {
@@ -599,15 +606,16 @@ var FormWizardBuilder = (function() {
         }
 
         this.id             = args.id;
-        this.displayed      = args.displayed    || [];
-        this.relations      = args.relations    || {};
-        this.rawattrdef     = args.rawattrdef   || {};
-        this.callback       = args.callback     || $.noop;
-        this.title          = args.title        || this.name;
-        this.skippable      = args.skippable    || false;
-        this.beforeSubmit   = args.beforeSubmit || $.noop;
-        this.cancelCallback = args.cancel       || $.noop;
-        this.error          = args.error        || $.noop;
+        this.displayed      = args.displayed      || [];
+        this.relations      = args.relations      || {};
+        this.rawattrdef     = args.rawattrdef     || {};
+        this.callback       = args.callback       || $.noop;
+        this.title          = args.title          || this.name;
+        this.skippable      = args.skippable      || false;
+        this.submitCallback = args.submitCallback || this.submit;
+        this.valuesCallback = args.valuesCallback || this.getValues;
+        this.cancelCallback = args.cancel         || $.noop;
+        this.error          = args.error          || $.noop;
     }
 
     FormWizardBuilder.prototype.exportArgs = function() {
@@ -620,7 +628,8 @@ var FormWizardBuilder = (function() {
             callback        : this.callback,
             title           : this.title,
             skippable       : this.skippable,
-            beforeSubmit    : this.beforeSubmit,
+            submitCallback  : this.submitCallback,
+            valuesCallback  : this.valuesCallback,
             cancel          : this.cancelCallback
         };
     }
@@ -685,7 +694,7 @@ var FormWizardBuilder = (function() {
                 beforeSerialize : $.proxy(this.beforeSerialize, this),
                 beforeSubmit    : $.proxy(this.handleBeforeSubmit, this),
                 success         : $.proxy(this.onSuccess, this),
-                error           : $.proxy(this.onSuccess, this),
+                error           : $.proxy(this.onError, this),
             }
         });
 
@@ -713,6 +722,8 @@ var FormWizardBuilder = (function() {
         // callback, so we delay the deletion
         this.closeDialog();
         this.callback(data, this.form);
+
+        return data;
     }
 
     FormWizardBuilder.prototype.onError = function(data) {
@@ -730,7 +741,6 @@ var FormWizardBuilder = (function() {
         catch (err) {
             error.reason = 'An error occurs, but can not be parsed...'
         }
-
         $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all' }));
         this.error(data);
     }
@@ -1194,34 +1204,11 @@ var ModalForm = (function() {
             formOptions         : {
                 beforeSerialize : $.proxy(this.beforeSerialize, this),
                 beforeSubmit    : $.proxy(this.handleBeforeSubmit, this),
-                success         : $.proxy(function(data) {
-                    // Ugly but must delete all DOM elements
-                    // but formwizard is using the element after this
-                    // callback, so we delay the deletion
-                    this.closeDialog();
-                    this.callback(data, this.form);
-                }, this),
-                error           : $.proxy(function(data) {
-                    var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
-                    buttonsdiv.find('button').each(function() {
-                        $(this).removeAttr('disabled', 'disabled');
-                    });
-                    $(this.content).find("div.ui-state-error").each(function() {
-                        $(this).remove();
-                    });
-                    var error;
-                    try {
-                        error = JSON.parse(data.responseText);
-                    }
-                    catch (err) {
-                        error = 'An error occurs, but can not be parsed...'
-                    }
-                    $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all' }));
-                    this.error(data);
-                }, this)
+                success         : $.proxy(this.onSuccess, this),
+                error           : $.proxy(this.onError, this),
             }
         });
-        
+
         var steps = $(this.form).children("table");
         if (steps.length > 1) {
             $(steps).each(function() {
