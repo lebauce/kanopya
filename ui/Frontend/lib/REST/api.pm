@@ -132,6 +132,7 @@ my %resources = (
     "alert"                    => "Alert",
     "mailnotifier0"            => "Entity::Component::Mailnotifier0",
     "linux0"                   => "Entity::Component::Linux0",
+    "linux0mount"              => "Linux0Mount",
 );
 
 sub db_to_json {

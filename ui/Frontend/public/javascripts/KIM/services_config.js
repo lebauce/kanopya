@@ -2,6 +2,14 @@ require('common/general.js');
 require('modalform.js');
 
 var ComponentsFields = {
+    'linux0' : { 'displayed': [],
+                 'relations': { 'linux0s_mount': ['linux0_mount_device',
+                                                  'linux0_mount_point',
+                                                  'linux0_mount_filesystem',
+                                                  'linux0_mount_options',
+                                                  'linux0_mount_dumpfreq',
+                                                  'linux0_mount_passnum' ] } },
+    /*              
     'puppetagent2' : ['puppetagent2_mode','puppetagent2_masterip',
                       'puppetagent2_masterfqdn', 'puppetagent2_options'],
     'snmpd5'       : ['monitor_server_ip','snmpd_options'],
@@ -19,6 +27,7 @@ var ComponentsFields = {
                        'port', 'hypervisor', 'debug_level',
                        'overcommitment_cpu_factor',
                        'overcommitment_memory_factor' ]
+    */
 };
 
 function getComponentTypes() {
@@ -65,7 +74,8 @@ function loadServicesConfig(cid, eid) {
                                 console.log('submitCallback')
                                 return ajax('POST', '/api/' + componentType + '/' + e.pk + '/setConf', { conf : data }, onsuccess, onerror);
                             },
-                            displayed      : ComponentsFields[componentType],
+                            displayed      : ComponentsFields[componentType].displayed,
+                            relations      : ComponentsFields[componentType].relations,
                         })).start();
                     }
                 }

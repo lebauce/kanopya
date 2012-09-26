@@ -64,7 +64,13 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    linux0s_mount => {
+        label => 'Filesystems mounts',
+        type => 'relation',
+        relation => 'multi'
+    },
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -86,7 +92,7 @@ sub getConf {
         };
     }
 
-    $conf->{mountdefs} = \@mountdefs;
+    $conf->{linux0s_mount} = \@mountdefs;
     return $conf;
 }
 
@@ -97,7 +103,7 @@ sub setConf {
     General::checkParams(args => \%args, required => ['conf']);
 
     my $conf = $args{conf};
-    my $mountdefs_conf = $conf->{linux_mountdefs};
+    my $mountdefs_conf = $conf->{linux0s_mount};
     
     # for each mount definition , we search it in db for update or deletion
     my $mountdefs_rs = $self->{_dbix}->linux0s_mount;
