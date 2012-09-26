@@ -120,7 +120,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                 },
                 {
                     label       : 'Optimize IaaS',
-                    icon        : 'arrowthick-2-e-w',
+                    icon        : 'calculator',
                     action      : '/api/component/' + cloudmanager_id + '/optimiaas',
                     condition   : is_iaas !== undefined
                 }
