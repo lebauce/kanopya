@@ -27,6 +27,7 @@ use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
 use Vsphere5Repository;
 use Vsphere5Datacenter;
+use Entity::Operation;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::ContainerAccess;
@@ -62,6 +63,39 @@ sub checkHostManagerParams {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'ram', 'core' ]); 
+}
+
+=head2 synchronize
+
+    Desc: synchronize the component with its related vSphere infrastructure.
+    Args: \@datacenters, a list of the datacenter managed by the vCenter infrastructure
+          that the user wants to synchronize with.
+
+=cut
+
+sub synchronize {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'datacenters' ]); 
+   
+    foreach my $datacenter (@{ $args{datacenters} }) {
+
+        $log->info(
+            'New Synchronize operation on component vsphere '. $self->id. 'for datacenter '. $datacenter
+        );
+
+        Entity::Operation->enqueue(
+            priority => 200,
+            type     => 'Synchronize',
+            params   => {
+                service_provider_id => $self->service_provider_id,
+                datacenter_name     => $datacenter,
+                context             => {
+                    entity => $self,
+                }
+            }
+        );
+    }
 }
 
 ###########################
@@ -177,6 +211,33 @@ sub addDatacenter {
     return $datacenter;
 }
 
+=head2 getDatacenters
+
+    Desc: get all the datacenters attached to this vsphere component
+    Return: $datacenters
+
+=cut
+
+sub getDatacenters {
+    my ($self,%args) = @_;
+
+    my $datacenters;
+
+    if (defined $args{datacenter_name}) {
+        $datacenters  = Vsphere5Datacenter->find(
+                            hash => { 
+                                vsphere5_id              => $self->id,
+                                vsphere5_datacenter_name => $args{datacenter_name},
+                            });
+    }
+    else {
+        $datacenters  = Vsphere5Datacenter->search(
+                               hash => { vsphere5_id => $self->id });
+    }
+
+    return $datacenters; 
+}
+
 =head2 getRepository
 
     Desc: get a repository corresponding to a container access
@@ -233,9 +294,9 @@ sub addVM {
 
 =head2 addHypervisor
 
-    Desc: register a new vsphere hypervisor into kanopya 
+    Desc: register a new vsphere hypervisor into kanopya
     Args: $host,$datacenter_id
-    Return: a new instance of vsphere5_hypervisor 
+    Return: a new instance of vsphere5_hypervisor
 
 =cut
 
@@ -250,7 +311,7 @@ sub addHypervisor {
                promoted                => $args{host},
                vsphere5_id             => $self->id,
                vsphere5_datacenter_id  => $args{datacenter_id}
-           ); 
+           );
 }
 
 1;

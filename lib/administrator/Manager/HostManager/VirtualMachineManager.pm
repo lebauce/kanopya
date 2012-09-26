@@ -29,7 +29,7 @@ my $errmsg;
 sub createVirtualHost {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ], optional => { 'ifaces' => 0 }); 
+    General::checkParams(args => \%args, required => [ 'ram', 'core' ], optional => { 'ifaces' => 0 });
 
     # Use the first kernel found...
     my $kernel = Entity::Kernel->find(hash => {});
@@ -46,7 +46,7 @@ sub createVirtualHost {
     my $adm = Administrator->new();
     foreach (0 .. $args{ifaces}-1) {
         $vm->addIface(
-            iface_name     => 'eth' . $_, 
+            iface_name     => 'eth' . $_,
             iface_mac_addr => $adm->{manager}->{network}->generateMacAddress(),
             iface_pxe      => 0,
         );

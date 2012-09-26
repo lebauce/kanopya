@@ -73,6 +73,7 @@ CREATE TABLE `entity_lock` (
 
 CREATE TABLE `service_provider` (
   `service_provider_id` int(8) unsigned NOT NULL,
+  `service_provider_name` char(32) DEFAULT NULL,
   PRIMARY KEY (`service_provider_id`),
   FOREIGN KEY (`service_provider_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1123,7 +1124,7 @@ CREATE TABLE `component` (
   PRIMARY KEY (`component_id`),
   FOREIGN KEY (`component_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`service_provider_id`),
-  FOREIGN KEY (`service_provider_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`component_template_id`),
   FOREIGN KEY (`component_template_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`component_type_id`),

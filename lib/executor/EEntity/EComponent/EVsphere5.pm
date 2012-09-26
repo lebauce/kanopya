@@ -26,6 +26,7 @@ use VMware::VIRuntime;
 use Vsphere5Datacenter;
 use Vsphere5Repository;
 use Entity;
+use Entity::Host::Hypervisor;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -177,6 +178,81 @@ sub findEntityView {
 # configuration methods #
 #########################
 
+=head2 synchronize
+
+    Desc: synchronize the component with its related vsphere infrastructure 
+    
+=cut 
+
+sub synchronize {
+    my ($self, %args) = @_;
+
+    $self->negociateConnection();
+
+    General::checkParams(args => \%args, required => ['service_provider_id',
+                                                      'datacenter_name']);
+
+    my $datacenter       = $self->getDatacenters(datacenter_name => $args{datacenter_name});
+    my $service_provider = Entity::ServiceProvider->find (hash => {
+                               service_provider_id => $args{service_provider_id}
+                           });
+    my $cluster_name     = $service_provider->service_provider_name;
+    my $datacenter_view  = $self->findEntityView(
+                               view_type   => 'Datacenter',
+                               hash_filter => {
+                                   name => $args{datacenter_name},
+                               });
+    my $cluster_views    = $self->findEntityView(
+                               view_type    => 'ClusterComputeResource',
+                               hash_filter  => {
+                                   name => $cluster_name
+                               },
+                               begin_entity => $datacenter_view,
+                           );
+    my $hypervisors      = $cluster_views->host;
+
+    # Use the first kernel found...
+    my $kernel = Entity::Kernel->find(hash => {});
+
+    foreach my $hypervisor (@$hypervisors) {
+
+        my $hypervisor_view = $self->getView(mo_ref => $hypervisor);
+        my $host_state;
+
+        #we define the state time as now
+        if ($hypervisor_view->runtime->connectionState->val eq 'disconnected') {
+            $host_state = 'down: '.time();
+        }
+        elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {
+            $host_state = 'up: '.time();
+        }
+        elsif ($hypervisor_view->runtime->connectionState->val eq 'notResponding') {
+            $host_state = 'broken: '.time();
+        }
+
+        my $hv = Entity::Host::Hypervisor->new(
+                     host_manager_id    => $self->id,
+                     kernel_id          => $kernel->id,
+                     host_serial_number => '',
+                     host_desc          => $cluster_name.' hypervisor',
+                     active             => 1,
+                     host_ram           => $hypervisor_view->hardware->memorySize,
+                     host_core          => $hypervisor_view->summary->hardware->numCpuCores,
+                     host_hostname      => $hypervisor_view->name,
+                     host_state         => $host_state,
+                 );
+$DB::single = 1;
+        #promote new hypervisor class to a vsphere5Hypervisor one
+        $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id);
+
+        my $node = Externalnode->new(
+                       externalnode_hostname => $hypervisor_view->name,
+                       service_provider_id   => $args{service_provider_id},
+                       externalnode_state    => 'enabled',
+                   );
+    }
+}
+
 =head2 addRepository
 
     Desc: Register a new repository for an host in Vsphere
@@ -252,7 +328,8 @@ sub startHost {
     my %host_conf;
     my $cluster     = Entity->get(id => $host->getClusterId());
     my $image       = $args{host}->getNodeSystemimage();
-    #my $image_name  = $image->systemimage_name.'.raw';
+    #TODO fix this way to get image disk file type
+    my $image_name  = $image->systemimage_name.'.raw';
     my $image_size  = $image->container->container_size;
     my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
     my $host_params = $cluster->getManagerParameters(manager_type => 'host_manager');
@@ -466,6 +543,10 @@ sub powerOnVm {
     }
 }
 
+#########################
+# VMware utils methods ##
+#########################
+
 sub create_conf_spec {
     my $controller =
         VirtualLsiLogicController->new(key => 0,
@@ -488,7 +569,6 @@ sub create_virtual_disk {
    my $path     = $args{path};
    my $disksize = $args{disksize};
 
-   $DB::single = 1;
    my $disk_backing_info =
        VirtualDiskFlatVer2BackingInfo->new(diskMode => 'persistent',
                                            fileName => $path);

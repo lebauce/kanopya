@@ -50,7 +50,13 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    service_provider_name => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },  
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -83,8 +89,11 @@ sub methods {
     };
 }
 
-
 sub getNodesMetrics {
+}
+
+sub getState {
+    throw Kanopya::Exception::NotImplemented();
 }
 
 =head2 getManager
@@ -130,12 +139,6 @@ sub getManagers {
     }
     return wantarray ? @managers : \@managers;
 }
-
-sub getState {
-    throw Kanopya::Exception::NotImplemented();
-}
-
-
 
 sub getNodes {
     my ($self, %args) = @_;
@@ -269,8 +272,7 @@ sub getServiceProviders {
 
 
 sub addManager {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'manager_id', "manager_type" ]);
 
@@ -446,6 +448,66 @@ sub getLimit {
         $value = $host_limit_value;
     }
     return $value;
+}
+
+=head2 addComponent
+
+    Desc: link a existing component with the cluster
+
+=cut
+
+sub addComponent {
+    my ($self,%args) = @_;
+    my $noconf;
+
+    General::checkParams(args => \%args, required => ['component']);
+
+    my $component = $args{component};
+    $component->setAttr(name  => 'service_provider_id',
+                        value => $self->id);
+    $component->save();
+
+    return $component;
+}
+
+=head2 addComponentFromType
+
+    Desc: create a new componant and link it to the cluster
+
+=cut
+
+sub addComponentFromType {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['component_type_id']);
+
+    my $type_id = $args{component_type_id};
+    my $adm = Administrator->new();
+    my $row = $adm->{db}->resultset('ComponentType')->find($type_id);
+    my $comp_name = $row->get_column('component_name');
+    my $comp_version = $row->get_column('component_version');
+    my $comp_class = 'Entity::Component::'.$comp_name.$comp_version;
+    my $location = General::getLocFromClass(entityclass => $comp_class);
+    eval {require $location };
+    my $component = $comp_class->new();
+
+    return $self->addComponent(component => $component);
+}
+
+=head2 removeComponent
+
+    Desc: remove a component instance and all its configuration
+          from this cluster
+
+=cut
+
+sub removeComponent {
+    my ($self,%args) = @_;
+    
+    General::checkParams(args => \%args, required => ['component_instance_id']);
+    
+    my $component_instance = Entity::Component->get(id => $args{component_instance_id});
+    $component_instance->delete;
 }
 
 1;

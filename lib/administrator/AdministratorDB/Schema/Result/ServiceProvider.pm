@@ -26,6 +26,12 @@ __PACKAGE__->table("service_provider");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 service_provider_name
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 32
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -36,6 +42,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "service_provider_name",
+  { data_type => "char", is_nullable => 1, size => 32 },
 );
 __PACKAGE__->set_primary_key("service_provider_id");
 
