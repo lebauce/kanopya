@@ -450,9 +450,9 @@ sub toJSON {
 =cut
 
 sub methodCall {
-    my $self = shift;
+    my $self  = shift;
     my $class = ref $self;
-    my %args = @_;
+    my %args  = @_;
 
     my $adm = Administrator->new();
 
@@ -461,16 +461,16 @@ sub methodCall {
     my $methods = $self->getMethods();
 
     # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
-    my ($granted, $perm_holder);
+    my ($granted, $perm_holder_id);
     if ($methods->{$args{method}}->{perm_holder} eq 'mastergroup') {
-        $perm_holder = $self->getMasterGroup;
+        $perm_holder_id = $self->getMasterGroup->id;
     }
     elsif ($class and $methods->{$args{method}}->{perm_holder} eq 'entity') {
-        $perm_holder = $self;
+        $perm_holder_id = $self->id;
     }
 
     # Check the permissions for the logged user
-    $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder->id, method => $args{method});
+    $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder_id, method => $args{method});
     if (not $granted) {
         my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
         Message->send(
