@@ -159,7 +159,7 @@ sub setConf {
     my $current_conf = $self->getConf;
 
     my $updated = 0;
-    for my $attr (keys %$current_conf) {
+    for my $attr (keys %{$args{conf}}) {
         if ($current_conf->{$attr} ne $args{conf}->{$attr}) {
             $self->setAttr(name => $attr, value => $args{conf}->{$attr});
             $updated = 1;
