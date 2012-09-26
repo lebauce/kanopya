@@ -52,7 +52,7 @@ var FormWizardBuilder = (function() {
         // If it is an update form, retrieve old datas from api
         var values = {};
         if (this.id) {
-            values = this.getValues(this.type, this.id);
+            values = this.valuesCallback(this.type, this.id);
         }
 
         // Firstly merge the attrdef with possible raw attrdef given in params
