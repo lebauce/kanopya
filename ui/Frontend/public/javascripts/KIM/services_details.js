@@ -84,7 +84,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                 },
                 async   : false,
                 success : function(data) {
-                    cloudmanager_id = data.pk;
+                    cloudmanager_id = data[0].pk;
                 }
         });
     }
