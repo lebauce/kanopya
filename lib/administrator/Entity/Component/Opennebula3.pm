@@ -185,6 +185,10 @@ sub methods {
             description => 'get hypervisors',
             perm_holder => 'entity'
         },
+        optimiaas  => {
+            description => 'optimize IaaS (packing)',
+            perm_holder => 'entity'
+        },
     };
 }
 

@@ -35,6 +35,12 @@
     margin: 0px;
 }
 
+td.action-cell .ui-button {
+    margin-top : 15px;
+    width      : 200px;
+}
+
+
 .headerlinks .ui-button {
     margin-top: 0;
 }

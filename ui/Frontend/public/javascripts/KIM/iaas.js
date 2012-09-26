@@ -233,8 +233,14 @@ function load_iaas_content (container_id) {
                         }
                     }
                     var tabs    = [];
+                    // Add the same tabs than 'Services'
                     jQuery.extend(true, tabs, mainmenu_def.Services.jsontree.submenu);
+                    // Add the tab 'Hypervisor'
                     tabs.push({label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor });
+                    // change details tab callback to inform we are in IAAS mode
+                    var details_tab = $.grep(tabs, function (e) {e.id == 'service_details'});
+                    details_tab[0].onLoad = function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid, 1);};
+
                     create_grid({
                         data                    : iaas,
                         content_container_id    : container_id,

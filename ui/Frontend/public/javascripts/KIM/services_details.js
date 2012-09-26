@@ -1,4 +1,4 @@
-function loadServicesDetails(cid, eid) {
+function loadServicesDetails(cid, eid, is_iaas) {
         
     var divId = 'service_details';
     var container = $('#'+ cid);
@@ -73,7 +73,23 @@ function loadServicesDetails(cid, eid) {
         }
     });
 
-    var actioncell  = $('<td>').css('text-align', 'right').appendTo(table);
+    // If this sp is a Iaas, we get its cloud manager component id (used for optimiaas)
+    var cloudmanager_id;
+    if (is_iaas) {
+        $.ajax({
+                url     : '/api/component',
+                data    : {
+                    'service_provider_id'               : eid,
+                    'component_type.component_category' : 'Cloudmanager'
+                },
+                async   : false,
+                success : function(data) {
+                    cloudmanager_id = data.pk;
+                }
+        });
+    }
+
+    var actioncell  = $('<td>', {'class' : 'action-cell'}).css('text-align', 'right').appendTo(table);
     $(actioncell).append($('<div>').append($('<h4>', { text : 'Actions' })));
     $.ajax({
         url     : '/api/serviceprovider/' + eid,
@@ -101,6 +117,12 @@ function loadServicesDetails(cid, eid) {
                     label       : 'Scale out',
                     icon        : 'arrowthick-2-e-w',
                     action      : '/api/cluster/' + eid + '/addNode'
+                },
+                {
+                    label       : 'Optimize IaaS',
+                    icon        : 'arrowthick-2-e-w',
+                    action      : '/api/component/' + cloudmanager_id + '/optimiaas',
+                    condition   : is_iaas !== undefined
                 }
             ];
             createallbuttons(buttons, actioncell);
