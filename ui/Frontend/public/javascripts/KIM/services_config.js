@@ -34,7 +34,14 @@ var ComponentsFields = {
         'relations': { 'opennebula3_repositories': ['repository_name',
                                                     'container_access_id']}
     },
-    
+    'mailnotifier0': {
+        'displayed': ['smtp_server',
+                      'smtp_login',
+                      'smtp_passwd',
+                      'use_ssl'],
+        'relations': {},
+    },
+
     /*
 
     'memcached1'   : ['memcached1_port'],
@@ -74,6 +81,7 @@ function loadServicesConfig(cid, eid) {
             url: '/api/component?service_provider_id=' + eid,
             content_container_id: cid,
             grid_id: 'services_components',
+            rowNum : 20,
             colNames: [ 'ID', 'Component Type', ],
             colModel: [
                 { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
