@@ -86,12 +86,25 @@ sub disconnect {
 
 sub negociateConnection {
     my ($self,%args) = @_;
+    print 'opening a new session to vSphere'."\n";
 
-    $self->connect(
-        user_name => $self->vsphere5_login,
-        password  => $self->vsphere5_pwd,
-        url       => 'https://'.$self->vsphere5_url);
+    #try to grab a dummy entity to check if a session is opened
+    my $view;
+    eval {
+        $view = Vim::find_entity_view(view_type      => 'Folder',
+                                      filter         => {name => 'rootFolder'});
+    };
+    if ($@ =~ /no global session is defined/) {
+        $log->info('opening a new session to vSphere');
 
+        $self->connect(
+            user_name => $self->vsphere5_login,
+            password  => $self->vsphere5_pwd,
+            url       => 'https://'.$self->vsphere5_url);
+    }
+    else {
+        $log->info('A session toward vSphere is already opened');
+    }
 }
 
 ###########################
@@ -111,7 +124,16 @@ sub getView {
 
     General::checkParams(args => \%args, required => ['mo_ref']);
 
-    my $view = Vim::get_view(mo_ref => $args{mo_ref});
+    $self->negociateConnection();
+
+    my $view;
+    eval {
+        $view = Vim::get_view(mo_ref => $args{mo_ref});
+    };
+    if ($@) {
+        $errmsg = 'Could not get view: '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 
     return $view;
 }
@@ -181,16 +203,17 @@ sub findEntityView {
 =head2 synchronize
 
     Desc: synchronize the component with its related vsphere infrastructure 
+    Args: $datacenter_name, $service_provider_id
     
 =cut 
 
 sub synchronize {
     my ($self, %args) = @_;
 
-    $self->negociateConnection();
-
     General::checkParams(args => \%args, required => ['service_provider_id',
                                                       'datacenter_name']);
+
+    $self->negociateConnection();
 
     my $datacenter       = $self->getDatacenters(datacenter_name => $args{datacenter_name});
     my $service_provider = Entity::ServiceProvider->find (hash => {
@@ -241,7 +264,7 @@ sub synchronize {
                      host_hostname      => $hypervisor_view->name,
                      host_state         => $host_state,
                  );
-$DB::single = 1;
+
         #promote new hypervisor class to a vsphere5Hypervisor one
         $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id);
 
@@ -267,6 +290,8 @@ sub addRepository {
     General::checkParams(args => \%args, required => ['host', 
                                                       'repository_name', 
                                                       'container_access']);
+
+    $self->negociateConnection();
 
     my $hypervisor_name     = $args{host}->host_hostname;
     my $container_access    = $args{container_access};
@@ -313,7 +338,10 @@ sub startHost {
 
     General::checkParams(args => \%args, required => ['hypervisor', 'host']);
 
-    $log->debug("Calling startHost on EVSphere $self");
+    $log->info('Calling startHost on EVSphere '. ref($self));
+
+    $self->negociateConnection();
+
     my $host       = $args{host};
     my $hypervisor = $args{hypervisor};
     my $guest_id   = 'debian6_64Guest';
@@ -398,10 +426,6 @@ sub createVm {
     my @vm_devices;
 
     $log->info('trying to get Hypervisor ' .$host_conf{hypervisor}. ' view from vsphere');
-    $self->connect(
-        user_name => $self->vsphere5_login,
-        password  => $self->vsphere5_pwd,
-        url       => 'https://'.$self->vsphere5_url);
 
     #retrieve host view
     eval {
