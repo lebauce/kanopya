@@ -56,6 +56,33 @@ sub createVirtualHost {
     return $vm;
 }
 
+=head2 scaleHost
+
+    Desc: launch a scale workflow that can be of type 'cpu' or 'memory'
+    Args: $host_id, $scalein_value, $scalein_type
+
+=cut
+
+sub scaleHost {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host_id', 'scalein_value', 'scalein_type' ]);
+
+    my $host = Entity->get(id => $args{host_id});
+
+    my $wf_params = {
+        scalein_value => $args{scalein_value},
+        scalein_type  => $args{scalein_type},
+        context       => {
+            host              => $host,
+            cloudmanager_comp => $self
+        }
+    };
+
+    Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
+                  params => $wf_params);
+}
+
 =head2 getHostType
 
     Desc: return the type of the host managed by this host manager

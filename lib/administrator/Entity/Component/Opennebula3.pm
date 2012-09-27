@@ -470,31 +470,6 @@ sub getRemoteSessionURL {
     return "vnc://" . $args{host}->hypervisor->getAdminIp() . ":" . $args{host}->vnc_port;
 }
 
-=head2 scaleHost
-
-=cut
-
-sub scaleHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'host_id', 'scalein_value', 'scalein_type' ]);
-
-    my $host = Entity->get(id => $args{host_id});
-
-    my $wf_params = {
-        scalein_value => $args{scalein_value},
-        scalein_type  => $args{scalein_type},
-        context       => {
-            host              => $host,
-            cloudmanager_comp => $self
-        }
-    };
-
-    Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
-                  params => $wf_params);
-}
-
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
