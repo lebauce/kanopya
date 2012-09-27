@@ -86,8 +86,8 @@ sub disconnect {
 
 sub negociateConnection {
     my ($self,%args) = @_;
-    print 'opening a new session to vSphere'."\n";
 
+    $log->info('Checking if a session to vSphere is already opened');
     #try to grab a dummy entity to check if a session is opened
     my $view;
     eval {
@@ -299,8 +299,8 @@ sub addRepository {
     my $export_full_path    = $container_access->container_access_export;
     my @export_path         = split (':', $export_full_path);
 
-    my $view = Vim::find_entity_view(view_type => 'HostSystem',
-                                     filter    => { 
+    my $view = $self->findEntityView(view_type      => 'HostSystem',
+                                     hash_filter    => {
                                          'name' => $hypervisor_name,
                                      });
 
@@ -429,10 +429,10 @@ sub createVm {
 
     #retrieve host view
     eval {
-        $host_view = Vim::find_entity_view(view_type => 'HostSystem',
-                                           filter    => {
-                                               'name' => $host_conf{hypervisor}
-                                          });
+        $host_view = $self->findEntityView(view_type   => 'HostSystem',
+                                           hash_filter => {
+                                               'name' => $host_conf{hypervisor},
+                                           });
     };
     if ($@) {
         $errmsg  = 'Error finding hypervisor '.$host_conf{hypervisor}.' on vSphere';
@@ -442,10 +442,10 @@ sub createVm {
 
     #retrieve datacenter view
     eval {
-        $datacenter_view = Vim::find_entity_view(view_type => 'Datacenter',
-                                                 filter    => {
+        $datacenter_view = $self->findEntityview(view_type   => 'Datacenter',
+                                                 hash_filter => {
                                                      name => $host_conf{datacenter}
-                                                });
+                                                 });
     };
     if ($@) {
         $errmsg  = 'Error finding datacenter '.$host_conf{datacenter}.' on vSphere';
@@ -506,7 +506,7 @@ sub createVm {
 
     #retrieve the vm folder from vsphere inventory
     eval {
-        $vm_folder_view = Vim::get_view(mo_ref => $datacenter_view->vmFolder);
+        $vm_folder_view = $self->getView(mo_ref => $datacenter_view->vmFolder);
     };
     if ($@) {
         $errmsg  = 'Error finding the vm folder on vSphere';
@@ -516,7 +516,7 @@ sub createVm {
 
     #retrieve the host parent view
     eval {
-        $comp_res_view  = Vim::get_view(mo_ref => $host_view->parent);
+        $comp_res_view  = $self->getView(mo_ref => $host_view->parent);
     };
     if ($@) {
         $errmsg  = 'Error finding the parent managed entity of the host view';
@@ -552,15 +552,15 @@ sub powerOnVm {
     my $vm_name   = $args{vm}->host_hostname;
 
     #get the HostSystem view
-    my $host_view = Vim::find_entity_view(view_type => 'HostSystem',
-                                          filter    => {
-                                              'name' => $host_name}
-                                         );
+    my $host_view = $self->findEntityView(view_type   => 'HostSystem',
+                                          hash_filter => {
+                                              'name' => $host_name
+                                          });
     my $host_vms = $host_view->vm;
  
     #maybe find a better way to do that? 
     foreach my $vm (@$host_vms) {
-        my $guest = Vim::get_view(mo_ref => $vm);
+        my $guest = $self->getView(mo_ref => $vm);
         if ($guest->name eq $vm_name) {
             $guest->PowerOnVM();
         }
