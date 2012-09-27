@@ -35,7 +35,7 @@ var FormWizardBuilder = (function() {
 
         // Initialize the from
         this.form   = $("<form>", { method : method, action : action });
-        this.table = $("<table>");
+        this.table  = $("<table>");
         this.tables = [];
 
         this.form.appendTo(this.content).append(this.table);
@@ -43,7 +43,7 @@ var FormWizardBuilder = (function() {
         this.attributedefs = {};
 
         // Retrieve data structure and values from api
-        var response = ajax('GET', '/api/attributes/' + this.type);
+        var response   = this.attrsCallback(this.type);
         var attributes = response.attributes;
         var relations  = response.relations;
 
@@ -66,7 +66,7 @@ var FormWizardBuilder = (function() {
             var relationdef = relations[relation_name];
 
             // Get the relation type attrdef
-            var response = ajax('GET', '/api/attributes/' + relationdef.resource);
+            var response = this.attrsCallback(relationdef.resource);
             var rel_attributedefs = response.attributes;
             var rel_relationdefs  = response.relations;
 
@@ -134,8 +134,8 @@ var FormWizardBuilder = (function() {
             var value = this.attributedefs[name].value || values[name] || undefined;
 
             // Get options for select inputs
-            if (this.attributedefs[name].type === 'relation' && this.attributedefs[name].relation === 'single' &&
-                this.attributedefs[name].options === undefined) {
+            if (this.attributedefs[name].type === 'relation' && this.attributedefs[name].options === undefined &&
+                (this.attributedefs[name].relation === 'single' || this.attributedefs[name].relation === 'multi')) {
                 this.attributedefs[name].options = this.buildSelectOptions(name, value, relations);
             }
 
@@ -150,7 +150,25 @@ var FormWizardBuilder = (function() {
     }
 
     FormWizardBuilder.prototype.buildSelectOptions = function(name, value, relations) {
-        var options = this.getForeignValues(name, relations);
+        var resource;
+        if (relations[name]) {
+            // Relation is multi to multi
+            resource = this.attributedefs[name].expand;
+
+        } else {
+            // Relation is single to single
+            for (relation in relations) {
+                for (prop in relations[relation].cond) {
+                    if (relations[relation].cond.hasOwnProperty(prop)) {
+                        if (relations[relation].cond[prop] === 'self.' + name) {
+                            resource = relations[relation].resource;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        var options = ajax('GET', '/api/' + resource);
 
         // If there is no options but a fixed value,
         // add the value to options.
@@ -180,6 +198,11 @@ var FormWizardBuilder = (function() {
         // Handle select fields
         } else if (toInputType(attr.type) === 'select') {
             input = $("<select>", { width: 200 });
+
+            // If relation is multi, set the multiple select attribute
+            if (attr.relation === 'multi') {
+                input.attr('multiple', 'multiple');
+            }
 
             // Inserting select options
             for (var i in attr.options) if (attr.options.hasOwnProperty(i)) {
@@ -218,7 +241,7 @@ var FormWizardBuilder = (function() {
                 this.validateRules[name].required = true;
             }
 
-        } else if (toInputType(attr.type) === 'select') {
+        } else if (toInputType(attr.type) === 'select' && attr.relation === 'single') {
             var option = $("<option>", { value : '', text : '-' }).prependTo(input);
             if (value === undefined) {
                 $(option).attr('selected', 'selected');
@@ -428,24 +451,6 @@ var FormWizardBuilder = (function() {
         }
     }
 
-    FormWizardBuilder.prototype.getForeignValues = function(name, relationdefs) {
-        var datavalues = undefined;
-
-        for (relation in relationdefs) {
-            for (prop in relationdefs[relation].cond) {
-                if (relationdefs[relation].cond.hasOwnProperty(prop)) {
-                    if (relationdefs[relation].cond[prop] === 'self.' + name) {
-                        relation = relationdefs[relation].resource;
-                        datavalues = ajax('GET', '/api/' + relation);
-                        break;
-                    }
-                    break;
-                }
-            }
-        }
-        return datavalues;
-    }
-
     FormWizardBuilder.prototype.mustDisableField = function(name) {
         if (this.attributedefs[name].disabled == true) {
             return true;
@@ -491,6 +496,7 @@ var FormWizardBuilder = (function() {
     }
 
     FormWizardBuilder.prototype.handleBeforeSubmit = function(arr, $form, opts) {
+        console.log(arr);
         // Building a hash representing the object with its relations
         var data = {};
         var rel_attr_names = [];
@@ -522,9 +528,18 @@ var FormWizardBuilder = (function() {
             } else {
                 hash_to_fill = data;
             }
-            hash_to_fill[attr.name] = attr.value;
-        }
+            if (this.attributedefs[attr.name].relation === 'multi') {
+                console.log(attr.name + ' is multi');
+                if (! hash_to_fill[attr.name]) {
+                    hash_to_fill[attr.name] = [];
+                }
+                hash_to_fill[attr.name].push(attr.value);
 
+            } else {
+                hash_to_fill[attr.name] = attr.value;
+            }
+        }
+        console.log(data);
         this.submitCallback(data, $form, opts, $.proxy(this.onSuccess, this), $.proxy(this.onError, this));
 
         return false;
@@ -560,6 +575,10 @@ var FormWizardBuilder = (function() {
             url += '?expand=' + expands.join(',');
         }
         return ajax('GET', url);
+    }
+
+    FormWizardBuilder.prototype.getAttributes = function(resource) {
+        return ajax('GET', '/api/attributes/' + resource);
     }
 
     FormWizardBuilder.prototype.findTable = function(tag, step) {
@@ -614,6 +633,7 @@ var FormWizardBuilder = (function() {
         this.skippable      = args.skippable      || false;
         this.submitCallback = args.submitCallback || this.submit;
         this.valuesCallback = args.valuesCallback || this.getValues;
+        this.attrsCallback  = args.attrsCallback  || this.getAttributes;
         this.cancelCallback = args.cancel         || $.noop;
         this.error          = args.error          || $.noop;
     }
@@ -630,6 +650,7 @@ var FormWizardBuilder = (function() {
             skippable       : this.skippable,
             submitCallback  : this.submitCallback,
             valuesCallback  : this.valuesCallback,
+            attrsCallback   : this.attrsCallback,
             cancel          : this.cancelCallback
         };
     }
