@@ -194,10 +194,11 @@ function createNodemetricRule(container_id, elem_id) {
                     terms.pop();
                     // add the selected item
                     terms.push( "id" + ui.item.value );
-                    // add placeholder to get the comma-and-space at the end
-                    //terms.push( "" );
-                    this.value = terms;
-                    this.value = terms.join(" ");
+
+                    $(this).val(terms.join(" "))
+
+                    // trick to avoid bad form validator behaviour
+                    $(this).blur().focus();
                     return false;
                 }
             });
@@ -401,8 +402,10 @@ function createServiceRule(container_id, elem_id) {
                     terms.push( "id" + ui.item.value );
                     // add placeholder to get the comma-and-space at the end
                     //terms.push( "" );
-                    this.value = terms;
-                    this.value = terms.join(" ");
+                    $(this).val(terms.join(" "))
+
+                    // trick to avoid bad form validator behaviour
+                    $(this).blur().focus();
                     return false;
                 }
             });
