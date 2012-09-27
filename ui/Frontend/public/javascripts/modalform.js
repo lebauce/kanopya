@@ -1225,8 +1225,31 @@ var ModalForm = (function() {
             formOptions         : {
                 beforeSerialize : $.proxy(this.beforeSerialize, this),
                 beforeSubmit    : $.proxy(this.handleBeforeSubmit, this),
-                success         : $.proxy(this.onSuccess, this),
-                error           : $.proxy(this.onError, this),
+                success         : $.proxy(function(data) {
+                    // Ugly but must delete all DOM elements
+                    // but formwizard is using the element after this
+                    // callback, so we delay the deletion
+                    this.closeDialog();
+                    this.callback(data, this.form);
+                }, this),
+                error           : $.proxy(function(data) {
+                    var buttonsdiv = $(this.content).parents('div.ui-dialog').children('div.ui-dialog-buttonpane');
+                    buttonsdiv.find('button').each(function() {
+                        $(this).removeAttr('disabled', 'disabled');
+                    });
+                    $(this.content).find("div.ui-state-error").each(function() {
+                        $(this).remove();
+                    });
+                    var error;
+                    try {
+                        error = JSON.parse(data.responseText);
+                    }
+                    catch (err) {
+                        error = 'An error occurs, but can not be parsed...'
+                    }
+                    $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all' }));
+                    this.error(data);
+                }, this)
             }
         });
 
