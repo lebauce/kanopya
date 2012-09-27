@@ -127,3 +127,39 @@ function node_rules_tab(cid, eid, service_provider_id) {
         action_delete : 'no',
     } );
 }
+
+// Make the field autocomplete and replace autocompleted name with corresponding id
+function makeAutocompleteAndTranslate(field, availableTags) {
+    // don't navigate away from the field on tab when selecting an item
+    field.bind( "keydown", function( event ) {
+        if ( event.keyCode === $.ui.keyCode.TAB &&
+                $( this ).data( "autocomplete" ).menu.active ) {
+            event.preventDefault();
+        }
+    })
+    .autocomplete({
+        minLength: 0,
+        source: function( request, response ) {
+            // delegate back to autocomplete, but extract the last term
+            response( $.ui.autocomplete.filter(
+                availableTags, request.term.split( / \s*/ ).pop() ) );
+        },
+        focus: function() {
+            // prevent value inserted on focus
+            return false;
+        },
+        select: function( event, ui ) {
+            var terms = this.value.split(/ \s*/);
+            // remove the current input
+            terms.pop();
+            // add the selected item
+            terms.push( "id" + ui.item.value );
+
+            $(this).val(terms.join(" "))
+
+            // trick to avoid bad form validator behaviour
+            $(this).blur().focus();
+            return false;
+        }
+    });
+}

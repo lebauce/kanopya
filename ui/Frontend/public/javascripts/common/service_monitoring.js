@@ -1,4 +1,5 @@
 require('common/grid.js');
+require('common/service_common.js');
 
 var statistics_function_name = ['mean','variance','std','max','min','kurtosis','skewness','dataOut','sum'];
 
@@ -160,65 +161,25 @@ function createServiceConbination(container_id, elem_id, options) {
     button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
-                    ////////////////////////////////////// Service Combination Forumla Construction ///////////////////////////////////////////
+        ////////////////////////////////////// Service Combination Forumla Construction ///////////////////////////////////////////
         
         $(function() {
-    var availableTags = new Array();
-    $.ajax({
-        url: '/api/clustermetric?clustermetric_service_provider_id=' + elem_id + '&dataType=jqGrid',
-        async   : false,
-        success: function(answer) {
-                    $(answer.rows).each(function(row) {
-                    var pk = answer.rows[row].pk;
-                    availableTags.push({label : answer.rows[row].clustermetric_label, value : answer.rows[row].clustermetric_id});
-
-                });
-            }
-    });
-
-    function split( val ) {
-            return val.split( / \s*/ );
-        }
-        function extractLast( term ) {
-            return split( term ).pop();
-        }
-
-        $( "#input_aggregate_combination_formula" )
-            // don't navigate away from the field on tab when selecting an item
-            .bind( "keydown", function( event ) {
-                if ( event.keyCode === $.ui.keyCode.TAB &&
-                        $( this ).data( "autocomplete" ).menu.active ) {
-                    event.preventDefault();
-                }
-            })
-            .autocomplete({
-                minLength: 0,
-                source: function( request, response ) {
-                    // delegate back to autocomplete, but extract the last term
-                    response( $.ui.autocomplete.filter(
-                        availableTags, extractLast( request.term ) ) );
-                },
-                focus: function() {
-                    // prevent value inserted on focus
-                    return false;
-                },
-                select: function( event, ui ) {
-                    var terms = split( this.value );
-                    // remove the current input
-                    terms.pop();
-                    // add the selected item
-                    terms.push( "id" + ui.item.value );
-                    // add placeholder to get the comma-and-space at the end
-                    //terms.push( "" );
-                    $(this).val(terms.join(" "))
-
-                    // trick to avoid bad form validator behaviour
-                    $(this).blur().focus();
-                    return false;
-                }
+            var availableTags = new Array();
+            $.ajax({
+                url: '/api/clustermetric?clustermetric_service_provider_id=' + elem_id + '&dataType=jqGrid',
+                async   : false,
+                success: function(answer) {
+                            $(answer.rows).each(function(row) {
+                            var pk = answer.rows[row].pk;
+                            availableTags.push({label : answer.rows[row].clustermetric_label, value : answer.rows[row].clustermetric_id});
+                        });
+                    }
             });
-    });
-    ////////////////////////////////////// END OF : Service Combination Forumla Construction ///////////////////////////////////////////
+
+            makeAutocompleteAndTranslate( $( "#input_aggregate_combination_formula" ), availableTags );
+
+        });
+        ////////////////////////////////////// END OF : Service Combination Forumla Construction ///////////////////////////////////////////
 
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
@@ -257,7 +218,7 @@ function createNodemetricCombination(container_id, elem_id, ext, options) {
     button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
-            ////////////////////////////////////// Node Combination Forumla Construction ///////////////////////////////////////////
+        ////////////////////////////////////// Node Combination Forumla Construction ///////////////////////////////////////////
             
 //        var component_id;
 //        var indicators;
@@ -291,49 +252,9 @@ function createNodemetricCombination(container_id, elem_id, ext, options) {
             //availableTags.push({indicators});
         }
 
-        function split( val ) {
-            return val.split( / \s*/ );
-        }
-        function extractLast( term ) {
-            return split( term ).pop();
-        }
+        makeAutocompleteAndTranslate( $( "#input_nodemetric_combination_formula" ), availableTags );
 
-        $( "#input_nodemetric_combination_formula" )
-            // don't navigate away from the field on tab when selecting an item
-            .bind( "keydown", function( event ) {
-                if ( event.keyCode === $.ui.keyCode.TAB &&
-                        $( this ).data( "autocomplete" ).menu.active ) {
-                    event.preventDefault();
-                }
-            })
-            .autocomplete({
-                minLength: 0,
-                source: function( request, response ) {
-                    // delegate back to autocomplete, but extract the last term
-                    response( $.ui.autocomplete.filter(
-                        availableTags, extractLast( request.term ) ) );
-                },
-                focus: function() {
-                    // prevent value inserted on focus
-                    return false;
-                },
-                select: function( event, ui ) {
-                    var terms = split( this.value );
-                    // remove the current input
-                    terms.pop();
-                    // add the selected item
-                    terms.push( "id" + ui.item.value );
-                    // add placeholder to get the comma-and-space at the end
-                    //terms.push( "" );
-                    $(this).val(terms.join(" "))
-
-                    // trick to avoid bad form validator behaviour
-                    $(this).blur().focus();
-                    return false;
-                }
-            });
-
-    ////////////////////////////////////// END OF : Node Combination Forumla Construciton ///////////////////////////////////////////
+        ////////////////////////////////////// END OF : Node Combination Forumla Construciton ///////////////////////////////////////////
 
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
