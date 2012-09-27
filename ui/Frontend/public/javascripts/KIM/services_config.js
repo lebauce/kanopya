@@ -2,17 +2,41 @@ require('common/general.js');
 require('modalform.js');
 
 var ComponentsFields = {
-    'linux0' : { 'displayed': [],
-                 'relations': { 'linux0s_mount': ['linux0_mount_device',
-                                                  'linux0_mount_point',
-                                                  'linux0_mount_filesystem',
-                                                  'linux0_mount_options',
-                                                  'linux0_mount_dumpfreq',
-                                                  'linux0_mount_passnum' ] } },
-    /*              
-    'puppetagent2' : ['puppetagent2_mode','puppetagent2_masterip',
-                      'puppetagent2_masterfqdn', 'puppetagent2_options'],
-    'snmpd5'       : ['monitor_server_ip','snmpd_options'],
+    'linux0' : { 
+        'displayed': [],
+        'relations': { 'linux0s_mount': ['linux0_mount_device',
+                                         'linux0_mount_point',
+                                         'linux0_mount_filesystem',
+                                         'linux0_mount_options',
+                                         'linux0_mount_dumpfreq',
+                                         'linux0_mount_passnum' ]}
+    },
+    'snmpd5' : { 
+        'displayed': ['monitor_server_ip',
+                      'snmpd_options'],
+        'relations': {}
+    },
+    'puppetagent2': { 
+        'displayed': ['puppetagent2_mode',
+                      'puppetagent2_masterip',
+                      'puppetagent2_masterfqdn', 
+                      'puppetagent2_options'],
+        'relations': {}
+    },
+    'opennebula3': {
+        'displayed': ['host_monitoring_interval',
+                      'vm_polling_interval',
+                      'port',
+                      'hypervisor',
+                      'debug_level',
+                      'overcommitment_cpu_factor',
+                      'overcommitment_memory_factor'],
+        'relations': { 'opennebula3_repositories': ['repository_name',
+                                                    'container_access_id']}
+    },
+    
+    /*
+
     'memcached1'   : ['memcached1_port'],
     'apache2'      : ['apache2_serverroot','apache2_loglevel',
                       'apache2_ports','apache2_sslports'],
@@ -23,10 +47,7 @@ var ComponentsFields = {
                         'smtp_server','smtp_connect_timeout',
                         'daemon_method','lvs_id'],      
     'mysql5'        : ['mysql5_bindaddress','mysql5_port','mysql5_datadir'] ,
-    'opennebula3'   : ['host_monitoring_interval', 'vm_polling_interval',
-                       'port', 'hypervisor', 'debug_level',
-                       'overcommitment_cpu_factor',
-                       'overcommitment_memory_factor' ]
+    
     */
 };
 
@@ -71,7 +92,15 @@ function loadServicesConfig(cid, eid) {
                                 return ajax('POST', '/api/' + componentType + '/' + e.pk + '/getConf');
                             },
                             submitCallback : function (data, $form, opts, onsuccess, onerror) {
-                                console.log('submitCallback')
+                                var attrdef = ajax('GET', '/api/attributes/' + componentType).attributes;
+                                var primary_attr;
+                                for(var attr in attrdef) {
+                                    if(attrdef[attr].is_primary == true) {
+                                        primary_attr = attr;
+                                        break;
+                                    }
+                                }
+                                data[primary_attr] = e.pk;
                                 return ajax('POST', '/api/' + componentType + '/' + e.pk + '/setConf', { conf : data }, onsuccess, onerror);
                             },
                             displayed      : ComponentsFields[componentType].displayed,

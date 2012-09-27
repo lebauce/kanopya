@@ -134,4 +134,7 @@ sub getExportManager {
     return Entity->get(id => $self->getAttr(name => 'export_manager_id'));
 }
 
+sub getLabelAttr { return 'container_access_export'; }
+
+
 1;

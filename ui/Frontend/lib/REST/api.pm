@@ -133,6 +133,7 @@ my %resources = (
     "mailnotifier0"            => "Entity::Component::Mailnotifier0",
     "linux0"                   => "Entity::Component::Linux0",
     "linux0mount"              => "Linux0Mount",
+    "opennebula3repository"    => "Opennebula3Repository",
 );
 
 sub db_to_json {

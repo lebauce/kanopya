@@ -158,6 +158,11 @@ use constant ATTR_DEF => {
         pattern     => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1
+    },
+    opennebula3_repositories => {
+        label => 'Virtual machine images repositories',
+        type  => 'relation',
+        relation => 'single_multi',
     }
 };
 
@@ -364,10 +369,20 @@ sub setConf {
     my $repos = $conf->{opennebula3_repositories};
     delete $conf->{opennebula3_repositories};
 
+    # main config
     if (not $conf->{opennebula3_id}) {
         $self->{_dbix}->create($conf);
     } else {
         $self->{_dbix}->update($conf);
+    }
+    
+    # repositories config
+    $self->{_dbix}->opennebula3_repositories->delete_all;
+    foreach my $repo (@$repos) {
+        if(exists $repo->{opennebula3_repository_id}) {
+            delete $repo->{opennebula3_repository_id};
+        }
+        $self->{_dbix}->opennebula3_repositories->create($repo);
     }
 }
 
