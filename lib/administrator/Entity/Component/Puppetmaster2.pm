@@ -48,7 +48,16 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    puppetmaster2_options => {
+        label        => "Daemon options",
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    }
+};
+
 sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {

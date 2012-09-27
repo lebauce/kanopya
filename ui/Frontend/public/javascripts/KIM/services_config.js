@@ -41,7 +41,18 @@ var ComponentsFields = {
                       'use_ssl'],
         'relations': {},
     },
-
+    'lvm2' : { 
+        'displayed': [],
+        'relations': { 'lvm2_vgs': ['lvm2_vg_name',
+                                    'lvm2_vg_freespace',
+                                    'lvm2_vg_size']}
+    },
+    'puppetmaster2': {
+        'displayed': ['puppetmaster2_options'],
+        'relations': {},
+    },
+    
+    
     /*
 
     'memcached1'   : ['memcached1_port'],
@@ -63,6 +74,7 @@ function getComponentTypes() {
         'Linux'        : 'linux0',
         'Mailnotifier' : 'mailnotifier0',
         'Puppetagent'  : 'puppetagent2',
+        'Puppetmaster' : 'puppetmaster2',
         'Snmpd'        : 'snmpd5',
         'Apache'       : 'apache2',
         'Syslogng'     : 'syslogng3',
