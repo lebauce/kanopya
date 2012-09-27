@@ -297,10 +297,10 @@ var FormWizardBuilder = (function() {
 
     FormWizardBuilder.prototype.insertInput = function(input, label, table, help, listing) {
         var linecontainer;
-
+        console.log($(input).attr('name') + ', ' + listing);
         if (listing) {
             // TOTO: Handle all special caracters as accent, etc
-            listing = listing.replace(' ', '_');
+            listing = listing.replace(/ /g, '_');
 
             var listing_size;
             if (input.attr('type') === 'checkbox') {
@@ -564,7 +564,7 @@ var FormWizardBuilder = (function() {
 
     FormWizardBuilder.prototype.findTable = function(tag, step) {
         if (tag !== undefined) {
-            tag.replace(' ', '_');
+            tag.replace(/ /g, '_');
 
             var table = this.tables[tag];
             if (table === undefined) {
