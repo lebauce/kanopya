@@ -34,6 +34,7 @@ function servicesList (container_id, elem_id) {
     $.ajax({
         url         : '/api/serviceprovider/getServiceProviders',
         type        : 'POST',
+        async       : false,
         contentType : 'application/json',
         data        : JSON.stringify({ category : 'Cloudmanager' }),
         success     : function(data) {
