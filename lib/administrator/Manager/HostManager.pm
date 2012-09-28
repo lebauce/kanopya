@@ -171,7 +171,6 @@ sub createHost {
         delete $args{ifaces};
     }
 
-    $log->debug("New Operation AddHost with attrs : " . Dumper(%args));
     Entity::Operation->enqueue(
         priority => 200,
         type     => 'AddHost',

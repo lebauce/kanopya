@@ -168,7 +168,7 @@ use constant ATTR_DEF => {
     ifaces => {
         label        => 'Network interfaces',
         type         => 'relation',
-        relation     => 'single-multi',
+        relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 0,
     },

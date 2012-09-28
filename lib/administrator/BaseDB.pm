@@ -284,16 +284,12 @@ sub checkAttrs {
 
 sub new {
     my ($class, %args) = @_;
+    my $hash = \%args;
 
-    # Extrating relation from attrs
-    my $relations = {};
-    for my $attr (keys %args) {
-        if (ref($args{$attr}) eq 'ARRAY') {
-            $relations->{$attr} = delete $args{$attr};
-        }
-    }
+    # Extract relation for futher handling
+    my $relations = extractRelations(hash => $hash);
 
-    my $attrs = $class->checkAttrs(attrs => \%args);
+    my $attrs = $class->checkAttrs(attrs => $hash);
 
     # Get the class_type_id for class name
     my $adm = Administrator->new();
@@ -311,42 +307,7 @@ sub new {
     bless $self, $class;
 
     # Populate relations
-    for my $relation (keys %$relations) {
-        my $attrdef = $class->getAttrDefs->{$relation};
-        my $reldef  = $self->{_dbix}->relationship_info($relation);
-
-        # Deduce the foreign key from relation def
-        my @conds = keys %{$reldef->{cond}};
-        my $fk = getForeignKeyFromCond(cond => $conds[0]);
-
-        my $relation_schema = $self->{_dbix}->$relation->result_source;
-        my $relationclass = classFromDbix($relation_schema);
-        requireClass($relationclass);
-
-        # Deduce the foreign key attr for link entries in relations mutli
-        my $linkfk;
-        if ($attrdef->{relation} eq 'multi') {
-            my $linked_reldef = $relation_schema->relationship_info($attrdef->{link_to});
-
-            my @conds = values %{$linked_reldef->{cond}};
-            $linkfk = getKeyFromCond(cond => $conds[0]);
-        }
-
-        for my $entry (@{$relations->{$relation}}) {
-            if ($attrdef->{relation} eq 'single_multi') {
-                # Create the new relationships
-                $entry->{$fk} = $self->id;
-            }
-            elsif ($attrdef->{relation} eq 'multi') {
-                # Create entries in the link table
-                $entry = {
-                    $fk     => $self->id,
-                    $linkfk => $entry,
-                };
-            }
-            $relationclass->create(%$entry);
-        }
-    }
+    $self->populateRelations(relations => $relations);
     return $self;
 }
 
@@ -359,21 +320,17 @@ sub new {
 
 sub update {
     my ($self, %args) = @_;
+    my $hash = \%args;
 
-    # Extrating relation from attrs
-    my $relations = {};
-    for my $attr (keys %args) {
-        if (ref($args{$attr}) eq 'ARRAY') {
-            $relations->{$attr} = delete $args{$attr};
-        }
-    }
-    delete $args{id};
+    # Extract relation for futher handling
+    my $relations = extractRelations(hash => $hash);
+    delete $hash->{id};
 
     my $updated = 0;
-    for my $attr (keys %args) {
+    for my $attr (keys %$hash) {
         my $currentvalue = $self->getAttr(name => $attr);
-        if ("$args{$attr}" ne "$currentvalue") {
-            $self->setAttr(name => $attr, value => $args{$attr});
+        if ("$hash->{$attr}" ne "$currentvalue") {
+            $self->setAttr(name => $attr, value => $hash->{$attr});
 
             if (not $updated) { $updated = 1; }
         }
@@ -381,26 +338,8 @@ sub update {
     if ($updated) { $self->save(); }
 
     # Populate relations
-    for my $relation (keys %$relations) {
-        my $schema = $self->{_dbix}->$relation->result_source;
-        my $relationclass = classFromDbix($schema);
-
-        # TODO: Handle multiple parimary keys
-        my $primary_key = @{$schema->_primaries}[0];
-
-        requireClass($relationclass);
-        for my $entry (@{$relations->{$relation}}) {
-            my $id = delete $entry->{$primary_key};
-            if ($id) {
-                # We have the relation id, it is a relation update
-                $relationclass->get(id => $id)->update(%$entry);
-            }
-            else {
-                # Id do not exists, it is a relation creation
-                $relationclass->create(%$entry);
-            }
-        }
-    }
+    $self->populateRelations(relations => $relations);
+    return $self;
 }
 
 =head2
@@ -1011,6 +950,9 @@ sub toJSON {
     my ($self, %args) = @_;
     my $class = ref ($self) || $self;
 
+    General::checkParams(args     => \%args,
+                         optional => { 'no_relations' => 0, 'model' => undef });
+
     my $pk;
     my $hash = {};
     my $attributes;
@@ -1086,6 +1028,101 @@ sub toJSON {
     }
 
     return $hash;
+}
+
+=head2
+
+    Remove relations values from values, and return its.
+
+=cut
+
+sub extractRelations {
+    my (%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'hash' ]);
+
+    # Extrating relation from attrs
+    my $relations = {};
+    for my $attr (keys %{$args{hash}}) {
+        if (ref($args{hash}->{$attr}) eq 'ARRAY') {
+            $relations->{$attr} = delete $args{hash}->{$attr};
+        }
+    }
+    return $relations;
+}
+
+=head2
+
+    Create or update relations.
+
+=cut
+
+sub populateRelations {
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, required => [ 'relations' ]);
+
+    # For each relations type
+    for my $relation (keys %{$args{relations}}) {
+        my $attrdef = $class->getAttrDefs->{$relation};
+        my $reldef  = $self->{_dbix}->relationship_info($relation);
+
+        # Deduce the foreign key from relation def
+        my @conds = keys %{$reldef->{cond}};
+        my $fk = getForeignKeyFromCond(cond => $conds[0]);
+
+        my $relation_schema = $self->{_dbix}->$relation->result_source;
+        my $relationclass = classFromDbix($relation_schema);
+        requireClass($relationclass);
+
+        # Deduce the foreign key attr for link entries in relations multi
+        my $linkfk;
+        my $exsting = {};
+        if ($attrdef->{relation} eq 'single_multi') {
+            my @entries = $relationclass->search(hash => { $fk => $self->id });
+            %$exsting = map { $_->id => $_ } @entries;
+        }
+        elsif ($attrdef->{relation} eq 'multi') {
+            my $linked_reldef = $relation_schema->relationship_info($attrdef->{link_to});
+
+            my @conds = values %{$linked_reldef->{cond}};
+            $linkfk = getKeyFromCond(cond => $conds[0]);
+
+            my @entries = $relationclass->search(hash => { $fk => $self->id });
+            %$exsting = map { $_->id => $_ } @entries;
+        }
+
+        # Create/update all entries
+        for my $entry (@{$args{relations}->{$relation}}) {
+            if ($attrdef->{relation} eq 'single_multi') {
+                my $id = delete $entry->{@{$relation_schema->_primaries}[0]};
+                if ($id) {
+                    # We have the relation id, it is a relation update
+                    $relationclass->get(id => $id)->update(%$entry);
+                    delete $exsting->{$id};
+                }
+                else {
+                    # Create the new relationships
+                    $entry->{$fk} = $self->id;
+                    # Id do not exists, it is a relation creation
+                    $relationclass->create(%$entry);
+                }
+            }
+            elsif ($attrdef->{relation} eq 'multi') {
+                my $exists = delete $exsting->{$entry};
+                if (not $exists) {
+                    # Create entries in the link table
+                    $relationclass->create($fk => $self->id, $linkfk => $entry);
+                }
+            }
+        }
+
+        # Finally delete remaining entries
+        for my $remaning (values %$exsting) {
+            $remaning->remove();
+        }
+    }
 }
 
 =head2
