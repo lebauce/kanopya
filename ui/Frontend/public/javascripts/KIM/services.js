@@ -358,6 +358,12 @@ function nodedetailsaction(cid, eid) {
                     data    : { host_id : data.host.pk }
                 },
                 {
+                    label   : 'Resubmit node',
+                    icon    : 'refresh',
+                    condition : isVirtual,
+                    action  : '/api/host/' + data.host.pk + '/resubmit',
+                },
+               {
                     label       : 'Scale Cpu',
                     icon        : 'arrowthick-2-n-s',
                     condition   : isVirtual,
