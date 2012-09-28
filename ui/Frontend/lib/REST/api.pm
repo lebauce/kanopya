@@ -135,6 +135,7 @@ my %resources = (
     "linux0"                   => "Entity::Component::Linux0",
     "linux0mount"              => "Linux0Mount",
     "opennebula3repository"    => "Opennebula3Repository",
+    "opennebula3hypervisor"    => "Opennebula3Hypervisor",
 );
 
 sub db_to_json {

@@ -90,21 +90,31 @@ var KanopyaFormWizard = (function() {
                 rel_attributedefs[foreign].value = this.id;
             }
 
-            // Build in one line the form inputs corresponding to the relation
-            var add_button = $("<input>", { text : 'Add', class : 'wizard-ignore', type: 'button' });
-            var add_button_line = $("<tr>").css('position', 'relative');
-            $("<td>", { colspan : 2 }).append(add_button).appendTo(add_button_line);
-            this.findTable(this.attributedefs[relation_name].label || relation_name, this.attributedefs[relation_name].step).append(add_button_line);
+            // If the relation is editable, insert a button to add entries
+            if (this.attributedefs[relation_name].is_editable == true) {
+                var add_button = $("<input>", { text : 'Add', class : 'wizard-ignore', type: 'button', id: 'add_button_' + relation_name });
+                var add_button_line = $("<tr>").css('position', 'relative');
+                $("<td>", { colspan : 2 }).append(add_button).appendTo(add_button_line);
+                this.findTable(this.attributedefs[relation_name].label || relation_name, this.attributedefs[relation_name].step).append(add_button_line);
 
-            var _this = this;
-            add_button.bind('click', function() {
-                _this.buildFromAttrDef(rel_attributedefs, _this.relations[relation_name], {},
-                                       rel_relationdefs, _this.attributedefs[relation_name].label || relation_name);
-            });
-            add_button.button({ icons : { primary : 'ui-icon-plusthick' } });
-            add_button.val('Add');
+                var _this = this;
+                var fixed_params = {
+                    attributes : rel_attributedefs,
+                    displayed  : _this.relations[relation_name],
+                    values     : {},
+                    relations  : rel_relationdefs,
+                    listing    : _this.attributedefs[relation_name].label || relation_name,
+                };
+                add_button.bind('click', fixed_params, function(event) {
+                    _this.buildFromAttrDef(event.data.attributes, event.data.displayed,
+                                           event.data.values, event.data.relations, event.data.listing);
+                });
+                add_button.button({ icons : { primary : 'ui-icon-plusthick' } });
+                add_button.val('Add');
+            }
 
             // For each relation entries, add filled inputs in one line
+            console.log(values[relation_name]);
             for (var entry in values[relation_name]) {
                 this.buildFromAttrDef(rel_attributedefs, this.relations[relation_name],
                                       values[relation_name][entry], rel_relationdefs,
@@ -344,7 +354,7 @@ var KanopyaFormWizard = (function() {
                 labelsline.addClass('labels_' + listing);
                 labelsline.appendTo(table);
                 // Add a column for actions
-                labeltd = $("<td>", { align : 'center' });
+                labeltd = $("<td>", { align : 'left' });
                 labeltd.appendTo(labelsline);
             }
 
@@ -355,7 +365,7 @@ var KanopyaFormWizard = (function() {
             if (! labeltd) {
                 // The label for this column does not exists yet,
                 // we are building the first line of the listing.
-                labeltd = $("<td>", { align : 'center' }).append(label);
+                labeltd = $("<td>", { align : 'left' }).append(label);
                 labeltd.addClass('label_' + $(input).attr('name'));
                 labeltd.appendTo(labelsline);
 
@@ -374,21 +384,26 @@ var KanopyaFormWizard = (function() {
                 line.addClass(listing);
                 line.appendTo(table);
 
-                // Add a button to remove the line
-                var removeButton = $('<a>').button({ icons : { primary : 'ui-icon-closethick' }, text : false });
-                removeButton.addClass('wizard-ignore');
-                removeButton.bind('click', function () {
-                    $(line).remove();
-                    if ($(table).find('tr').length <= 2) {
-                        $(labelsline).remove();
-                    }
-                });
-                var td = $("<td>", { align : 'left' });
-                td.append(removeButton);
+                var td = $("<td>", { align : 'left', width : 60 });
+
+                var relation_name = this.attributedefs[input.attr('name')].belongs_to;
+                if (! (relation_name && ! this.attributedefs[relation_name].is_editable)) {
+                    // Add a button to remove the line
+                    var removeButton = $('<a>').button({ icons : { primary : 'ui-icon-closethick' }, text : false });
+                    removeButton.addClass('wizard-ignore');
+                    removeButton.bind('click', function () {
+                        $(line).remove();
+                        if ($(table).find('tr').length <= 2) {
+                            $(labelsline).remove();
+                        }
+                    });
+                    td.append(removeButton);
+                }
+
                 line.append(td);
             }
 
-            var inputcontainer = $("<td>", { align : 'center' }).append(input);
+            var inputcontainer = $("<td>", { align : 'left' }).append(input);
 
             // Hide the line if required
             if ($(input).attr('type') === 'hidden') {
@@ -459,6 +474,10 @@ var KanopyaFormWizard = (function() {
         }
         if ($(this.form).attr('method').toUpperCase() === 'PUT' && this.attributedefs[name].is_editable != true &&
             !(this.attributedefs[name].is_primary == true && this.attributedefs[name].belongs_to != undefined)) {
+            return true;
+        }
+        if (this.attributedefs[name].belongs_to &&
+            this.attributedefs[this.attributedefs[name].belongs_to].is_editable != true) {
             return true;
         }
         return false;

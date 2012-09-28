@@ -31,8 +31,7 @@ var ComponentsFields = {
                       'debug_level',
                       'overcommitment_cpu_factor',
                       'overcommitment_memory_factor'],
-        'relations': { 'opennebula3_repositories': ['repository_name',
-                                                    'container_access_id']}
+        'relations': { 'opennebula3_repositories': ['repository_name', 'container_access_id'], },
     },
     'mailnotifier0': {
         'displayed': ['smtp_server',
