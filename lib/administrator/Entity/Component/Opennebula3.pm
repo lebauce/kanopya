@@ -148,21 +148,28 @@ use constant ATTR_DEF => {
     overcommitment_cpu_factor => {
         label        => 'Overcommitment cpu factor',
         type         => 'string',
-        pattern     => '^\d*$',
+        pattern      => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1
     },
     overcommitment_memory_factor => {
         label        => '0vercommitment memory factor',
         type         => 'string',
-        pattern     => '^\d*$',
+        pattern      => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1
     },
     opennebula3_repositories => {
-        label => 'Virtual machine images repositories',
-        type  => 'relation',
-        relation => 'single_multi',
+        label       => 'Virtual machine images repositories',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1,
+    },
+    opennebula3_hypervisors => {
+        label       => 'Hypervisors',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 0,
     }
 };
 
@@ -332,8 +339,7 @@ sub getConf {
         my @vms_rs = $hyper->getVms();
 
         push @hypervisors, {
-                hypervisor_host_id        => $hyper->getId,
-                hypervisor_id             => $hyper->onehost_id,
+                onehost_id             => $hyper->onehost_id,
                 opennebula3_hypervisor_id => $hyper->getId,
                 vms                       => \@vms_rs,
                 nbrevms                   => scalar(@vms_rs)
