@@ -30,6 +30,7 @@ my %resources = (
     "aggregatecondition"       => "AggregateCondition",
     "aggregaterule"            => "AggregateRule",
     "apache2"                  => "Entity::Component::Apache2",
+    "apache2virtualhost"       => "Apache2Virtualhost",
     "billinglimit"             => "Entity::Billinglimit",
     "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
     "clustermetric"            => "Clustermetric",

@@ -51,21 +51,39 @@ var ComponentsFields = {
         'displayed': ['puppetmaster2_options'],
         'relations': {},
     },
-    
+    'keepalived1': { 
+        'displayed': ['notification_email',
+                     'notification_email_from',
+                     'smtp_server',
+                     'smtp_connect_timeout',
+                     'daemon_method'],
+        'relations': {},
+    },
+    'memcached1': {
+        'displayed': ['memcached1_port'],
+        'relations': {},
+    },
+    'php5': {
+        'displayed': ['php5_session_handler','php5_session_path'],                 
+        'relations': {},
+    },
+    'apache2': {
+        'displayed': ['apache2_serverroot',
+                      'apache2_loglevel',
+                      'apache2_ports',
+                      'apache2_sslports'],
+        'relations': { 'apache2_virtualhosts': ['apache2_virtualhost_servername',
+                                               'apache2_virtualhost_sslenable',
+                                               'apache2_virtualhost_serveradmin',
+                                               'apache2_virtualhost_documentroot',
+                                               'apache2_virtualhost_log',
+                                               'apache2_virtualhost_errorlog'] },
+    },
     
     /*
-
-    'memcached1'   : ['memcached1_port'],
-    'apache2'      : ['apache2_serverroot','apache2_loglevel',
-                      'apache2_ports','apache2_sslports'],
-    'syslogng3'    : [],
-    'php5'         : ['php5_session_handler','php5_session_path'],
-    'mailnotifier0' : ['smtp_server','smtp_login','smtp_passwd','use_ssl'],
-    'keepalived1'   : ['notification_email','notification_email_from',
-                        'smtp_server','smtp_connect_timeout',
-                        'daemon_method','lvs_id'],      
-    'mysql5'        : ['mysql5_bindaddress','mysql5_port','mysql5_datadir'] ,
     
+    'mysql5'        : ['mysql5_bindaddress','mysql5_port','mysql5_datadir'] ,
+    'syslogng3'    : [],
     */
 };
 

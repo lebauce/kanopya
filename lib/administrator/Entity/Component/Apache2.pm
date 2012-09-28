@@ -64,7 +64,7 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    apache2_loglevel   => { 
+    apache2_loglevel => { 
         label        => 'Log level',
         type         => 'enum',
         options      => ['debug','info','notice','warn','error','crit',
@@ -80,19 +80,24 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 1
     },
-    apache2_ports      => { 
+    apache2_ports => { 
         label        => 'HTTP Port',
         type         => 'string',
-        pattern        => '^.*$',
-        is_mandatory   => 1,
-        is_editable    => 1
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
     },
-    apache2_sslports   => { 
+    apache2_sslports => { 
         label        => 'SSL Port',
         type         => 'string',
-        pattern        => '^.*$',
-        is_mandatory   => 0,
-        is_editable    => 1
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_editable  => 1
+    },
+    apache2_virtualhosts => {
+        label    => 'Virtual hosts',
+        type     => 'relation',
+        relation => 'single_multi'
     },
 };
 
