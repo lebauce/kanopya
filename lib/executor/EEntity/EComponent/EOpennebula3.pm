@@ -979,7 +979,7 @@ sub generateXenVmTemplate {
 sub generateKvmVmTemplate {
     my ($self, %args) = @_;
     General::checkParams(
-        args     => \%args, 
+        args     => \%args,
         required => [ 'hypervisor','host']
     );
 
@@ -1435,5 +1435,32 @@ sub onevm_resubmit {
     my $cmd = one_command("onevm resubmit $args{vm_nameorid}");
     my $result = $self->getEContext->execute(command => $cmd);
 }
+
+
+sub getMaxRamFreeHV{
+    my ($self, %args) = @_;
+    print "hoho\n";
+    my @hypervisors = $self->getHypervisors();
+
+    my $max_hv  = shift @hypervisors;
+    my $max_freeram = EFactory::newEEntity(data => $max_hv)->getAvailableMemory->{mem_effectively_available};
+
+    print $max_hv->host_hostname."\n";
+    for my $hypervisor (@hypervisors) {
+        print $hypervisor->host_hostname."\n";
+        my $freeram =  EFactory::newEEntity(data => $hypervisor)->getAvailableMemory->{mem_effectively_available};
+
+        print "hohu\n";
+        if ($freeram > $max_freeram) {
+            $max_freeram = $freeram;
+            $max_hv  = $hypervisor;
+        }
+    }
+    return {
+        hypervisor  => $max_hv,
+        ram => $max_freeram,
+    }
+}
+
 
 1;
