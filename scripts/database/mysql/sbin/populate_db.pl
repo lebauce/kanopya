@@ -143,7 +143,22 @@ sub populate_workflow_def {
     $resubmit_node_wf->addStep( operationtype_id => $scale_cpu_op_id );
     $resubmit_node_wf->addStep( operationtype_id => $scale_mem_op_id );
 
-}
+    # RelieveHypervisor workflow def
+    my $relieve_hypervisor_wf = $kanopya_wf_manager->createWorkflow(
+        workflow_name => 'RelieveHypervisor',
+        params => {
+            internal => {
+                scope_id => 1,
+            },
+            automatic => {
+                context => { host => undef },
+            },
+        }
+    );
+    my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
+    $relieve_hypervisor_wf->addStep( operationtype_id => $resubmit_node_op_id );
+    $relieve_hypervisor_wf->addStep( operationtype_id => $migrate_op_id );
+  }
 
 sub populate_policies {
     my %policies = ();
