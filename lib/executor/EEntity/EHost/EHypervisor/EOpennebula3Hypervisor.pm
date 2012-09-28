@@ -64,6 +64,12 @@ sub checkStoppable {
     }
 }
 
-
+sub getMaxRamFreeVm{
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args,
+        required => [ 'cluster' ]
+    );
+}
 
 1;
