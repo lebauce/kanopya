@@ -96,7 +96,7 @@ sub getAttrDefs {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
 
-    General::checkParams(args => \%args, optional => { 'group_by' => undef });
+    General::checkParams(args => \%args, optional => { 'group_by' => 'none' });
 
     my $attributedefs = {};
     my @classes = split(/::/, (split("=", "$class"))[0]);
