@@ -30,7 +30,7 @@ use Entity::ServiceProvider;
 use Entity::Container;
 use Entity::Interface;
 use Entity::Iface;
-
+use Entity::Operation;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 my $log = get_logger("");
@@ -237,7 +237,11 @@ sub methods {
         getHostType => {
             description => 'get the host type from host manager',
             perm_holder => 'entity'
-        }
+        },
+        resubmit => {
+            description => 'resubmit the corresponding node',
+            perm_holder => 'entity'
+       }
     };
 }
 
@@ -255,6 +259,19 @@ sub create {
 
     Entity->get(id => $args{host_manager_id})->createHost(%args);
 }
+
+sub resubmit() {
+    my $self = shift;
+
+    my $wf_params = {
+          context => {
+                host => $self
+        }
+      };
+    Workflow->run(name=>'ResubmitNode', params=> $wf_params);
+}
+
+
 
 =head2 getServiceProvider
 

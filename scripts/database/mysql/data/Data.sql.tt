@@ -395,7 +395,8 @@ INSERT INTO `operationtype` VALUES
 (48,'UpdateComponent', NULL),
 (49,'LaunchScaleInWorkflow', 'Configuring scale in node'),
 (50,'LaunchOptimiaasWorkflow', NULL),
-(51,'ProcessRule', 'Processing triggered rule');
+(51,'ProcessRule', 'Processing triggered rule'),
+(52,'ResubmitNode','Resubmit a virtual machine to the IAAS');
 
 --
 -- components type list
