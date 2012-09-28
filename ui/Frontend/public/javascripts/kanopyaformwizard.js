@@ -147,6 +147,7 @@ var KanopyaFormWizard = (function() {
             $(this.content).css('height', $(window).innerHeight() - 200);
             $(this.content).css('width', $(this.content).width() + 15);
         }
+        $(this.content).dialog('option', 'position', 'top');
     }
 
     KanopyaFormWizard.prototype.buildSelectOptions = function(name, value, relations) {
