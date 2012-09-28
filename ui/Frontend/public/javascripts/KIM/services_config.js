@@ -1,5 +1,5 @@
 require('common/general.js');
-require('modalform.js');
+require('kanopyaformwizard.js');
 
 var ComponentsFields = {
     'linux0' : { 
@@ -77,14 +77,14 @@ function loadServicesConfig(cid, eid) {
             colNames: [ 'ID', 'Component Type', ],
             colModel: [
                 { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
-                { name: 'component_type_id', index: 'component_type_id', width: 200, formatter:fromIdToComponentType},
+                { name: 'component_type_id', index: 'component_type_id', width: 200, formatter:fromIdToComponentType },
             ],
             caption: 'Components',
             details : {
                 onSelectRow : function(eid, e) {
                     var componentType   = (getComponentTypes())[e.component_type_id];
                     if (componentType != undefined) {
-                        (new FormWizardBuilder({
+                        (new KanopyaFormWizard({
                             title          : componentType + ' configuration',
                             type           : componentType,
                             id             : e.pk,

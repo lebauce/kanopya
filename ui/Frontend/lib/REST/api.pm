@@ -284,9 +284,7 @@ sub format_results {
             require (General::getLocFromClass(entityclass => $class));
         };
 
-        $result = $class->search(hash     => \%args,
-                                 dataType => "hash",
-                                 %params);
+        $result = $class->search(hash => \%args, dataType => "hash", %params);
 
         for my $obj (@{$result->{rows}}) {
             push @$objs, $obj->toJSON();

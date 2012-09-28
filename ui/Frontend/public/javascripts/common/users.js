@@ -1,5 +1,6 @@
 require('detailstable.js');
 require('common/formatters.js');
+require('kanopyaformwizard.js');
 require('modalform.js');
 
 var g_user_id = undefined;
@@ -13,10 +14,10 @@ function user_addbutton_action(e, displayed) {
         displayed = [ 'user_firstname', 'user_lastname', 'user_email', 
                       'user_desc', 'user_login', 'user_password', 
                       'user_lastaccess', 'user_creationdate',
-                      'user_sshkey' ]
+                      'user_sshkey', 'user_profiles' ];
     }
 
-    (new FormWizardBuilder({
+    (new KanopyaFormWizard({
         title      : 'Add a user',
         type       : 'user',
         id         : (!(e instanceof Object)) ? e : undefined,
@@ -48,7 +49,7 @@ function Users() {
                                   .button({ icons : { primary : 'ui-icon-plusthick' } });
 
         var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
-                               'user_login', 'user_password','user_sshkey' ];
+                               'user_login', 'user_password', 'user_sshkey', 'user_profiles' ];
         $(user_addbutton).bind('click', { displayed : creation_attrs }, user_addbutton_action);
     }
   

@@ -1,10 +1,10 @@
 require('common/formatters.js');
-require('modalform.js');
+require('kanopyaformwizard.js');
 
 var g_host_manager_id = undefined;
 
 function host_addbutton_action(e) {
-    (new FormWizardBuilder({
+    (new KanopyaFormWizard({
         title      : 'Create a host',
         type       : 'host',
         id         : (!(e instanceof Object)) ? e : undefined,
