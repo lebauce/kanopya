@@ -114,7 +114,6 @@ var KanopyaFormWizard = (function() {
             }
 
             // For each relation entries, add filled inputs in one line
-            console.log(values[relation_name]);
             for (var entry in values[relation_name]) {
                 this.buildFromAttrDef(rel_attributedefs, this.relations[relation_name],
                                       values[relation_name][entry], rel_relationdefs,
