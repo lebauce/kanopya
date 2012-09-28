@@ -25,8 +25,6 @@ use ParamPreset;
 use Entity::InterfaceRole;
 use Entity::ServiceProvider::Inside::Cluster;
 
-use Hash::Merge;
-
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -121,14 +119,9 @@ sub buildPatternFromHash {
     General::checkParams(args => \%args, required => [ 'policy_type', 'hash' ]);
 
     my %pattern;
-    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
     # Build the complette list of cluster attributes.
-    my $cluster_attrs;
-    my $attributes_def = Entity::ServiceProvider::Inside::Cluster->getAttrDefs();
-    foreach my $module (keys %$attributes_def) {
-        $cluster_attrs = $merge->merge($cluster_attrs, $attributes_def->{$module});
-    }
+    my $cluster_attrs = Entity::ServiceProvider::Inside::Cluster->getAttrDefs();
 
     # Transform the policy form hash to a cluster configuration pattern
     for my $name (keys %{$args{hash}}) {

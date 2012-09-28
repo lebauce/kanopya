@@ -42,7 +42,6 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^\w*$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     user_desc => {
@@ -51,7 +50,6 @@ use constant ATTR_DEF => {
         # Impossible to check char used because of \n doesn't match with \w
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 1
     },
     user_password => {
@@ -59,7 +57,6 @@ use constant ATTR_DEF => {
         type         => 'password',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 1
     },
     user_firstname => {
@@ -67,7 +64,6 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^\w*$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 1
     },
     user_lastname => {
@@ -75,7 +71,6 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^\w*$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 1
     },
     user_email => {
@@ -83,7 +78,6 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 1
     },
     user_sshkey => {
@@ -91,7 +85,6 @@ use constant ATTR_DEF => {
         type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 1
     },
     user_creationdate => {
@@ -99,7 +92,6 @@ use constant ATTR_DEF => {
         type         => 'date',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 0
     },
     user_lastaccess => {
@@ -107,9 +99,16 @@ use constant ATTR_DEF => {
         type         => 'date',
         pattern      => '^\w*$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 0
     },
+    user_profiles => {
+        label        => 'Profiles',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'profile',
+        is_mandatory => 0,
+        is_editable  => 1,
+    }
 };
 
 sub methods {

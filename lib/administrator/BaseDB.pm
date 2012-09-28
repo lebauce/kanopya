@@ -93,8 +93,12 @@ sub requireClass {
 =cut
 
 sub getAttrDefs {
-    my $class = shift;
-    my $result = {};
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, optional => { 'group_by' => undef });
+
+    my $attributedefs = {};
     my @classes = split(/::/, (split("=", "$class"))[0]);
 
     while(@classes) {
@@ -146,9 +150,21 @@ sub getAttrDefs {
         }
 
         if ($attr_def) {
-            $result->{$currentclass} = $attr_def;
+            $attributedefs->{$currentclass} = $attr_def;
         }
         pop @classes;
+    }
+
+    if ($args{group_by} eq 'module') {
+        return $attributedefs;
+    }
+
+    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
+    # Finally merge all module attrs into one level hash
+    my $result = {};
+    foreach my $module (keys %$attributedefs) {
+        $result = $merge->merge($result, $attributedefs->{$module});
     }
     return $result;
 }
@@ -171,17 +187,14 @@ sub checkAttr {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
+
     my $attributes_def = $class->getAttrDefs();
-    foreach my $module (keys %$attributes_def) {
-        if (exists $attributes_def->{$module}->{$args{name}} && defined $args{value}){
-            if($args{value} !~ m/($attributes_def->{$module}->{$args{name}}->{pattern})/){
-                $errmsg = "$class"."->checkAttr detect a wrong value $args{value} for param : $args{name} on class $module";
-                $log->error($errmsg);
-                throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-            }
-            next;
-        }
+    if (exists $attributes_def->{$args{name}} && defined $args{value} &&
+        $args{value} !~ m/($attributes_def->{$args{name}}->{pattern})/) {
+
+        $errmsg = "$class"."->checkAttr detect a wrong value $args{value} for param: $args{name} on class $class";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 }
 
@@ -197,7 +210,7 @@ sub checkAttrs {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
     my $final_attrs = {};
-    my $attributes_def = $class->getAttrDefs();
+    my $attributes_def = $class->getAttrDefs(group_by => 'module');
     
     General::checkParams(args => \%args, required => ['attrs']);
 
@@ -299,15 +312,38 @@ sub new {
 
     # Populate relations
     for my $relation (keys %$relations) {
-        my $infos = $self->{_dbix}->relationship_info($relation);
-        my @conds = keys %{$infos->{cond}};
+        my $attrdef = $class->getAttrDefs->{$relation};
+        my $reldef  = $self->{_dbix}->relationship_info($relation);
+
+        # Deduce the foreign key from relation def
+        my @conds = keys %{$reldef->{cond}};
         my $fk = getForeignKeyFromCond(cond => $conds[0]);
 
-        my $relationclass = classFromDbix($self->{_dbix}->$relation->result_source);
-
+        my $relation_schema = $self->{_dbix}->$relation->result_source;
+        my $relationclass = classFromDbix($relation_schema);
         requireClass($relationclass);
+
+        # Deduce the foreign key attr for link entries in relations mutli
+        my $linkfk;
+        if ($attrdef->{relation} eq 'multi') {
+            my $linked_reldef = $relation_schema->relationship_info($attrdef->{link_to});
+
+            my @conds = values %{$linked_reldef->{cond}};
+            $linkfk = getKeyFromCond(cond => $conds[0]);
+        }
+
         for my $entry (@{$relations->{$relation}}) {
-            $entry->{$fk} = $self->id;
+            if ($attrdef->{relation} eq 'single_multi') {
+                # Create the new relationships
+                $entry->{$fk} = $self->id;
+            }
+            elsif ($attrdef->{relation} eq 'multi') {
+                # Create entries in the link table
+                $entry = {
+                    $fk     => $self->id,
+                    $linkfk => $entry,
+                };
+            }
             $relationclass->create(%$entry);
         }
     }
@@ -481,11 +517,11 @@ sub newDBix {
         throw Kanopya::Exception::DB(error => "Unable to create a new $class: " .  $errmsg);
     }
 
-    my $id = $dbixroot->id;
-
     return {
-        _dbix => $adm->getRow(table => _buildClassNameFromString($class), id => $id),
-        _entity_id => $id
+        _dbix => $adm->getRow(
+                     table => _buildClassNameFromString($class),
+                     id    => getRowPrimaryKey(row => $dbixroot),
+                 )
     };
 }
 
@@ -510,18 +546,9 @@ sub fromDBIx {
 
 #    return bless {
 #        _dbix      => $args{row},
-#        _entity_id => $args{row}->id
 #    }, $name;
 
-     # If the primary key is multiple, gevie the array ref to the get function
-     my $id;
-     my @multiple_id = $args{row}->id;
-     if (scalar(@multiple_id) > 1) {
-         $id = \@multiple_id;
-     } else {
-         $id = $multiple_id[0];
-     }
-     return $name->get(id => $id);
+    return $name->get(id => getRowPrimaryKey(row => $args{row}));
 }
 
 =head2
@@ -990,7 +1017,7 @@ sub toJSON {
     my $conreteclass = $class;
     my $merge = Hash::Merge->new();
 
-    $attributes = $class->getAttrDefs();
+    $attributes = $class->getAttrDefs(group_by => 'module');
     foreach my $class (keys %$attributes) {
         foreach my $attr (keys %{$attributes->{$class}}) {
             if (defined $args{model}) {
@@ -1059,6 +1086,28 @@ sub toJSON {
     }
 
     return $hash;
+}
+
+=head2
+
+    Return the primary(ies) key(s) of a row.
+
+=cut
+
+sub getRowPrimaryKey {
+    my (%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'row' ]);
+
+    # If the primary key is multiple, gevie the array ref to the get function
+    my $id;
+    my @multiple_id = $args{row}->id;
+    if (scalar(@multiple_id) > 1) {
+        $id = \@multiple_id;
+    } else {
+        $id = $multiple_id[0];
+    }
+    return $id;
 }
 
 =head2
@@ -1188,6 +1237,15 @@ sub getForeignKeyFromCond {
     General::checkParams(args => \%args, required => [ 'cond' ]);
     
     $args{cond} =~ s/.*foreign\.//g;
+    return $args{cond};
+}
+
+sub getKeyFromCond {
+    my (%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cond' ]);
+
+    $args{cond} =~ s/.*self\.//g;
     return $args{cond};
 }
 

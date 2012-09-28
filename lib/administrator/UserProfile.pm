@@ -12,10 +12,10 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package UserProfile;
+use base 'BaseDB';
 
 use strict;
 use warnings;
-use base 'BaseDB';
 
 use constant ATTR_DEF => {};
 

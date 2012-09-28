@@ -153,7 +153,7 @@ sub getPerms {
             $methods->{$m}->{'granted'} = $granted;
         }
         elsif($class and $methods->{$m}->{'perm_holder'} eq 'entity') {
-            $granted = $adm->getRightChecker->checkPerm(entity_id => $self->{_entity_id}, method => $m);
+            $granted = $adm->getRightChecker->checkPerm(entity_id => $self->id, method => $m);
             $methods->{$m}->{'granted'} = $granted;
         }
         else {
