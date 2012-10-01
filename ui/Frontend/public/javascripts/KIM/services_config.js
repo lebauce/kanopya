@@ -100,6 +100,8 @@ var ComponentsFields = {
                 conf.targets.push(target);
             }
 
+            console.log(conf);
+
             // Call setConf on the component
             return ajax('POST', opts.url + '/setConf', { conf : conf }, onsuccess, onerror);
         },
@@ -132,7 +134,14 @@ var ComponentsFields = {
                     devices.push(containers[container].container_device);
                 }
                 var attributes = {
+                    iscsitarget1_lun_id : {
+                        is_primary   : true,
+                        is_mandatory : false,
+                    },
                     iscsitarget1_id : {
+                        type         : 'relation',
+                        relation     : 'single',
+                        is_mandatory : true,
                     },
                     iscsitarget1_lun_device : {
                         label        : 'Device',
@@ -254,7 +263,6 @@ function loadServicesConfig(cid, eid) {
 }
 
 function getPrimarykey (componentType) {
-    console.log(componentType);
     var attrdef = ajax('GET', '/api/attributes/' + componentType).attributes;
     var primary_attr;
     for(var attr in attrdef) {

@@ -170,7 +170,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single_multi',
         is_mandatory => 0,
-        is_editable  => 0,
+        is_editable  => 1,
     },
 };
 
