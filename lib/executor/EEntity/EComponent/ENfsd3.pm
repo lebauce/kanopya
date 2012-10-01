@@ -195,12 +195,17 @@ sub addExportClient {
 sub updateExports {
     my $self = shift;
     my %args = @_;
-
+    
     my $result = $self->getEContext->execute(command => "/usr/sbin/exportfs -rf");
-    if ($result->{exitcode} != 0) {
-        $errmsg = "Error while updating nfs exports: " . $result->{stderr};
-        throw Kanopya::Exception::Execution(error => $errmsg);
-    }
+    
+    ### NFS BUG :
+    # expoortfs command return no null exitcode with message
+    # exportfs: /proc/fs/nfs/exports:1: unknown keyword "test-client-(rw
+    
+    #if ($result->{exitcode} != 0) {
+    #    $errmsg = "Error while updating nfs exports: " . $result->{stderr};
+    #    throw Kanopya::Exception::Execution(error => $errmsg);
+    #}
 }
 
 sub generateConfFile {

@@ -48,9 +48,11 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     container_access_export => {
+        label        => 'Export name',
+        type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1
     },
     container_access_ip => {
         pattern      => '^.*$',

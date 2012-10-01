@@ -193,12 +193,122 @@ var ComponentsFields = {
                                                'apache2_virtualhost_log',
                                                'apache2_virtualhost_errorlog'] },
     },
-    
-    /*
-    
-    'mysql5'        : ['mysql5_bindaddress','mysql5_port','mysql5_datadir'] ,
-    'syslogng3'    : [],
-    */
+    'nfsd3': {
+        'displayed': [],
+        'relations': { 'exports': ['nfsd3_export_path','container_access_export','nfsd3_exportclient_name','nfsd3_exportclient_options']},
+        'valuesCallback': function (type, id) {
+            var response = ajax('POST', '/api/' + type + '/' + id + '/getConf');
+            var exports = [];
+            //console.log(response);
+            for(index in response.exports) {
+                response.exports[index]['nfsd3_exportclient_name'] = response.exports[index].clients[0].nfsd3_exportclient_name;
+                response.exports[index]['nfsd3_exportclient_options'] = response.exports[index].clients[0].nfsd3_exportclient_options;
+                delete response.exports[index].clients;
+            }
+            console.log(response);
+            return response;
+        },        
+        'submitCallback' : function (data, $form, opts, onsuccess, onerror) {
+            //console.log(data);
+
+            // Parse the infos from options
+            var infos = opts.url.split('/');
+            var type = infos[2];
+            var id = infos[3];
+
+            // Add the primary key value to data
+            data[getPrimarykey(type)] = id;
+
+            var conf = {
+                    nfsd3_statdopts : data.nfsd3_statdopts,
+                    nfsd3_rpcmountopts: data.nfsd3_rpcmountopts,
+                    nfsd3_rpcsvcgssdopts: data.nfsd3_rpcsvcgssdopts,
+                    nfsd3_rpcnfsdcount: data.nfsd3_rpcnfsdcount,
+                    nfsd3_need_svcgssd: data.nfsd3_need_svcgssd,
+                    nfsd3_rpcnfsdpriority: data.nfsd3_rpcnfsdpriority
+            };
+            conf.exports = [];
+            for (var index in data.exports) {
+                var e = {
+                    nfsd3_export_path: data.exports[index].nfsd3_export_path,
+                    nfsd3_export_id: data.exports[index].nfsd3_export_id,
+                    clients: [{
+                        nfsd3_exportclient_name: data.exports[index].nfsd3_exportclient_name,
+                        nfsd3_exportclient_options: data.exports[index].nfsd3_exportclient_options,
+                    }],
+                }
+                
+                conf.exports.push(e);  
+                
+            }
+            console.log(conf);
+            // Call setConf on the component
+            return ajax('POST', opts.url + '/setConf', { conf : conf }, onsuccess, onerror);
+        },
+        'attrsCallback': function (resource) {
+            if(resource == 'nfsd3') {
+                var response = ajax('GET', '/api/attributes/nfsd3');
+                response.attributes['exports'] = {
+                    'label'      : 'Exports',
+                    'type'       : 'relation',
+                    'relation'   : 'single_multi',
+                    'is_editable': 1
+                };
+                response.relations['exports'] = {
+                    'attrs' : { 'accessor' : 'multi' },
+                    'cond'  : { 'foreign.nfsd3_id': 'self.nfsd3_id' },
+                    'resource' : 'containeraccess',
+                };
+                
+                return response;
+            } else if(resource == 'containeraccess') {
+                // If ressource is the relation, build the fake attrdef
+                var containers = ajax('GET', '/api/container');
+                var devices = [];
+                for (var container in containers) {
+                    devices.push(containers[container].container_device);
+                }
+                
+                var attributes = {                
+                    nfsd3_id: {},
+                    nfsd3_export_id: {
+                        is_primary   : true,
+                        is_mandatory : false,
+                    },
+                    nfsd3_export_path: {
+                        label        : 'Device',
+                        type         : 'enum',
+                        is_mandatory : true,
+                        is_editable  : true,
+                        options      : devices
+                    },
+                    container_access_export: {
+                        label        : 'Export',
+                        type         : 'string',
+                        is_mandatory : true,
+                        is_editable  : false,
+                    },
+                    nfsd3_exportclient_name: {
+                        label        : 'Client name',
+                        type         : 'string',
+                        is_mandatory : true,
+                        is_editable  : true,
+                    },
+                    nfsd3_exportclient_options: {
+                        label        : 'Client options',
+                        type         : 'string',
+                        is_mandatory : true,
+                        is_editable  : true,
+                    },
+                };
+                
+                return { attributes : attributes, relations : {} };
+            } else {
+                return ajax('GET', '/api/attributes/' + resource);
+            }
+        },
+    },
+
 };
 
 function getComponentTypes() {
@@ -217,6 +327,8 @@ function getComponentTypes() {
         'Opennebula'   : 'opennebula3',
         'Iscsitarget'  : 'iscsitarget1', 
         'Mysql'        : 'mysql5',
+        'Mysql'        : 'mysql5',         
+        'Nfsd'         : 'nfsd3',
         '' : '',
     };
 }

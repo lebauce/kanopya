@@ -32,6 +32,7 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {};
+
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
@@ -65,7 +66,9 @@ sub getExports {
                 };
             }
             push @result, {
-                nfsd3_export_path => $export->getAttr(name => 'container_access_export'),
+                container_access_export => $export->getAttr(name => 'container_access_export'),
+                nfsd3_export_path       => $export->getContainer->container_device,
+                nfsd3_export_id         => $export->getContainer->id,
                 clients     => \@clients,
             };
         }
@@ -112,9 +115,14 @@ sub setConf {
     General::checkParams(args => \%args, required => ['conf']);
 
     my $conf = $args{conf};
+    my @containers = Entity::Container->search(hash => {});
+    EXPORT:
     for my $export (@{ $conf->{exports} }) {
-        my @containers = Entity::Container->search(hash => {});
-
+        
+        if($export->{nfsd3_export_id}) {
+            next EXPORT;
+        }
+        
         # Check if specified device match to a registred container.
         my $container;
         my $device;
@@ -132,12 +140,13 @@ sub setConf {
             throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
         }
 
+        CLIENT:
         for my $client ( @{ $export->{clients} } ) {
             $self->createExport(export_name    => $export->{nfsd3_export_path},
                                 container      => $container,
                                 client_name    => $client->{nfsd3_exportclient_name},
                                 client_options => $client->{nfsd3_exportclient_options});
-            last;
+            last CLIENT;
         }
     }
 }
