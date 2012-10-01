@@ -68,10 +68,22 @@ var ComponentsFields = {
     },
     'iscsitarget1': {
         'displayed': [],
-        'relations': { 'iscsitarget1_luns' : [ 'iscsitarget1_lun_device', 'iscsitarget1_lun_number', 'iscsitarget1_lun_typeio', 'iscsitarget1_lun_iomode' ] },
-        'submitCallback' : function (data, $form, opts, onsuccess, onerror) {
-            //console.log(data);
+        'relations': { 'iscsitarget1_luns' : [ 'iscsitarget1_lun_device', 'iscsitarget1_lun_number', 'iscsitarget1_target_name', 'iscsitarget1_lun_typeio', 'iscsitarget1_lun_iomode' ] },
+        'valuesCallback' : function (type, id) {
+            var conf = ajax('POST', '/api/' + type + '/' + id + '/getConf');
 
+            // Get the values from getConf, add build a new values hash
+            // according to the attrdef builded in the attrsCallback.
+            conf.iscsitarget1_luns = [];
+            for (var target in conf.targets) {
+                for (var lun in conf.targets[target].luns) {
+                    conf.targets[target].luns[lun].iscsitarget1_target_name = conf.targets[target].iscsitarget1_target_name;
+                    conf.iscsitarget1_luns.push(conf.targets[target].luns[lun]);
+                }
+            }
+            return conf;
+        },
+        'submitCallback' : function (data, $form, opts, onsuccess, onerror) {
             // Parse the infos from options
             var infos = opts.url.split('/');
             var type = infos[2];
@@ -85,9 +97,9 @@ var ComponentsFields = {
             for (var lun in data.iscsitarget1_luns) {
                 var target = {};
                 target.luns = [ data.iscsitarget1_luns[lun] ];
-                conf.targets .push(target);
+                conf.targets.push(target);
             }
-            console.log(conf);
+
             // Call setConf on the component
             return ajax('POST', opts.url + '/setConf', { conf : conf }, onsuccess, onerror);
         },
@@ -149,6 +161,11 @@ var ComponentsFields = {
                         options      : [ 'wb', 'ro', 'wt' ],
                         is_mandatory : true,
                         is_editable  : true,
+                    },
+                    iscsitarget1_target_name : {
+                        label        : 'Target',
+                        type         : 'string',
+                        is_editable  : false,
                     },
                 };
                 return { attributes : attributes, relations : {} };
