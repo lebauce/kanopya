@@ -76,7 +76,7 @@ sub preconfigureSystemimage {
     # adjust some requirements on the image
     my $data = $self->_getEntity()->getConf();
     my $automountnfs = 0;
-    for my $mountdef (@{$data->{mountdefs}}) {
+    for my $mountdef (@{$data->{linux0s_mount}}) {
         my $mountpoint = $mountdef->{linux0_mount_point};
         $econtext->execute(command => "mkdir -p $args{mount_point}/$mountpoint");
         
@@ -125,7 +125,7 @@ sub _generateFstab {
     
     my $data = $self->_getEntity()->getConf();
 
-    foreach my $row (@{$data->{mountdefs}}) {
+    foreach my $row (@{$data->{linux0s_mount}}) {
         delete $row->{linux0_id};
     }
 

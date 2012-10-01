@@ -196,7 +196,7 @@ sub getPuppetDefinition {
     my $str = "class {'linux': sourcepath => \"$path\",}\n";  
     
     # /etc/fstab et mounts
-    foreach my $mount (@{$conf->{mountdefs}}) {
+    foreach my $mount (@{$conf->{linux0s_mount}}) {
         $str .= "file {'$mount->{linux0_mount_point}': ensure => directory }\n";
         $str .= "mount {'$mount->{linux0_mount_point}':\n";
         $str .= "\tdevice => '$mount->{linux0_mount_device}',\n";
