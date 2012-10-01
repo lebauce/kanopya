@@ -164,6 +164,8 @@ sub findEntityView {
     General::checkParams(args     => $args{hash_filter},
                          required => ['name'],);
 
+    $self->negociateConnection();
+
     my $hash_filter  = $args{hash_filter};
     my $view_type    = $args{view_type};
     my $begin_entity = $args{begin_entity};
@@ -188,7 +190,7 @@ sub findEntityView {
         }
     };
     if ($@) {
-        $errmsg = 'Could not get entity '.$hash_filter->{name}.' of type '.$view_type.': '.$@."\n";
+        $errmsg = 'Could not get entity '.$hash_filter->{name}.' of type '.$view_type.': '.$@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -230,8 +232,6 @@ sub synchronize {
 
     Desc: synchronize the component with a cluster in a given datacenter 
     Args: $datacenter_name, $service_provider_id
- 
-=cut 
 
 sub synchronizeCluster {
     my ($self, %args) = @_;
@@ -247,7 +247,7 @@ sub synchronizeCluster {
                                view_type   => 'Datacenter',
                                hash_filter => {
                                    name => $args{datacenter_name},
-                               });
+                           });
     my $cluster_views    = $self->findEntityView(
                                view_type    => 'ClusterComputeResource',
                                hash_filter  => {
@@ -262,6 +262,7 @@ sub synchronizeCluster {
 
     foreach my $hypervisor (@$hypervisors) {
 
+        $log->error($errmsg);
         my $hypervisor_view = $self->getView(mo_ref => $hypervisor);
         my $host_state;
 
@@ -331,19 +332,9 @@ sub addRepository {
                                             remoteHost => $container_access_ip,
                                             localPath  => $args{repository_name},
                                             remotePath => $export_path[1],
-                );
+                    );
 
-    my $dsmv = $view->{vim}->get_view(mo_ref=>$view->configManager->datastoreSystem);
-
-    eval {
-        $dsmv->CreateNasDatastore(spec => $datastore);
-    };
-    if ($@) {
-        $errmsg = 'Could not attach the datastore to the host: '.$@."\n";
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    } else {
-        print "success! \n";
-    }
+    my $dsmv = $self->getView(mo_ref=>$view->configManager->datastoreSystem);
 }
 
 #########################
@@ -415,14 +406,20 @@ sub startHost {
     );
 
     #Power on the VM
-    eval {
-        $self->powerOnVm(hypervisor => $hypervisor, vm => $host);
-    };
-    if ($@) {
-        $errmsg  = 'Could not launch newly created vm '.$host->host_hostname;
-        $errmsg .= ': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    #We retrieve a view of the newly created VM
+    my $hypervisor_hash_filter = {name => $hypervisor->host_hostname};
+    my $hypervisor_view        = findEntityView(
+                                    view_type   => 'HostSystem',
+                                    hash_filter => $hypervisor_hash_filter,
+                                 );
+    my $vm_hash_filter        = {name => $host->host_hostname};
+    my $vm_view               = findEntityView(
+                                    view_type    => 'VirtualMachine',
+                                    hash_filter  => $vm_hash_filter,
+                                    begin_entity => $hypervisor_view,
+                                );
+    #Power On
+    $vm_view->PowerOnVM();
 }
 
 
@@ -451,73 +448,33 @@ sub createVm {
     $log->info('trying to get Hypervisor ' .$host_conf{hypervisor}. ' view from vsphere');
 
     #retrieve host view
-    eval {
         $host_view = $self->findEntityView(view_type   => 'HostSystem',
                                            hash_filter => {
                                                'name' => $host_conf{hypervisor},
                                            });
-    };
-    if ($@) {
-        $errmsg  = 'Error finding hypervisor '.$host_conf{hypervisor}.' on vSphere';
-        $errmsg .= ': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
 
     #retrieve datacenter view
-    eval {
         $datacenter_view = $self->findEntityview(view_type   => 'Datacenter',
                                                  hash_filter => {
                                                      name => $host_conf{datacenter}
                                                  });
-    };
-    if ($@) {
-        $errmsg  = 'Error finding datacenter '.$host_conf{datacenter}.' on vSphere';
-        $errmsg .= ': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
 
     #Generate vm's devices specifications
-    my $controller_vm_dev_conf_spec;
-    eval {
-        $controller_vm_dev_conf_spec = create_conf_spec();
-    };
-    if ($@) {
-        $errmsg  = 'Error creating the virtual machine controller configuration';
-        $errmsg .= ': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    my $controller_vm_dev_conf_spec = create_conf_spec();
     push(@vm_devices, $controller_vm_dev_conf_spec);
 
-    my $disk_vm_dev_conf_spec;
-    eval {
-        $disk_vm_dev_conf_spec =
-            create_virtual_disk(path => $path, disksize => $img_size);
-    };
-    if ($@) {
-        $errmsg  = 'Error creating the virtual machine disk configuration';
-        $errmsg .= ': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    my $disk_vm_dev_conf_spec = create_virtual_disk(path => $path, disksize => $img_size);
     push(@vm_devices, $disk_vm_dev_conf_spec);
 
-    my %net_settings;
-    eval {
-        %net_settings = get_network(network_name => $host_conf{network},
+    my %net_settings = get_network(network_name => $host_conf{network},
                                     poweron      => 0,
                                     host_view    => $host_view);
-    };
-    if ($@) {
-        $errmsg  = 'Error creating the virtual machine network configuration';
-        $errmsg .= ': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
     push(@vm_devices, $net_settings{network_conf});
 
     my $files = VirtualMachineFileInfo->new(logDirectory      => undef,
                                             snapshotDirectory => undef,
                                             suspendDirectory  => undef,
                                             vmPathName        => $ds_path);
-
 
     my $vm_config_spec = VirtualMachineConfigSpec->new(
                              name         => $host_conf{hostname},
@@ -528,24 +485,10 @@ sub createVm {
                              deviceChange => \@vm_devices);
 
     #retrieve the vm folder from vsphere inventory
-    eval {
-        $vm_folder_view = $self->getView(mo_ref => $datacenter_view->vmFolder);
-    };
-    if ($@) {
-        $errmsg  = 'Error finding the vm folder on vSphere';
-        $errmsg .= ': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    $vm_folder_view = $self->getView(mo_ref => $datacenter_view->vmFolder);
 
     #retrieve the host parent view
-    eval {
-        $comp_res_view  = $self->getView(mo_ref => $host_view->parent);
-    };
-    if ($@) {
-        $errmsg  = 'Error finding the parent managed entity of the host view';
-        $errmsg .= ': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    $comp_res_view  = $self->getView(mo_ref => $host_view->parent);
 
     #finally create the VM
     eval {
@@ -553,41 +496,76 @@ sub createVm {
                                   pool   => $comp_res_view->resourcePool);
     };
     if ($@) {
-        $errmsg  = 'Error creating the virtual machine on host '.$host_conf{hypervisor};
-        $errmsg .= ': '.$@;
+        $errmsg = 'Error creating the virtual machine on host '.$host_conf{hypervisor}.': '.$@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
 }
 
-=head2 powerOnVm
+=head2 scaleCpu
 
-    Desc: start a VM registerd on vSphere
-
+    Desc: Scale In CPU for virtual machine
+    Args: $host (the VM's view), $cpu_number (the new number of CPUs to be set)
+    
 =cut
 
-sub powerOnVm {
-    my ($self, %args) = @_;
+sub scaleCpu {
+    my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'hypervisor', 'vm']);
+    General::checkParams(args => \%args, required => [ 'host', 'cpu_number' ]);
 
-    my $host_name = $args{hypervisor}->host_hostname;
-    my $vm_name   = $args{vm}->host_hostname;
+    my $host       = $args{host};
+    my $cpu_number = $args{cpu_number};
 
-    #get the HostSystem view
-    my $host_view = $self->findEntityView(view_type   => 'HostSystem',
-                                          hash_filter => {
-                                              'name' => $host_name
-                                          });
-    my $host_vms = $host_view->vm;
- 
-    #maybe find a better way to do that? 
-    foreach my $vm (@$host_vms) {
-        my $guest = $self->getView(mo_ref => $vm);
-        if ($guest->name eq $vm_name) {
-            $guest->PowerOnVM();
-        }
+    #Now we do the VM Scale In through ReconfigVM() method
+    my $new_vm_config_spec = VirtualMachineConfigSpec->new(
+                                 numCPUs => $cpu_number,
+                             );
+    eval {
+            $host->ReconfigVM(
+                spec => $new_vm_config_spec,
+            );
+    };
+    if ($@) {
+        $errmsg = 'Error scaling in CPU on virtual machine '.$host->name.': '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    #We Refresh the values of view
+    #with corresponding server-side object values
+    $host->update_view_data;
+}
+
+=head2 scaleMemory
+
+    Desc: Scale In memory for virtual machine
+    Args: $host (the VM's view), $memory (the new amount of memory to be set)
+    
+=cut
+
+sub scaleMemory {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['host','memory']);
+
+    my $host   = $args{host};
+    my $memory = $args{memory};
+
+    #Now we do the VM Scale In through ReconfigVM() method
+    my $vm_new_config_spec = VirtualMachineConfigSpec->new(
+                                 memoryMB => $memory  / 1024 / 1024,
+                             );
+    eval {
+        $host->ReconfigVM(
+            spec => $vm_new_config_spec,
+        );
+    };
+    if ($@) {
+        $errmsg = 'Error scaling in Memory on virtual machine '.$host->name.': '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    #We Refresh the values of view
+    #with corresponding server-side object values
+    $host->update_view_data;
 }
 
 #########################
@@ -595,44 +573,63 @@ sub powerOnVm {
 #########################
 
 sub create_conf_spec {
-    my $controller =
-        VirtualLsiLogicController->new(key => 0,
-                                       device => [0],
-                                       busNumber => 0,
-                                       sharedBus => VirtualSCSISharing->new('noSharing')
-        );
+    my $controller;
+    my $controller_vm_dev_conf_spec;
 
-    my $controller_vm_dev_conf_spec =
-        VirtualDeviceConfigSpec->new(
-            device => $controller,
-            operation => VirtualDeviceConfigSpecOperation->new('add')
-        );
+    eval {
+        $controller =
+            VirtualLsiLogicController->new(key => 0,
+                                           device => [0],
+                                           busNumber => 0,
+                                           sharedBus => VirtualSCSISharing->new('noSharing')
+            );
+
+        $controller_vm_dev_conf_spec =
+            VirtualDeviceConfigSpec->new(
+                device => $controller,
+                operation => VirtualDeviceConfigSpecOperation->new('add')
+            );
+    };
+    if ($@) {
+        $errmsg = 'Error creating the virtual machine controller configuration: '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 
     return $controller_vm_dev_conf_spec;
 }
 
 sub create_virtual_disk {
-   my %args     = @_;
-   my $path     = $args{path};
-   my $disksize = $args{disksize};
+    my %args     = @_;
+    my $path     = $args{path};
+    my $disksize = $args{disksize};
 
-   my $disk_backing_info =
-       VirtualDiskFlatVer2BackingInfo->new(diskMode => 'persistent',
-                                           fileName => $path);
+    my $disk_vm_dev_conf_spec;
+    my $disk_backing_info;
+    my $disk;
+    
+    eval {
+        $disk_backing_info =
+           VirtualDiskFlatVer2BackingInfo->new(diskMode => 'persistent',
+                                               fileName => $path);
 
-   my $disk = VirtualDisk->new(backing       => $disk_backing_info,
-                               controllerKey => 0,
-                               key           => 0,
-                               unitNumber    => 0,
-                               capacityInKB  => $disksize);
+        $disk = VirtualDisk->new(backing       => $disk_backing_info,
+                                   controllerKey => 0,
+                                   key           => 0,
+                                   unitNumber    => 0,
+                                   capacityInKB  => $disksize);
 
-   my $disk_vm_dev_conf_spec =
-       VirtualDeviceConfigSpec->new(
-           device        => $disk,
-           operation     => VirtualDeviceConfigSpecOperation->new('add')
-       );
+        $disk_vm_dev_conf_spec =
+           VirtualDeviceConfigSpec->new(
+               device        => $disk,
+               operation     => VirtualDeviceConfigSpecOperation->new('add')
+           );
+    };
+    if ($@) {
+        $errmsg = 'Error creating the virtual machine disk configuration: '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 
-   return $disk_vm_dev_conf_spec;
+    return $disk_vm_dev_conf_spec;
 }
 
 sub get_network {
@@ -643,42 +640,51 @@ sub get_network {
     my $network      = undef;
     my $unit_num     = 1;  # 1 since 0 is used by disk
 
-    if($network_name) {
-        my $network_list = Vim::get_views(mo_ref_array => $host_view->network);
-        foreach (@$network_list) {
-            if($network_name eq $_->name) {
-                $network             = $_;
-                my $nic_backing_info =
-                    VirtualEthernetCardNetworkBackingInfo->new(
-                        deviceName => $network_name,
-                        network    => $network
-                    );
+    eval {
+        if($network_name) {
+        #TODO Use get view from an Mother entity + Eval{};
+            my $network_list = Vim::get_views(mo_ref_array => $host_view->network);
+            foreach (@$network_list) {
+                if($network_name eq $_->name) {
+                    $network             = $_;
+                    my $nic_backing_info =
+                        VirtualEthernetCardNetworkBackingInfo->new(
+                            deviceName => $network_name,
+                            network    => $network
+                        );
 
-                my $vd_connect_info =
-                    VirtualDeviceConnectInfo->new(allowGuestControl => 1,
-                                                  connected         => 0,
-                                                  startConnected    => $poweron);
+                    my $vd_connect_info =
+                        VirtualDeviceConnectInfo->new(allowGuestControl => 1,
+                                                      connected         => 0,
+                                                      startConnected    => $poweron);
 
-                my $nic = VirtualPCNet32->new(backing     => $nic_backing_info,
-                                              key         => 0,
-                                              unitNumber  => $unit_num,
-                                              addressType => 'generated',
-                                              connectable => $vd_connect_info);
+                    my $nic = VirtualPCNet32->new(backing     => $nic_backing_info,
+                                                  key         => 0,
+                                                  unitNumber  => $unit_num,
+                                                  addressType => 'generated',
+                                                  connectable => $vd_connect_info);
 
-                my $nic_vm_dev_conf_spec =
-                    VirtualDeviceConfigSpec->new(
-                        device => $nic,
-                        operation => VirtualDeviceConfigSpecOperation->new('add')
-                    );
+                    my $nic_vm_dev_conf_spec =
+                        VirtualDeviceConfigSpec->new(
+                            device => $nic,
+                            operation => VirtualDeviceConfigSpecOperation->new('add')
+                        );
 
-                return (error => 0, network_conf => $nic_vm_dev_conf_spec);
+                    return (error => 0, network_conf => $nic_vm_dev_conf_spec);
+                }
+            }
+
+            if (!defined($network)) {
+                # no network found
+                return (error => 1);
             }
         }
-       if (!defined($network)) {
-           # no network found
-           return (error => 1);
-       }
+    };
+    if ($@) {
+        $errmsg = 'Error creating the virtual machine network configuration: '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
+
     # default network will be used
     return (error => 2);
 }
