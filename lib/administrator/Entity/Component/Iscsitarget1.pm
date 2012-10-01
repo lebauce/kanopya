@@ -105,20 +105,20 @@ sub getConf {
     for my $access (@accesses) {
         my @luns = ();
         push @luns, {
-                 iscsitarget1_lun_number => $access->getAttr(name => 'lun_name'),
-                 iscsitarget1_lun_device => $access->getContainer->getAttr(name => 'container_device'),
-                 iscsitarget1_lun_typeio => $access->getAttr(name => 'typeio'),
-                 iscsitarget1_lun_iomode => $access->getAttr(name => 'iomode'),
-             };
+            iscsitarget1_lun_id     => $access->getContainer->id,
+            iscsitarget1_lun_number => $access->getAttr(name => 'lun_name'),
+            iscsitarget1_lun_device => $access->getContainer->getAttr(name => 'container_device'),
+            iscsitarget1_lun_typeio => $access->getAttr(name => 'typeio'),
+            iscsitarget1_lun_iomode => $access->getAttr(name => 'iomode'),
+        };
         push @targets, {
-                 iscsitarget1_target_name => $access->getAttr(name => 'container_access_export'),
-                 iscsitarget1_target_id   => $access->getAttr(name => 'entity_id'),
-                 luns => \@luns
-             };
+            iscsitarget1_target_name => $access->getAttr(name => 'container_access_export'),
+            iscsitarget1_target_id   => $access->getAttr(name => 'entity_id'),
+            luns => \@luns
+        };
     }
 
     $conf{targets} = \@targets;
-    
     return \%conf;
 }
 
@@ -132,28 +132,31 @@ sub setConf {
     for my $target ( @{ $conf->{targets} } ) {
         LUN:
         for my $lun ( @{ $target->{luns} } ) {
-            my @containers = Entity::Container->search(hash => {});
+            # Create the export if not already exists
+            if (not $lun->{iscsitarget1_lun_id}) {
+                my @containers = Entity::Container->search(hash => {});
 
-            # Check if specified device match to a registred container.
-            my $container;
-            foreach my $cont (@containers) {
-                my $device = $cont->getAttr(name => 'container_device');
-                if ("$device" eq "$lun->{iscsitarget1_lun_device}") {
-                    $container = $cont;
-                    last;
+                # Check if specified device match to a registred container.
+                my $container;
+                foreach my $cont (@containers) {
+                    my $device = $cont->getAttr(name => 'container_device');
+                    if ("$device" eq "$lun->{iscsitarget1_lun_device}") {
+                        $container = $cont;
+                        last;
+                    }
                 }
-            }
-            if (! defined $container) {
-                $errmsg = "Specified device <$lun->{iscsitarget1_lun_device}> " .
-                          "does not match to an existing container.";
-                $log->error($errmsg);
-                throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-            }
+                if (! defined $container) {
+                    $errmsg = "Specified device <$lun->{iscsitarget1_lun_device}> " .
+                              "does not match to an existing container.";
+                    $log->error($errmsg);
+                    throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+                }
 
-            $self->createExport(container   => $container,
-                                export_name => $container->container_name,
-                                typeio      => $lun->{iscsitarget1_lun_typeio},
-                                iomode      => $lun->{iscsitarget1_lun_iomode});
+                $self->createExport(container   => $container,
+                                    export_name => $container->container_name,
+                                    typeio      => $lun->{iscsitarget1_lun_typeio},
+                                    iomode      => $lun->{iscsitarget1_lun_iomode});
+            }
 
             # Temporary: we can create only one lun with one target
             last LUN;
