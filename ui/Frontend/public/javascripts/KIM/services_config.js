@@ -66,6 +66,95 @@ var ComponentsFields = {
         'displayed': ['php5_session_handler','php5_session_path'],                 
         'relations': {},
     },
+    'iscsitarget1': {
+        'displayed': [],
+        'relations': { 'iscsitarget1_luns' : [ 'iscsitarget1_lun_device', 'iscsitarget1_lun_number', 'iscsitarget1_lun_typeio', 'iscsitarget1_lun_iomode' ] },
+        'submitCallback' : function (data, $form, opts, onsuccess, onerror) {
+            //console.log(data);
+
+            // Parse the infos from options
+            var infos = opts.url.split('/');
+            var type = infos[2];
+            var id = infos[3];
+
+            // Add the primary key value to data
+            data[getPrimarykey(type)] = id;
+
+            var conf = {};
+            conf.targets = [];
+            for (var lun in data.iscsitarget1_luns) {
+                var target = {};
+                target.luns = [ data.iscsitarget1_luns[lun] ];
+                conf.targets .push(target);
+            }
+            console.log(conf);
+            // Call setConf on the component
+            return ajax('POST', opts.url + '/setConf', { conf : conf }, onsuccess, onerror);
+        },
+        'attrsCallback' : function (resource) {
+            if (resource === 'iscsitarget1') {
+                // If ressource is the component, add the fake relation
+                var response = ajax('GET', '/api/attributes/' + resource);
+                response.attributes['iscsitarget1_luns'] = {
+                    label       : 'Iscsi luns',
+                    type        : 'relation',
+                    relation    : 'single_multi',
+                    is_editable : true,
+                };
+                response.relations['iscsitarget1_luns'] = {
+                    attrs : {
+                        accessor : 'multi',
+                    },
+                    cond : {
+                        'foreign.iscsitarget1_id' : 'self.iscsitarget1_id',
+                    },
+                    resource: 'iscsitarget1lun',
+                };
+                return response;
+
+            } else if (resource === 'iscsitarget1lun') {
+                // If ressource is the relation, build the fake attrdef
+                var containers = ajax('GET', '/api/container');
+                var devices = [];
+                for (var container in containers) {
+                    devices.push(containers[container].container_device);
+                }
+                var attributes = {
+                    iscsitarget1_id : {
+                    },
+                    iscsitarget1_lun_device : {
+                        label        : 'Device',
+                        type         : 'relation',
+                        relation     : 'single',
+                        is_mandatory : true,
+                        is_editable  : true,
+                        options      : devices,
+                    },
+                    iscsitarget1_lun_number : {
+                        label        : 'Lun number',
+                        type         : 'string',
+                        is_mandatory : true,
+                        is_editable  : false,
+                    },
+                    iscsitarget1_lun_typeio : {
+                        label        : 'I/O type',
+                        type         : 'enum',
+                        options      : [ 'fileio', 'blockio', 'nullio' ],
+                        is_mandatory : true,
+                        is_editable  : true,
+                    },
+                    iscsitarget1_lun_iomode : {
+                        label        : 'I/O mode',
+                        type         : 'enum',
+                        options      : [ 'wb', 'ro', 'wt' ],
+                        is_mandatory : true,
+                        is_editable  : true,
+                    },
+                };
+                return { attributes : attributes, relations : {} };
+            }
+        }
+    },
     'apache2': {
         'displayed': ['apache2_serverroot',
                       'apache2_loglevel',
@@ -100,7 +189,8 @@ function getComponentTypes() {
         'Mailnotifier' : 'mailnotifier0',
         'Keepalived'   : 'keepalived1',
         'Opennebula'   : 'opennebula3',
-        'Mysql'        : 'mysql5',         
+        'Iscsitarget'  : 'iscsitarget1', 
+        'Mysql'        : 'mysql5',
         '' : '',
     };
 }
@@ -125,26 +215,34 @@ function loadServicesConfig(cid, eid) {
                             title          : componentType + ' configuration',
                             type           : componentType,
                             id             : e.pk,
-                            valuesCallback : function (type, id) {
-                                return ajax('POST', '/api/' + componentType + '/' + e.pk + '/getConf');
-                            },
-                            submitCallback : function (data, $form, opts, onsuccess, onerror) {
-                                var attrdef = ajax('GET', '/api/attributes/' + componentType).attributes;
-                                var primary_attr;
-                                for(var attr in attrdef) {
-                                    if(attrdef[attr].is_primary == true) {
-                                        primary_attr = attr;
-                                        break;
-                                    }
-                                }
-                                data[primary_attr] = e.pk;
-                                return ajax('POST', '/api/' + componentType + '/' + e.pk + '/setConf', { conf : data }, onsuccess, onerror);
-                            },
+                            valuesCallback : ComponentsFields[componentType].valuesCallback ? ComponentsFields[componentType].valuesCallback :
+                                function (type, id) {
+                                    return ajax('POST', '/api/' + componentType + '/' + e.pk + '/getConf');
+                                },
+                            submitCallback : ComponentsFields[componentType].submitCallback ? ComponentsFields[componentType].submitCallback :
+                                function (data, $form, opts, onsuccess, onerror) {
+                                    // Add the primary key value to data
+                                    data[getPrimarykey(componentType)] = e.pk;
+                                    // Call setConf on the component
+                                    return ajax('POST', '/api/' + componentType + '/' + e.pk + '/setConf', { conf : data }, onsuccess, onerror);
+                                },
                             displayed      : ComponentsFields[componentType].displayed,
                             relations      : ComponentsFields[componentType].relations,
+                            attrsCallback  : ComponentsFields[componentType].attrsCallback,
                         })).start();
                     }
                 }
             }
         });
+}
+
+function getPrimarykey (componentType) {
+    console.log(componentType);
+    var attrdef = ajax('GET', '/api/attributes/' + componentType).attributes;
+    var primary_attr;
+    for(var attr in attrdef) {
+        if(attrdef[attr].is_primary == true) {
+            return attr;
+        }
+    }
 }
