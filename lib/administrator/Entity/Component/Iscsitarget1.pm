@@ -151,7 +151,7 @@ sub setConf {
             }
 
             $self->createExport(container   => $container,
-                                export_name => $target->{iscsitarget1_target_name},
+                                export_name => $container->container_name,
                                 typeio      => $lun->{iscsitarget1_lun_typeio},
                                 iomode      => $lun->{iscsitarget1_lun_iomode});
 
