@@ -71,7 +71,16 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    lvm2_vgs => {
+        label        => 'Volume groups',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_mandatory => 0,
+        is_editable  => 0,
+    },
+};
+
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
@@ -244,7 +253,7 @@ sub setConf {
     my $conf = $args{conf};
     for my $vg ( @{ $conf->{vgs} }) {
         for my $new_lv ( @{ $vg->{lvs} }) {
-            if (keys %$new_lv) {
+            if (keys %$new_lv and not $new_lv->{lvm2_lv_id}) {
                 $self->createDisk(
                     name       => $new_lv->{lvm2_lv_name},
                     size       => $new_lv->{lvm2_lv_size},
