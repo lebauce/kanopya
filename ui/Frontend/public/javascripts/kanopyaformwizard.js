@@ -237,11 +237,6 @@ var KanopyaFormWizard = (function() {
             input = $("<input>", { type : attr.type ? toInputType(attr.type) : 'text', width: 246 });
         }
 
-        // Set the field as hidden if defined
-        if (attr.hidden) {
-            input.attr('type', 'hidden');
-        }
-
         // Set the input attributes
         $(input).attr({ name : name, id : 'input_' + name, rel : name });
 
@@ -283,6 +278,13 @@ var KanopyaFormWizard = (function() {
             }
         }
 
+        // Set the field as hidden if defined.
+        // Be carefull to not move this block before the previous
+        // tests on the input type, has we change the type to hidden.
+        if (attr.hidden) {
+            input.attr('type', 'hidden');
+        }
+
         // Finally, insert DOM elements in the form
         this.insertInput(input, label, this.findTable(listing, attr.step), attr.help || attr.description, listing);
 
@@ -309,7 +311,11 @@ var KanopyaFormWizard = (function() {
             $(input).parent().append(unit_cont);
 
             var current_unit;
-            addFieldUnit(attr, unit_cont, unit_field_id).addClass('wizard-ignore');
+            var unit_input = addFieldUnit(attr, unit_cont, unit_field_id);
+            unit_input.addClass('wizard-ignore');
+            if ($(input).attr('disabled')) {
+                unit_input.attr('disabled', 'disabled');
+            }
             current_unit = attr.unit;
 
             // Set the serialize attribute to manage convertion from (selected) unit to final value
@@ -487,8 +493,8 @@ var KanopyaFormWizard = (function() {
         $(form).find(':input').not('.wizard-ignore').each(function () {
             // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
             if (toInputType(_this.attributedefs[$(this).attr('name')].type) === 'checkbox') {
-
-                if ($(this).attr('value') === 'on' && $(this).attr('checked')) {
+                //if ($(this).attr('value') === 'on' && $(this).attr('checked')) {
+                if ($(this).attr('checked')) {
                     $(this).attr('value', '1');
                 } else {
                     $(this).attr('value', '0');
