@@ -136,6 +136,7 @@ my %resources = (
     "linux0mount"              => "Linux0Mount",
     "opennebula3repository"    => "Opennebula3Repository",
     "opennebula3hypervisor"    => "Opennebula3Hypervisor",
+    "lvm2vg"                   => "Lvm2Vg",
 );
 
 sub db_to_json {
