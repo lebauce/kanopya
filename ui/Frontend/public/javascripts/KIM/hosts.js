@@ -13,7 +13,10 @@ function host_addbutton_action(e) {
         rawattrdef : {
             'host_manager_id' : {
                 'value' : g_host_manager_id,
-            }
+            },
+            'active' : {
+                'value' : 1,
+            },
         }
     })).start();
 }
