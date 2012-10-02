@@ -40,11 +40,135 @@ var ComponentsFields = {
                       'use_ssl'],
         'relations': {},
     },
-    'lvm2' : { 
+    'lvm2' : {
         'displayed': [],
-        'relations': { 'lvm2_vgs': ['lvm2_vg_name',
-                                    'lvm2_vg_freespace',
-                                    'lvm2_vg_size']}
+        'relations': {
+            'lvm2_vgs' : [ 'lvm2_vg_name', 'lvm2_vg_size', 'lvm2_vg_freespace' ],
+            'lvm2_lvs' : [ 'lvm2_lv_name', 'lvm2_lv_size', 'constainer_access_device', 'lvm2_lv_filesystem', 'lvm2_vg' ],
+        },
+        'valuesCallback' : function (type, id) {
+            var conf = ajax('POST', '/api/' + type + '/' + id + '/getConf');
+
+            // Get the values from getConf, add build a new values hash
+            // according to the attrdef builded in the attrsCallback.
+            conf.lvm2_lvs = [];
+            for (var vg in conf.lvm2_vgs) {
+                for (var lv in conf.lvm2_vgs[vg].lvm2_lvs) {
+                    lv_entry = conf.lvm2_vgs[vg].lvm2_lvs[lv];
+
+                    // Rename the attr lvm2_vg_id to lvm2_vg, because we are displaying
+                    // both list vgs and lvs that have a common attr lvm2_vg_id.
+                    // We need to build many attrdef hash instead of only one.
+                    lv_entry.lvm2_vg = delete lv_entry.lvm2_vg_id;
+
+                    //conf.targets[target].luns[lun].iscsitarget1_target_name = conf.targets[target].iscsitarget1_target_name;
+                    conf.lvm2_lvs.push(lv_entry);
+                }
+            }
+            return conf;
+        },
+        'submitCallback' : function (data, $form, opts, onsuccess, onerror) {
+            // Parse the infos from options
+            var infos = opts.url.split('/');
+            var type = infos[2];
+            var id = infos[3];
+
+            // Add the primary key value to data
+            data[getPrimarykey(type)] = id;
+
+            var lvs_by_vg = {}
+            for (var lv in data.lvm2_lvs) {
+                var lv_entry = data.lvm2_lvs[lv];
+                if (lvs_by_vg[lv_entry.lvm2_vg] == undefined) {
+                    lvs_by_vg[lv_entry.lvm2_vg] = [];
+                }
+                lvs_by_vg[lv_entry.lvm2_vg].push(lv_entry);
+            }
+
+            var conf = {};
+            conf.vgs = [];
+            for (var vg in lvs_by_vg) {
+                // Use any lv in the list to get the vg_id.
+                conf.vgs.push({ vg_id: lvs_by_vg[vg][0].lvm2_vg, lvs: lvs_by_vg[vg] } )
+            }
+
+            console.log(conf);
+
+            // Call setConf on the component
+            return ajax('POST', opts.url + '/setConf', { conf : conf }, onsuccess, onerror);
+        },
+        'attrsCallback' : function (resource) {
+            if (resource === 'lvm2') {
+                // If ressource is the component, add the fake relation
+                var response = ajax('GET', '/api/attributes/' + resource);
+                response.attributes['lvm2_lvs'] = {
+                    label       : 'Logical volumes',
+                    type        : 'relation',
+                    relation    : 'single_multi',
+                    is_editable : true,
+                };
+                response.relations['lvm2_lvs'] = {
+                    attrs : {
+                        accessor : 'multi',
+                    },
+                    cond : {
+                        'foreign.lvm2_id' : 'self.lvm2_id',
+                    },
+                    resource: 'lvm2lv',
+                };
+                return response;
+
+            } else if (resource === 'lvm2lv') {
+                var vgs = ajax('GET', '/api/lvm2vg');
+                var attributes = {
+                    lvm2_lv_id : {
+                        is_primary   : true,
+                        is_mandatory : false,
+                    },
+                    lvm2_id : {
+                        type         : 'relation',
+                        relation     : 'single',
+                        is_mandatory : true,
+                    },
+                    lvm2_lv_name : {
+                        label        : 'Name',
+                        type         : 'string',
+                        is_mandatory : true,
+                        is_editable  : true,
+                    },
+                    lvm2_lv_size : {
+                        label        : 'Size',
+                        type         : 'string',
+                        unit         : 'byte',
+                        is_mandatory : true,
+                        is_editable  : true,
+                    },
+                    constainer_access_device : {
+                        label        : 'Device',
+                        type         : 'string',
+                        is_mandatory : true,
+                        is_editable  : false,
+                    },
+                    lvm2_lv_filesystem : {
+                        label        : 'File system',
+                        type         : 'string',
+                        is_mandatory : true,
+                        is_editable  : true,
+                    },
+                    lvm2_vg : {
+                        label        : 'Volume group',
+                        type         : 'relation',
+                        relation     : 'single',
+                        is_mandatory : true,
+                        is_editable  : true,
+                        options      : vgs,
+                    },
+                };
+            } else {
+                return ajax('GET', '/api/attributes/' + resource);
+            }
+            return { attributes : attributes, relations : {} };
+        }
     },
     'puppetmaster2': {
         'displayed': ['puppetmaster2_options'],
@@ -99,8 +223,6 @@ var ComponentsFields = {
                 target.luns = [ data.iscsitarget1_luns[lun] ];
                 conf.targets.push(target);
             }
-
-            console.log(conf);
 
             // Call setConf on the component
             return ajax('POST', opts.url + '/setConf', { conf : conf }, onsuccess, onerror);
@@ -325,7 +447,8 @@ function getComponentTypes() {
         'Mailnotifier' : 'mailnotifier0',
         'Keepalived'   : 'keepalived1',
         'Opennebula'   : 'opennebula3',
-        'Iscsitarget'  : 'iscsitarget1', 
+        'Iscsitarget'  : 'iscsitarget1',
+        'Lvm'          : 'lvm2',
         'Mysql'        : 'mysql5',
         'Mysql'        : 'mysql5',         
         'Nfsd'         : 'nfsd3',
