@@ -36,12 +36,13 @@ my $errmsg;
 
 sub prerequisites {
     my ($self, %args) = @_;
+
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
     if (defined $self->{params}->{remediation_workflow_id}){
 
         my $wf = Workflow->get(id => $self->{params}->{remediation_workflow_id});
-        $log->info('REMEDIATION WORKFLOW <'.($self->{params}->{remediation_workflow_id}).'> STATE <'.($wf->getAttr(name => 'state')).'> ');
+        $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> STATE <'.($wf->getAttr(name => 'state')).'> ');
 
         if($wf->getAttr(name => 'state') eq 'cancelled') {
             $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> cancelled, EXCEPTION');
@@ -224,6 +225,16 @@ sub execute {
     if (not defined $self->{context}->{host}) {
         throw Kanopya::Exception::Internal(error => "Could not find a usable host");
     }
+
+    # Check the user quota on ram and cpu
+    $self->{context}->{cluster}->user->canConsumeQuota(
+        resource => 'ram',
+        amount   => $self->{context}->{host}->host_ram,
+    );
+    $self->{context}->{cluster}->user->canConsumeQuota(
+        resource => 'cpu',
+        amount   => $self->{context}->{host}->host_core,
+    );
 
     $self->{context}->{host}->setState(state => "locked");
 

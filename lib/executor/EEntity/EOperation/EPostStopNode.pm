@@ -221,9 +221,19 @@ sub execute {
     
     my $systemimage_name = $self->{context}->{cluster}->getAttr(name => 'cluster_name');
     $systemimage_name .= '_' . $self->{context}->{host}->getNodeNumber();
-    
+
     # Finally save the host
     $self->{context}->{host}->save();
+
+    # Update the user quota on ram and cpu
+    $self->{context}->{cluster}->user->releaseQuota(
+        resource => 'ram',
+        amount   => $self->{context}->{host}->host_ram,
+    );
+    $self->{context}->{cluster}->user->releaseQuota(
+        resource => 'cpu',
+        amount   => $self->{context}->{host}->host_core,
+    );
 
     $self->{context}->{host}->stopToBeNode();
     

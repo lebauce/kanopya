@@ -227,6 +227,16 @@ sub execute {
     }
 
     $self->{context}->{host}->postStart();
+
+    # Update the user quota on ram and cpu
+    $self->{context}->{cluster}->user->consumeQuota(
+        resource => 'ram',
+        amount   => $self->{context}->{host}->host_ram,
+    );
+    $self->{context}->{cluster}->user->consumeQuota(
+        resource => 'cpu',
+        amount   => $self->{context}->{host}->host_core,
+    );
 }
 
 sub finish {
