@@ -1036,6 +1036,21 @@ CREATE TABLE `gp` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `quota`
+-- Quota class
+
+CREATE TABLE `quota` (
+  `quota_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(8) unsigned NOT NULL,
+  `resource` int(8) unsigned NOT NULL,
+  `current` int(8) unsigned NOT NULL DEFAULT 0,
+  `limit` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`quota_id`),
+  KEY (`user_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `message`
 -- Message class
 
