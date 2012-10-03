@@ -225,7 +225,9 @@ sub consumeQuota {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'ressource', 'amount' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'resource', 'amount' ],
+                         optional => { 'dryrun' => 0 });
 
     # Search for a quota for this resource
     my $quota;
@@ -234,7 +236,45 @@ sub consumeQuota {
     };
     # If a quota exixts, try to consume some resource
     if ($quota) {
-        $quota->consume(amount => $args{amount});
+        $quota->consume(amount => $args{amount}, dryrun => $args{dryrun});
+    }
+}
+
+=head2 canConsumeQuota
+
+    Check if we can consume amount on quata only. 
+
+=cut
+
+sub canConsumeQuota {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'resource', 'amount' ]);
+
+    $self->consumeQuota(dryrun => 1, %args);
+}
+
+=head2 releaseQuota
+
+    Check if we can consume amount on quata only. 
+
+=cut
+
+sub releaseQuota {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'resource', 'amount' ]);
+
+    # Search for a quota for this resource
+    my $quota;
+    eval {
+        $quota = Quota->find(hash => { user_id => $self->id, resource => $args{resource} });
+    };
+    # If a quota exixts, try to consume some resource
+    if ($quota) {
+        $quota->release(amount => $args{amount});
     }
 }
 

@@ -41,7 +41,7 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 0,
     },
-    limit => {
+    quota => {
         label        => 'Limit value',
         type         => 'string',
         pattern      => '^\d+$',
@@ -63,18 +63,44 @@ sub consume {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'amount' ]);
+    General::checkParams(args => \%args, required => [ 'amount' ], optional => { 'dryrun' => 0 });
 
     # Check if the quota exceed
-    if (($self->current + $args{amount}) > $self->limit) {
+    if (($self->current + $args{amount}) > $self->quota) {
         throw Kanopya::Exception::Quota(
-            error => 'Quota exceeded: <$args{amount}> exceed the ' . $self->ressource .
-                     ' limit <' . $self->limit . '>'
+            error => "<$args{amount}> exceed the " . $self->resource . " quota <" . $self->quota . ">"
         );
     }
 
-    # Set the new current value
-    $self->setAttr(name => 'current', value => $self->current + $args{amount});
+    if (not $args{dryrun}) {
+        # Set the new current value
+        $self->setAttr(name => 'current', value => $self->current + $args{amount});
+        $self->save();
+    }
+}
+
+=head2 release
+
+    Release a given amount of the quota resource.
+
+=cut
+
+sub release {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'amount' ]);
+
+    # Check if the quota exceed
+    if (($self->current - $args{amount}) < 0) {
+        throw Kanopya::Exception::Quota(
+            error => "Can not release <$args{amount}> of " . $self->resource .
+                     " on the current value <" . $self->current . ">"
+        );
+    }
+
+    $self->setAttr(name => 'current', value => $self->current - $args{amount});
+    $self->save();
 }
 
 1;
