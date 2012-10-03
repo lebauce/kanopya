@@ -33,7 +33,7 @@ get '/login' => sub {
 
 post '/login' => sub {
     my $user     = escape_html( param('login') );
-    my $password = escape_html( param('password') );
+    my $password = param('password');
     my $redirect = session->{login_redirect_url} || '/';
     #$redirect = '/dashboard/status' if $redirect eq '/';
 
