@@ -805,7 +805,7 @@ sub search {
         }
 
         my $class_type;
-        if ($parent->has_column("class_type_id")) {
+        if ($parent->has_column("class_type_id") and $class ne "ClassType") {
             $class_type = getClassType(id => $parent->get_column("class_type_id"));
 
             if (length($class_type) > length($class)) {

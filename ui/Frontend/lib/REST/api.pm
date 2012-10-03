@@ -32,6 +32,7 @@ my %resources = (
     "apache2"                  => "Entity::Component::Apache2",
     "apache2virtualhost"       => "Apache2Virtualhost",
     "billinglimit"             => "Entity::Billinglimit",
+    "classtype"                => "ClassType",
     "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
     "clustermetric"            => "Clustermetric",
     "component"                => "Entity::Component",
