@@ -8,13 +8,17 @@ var g_user_id = undefined;
 function user_addbutton_action(e, displayed) {
     // When called from user details, e is the user id, event instead.
     var displayed;
+    var relations;
     if (e instanceof Object && e.data.displayed !== undefined) {
         displayed = e.data.displayed;
+        relations = e.data.relations;
     } else {
         displayed = [ 'user_firstname', 'user_lastname', 'user_email', 
                       'user_desc', 'user_login', 'user_password', 
                       'user_lastaccess', 'user_creationdate',
                       'user_sshkey', 'user_profiles' ];
+
+        relations = { 'quotas' : [ 'resource', 'current', 'quota' ] };
     }
 
     (new KanopyaFormWizard({
@@ -22,7 +26,7 @@ function user_addbutton_action(e, displayed) {
         type       : 'user',
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : displayed,
-        relations  : { 'quotas' : [ 'resource', 'current', 'limit' ] },
+        relations  : relations,
     })).start();
 }
 
@@ -49,7 +53,8 @@ function Users() {
 
         var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
                                'user_login', 'user_password', 'user_sshkey', 'user_profiles' ];
-        $(user_addbutton).bind('click', { displayed : creation_attrs }, user_addbutton_action);
+        var creation_relations = { 'quotas' : [ 'resource', 'quota' ] };
+        $(user_addbutton).bind('click', { displayed : creation_attrs, relations : creation_relations }, user_addbutton_action);
     };
   
     Users.prototype.load_details = function(container_id, elem_id) {
