@@ -27,6 +27,7 @@ use Kanopya::Exceptions;
 use General;
 use Profile;
 use Entity::Gp;
+use Quota;
 
 use Log::Log4perl "get_logger";
 
@@ -99,6 +100,13 @@ use constant ATTR_DEF => {
         pattern      => '^\w*$',
         is_mandatory => 0,
         is_editable  => 0
+    },
+    quotas => {
+        label        => 'Quotas',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_mandatory => 0,
+        is_editable  => 1,
     },
     user_profiles => {
         label        => 'Profiles',
@@ -207,13 +215,27 @@ sub setAttr {
     $self->SUPER::setAttr(%args);
 }
 
-=head2 remove
+=head2 consumeQuota
+
+    Consume any resource type in the user quota.
 
 =cut
 
-sub remove {
+sub consumeQuota {
     my $self = shift;
-    $self->SUPER::delete();
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'ressource', 'amount' ]);
+
+    # Search for a quota for this resource
+    my $quota;
+    eval {
+        $quota = Quota->find(hash => { user_id => $self->id, resource => $args{resource} });
+    };
+    # If a quota exixts, try to consume some resource
+    if ($quota) {
+        $quota->consume(amount => $args{amount});
+    }
 }
 
 sub setProfiles {
