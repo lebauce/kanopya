@@ -54,21 +54,21 @@ use constant ATTR_DEF => {
     user_password => {
         label        => 'Password',
         type         => 'password',
-        pattern      => '^.*$',
+        pattern      => '^.+$',
         is_mandatory => 1,
         is_editable  => 1
     },
     user_firstname => {
         label        => 'First name',
         type         => 'string',
-        pattern      => '^\w*$',
+        pattern      => '^.+$',
         is_mandatory => 1,
         is_editable  => 1
     },
     user_lastname => {
         label        => 'Last name',
         type         => 'string',
-        pattern      => '^\w*$',
+        pattern      => '^.+$',
         is_mandatory => 1,
         is_editable  => 1
     },
