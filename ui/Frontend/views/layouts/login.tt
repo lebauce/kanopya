@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
-        <title>Microcluster Web Interface: login</title>
+        <title>Kanopya Web Interface: login</title>
         <link rel="stylesheet" href="<% request.uri_base %>/css/login.css" />
     </head>
 
