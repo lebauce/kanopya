@@ -35,20 +35,20 @@ __PACKAGE__->table("quota");
 
 =head2 resource
 
-  data_type: 'integer'
-  extra: {unsigned => 1}
+  data_type: 'char'
   is_nullable: 0
+  size: 32
 
 =head2 current
 
-  data_type: 'integer'
+  data_type: 'bigint'
   default_value: 0
   extra: {unsigned => 1}
   is_nullable: 0
 
-=head2 limit
+=head2 quota
 
-  data_type: 'integer'
+  data_type: 'bigint'
   extra: {unsigned => 1}
   is_nullable: 0
 
@@ -70,16 +70,16 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "resource",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  { data_type => "char", is_nullable => 0, size => 32 },
   "current",
   {
-    data_type => "integer",
+    data_type => "bigint",
     default_value => 0,
     extra => { unsigned => 1 },
     is_nullable => 0,
   },
-  "limit",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "quota",
+  { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("quota_id");
 
@@ -101,8 +101,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-03 14:14:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MGZCgBK1txvnV2xQGSrOog
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-03 16:38:39
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XQoDi2jA4eFFc0DdhgKE3w
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
