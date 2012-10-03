@@ -34,7 +34,7 @@ use constant ATTR_DEF => {
     smtp_server => {
         label        => 'SMTP server',
         type         => 'string',
-        pattern      => '^[a-z0-9-]+(\.[a-z0-9-]+)?$',
+        pattern      => '^[a-z0-9-]+(\.[a-z0-9-]+)*$',
         is_mandatory => 1,
         is_editable  => 1,
     },
