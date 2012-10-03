@@ -99,19 +99,22 @@ function loadServicesDetails(cid, eid, is_iaas) {
                     label       : 'Start service',
                     icon        : 'play',
                     action      : '/api/cluster/' + eid + '/start',
-                    condition   : (new RegExp('^down')).test(data.cluster_state)
+                    condition   : (new RegExp('^down')).test(data.cluster_state),
+                    confirm     : 'This will start your instance'
                 },
                 {
                     label       : 'Stop service',
                     icon        : 'stop',
                     action      : '/api/cluster/' + eid + '/stop',
-                    condition   : (new RegExp('^up')).test(data.cluster_state)
+                    condition   : (new RegExp('^up')).test(data.cluster_state),
+                    confirm     : 'This will stop all your running instances'
                 },
                 {
                     label       : 'Force stop service',
                     icon        : 'stop',
                     action      : '/api/cluster/' + eid + '/forceStop',
-                    condition   : (!(new RegExp('^down')).test(data.cluster_state))
+                    condition   : (!(new RegExp('^down')).test(data.cluster_state)),
+                    confirm     : 'This will stop all your running instances'
                 },
                 {
                     label       : 'Scale out',
@@ -142,12 +145,20 @@ function createallbuttons(buttons, container) {
 function createbutton(button) {
     return $('<a>', { text : button.label }).button({
         icons : { primary : 'ui-icon-' + button.icon }
-    }).bind('click', ((typeof(button.action) === 'string') ? function() {
-        $.ajax({
-            url         : button.action,
-            type        : 'POST',
-            contentType : 'application/json',
-            data        : JSON.stringify((button.data !== undefined) ? button.data : {})
-        });
-    } : button.action));
+    }).bind('click', function (e) {
+        if (button.confirm &&
+            !confirm(button.confirm + ". Do you want to continue ?")) {
+            return false;
+        }
+        if (typeof(button.action) === 'string') {
+            $.ajax({
+                url         : button.action,
+                type        : 'POST',
+                contentType : 'application/json',
+                data        : JSON.stringify((button.data !== undefined) ? button.data : {})
+            });
+        } else {
+            button.action(e);
+        }
+    });
 }

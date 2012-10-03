@@ -355,13 +355,15 @@ function nodedetailsaction(cid, eid) {
                     label   : 'Stop node',
                     icon    : 'stop',
                     action  : '/api/serviceprovider/' + data.service_provider_id + '/removeNode',
-                    data    : { host_id : data.host.pk }
+                    data    : { host_id : data.host.pk },
+                    confirm : 'The node will be halted'
                 },
                 {
                     label   : 'Resubmit node',
                     icon    : 'refresh',
                     condition : isVirtual,
                     action  : '/api/host/' + data.host.pk + '/resubmit',
+                    confirm : 'The node will be stopped and restarted'
                 },
                {
                     label       : 'Scale Cpu',
