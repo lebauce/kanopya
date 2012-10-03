@@ -3,17 +3,25 @@
 function fromIdToComponentType(cell, options, row) {
     
     var componentId = cell;
-    var toReturn;
+    var componentType;
     
     $.ajax({
         async   : false,
         url     : '/api/componenttype?component_type_id=' + componentId,
         type    : 'GET',
         success : function(data) {
-            toReturn = data[0].component_name;
+            componentType = data[0];
         }
     });
-    return toReturn;
+    return componentType;
+}
+
+function fromIdToComponentName(cell, options, row) {
+    return fromIdToComponentType(cell, options,row).component_name;
+}
+
+function fromIdToComponentVersion(cell, options, row) {
+    return fromIdToComponentType(cell, options,row).component_version;
 }
 
 // Set the correct state icon for each element :
