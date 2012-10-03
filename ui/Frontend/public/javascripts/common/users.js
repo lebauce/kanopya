@@ -22,14 +22,13 @@ function user_addbutton_action(e, displayed) {
         type       : 'user',
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : displayed,
+        relations  : { 'quotas' : [ 'resource', 'current', 'limit' ] },
     })).start();
 }
 
-///* users class */
+/* users class */
 function Users() {
     Users.prototype.load_content = function(container_id, elem_id) {
-        var container = $('#' + container_id);
-
         g_user_id = elem_id;
         create_grid({
             url: '/api/user',
@@ -51,7 +50,7 @@ function Users() {
         var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
                                'user_login', 'user_password', 'user_sshkey', 'user_profiles' ];
         $(user_addbutton).bind('click', { displayed : creation_attrs }, user_addbutton_action);
-    }
+    };
   
     Users.prototype.load_details = function(container_id, elem_id) {
         var users_opts = {
@@ -91,11 +90,10 @@ function Users() {
             
         }});
         details.show();
-    }
+    };
     
     Users.prototype.load_profiles = function(container_id, elem_id) {
         /* retrieve profiles list  */
-        var profiles_data = [];
         var container = $('#'+container_id);
         var table = $('<table>',  {id: 'profiles_table'});
         table.appendTo(container);
@@ -126,8 +124,7 @@ function Users() {
                 grid.trigger("reloadGrid");
             }
         });
-    }
-    
+    };
 }
   
 var users = new Users();

@@ -24,6 +24,7 @@ prepare_serializer_for_format;
 
 my %resources = (
     "activedirectory"          => "Entity::Connector::ActiveDirectory",
+    "alert"                    => "Alert",
     "aggregator"               => "Aggregator",
     "atftpd0"                  => "Entity::Component::Atftpd0",
     "aggregatecombination"     => "AggregateCombination",
@@ -129,16 +130,29 @@ my %resources = (
     "userextension"            => "UserExtension",
     "userprofile"              => "UserProfile",
     "vlan"                     => "Entity::Network::Vlan",
-    "workflow"                 => "Workflow",
-    "workflowdef"              => "WorkflowDef",
-    "alert"                    => "Alert",
-    "mailnotifier0"            => "Entity::Component::Mailnotifier0",
     "linux0"                   => "Entity::Component::Linux0",
     "linux0mount"              => "Linux0Mount",
+    "lvm2vg"                   => "Lvm2Vg",
+    "mailnotifier0"            => "Entity::Component::Mailnotifier0",
     "opennebula3repository"    => "Opennebula3Repository",
     "opennebula3hypervisor"    => "Opennebula3Hypervisor",
-    "lvm2vg"                   => "Lvm2Vg",
+    "quota"                    => "Quota",
+    "workflow"                 => "Workflow",
+    "workflowdef"              => "WorkflowDef",
 );
+
+sub class_from_resource {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'resource' ]);
+
+    if (not $resources{$args{resource}}) {
+        throw Kanopya::Exception::Internal::UnknownResource(
+            error => 'Unknown ressource name: ' . $args{resource}
+        );
+    }
+    return $resources{$args{resource}};
+}
 
 sub db_to_json {
     my $obj = shift;
@@ -326,7 +340,7 @@ sub jsonify {
 sub setupREST {
 
     foreach my $resource (keys %resources) {
-        my $class = $resources{$resource};
+        my $class = class_from_resource(resource => $resource);
 
         resource "api/$resource" =>
             get    => sub {
@@ -515,7 +529,7 @@ sub setupREST {
             require (General::getLocFromClass(entityclass => $class));
 
             my $objs = [];
-            my $class = $resources{$resource};
+            my $class = class_from_resource(resource => $resource);
             my %query = params('query');
             my %params = (
                 hash => \%query,
@@ -534,7 +548,7 @@ sub setupREST {
 get '/api/attributes/:resource' => sub {
     content_type 'application/json';
 
-    my $class = $resources{params->{resource}};
+    my $class = class_from_resource(resource => params->{resource});
 
     require (General::getLocFromClass(entityclass => $class));
 
