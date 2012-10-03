@@ -202,24 +202,47 @@ sub findEntityView {
 
 =head2 synchronize
 
-    Desc: synchronize the component with its related vsphere infrastructure 
-    Args: $datacenter_name, $service_provider_id
-    
-=cut 
+    Desc: synchronize the component with its related vsphere infrastructure
+    Args: $synchroniza_item
+
+=cut
 
 sub synchronize {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['service_provider_id',
+    General::checkParams(args => \%args, required => ['synchronize_item']);
+
+    my %synchronize_functions = (
+        'cluster'    => 'synchronizeCluster',
+        'datacenter' => 'synchronizeDatacenter',
+        'vm'         => 'synchronizeVm',
+        'network'    => 'synchronizeNetwork',
+    );
+
+    my $synchronize_method = $synchronize_functions{$args{synchronize_item}};
+
+    delete $args{synchronize_item};
+
+    $self->$synchronize_method(\%args);
+}
+
+=head2 synchronizeCluster
+
+    Desc: synchronize the component with a cluster in a given datacenter 
+    Args: $datacenter_name, $service_provider_id
+ 
+=cut 
+
+sub synchronizeCluster {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['service_provider',
                                                       'datacenter_name']);
 
     $self->negociateConnection();
 
     my $datacenter       = $self->getDatacenters(datacenter_name => $args{datacenter_name});
-    my $service_provider = Entity::ServiceProvider->find (hash => {
-                               service_provider_id => $args{service_provider_id}
-                           });
-    my $cluster_name     = $service_provider->service_provider_name;
+    my $cluster_name     = $args{service_provider}->service_provider_name;
     my $datacenter_view  = $self->findEntityView(
                                view_type   => 'Datacenter',
                                hash_filter => {

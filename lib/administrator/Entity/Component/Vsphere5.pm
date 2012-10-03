@@ -68,34 +68,35 @@ sub checkHostManagerParams {
 =head2 synchronize
 
     Desc: synchronize the component with its related vSphere infrastructure.
-    Args: \@datacenters, a list of the datacenter managed by the vCenter infrastructure
-          that the user wants to synchronize with.
-
+    Args: $synchronize_item, the object to be synchronized in the vsphere entity with Kanopya
+          \%args is also relayed to the operation
 =cut
 
 sub synchronize {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'datacenters' ]); 
-   
-    foreach my $datacenter (@{ $args{datacenters} }) {
+    General::checkParams(args => \%args, required => [ 'synchronize_item' ]);
 
-        $log->info(
-            'New Synchronize operation on component vsphere '. $self->id. 'for datacenter '. $datacenter
-        );
+    my $synchronize_item =  $args{synchronize_item};
+    delete $args{synchronize_item};
 
-        Entity::Operation->enqueue(
-            priority => 200,
-            type     => 'Synchronize',
-            params   => {
-                service_provider_id => $self->service_provider_id,
-                datacenter_name     => $datacenter,
-                context             => {
-                    entity => $self,
-                }
-            }
-        );
-    }
+    $log->info(
+        'New Synchronize operation on component vsphere '. $self->id.
+        ' with item: '. $synchronize_item
+    );
+
+    Entity::Operation->enqueue(
+        priority => 200,
+        type     => 'Synchronize',
+        params   => {
+            service_provider => $self->service_provider,
+            synchronize_item => $synchronize_item,
+            context          => {
+                entity => $self,
+            },
+            \%args,
+        }
+    );
 }
 
 ###########################
