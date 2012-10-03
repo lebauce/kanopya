@@ -232,6 +232,7 @@ sub synchronize {
 
     Desc: synchronize the component with a cluster in a given datacenter 
     Args: $datacenter_name, $service_provider_id
+=cut
 
 sub synchronizeCluster {
     my ($self, %args) = @_;
