@@ -63,19 +63,16 @@ __PACKAGE__->table("user");
   is_nullable: 1
   size: 255
 
-=head2 user_sshkey
-
-  data_type: 'text'
-  is_nullable: 1
-
 =head2 user_creationdate
 
   data_type: 'date'
+  datetime_undef_if_invalid: 1
   is_nullable: 1
 
 =head2 user_lastaccess
 
   data_type: 'datetime'
+  datetime_undef_if_invalid: 1
   is_nullable: 1
 
 =head2 user_desc
@@ -84,6 +81,11 @@ __PACKAGE__->table("user");
   default_value: 'Note concerning this user'
   is_nullable: 1
   size: 255
+
+=head2 user_sshkey
+
+  data_type: 'text'
+  is_nullable: 1
 
 =cut
 
@@ -112,12 +114,14 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 64 },
   "user_email",
   { data_type => "char", is_nullable => 1, size => 255 },
-  "user_sshkey",
-  { data_type => "text", is_nullable => 1 },
   "user_creationdate",
-  { data_type => "date", is_nullable => 1 },
+  { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
   "user_lastaccess",
-  { data_type => "datetime", is_nullable => 1 },
+  {
+    data_type => "datetime",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
   "user_desc",
   {
     data_type => "char",
@@ -125,6 +129,8 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
     size => 255,
   },
+  "user_sshkey",
+  { data_type => "text", is_nullable => 1 },
 );
 __PACKAGE__->set_primary_key("user_id");
 __PACKAGE__->add_unique_constraint("user_login", ["user_login"]);
@@ -191,6 +197,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 quotas
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Quota>
+
+=cut
+
+__PACKAGE__->has_many(
+  "quotas",
+  "AdministratorDB::Schema::Result::Quota",
+  { "foreign.user_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 user
 
 Type: belongs_to
@@ -237,8 +258,9 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-09-18 11:31:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2kcGbzpSqLin+XEN5dDz7g
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-03 14:14:22
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:n0YubF0cRkyeFaoOH+MW8w
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
@@ -246,5 +268,4 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-# You can replace this text with custom content, and it will be preserved on regeneration
 1;

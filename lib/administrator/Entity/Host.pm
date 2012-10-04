@@ -399,8 +399,21 @@ sub updateCPU {
 
     General::checkParams(args => \%args, required => [ 'cpu_number' ]);
 
-    $self->setAttr(name  => "host_core",
-                   value => $args{cpu_number});
+    # If the host is a node, then it is used in a cluster
+    # belonging to a user, so update quota
+    if ($self->node) {
+        my $user = $self->node->inside->user;
+
+        if ($args{cpu_number} < $self->host_core) {
+            $user->releaseQuota(resource => 'cpu',
+                                amount   => $self->host_core - $args{cpu_number});
+        } else {
+            $user->consumeQuota(resource => 'cpu',
+                                amount   => $args{cpu_number} - $self->host_core);
+        }
+    }
+
+    $self->setAttr(name => "host_core", value => $args{cpu_number});
     $self->save();
 }
 
@@ -413,8 +426,21 @@ sub updateMemory {
 
     General::checkParams(args => \%args, required => [ 'memory' ]);
 
-    $self->setAttr(name  => "host_ram",
-                   value => $args{memory});
+    # If the host is a node, then it is used in a cluster
+    # belonging to a user, so update quota
+    if ($self->node) {
+        my $user = $self->node->inside->user;
+
+        if ($args{memory} < $self->host_ram) {
+            $user->releaseQuota(resource => 'ram',
+                                amount   => $self->host_ram - $args{memory});
+        } else {
+            $user->consumeQuota(resource => 'ram',
+                                amount   => $args{memory} - $self->host_ram);
+        }
+    }
+
+    $self->setAttr(name => "host_ram", value => $args{memory});
     $self->save();
 }
 
@@ -441,12 +467,12 @@ sub becomeNode {
 
     my $adm = Administrator->new();
     my $node = Externalnode::Node->new(
-                  inside_id           => $args{inside_id},
-                  host_id             => $self->getAttr(name => 'host_id'),
-                  master_node         => $args{master_node},
-                  node_number         => $args{node_number},
-                  systemimage_id      => $args{systemimage_id},
-    );
+                   inside_id           => $args{inside_id},
+                   host_id             => $self->getAttr(name => 'host_id'),
+                   master_node         => $args{master_node},
+                   node_number         => $args{node_number},
+                   systemimage_id      => $args{systemimage_id},
+               );
 
     my $cluster = Entity::ServiceProvider->get(id => $args{inside_id});
     $log->info("Associate host ifaces with service network interfaces");
@@ -483,7 +509,7 @@ sub becomeMasterNode {
 sub stopToBeNode{
     my $self = shift;
 
-    if(not defined $self->node) {
+    if (not defined $self->node) {
         $errmsg = "Host " . $self->id . " is not a node!";
         $log->error($errmsg);
         #throw Kanopya::Exception::DB(error => $errmsg);

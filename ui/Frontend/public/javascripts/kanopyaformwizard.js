@@ -35,7 +35,11 @@ var KanopyaFormWizard = (function() {
         this.attributedefs = {};
 
         // Retrieve data structure and values from api
-        var response   = this.attrsCallback(this.type);
+        var response = this.attrsCallback(this.type);
+        if (response == undefined) {
+            throw new Error("KanopyaFormWizard: Could not get attributes of: " + this.type);
+        }
+
         var attributes = response.attributes;
         var relations  = response.relations;
 
@@ -57,6 +61,10 @@ var KanopyaFormWizard = (function() {
 
             // Get the relation type attrdef
             var response = this.attrsCallback(relationdef.resource);
+            if (response == undefined) {
+                throw new Error("KanopyaFormWizard: Could not get attributes of: " + relationdef.resource);
+            }
+
             var rel_attributedefs = response.attributes;
             var rel_relationdefs  = response.relations;
 
@@ -149,11 +157,11 @@ var KanopyaFormWizard = (function() {
             $(this.content).css('width', $(this.content).width() + 15);
         }
         $(this.content).dialog('option', 'position', 'top');
-    }
+    };
 
     KanopyaFormWizard.prototype.buildSelectOptions = function(name, value, relations) {
-        var resource;
-        var options;
+        var resource = undefined;
+        var options  = undefined;
 
         if (relations[name]) {
             // Relation is multi to multi
@@ -180,7 +188,7 @@ var KanopyaFormWizard = (function() {
             options = [ value ];
         }
         return options !== undefined ? options : [];
-    }
+    };
 
     KanopyaFormWizard.prototype.newFormInput = function(name, value, listing) {
         var attr = this.attributedefs[name];

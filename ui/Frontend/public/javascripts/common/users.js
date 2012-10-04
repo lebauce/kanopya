@@ -8,13 +8,17 @@ var g_user_id = undefined;
 function user_addbutton_action(e, displayed) {
     // When called from user details, e is the user id, event instead.
     var displayed;
+    var relations;
     if (e instanceof Object && e.data.displayed !== undefined) {
         displayed = e.data.displayed;
+        relations = e.data.relations;
     } else {
         displayed = [ 'user_firstname', 'user_lastname', 'user_email', 
                       'user_desc', 'user_login', 'user_password', 
                       'user_lastaccess', 'user_creationdate',
                       'user_sshkey', 'user_profiles' ];
+
+        relations = { 'quotas' : [ 'resource', 'current', 'quota' ] };
     }
 
     (new KanopyaFormWizard({
@@ -22,14 +26,13 @@ function user_addbutton_action(e, displayed) {
         type       : 'user',
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : displayed,
+        relations  : relations,
     })).start();
 }
 
-///* users class */
+/* users class */
 function Users() {
     Users.prototype.load_content = function(container_id, elem_id) {
-        var container = $('#' + container_id);
-
         g_user_id = elem_id;
         create_grid({
             url: '/api/user',
@@ -50,8 +53,9 @@ function Users() {
 
         var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
                                'user_login', 'user_password', 'user_sshkey', 'user_profiles' ];
-        $(user_addbutton).bind('click', { displayed : creation_attrs }, user_addbutton_action);
-    }
+        var creation_relations = { 'quotas' : [ 'resource', 'quota' ] };
+        $(user_addbutton).bind('click', { displayed : creation_attrs, relations : creation_relations }, user_addbutton_action);
+    };
   
     Users.prototype.load_details = function(container_id, elem_id) {
         var users_opts = {
@@ -91,11 +95,10 @@ function Users() {
             
         }});
         details.show();
-    }
+    };
     
     Users.prototype.load_profiles = function(container_id, elem_id) {
         /* retrieve profiles list  */
-        var profiles_data = [];
         var container = $('#'+container_id);
         var table = $('<table>',  {id: 'profiles_table'});
         table.appendTo(container);
@@ -126,8 +129,7 @@ function Users() {
                 grid.trigger("reloadGrid");
             }
         });
-    }
-    
+    };
 }
   
 var users = new Users();
