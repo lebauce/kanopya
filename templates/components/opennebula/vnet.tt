@@ -7,10 +7,11 @@ VLAN_ID = [% vnet_vlanid %]
 [% IF vnet_bridge %]
 BRIDGE  = [% vnet_bridge %]
 [% END %]
-[% ELSE %]
-VLAN    = NO
-[% END %]
 [% IF vnet_phydev %]
 PHYDEV  = [% vnet_phydev %]
 [% END %] 
+[% ELSE %]
+VLAN    = NO
+BRIDGE  = vifbr0
+[% END %]
 LEASES  = [IP=[% vnet_netaddress %], MAC=[% vnet_mac %]]
