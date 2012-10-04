@@ -343,9 +343,10 @@ function createTreeGrid(params, pageSize) {
     $(grid)[0].addJSONData({
         total   : params.data.length / pageSize,
         page    : 1,
-        recors  : params.data.length,
+        records : params.data.length,
         rows    : params.data
     });
+    grid.trigger('reloadGrid');
 }
 
 $(document).ready(function () {

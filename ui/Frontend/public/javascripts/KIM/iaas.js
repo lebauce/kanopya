@@ -36,7 +36,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
             var topush  = [];
             for (var i in data) if (data.hasOwnProperty(i)) {
                 data[i].id      = data[i].pk;
-                data[i].parent  = 'null';
+                data[i].parent  = null;
                 data[i].level   = '0';
                 data[i].type    = 'hypervisor';
                 data[i].vmcount = 0;
