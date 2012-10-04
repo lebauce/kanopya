@@ -342,8 +342,7 @@ sub restoreHost {
                 if ( (not defined $vm->host_ram)
                      || $host_vm_capacities->{$vm->getId()}->{ram} != $vm->host_ram) {
                         $log->info('Memory one = '.($host_vm_capacities->{$vm->getId()}->{ram}).' VS db = '.($vm->host_ram));
-                        $vm->setAttr(name => 'host_ram', value => $host_vm_capacities->{$vm->getId()}->{ram});
-                        $vm->save();
+                        $vm->updateMemory(memory => $host_vm_capacities->{$vm->getId()}->{ram});
                 }
             }
             else {
@@ -354,8 +353,7 @@ sub restoreHost {
                 if( (not defined $vm->host_core)
                     || $host_vm_capacities->{$vm->getId()}->{cpu} != $vm->host_core){
                     $log->info('Cpu one = '.(($host_vm_capacities->{$vm->getId()}->{cpu})).' VS db = '.($vm->host_core));
-                    $vm->setAttr(name => 'host_core', value => $host_vm_capacities->{$vm->getId()}->{cpu});
-                    $vm->save();
+                    $vm->updateCPU(cpu_number => $host_vm_capacities->{$vm->getId()}->{cpu});
                 }
             }
             else {
@@ -564,16 +562,15 @@ sub postStart {
 
     # Check final RAM and CPU and store
     $args{host}->setAttr(name => 'vnc_port',  value => $vnc_port);
+    $args{host}->save();
 
     if ($self->getHypervisorType() eq 'xen') {
-        $args{host}->setAttr(name => 'host_ram',  value => $args{host}->getTotalMemory);
-        $args{host}->setAttr(name => 'host_core', value => $args{host}->getTotalCpu);
+        $args{host}->updateMemory(memory => $args{host}->getTotalMemory);
+        $args{host}->updateCPU(cpu_number => $args{host}->getTotalCpu);
 
         $log->info('Set Ram and Cpu from real info : ram <' . $args{host}->host_ram .
                    '> cpu <' . $args{host}->host_core . '>');
     }
-
-    $args{host}->save();
 }
 
 sub getFreeHost {
