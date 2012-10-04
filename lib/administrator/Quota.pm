@@ -19,6 +19,11 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
+use Log::Log4perl 'get_logger';
+
+my $log = get_logger("");
+my $errmsg;
+
 use constant ATTR_DEF => {
     user_id => {
         type         => 'relation',
@@ -52,6 +57,36 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = $class->SUPER::new(%args);
+
+    # Compute the current consomation value for the resource
+    my @services = Entity::ServiceProvider::Inside::Cluster->search(hash => {
+                       user_id => $self->user->id
+                   });
+
+    my $hostattr;
+    if ($self->resource eq 'ram') {
+        $hostattr = 'host_ram';
+    } elsif ($self->resource eq 'cpu') {
+        $hostattr = 'host_core';
+    }
+
+    my $consumed = 0;
+    for my $service (@services) {
+        my @nodes = $service->nodes;
+        for my $node (@nodes) {
+            $consumed += $node->host->$hostattr;
+        }
+    }
+    $self->setAttr(name => 'current', value => $consumed);
+    $self->save();
+
+    return $self;
+}
 
 =head2 consume
 
