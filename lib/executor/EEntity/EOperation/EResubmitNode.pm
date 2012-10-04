@@ -86,10 +86,10 @@ sub prepare {
     my $converted_ram = General::convertToBytes(
                             value => $host_manager_params->{ram},
                             units => $host_manager_params->{ram_unit},
-    );
+                        );
 
-    $self->{context}->{host}->setAttr(name => 'host_ram',  value => $converted_ram);
-    $self->{context}->{host}->setAttr(name => 'host_core', value => $host_manager_params->{core});
+    $self->{context}->{host}->updateMemory(memory => $converted_ram);
+    $self->{context}->{host}->updateCPU(cpu_number => $host_manager_params->{core});
 
     #TODO Factorize the following code which appears in prerequisites of EAddNode too
     my $hvs   = $self->{context}->{cloudmanager_comp}->getHypervisors();
@@ -106,17 +106,14 @@ sub prepare {
                  cloud_manager => $self->{context}->{cloudmanager_comp},
     );
 
-     my $hypervisor_id = $cm->getHypervisorIdForVM(
-                                            wanted_values   => {
-                                                ram           => $self->{params}->{host_ram_origin},
-                                                cpu           => $self->{params}->{host_core_origin},
-                                                ram_effective => 1*1024*1024*1024
-                                            }
-    );
-
+     my $hypervisor_id = $cm->getHypervisorIdForVM(wanted_values   => {
+                             ram           => $self->{params}->{host_ram_origin},
+                             cpu           => $self->{params}->{host_core_origin},
+                             ram_effective => 1*1024*1024*1024
+                         });
 
     #TODO implement remediation like in EAddNode
-    if(!defined $hypervisor_id) {
+    if (!defined $hypervisor_id) {
         my $error = 'Cannot find free hypervisor to resubmit node';
         throw Kanopya::Exception::Internal::WrongValue(error => $error);
     }
