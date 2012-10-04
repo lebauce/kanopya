@@ -3,14 +3,6 @@ require('jquery/jquery.validate.js');
 require('jquery/jquery.form.wizard.js');
 require('jquery/jquery.qtip.min.js');
 
-$.validator.addMethod("regex", function(value, element, regexp) {
-    var re = new RegExp(regexp);
-    return this.optional(element) || re.test(value);
-}, "Please check your input");
-
-$.validator.addMethod("confirm_password", function(value, element, input) {
-    return value === $(input).val();
-}, "Password differs");
 
 var KanopyaFormWizard = (function() {
     function KanopyaFormWizard(args) {
@@ -353,14 +345,21 @@ var KanopyaFormWizard = (function() {
 
             // Search for the line that contains labels for this listing
             var labelsline = $(table).find('tr.labels_' + listing).get(0);
+            var errorsline = $(table).find('tr.errors_' + listing).get(0);
             if (! labelsline) {
                 // Add an empty line if not exists
-                labelsline = $("<tr>").css('position', 'relative')
+                labelsline = $("<tr>").css('position', 'relative');
                 labelsline.addClass('labels_' + listing);
                 labelsline.appendTo(table);
+                // Ann another line for error messages
+                errorsline = $("<tr>").css('position', 'relative');
+                errorsline.addClass('errors_' + listing);
+                errorsline.appendTo(table);
                 // Add a column for actions
-                labeltd = $("<td>", { align : 'left' });
+                var labeltd = $("<td>", { align : 'left' });
                 labeltd.appendTo(labelsline);
+                var errortd = $("<td>", { align : 'left' });
+                errortd.appendTo(errorsline);
             }
 
             var line = $(table).find('tr.' + listing).get(0);
@@ -373,6 +372,10 @@ var KanopyaFormWizard = (function() {
                 labeltd = $("<td>", { align : 'left' }).append(label);
                 labeltd.addClass('label_' + $(input).attr('name'));
                 labeltd.appendTo(labelsline);
+                // Add a td to display possible error message for this column
+                errortd = $("<td>", { align : 'left' });
+                errortd.addClass('error_' + $(input).attr('name'));
+                errortd.appendTo(errorsline);
 
             } else {
                 // The labels line has been filled, so we can use
@@ -745,9 +748,7 @@ var KanopyaFormWizard = (function() {
                 rules           : this.validateRules,
                 messages        : this.validateMessages,
                 errorClass      : 'ui-state-error',
-                errorPlacement  : function(error, element) {
-                    error.insertBefore(element);
-                }
+                errorPlacement  : $.proxy(this.errorPlacement, this),
             },
             formPluginEnabled   : true,
             formOptions         : {
@@ -758,7 +759,7 @@ var KanopyaFormWizard = (function() {
             }
         });
 
-        var steps = $(this.form).children("table.step")
+        var steps = $(this.form).children("table.step");
         if (steps.length > 1) {
             $(steps).each(function() {
                 if (!$(this).html()) {
@@ -773,6 +774,17 @@ var KanopyaFormWizard = (function() {
             }));
             this.changeStep({}, $(this.form).formwizard("state"));
             $(this.form).bind('step_shown', $.proxy(this.changeStep, this));
+        }
+    }
+
+    KanopyaFormWizard.prototype.errorPlacement = function(error, element) {
+        // Check if the input come from a listing by seraching
+        // a possibly defined td for the error label
+        var errortd = this.form.find('td.error_' + element.attr('name')).get(0);
+        if (errortd) {
+            error.appendTo(errortd);
+        } else {
+            error.insertBefore(element);
         }
     }
 
@@ -851,9 +863,47 @@ var KanopyaFormWizard = (function() {
     }
 
     KanopyaFormWizard.prototype.validateForm = function () {
+        var _this = this;
+
+        // Add validation rules for inputs inserted dinamically in the form.
+        $(this.form).find(':input').each(function () {
+            for (var rule in _this.validateRules[$(this).attr('name')]) {
+                var rules = $(this).rules();
+                if (rules[rule] === undefined) {
+                    $(this).rules("add", _this.validateRules[$(this).attr('name')]);
+                    break;
+                }
+            }
+        });
+
         $(this.form).formwizard("next");
     }
 
     return KanopyaFormWizard;
     
 })();
+
+$.validator.addMethod("regex", function(value, element, regexp) {
+    var re = new RegExp(regexp);
+    return this.optional(element) || re.test(value);
+}, "Please check your input");
+
+$.validator.addMethod("confirm_password", function(value, element, input) {
+    return value === $(input).val();
+}, "Password differs");
+
+// Override the checkFrom validator method, to validate all fields
+// that have the same name instead of the first occurrence of each.
+$.validator.prototype.checkForm = function() {
+    this.prepareForm();
+    for (var i = 0, elements = (this.currentElements = this.elements()); elements[i]; i++ ) {
+        if (this.findByName(elements[i].name ).length != undefined && this.findByName(elements[i].name).length > 1) {
+            for (var cnt = 0; cnt < this.findByName( elements[i].name ).length; cnt++) {
+                this.check(this.findByName(elements[i].name)[cnt]);
+            }
+        } else {
+            this.check(elements[i]);
+        }
+    }
+    return this.valid();
+};
