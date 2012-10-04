@@ -68,6 +68,7 @@ my %conf_data = (
 welcome();
 
 #generation of configuration files
+my $crypt_salt = join '', ('.','/',0..9,'A'..'Z','a'..'z')[rand 64, rand 64];
 genConf();
 
 ###########################
@@ -128,7 +129,7 @@ my %db_data = (
     ipv4_internal_network_ip => $conf_data{internal_net_add},
     admin_domainname         => $conf_data{kanopya_server_domain_name},
     mb_hw_address            => 'FF:FF:FF:FF:FF:FF',
-    admin_password           => $conf_data{admin_password},
+    admin_password           => crypt($conf_data{admin_password}, '$6$'.$crypt_salt.'$'),
     admin_kernel             => '2.39',
     tmstp                    => time(),
     poolip_addr              => '10.0.0.1',
