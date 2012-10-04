@@ -38,6 +38,8 @@ Orchestrator is the main object for mc management politic.
 
 package Orchestrator;
 
+use base 'BaseDB';
+
 ###############################################################################################################
 #WARN l'orchestrator considère actuellement que les noeuds sont homogènes et ne prend pas en compte les spécificités de chaque carte
 #TODO Prendre en compte les spécificités des cartes dans les algos, faire un système de notation pour le choix des cartes à ajouter/supprimer
@@ -64,6 +66,10 @@ use WorkflowNoderule;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
+
+use constant ATTR_DEF => {};
+
+sub getAttrDef { return ATTR_DEF; }
 
 sub getMethods {
   return {

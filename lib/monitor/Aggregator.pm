@@ -13,6 +13,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package Aggregator;
 
+use base 'BaseDB';
+
 use strict;
 use warnings;
 use General;
@@ -27,6 +29,10 @@ use Kanopya::Config;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
+
+use constant ATTR_DEF => {};
+
+sub getAttrDef { return ATTR_DEF; }
 
 sub getMethods {
   return {
