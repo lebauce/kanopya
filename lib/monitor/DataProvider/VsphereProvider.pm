@@ -120,7 +120,6 @@ sub _retrieveVmData {
                       hash_filter  => {
                           name => $self->{host}->host_hostname
                       },
-                      properties   => ['summary'],
                       begin_entity => $hv_view,
                    )->summary;
 
@@ -166,7 +165,6 @@ sub _retrieveHypervisorData {
                       hash_filter  => {
                             name => $self->{host}->host_hostname
                       },
-                      properties   => ['summary'],
                       begin_entity => $dc_view,
                   )->summary;
 
