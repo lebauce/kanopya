@@ -216,7 +216,7 @@ function toInputType(type) {
 }
 
 /*
- * Return the final value from user input and selected unit
+ * Return the final value from user input and selected unit (if exists)
  * Manage the case where input can contain '+' and '-'
  */
 
@@ -226,7 +226,7 @@ function getRawValue(val, unit_field_id) {
         val = val.substr(1);
         return prefix + (val * getUnitMultiplicator(unit_field_id));
     }
-    return val * getUnitMultiplicator(unit_field_id);
+    return isNaN( parseInt(val)) ? val : val * getUnitMultiplicator(unit_field_id);
 }
 
 function ajax(method, route, data, onsuccess, onerror) {
