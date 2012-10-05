@@ -25,7 +25,7 @@ use base "Monitor";
 
 # logger
 use Log::Log4perl "get_logger";
-my $log = get_logger("collector");
+my $log = get_logger("");
 
 # Constructor
 

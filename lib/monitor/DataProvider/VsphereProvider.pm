@@ -16,9 +16,15 @@ package VsphereProvider;
 
 use strict;
 use warnings;
-use Data::Dumper;
+
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Vsphere5Datacenter;
+use Kanopya::Exceptions;
+
+use Data::Dumper;
+use Log::Log4perl "get_logger";
+my $errmsg;
+my $log = get_logger("");
 
 sub new {
     my ($class,%args) = @_;
@@ -42,25 +48,30 @@ sub retrieveData {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['var_map']);
-
-    my $host_type        = $self->{host}->getHostType();
-    my $service_provider = $self->{host}->getServiceProvider();
+    
+    my @oid_list = values (%{ $args{var_map} });
+    my $service_provider;
     my $vsphere;
     my $values;
     my $time;
 
-    if ($host_type eq 'Virtual Machine') {
-        $vsphere = $service_provider->getManager(manager_type => 'host_manager');
-        $values  = $self->_retrieveVmData(var_map => $args{var_map}, vsphere => $vsphere);
+    if ($self->{host}->isa("Entity::Host::VirtualMachine::Vsphere5Vm")) {
+        $vsphere = $self->{host}->getHostManager();
+        $values  = $self->_retrieveVmData(oid_list => \@oid_list, vsphere => $vsphere);
         $time    = time();
     }
-    elsif ($host_type eq 'Host') {
+    elsif ($self->{host}->isa("Entity::Host::Hypervisor::Vsphere5Hypervisor")) {
+        $service_provider = $self->{host}->getCluster();
         $vsphere = $service_provider->getComponent(
-                       name    => 'vsphere',
+                       name    => 'Vsphere',
                        version => 5
         );
-        $values  = $self->_retrieveHypervisorData(var_map => $args{var_map}, vsphere => $vsphere);
+        $values  = $self->_retrieveHypervisorData(oid_list => \@oid_list, vsphere => $vsphere);
         $time    = time();
+    }
+    else {
+        $errmsg = ref ($self->{host}) .' is not a valid host type for this data provider';
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
     return ($time, $values);
@@ -69,14 +80,14 @@ sub retrieveData {
 =head2 _retrieveVmData
 
     Desc: Get data from a vsphere VM 
-    Args: $host, $var_map
+    Args: $host, $oid_list
 
 =cut
 
 sub _retrieveVmData {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['var_map', 'vsphere']);
+    General::checkParams(args => \%args, required => ['oid_list', 'vsphere']);
 
 
     #get vm's host
@@ -109,12 +120,13 @@ sub _retrieveVmData {
                       hash_filter  => {
                           name => $self->{host}->host_hostname
                       },
+                      properties   => ['summary'],
                       begin_entity => $hv_view,
-                   );
+                   )->summary;
 
     #finally retrieve the data
     my %values;
-    foreach my $oid ( @{ $args{var_map} }) {
+    foreach my $oid ( @{ $args{oid_list} }) {
         my $value = $vm_view;
         for my $selector (split(/\./,$oid)) {
             $value = $value->$selector;
@@ -128,16 +140,47 @@ sub _retrieveVmData {
 =head2 _retrieveHypervisorData
 
     Desc: Get data from a vsphere hypervisor 
-    Args: $host, $var_map
+    Args: $host, $oid_list
 
 =cut
 
 sub _retrieveHypervisorData {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['var_map','vsphere']);
+    General::checkParams(args => \%args, required => ['oid_list','vsphere']);
 
+    #get hypervisor datacenter
+    my $datacenter = Vsphere5Datacenter->find(hash => {
+                         vsphere5_datacenter_id => $self->{host}->vsphere5_datacenter_id });
 
+    #get vsphere hypervisor's datacenter view
+    my $dc_view = $args{vsphere}->findEntityView(
+                      view_type   => 'Datacenter',
+                      hash_filter => {
+                          name => $datacenter->vsphere5_datacenter_name
+                      });
+
+    #get vsphere hypervisor view
+    my $hv_view = $args{vsphere}->findEntityView(
+                      view_type    => 'HostSystem',
+                      hash_filter  => {
+                            name => $self->{host}->host_hostname
+                      },
+                      properties   => ['summary'],
+                      begin_entity => $dc_view,
+                  )->summary;
+
+    #finally retrieve the data
+    my %values;
+    foreach my $oid ( @{ $args{oid_list} }) {
+        my $value = $hv_view;
+        for my $selector (split(/\./,$oid)) {
+            $value = $value->$selector;
+        }
+        $values{$oid} = $value;
+    }
+
+    return \%values;
 }
 
 1;

@@ -756,6 +756,11 @@ sub getClusterId {
     return $self->node->service_provider->id;
 }
 
+sub getCluster {
+    my $self = shift;
+    return $self->node->service_provider;
+}
+
 sub getPowerSupplyCardId {
     my $self = shift;
     my $row = $self->host_powersupply;

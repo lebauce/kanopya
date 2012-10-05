@@ -125,7 +125,7 @@ sub getCollectedSets {
     
     
     
-    return $self->getIndicatorSets( search => [{ 'collects.cluster_id' => $args{cluster_id} },  { join => ['collects'] }] );
+    return $self->getIndicatorSets( search => [{ 'collects.service_provider_id' => $args{cluster_id} },  { join => ['collects'] }] );
 }
 
 sub getSetDesc {

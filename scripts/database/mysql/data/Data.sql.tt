@@ -774,7 +774,8 @@ INSERT INTO `indicatorset` VALUES
 (6,'billing', 'KanopyaDatabaseProvider','GAUGE', null, null, null, null),
 (7,'diskIOTable', 'SnmpProvider','COUNTER', null, null, '1.3.6.1.4.1.2021.13.15.1', 2),
 (8,'interfaces', 'SnmpProvider','COUNTER', null, null,  '1.3.6.1.2.1.2.2', 2),
-(9,'vsphere', 'VsphereProvider','GAUGE', null, null,  'null', null);
+(9,'vsphere_vm', 'VsphereProvider','GAUGE', null, null, null, null),
+(10,'vsphere_host', 'VsphereProvider','GAUGE', null, null, null, null);
 
 INSERT INTO `indicator` VALUES
 (1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1, 'KBytes', null),
@@ -813,10 +814,10 @@ INSERT INTO `indicator` VALUES
 (34,'vsphere_vm_cpu_total', 'numCpu', null, null, 'FF000099', 9, 'Cores', null),
 (35,'vsphere_vm_mem_total', 'memorySizeMB', null, null, 'FF000099', 9, 'MBytes', null),
 (36,'vsphere_vm_mem_usage', 'guestMemoryUsage', null, null, 'FF000099', 9, 'MBytes', null),
-(37,'vsphere_hypervisor_cpu_total', 'numCpuCores', null, null, 'FF000099', 9, 'Cores', null),
-(38,'vsphere_hypervisor_cpu_usage', 'overallCpuUsage', null, null, 'FF000099', 9, 'MHz', null),
-(39,'vsphere_hypervisor_mem_usage', 'overallMemoryUsage', null, null, 'FF000099', 9, 'MBytes', null),
-(40,'vsphere_hypervisor_mem_total', 'memorySize', null, null, 'FF000099', 9, 'Bytes', null);
+(37,'vsphere_hypervisor_cpu_total', 'numCpuCores', null, null, 'FF000099', 10, 'Cores', null),
+(38,'vsphere_hypervisor_cpu_usage', 'overallCpuUsage', null, null, 'FF000099', 10, 'MHz', null),
+(39,'vsphere_hypervisor_mem_usage', 'overallMemoryUsage', null, null, 'FF000099', 10, 'MBytes', null),
+(40,'vsphere_hypervisor_mem_total', 'memorySize', null, null, 'FF000099', 10, 'Bytes', null);
 
 --
 -- initial permissions for profile groups
