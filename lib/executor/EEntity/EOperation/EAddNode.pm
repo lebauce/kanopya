@@ -27,9 +27,11 @@ use Entity::Masterimage;
 use Entity::Systemimage;
 use Entity::Host;
 use CapacityManagement;
-use Workflow;
+use Entity::Workflow;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+
 my $log = get_logger("");
 my $errmsg;
 
@@ -41,7 +43,7 @@ sub prerequisites {
 
     if (defined $self->{params}->{remediation_workflow_id}){
 
-        my $wf = Workflow->get(id => $self->{params}->{remediation_workflow_id});
+        my $wf = Entity::Workflow->get(id => $self->{params}->{remediation_workflow_id});
         $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> STATE <'.($wf->getAttr(name => 'state')).'> ');
 
         if($wf->getAttr(name => 'state') eq 'cancelled') {

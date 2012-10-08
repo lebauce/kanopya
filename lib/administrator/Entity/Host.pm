@@ -31,8 +31,11 @@ use Entity::Container;
 use Entity::Interface;
 use Entity::Iface;
 use Entity::Operation;
+use Entity::Workflow;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+
 my $log = get_logger("");
 my $errmsg;
 
@@ -263,12 +266,7 @@ sub create {
 sub resubmit() {
     my $self = shift;
 
-    my $wf_params = {
-          context => {
-                host => $self
-        }
-      };
-    Workflow->run(name=>'ResubmitNode', params=> $wf_params);
+    Entity::Workflow->run(name => 'ResubmitNode', params => { context => { host => $self } });
 }
 
 

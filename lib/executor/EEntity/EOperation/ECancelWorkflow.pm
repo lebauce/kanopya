@@ -20,8 +20,7 @@ use base "EEntity::EOperation";
 
 use Kanopya::Exceptions;
 use EFactory;
-use Workflow;
-use EWorkflow;
+use Entity::Workflow;
 
 use strict;
 use warnings;
@@ -45,8 +44,8 @@ sub prepare {
     $self->SUPER::prepare();
 
     # Workflow is not an entity...
-    my $workflow = Workflow->get(id => $self->{params}->{workflow_id});
-    $self->{context}->{workflow} = EWorkflow->new(data => $workflow, config => $self->{config});
+    my $workflow = Entity::Workflow->get(id => $self->{params}->{workflow_id});
+    $self->{context}->{workflow} = EFactory::newEEntity(data => $workflow);
 
     # Check if the workflow is 'running'
     if ($self->{context}->{workflow}->getAttr(name => 'state') ne 'running') {

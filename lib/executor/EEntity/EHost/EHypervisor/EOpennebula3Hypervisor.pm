@@ -20,11 +20,15 @@ use base "EEntity::EHost::EHypervisor";
 
 use strict;
 use warnings;
+
+use CapacityManagement;
+use Entity::Workflow;
+
 use Data::Dumper;
 use Log::Log4perl "get_logger";
-use CapacityManagement;
 
 my $log = get_logger("");
+
 
 sub checkStoppable {
     my $self = shift;
@@ -44,7 +48,8 @@ sub checkStoppable {
         );
         my $flushRes = $cm->flushHypervisor(hv_id => $self->getId());
         if ($flushRes->{num_failed} == 0) {
-            my $workflow = Workflow->new(workflow_name => 'remediation_hypervisor_'.$self->getId());
+            my $workflow = Entity::Workflow->new(workflow_name => 'remediation_hypervisor_'.$self->getId());
+
             for my $operation (@{$flushRes->{operation_plan}}){
                 $log->info('Operation enqueuing');
                 $workflow->enqueue(

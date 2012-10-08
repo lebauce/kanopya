@@ -9,7 +9,7 @@ prefix undef;
 use General;
 use Entity;
 use Entity::Operation;
-use Workflow;
+use Entity::Workflow;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -137,7 +137,7 @@ my %resources = (
     "opennebula3repository"    => "Opennebula3Repository",
     "opennebula3hypervisor"    => "Opennebula3Hypervisor",
     "quota"                    => "Quota",
-    "workflow"                 => "Workflow",
+    "workflow"                 => "Entity::Workflow",
     "workflowdef"              => "WorkflowDef",
 );
 
@@ -327,8 +327,8 @@ sub jsonify {
             if ($var->isa("Entity::Operation")) {
                 return Entity::Operation->get(id => $var->getId)->toJSON;
             }
-            elsif ($var->isa("Workflow")) {
-                return Workflow->get(id => $var->getId)->toJSON;
+            elsif ($var->isa("Entity::Workflow")) {
+                return Entity::Workflow->get(id => $var->getId)->toJSON;
             } else {
                 return $var->toJSON;
             }
@@ -348,8 +348,7 @@ sub setupREST {
                 require (General::getLocFromClass(entityclass => $class));
 
                 my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-                return to_json( db_to_json($class->get(id => params->{id}),
-                                           \@expand) );
+                return to_json( db_to_json($class->get(id => params->{id}), \@expand));
             },
 
             create => sub {

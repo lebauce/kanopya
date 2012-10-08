@@ -63,6 +63,8 @@ use NodemetricCondition;
 use NodemetricCombination;
 use WorkflowDef;
 use WorkflowNoderule;
+use Entity::Workflow;
+
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -447,18 +449,18 @@ sub clustermetricManagement{
             $workflow_id      = $aggregate_rule->getAttr(name => 'workflow_id');
 
             if (defined $workflow_id) {
-                $log->info('linked workflow state <'.(Workflow->get(id => $workflow_id)->state).'>');
-                if ( Workflow->get(id => $workflow_id)->state eq 'running' ) {
+                $log->info('linked workflow state <'.(Entity::Workflow->get(id => $workflow_id)->state).'>');
+                if ( Entity::Workflow->get(id => $workflow_id)->state eq 'running' ) {
                     $log->info('Workflow <'.$workflow_id.'> still running');
                 }
-                elsif ( Workflow->get(id => $workflow_id)->state eq 'cancelled' ) {
+                elsif ( Entity::Workflow->get(id => $workflow_id)->state eq 'cancelled' ) {
 
                     $log->info('Workflow <'.$workflow_id.'> cancelled, re-enable rule');
                     $aggregate_rule->setAttr(name  => 'aggregate_rule_state', value => 'enabled' );
                     $aggregate_rule->setAttr(name  => 'workflow_id',  value => undef );
                     $aggregate_rule->save();
                 }
-                elsif ( Workflow->get(id => $workflow_id)->state eq 'done' ) {
+                elsif ( Entity::Workflow->get(id => $workflow_id)->state eq 'done' ) {
                     $log->info('Workflow <'.$workflow_id.'> done');
 
                     if ( $aggregate_rule->aggregate_rule_state eq 'delayed') {

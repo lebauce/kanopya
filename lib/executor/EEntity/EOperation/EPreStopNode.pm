@@ -40,19 +40,21 @@ It takes as parameters :
 package EEntity::EOperation::EPreStopNode;
 use base "EEntity::EOperation";
 
+use strict;
+use warnings;
+
 use Kanopya::Exceptions;
 use EFactory;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 use Externalnode::Node;
-use strict;
-use warnings;
-
-use Log::Log4perl "get_logger";
-use Data::Dumper;
 use String::Random;
 use Date::Simple (':all');
 use Template;
+use Entity::Workflow;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -108,7 +110,7 @@ sub prerequisites {
 
     if (defined $self->{params}->{remediation_workflow_id}){
 
-        my $wf = Workflow->get(id => $self->{params}->{remediation_workflow_id});
+        my $wf = Entity::Workflow->get(id => $self->{params}->{remediation_workflow_id});
         $log->info('Remediation Workflow <'.($self->{params}->{remediation_workflow_id}).'> state <'.($wf->getAttr(name => 'state')).'> ');
 
         if($wf->getAttr(name => 'state') eq 'cancelled') {

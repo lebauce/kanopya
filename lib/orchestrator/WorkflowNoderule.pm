@@ -14,11 +14,14 @@
 # Created 3 juillet 2012
 
 package WorkflowNoderule;
+use base 'BaseDB';
 
 use strict;
 use warnings;
-use base 'BaseDB';
+
 use NodemetricRule;
+use Entity::Workflow;
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -59,7 +62,7 @@ sub workflowState{
 
     if(defined $workflow_noderule){
         my $workflow_id = $workflow_noderule->getAttr(name => 'workflow_id');
-        my $workflow    = Workflow->get(id => $workflow_id);
+        my $workflow    = Entity::Workflow->get(id => $workflow_id);
 
         if ($workflow->state eq 'running'){
             $log->info('A workflow is already running');
@@ -126,7 +129,7 @@ sub isWorkflowRunning{
 
     if(defined $workflow_noderule){
         my $workflow_id = $workflow_noderule->getAttr(name => 'workflow_id');
-        my $workflow    = Workflow->get(id => $workflow_id);
+        my $workflow    = Entity::Workflow->get(id => $workflow_id);
 
         if ($workflow->state eq 'running'){
             $log->info('A workflow is already running');

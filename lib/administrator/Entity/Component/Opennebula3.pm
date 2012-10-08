@@ -59,6 +59,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Manager::HostManager;
+use Entity::Workflow;
 use Entity::Operation;
 use Entity::ContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
@@ -532,7 +533,7 @@ sub optimiaas {
         }
     };
 
-    return Workflow->run(name => 'OptimiaasWorkflow', params => $wf_params);
+    return Entity::Workflow->run(name => 'OptimiaasWorkflow', params => $wf_params);
 
 }
 
@@ -550,10 +551,10 @@ sub migrate {
         }
     };
 
-    return Workflow->run(
-        name      => 'MigrateWorkflow',
-        entity_id => $hypervisor->getClusterId(),
-        params    => $wf_params
+    return Entity::Workflow->run(
+        name       => 'MigrateWorkflow',
+        related_id => $hypervisor->getClusterId(),
+        params     => $wf_params
     );
 }
 
@@ -619,8 +620,8 @@ sub scaleHost {
         }
     };
 
-    Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
-                  params => $wf_params);
+    Entity::Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
+                          params => $wf_params);
 }
 
 =head1 DIAGNOSTICS

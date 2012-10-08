@@ -36,7 +36,7 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended => 0
     },
-    workflow_id => {
+    consumer_id => {
         pattern => '^\d+$',
         is_mandatory => 1,
         is_extended => 0

@@ -39,7 +39,7 @@ use strict;
 use warnings;
 
 use General;
-use Workflow;
+use Entity::Workflow;
 use Operationtype;
 use ParamPreset;
 use Kanopya::Exceptions;
@@ -165,7 +165,7 @@ sub new {
 
     # If workflow not defined, initiate a new one with parameters
     if (not defined $args{workflow_id}) {
-        my $workflow = Workflow->new();
+        my $workflow = Entity::Workflow->new();
         $args{workflow_id} = $workflow->getAttr(name => 'workflow_id');
     }
 
@@ -300,7 +300,7 @@ sub getWorkflow {
     my %args = @_;
 
     # my $workflow = $self->getRelation(name => 'workflow');
-    return Workflow->get(id => $self->getAttr(name => 'workflow_id'));
+    return Entity::Workflow->get(id => $self->getAttr(name => 'workflow_id'));
 }
 
 =head setHopedExecutionTime
@@ -479,7 +479,7 @@ sub lockContext {
     eval {
         for $entity (values %{ $self->getParams->{context} }) {
             $log->debug("Trying to lock entity <$entity>");
-            $entity->lock(workflow => $self->getWorkflow);
+            $entity->lock(consumer => $self->getWorkflow);
         }
     };
     if ($@) {
@@ -504,7 +504,7 @@ sub unlockContext {
         my $entity = $params->{context}->{$key};
         $log->debug("Trying to unlock entity <$key>:<$entity>");
         eval {
-            $entity->unlock(workflow => $self);
+            $entity->unlock(consumer => $self->getWorkflow);
         };
         if ($@) {
             #$log->debug("Unable to unlock context param <$key>\n$@");
