@@ -151,13 +151,12 @@ sub retrieveClustersAndHypervisors {
 
     #Views of Hypervisors that are NOT in a cluster
     #To find them,
-    #TODO use regular expression
+    #TODO Test if Hypervisor.Parent NOT from type Cluster
         #hash for Hypervisor NOT in a Cluster
-#    foreach my 
     my $hypervisor_hash_filter  = {};
     my $hypervisor_views        = $self->findEntityViews (
                                     view_type    => 'HostSystem',
-                                    hash_filter  => $datacenter_hash_filter,
+                                    hash_filter  => $hypervisor_hash_filter,
                                     begin_entity => $datacenter_view,
                                 );
     @{$clusters_and_hypervisors_views{hypervisor}} = @{$hypervisor_views};
@@ -356,13 +355,13 @@ sub findEntityView {
         if (defined $begin_entity) {
             $view = Vim::find_entity_view(view_type      => $view_type,
                                           filter         => $hash_filter,
-                                          properties     => @array_property,
+                                          properties     => \@array_property,
                                           begin_entity   => $begin_entity,);
         }
         else {
             $view = Vim::find_entity_view(view_type      => $view_type,
                                           filter         => $hash_filter,
-                                          properties     => @array_property,);
+                                          properties     => \@array_property,);
         }
     };
     if ($@) {
@@ -396,10 +395,6 @@ sub findEntityViews {
                              'begin_entity'   => undef,
                          });
 
-    #Check of Filter parameters
-    General::checkParams(args     => $args{hash_filter},
-                         required => ['name'],);
-
     $self->negociateConnection();
 
     my $hash_filter  = $args{hash_filter};
@@ -411,18 +406,22 @@ sub findEntityViews {
         @array_property = @{$args{array_property}};
     }
 
-    my $view;
+    my $views;
     eval {
         if (defined $begin_entity) {
-            $views = Vim::find_entity_views(view_type      => $view_type,
-                                          filter         => $hash_filter,
-                                          properties     => @array_property,
-                                          begin_entity   => $begin_entity,);
+            $views = Vim::find_entity_views(
+                         view_type    => $view_type,
+                         filter       => $hash_filter,
+                         properties   => \@array_property,
+                         begin_entity => $begin_entity,
+                     );
         }
         else {
-            $views = Vim::find_entity_views(view_type      => $view_type,
-                                          filter         => $hash_filter,
-                                          properties     => @array_property,);
+            $views = Vim::find_entity_views(
+                         view_type  => $view_type,
+                         filter     => $hash_filter,
+                         properties => \@array_property,
+                     );
         }
     };
     if ($@) {
