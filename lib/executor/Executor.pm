@@ -50,7 +50,6 @@ use Kanopya::Exceptions;
 use Administrator;
 use EFactory;
 use Entity::Operation;
-use EWorkflow;
 use Message;
 
 use XML::Simple;
@@ -124,57 +123,52 @@ sub oneRun {
 
     my $operation = Entity::Operation->getNextOp(include_blocked => $self->{include_blocked});
 
-    my ($op, $opclass, $workflow, $delay, $logprefix);
+    my ($op, $workflow, $delay, $logprefix);
     if ($operation){
         $log->info("\n\n");
-        $workflow = EWorkflow->new(data => $operation->getWorkflow, config => $self->{config}) ;
-        my $workflow_name = $workflow->getAttr(name => 'workflow_name');
-        $workflow_name = defined $workflow_name ? $workflow_name : 'Anonymous';
-        my $workflow_id = $workflow->getAttr(name => 'workflow_id');
+
+        $workflow = EFactory::newEEntity(data => $operation->getWorkflow);
 
         # init log appender for this workflow if this one is not the same as the last executed
-        if($workflow_id != $self->{last_workflow_id}) {
+        if($workflow->id != $self->{last_workflow_id}) {
             my $appenders = Log::Log4perl->appenders();
 
             if(exists $appenders->{'WORKFLOW'}) {
                 $log->eradicate_appender('WORKFLOW');
             }
-
             my $layout = Log::Log4perl::Layout::PatternLayout->new("%d %c %p> %M - %m%n");
             my $file_appender = Log::Log4perl::Appender->new(
-                              "Log::Dispatch::File",
-                              name      => "WORKFLOW",
-                              filename  => $self->{config}->{logdir}."workflows/$workflow_id.log");
+                                    "Log::Dispatch::File",
+                                    name      => "WORKFLOW",
+                                    filename  => $self->{config}->{logdir} . "workflows/" . $workflow->id . ".log"
+                                );
+
             $file_appender->layout($layout);
             $log->add_appender($file_appender);
-            $self->{last_workflow_id} = $workflow_id;
+            $self->{last_workflow_id} = $workflow->id;
         }
-
 
         # Initialize EOperation and context
         eval {
             $op = EFactory::newEOperation(op => $operation);
-            $opclass = ref($op);
-            my $op_type = $op->getAttr(name => 'type');
-            my $op_id = $op->getAttr(name => 'operation_id');
-            $logprefix = "[$workflow_name workflow <$workflow_id> -";
-            $logprefix .= " Operation $op_type <$op_id>]";
+            $logprefix = "[" . $workflow->workflow_name . " workflow <" . $workflow->id .
+                         "> - Operation " . $op->type  . " <" . $op->id . ">]";
 
             $log->info("---- $logprefix ----");
             Message->send(
                 from    => 'Executor',
                 level   => 'info',
-                content => "Operation Processing [$opclass]..."
+                content => "Operation Processing [$op]..."
             );
 
             $log->info("Check step");
             $op->check();
         };
         if ($@) {
-            $log->error("$opclass context initilisation failed:$@");
+            $log->error("$op context initilisation failed:$@");
 
             # Probably a compilation error on the operation class.
-            $log->info("Cancelling $workflow_name workflow <$workflow_id>");
+            $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
             $workflow->cancel(config => $self->{config}, state => 'failed');
             return;
         }
@@ -184,19 +178,19 @@ sub oneRun {
             $op->setState(state => 'ready');
         }
         else {
-            $log->debug("Calling validation of operation $opclass.");
+            $log->debug("Calling validation of operation $op.");
 
             if (not $op->validation()) {
                 $op->setState(state => 'waiting_validation');
 
-                $log->info("---- [$opclass] Operation waiting validation. ----");
+                $log->info("---- [$op] Operation waiting validation. ----");
                 return;
             }
         }
 
         # Try to lock the context to check if entities are locked by others workflow
         eval {
-            $log->debug("Locking context for $opclass");
+            $log->debug("Locking context for $op");
             $operation->lockContext();
 
             if ($op->state eq 'blocked') {
@@ -206,7 +200,7 @@ sub oneRun {
         if ($@) {
             $op->setState(state => 'blocked');
 
-            $log->info("---- [$opclass] Unable to get locks, skip. ----");
+            $log->info("---- [$op] Unable to get locks, skip. ----");
 
             # Unset the option include_blocked, to avoid
             # fetching this operation at the next loop.
@@ -279,7 +273,7 @@ sub oneRun {
                 $log->error("--- $logprefix Processing FAILED : $err_exec");
             }
 
-            $log->info("$opclass rollback processing");
+            $log->info("$op rollback processing");
             if(defined $op->{erollback}) {
                 $op->{erollback}->undo();
             }
@@ -288,17 +282,10 @@ sub oneRun {
 
             # Cancelling the workflow
             eval {
-#                # Unlock the entities as the workflow will be cancelled
-#                $workflow->unlockContext();
-
-#                $adm->{db}->txn_begin;
-
                 # Try to cancel all workflow operations, and delete them.
                 # Context entities will be unlocked by this call
-                $log->info("Cancelling $workflow_name workflow $workflow_id");
+                $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
                 $workflow->cancel(config => $self->{config}, state => 'failed');
-
-#                $adm->{db}->txn_commit;
             };
             if ($@){
                 my $err_rollback = $@;
@@ -309,9 +296,8 @@ sub oneRun {
                 Message->send(
                     from    => 'Executor',
                     level   => 'error',
-                    content => "[$opclass] Execution Aborted : $err_exec"
+                    content => "[$op] Execution Aborted : $err_exec"
                 );
-
             }
             else {
                 $log->info("Warning : $err_exec");
@@ -336,12 +322,12 @@ sub oneRun {
             Message->send(
                 from    => 'Executor',
                 level   => 'info',
-                content => "[$opclass] Execution Success"
+                content => "[$op] Execution Success"
             );
 
             # Unlock the context to update it.
             eval {
-                $log->debug("Unlocking context for $opclass");
+                $log->debug("Unlocking context for $op");
                 $operation->unlockContext();
             };
             if ($@) {
