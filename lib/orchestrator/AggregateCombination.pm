@@ -119,7 +119,7 @@ sub toString {
     else {
         $depth = -1;
     }
-    
+
     if ($depth == 0) {
         return $self->getAttr(name => 'aggregate_combination_label');
     }
@@ -179,10 +179,10 @@ sub computeLastValue{
 
 
     #Evaluate the logic formula
-    #print 'Evaluate combination :'.($self->toString())."\n";
+
     #$log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
-    # print "$arrayString = ";
+
     $log->info("$arrayString");
     return $res;
 }
@@ -203,8 +203,6 @@ sub compute{
 
     my $formula = $self->getAttr(name => 'aggregate_combination_formula');
 
-    # print Dumper \%args;
-
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
@@ -222,23 +220,12 @@ sub compute{
     my $arrayString = '$res = '."@array";
 
     #Evaluate the logic formula
-    #print 'Evaluate combination :'.($self->toString())."\n";
+
     #$log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
-    # print "$arrayString = $res\n";
     $log->info("$arrayString");
     return $res;
 }
-#sub getDependantClusterMetric() {
-#   my $self = shift;
-#   my @ids = dependantClusterMetricIds();
-#   my @rep;
-#   foreach my $id (@ids){
-#       push @rep,Clustermetric->get('id' => $id);
-#   }
-#   return @rep;
-#};
-
 
 sub dependantClusterMetricIds() {
     my $self = shift;
@@ -268,12 +255,7 @@ sub computeFromArrays{
     my $self = shift;
     my %args = @_;
 
-    # print Dumper \%args;
-
     my @requiredArgs = $self->dependantClusterMetricIds();
-
-#    print "******* @requiredArgs \n";
-#    print Dumper \%args;
 
     General::checkParams args => \%args, required => \@requiredArgs;
 
@@ -285,17 +267,14 @@ sub computeFromArrays{
     }
     @timestamps = uniq @timestamps;
 
-    # print " @timestamps \n";
     my %rep;
     foreach my $timestamp (@timestamps){
         my %valuesForATimeStamp;
         foreach my $cm_id (@requiredArgs){
             $valuesForATimeStamp{$cm_id} = $args{$cm_id}->{$timestamp};
         }
-        # print Dumper \%valuesForATimeStamp;
         $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
     }
-    # print Dumper \%rep;
     return %rep;
 }
 
@@ -313,7 +292,6 @@ sub checkMissingParams {
             # Log in general logger
             # TODO log in the logger corresponding to caller package;
             $log->error($errmsg);
-            # print "$caller_sub_name : $errmsg \n";
             throw Kanopya::Exception::Internal::IncorrectParam();
         }
     }
@@ -326,30 +304,6 @@ sub useClusterMetric {
     my @dep_cm = $self->dependantClusterMetricIds();
     my $rep = any {$_ eq $clustermetric_id} @dep_cm;
     return $rep;
-}
-
-sub getAllTheCombinationsRelativeToAClusterId{
-    my $class      = shift;
-    my $cluster_id = shift;
-
-    my @combinations = $class->search(hash => {});
-    my @rep;
-
-    COMBINATION:
-    foreach my $combination (@combinations) {
-        my @dependantClusterMetricIds = $combination->dependantClusterMetricIds();
-
-        foreach my $cm_id (@dependantClusterMetricIds){
-            my $clustermetric = Clustermetric->get('id' => $cm_id);
-            if($clustermetric->getAttr(name => 'clustermetric_service_provider_id') eq $cluster_id)
-            {
-                push @rep, $combination;
-                next COMBINATION;
-            }
-        }
-    }
-
-    return @rep;
 }
 
 =head2 getUnit
@@ -394,5 +348,17 @@ sub getUnit {
     #$log->info(@array);
     return join('',@array);
 }
+
+sub getDependencies {
+    my ($self, %args) = @_;
+    my @conditions = $self->aggregate_conditions;
+    my %dependencies;
+
+    for my $condition (@conditions) {
+        $dependencies{$condition->aggregate_condition_label} = $condition->getDependencies;
+    }
+    return \%dependencies;
+}
+
 
 1;
