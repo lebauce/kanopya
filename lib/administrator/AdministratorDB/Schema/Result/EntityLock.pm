@@ -33,7 +33,7 @@ __PACKAGE__->table("entity_lock");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 workflow_id
+=head2 consumer_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -57,7 +57,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "workflow_id",
+  "consumer_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -85,24 +85,24 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 workflow
+=head2 consumer
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Workflow>
+Related object: L<AdministratorDB::Schema::Result::Entity>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "workflow",
-  "AdministratorDB::Schema::Result::Workflow",
-  { workflow_id => "workflow_id" },
+  "consumer",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "consumer_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-05-22 15:15:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Qw84+pHwR3HvtzjNsy9G3g
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-05 11:14:38
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jNojMhnC9TRPVx3xqOaahw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

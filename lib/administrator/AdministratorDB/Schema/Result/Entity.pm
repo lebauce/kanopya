@@ -69,6 +69,21 @@ __PACKAGE__->set_primary_key("entity_id");
 
 =head1 RELATIONS
 
+=head2 alerts
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Alert>
+
+=cut
+
+__PACKAGE__->has_many(
+  "alerts",
+  "AdministratorDB::Schema::Result::Alert",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 billinglimit
 
 Type: might_have
@@ -191,6 +206,21 @@ __PACKAGE__->might_have(
   "entity_lock",
   "AdministratorDB::Schema::Result::EntityLock",
   { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 entity_lock_consumers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::EntityLock>
+
+=cut
+
+__PACKAGE__->has_many(
+  "entity_lock_consumers",
+  "AdministratorDB::Schema::Result::EntityLock",
+  { "foreign.consumer_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -614,7 +644,24 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 workflows
+=head2 workflow_workflow
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Workflow>
+
+=cut
+
+__PACKAGE__->might_have(
+  # WARNING: We need to rename this relation from 'workflow_workflow' to 'workflow'
+  #          as dbix loader generate this relation with this strange name.
+  "workflow",
+  "AdministratorDB::Schema::Result::Workflow",
+  { "foreign.workflow_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 workflows_related
 
 Type: has_many
 
@@ -623,15 +670,16 @@ Related object: L<AdministratorDB::Schema::Result::Workflow>
 =cut
 
 __PACKAGE__->has_many(
-  "workflows",
+  "workflows_related",
   "AdministratorDB::Schema::Result::Workflow",
-  { "foreign.entity_id" => "self.entity_id" },
+  { "foreign.related_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-09-07 12:17:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:y7Xm+06tqUu4pODIsAGpOA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-05 18:05:35
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3SwZgl01sCKE2CBFktG4fA
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

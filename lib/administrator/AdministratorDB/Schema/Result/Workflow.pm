@@ -23,7 +23,7 @@ __PACKAGE__->table("workflow");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 workflow_name
@@ -39,7 +39,7 @@ __PACKAGE__->table("workflow");
   is_nullable: 0
   size: 32
 
-=head2 entity_id
+=head2 related_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -53,7 +53,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "workflow_name",
@@ -65,7 +65,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
     size => 32,
   },
-  "entity_id",
+  "related_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -88,21 +88,6 @@ Related object: L<AdministratorDB::Schema::Result::AggregateRule>
 __PACKAGE__->has_many(
   "aggregate_rules",
   "AdministratorDB::Schema::Result::AggregateRule",
-  { "foreign.workflow_id" => "self.workflow_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 entity_locks
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::EntityLock>
-
-=cut
-
-__PACKAGE__->has_many(
-  "entity_locks",
-  "AdministratorDB::Schema::Result::EntityLock",
   { "foreign.workflow_id" => "self.workflow_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -137,7 +122,7 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 entity
+=head2 workflow
 
 Type: belongs_to
 
@@ -146,9 +131,24 @@ Related object: L<AdministratorDB::Schema::Result::Entity>
 =cut
 
 __PACKAGE__->belongs_to(
-  "entity",
+  "workflow",
   "AdministratorDB::Schema::Result::Entity",
-  { entity_id => "entity_id" },
+  { entity_id => "workflow_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 related
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "related",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "related_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
@@ -173,9 +173,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-09-10 17:17:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:59pmYIPPFCJm095fPtAlvw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-05 18:05:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OIzUbKSQxnauH9C9joyU5w
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "workflow_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
-# You can replace this text with custom content, and it will be preserved on regeneration
 1;

@@ -94,7 +94,8 @@ INSERT INTO `class_type` VALUES
 (91, 'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm'),
 (92, 'Entity::ServiceTemplate'),
 (93, 'Entity::Policy'),
-(94, 'Entity::Operation');
+(94, 'Entity::Operation'),
+(95, 'Entity::Workflow');
 
 --
 -- entity comment list

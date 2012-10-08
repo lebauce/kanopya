@@ -59,12 +59,12 @@ CREATE TABLE `entity` (
 CREATE TABLE `entity_lock` (
   `entity_lock_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `entity_id` int(8) unsigned NOT NULL,
-  `workflow_id` int(8) unsigned NOT NULL,
+  `consumer_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`entity_lock_id`),
   UNIQUE KEY (`entity_id`),
   FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`workflow_id`),
-  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY (`consumer_id`),
+  FOREIGN KEY (`consumer_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -692,12 +692,13 @@ CREATE TABLE `old_operation_parameter` (
 --
 
 CREATE TABLE `workflow` (
-  `workflow_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `workflow_id` int(8) unsigned NOT NULL,
   `workflow_name` char(64) DEFAULT NULL,
   `state` char(32) NOT NULL DEFAULT 'running',
-  `entity_id` int(8) unsigned NULL DEFAULT NULL,
+  `related_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`workflow_id`),
-  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`workflow_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`related_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
