@@ -6,7 +6,7 @@ use Log::Log4perl 'get_logger';
 
 use EntityLock;
 use EntityComment;
-use Workflow;
+use Entity::Workflow;
 use Message;
 use Entity::Gp;
 use OperationParameter;
@@ -67,6 +67,42 @@ sub new {
     $class->getMasterGroup->appendEntity(entity => $self);
     return $self;
 }
+
+=head2
+
+    Lock the entity while updating it.
+
+=cut
+
+sub update {
+    my ($self, %args) = @_;
+
+    # Try to lock the entoty while updating it
+    $self->lock(consumer => $self);
+
+    $self->SUPER::update(%args);
+
+    $self->unlock(consumer => $self);
+    return $self;
+}
+
+=head2
+
+    Ensure to get the lock on the entity before removing it.
+
+=cut
+
+sub remove {
+    my ($self, %args) = @_;
+
+    # Try to lock the entoty while updating it
+    $self->lock(consumer => $self);
+
+    $self->SUPER::remove(%args);
+
+    $self->unlock(consumer => $self);
+}
+
 
 =head2 getMasterGroup
 
@@ -304,12 +340,6 @@ sub getEntities {
     return  @objs;
 }
 
-sub getId() {
-    my $self = shift;
-
-    return $self->getAttr(name => "entity_id");
-}
-
 sub getComment {
     my $self = shift;
 
@@ -332,15 +362,12 @@ sub setComment {
         $comment = EntityComment->get(id => $comment_id);
         $comment->setAttr(name => 'entity_comment', value => $args{comment});
         $comment->save();
-        $log->info($comment);
     }
     else {
         $comment = EntityComment->new(entity_comment => $args{comment});
         $self->setAttr(name => 'entity_comment_id', value => $comment->getAttr(name => 'entity_comment_id'));
         $self->save();
     }
-
-    $log->info($comment);
 }
 
 sub getWorkflows {
@@ -351,7 +378,7 @@ sub getWorkflows {
     }
     
     $hash->{entity_id} = $self->id;
-    my @workflows = Workflow->search(hash => $hash);
+    my @workflows = Entity::Workflow->search(hash => $hash);
 
     # TODO: join tables workflow and workflow_parameter to get
     #       paramters of running workflow only.
@@ -363,25 +390,27 @@ sub lock {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'workflow' ]);
+    General::checkParams(args => \%args, required => [ 'consumer' ]);
 
-    my $workflow_id = $args{workflow}->getAttr(name => 'workflow_id');
+    my $consumer_id = $args{consumer}->id;
     eval {
-        EntityLock->new(entity_id => $self->getId, workflow_id => $workflow_id);
+        EntityLock->new(entity_id => $self->id, consumer_id => $consumer_id);
     };
     if ($@) {
         # Check if the lock is already owned by the workflow
         my $lock;
         eval {
-            $lock = EntityLock->find(hash => { entity_id   => $self->getId(),
-                                               workflow_id => $workflow_id });
+            $lock = EntityLock->find(hash => {
+                        entity_id   => $self->id,
+                        consumer_id => $consumer_id,
+                    });
         };
         if (not $lock) {
             throw Kanopya::Exception::Execution::Locked(
-                      error => "Entity <" . $self->getId . "> already locked."
+                      error => "Entity <" . $self->id . "> already locked."
                   );
         } else {
-            $log->debug("Entity <" . $self->getId . "> already locked on workflow <$workflow_id>");
+            $log->debug("Entity <" . $self->id . "> already locked by the consumer <$consumer_id>");
         }
     }
 }
@@ -390,14 +419,25 @@ sub unlock {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'workflow' ]);
+    General::checkParams(args => \%args, required => [ 'consumer' ]);
 
-    my $lock = EntityLock->find(hash => {
-                   entity_id   => $self->getId(),
-                   workflow_id => $args{workflow}->getAttr(name => 'workflow_id')
-               });
-
-    $lock->delete();
+    my $lock;
+    eval {
+        $lock = EntityLock->find(hash => {
+                    entity_id   => $self->id,
+                    consumer_id => $args{consumer}->id,
+                });
+    };
+    if ($@) {
+        my $error = $@;
+        if ($error->isa('Kanopya::Exception::Internal::NotFound')) {
+            $log->debug("Entity <" . $self->id . "> lock does not exists any more.");
+        }
+        else { throw $error; }
+    }
+    else {
+        $lock->delete();
+    }
 }
 
 sub getAttr {
