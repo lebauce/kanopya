@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Workflow;
-use base 'BaseDB';
+package Entity::Workflow;
+use base 'Entity';
 
 use strict;
 use warnings;
@@ -43,7 +43,7 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
-    entity_id => {
+    related_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
         is_extended  => 0
@@ -72,9 +72,9 @@ sub run {
     General::checkParams(args => \%args, required => [ 'name' ], optional => { 'rule' => undef });
 
     my $def = WorkflowDef->find(hash => { workflow_def_name => $args{name} });
-    my $workflow = Workflow->new(workflow_name => $args{name}, entity_id => $args{entity_id});
+    my $workflow = Entity::Workflow->new(workflow_name => $args{name}, related_id => $args{related_id});
     delete $args{name};
-    delete $args{entity_id};
+    delete $args{related_id};
 
     my @steps = WorkflowStep->search(hash => { workflow_def_id => $def->id });
 
@@ -151,33 +151,6 @@ sub cancel {
             workflow_id => $self->id,
         }
     );
-}
-
-sub pepareNextOp {
-    my $self = shift;
-    my %args = @_;
-
-    $self->getCurrentOperation->setState(state => 'succeeded');
-
-    if(not $args{params}) {
-        $args{params} = {};
-    }
-
-    my $next;
-    eval {
-        $next = $self->getCurrentOperation();
-    };
-    if ($@) {
-        $self->finish();
-    }
-    else {
-        # Update the context with the last operation output context
-        $args{params}->{context} = $args{context};
-        $next->setParams(params => $args{params});
-
-        $next->lockContext();
-        $next->setState(state => 'ready');
-    }
 }
 
 sub setState {

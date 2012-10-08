@@ -15,39 +15,22 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package EWorkflow;
+package EEntity::EWorkflow;
+use base 'EEntity';
 
 use strict;
 use warnings;
+
 use Kanopya::Exceptions;
 use Entity::Operation;
 use EFactory;
+
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 my $errmsg;
 
 use vars qw ( $AUTOLOAD );
-
-sub _getWorkflow{
-    my ($self) = @_;
-    return $self->{_workflow};
-}
-
-sub new {
-    my ($class, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'data', 'config' ]);
-
-    my $self = {
-        config    => $args{config},
-        _workflow => $args{data},
-        _executor => Entity->get(id => $args{config}->{cluster}->{executor})
-    };
-
-    bless $self, $class;
-    return $self;
-}
 
 sub cancel {
     my ($self, %args) = @_;
@@ -74,23 +57,38 @@ sub cancel {
     $self->setState(state => $args{state});
 }
 
+sub pepareNextOp {
+    my $self = shift;
+    my %args = @_;
+
+    $self->getCurrentOperation->setState(state => 'succeeded');
+
+    if(not $args{params}) {
+        $args{params} = {};
+    }
+
+    my $next;
+    eval {
+        $next = $self->getCurrentOperation();
+    };
+    if ($@) {
+        $self->finish();
+    }
+    else {
+        # Update the context with the last operation output context
+        $args{params}->{context} = $args{context};
+        $next->setParams(params => $args{params});
+
+        $next->lockContext();
+        $next->setState(state => 'ready');
+    }
+}
+
 sub getEContext {
     my ($self) = @_;
 
     return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
                                  ip_destination => $self->{_executor}->getMasterNodeIp());
 }
-
-sub AUTOLOAD {
-    my ($self, %args) = @_;
-
-    my @autoload = split(/::/, $AUTOLOAD);
-    my $method = $autoload[-1];
-
-    return $self->_getWorkflow->$method(%args);
-}
-
-# DESTROY definition required for AUTOLOAD
-sub DESTROY {}
 
 1;
