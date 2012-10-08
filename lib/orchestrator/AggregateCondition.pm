@@ -17,14 +17,15 @@ use strict;
 use warnings;
 use TimeData::RRDTimeData;
 use AggregateCombination;
-
+require 'AggregateRule.pm';
 use base 'BaseDB';
+use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    aggregate_condition_id               =>  {pattern       => '^.*$',
+    aggregate_condition_id       =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
@@ -77,7 +78,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = $class->SUPER::new(%args);
-    
+
     if(!defined $args{aggregate_condition_label} || $args{aggregate_condition_label} eq ''){
         $self->setAttr(name=>'aggregate_condition_label', value => $self->toString());
         $self->save();
@@ -89,7 +90,7 @@ sub new {
 
     desc: set entity's name to .toString() return value
 
-=cut 
+=cut
 
 sub updateName {
     my $self    = shift;
@@ -121,33 +122,33 @@ sub toString {
         my $aggregate_combination_id   = $self->getAttr(name => 'aggregate_combination_id');
         my $comparator                 = $self->getAttr(name => 'comparator');
         my $threshold                  = $self->getAttr(name => 'threshold');
-    
+
         return AggregateCombination->get('id'=>$aggregate_combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
     }
 }
 
 sub eval{
     my $self = shift;
-    
+
     my $aggregate_combination_id    = $self->getAttr(name => 'aggregate_combination_id');
     my $comparator      = $self->getAttr(name => 'comparator');
     my $threshold       = $self->getAttr(name => 'threshold');
 
     my $agg_combination = AggregateCombination->get('id' => $aggregate_combination_id);
-    my $value = $agg_combination->computeLastValue(); 
+    my $value = $agg_combination->computeLastValue();
     if(defined $value){
         my $evalString = $value.$comparator.$threshold;
         $log->info("CM Combination formula: $evalString");
 
-        if(eval $evalString){        
+        if(eval $evalString){
             #print $evalString."=> true\n";
-            $log->info($evalString."=> true");        
+            $log->info($evalString."=> true");
             $self->setAttr(name => 'last_eval', value => 1);
             $self->save();
             return 1;
         }else{
             #print $evalString."=> false\n";
-            $log->info($evalString."=> false");        
+            $log->info($evalString."=> false");
             $self->setAttr(name => 'last_eval', value => 0);
             $self->save();
             return 0;
@@ -163,5 +164,24 @@ sub eval{
 sub getCombination{
     my ($self) = @_;
     return AggregateCombination->get('id' => $self->getAttr(name => 'aggregate_combination_id'));
+}
+
+sub getDependencies {
+    my ($self) = @_;
+
+    my @rules_from_same_service = AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
+
+    my %dependencies;
+    my $id = $self->getId;
+    for my $rule (@rules_from_same_service) {
+        my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
+        for my $condition_id (@rule_dependant_condition_ids) {
+            $log->info("condition $condition_id");
+            if ($id == $condition_id) {
+                $dependencies{$rule->aggregate_rule_label} = {};
+            }
+        }
+    }
+    return \%dependencies;
 }
 1;
