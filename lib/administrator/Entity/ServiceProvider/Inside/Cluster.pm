@@ -29,7 +29,7 @@ use Entity::Systemimage;
 use Entity::Tier;
 use Externalnode::Node;
 use Entity::Operation;
-use Workflow;
+use Entity::Workflow;
 use NodemetricCombination;
 use Clustermetric;
 use AggregateCombination;
@@ -1214,10 +1214,10 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
-    return Workflow->run(
-        name => 'AddNode',
-        entity_id => $self->id,
-        params   => {
+    return Entity::Workflow->run(
+        name       => 'AddNode',
+        related_id => $self->id,
+        params     => {
             context => {
                 cluster => $self,
             }
@@ -1252,10 +1252,10 @@ sub removeNode {
     General::checkParams(args => \%args, required => ['host_id']);
 
     my $host = Entity->get(id => $args{host_id});
-    Workflow->run(
-        name => 'StopNode',
-        entity_id => $self->id,
-        params   => {
+    Entity::Workflow->run(
+        name       => 'StopNode',
+        related_id => $self->id,
+        params     => {
             context => {
                 cluster => $self,
                 host    => $host,
@@ -1544,6 +1544,32 @@ sub getMonthlyConsommation {
                   );
 
     BillingManager::clusterBilling($self->user, $self, $from, $to, 1);
+}
+
+sub lock {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'consumer' ]);
+
+    # Lock the cluster himself
+    $self->SUPER::lock(%args);
+
+    # Lock the customer user related to the cluster
+    $self->user->lock(%args);
+}
+
+sub unlock {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'consumer' ]);
+
+    # Unock the customer user related to the cluster
+    $self->user->unlock(%args);
+
+    # Unlock the cluster himself
+    $self->SUPER::unlock(%args);
 }
 
 1;
