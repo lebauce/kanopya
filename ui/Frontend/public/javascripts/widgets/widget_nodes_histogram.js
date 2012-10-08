@@ -62,8 +62,17 @@ function showNodemetricCombinationHistogram(curobj,nodemetric_combination_id,nod
         if (data.error){
             graph_container_div.append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: data.error}));
         } else {
+            // Transform series values to add node percentage information (displayed in tooltips, see highlighter conf)
+            // e.g. :   nbof_nodes_in_partition = [20,10,40] (interpreted by jqplot as [[1,20],[2,10],[3,40]]
+            //          After transformation nodes_count_and_percent_in_partition = [[1,20,28.57],[2,10,14.28],[3,40,57.14]]
+            var total = data.nbof_nodes_in_partition.reduce(function(a, b){return a+b});
+            var nodes_count_and_percent_in_partition = [];
+            $.each(data.nbof_nodes_in_partition, function (i,j) {
+                nodes_count_and_percent_in_partition.push([i+1, j, j*100/total]);
+            });
+
             graph_div.css('display', 'block');
-            nodemetricCombinationHistogram(data.nbof_nodes_in_partition, data.partitions, graph_div_id, data.nodesquantity, nodemetric_combination_label);
+            nodemetricCombinationHistogram(nodes_count_and_percent_in_partition, data.partitions, graph_div_id, data.nodesquantity, nodemetric_combination_label);
         }
 //        var button = '<input type=\"button\" value=\"refresh\" id=\"nch_button\" onclick=\"nch_replot()\"/>';
 //        $("#"+div_id).append(button);
@@ -111,7 +120,8 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
             show: true,
             showMarker:false,
             tooltipAxes: 'y',
-            formatString: '%s nodes',
+            yvalues : 2,
+            formatString: '%i nodes (%s\%)',
         }
     });
 
