@@ -65,7 +65,7 @@ sub _prepareParams {
     my @lines            = split (/\n/, $template_content);
 
     foreach my $line (@lines) {
-        my @split = split(/\[\% | \%\]/, $line);
+        my @split = split(/\[\%\s*|\s*\%\]/, $line);
         for (my $i = 1; $i < (scalar @split); $i+=2){
             $prepared_data_params{$split[$i]} = undef;
         }
