@@ -17,6 +17,8 @@ use strict;
 use warnings;
 use base 'BaseDB';
 use NodemetricCombination;
+require 'NodemetricRule.pm';
+
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
@@ -64,7 +66,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = $class->SUPER::new(%args);
-    
+
     if(!defined $args{nodemetric_condition_label} || $args{nodemetric_condition_label} eq ''){
         $self->setAttr(name=>'nodemetric_condition_label', value => $self->toString());
         $self->save();
@@ -116,9 +118,9 @@ sub toString {
 sub evalOnOneNode{
     my $self = shift;
     my %args = @_;
-    
+
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
-    
+
     my $combination_id = $self->getAttr(name => 'nodemetric_condition_combination_id');
     my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
     my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
@@ -126,15 +128,15 @@ sub evalOnOneNode{
     my $combination    = NodemetricCombination->get('id' => $combination_id);
     my $value          = $combination->computeValueFromMonitoredValues(
                                            monitored_values_for_one_node => $monitored_values_for_one_node
-                                       ); 
+                                       );
 
     if(not defined $value ){
         return undef;
     } else {
         my $evalString = $value.$comparator.$threshold;
-        
+
         $log->info("NM Condition formula: $evalString");
-        
+
         if(eval $evalString){
             return 1;
         }else{
@@ -142,4 +144,23 @@ sub evalOnOneNode{
         }
     }
 }
+
+sub getDependencies {
+    my ($self) = @_;
+
+    my @rules_from_same_service = NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
+
+    my %dependencies;
+    my $id = $self->getId;
+    for my $rule (@rules_from_same_service) {
+        my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
+        for my $condition_id (@rule_dependant_condition_ids) {
+            if ($id == $condition_id) {
+                $dependencies{$rule->nodemetric_rule_label} = {};
+            }
+        }
+    }
+    return \%dependencies;
+}
+
 1;

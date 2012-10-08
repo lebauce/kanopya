@@ -64,7 +64,7 @@ sub methods {
         },
         'getUnit'   => {
             'description' => 'getUnit',
-            'perm_holder' => 'entity',  
+            'perm_holder' => 'entity',
         },
     }
 }
@@ -188,7 +188,6 @@ sub computeValueFromMonitoredValues {
 
     my $res = -1;
     my $arrayString = '$res = '."@array";
-    #print $arrayString."\n";
 
     #Evaluate the logic formula
     eval $arrayString;
@@ -266,5 +265,15 @@ sub getUnit {
     return join('',@array);
 }
 
+sub getDependencies {
+    my ($self, %args) = @_;
+    my @conditions = $self->nodemetric_conditions;
+    my %dependencies;
+
+    for my $condition (@conditions) {
+        $dependencies{$condition->nodemetric_condition_label} = $condition->getDependencies;
+    }
+    return \%dependencies;
+}
 
 1;

@@ -90,10 +90,10 @@ sub new {
         $self->setAttr(name=>'nodemetric_rule_label', value => $self->toString());
         $self->save();
     }
-    # When enabled, set undef for each node (will be update next orchestrator loop) 
+    # When enabled, set undef for each node (will be update next orchestrator loop)
     if($self->getAttr('name' => 'nodemetric_rule_state') eq 'enabled'){
         $self->setUndefForEachNode();
-    } 
+    }
     return $self;
 }
 
@@ -146,14 +146,14 @@ sub toString{
     }
 };
 
-#C/P of homonym method in AggregateRulePackage 
+#C/P of homonym method in AggregateRulePackage
 sub getDependantConditionIds {
     my $self = shift;
     my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
     my @array = split(/(id\d+)/,$formula);
-    
+
     my @conditionIds;
-    
+
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
@@ -166,17 +166,17 @@ sub getDependantConditionIds {
 sub evalOnOneNode{
     my $self = shift;
     my %args = @_;
-    
+
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
-    
+
     my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
 
     #Split nodemetric_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
-    
+
     #replace each id by its evaluation
     for my $element (@array) {
-        
+
         if( $element =~ m/id(\d+)/){
             $element = NodemetricCondition->get('id'=>substr($element,2))
                                           ->evalOnOneNode(
@@ -185,11 +185,11 @@ sub evalOnOneNode{
             if(not defined $element){
                 return undef;
             }
-           
+
         }
     }
     my $res = undef;
-    my $arrayString = '$res = '."(@array)"; 
+    my $arrayString = '$res = '."(@array)";
 
     $log->info("NM rule evaluation: $arrayString");
     #Evaluate the logic formula
@@ -205,7 +205,7 @@ sub isVerifiedForANode{
     my $externalnode_id;
     if(defined $args{externalnode_hostname}){
         my $node = Externalnode->find(hash => {externalnode_hostname => $args{externalnode_hostname}});
-       $externalnode_id = $node->getId(); 
+       $externalnode_id = $node->getId();
     }
     else {
         $externalnode_id = $args{externalnode_id};
@@ -310,20 +310,10 @@ sub setVerifiedRule{
     });
 }
 
-sub isCombinationDependant{
-    my $self         = shift;
-    my $condition_id = shift;
-    
-    my @dep_cond_id = $self->getDependantConditionIds();
-    my $rep = any {$_ eq $condition_id} @dep_cond_id;
-    return $rep;
-}
-
-
 sub checkFormula {
     my $class = shift;
     my %args = @_;
-    
+
     my $formula = (\%args)->{formula};
 
     my @array = split(/(id\d+)/,$formula);;
@@ -346,7 +336,7 @@ sub checkFormula {
 
 sub disable {
     my $self = shift;
-    my $verified_rule_dbix = 
+    my $verified_rule_dbix =
         $self->{_dbix}
         ->verified_noderules->delete_all;
 
@@ -363,19 +353,19 @@ sub enable {
 
 sub setAllRulesUndefForANode{
     my (%args) = @_;
-    
+
     General::checkParams(args => \%args, required => ['cluster_id', 'node_id']);
-    
+
     my $cluster_id     = $args{cluster_id};
     my $node_id        = $args{node_id};
-    
+
     my @nodemetric_rules = NodemetricRule->search(
                                hash => {
                                    nodemetric_rule_service_provider_id => $cluster_id,
                                    nodemetric_rule_state               => 'enabled',
                                },
                            );
-    
+
     foreach my $nodemetric_rule (@nodemetric_rules){
         $nodemetric_rule->{_dbix}
             ->verified_noderules
@@ -384,6 +374,6 @@ sub setAllRulesUndefForANode{
                 verified_noderule_state              => 'undef',
         });
     }
-} 
+}
 
 1;
