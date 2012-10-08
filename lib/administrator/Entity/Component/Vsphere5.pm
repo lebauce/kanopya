@@ -24,6 +24,8 @@ use warnings;
 
 use VMware::VIRuntime;
 
+use General;
+
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
@@ -65,6 +67,148 @@ sub checkHostManagerParams {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'ram', 'core' ]); 
+}
+
+###############
+# API methods #
+###############
+
+=head2 methods
+
+    Desc: List methods accessible from API and permission need to access to them
+    Args: null
+    Return: List of methods with description and permissions
+
+=cut
+
+sub methods {
+    return {
+        'retrieveDatacenters'    =>  {
+            'description'   =>  'Retrieve list of Datacenters',
+            'perm_holder'   =>  'entity',
+        },
+        'retrieveClustersAndHypervisors'    =>  {
+            'description'   =>  'Retrieve list of Clusters and Hypervisors (that are not in a cluster) hosted in a Datacenter',
+            'perm_holder'   =>  'entity',
+        },
+        'retrieveHypervisors'    =>  {
+            'description'   =>  'Retrieve list of Hypervisors hosted in a Cluster',
+            'perm_holder'   =>  'entity',
+        },
+        'retrieveVirtualMachines'    =>  {
+            'description'   =>  'Retrieve list of Virtual Machines hosted in an Hypervisor',
+            'perm_holder'   =>  'entity',
+        },
+    };
+}
+
+=head2 retrieveDatacenters
+
+    Desc: Retrieve list of all Datacenters
+    Args: null
+    Return: \@datacenter_list
+
+=cut
+
+sub retrieveDatacenters {
+    my ($self) = @_;
+
+    my $datacenter_views = $self->findEntityViews (
+                             view_type      => 'Datacenter',
+                             array_property => ['name'],
+                         );
+    return $datacenter_views;
+}
+
+=head2 retrieveClustersAndHypervisors
+
+    Desc: Retrieve list of Clusters and Hypervisors (that are not in a cluster) hosted in a Datacenter
+    Args: $datacenter_view
+    Return: \%clusters_and_hypervisors_views
+
+=cut
+
+sub retrieveClustersAndHypervisors {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['datacenter_view']);
+    my $datacenter_view = $args{datacenter_view};
+
+    #A hash in which we add
+        #type: 'cluster' for list of Clusters views and
+        #type: 'hypervisor' for List of Hypervisors views
+    my %clusters_and_hypervisors_views = (
+                                     cluster    =>   undef,
+                                     hypervisor =>   undef,
+                                 );
+
+    #Views of Cluster
+    my $cluster_views = $self->findEntityViews (
+                          view_type    => 'ClusterComputeResource',
+                          begin_entity => $datacenter_view,
+                      );
+    @{$clusters_and_hypervisors_views{cluster}} = @{$cluster_views};
+
+    #Views of Hypervisors that are NOT in a cluster
+    #To find them,
+    #TODO use regular expression
+        #hash for Hypervisor NOT in a Cluster
+#    foreach my 
+    my $hypervisor_hash_filter  = {};
+    my $hypervisor_views        = $self->findEntityViews (
+                                    view_type    => 'HostSystem',
+                                    hash_filter  => $datacenter_hash_filter,
+                                    begin_entity => $datacenter_view,
+                                );
+    @{$clusters_and_hypervisors_views{hypervisor}} = @{$hypervisor_views};
+
+    return \%clusters_and_hypervisors_views;
+}
+
+=head2 retrieveHypervisors
+
+    Desc: Retrieve list of Hypervisors hosted in a Cluster
+    Args: $cluster_view
+    Return: \@hypervisor_views
+
+=cut
+
+sub retrieveHypervisors {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['cluster_view']);
+    my $cluster_view = $args{cluster_view};
+
+    #Views of Hypervisor that are in the cluster
+    my $hypervisor_views = $self->findEntityViews (
+                             view_type    => 'HostSystem',
+                             begin_entity => $cluster_view,
+                         );
+
+    return $hypervisor_views;
+}
+
+=head2 retrieveVirtualMachines
+
+    Desc: Retrieve list of Virtual Machines hosted in an Hypervisor
+    Args: $hypervisor_view
+    Return: \@vm_views
+
+=cut
+
+sub retrieveVirtualMachines {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['hypervisor_view']);
+    my $hypervisor_view = $args{hypervisor_view};
+
+    #Views of Virtual Machines that are in the Hypervisor
+    my $vm_views = $self->findEntityViews (
+                     view_type    => 'VirtualMachine',
+                     begin_entity => $hypervisor_view,
+                 );
+
+    return $vm_views;
 }
 
 ######################
@@ -228,6 +372,66 @@ sub findEntityView {
     }
 
     return $view;
+}
+
+=head2 findEntityViews
+
+    Desc: find views of a specified managed object type
+    Args: $view_type (HostSystem,VirtualMachine,Datacenter,Folder,ResourcePool,
+                        ClusterComputeResource or ComputeResource),
+          %hash_filter, @array_property, $begin_entity view
+    Return: the managed entity views
+
+=cut
+
+sub findEntityViews {
+    my ($self,%args) = @_;
+
+    #Check of Global parameters
+    General::checkParams(args     => \%args,
+                         required => ['view_type'],
+                         optional => {
+                             'hash_filter'    => undef,
+                             'array_property' => undef,
+                             'begin_entity'   => undef,
+                         });
+
+    #Check of Filter parameters
+    General::checkParams(args     => $args{hash_filter},
+                         required => ['name'],);
+
+    $self->negociateConnection();
+
+    my $hash_filter  = $args{hash_filter};
+    my $view_type    = $args{view_type};
+    my $begin_entity = $args{begin_entity};
+
+    my @array_property = undef;
+    if ($args{array_property}) {
+        @array_property = @{$args{array_property}};
+    }
+
+    my $view;
+    eval {
+        if (defined $begin_entity) {
+            $views = Vim::find_entity_views(view_type      => $view_type,
+                                          filter         => $hash_filter,
+                                          properties     => @array_property,
+                                          begin_entity   => $begin_entity,);
+        }
+        else {
+            $views = Vim::find_entity_views(view_type      => $view_type,
+                                          filter         => $hash_filter,
+                                          properties     => @array_property,);
+        }
+    };
+    if ($@) {
+        $errmsg = 'Could not get entities of type '.$view_type.': '.$@."\n";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    return $views;
 }
 
 #############################

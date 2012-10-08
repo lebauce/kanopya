@@ -94,6 +94,7 @@ sub negociateConnection {
         $view = Vim::find_entity_view(view_type      => 'Folder',
                                       filter         => {name => 'rootFolder'});
     };
+    #TODO Error Message may be defined in an another language than English
     if ($@ =~ /no global session is defined/) {
         $log->info('opening a new session to vSphere');
 
