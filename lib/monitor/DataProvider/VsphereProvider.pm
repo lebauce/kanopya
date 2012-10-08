@@ -52,12 +52,12 @@ sub retrieveData {
     my @oid_list = values (%{ $args{var_map} });
     my $service_provider;
     my $vsphere;
-    my $values;
+    my $results;
     my $time;
 
     if ($self->{host}->isa("Entity::Host::VirtualMachine::Vsphere5Vm")) {
         $vsphere = $self->{host}->getHostManager();
-        $values  = $self->_retrieveVmData(oid_list => \@oid_list, vsphere => $vsphere);
+        $results  = $self->_retrieveVmData(oid_list => \@oid_list, vsphere => $vsphere);
         $time    = time();
     }
     elsif ($self->{host}->isa("Entity::Host::Hypervisor::Vsphere5Hypervisor")) {
@@ -66,7 +66,7 @@ sub retrieveData {
                        name    => 'Vsphere',
                        version => 5
         );
-        $values  = $self->_retrieveHypervisorData(oid_list => \@oid_list, vsphere => $vsphere);
+        $results  = $self->_retrieveHypervisorData(oid_list => \@oid_list, vsphere => $vsphere);
         $time    = time();
     }
     else {
@@ -74,7 +74,12 @@ sub retrieveData {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    return ($time, $values);
+    my %values = (); 
+    while ( my ($name, $oid) = each %{ $args{var_map} } ) {
+        $values{$name} = $results->{$oid};
+    }
+
+    return ($time, \%values);
 }
 
 =head2 _retrieveVmData
