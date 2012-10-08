@@ -662,6 +662,7 @@ sub get {
     };
 
     bless $self, $class;
+
     return $self;
 }
 
@@ -1021,10 +1022,10 @@ sub toJSON {
         };
     }
     else {
-        $hash->{pk} = $self->getId;
+        $hash->{pk} = $self->id;
 
         my $label = $self->getLabelAttr(attrs => $hash);
-        $hash->{label} = $label ? $self->getAttr(name => $label) : $self->getId;
+        $hash->{label} = $label ? $self->getAttr(name => $label) : $self->id;
     }
 
     return $hash;
