@@ -16,9 +16,11 @@ package Clustermetric;
 use strict;
 use warnings;
 use General;
+use Data::Dumper;
 use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
 use Indicator;
+require 'AggregateCombination.pm';
 
 use base 'BaseDB';
 
@@ -87,11 +89,11 @@ sub getValuesFromDB{
     my $self = shift;
     my %args = @_;
     General::checkParams args => \%args, required => ['start_time','stop_time'];
-    
+
     my $id = $self->getAttr(name=>'clustermetric_id');
-    
+
     my %rep = RRDTimeData::fetchTimeDataStore(
-                                            name         => $id, 
+                                            name         => $id,
                                             start        => $args{start_time},
                                             end          => $args{stop_time}
                                           );
@@ -100,7 +102,7 @@ sub getValuesFromDB{
 sub getLastValueFromDB{
     my $self = shift;
 	my $id = $self->getAttr(name=>'clustermetric_id');
-    my %last_value = RRDTimeData::getLastUpdatedValue(clustermetric_id => $id); 
+    my %last_value = RRDTimeData::getLastUpdatedValue(clustermetric_id => $id);
     my @indicator = (values %last_value);
     return $indicator[0];
 }
@@ -116,7 +118,7 @@ sub getLastValueFromDB{
 
 sub regenTimeDataStores {
 
-    my @clustermetrics = Clustermetric->search(hash => { }); 
+    my @clustermetrics = Clustermetric->search(hash => { });
 
     foreach my $clustermetric (@clustermetrics) {
         #delete previous rrd
@@ -215,4 +217,23 @@ sub getUnit {
     return $indicator_unit;
 }
 
+sub getDependencies {
+    my ($self, %args) = @_;
+
+    my @aggregate_combinations_from_same_service = AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
+    my $id = $self->getId;
+
+    my %dependencies;
+    for my $aggregate_combination (@aggregate_combinations_from_same_service) {
+        my @cluster_metric_ids = $aggregate_combination->dependantClusterMetricIds();
+
+        for my $cluster_metric_id (@cluster_metric_ids) {
+            if ($id == $cluster_metric_id) {
+                $dependencies{$aggregate_combination->aggregate_combination_label} = $aggregate_combination->getDependencies;
+            }
+        }
+    }
+
+    return \%dependencies;
+}
 1;
