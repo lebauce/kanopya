@@ -110,7 +110,7 @@ sub checkHostManagerParams {
 
     Desc: Retrieve list of all Datacenters
     Args: null
-    Return: \@datacenter_views
+    Return: \@datacenter_infos
 
 =cut
 
@@ -136,46 +136,70 @@ sub retrieveDatacenters {
 
 =head2 retrieveClustersAndHypervisors
 
-    Desc: Retrieve list of Clusters and Hypervisors (that are not in a cluster) hosted in a Datacenter
-    Args: $datacenter_view
-    Return: \%clusters_and_hypervisors_views
+    Desc: Retrieve list of Clusters and Hypervisors (that are not in a cluster) 
+          hosted in a given Datacenter
+    Args: $datacenter_name
+    Return: \@clusters_and_hypervisors_infos
 
 =cut
 
 sub retrieveClustersAndHypervisors {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['datacenter_view']);
-    my $datacenter_view = $args{datacenter_view};
+    General::checkParams(args => \%args, required => ['datacenter_name']);
 
-    #A hash in which we add
-        #type: 'cluster' for list of Clusters views and
-        #type: 'hypervisor' for List of Hypervisors views
-    my %clusters_and_hypervisors_views = (
-                                     cluster    =>   undef,
-                                     hypervisor =>   undef,
-                                 );
+    my @clusters_hypervisors_infos;
+    my $datacenter_name = $args{datacenter_name};
 
-    #Views of Cluster
-    my $cluster_views = $self->findEntityViews(
-                          view_type    => 'ClusterComputeResource',
-                          begin_entity => $datacenter_view,
-                      );
-    @{$clusters_and_hypervisors_views{cluster}} = @{$cluster_views};
+    #Find datacenter view
+    my $datacenter_view = $self->findEntityView(
+                              view_type   => 'Datacenter',
+                              hash_filter => { name => $datacenter_name }
+                          );
+    #get datacenter host folder
+    my $host_folder = $self->getView(mo_ref => $datacenter_view->hostFolder);
 
-    #Views of Hypervisors that are NOT in a cluster
-    #To find them,
-    #TODO Test if Hypervisor.Parent NOT from type Cluster
-        #hash for Hypervisor NOT in a Cluster
-    my $hypervisor_hash_filter  = {};
-    my $hypervisor_views        = $self->findEntityViews (
-                                    view_type    => 'HostSystem',
-                                    hash_filter  => $hypervisor_hash_filter,
-                                    begin_entity => $datacenter_view,
-                                );
-    @{$clusters_and_hypervisors_views{hypervisor}} = @{$hypervisor_views};
+    #We only gather ClusterComputeResource or ComputeResource
+    CHILD:
+    foreach my $child (@{ $host_folder->childEntity }) {
 
-    return \%clusters_and_hypervisors_views;
+        my $child_view = $self->getView(mo_ref => $child);
+        my $compute_resource_infos;
+
+        if (ref ($child_view) eq 'ClusterComputeResource') {
+            $compute_resource_infos = {
+                name => $child_view->name,
+                type => 'cluster'
+            };
+        }
+        elsif(ref ($child_view) eq 'ComputeResource') {
+            $compute_resource_infos = {
+                name => $child_view->name,
+                type => 'hypervisor'
+            };
+        }
+        else {
+            next CHILD;
+        }
+
+        push @clusters_hypervisors_infos, $compute_resource_infos;
+    }
+
+    return \@clusters_hypervisors_infos;
+}
+
+=head2 retrieveVmsAndHypervisors
+
+    Desc: Retrieve a cluster's elements (vms and hypervisors)
+    Args: $cluster_name, $datacenter_name
+    Return: \@cluster_infos 
+
+=cut
+
+sub retrieveVmsAndHypervisors {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['cluster_view']);
 }
 
 =head2 retrieveHypervisors
@@ -266,6 +290,7 @@ sub disconnect {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
+        print "a new session to vSphere has been closed\n";
 }
 
 =head2 negociateConnection
@@ -286,6 +311,7 @@ sub negociateConnection {
     };
     if ($@ =~ /no global session is defined/) {
         $log->info('opening a new session to vSphere');
+        print "opening a new session to vSphere\n";
 
         $self->connect(
             user_name => $self->vsphere5_login,
