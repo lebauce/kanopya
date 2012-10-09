@@ -374,7 +374,9 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         ],
         details: { onSelectRow : function(eid) { nodemetricconditionmodal(elem_id, eid); } },
         action_delete: {
-            url : '/api/nodemetriccondition',
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/nodemetriccondition/', id);
+            }
         },
     } );
     createNodemetricCondition('node_accordion_container', elem_id)
@@ -439,7 +441,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             onClose : function() {$('#'+serviceNodemetricRulesGridId).trigger('reloadGrid')}
         },
         action_delete: {
-            url : '/api/nodemetricrule',
+            url : '/api/nodemetricrule'
         },
     } );
     
@@ -473,7 +475,9 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
            ],
         details: { onSelectRow : function(eid) { serviceconditionmodal(elem_id, eid); } },
         action_delete: {
-            url : '/api/aggregatecondition'
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/aggregatecondition/', id);
+            }
         },
     } );
     createServiceCondition('service_accordion_container', elem_id);

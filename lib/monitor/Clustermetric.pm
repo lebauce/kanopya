@@ -62,7 +62,11 @@ sub methods {
     'resizeTimeDataStores'  => {
       'description' => 'Resize all data stores',
       'perm_holder' => 'entity'
-    }
+    },
+    'getDependencies' => {
+        'description' => 'return dependencies tree for this object',
+        'perm_holder' => 'entity',
+    },
   }
 }
 

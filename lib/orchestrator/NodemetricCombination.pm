@@ -66,6 +66,10 @@ sub methods {
             'description' => 'getUnit',
             'perm_holder' => 'entity',
         },
+        'getDependencies' => {
+            'description' => 'return dependencies tree for this object',
+            'perm_holder' => 'entity',
+        },
     }
 }
 

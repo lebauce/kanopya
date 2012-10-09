@@ -61,12 +61,16 @@ sub getAttr {
 }
 
 sub methods {
-  return {
-    'toString'  => {
-      'description' => 'toString',
-      'perm_holder' => 'entity'
+    return {
+        'toString'  => {
+          'description' => 'toString',
+          'perm_holder' => 'entity'
+        },
+        'getDependencies' => {
+            'description' => 'return dependencies tree for this object',
+            'perm_holder' => 'entity',
+        },
     }
-  }
 }
 
 

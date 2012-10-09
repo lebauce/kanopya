@@ -347,7 +347,9 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         },
         deactivate_details  : mode_policy,
         action_delete: {
-            url : '/api/nodemetriccombination',
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/nodemetriccombination/', id);
+            }
         }
     } );
     createNodemetricCombination('node_monitoring_accordion_container', elem_id, (external !== '') ? true : false);
@@ -376,7 +378,9 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
             { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
         ],
         action_delete: {
-            url : '/api/clustermetric',
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/clustermetric/', id);
+            }
         },
         deactivate_details  : mode_policy,
     } );
@@ -408,7 +412,9 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         },
         deactivate_details  : mode_policy,
         action_delete: {
-            url : '/api/aggregatecombination',
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/aggregatecombination/', id);
+            }
         },
     } );
     createServiceConbination('service_monitoring_accordion_container', elem_id);
