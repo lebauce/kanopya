@@ -1,3 +1,4 @@
+
 # Copyright © 2011 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
@@ -186,5 +187,5 @@ sub getInterface {
 
     return Entity::Interface->get(id => $self->getAttr(name => 'interface_id'));
 }
-    
+
 1;

@@ -210,8 +210,9 @@ sub checkAttrs {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
     my $final_attrs = {};
+
     my $attributes_def = $class->getAttrDefs(group_by => 'module');
-    
+
     General::checkParams(args => \%args, required => ['attrs']);
 
     foreach my $module (keys %$attributes_def) {
@@ -221,7 +222,7 @@ sub checkAttrs {
     my $attrs = $args{attrs};
     # search unknown attribute or invalid value attribute
     ATTRLOOP:
-    foreach my $attr (keys(%$attrs)) { 
+    foreach my $attr (keys(%$attrs)) {
         foreach my $module (keys %$attributes_def) {
             if (exists $attributes_def->{$module}->{$attr}){
                 my $value = $attrs->{$attr};
@@ -239,7 +240,7 @@ sub checkAttrs {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    
+
     # search for non provided mandatory attribute and set primary keys to undef
     foreach my $module (keys %$attributes_def) {
         foreach my $attr (keys(%{$attributes_def->{$module}})) {
@@ -548,7 +549,7 @@ sub getAttr {
         $errmsg = ref($self) . " getAttr no attr name $args{name}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
-    } 
+    }
 
     return $value;
 }
@@ -562,7 +563,7 @@ sub getAttr {
 sub getAttrs {
     my ($self) = @_;
     my $dbix = $self->{_dbix};
-     
+
    # build hash corresponding to class table (with local changes)
    my %attrs = ();
        while(1) {
@@ -576,7 +577,7 @@ sub getAttrs {
             last;
         }
     }
-    
+
    return %attrs;
 }
 
@@ -602,7 +603,7 @@ sub setAttr {
     my ($name, $value) = ($args{name}, $args{value});
     my $dbix = $self->{_dbix};
     $self->checkAttr(%args);
-    
+
     my $found = 0;
     while(1) {
         # Search for attr in this dbix
@@ -783,7 +784,7 @@ sub search {
 
             my $merge = Hash::Merge->new('RETAINMENT_PRECEDENT');
             $join = $merge->merge($join, $class->getJoinQuery(@comps));
-            
+
             $args{hash}->{$comps[-1] . '.' . $attr} = $value;
         }
     }
@@ -820,12 +821,12 @@ sub search {
         bless $obj, $class_type;
 
         if($@) {
-            my $exception = $@; 
+            my $exception = $@;
             if(Kanopya::Exception::Permission::Denied->caught()) {
                 $log->debug("no right to access to object <$table> with <$row->id>");
                 next;
-            } 
-            else { $exception->rethrow(); } 
+            }
+            else { $exception->rethrow(); }
         }
         else {
             push @objs, $obj;

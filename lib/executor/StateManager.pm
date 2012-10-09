@@ -84,7 +84,7 @@ sub run {
                 for my $alert(@alerts) {
                     $alert->mark_resolved;
                 }
-                
+
                 next CLUSTER;
             }
             $log->info('---------------------------------------------');
@@ -99,12 +99,12 @@ sub run {
                 my $hostname = $ehost->getAttr(name => 'host_hostname');
                 my $hostmsg = "Host $hostname not reachable";
                 # search if an alert exists
-                my $hostalert =  eval { Alert->find(hash => { 
-                                                          alert_active => 1, 
+                my $hostalert =  eval { Alert->find(hash => {
+                                                          alert_active => 1,
                                                           alert_message => $hostmsg,
-                                                          entity_id => $cluster->id }) 
+                                                          entity_id => $cluster->id })
                             };
-                
+
                 eval {
                    $pingable = $ehost->checkUp();
                 };
@@ -193,7 +193,7 @@ sub run {
                 elsif ($node_available and $nodestate eq 'broken') {
                     # Set the node is repaired
                     $ehost->setNodeState(state => 'in');
-                    
+
                 }
 
                 $adm->commitTransaction;

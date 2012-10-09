@@ -71,7 +71,7 @@ sub new {
     my ($class, %args) = @_;
 
     my $host = Entity->get(id => $args{host_id});
-    
+
     my $self = $class->SUPER::new(
         service_provider_id => $args{inside_id}, #needed to create externalnode
         externalnode_hostname           => $host->getAttr(name => 'host_hostname'), #needed to create externalnode
@@ -89,7 +89,7 @@ sub getServiceProvider() {
 
 sub remove() {
     my $self = shift;
-    
+
     my $serviceProvider = $self->getServiceProvider();
     $serviceProvider->removeNode('host_id' => $self->getAttr(name => 'host_id'));
 }

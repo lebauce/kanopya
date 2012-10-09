@@ -1,4 +1,4 @@
-# Entity::Gp.pm  
+# Entity::Gp.pm
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -100,11 +100,11 @@ sub methods {
         appendEntity => {
             description => 'add an element to group',
             perm_holder => 'entity',
-        },                    
+        },
         removeEntity => {
             description => 'remove an element from a group',
             perm_holder => 'entity',
-        }, 
+        },
     };
 }
 
@@ -115,7 +115,7 @@ sub methods {
     args:
         hash : hashref : where criteria
     return: @ : array of Entity::Gp instances
-    
+
 =cut
 
 sub getGroups {
@@ -144,16 +144,16 @@ sub getSize {
     args:
         entity : Entity::* : an Entity instance
     return: @ : array of Entity::Gp instances
-    
+
 =cut
 
 sub getGroupsFromEntity {
     my ($class, %args) = @_;
     my @groups = ();
     General::checkParams(args => \%args, required => ['entity']);
-    
-    if(not $args{entity}->{_dbix}->in_storage ) { return @groups; } 
-        
+
+    if(not $args{entity}->{_dbix}->in_storage ) { return @groups; }
+
     my $adm = Administrator->new();
        my $mastergroup = $args{entity}->getMasterGroupName();
     my $gp_rs = $adm->{db}->resultset('Gp')->search(
@@ -167,14 +167,14 @@ sub getGroupsFromEntity {
     while(my $row = $gp_rs->next) {
         eval {
             my $group = $class->get(id => $row->get_column('gp_id'));
-            push(@groups, $group);    
+            push(@groups, $group);
         };
         if($@) {
             my $exception = $@;
             if(Kanopya::Exception::Permission::Denied->caught()) {
                 next;
             }
-            else { $exception->rethrow(); } 
+            else { $exception->rethrow(); }
         }
     }
        return @groups;
@@ -183,9 +183,9 @@ sub getGroupsFromEntity {
 =head2 appendEntity
 
     Class : Public
-    
+
     Desc : append an entity object to the groups ; the entity must have been saved to the database before adding it to a group.
-        
+
     args:
         entity : Entity::* object : an Entity object
 
@@ -195,9 +195,9 @@ sub appendEntity {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['entity']);
 
- 	my $entity_id = $args{entity}->{_dbix}->id;
+    my $entity_id = $args{entity}->id;
     $self->{_dbix}->ingroups->create({
-        gp_id     => $self->getAttr(name => 'gp_id'), 
+        gp_id     => $self->getAttr(name => 'gp_id'),
         entity_id => $entity_id
     });
 }
@@ -205,9 +205,9 @@ sub appendEntity {
 =head2 removeEntity
 
     Class : Public
-    
+
     Desc : remove an entity object from the groups
-    
+
     args:
         entity : Entity::* object : an Entity object contained by the groups
 
@@ -216,7 +216,7 @@ sub appendEntity {
 sub removeEntity {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['entity']);
-    
+
     my $entity_id = $args{entity}->{_dbix}->id;
     $self->{_dbix}->ingroups->find({entity_id => $entity_id})->delete();
 }
@@ -224,27 +224,27 @@ sub removeEntity {
 =head2 getEntities
 
     Desc : get all entities contained in the group
-    
-    return : @: array of entities 
+
+    return : @: array of entities
 
 =cut
 
 sub getEntities {
     my ($self) = @_;
-    my $adm = Administrator->new();    
+    my $adm = Administrator->new();
     my $type = $self->{_dbix}->get_column('gp_type');
     my $entity_class = 'Entity::'.$type;
     require 'Entity/'.$type.'.pm';
-        
+
     my $entities_rs = $self->{_dbix}->ingroups;
     my $ids = [];
     my $idfield = lc($type)."_id";
-    
+
     while(my $row = $entities_rs->next) {
         my $concret = $adm->{db}->resultset($type)->find($row->get_column('entity_id'));
         push @$ids, $concret->id;
-    }    
-    
+    }
+
     my @objs = ();
     foreach my $id (@$ids) {
         my $e = eval { $entity_class->get(id => $id) };
@@ -252,51 +252,51 @@ sub getEntities {
             my $exception = $@;
             if(Kanopya::Exception::Permission::Denied->caught()) {
                 next;
-            } 
-            else { $exception->rethrow(); } 
+            }
+            else { $exception->rethrow(); }
         }
-        push @objs, $e; 
-    }    
-        
+        push @objs, $e;
+    }
+
     return @objs;
 }
 
 =head2 getExcludedEntities
-    
+
     Desc : get all entities of the same type not contained in the group
-    
-    return : array of entities 
+
+    return : array of entities
 
 =cut
 
 sub getExcludedEntities {
     my ($self) = @_;
-    my $adm = Administrator->new();    
+    my $adm = Administrator->new();
     my $type = $self->{_dbix}->get_column('gp_type');
     my $entity_class = 'Entity::'.$type;
     require 'Entity/'.$type.'.pm';
-    
+
     my $entities_rs = $self->{_dbix}->ingroups;
     my $ids = [];
     my $idfield = lc($type)."_id";
     my $systemfield = lc($type)."_system";
-    
-    # retrieve groups elements ids 
+
+    # retrieve groups elements ids
     while(my $row = $entities_rs->next) {
         my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->id})->first;
         push @$ids, $concret->get_column("$idfield");
-    }    
-    
-    # get (if granted) elements not already in the group 
+    }
+
+    # get (if granted) elements not already in the group
     my @objs = ();
     my $where_clause = { "$idfield" => { -not_in => $ids }};
     # don't include system element
     if($adm->{db}->resultset($type)->result_source->has_column("$systemfield")) {
         $where_clause->{"$systemfield"} = 0;
     }
-    
+
     #$log->debug(Dumper $where_clause);
-    
+
     $entities_rs = $adm->{db}->resultset($type)->search($where_clause);
     while(my $row = $entities_rs->next) {
         my $entity = eval { $entity_class->get(id => $row->get_column("$idfield")); };
@@ -304,12 +304,12 @@ sub getExcludedEntities {
             my $exception = $@;
             if(Kanopya::Exception::Permission::Denied->caught()) {
                 next;
-            } 
+            }
             else { $exception->rethrow(); }
         }
-        else { push @objs, $entity; }    
+        else { push @objs, $entity; }
     }
-    
+
     return @objs;
 }
 

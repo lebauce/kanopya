@@ -19,10 +19,10 @@ KanopyaDatabaseProvider - KanopyaDatabaseProvider object
 =head1 SYNOPSIS
 
     use KanopyaDatabaseProvider
-    
+
     # Creates provider
     my $provider = KanopyaDatabaseProvider->new( $host );
-    
+
     # Retrieve data
     my $var_map = { 'var_name' => '<Virtual status var name>', ... };
     $provider->retrieveData( var_map => $var_map );
@@ -45,16 +45,16 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 =head2 new
-    
+
     Class : Public
-    
+
     Desc : Instanciate KanopyaDatabaseProvider instance to provide Virtual stat from a specific host
-    
+
     Args :
         host: string: ip of host
-    
+
     Return : KanopyaDatabaseProvider instance
-    
+
 =cut
 
 sub new {
@@ -65,24 +65,24 @@ sub new {
     bless $self, $class;
 
     $self->{host} = $args{host};
-    
+
     return $self;
 }
 
 
 =head2 retrieveData
-    
+
     Class : Public
-    
+
     Desc : Retrieve a set of monitor var value
-    
+
     Args :
         var_map : hash ref : required  var { var_name => oid }
-    
+
     Return :
         [0] : time when data was retrived
         [1] : resulting hash ref { var_name => value }
-    
+
 =cut
 
 sub retrieveData {
@@ -106,10 +106,10 @@ sub retrieveData {
 sub compute {
     my $self = shift;
     my %args = @_;
-    
+
     my $var = $args{var};
     my $load = $args{load};
-    
+
     die "Error: no definition to compute virtual var '$args{var}'";
 }
 

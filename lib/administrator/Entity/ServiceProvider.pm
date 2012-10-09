@@ -406,8 +406,9 @@ sub getLimit {
     my $billing_limit_value;
     my $now = time() * 1000;
     for my $limit (@limits) {
-        if (($limit->start < $now) && ($limit->ending > $now)) {
+        if (($limit->start < $now) && ($limit->ending > $now)){ 
             $billing_limit_value = $billing_limit_value ? min($billing_limit_value, $limit->value) : $limit->value;
+            $log->debug('Limit value'.($limit->value));
         }
     }
 
