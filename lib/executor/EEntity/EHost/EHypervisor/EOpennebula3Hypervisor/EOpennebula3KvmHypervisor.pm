@@ -26,6 +26,7 @@ use List::Util qw(reduce);
 use XML::Simple;
 use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
+use EFactory;
 my $log = get_logger("");
 
 
@@ -38,29 +39,31 @@ my $resources_keys = {
 sub getAvailableMemory {
     my ($self, %args) = @_ ;
 
-    my @vms = $self->virtual_machines;
-    my $command = '';
-    my $onevm_id;
-    for my $vm (@vms) {
-        $onevm_id = $vm->opennebula3_vm->onevm_id;
-        $command .= "virsh dumpxml one-$onevm_id | grep currentMemory; "
-    }
-
-    my $result = $self->getEContext->execute(command => $command);
-
-    my $parser = XML::Simple->new();
-    my $stdout = '<root>' . $result->{stdout} . '</root>';
-    my $res_array = $parser->XMLin($stdout, ForceArray => 'currentMemory')->{currentMemory};
     my $mem = 0;
-    for my $res (@$res_array) {
-        $mem += $res->{content} * 1024;
+
+    my @vms = $self->virtual_machines;
+    if (@vms) {
+        my $command = '';
+        my $onevm_id;
+        for my $vm (@vms) {
+            $onevm_id = $vm->opennebula3_vm->onevm_id;
+            $command .= "virsh dumpxml one-$onevm_id | grep currentMemory; "
+        }
+
+        my $result = $self->getEContext->execute(command => $command);
+        my $parser = XML::Simple->new();
+        my $stdout = '<root>' . $result->{stdout} . '</root>';
+        my $res_array = $parser->XMLin($stdout, ForceArray => 'currentMemory')->{currentMemory};
+        for my $res (@$res_array) {
+            $mem += $res->{content} * 1024;
+        }
     }
+
 
     return {
         mem_effectively_available   => $self->SUPER::getAvailableMemory->{mem_effectively_available},
         mem_theoretically_available => $self->host_ram * $self->opennebula3->overcommitment_memory_factor - $mem,
     }
-
 }
 
 
