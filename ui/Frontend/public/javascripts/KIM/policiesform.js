@@ -82,7 +82,8 @@ var PolicyForm = (function() {
                 });
             });
 
-            $(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
+            $(this.content).dialog('option', 'position', 'top');
+            //$(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
             if ($(this.content).height() > $(window).innerHeight() - 200) {
                 $(this.content).css('height', $(window).innerHeight() - 200);
             }
@@ -173,7 +174,8 @@ var PolicyForm = (function() {
                 $("<td>", { colspan : 2 }).append($('<hr>')).appendTo(hrseprationline);
                 container.append(hrseprationline);
 
-                $(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
+                $(this.content).dialog('option', 'position', 'top');
+                //$(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
                 if ($(this.content).height() > $(window).innerHeight() - 200) {
                     $(this.content).css('height', $(window).innerHeight() - 200);
                 }
@@ -1139,7 +1141,8 @@ var PolicyForm = (function() {
         });
         $(this.content).children("div#" + this.name + "_steps").html(text);
 
-        $(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
+        $(this.content).dialog('option', 'position', 'top');
+        //$(this.content).dialog('option', 'position', $(this.content).dialog('option', 'position'));
         if ($(this.content).height() > $(window).innerHeight() - 200) {
             $(this.content).css('height', $(window).innerHeight() - 200);
         }
