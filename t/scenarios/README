@@ -1,0 +1,3 @@
+Requirements to run these tests :
+- kanopya installed and running
+- full operational architecture (with at least 2 hypervisor hosts)
