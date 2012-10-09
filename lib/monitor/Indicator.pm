@@ -16,6 +16,13 @@ package Indicator;
 use strict;
 use warnings;
 use base 'BaseDB';
+use Data::Dumper;
+require 'ScomIndicator.pm';
+require 'Clustermetric.pm';
+
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
     indicator_id               =>  {pattern       => '^.*$',
@@ -67,6 +74,111 @@ sub toString {
     my $self = shift;
 
     return $self->indicatorset->indicatorset_name . '/' . $self->indicator_name;
+}
+
+sub getDependencies {
+    my $self = shift;
+    my %dependencies;
+
+    my @related_scom_indicators = ScomIndicator->search(
+                                                     hash => {
+                                                         indicator_oid => $self->indicator_oid,
+                                                     }
+                                                 );
+
+    # Service
+    for my $indicator (@related_scom_indicators) {
+
+        # Node related hierarchy
+
+        #TODO : Compaptibility with KIM service_provider_name (with function getName) !
+        # Variables used more than once
+        my $service_provider      = $indicator->service_provider;
+        my $service_provider_name = $service_provider->externalcluster_name;
+        my $indicator_id          = $indicator->getId;
+
+        my @dependent_clustermetric = Clustermetric->search(
+                                                         hash => {
+                                                             clustermetric_indicator_id => $indicator_id,
+                                                         }
+                                                     );
+        for my $clustermetric (@dependent_clustermetric){
+            $dependencies{$service_provider_name}->{'service'}
+                                                 ->{$clustermetric->clustermetric_label} = $clustermetric->getDependencies;
+        }
+
+        # Service related hierarchy
+
+        my @dependent_nodemetric_combination = NodemetricCombination->search(
+                                                                          hash => {
+                                                                              nodemetric_combination_service_provider_id => $service_provider->getId
+                                                                          }
+                                                                      );
+
+
+        my $id = $self->getId;
+        LOOP:
+        for my $nm_combi (@dependent_nodemetric_combination) {
+            my @scom_indicator_ids = $nm_combi->getDependantIndicatorIds();
+            for my $nm_indicator_id (@scom_indicator_ids) {
+                if ($indicator_id == $nm_indicator_id) {
+                    $dependencies{$service_provider_name}->{'node'}
+                                                 ->{$nm_combi->nodemetric_combination_label} = $nm_combi->getDependencies;
+                    next LOOP;
+                }
+            }
+        }
+    }
+    return \%dependencies;
+}
+
+sub delete {
+    my $self = shift;
+    my @related_scom_indicators = ScomIndicator->search(
+                                                     hash => {
+                                                         indicator_oid => $self->indicator_oid,
+                                                     }
+                                                 );
+
+    # Service
+    while (@related_scom_indicators) {
+        my $indicator = pop @related_scom_indicators;
+        # Node related hierarchy
+
+        my $indicator_id          = $indicator->getId;
+        my @dependent_clustermetric = Clustermetric->search(
+                                                         hash => {
+                                                             clustermetric_indicator_id => $indicator_id,
+                                                         }
+                                                     );
+        while (@dependent_clustermetric) {
+            (pop @dependent_clustermetric)->delete();
+        }
+
+        # Service related hierarchy
+
+        my @dependent_nodemetric_combination = NodemetricCombination->search(
+                                                                          hash => {
+                                                                              nodemetric_combination_service_provider_id => $indicator->service_provider->getId
+                                                                          }
+                                                                      );
+
+
+        my $id = $self->getId;
+        LOOP:
+        while (@dependent_nodemetric_combination) {
+            my $nm_combi  = pop @dependent_nodemetric_combination;
+            my @scom_indicator_ids = $nm_combi->getDependantIndicatorIds();
+            for my $nm_indicator_id (@scom_indicator_ids) {
+                if ($indicator_id == $nm_indicator_id) {
+                    $nm_combi->delete();
+                    next LOOP;
+                }
+            }
+        }
+        $indicator->delete();
+    }
+    return $self->SUPER::delete();
 }
 
 1;

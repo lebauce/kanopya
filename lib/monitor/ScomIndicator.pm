@@ -15,8 +15,7 @@ package ScomIndicator;
 
 use strict;
 use warnings;
-use base 'Indicator';
-
+use base 'BaseDB';
 use constant ATTR_DEF => {
     indicator_name             =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
