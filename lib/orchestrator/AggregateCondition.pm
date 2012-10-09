@@ -184,4 +184,23 @@ sub getDependencies {
     }
     return \%dependencies;
 }
+
+sub delete {
+    my ($self) = @_;
+
+    my @rules_from_same_service = AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
+
+    my $id = $self->getId;
+    while (@rules_from_same_service) {
+        my $rule = pop @rules_from_same_service;
+        my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
+        for my $condition_id (@rule_dependant_condition_ids) {
+            if ($id == $condition_id) {
+                $rule->delete();
+            }
+        }
+    }
+    return $self->SUPER::delete();
+}
+
 1;

@@ -236,4 +236,24 @@ sub getDependencies {
 
     return \%dependencies;
 }
+
+sub delete {
+    my $self = shift;
+
+    my @aggregate_combinations_from_same_service = AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
+    my $id = $self->getId;
+
+    while (@aggregate_combinations_from_same_service) {
+        my $aggregate_combination = pop @aggregate_combinations_from_same_service;
+        my @cluster_metric_ids = $aggregate_combination->dependantClusterMetricIds();
+
+        for my $cluster_metric_id (@cluster_metric_ids) {
+            if ($id == $cluster_metric_id) {
+                $aggregate_combination->delete();
+            }
+        }
+    }
+    return $self->SUPER::delete();
+}
+
 1;

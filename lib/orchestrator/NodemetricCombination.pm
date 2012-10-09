@@ -276,4 +276,12 @@ sub getDependencies {
     return \%dependencies;
 }
 
+sub delete {
+    my $self = shift;
+    my @conditions = $self->nodemetric_conditions;
+    while (@conditions) {
+        (pop @conditions)->delete();
+    }
+    return $self->SUPER::delete();
+}
 1;
