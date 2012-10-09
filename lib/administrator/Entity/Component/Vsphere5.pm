@@ -59,16 +59,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-=head2 checkHostManagerParams
-
-=cut
-
-sub checkHostManagerParams {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ]); 
-}
-
 ###############
 # API methods #
 ###############
@@ -83,40 +73,55 @@ sub checkHostManagerParams {
 
 sub methods {
     return {
-        'retrieveDatacenters'    =>  {
+        'retrieveDatacenters'            =>  {
             'description'   =>  'Retrieve list of Datacenters',
             'perm_holder'   =>  'entity',
         },
-        'retrieveClustersAndHypervisors'    =>  {
+        'retrieveClustersAndHypervisors' =>  {
             'description'   =>  'Retrieve list of Clusters and Hypervisors (that are not in a cluster) hosted in a Datacenter',
             'perm_holder'   =>  'entity',
         },
-        'retrieveHypervisors'    =>  {
+        'retrieveHypervisors'            =>  {
             'description'   =>  'Retrieve list of Hypervisors hosted in a Cluster',
             'perm_holder'   =>  'entity',
         },
-        'retrieveVirtualMachines'    =>  {
+        'retrieveVirtualMachines'        =>  {
             'description'   =>  'Retrieve list of Virtual Machines hosted in an Hypervisor',
             'perm_holder'   =>  'entity',
         },
     };
 }
 
+=head2 checkHostManagerParams
+
+=cut
+
+sub checkHostManagerParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
+}
+
+####################
+# Retrieve methods #
+####################
+
 =head2 retrieveDatacenters
 
     Desc: Retrieve list of all Datacenters
     Args: null
-    Return: \@datacenter_list
+    Return: \@datacenter_views
 
 =cut
 
 sub retrieveDatacenters {
     my ($self) = @_;
 
-    my $datacenter_views = $self->findEntityViews (
-                             view_type      => 'Datacenter',
-                             array_property => ['name'],
-                         );
+    my $datacenter_views = $self->findEntityViews(
+                               view_type      => 'Datacenter',
+                               array_property => ['name'],
+                           );
+
     return $datacenter_views;
 }
 
@@ -143,7 +148,7 @@ sub retrieveClustersAndHypervisors {
                                  );
 
     #Views of Cluster
-    my $cluster_views = $self->findEntityViews (
+    my $cluster_views = $self->findEntityViews(
                           view_type    => 'ClusterComputeResource',
                           begin_entity => $datacenter_view,
                       );
@@ -166,7 +171,7 @@ sub retrieveClustersAndHypervisors {
 
 =head2 retrieveHypervisors
 
-    Desc: Retrieve list of Hypervisors hosted in a Cluster
+    Desc: Retrieve a cluster's hypervisors
     Args: $cluster_view
     Return: \@hypervisor_views
 
@@ -181,6 +186,7 @@ sub retrieveHypervisors {
     #Views of Hypervisor that are in the cluster
     my $hypervisor_views = $self->findEntityViews (
                              view_type    => 'HostSystem',
+                             array_property => ['name'],
                              begin_entity => $cluster_view,
                          );
 
@@ -189,7 +195,7 @@ sub retrieveHypervisors {
 
 =head2 retrieveVirtualMachines
 
-    Desc: Retrieve list of Virtual Machines hosted in an Hypervisor
+    Desc: Retrieve an hypervisor's VMs
     Args: $hypervisor_view
     Return: \@vm_views
 
@@ -345,9 +351,9 @@ sub findEntityView {
     my $view_type    = $args{view_type};
     my $begin_entity = $args{begin_entity};
 
-    my @array_property = undef;
+    my $array_property = undef;
     if ($args{array_property}) {
-        @array_property = @{$args{array_property}};
+        $array_property = $args{array_property};
     }
 
     my $view;
@@ -355,13 +361,13 @@ sub findEntityView {
         if (defined $begin_entity) {
             $view = Vim::find_entity_view(view_type      => $view_type,
                                           filter         => $hash_filter,
-                                          properties     => \@array_property,
+                                          properties     => $array_property,
                                           begin_entity   => $begin_entity,);
         }
         else {
             $view = Vim::find_entity_view(view_type      => $view_type,
                                           filter         => $hash_filter,
-                                          properties     => \@array_property,);
+                                          properties     => $array_property,);
         }
     };
     if ($@) {
@@ -433,35 +439,43 @@ sub findEntityViews {
     return $views;
 }
 
-#############################
-## synchronization methods ##
-#############################
+##########################
+## registration methods ##
+##########################
 
-=head2 synchronize
+=head2 register
 
-    Desc: synchronize the component with its related vSphere infrastructure.
-    Args: $synchronize_item, the object to be synchronized in the vsphere entity with Kanopya
+    Desc: register a vSphere item into kanopya
+    Args: $register_item, the object to be registered from the vsphere entity into Kanopya
           \%args is also relayed to the operation
 =cut
 
-sub synchronize {
+sub register {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['synchronize_item']);
+    General::checkParams(args => \%args, required => ['register_item']);
 
-    my %synchronize_functions = (
+    my %register_methods = (
         'cluster'    => 'synchronizeCluster',
         'datacenter' => 'synchronizeDatacenter',
         'vm'         => 'synchronizeVm',
         'network'    => 'synchronizeNetwork',
     );
 
-    my $synchronize_method = $synchronize_functions{$args{synchronize_item}};
+    my $register_method = $register_methods{$args{register_item}};
 
-    delete $args{synchronize_item};
+    delete $args{register_item};
 
-    $self->$synchronize_method(\%args);
+    $self->$register_method(\%args);
 }
+
+
+=head2 registerHypervisor
+
+    Desc: register a new hypervisor into Kanopya
+
+=cut
+
 
 =head2 synchronizeCluster
 
@@ -538,6 +552,7 @@ sub synchronizeCluster {
 
 ###########################
 ## configuration methods ##
+## getters and setters   ##
 ###########################
 
 =head 2 setConf
@@ -762,7 +777,7 @@ sub powerOnVm {
 
 =head2 addHypervisor
 
-    Desc: register a new vsphere hypervisor into kanopya
+    Desc: promote an Host::Hypervior into a Kanopya vsphere hypervisor
     Args: $host,$datacenter_id
     Return: a new instance of vsphere5_hypervisor
 
