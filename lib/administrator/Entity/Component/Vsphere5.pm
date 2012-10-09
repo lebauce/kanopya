@@ -117,12 +117,21 @@ sub checkHostManagerParams {
 sub retrieveDatacenters {
     my ($self) = @_;
 
+    my @datacenters_infos;
+
     my $datacenter_views = $self->findEntityViews(
                                view_type      => 'Datacenter',
                                array_property => ['name'],
                            );
 
-    return $datacenter_views;
+    foreach my $datacenter_view (@$datacenter_views) {
+        my %datacenter_infos = (
+            name => $datacenter_view->name,
+         );
+        push @datacenters_infos, \%datacenter_infos;
+    }
+
+    return \@datacenters_infos;
 }
 
 =head2 retrieveClustersAndHypervisors
