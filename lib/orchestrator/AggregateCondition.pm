@@ -141,13 +141,11 @@ sub eval{
         $log->info("CM Combination formula: $evalString");
 
         if(eval $evalString){
-            #print $evalString."=> true\n";
             $log->info($evalString."=> true");
             $self->setAttr(name => 'last_eval', value => 1);
             $self->save();
             return 1;
         }else{
-            #print $evalString."=> false\n";
             $log->info($evalString."=> false");
             $self->setAttr(name => 'last_eval', value => 0);
             $self->save();
@@ -167,8 +165,7 @@ sub getCombination{
 }
 
 sub getDependencies {
-    my ($self) = @_;
-
+    my $self = shift;
     my @rules_from_same_service = AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
 
     my %dependencies;
@@ -176,7 +173,6 @@ sub getDependencies {
     for my $rule (@rules_from_same_service) {
         my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
         for my $condition_id (@rule_dependant_condition_ids) {
-            $log->info("condition $condition_id");
             if ($id == $condition_id) {
                 $dependencies{$rule->aggregate_rule_label} = {};
             }
@@ -186,8 +182,7 @@ sub getDependencies {
 }
 
 sub delete {
-    my ($self) = @_;
-
+    my $self = shift;
     my @rules_from_same_service = AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
 
     my $id = $self->getId;

@@ -218,7 +218,7 @@ sub getUnit {
 }
 
 sub getDependencies {
-    my ($self, %args) = @_;
+    my $self = shift;
 
     my @aggregate_combinations_from_same_service = AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
     my $id = $self->getId;

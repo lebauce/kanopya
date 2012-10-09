@@ -114,7 +114,7 @@ sub toString {
         my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
         my $collector           = $service_provider->getManager(manager_type => "collector_manager");
 
-        #Split aggregate_rule id from $formula
+        #Split nodemetric_rule id from $formula
         my @array = split(/(id\d+)/,$formula);
         #replace each rule id by its evaluation
         for my $element (@array) {
@@ -135,7 +135,7 @@ sub getDependantIndicatorIds{
 
     my @indicator_ids;
 
-    #Split aggregate_rule id from $formula
+    #Split nodemetric_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
 
     #replace each rule id by its evaluation
@@ -239,7 +239,7 @@ sub getUnit {
     my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
     my $collector           = $service_provider->getManager(manager_type => "collector_manager");
 
-    #Split aggregate_rule id from $formula
+    #Split nodemtric_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
     my $ref_element;
@@ -266,7 +266,7 @@ sub getUnit {
 }
 
 sub getDependencies {
-    my ($self, %args) = @_;
+    my $self = shift;
     my @conditions = $self->nodemetric_conditions;
     my %dependencies;
 

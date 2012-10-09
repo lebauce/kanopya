@@ -350,7 +350,7 @@ sub getUnit {
 }
 
 sub getDependencies {
-    my ($self, %args) = @_;
+    my $self = shift;
     my @conditions = $self->aggregate_conditions;
     my %dependencies;
 
