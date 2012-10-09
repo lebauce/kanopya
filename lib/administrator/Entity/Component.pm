@@ -182,7 +182,7 @@ sub getGenericMasterGroupName {
     return 'Component';
 }
 
-=head2 getHostingPolicyParams
+=head2 getPolicyParams
 
 =cut
 
@@ -193,88 +193,6 @@ sub getPolicyParams {
     General::checkParams(args => \%args, required => [ 'policy_type' ]);
 
     return [];
-}
-
-sub getComponentId {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['component_name','component_version']);
-    
-    my $adm = Administrator->new();
-
-    $log->error(Dumper %args);
-    my $component = $adm->{db}->resultset('ComponentType')->search(\%args)->single();
-
-    return $component->get_column("component_id");
-}
-
-=head2 getInstance
-
-=cut
-
-sub getInstance {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $adm = Administrator->new();
-
-    # Retrieve the component type.
-    my $component = $adm->{db}->resultset('Component')->find($args{id});
-    my $comp_name = $component->component_type->get_column('component_name');
-    my $comp_version = $component->component_type->get_column('component_version'); 
-    my $comp_class = $class .'::'. $comp_name.$comp_version;
-    my $location = General::getLocFromClass(entityclass => $comp_class);
-    eval { require $location; };
-
-    return $comp_class->get(id => $args{id});
-}
-
-sub getComponents {
-    my $class = shift;
-    my $adm = Administrator->new();
-    my $components = $adm->{db}->resultset('ComponentType')->search();
-    my $list = [];
-
-    while(my $c = $components->next) {
-        my $tmp = {};
-        $tmp->{component_type_id}  = $c->get_column('component_type_id');
-        $tmp->{component_name}     = $c->get_column('component_name');
-        $tmp->{component_version}  = $c->get_column('component_version');
-        $tmp->{component_category} = $c->get_column('component_category');
-        push(@$list, $tmp);
-    }
-
-    return $list;
-}
-
-sub getComponentsByCategory {
-    my $class = shift;
-    my $adm = Administrator->new();
-    my $list = [];
-    my $currentindex = -1;
-    my $currentcategory = '';
-    my $components = $adm->{db}->resultset('ComponentType')->search({ }, {
-                         order_by => {
-                                 -asc => [qw/component_category component_name component_version/]
-                         } });
-
-    while(my $c = $components->next) {
-        my $category = $c->get_column('component_category');
-        my $tmp = { name => $c->get_column('component_name'),
-                    version => $c->get_column('component_version') };
-        if ($currentcategory ne $category) {
-            $currentcategory = $category;
-            $currentindex++;
-            $list->[$currentindex] = { category => "$category",
-                                       components => [] };
-        }
-        push @{$list->[$currentindex]->{components}}, $tmp;
-    }
-
-    return $list;
 }
 
 =head2 getTemplateDirectory
@@ -391,7 +309,6 @@ sub getClusterizationType {}
 sub getExecToTest {}
 sub getNetConf {}
 sub needBridge { return 0; }
-sub getHostConstraints { return; }
 sub getHostsEntries { return; }
 sub getPuppetDefinition { return ""; }
 =head1 DIAGNOSTICS

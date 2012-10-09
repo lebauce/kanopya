@@ -96,12 +96,12 @@ sub prerequisites {
         $self->{context}->{host}->getEContext;
 
         # Check if all host components are up.
-        my $components = $self->{context}->{cluster}->getComponents(category => "all");
-        foreach my $key (keys %$components) {
-            my $component_name = $components->{$key}->getComponentAttr()->{component_name};
+        my @components = $self->{context}->{cluster}->getComponents(category => "all");
+        foreach my $component (@components) {
+            my $component_name = $component->getComponentAttr()->{component_name};
             $log->debug("Browse component: " . $component_name);
     
-            my $ecomponent = EFactory::newEEntity(data => $components->{$key});
+            my $ecomponent = EFactory::newEEntity(data => $component);
     
             if ($ecomponent->isUp(host => $self->{context}->{host}, cluster => $self->{context}->{cluster})) {
                 $log->debug("Component <$component_name> on host <$host_id> from cluster <$cluster_id> up.");

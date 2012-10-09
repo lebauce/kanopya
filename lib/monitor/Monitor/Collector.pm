@@ -378,8 +378,8 @@ sub update {
             my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster->getId );
 
             # Get components of this cluster
-            my $components = $cluster->getComponents(category => 'all');
-            my %components_by_name = map { $_->getComponentAttr()->{component_name} => $_ } values %$components;
+            my @components = $cluster->getComponents(category => 'all');
+            my %components_by_name = map { $_->getComponentAttr()->{component_name} => $_ } @components;
 
             # Collect data for nodes in the cluster
             foreach my $mb ( values %{ $cluster->getHosts( ) } ) {

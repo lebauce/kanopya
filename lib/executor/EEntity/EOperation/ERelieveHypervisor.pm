@@ -57,16 +57,13 @@ sub prepare {
     my ($self, %args) = @_;
     $self->SUPER::prepare();
 
-    if(! $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
+    if(not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
         my $error = 'Operation can only be applied to an hypervisor';
         throw Kanopya::Exception(error => $error);
     }
 
-    my ($id,$cloud_manager) = each %{$self->{context}->{host}->node->inside->getComponents(category => 'Cloudmanager')};
-
-    $self->{context}->{cloud_manager} = EFactory::newEEntity(
-                                            data => $cloud_manager,
-                                        );
+    my @cloudmanagers = $self->{context}->{host}->node->inside->getComponents(category => 'Cloudmanager');
+    $self->{context}->{cloud_manager} = EFactory::newEEntity(data => $cloudmanagers[0]);
 
     my $vm_min_effective_ram = $self->{context}->{host}->getMinEffectiveRamVm; #vm / ram
     my $hv_max_effective_freeram = $self->{context}->{cloud_manager}->getMaxRamFreeHV;  #hv / ram

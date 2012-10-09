@@ -66,9 +66,9 @@ sub prerequisites {
     my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
 
     # Ask to all cluster component if they are ready for node addition.
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
-    foreach my $key (keys %$components) {
-        my $ready = $components->{$key}->readyNodeRemoving(host_id => $self->{context}->{host}->getAttr(name => "host_id"));
+    my @components = $self->{context}->{cluster}->getComponents(category => "all");
+    foreach my $component (@components) {
+        my $ready = $component->readyNodeRemoving(host_id => $self->{context}->{host}->id);
         if (not $ready) {
             $log->debug("Cluster <$cluster_id> not ready for node removing, retrying in $delay seconds");
             return $delay;
@@ -89,14 +89,14 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
+    my @components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Processing cluster components configuration for this node');
 
-    foreach my $i (keys %$components) {
-        my $comp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is ".ref($comp));
-        $comp->stopNode(host    => $self->{context}->{host},
-                        cluster => $self->{context}->{cluster} );
+    foreach my $component (@components) {
+        EFactory::newEEntity(data => $component)->stopNode(
+            host    => $self->{context}->{host},
+            cluster => $self->{context}->{cluster}
+        );
     }
     # finaly we halt the node
     $self->{context}->{host}->halt();

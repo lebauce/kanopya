@@ -194,13 +194,13 @@ sub postrequisites {
     }
 
     # Check if all host components are up.
-    my $components = $self->{context}->{vm_cluster}->getComponents(category => "all");
+    my @components = $self->{context}->{vm_cluster}->getComponents(category => "all");
 
-    foreach my $key (keys %$components) {
-        my $component_name = $components->{$key}->getComponentAttr()->{component_name};
+    foreach my $component (@components) {
+        my $component_name = $component->getComponentAttr()->{component_name};
         $log->debug("Browse component: " . $component_name);
 
-        my $ecomponent = EFactory::newEEntity(data => $components->{$key});
+        my $ecomponent = EFactory::newEEntity(data => $component);
 
         if (not $ecomponent->isUp(host => $self->{context}->{host}, cluster =>$self->{context}->{vm_cluster})) {
             $log->info("Component <$component_name> not yet operational on host <$host_id>");

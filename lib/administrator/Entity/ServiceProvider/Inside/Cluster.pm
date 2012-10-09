@@ -867,8 +867,8 @@ sub toString {
     Desc : This function get components used in a cluster. This function allows to select
             category of components or all of them.
     args:
-        administrator : Administrator : Administrator object to instanciate all components
         category : String : Component category
+
     return : a hashref of components, it is indexed on component_instance_id
 
 =cut
@@ -877,31 +877,33 @@ sub getComponents {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['category']);
+    General::checkParams(args => \%args, required => [ 'category' ]);
 
-    my $components_rs = $self->{_dbix}->parent->search_related("components", undef,
-		{ '+columns' => { "component_name"     => "component_type.component_name",
-						  "component_version"  => "component_type.component_version",
-						  "component_category" => "component_type.component_category"},
-	   join => ["component_type"]}
-	);
+    my $components_rs = $self->{_dbix}->parent->search_related("components", undef, {
+                            '+columns' => {
+                                "component_name"     => "component_type.component_name",
+						        "component_version"  => "component_type.component_version",
+						        "component_category" => "component_type.component_category",
+                            },
+	                        join => [ "component_type" ] }
+	                    );
 
-    my %comps;
-    while ( my $component_row = $components_rs->next ) {
+    my @components;
+    while (my $component_row = $components_rs->next) {
         my $comp_id           = $component_row->get_column('component_id');
         my $comptype_category = $component_row->get_column('component_category');
         my $comptype_name     = $component_row->get_column('component_name');
         my $comptype_version  = $component_row->get_column('component_version');
 
-        if (($args{category} eq "all")||
-            ($args{category} eq $comptype_category)){
+        if ($args{category} eq "all" or $args{category} eq $comptype_category){
             my $class= "Entity::Component::" . $comptype_name . $comptype_version;
             my $loc = General::getLocFromClass(entityclass=>$class);
             eval { require $loc; };
-            $comps{$comp_id} = $class->get(id =>$comp_id);
+            
+            push @components, $class->get(id => $comp_id);
         }
     }
-    return \%comps;
+    return wantarray ? @components : \@components;
 }
 
 =head2 getComponent
@@ -1223,22 +1225,6 @@ sub addNode {
             }
         }
     );
-}
-
-sub getHostConstraints {
-    my $self = shift;
-
-    #TODO BIG IA, HYPER INTELLIGENCE TO REMEDIATE CONSTRAINTS CONFLICTS
-    my $components = $self->getComponents(category=>"all");
-
-    # Return the first constraint found.
-    foreach my $k (keys %$components) {
-        my $constraints = $components->{$k}->getHostConstraints();
-        if ($constraints){
-            return $constraints;
-        }
-    }
-    return;
 }
 
 =head2 removeNode

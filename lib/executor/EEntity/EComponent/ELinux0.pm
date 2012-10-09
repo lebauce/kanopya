@@ -164,8 +164,8 @@ sub _generateHosts {
     }
 
     # we ask components for additional hosts entries
-    my $components = $args{cluster}->getComponents(category => 'all');
-    foreach my $component (values %$components) {
+    my @components = $args{cluster}->getComponents(category => 'all');
+    foreach my $component (@components) {
         my $entries = $component->getHostsEntries();
         if(defined $entries) {
             foreach my $entry (@$entries) {

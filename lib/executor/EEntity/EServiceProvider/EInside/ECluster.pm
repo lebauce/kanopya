@@ -206,8 +206,8 @@ sub generateHostsConf {
     }
 
     # we ask components for additional hosts entries
-    my $components = $self->getComponents(category => 'all');
-    foreach my $component (values %$components) {
+    my @components = $self->getComponents(category => 'all');
+    foreach my $component (@components) {
         my $entries = $component->getHostsEntries();
         if(defined $entries) {
             foreach my $entry (@$entries) {
@@ -269,8 +269,8 @@ sub updateHostsFile {
             if($cluster->getAttr(name => 'cluster_id') eq $cluster_id) {
                 push @cluster_nodes, $tmp;
                 # we ask components for additional hosts entries
-                my $components = $cluster->getComponents(category => 'all');
-                foreach my $component (values %$components) {
+                my @components = $cluster->getComponents(category => 'all');
+                foreach my $component (@components) {
                     my $entries = $component->getHostsEntries();
                     if(defined $entries) {
                         foreach my $entry (@$entries) {

@@ -169,15 +169,15 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
+    my @components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Inform cluster components about node removal');
 
-    foreach my $i (keys %$components) {
-        my $comp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is " . ref($comp));
-        $comp->preStopNode(host      => $self->{context}->{host},
-                           cluster   => $self->{context}->{cluster},
-                           erollback => $self->{erollback});
+    foreach my $component (@components) {
+        EFactory::newEEntity(data => $component)->preStopNode(
+            host      => $self->{context}->{host},
+            cluster   => $self->{context}->{cluster},
+            erollback => $self->{erollback}
+        );
     }
     $self->{context}->{host}->setNodeState(state => "pregoingout");
 }

@@ -230,7 +230,7 @@ return array ref containing hash ref
 sub getInstalledComponents {
     my $self = shift;
     if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Systemimage->getComponents must be called on an already save instance";
+        $errmsg = "Entity::Systemimage->getInstalledComponents must be called on an already save instance";
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }

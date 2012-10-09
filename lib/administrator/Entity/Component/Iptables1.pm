@@ -147,9 +147,9 @@ sub getComponentInstance{
    #my $var;
    my $cluster_id = $self->{_dbix}->get_column('cluster_id');
    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
-   my $components = $cluster->getComponents(category => "all");  
+   my @components = $cluster->getComponents(category => "all");  
    my $data_components = [];
-    foreach my $element (values %$components) {
+    foreach my $element (@components) {
         my $netconf = $element->getNetConf();
         if(!defined($netconf)){
             next;

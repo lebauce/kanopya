@@ -33,28 +33,25 @@ sub addNode {
 
     my $keepalived = $self->_getEntity();
     my $masternodeip = $self->getServiceProvider->getMasterNodeIp();
-        
-    # recuperer les adresses ips publiques et les ports
-    
-    if(not defined $masternodeip) {
 
+    # recuperer les adresses ips publiques et les ports
+    if(not defined $masternodeip) {
         # no masternode defined, this host becomes the masternode
         #  so it is the first initialization of keepalived
-        
+
         # retrieve all public ips associated with the cluster
         my $publicips  = [];
-        
+
         my @ifaces = $args{host}->getIfaces(role => 'public');
         foreach my $iface (@ifaces) {
             push @$publicips, $iface->getIPAddr;
         }
-        
-                
-        my $components = $args{cluster}->getComponents(category => 'all');
+
+        my @components = $args{cluster}->getComponents(category => 'all');
 
         # retrieved loadbalanced components and there ports
         my $ports = [];
-        foreach my $component(values %$components) {
+        foreach my $component(@components) {
             if($component->getClusterizationType() eq 'loadbalanced') {
                 my $netconf = $component->getNetConf();
                 foreach my $port (keys %$netconf) {

@@ -143,8 +143,8 @@ sub run {
 
                 # Then check the node component availability
                 my $node_available = 1;
-                my $components = $cluster->getComponents(category => "all");
-                foreach my $component (values %$components) {
+                my @components = $cluster->getComponents(category => "all");
+                foreach my $component (@components) {
                     my $ecomponent = EFactory::newEEntity(data => $component);
                     my $component_name = $component->getComponentAttr->{component_name};
 

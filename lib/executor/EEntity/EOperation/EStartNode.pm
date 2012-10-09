@@ -57,12 +57,11 @@ sub prerequisites {
     my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
 
     # Ask to all cluster component if they are ready for node addition.
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
-    foreach my $key (keys %$components) {
-        my $ready = $components->{$key}->readyNodeAddition(host_id => $host_id);
+    my @components = $self->{context}->{cluster}->getComponents(category => "all");
+    foreach my $component (@components) {
+        my $ready = $component->readyNodeAddition(host_id => $host_id);
         if (not $ready) {
-            my $component_class = ref($components->{$key});
-            $log->info("Component $component_class not ready for node addition");
+            $log->info("Component $component not ready for node addition");
             return $delay;
         }
     }
@@ -147,18 +146,14 @@ sub execute {
 
     $log->info("Operate Boot Configuration");
     $self->_generateBootConf(mount_point => $mountpoint,
-                             filesystem => $self->{context}->{container}->getAttr(
-                                               name => 'container_filesystem'
-                                           ),
+                             filesystem => $self->{context}->{container}->container_filesystem,
                              options    => $mount_options);
 
-    my $components = $self->{cluster_components};
     my $puppet_definitions = "";
     
     $log->info("Operate components configuration");
-    foreach my $i (keys %$components) {
-        my $ecomponent = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is " . ref($ecomponent));
+    foreach my $component (@{ $self->{cluster_components} }) {
+        my $ecomponent = EFactory::newEEntity(data => $component);
         $ecomponent->addNode(host        => $self->{context}->{host},
                              mount_point => $mountpoint,
                              cluster     => $self->{context}->{cluster},
@@ -295,9 +290,8 @@ sub _generateNetConf {
     General::checkParams(args => \%args, required => [ 'mount_point' ]);
 
     # search for an potential 'loadbalanced' component
-    my $components = $self->{cluster_components};
     my $is_loadbalanced = 0;
-    foreach my $component (values %$components) {
+    foreach my $component (@{ $self->{cluster_components} }) {
         my $clusterization_type = $component->getClusterizationType();
         if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
             $is_loadbalanced = 1;
@@ -482,16 +476,13 @@ sub _generateBootConf {
                 additional_devices => "",
             };
 
-            my $components = $self->{cluster_components};
-            foreach my $i (keys %$components) {
-                if ($components->{$i}->isa("Entity::Component")) {
-                    if ($components->{$i}->isa("Entity::Component::Openiscsi2")){
-                        my $iscsi_export = $components->{$i};
-                        $vars->{mounts_iscsi} = $iscsi_export->getExports();
-                        my $tmp = $vars->{mounts_iscsi};
-                        foreach my $j (@$tmp){
-                            $vars->{additional_devices} .= " ". $j->{name};
-                        }
+            foreach my $component (@{ $self->{cluster_components} }) {
+                if ($component->isa("Entity::Component::Openiscsi2")){
+                    $vars->{mounts_iscsi} = $component->getExports();
+
+                    my $tmp = $vars->{mounts_iscsi};
+                    foreach my $j (@$tmp){
+                        $vars->{additional_devices} .= " ". $j->{name};
                     }
                 }
             }
@@ -693,16 +684,11 @@ sub _generateKanopyaHalt {
         nas_port => $self->{context}->{container_access}->getAttr(name => 'container_access_port'),
     };
 
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
-    foreach my $i (keys %$components) {
+    my @components = $self->{context}->{cluster}->getComponents(category => "all");
+    foreach my $component (@components) {
         # TODO: Check if it is an ExportClient and call generic method
-        if ($components->{$i}->isa("Entity::Component")) {
-            if ($components->{$i}->isa("Entity::Component::Openiscsi2")) {
-                $log->debug("The cluster component is an Openiscsi2");
-
-                my $iscsi_export = $components->{$i};
-                $vars->{data_exports} = $iscsi_export->getExports();
-            }
+        if ($component->isa("Entity::Component::Openiscsi2")) {
+            $vars->{data_exports} = $component->getExports();
         }
     }
 

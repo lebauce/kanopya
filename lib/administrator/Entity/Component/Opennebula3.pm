@@ -418,10 +418,6 @@ sub getTemplateDataOnedInitScript {
     return $data;
 }
 
-sub getHostConstraints {
-    return "physical";
-}
-
 sub createVirtualHost {
     my $self = shift;
     my %args = @_;

@@ -91,16 +91,14 @@ sub execute {
     $self->SUPER::execute();
 
     #TODO  component migrate (node, exec context?)
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
+    my @components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Inform cluster components about node addition');
-    foreach my $i (keys %$components) {
-        my $comp = EFactory::newEEntity(data => $components->{$i});
-
-        $log->debug("component is ".ref($comp));
-        $comp->preStartNode(host    => $self->{context}->{host},
-                            cluster => $self->{context}->{cluster});
+    foreach my $component (@components) {
+        EFactory::newEEntity(data => $component)->preStartNode(
+            host    => $self->{context}->{host},
+            cluster => $self->{context}->{cluster},
+        );
     }
-
 
     # define a hostname
     my $hostname = $self->{context}->{cluster}->getAttr(name => 'cluster_basehostname');

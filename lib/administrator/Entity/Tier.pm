@@ -203,53 +203,6 @@ sub toString {
     return $string;
 }
 
-=head2 getComponents
-
-    Desc : This function get components used in a tier. This function allows to select
-            category of components or all of them.
-    args:
-        category : String : Component category
-    return : a hashref of components, it is indexed on component_instance_id
-
-=cut
-
-sub getComponents {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['category']);
-
-#    my $adm = Administrator->new();
-    my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
-                                            { '+columns' => {'component_name' => 'component.component_name', 
-                                                             'component_version' => 'component.component_version', 
-                                                             'component_category' => 'component.component_category' },
-                                                    join => ["component"]});
-
-    my %comps;
-    $log->debug("Category is $args{category}");
-    while ( my $comp_instance_row = $comp_instance_rs->next ) {
-        my $comp_category = $comp_instance_row->get_column('component_category');
-        $log->debug("Component category: $comp_category");
-        my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
-        $log->debug("Component instance id: $comp_instance_id");
-        my $comp_name = $comp_instance_row->get_column('component_name');
-        $log->debug("Component name: $comp_name");
-        my $comp_version = $comp_instance_row->get_column('component_version');
-        $log->debug("Component version: $comp_version");
-        if (($args{category} eq "all")||
-            ($args{category} eq $comp_category)){
-            $log->debug("One component instance found with " . ref($comp_instance_row));
-#            my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
-            my $class= "Entity::Component::" . $comp_name . $comp_version;
-            my $loc = General::getLocFromClass(entityclass=>$class);
-            eval { require $loc; };
-            $comps{$comp_instance_id} = $class->get(id =>$comp_instance_id);
-        }
-    }
-    return \%comps;
-}
-
 =head2 getComponent
 
     Desc : This function get component used in a tier. This function allows to select

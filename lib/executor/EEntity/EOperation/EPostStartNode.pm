@@ -125,12 +125,12 @@ sub prerequisites {
     }
 
     # Check if all host components are up.
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
-    foreach my $key (keys %$components) {
-        my $component_name = $components->{$key}->getComponentAttr()->{component_name};
+    my @components = $self->{context}->{cluster}->getComponents(category => "all");
+    foreach my $component (@components) {
+        my $component_name = $component->getComponentAttr()->{component_name};
         $log->debug("Browse component: " . $component_name);
 
-        my $ecomponent = EFactory::newEEntity(data => $components->{$key});
+        my $ecomponent = EFactory::newEEntity(data => $component);
 
         if (not $ecomponent->isUp(host => $self->{context}->{host}, cluster => $self->{context}->{cluster})) {
             $log->info("Component <$component_name> not yet operational on host <$host_id>");
@@ -209,17 +209,17 @@ sub execute {
         }
     }
 
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
+    my @components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Processing cluster components configuration for this node');
-    foreach my $i (keys %$components) {
-        my $comp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("Component is ".ref($comp));
-        $comp->postStartNode(host      => $self->{context}->{host},
-                             cluster   => $self->{context}->{cluster},
-                             erollback => $self->{erollback});
+    foreach my $component (@components) {
+        EFactory::newEEntity(data => $component)->postStartNode(
+            host      => $self->{context}->{host},
+            cluster   => $self->{context}->{cluster},
+            erollback => $self->{erollback}
+        );
     }
 
-    if(defined $self->{context}->{puppetagent}) {
+    if (defined $self->{context}->{puppetagent}) {
         $self->{context}->{component_puppetmaster}->updateSite;
         for my $ehost (@ehosts) {
             $self->{context}->{puppetagent}->applyManifest(host => $ehost);

@@ -32,8 +32,7 @@ sub configureNode {
      #TODO insert configuration files generation
     my $cluster = $self->_getEntity->getServiceProvider;
     my $data = {};
-       
-    my $components = $cluster->getComponents(category => "all"); 
+ 
     my $components_instance=$self->_getEntity()->getComponentInstance();
     my $iptables_components= $self->_getEntity()->getIptables1Component();
    

@@ -116,14 +116,11 @@ sub execute {
         }
 
         # component migration
-        my $components = $self->{context}->{cluster}->getComponents(category => "all");
-        $log->info('Processing cluster components quick remove for node <' .
-                   $node->getAttr(name => 'host_id') . '>');
+        $log->info('Processing cluster components quick remove for node <' . $node->host->id . '>');
 
-        foreach my $i (keys %$components) {
-            my $tmp = EFactory::newEEntity(data => $components->{$i});
-            $log->debug("component is " . ref($tmp));
-            $tmp->cleanNode(
+        my @components = $self->{context}->{cluster}->getComponents(category => "all");
+        foreach my $component (@components) {
+            EFactory::newEEntity(data => $component)->cleanNode(
                 host => $node, mount_point => '', cluster => $self->{context}->{cluster}
             );
         }
