@@ -146,17 +146,19 @@ sub evalOnOneNode{
 }
 
 sub getDependencies {
-    my ($self) = @_;
-
+    my $self = shift;
     my @rules_from_same_service = NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
 
     my %dependencies;
     my $id = $self->getId;
+
+    LOOP:
     for my $rule (@rules_from_same_service) {
         my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
         for my $condition_id (@rule_dependant_condition_ids) {
             if ($id == $condition_id) {
                 $dependencies{$rule->nodemetric_rule_label} = {};
+                next LOOP;
             }
         }
     }

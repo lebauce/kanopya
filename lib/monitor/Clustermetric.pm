@@ -224,12 +224,14 @@ sub getDependencies {
     my $id = $self->getId;
 
     my %dependencies;
+    LOOP:
     for my $aggregate_combination (@aggregate_combinations_from_same_service) {
         my @cluster_metric_ids = $aggregate_combination->dependantClusterMetricIds();
 
         for my $cluster_metric_id (@cluster_metric_ids) {
             if ($id == $cluster_metric_id) {
                 $dependencies{$aggregate_combination->aggregate_combination_label} = $aggregate_combination->getDependencies;
+                next LOOP;
             }
         }
     }
@@ -243,6 +245,7 @@ sub delete {
     my @aggregate_combinations_from_same_service = AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
     my $id = $self->getId;
 
+    LOOP:
     while (@aggregate_combinations_from_same_service) {
         my $aggregate_combination = pop @aggregate_combinations_from_same_service;
         my @cluster_metric_ids = $aggregate_combination->dependantClusterMetricIds();
@@ -250,6 +253,7 @@ sub delete {
         for my $cluster_metric_id (@cluster_metric_ids) {
             if ($id == $cluster_metric_id) {
                 $aggregate_combination->delete();
+                next LOOP;
             }
         }
     }
