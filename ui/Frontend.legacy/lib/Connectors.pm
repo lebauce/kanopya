@@ -6,7 +6,7 @@ use Dancer::Plugin::EscapeHTML;
 use Entity::Connector;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
-use Operation;
+use Entity::Operation;
 
 use Log::Log4perl "get_logger";
 

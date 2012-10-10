@@ -5,7 +5,7 @@ use Dancer ':syntax';
 use Administrator;
 use General;
 use Entity::Masterimage;
-use Operation;
+use Entity::Operation;
 
 use Log::Log4perl "get_logger";
 

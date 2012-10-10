@@ -5,7 +5,7 @@ use Dancer::Plugin::Ajax;
 
 use Administrator;
 use General;
-use ServiceTemplate;
+use Entity::ServiceTemplate;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;

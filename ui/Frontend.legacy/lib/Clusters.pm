@@ -18,8 +18,8 @@ use Entity::Network::Vlan;
 
 use NodemetricRule;
 use Orchestrator;
-use Workflow;
-use Policy;
+use Entity::Workflow;
+use Entity::Policy;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
