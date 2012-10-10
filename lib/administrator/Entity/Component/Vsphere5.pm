@@ -205,6 +205,7 @@ sub retrieveDatacenters {
     foreach my $datacenter_view (@$datacenter_views) {
         my %datacenter_infos = (
             name => $datacenter_view->name,
+            type => 'datacenter',
          );
         push @datacenters_infos, \%datacenter_infos;
     }
@@ -563,23 +564,40 @@ sub register {
 
 =cut
 
+=head2 registerDatacenter
 
-=head2 synchronizeCluster
-
-    Desc: synchronize the component with a cluster in a given datacenter 
-    Args: $datacenter_name, $service_provider_id
+    Desc: register a new vsphere datacenter into Kanopya
+    Args: $datacenter_name
  
 =cut 
 
-sub synchronizeCluster {
+sub registerDatacenter {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['service_provider',
-                                                      'datacenter_name']);
+    General::checkParams(args => \%args, required => ['datacenter_name']);
+
+    #First we check if the datacenter already exist in Kanopya
+    eval {
+    };
+}
+
+=head2 registerCluster
+
+    Desc: register a new service provider with the content of a vsphere Cluster
+    Args: $datacenter_name
+ 
+=cut 
+
+sub registerCluster {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['datacenter_name']);
 
     $self->negociateConnection();
 
     my $datacenter       = $self->getDatacenters(datacenter_name => $args{datacenter_name});
+    #We check if the datacenter is already Registered in Kanopya
+
     my $cluster_name     = $args{service_provider}->service_provider_name;
     my $datacenter_view  = $self->findEntityView(
                                view_type   => 'Datacenter',
