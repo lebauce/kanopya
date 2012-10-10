@@ -8,7 +8,7 @@ use Path::Class;
 my $config;
 my $kanopya_dir;
 
-BEGIN {
+sub _loadconfig {
     #get Kanopya base directory
     my $base_dir = __FILE__;
     my @kanopya  = split 'kanopya', $base_dir;
@@ -29,11 +29,18 @@ BEGIN {
 }
 
 sub getKanopyaDir {
+    if(not defined $kanopya_dir) {
+        _loadconfig();
+    }
     return $kanopya_dir;
 }
 
 sub get {
     my ($subsystem) = @_;
+
+    if(not defined $config) {
+        _loadconfig();
+    }
 
     # use a copy of the structure to avoid accidental global modifications 
     my $copy = dclone($config);
@@ -49,6 +56,7 @@ sub get {
 
 sub set {
     my (%args) = @_;
+    
     if(defined $args{config} && exists $config->{$args{subsystem}}) {
         $config->{$args{subsystem}} = $args{config};
         open (my $FILE, ">", $config->{"$args{subsystem}_path"}) 

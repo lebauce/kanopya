@@ -78,7 +78,7 @@ my ($schema, $config, $oneinstance);
 
 =cut
 
-sub loadConfig {
+sub _loadconfig {
     $config = Kanopya::Config::get('libkanopya');
     if (! exists $config->{internalnetwork}->{ip} ||
         ! defined $config->{internalnetwork}->{ip} ||
@@ -118,6 +118,22 @@ sub loadConfig {
             ":" . $config->{dbconf}->{port};
 }
 
+sub _connectdb {
+    eval {
+        my $dbi = _loadconfig() if not defined $config;
+        $schema = AdministratorDB::Schema->connect($dbi,
+                                                   $config->{dbconf}->{user},
+                                                   $config->{dbconf}->{password},
+                                                   { mysql_enable_utf8 => 1 });
+    };
+
+    if ($@) {
+        my $error = $@;
+        $log->error($error);
+        throw Kanopya::Exception::Internal(error => $error);
+    }
+}
+
 =head2 Administrator::authenticate (%args)
 
     Class : Public
@@ -135,7 +151,9 @@ sub authenticate {
 
     General::checkParams(args => \%args, required => ['login', 'password']);
 
-    #$log->debug("login: ".$args{login}." password: ".$args{password});
+    if(not defined $schema) {
+        _connectdb()
+    }
 
     my $user_data = $schema->resultset('User')->search(
         {
@@ -163,7 +181,6 @@ sub authenticate {
 
 sub beginTransaction {
     my $self = shift;
-
     $log->debug("Beginning database transaction");
     $self->{db}->txn_begin;
 }
@@ -205,25 +222,6 @@ sub rollbackTransaction {
     $self->{db}->txn_rollback;
 }
 
-# Configuration loading and database connection are automaticaly done during
-# module loading.
-
-{
-    eval {
-        my $dbi = loadConfig();
-        $schema = AdministratorDB::Schema->connect($dbi,
-                                                   $config->{dbconf}->{user},
-                                                   $config->{dbconf}->{password},
-                                                   { mysql_enable_utf8 => 1 });
-    };
-
-    if ($@) {
-        my $error = $@;
-        $log->error($error);
-        throw Kanopya::Exception::Internal(error => $error);
-    }
-}
-
 =head2 Administrator::buildEntityright (%args)
 
     desc : instanciate an Entityright::User/System depending on
@@ -263,8 +261,11 @@ sub buildEntityright {
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
+    
+    if(not defined $schema) {
+        _connectdb();
+    }
 
     if(not exists $ENV{EID} or not defined $ENV{EID}) {
         $errmsg = "No valid session registered ;";
