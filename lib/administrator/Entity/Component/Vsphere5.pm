@@ -74,19 +74,23 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         'retrieveDatacenters'            =>  {
-            'description'   =>  'Retrieve list of Datacenters',
+            'description'   =>  'Retrieve a list of Datacenters',
             'perm_holder'   =>  'entity',
         },
         'retrieveClustersAndHypervisors' =>  {
-            'description'   =>  'Retrieve list of Clusters and Hypervisors (that are not in a cluster) hosted in a Datacenter',
+            'description'   =>  'Retrieve a list of Clusters and Hypervisors (that are not in a cluster) registered in a Datacenter',
+            'perm_holder'   =>  'entity',
+        },
+        'retrieveVmsAndHypervisors' =>  {
+            'description'   =>  'Retrieve a list of Vms and Hypervisors that are registered in a Cluster',
             'perm_holder'   =>  'entity',
         },
         'retrieveHypervisors'            =>  {
-            'description'   =>  'Retrieve list of Hypervisors hosted in a Cluster',
+            'description'   =>  'Retrieve list of Hypervisors registered in a Cluster',
             'perm_holder'   =>  'entity',
         },
         'retrieveVirtualMachines'        =>  {
-            'description'   =>  'Retrieve list of Virtual Machines hosted in an Hypervisor',
+            'description'   =>  'Retrieve list of Virtual Machines registered under a vsphere view (Hypervisor or Cluster)',
             'perm_holder'   =>  'entity',
         },
     };
@@ -100,6 +104,80 @@ sub checkHostManagerParams {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
+}
+
+######################
+# connection methods #
+######################
+
+=head2 connect
+
+    Desc: Connect to a vCenter instance
+    Args: $login, $pwd
+ 
+=cut
+
+sub connect {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['user_name', 'password', 'url']);
+
+    eval {
+        Util::connect($args{url}, $args{user_name}, $args{password});
+    };
+    if ($@) {
+        $errmsg = 'Could not connect to vCenter server: '.$@;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+}
+
+=head2 disconnect
+
+    Desc: End the vSphere session
+
+=cut
+
+sub disconnect {
+    eval {
+        Util::disconnect();
+    };
+    if ($@) {
+        $errmsg = 'Could not disconnect from vCenter server: '.$@;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+        print "a new session to vSphere has been closed\n";
+}
+
+=head2 negociateConnection
+
+    Desc: Check if a connection is established and create one if not
+
+=cut
+
+sub negociateConnection {
+    my ($self,%args) = @_;
+
+    $log->info('Checking if a session to vSphere is already opened');
+    #try to grab a dummy entity to check if a session is opened
+    my $view;
+    eval {
+        $view = Vim::find_entity_view(view_type      => 'Folder',
+                                      filter         => {name => 'rootFolder'});
+    };
+    if ($@ =~ /no global session is defined/) {
+        $log->info('opening a new session to vSphere');
+        print "opening a new session to vSphere\n";
+
+        $self->connect(
+            user_name => $self->vsphere5_login,
+            password  => $self->vsphere5_pwd,
+            url       => 'https://'.$self->vsphere5_url);
+    }
+    else {
+        $log->info('A session toward vSphere is already opened');
+    }
 }
 
 ####################
@@ -199,14 +277,40 @@ sub retrieveClustersAndHypervisors {
 sub retrieveVmsAndHypervisors {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['cluster_view']);
+    General::checkParams(args => \%args, required => ['cluster_name', 'datacenter_name']);
+    
+    #retrieve datacenter and cluster views
+    my $datacenter_view = $self->findEntityView(
+                              view_type   => 'Datacenter',
+                              hash_filter => { name => $args{datacenter_name}},
+                          );
+
+    my $cluster_view = $self->findEntityView(
+                              view_type    => 'ClusterComputeResource',
+                              hash_filter  => { name => $args{cluster_name}},
+                              begin_entity => $datacenter_view,
+                          );
+
+    #retrieve the cluster's hypervisors
+    my $cluster_hypervisors = $self->retrieveHypervisors(
+        cluster_view => $cluster_view,
+    );
+
+    #retrieve the cluster's vms
+    my $cluster_vms = $self->retrieveVirtualMachines (
+        view => $cluster_view,
+    );
+
+    my @cluster_infos = (@$cluster_hypervisors, @$cluster_vms);
+
+    return \@cluster_infos;
 }
 
 =head2 retrieveHypervisors
 
     Desc: Retrieve a cluster's hypervisors
     Args: $cluster_view
-    Return: \@hypervisor_views
+    Return: \@hypervisors_infos
 
 =cut
 
@@ -214,113 +318,61 @@ sub retrieveHypervisors {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['cluster_view']);
+
     my $cluster_view = $args{cluster_view};
+    my $hosts_mor  = $cluster_view->host;
 
-    #Views of Hypervisor that are in the cluster
-    my $hypervisor_views = $self->findEntityViews (
-                             view_type    => 'HostSystem',
-                             array_property => ['name'],
-                             begin_entity => $cluster_view,
-                         );
+    my @hypervisors_infos;
 
-    return $hypervisor_views;
+    foreach my $hypervisor (@$hosts_mor) {
+        my $hypervisor_view  = $self->getView(mo_ref => $hypervisor);
+        my %hypervisor_infos = (
+            name => $hypervisor_view->name,
+            type => 'hypervisor'
+        );
+
+        push @hypervisors_infos, \%hypervisor_infos;
+    }
+
+    return \@hypervisors_infos;
 }
 
 =head2 retrieveVirtualMachines
 
-    Desc: Retrieve an hypervisor's VMs
-    Args: $hypervisor_view
-    Return: \@vm_views
+    Desc: Retrieve all the VM in vsphere inventory under a given view
+    Args: a $view that can be a cluster or an hypervisor one
+    Return: \@vms_infos
 
 =cut
 
 sub retrieveVirtualMachines {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['hypervisor_view']);
-    my $hypervisor_view = $args{hypervisor_view};
+    General::checkParams(args => \%args, required => ['view']);
 
-    #Views of Virtual Machines that are in the Hypervisor
-    my $vm_views = $self->findEntityViews (
-                     view_type    => 'VirtualMachine',
-                     begin_entity => $hypervisor_view,
-                 );
-
-    return $vm_views;
-}
-
-######################
-# connection methods #
-######################
-
-=head2 connect
-
-    Desc: Connect to a vCenter instance
-    Args: $login, $pwd
- 
-=cut
-
-sub connect {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => ['user_name', 'password', 'url']);
-
-    eval {
-        Util::connect($args{url}, $args{user_name}, $args{password});
-    };
-    if ($@) {
-        $errmsg = 'Could not connect to vCenter server: '.$@;
-        $log->error($errmsg);
+    if (!ref $args{view} eq 'ClusterComputeResource' || !ref $args{view} eq 'HostSystem') {
+        $errmsg = 'given view'. ref $args{view} .' is not handled by this method';
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-}
 
-=head2 disconnect
+    my @vms_infos;
 
-    Desc: End the vSphere session
+    my $vms = $self->findEntityViews(
+                  view_type      => 'VirtualMachine',
+                  array_property => ['name'],
+                  begin_entity   => $args{view},
+              );
 
-=cut
-
-sub disconnect {
-    eval {
-        Util::disconnect();
-    };
-    if ($@) {
-        $errmsg = 'Could not disconnect from vCenter server: '.$@;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    foreach my $vm (@$vms) {
+        my %vm_infos = (
+            name => $vm->name,
+            type => 'vm',
+        );
+        
+        push @vms_infos, \%vm_infos;
     }
-        print "a new session to vSphere has been closed\n";
-}
 
-=head2 negociateConnection
-
-    Desc: Check if a connection is established and create one if not
-
-=cut
-
-sub negociateConnection {
-    my ($self,%args) = @_;
-
-    $log->info('Checking if a session to vSphere is already opened');
-    #try to grab a dummy entity to check if a session is opened
-    my $view;
-    eval {
-        $view = Vim::find_entity_view(view_type      => 'Folder',
-                                      filter         => {name => 'rootFolder'});
-    };
-    if ($@ =~ /no global session is defined/) {
-        $log->info('opening a new session to vSphere');
-        print "opening a new session to vSphere\n";
-
-        $self->connect(
-            user_name => $self->vsphere5_login,
-            password  => $self->vsphere5_pwd,
-            url       => 'https://'.$self->vsphere5_url);
-    }
-    else {
-        $log->info('A session toward vSphere is already opened');
-    }
+    return \@vms_infos;
 }
 
 ###########################
