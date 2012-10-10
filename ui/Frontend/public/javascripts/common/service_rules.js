@@ -351,6 +351,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     $('<div id="node_accordion_container">').appendTo(divacc);
     // Display nodemetric conditions
     var serviceNodemetricConditionsGridId = 'service_resources_nodemetric_conditions_' + elem_id;
+    var serviceNodemetricRulesGridId = 'service_resources_nodemetric_rules_' + elem_id;
     create_grid( {
         caption: 'Conditions',
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions',
@@ -375,7 +376,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         details: { onSelectRow : function(eid) { nodemetricconditionmodal(elem_id, eid); } },
         action_delete: {
             callback : function (id) {
-                confirmDeleteWithDependencies('/api/nodemetriccondition/', id);
+                confirmDeleteWithDependencies('/api/nodemetriccondition/', id, [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]);
             }
         },
     } );
@@ -383,7 +384,6 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     
     // Display nodemetric rules
     $("<p>").appendTo('#node_accordion_container');
-    var serviceNodemetricRulesGridId = 'service_resources_nodemetric_rules_' + elem_id;
     create_grid( {
         caption: 'Rules',
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_rules',
@@ -451,6 +451,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     $('<div id="service_accordion_container">').appendTo(divacc);
     // Display service conditions :
     var serviceAggregateConditionsGridId = 'service_resources_aggregate_conditions_' + elem_id;
+    var serviceAggregateRulesGridId = 'service_resources_aggregate_rules_' + elem_id;
     create_grid( {
         caption: 'Conditions',
         url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions',
@@ -476,7 +477,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         details: { onSelectRow : function(eid) { serviceconditionmodal(elem_id, eid); } },
         action_delete: {
             callback : function (id) {
-                confirmDeleteWithDependencies('/api/aggregatecondition/', id);
+                confirmDeleteWithDependencies('/api/aggregatecondition/', id, [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]);
             }
         },
     } );
@@ -484,7 +485,6 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
 
     // Display services rules :
     $("<p>").appendTo('#service_accordion_container');
-    var serviceAggregateRulesGridId = 'service_resources_aggregate_rules_' + elem_id;
     create_grid( {
         caption: 'Rules',
         url: '/api/serviceprovider/' + elem_id + '/aggregate_rules',

@@ -275,9 +275,14 @@ function ucfirst(str) {
 String.prototype.ucfirst    = function() { return ucfirst(this); };
 
 /*
- * Inform user and display a confirm dialog for deletion for object with potential dependencies (see getDependencies)
+ * Inform user and display a confirm dialog for deletion for object with potential dependencies (i.e implementing getDependencies)
+ * Display the dependencies tree
+ * Args:
+ *  url         : base route to access object
+ *  id          : target entity id
+ *  grid_ids    : arrays of the grid id impacted by dependencies deletion (if defined then refresh the grids)
  */
-function confirmDeleteWithDependencies(url, id) {
+function confirmDeleteWithDependencies(url, id, grid_ids) {
     $.post(
             url + id + '/getDependencies',
             function(dependencies) {
@@ -328,7 +333,10 @@ function confirmDeleteWithDependencies(url, id) {
                 buttons[confirm_button_label] = function () {
                     $.ajax({
                         type    : 'DELETE',
-                        url     : url + id
+                        url     : url + id,
+                        success : function() {
+                            $.each( grid_ids, function(idx,grid_id) {$('#' + grid_id).trigger('reloadGrid')});
+                        }
                     });
                     $(this).dialog("close");
                 }

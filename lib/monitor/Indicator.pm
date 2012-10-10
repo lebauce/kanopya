@@ -66,7 +66,11 @@ sub methods {
         'toString'  => {
             'description' => 'toString',
             'perm_holder' => 'entity'
-        }
+        },
+        'getDependencies' => {
+            'description' => 'return dependencies tree for this object',
+            'perm_holder' => 'entity',
+        },
     };
 }
 
@@ -103,7 +107,7 @@ sub getDependencies {
                                                          }
                                                      );
         for my $clustermetric (@dependent_clustermetric){
-            $dependencies{$service_provider_name}->{'service'}
+            $dependencies{$service_provider_name}->{'Service scope'}
                                                  ->{$clustermetric->clustermetric_label} = $clustermetric->getDependencies;
         }
 
@@ -122,7 +126,7 @@ sub getDependencies {
             my @scom_indicator_ids = $nm_combi->getDependantIndicatorIds();
             for my $nm_indicator_id (@scom_indicator_ids) {
                 if ($indicator_id == $nm_indicator_id) {
-                    $dependencies{$service_provider_name}->{'node'}
+                    $dependencies{$service_provider_name}->{'Node scope'}
                                                  ->{$nm_combi->nodemetric_combination_label} = $nm_combi->getDependencies;
                     next LOOP;
                 }
