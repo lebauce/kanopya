@@ -326,7 +326,7 @@ CREATE TABLE `file_container` (
   PRIMARY KEY (`file_container_id`),
   FOREIGN KEY (`file_container_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`container_access_id`),
-  FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -383,7 +383,7 @@ CREATE TABLE `container_access` (
   PRIMARY KEY (`container_access_id`),
   FOREIGN KEY (`container_access_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`container_id`),
-  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
