@@ -48,7 +48,7 @@ engines:
 
 plugins:
   FormValidator:
-    profil_file: 'profiles.pl'
+    profile_file: 'profiles.pl'
     msg:
       single: 'Missing field'
       several: 'Missing fields'
