@@ -44,14 +44,16 @@ sub createDisk {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'name', 'size', 'filesystem', 'vg_id' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'name', 'size', 'filesystem' ],
+                         optional => { 'vg_id' => $self->getMainVg->{vgid} });
 
     my $entity = $self->lvCreate(lvm2_vg_id         => $args{vg_id},
                                  lvm2_lv_name       => $args{name},
                                  lvm2_lv_filesystem => $args{filesystem},
                                  lvm2_lv_size       => $args{size});
-    my $container = EFactory::newEEntity(data => $entity);
 
+    my $container = EFactory::newEEntity(data => $entity);
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
             function   => $self->can('removeDisk'),

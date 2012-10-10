@@ -86,4 +86,18 @@ sub removeDisk {
     );
 }
 
+=head2 removeDisk
+
+    Return the components available for exporting disk
+    provided by this disk manager.
+
+=cut
+
+sub getExportManagers {
+    my $self = shift;
+    my %args = @_;
+
+    return [];
+}
+
 1;

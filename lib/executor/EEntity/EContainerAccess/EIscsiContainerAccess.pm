@@ -63,8 +63,9 @@ sub connect {
 
     $log->debug("Creating open iscsi node <$target> from <$ip:$port>.");
 
+    my $result;
     my $create_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o new";
-    my $result = $args{econtext}->execute(command => $create_node_cmd);
+    $result = $args{econtext}->execute(command => $create_node_cmd);
 
     if($result->{exitcode} != 0) {
         my $logger = get_logger("command");
@@ -85,7 +86,6 @@ sub connect {
 
     my $device = '/dev/disk/by-path/ip-' . $ip . ':' . $port . '-iscsi-' . $target . '-lun-' . $lun;
 
-    my $result;
     my $retry = 20;
     do {
         $result = $args{econtext}->execute(command => "file $device");

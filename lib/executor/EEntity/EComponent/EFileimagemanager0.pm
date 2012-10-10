@@ -43,15 +43,13 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "name", "size", "filesystem",
-                                       "container_access_id" ]);
+                         required => [ "name", "size", "filesystem", "container_access_id" ]);
 
     my $container_access = Entity::ContainerAccess->get(id => $args{container_access_id});
 
     $self->fileCreate(container_access => $container_access,
                       file_name        => $args{name},
-                      file_size        => $args{size},
-                      file_filesystem  => $args{filesystem});
+                      file_size        => $args{size});
 
     my $entity = Entity::Container::FileContainer->new(
                      disk_manager_id      => $self->getAttr(name => 'fileimagemanager0_id'),
@@ -63,6 +61,20 @@ sub createDisk {
                      container_device     => $args{name} . '.img',
                  );
     my $container = EFactory::newEEntity(data => $entity);
+
+    if (not defined $args{"noformat"}) {
+        # Create a temporary export and connect to the access to get a device
+        my $access = $self->createExport(container => $container);
+        my $device = $access->tryConnect(econtext  => $self->getEContext,
+                                         erollback => $args{erollback});
+
+        $self->mkfs(device => $device, fstype => $args{filesystem});
+
+        # Disconnect from access and remove the export
+        $access->tryDisconnect(econtext  => $self->getEContext,
+                               erollback => $args{erollback});
+        $self->removeExport(container_access => $access);
+    }
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
@@ -125,7 +137,7 @@ sub createExport {
                  );
     my $container_access = EFactory::newEEntity(data => $entity);
 
-    $log->info("Added NFS Export of device <$args{export_name}>");
+    $log->info("Added NFS Export of device <$export_name>");
 
     if (exists $args{erollback}) {
         $args{erollback}->add(
@@ -162,8 +174,7 @@ sub fileCreate{
     my %args = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ "container_access", "file_name",
-                                       "file_size", "file_filesystem" ]);
+                         required => [ "container_access", "file_name", "file_size" ]);
 
     # Firstly mount the container access on the executor.
     my $mountpoint = $args{container_access}->getContainer->getMountPoint .

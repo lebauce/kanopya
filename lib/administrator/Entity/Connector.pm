@@ -29,18 +29,18 @@ my $log = get_logger("");
 
 
 use constant ATTR_DEF => {
+    service_provider_id => {
+      pattern       => '^\d*$',
+      is_mandatory  => 0,
+      is_extended   => 0,
+      is_editable   => 0
+    },
     connector_type_id => {
         pattern        => '\d*',
         is_mandatory   => 1,
         is_extended    => 0,
         is_editable    => 0
     },
-    service_provider_id => {
-      pattern       => '^\d*$',
-      is_mandatory  => 1,
-      is_extended   => 0,
-      is_editable   => 0
-    }
 };
 
 sub getAttrDef { return ATTR_DEF; }

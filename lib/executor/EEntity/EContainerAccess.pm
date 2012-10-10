@@ -286,7 +286,14 @@ sub getPartitionStart {
     }
 
     $command = "parted -m -s $device u B print";
-    $result = $args{econtext}->execute(command => $command);
+    $result  = $args{econtext}->execute(command => $command);
+
+    if ($result->{exitcode} != 0 ) {
+        throw Kanopya::Exception::Execution(
+                  error => "Unable to open $device with parted: " .
+                           $result->{stdout}
+              );
+    }
 
     # Parse the parted output to get partition start.
     my $part_start = $result->{stdout};
@@ -312,7 +319,14 @@ sub getPartitionCount {
     }
 
     $command = "parted -m -s $device u B print";
-    $result = $args{econtext}->execute(command => $command);
+    $result  = $args{econtext}->execute(command => $command);
+
+    if ($result->{exitcode} != 0 ) {
+        throw Kanopya::Exception::Execution(
+                  error => "Unable to open $device with parted: " .
+                           $result->{stdout}
+              );
+    }
 
     my @lines = split('\n', $result->{stdout});
     return (scalar @lines) - 2;
