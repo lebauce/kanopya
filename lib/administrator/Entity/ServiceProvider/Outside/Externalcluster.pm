@@ -405,8 +405,7 @@ sub generateClustermetricAndCombination{
 =cut
 
 sub monitoringDefaultInit {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $adm = Administrator->new();
 

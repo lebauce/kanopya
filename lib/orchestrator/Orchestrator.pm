@@ -342,10 +342,7 @@ sub _evalRule {
 sub _contructRetrieverOutput {
     my ($self,%args) = @_;
 
-    my $service_provider_id = $args{service_provider_id};
     my $rules               = $args{rules};
-
-    my $service_provider    = Entity::ServiceProvider->find( hash => { service_provider_id => $service_provider_id});
     my $indicators          = {};
 
     #Get all the rules relative to the cluster_id
@@ -363,15 +360,13 @@ sub _contructRetrieverOutput {
             my $combination = NodemetricCombination->get('id' => $combination_id);
             # get the indicator ids used in combination formula
             my @indicator_ids = $combination->getDependantIndicatorIds();
-            my $collector = $service_provider->getManager(manager_type => 'collector_manager');
 
             for my $indicator_id (@indicator_ids) {
-                my $indicator = $collector->getIndicator(id => $indicator_id);
+                my $indicator = Indicator->get(id => $indicator_id);
                 $indicators->{$indicator->indicator_oid} = $indicator;
             }
         }
     }
-
     my $rep = {
         indicators => $indicators,
         time_span  => 1200,
@@ -1257,7 +1252,6 @@ sub graph {
 
     # Graph data and add horizontal lines corresponding to thresholds for this op
     my ($rules, $tag) = $args{op} eq "add" ? ($self->{_traps}, 'threshold') : ($self->{_conditions}, 'required');
-    my @var_list = ();
     for my $rule ( @{ $rules } ) {
         foreach my $cond ( @{ General::getAsArrayRef( data => $rule, tag => $tag ) }) {
             push @graph_params, (

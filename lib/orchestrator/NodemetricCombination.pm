@@ -249,12 +249,9 @@ sub checkFormula {
 =cut
 
 sub getUnit {
-    my ($self, %args) = @_;
+    my $self = shift;
 
     my $formula             = $self->getAttr(name => 'nodemetric_combination_formula');
-    my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
-    my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
-    my $collector           = $service_provider->getManager(manager_type => "collector_manager");
 
     #Split nodemtric_rule id from $formula
     my @array = split(/(id\d+)/,$formula);

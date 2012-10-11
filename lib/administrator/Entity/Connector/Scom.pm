@@ -151,10 +151,10 @@ sub _format_data {
     my $end_dt = $args{end_dt};
     my $time_span = $args{time_span};
     my $time_zone = $args{time_zone};
-    
+
     my $date_parser = DateTime::Format::Strptime->new( pattern => '%d/%m/%Y %H:%M:%S' );
-    
-    # Compute mean value for each metrics 
+
+    # Compute mean value for each metrics
     my %res;
     while (my ($monit_object_path, $metrics) = each %$data) {
         while (my ($object_name, $counters) = each %$metrics) {

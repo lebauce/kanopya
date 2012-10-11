@@ -339,7 +339,7 @@ sub setAttr {
     if ($args{name} eq 'aggregate_rule_formula'){
         _verify($args{value});
     }
-    my $self = $class->SUPER::setAttr(%args);
+    $class->SUPER::setAttr(%args);
 };
 
 1;

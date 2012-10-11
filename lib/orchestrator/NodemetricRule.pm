@@ -166,7 +166,7 @@ sub getDependantConditionIds {
 sub evalOnOneNode{
     my $self = shift;
     my %args = @_;
-
+    
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
 
     my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
@@ -176,7 +176,6 @@ sub evalOnOneNode{
 
     #replace each id by its evaluation
     for my $element (@array) {
-
         if( $element =~ m/id(\d+)/){
             $element = NodemetricCondition->get('id'=>substr($element,2))
                                           ->evalOnOneNode(
@@ -194,7 +193,9 @@ sub evalOnOneNode{
     $log->info("NM rule evaluation: $arrayString");
     #Evaluate the logic formula
     eval $arrayString;
+
     return ($res)?1:0;
+    #return $res;
 };
 
 sub isVerifiedForANode{
@@ -237,8 +238,6 @@ sub isVerifiedForANode{
 sub deleteVerifiedRule  {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'externalnode_id' ]);
-
-    my $externalnode_id = $args{externalnode_id};
 
     my $verified_noderule;
     eval{
@@ -335,9 +334,8 @@ sub checkFormula {
 
 sub disable {
     my $self = shift;
-    my $verified_rule_dbix =
-        $self->{_dbix}
-        ->verified_noderules->delete_all;
+    
+    $self->{_dbix}->verified_noderules->delete_all;
 
     $self->setAttr(name => 'nodemetric_rule_state', value => 'disabled');
     $self->save();

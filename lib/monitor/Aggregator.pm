@@ -50,7 +50,6 @@ sub getMethods {
 # Constructor
 sub new {
     my $class = shift;
-    my %args = @_;
     my $self = {};
     bless $self, $class;
 
@@ -157,7 +156,8 @@ sub update() {
                 }
                 1;
             }
-        } or do {
+        };
+        if($@) {
             $log->error("An error occurred : " . $@);
             next CLUSTER;
         }
@@ -175,8 +175,6 @@ sub _checkNodesMetrics{
 
     my $asked_indicators = $args{asked_indicators};
     my $received         = $args{received};
-
-    my $num_of_nodes     = scalar (keys %$received);
 
     foreach my $indicator (values %$asked_indicators) {
         while ( my ($node_name, $metrics) = each(%$received) ) {
