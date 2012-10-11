@@ -27,7 +27,7 @@
       "description" : "Nodes histogram widget",
       "creator" : "Hedera",
       "url" : "widgets/widget_nodes_histogram.html",
-      "image": "widgets/widget_nodes_bargraph.png",
+      "image": "widgets/widget_nodes_histo.png",
       "metadata" : {}
     }
   ]

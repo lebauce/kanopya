@@ -88,7 +88,7 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
             rendererOptions:{ varyBarColor : true, barWidth: 30 },
-            pointLabels: { show: true },
+            pointLabels: { show: true, formatString: '%.1f\%' },
             trendline: {
                 show: false, 
             },
@@ -124,9 +124,6 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
             formatString: '%i nodes (%s\%)',
         }
     });
-
-    // add '%' at the end of point label values
-    $('#'+div_id).find('.jqplot-point-label').append('%');
 
     // Attach resize event handlers
     setGraphResizeHandlers(div_id, nodes_bar_graph);

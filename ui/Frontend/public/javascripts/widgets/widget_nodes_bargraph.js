@@ -82,56 +82,59 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
                 data.values     = data.values.slice(0,nodes_selection_opt.count);
             }
 
-            var max_nodes_per_graph = 50;
-            var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
-            var nodes_per_graph = data.nodelist.length/graph_number;
-            for (var i = 0; i<graph_number; i++) {
-                var div_id = graph_div_id_prefix + '_'+i;
-                var div = '<div id=\"'+div_id+'\"></div>';
-                //create the graph div container
-                graph_container_div.append(div);
-                //slice the array
-                var indexOffset = nodes_per_graph*i;
-                var toElementNumber = nodes_per_graph*(i+1);
-                var sliced_values = data.values.slice(indexOffset,toElementNumber);
-                var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
+            // build series
+            var series = [];
+            $.each(data.nodelist, function(idx,node) {
+                series.unshift([parseFloat(data.values[idx]), node]);
+            });
 
-                //we generate the graph
-                nodemetricCombinationBarGraph(sliced_values, sliced_nodelist, div_id, max, nodemetric_combination_label, nodemetric_combination_unit, mean);
-            }
-            //var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
-            //graph_container_div.append(button);
+            //we generate the graph
+            var div_id = graph_div_id_prefix;
+            var master_div = $('<div>', {style:'height:300px;overflow-y:auto;overflow-x:hidden;display:block'});
+            var div = $('<div>', {id: div_id});
+            var graph_title = nodemetric_combination_label + ' (' + nodemetric_combination_unit + ')';
+            graph_container_div
+                .append($('<div>', {html: graph_title, style: 'text-align:center;color:#666'}))
+                .append(master_div.append(div));
+            nodemetricCombinationBarGraph(series, div_id, max, nodemetric_combination_label, nodemetric_combination_unit, mean);
         }
         widget_loading_stop( $(curobj).closest('.widget') );
     });
 }
 
 //Jqplot bar plots
-function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title, unit, mean_value) {
+function nodemetricCombinationBarGraph(series, div_id, max, title, unit, mean_value) {
     $.jqplot.config.enablePlugins = true;
-    var nodes_bar_graph = $.jqplot(div_id, [values], {
-    title: title,
+    var barWidth = 12;
+    var barSpace = 5;
+    var nodes_bar_graph = $.jqplot(div_id,  [series], {
+        //title: title + ' (' + unit + ')',
+        height: Math.max(300, 100 + (barWidth + barSpace) * series.length) + 'px',//'600px',
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
-            rendererOptions:{ varyBarColor : true, barWidth: 30 - (nodelist.length * 0.5) },
-            pointLabels: { show: true },
+            shadowAngle: 135,
+            rendererOptions:{
+                varyBarColor : true,
+                barWidth: barWidth,
+                barDirection: 'horizontal'
+            },
+            pointLabels: { show: true, formatString: '%.1f', location: 'w' },
             trendline: {
                 show: false, 
             },
         },
         axes: {
-            xaxis: {
+            yaxis: {
                 renderer: $.jqplot.CategoryAxisRenderer,
-                ticks: nodelist,
-                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+                //tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 tickOptions: {
                     showMark: false,
                     showGridline: false,
-                    angle: -40,
+                    //angle: -40
                 }
             },
-            yaxis:{
+            xaxis:{
                 min:0,
                 max:max,
                 label: unit,
@@ -143,18 +146,18 @@ function nodemetricCombinationBarGraph(values, nodelist, div_id, max, title, uni
         },
         //seriesColors: ["#D4D4D4" ,"#999999"],
         seriesColors: ["#4BB2C5" ,"#6DD4E7"],
-        highlighter: { 
+        highlighter: {
             show: true,
             //useAxesFormatters: true,
-            tooltipAxes: 'y',
+            tooltipAxes: 'x',
             showMarker:false,
         },
         canvasOverlay: {
             show: true,
             objects: [
-              {dashedHorizontalLine: {
+              {dashedVerticalLine: {
                 name: 'Average',
-                y: mean_value,
+                x: mean_value,
                 lineWidth: 1,
                 color: "#999999",
                 //shadow: true,
