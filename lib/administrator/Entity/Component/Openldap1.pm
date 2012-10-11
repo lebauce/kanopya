@@ -56,11 +56,10 @@ use base "Entity::Component";
 
 use strict;
 use warnings;
-
 use Kanopya::Exceptions;
+use General;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use Crypt::SaltedHash;
 
 my $log = get_logger("");
 my $errmsg;
@@ -138,10 +137,8 @@ sub setConf {
     General::checkParams(args => \%args, required => ['conf']);
 
     my $conf = $args{conf};
-    my $csh = Crypt::SaltedHash->new(algorithm => 'SHA-1');
-    $csh->add($conf->{openldap1_rootpw});
-
-    $conf->{openldap1_rootpw} = $csh->generate;
+    
+    $conf->{openldap1_rootpw} = General::cryptPassword(password => $conf->{openldap1_rootpw});
     $self->{_dbix}->update($conf);
 }    
 
