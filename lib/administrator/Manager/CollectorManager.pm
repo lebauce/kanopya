@@ -55,6 +55,10 @@ sub retrieveData {
 =cut
 
 sub getIndicators {
+    my $self = shift;
+    my @collector_indicators = $self->collector_indicators;
+    my @indicators = map {$_->indicator} @collector_indicators;
+    return \@indicators;
 }
 
 =head2 getIndicator
@@ -66,6 +70,27 @@ sub getIndicators {
 =cut
 
 sub getIndicator {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['id']);
+    my $collector_indicator = CollectorIndicator->get(id => $args{id});
+    return $collector_indicator->indicator;
+}
+
+=head2 checkManagerParams
+
+=cut
+
+sub checkCollectorManagerParams {
+}
+
+=head2
+
+    Desc: Call kanopya native monitoring API to retrieve indicators data
+    return \%monitored_values;
+
+=cut
+
+sub retrieveData {
 }
 
 =head2 collectIndicator
