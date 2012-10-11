@@ -1020,8 +1020,8 @@ sub generateKvmVmTemplate {
             my $vlan = $network->isa("Entity::Network::Vlan") ?
                            $network->getAttr(name => "vlan_number") : undef;
 
-            my $ip;
 
+            my $ip;
             eval {
                 $ip = $iface->getIPAddr();
             };
