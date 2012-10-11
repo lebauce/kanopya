@@ -80,15 +80,11 @@ sub _contructRetrieverOutput {
 
     my $service_provider = Entity::ServiceProvider->get(id => $args{service_provider_id});
     my @clustermetrics = $service_provider->clustermetrics;
-    my $collector = $service_provider->getManager(manager_type => "collector_manager");
 
     for my $clustermetric (@clustermetrics) {
-        my $clustermetric_indicator = $collector->getIndicator(id => $clustermetric->clustermetric_indicator_id);
         my $clustermetric_time_span = $clustermetric->clustermetric_window_time;
-        my $indicator_oid           = $clustermetric_indicator->indicator_oid;
-
-        $indicators->{$indicator_oid} = $clustermetric_indicator;
-
+        my $indicator = $clustermetric->getIndicator();
+        $indicators->{$indicator->indicator_oid} = $indicator;
         if (! defined $time_span) {
             $time_span = $clustermetric_time_span;
         } else {
@@ -215,22 +211,15 @@ sub _computeCombinationAndFeedTimeDB {
 
     my $service_provider = Entity::ServiceProvider->get('id' => $cluster_id);
     my @clustermetrics   = $service_provider->clustermetrics;
-    my $collector        = $service_provider->getManager(manager_type => "collector_manager");
-
-    my $clustermetric_indicator;
-    my $indicator_oid;
 
     # Loop on all the clustermetrics
     for my $clustermetric (@clustermetrics) {
-
+        my $indicator_oid = $clustermetric->getIndicator()->indicator_oid;
         # Array that will store all the values needed to compute $clustermetric val
         my @dataStored = ();
 
         # Loop on all the host_name of the $clustermetric
         for my $host_name (keys %$values) {
-            $clustermetric_indicator = $collector->getIndicator(id => $clustermetric->clustermetric_indicator_id);
-            $indicator_oid           = $clustermetric_indicator->indicator_oid;
-
             #if indicator value is undef, do not store it in the array
             if (defined $values->{$host_name}->{$indicator_oid}) {
                 push @dataStored, $values->{$host_name}->{$indicator_oid};
