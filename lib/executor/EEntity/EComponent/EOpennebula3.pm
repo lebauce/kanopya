@@ -1019,20 +1019,9 @@ sub generateKvmVmTemplate {
         for my $network ($iface->getInterface->getNetworks) {
             my $vlan = $network->isa("Entity::Network::Vlan") ?
                            $network->getAttr(name => "vlan_number") : undef;
-            my $ip;
-
-            eval {
-                $ip = $iface->getIPAddr();
-            };
-            if ($@) {
-                my $exception = $@;
-                if (Kanopya::Exception::Internal::NotFound->caught()) {
-                    next;
-                }
-                else { $exception->rethrow(); }
-            }
 
             my $ip;
+
             eval {
                 $ip = $iface->getIPAddr();
             };
