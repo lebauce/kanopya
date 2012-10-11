@@ -92,9 +92,19 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
             var div_id = graph_div_id_prefix;
             var master_div = $('<div>', {style:'height:300px;overflow-y:auto;overflow-x:hidden;display:block'});
             var div = $('<div>', {id: div_id});
-            var graph_title = nodemetric_combination_label + ' (' + nodemetric_combination_unit + ')';
+            var graph_title;
+            var title_align;
+            if (!nodemetric_combination_label || nodemetric_combination_label == '') {
+                // label not provided (i.e graph displayed in details dialog)
+                graph_title = 'Unit: ' + nodemetric_combination_unit;
+                title_align = 'right';
+            } else {
+                // widget on dashboard
+                graph_title = nodemetric_combination_label + ' (' + nodemetric_combination_unit + ')';
+                title_align = 'center';
+            }
             graph_container_div
-                .append($('<div>', {html: graph_title, style: 'text-align:center;color:#666'}))
+                .append($('<div>', {html: graph_title, style: 'text-align:' + title_align + ';color:#666'}))
                 .append(master_div.append(div));
             nodemetricCombinationBarGraph(series, div_id, max, nodemetric_combination_label, nodemetric_combination_unit, mean);
         }
@@ -151,6 +161,7 @@ function nodemetricCombinationBarGraph(series, div_id, max, title, unit, mean_va
             //useAxesFormatters: true,
             tooltipAxes: 'x',
             showMarker:false,
+            formatString: '%s' + unit,
         },
         canvasOverlay: {
             show: true,
