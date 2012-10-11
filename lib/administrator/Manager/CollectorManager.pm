@@ -26,32 +26,42 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use General;
+use CollectorIndicator;
 use Indicator;
 
 my $log = get_logger("");
 
-=head2 checkManagerParams
 
-=cut
+sub createCollectorIndicators {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['indicator_sets']);
 
-sub checkCollectorManagerParams {
-}
+    my @indicators = ();
 
-=head2
+    for my $indicator_set (@{$args{indicator_sets}}) {
+        @indicators = ( @indicators,
+                        Indicator->search (
+                            hash => {
+                                indicatorset_id => $indicator_set-> id,
+                            }
+                        )
+                      );
+    }
 
-    Desc: Call kanopya native monitoring API to retrieve indicators data 
-    return \%monitored_values;
 
-=cut
-
-sub retrieveData {
+    for my $indicator (@indicators) {
+        CollectorIndicator->new(
+            indicator_id => $indicator->id,
+            collector_manager_id =>  $self->id,
+        );
+    }
+    return;
 }
 
 =head2 getIndicators
 
-    Desc: call collector manager to retrieve indicators available for the service provider
-    return \@indicators;
-        
+    Desc: Retrieve a list of indicators available (currently use SCOM indic)
+
 =cut
 
 sub getIndicators {
@@ -104,7 +114,7 @@ sub collectIndicator {
 
 =head2
 
-    Desc: Return an information string about the collector manager 
+    Desc: Return an information string about the collector manager
 
 =cut
 

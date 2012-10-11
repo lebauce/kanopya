@@ -45,6 +45,24 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+=head2 new
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args  = @_;
+    my $self  = $class->SUPER::new( %args );
+
+    my @indicator_sets = (Indicatorset->search(hash =>{indicatorset_name => 'scom'}));
+    $self->createCollectorIndicators(
+        indicator_sets => \@indicator_sets,
+    );
+
+    return $self;
+}
+
 # Retriever interface method implementation
 # args: nodes => [<node_id>], indicators => [<indicator_id>], time_span => <seconds>
 # with:

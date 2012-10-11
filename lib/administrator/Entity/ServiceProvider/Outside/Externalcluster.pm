@@ -31,7 +31,7 @@ use AggregateCombination;
 use AggregateCondition;
 use AggregateRule;
 use Clustermetric;
-use ScomIndicator;
+use CollectorIndicator;
 use Externalnode;
 
 use Log::Log4perl "get_logger";
@@ -392,48 +392,6 @@ sub generateClustermetricAndCombination{
     return $rep;
 }
 
-
-
-# this is just an aberation that we quickly inserted to create initial SCOM indicators.
-sub insertCollectorIndicators {
-    my ($self,%args) = @_;
-
-    # erk
-    my $scom_indicatorset_id = 5;
-
-    # Retrieve scom indicator from indicator table
-    my @indicators = Indicator->search (
-        hash => {
-            indicatorset_id => $scom_indicatorset_id
-        }
-    );
-
-    my $service_provider_id = $self->getAttr (name => 'service_provider_id' );
-    my $params;
-    my @scom_indicators;
-
-    # Create a scom indicator for each indicator from scom set (sic)
-    for my $indicator (@indicators) {
-        # worth and worth
-        # use indicator_color to know if it's a default indicator or a user created (oh yeah)
-        if (
-            (($args{'default'} == 1) && defined $indicator->getAttr(name => 'indicator_color'))
-            ||
-            (($args{'default'} == 0) && not defined $indicator->getAttr(name => 'indicator_color'))
-            ) {
-            $params = { indicator_name => $indicator->getAttr(name => 'indicator_name'),
-                        indicator_oid  => $indicator->getAttr(name => 'indicator_oid'),
-                        indicator_unit => $indicator->getAttr(name => 'indicator_unit'),
-                        service_provider_id => $service_provider_id,
-            };
-            my $scom_indicator = ScomIndicator->new(%$params);
-            push @scom_indicators, $scom_indicator;
-        }
-    }
-
-    return \@scom_indicators;
-}
-
 =head2 monitoringDefaultInit
 
     Insert some basic clustermetrics, combinations and rules for this cluster
@@ -452,20 +410,18 @@ sub monitoringDefaultInit {
 
     my $adm = Administrator->new();
 
-    #generate the scom indicators (only default)
-    my $indicators = $self->insertCollectorIndicators(default => 1);
-
     return if ($args{no_default_conf});
 
     my $service_provider_id = $self->id;
+    my @collector_indicators = $self->getManager(manager_type => "collector_manager")->collector_indicators;
 
     my $active_session_indicator_id;
     my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
     my @funcs = qw(mean max min std dataOut);
 
-    foreach my $indicator (@$indicators) {
-        my $indicator_id  = $indicator->id;
-        my $indicator_oid = $indicator->indicator_oid;
+    foreach my $collector_indicator (@collector_indicators) {
+        my $indicator_id  = $collector_indicator->id;
+        my $indicator_oid = $collector_indicator->indicator->indicator_oid;
 
         if ($indicator_oid eq 'Terminal Services/Active Sessions') {
             $active_session_indicator_id = $indicator_id;
