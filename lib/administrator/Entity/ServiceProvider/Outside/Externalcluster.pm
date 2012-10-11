@@ -329,18 +329,22 @@ sub updateNodes {
 =cut
 
 sub getNodesMetrics {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['indicators', 'time_span']);
-     
+
     my $shortname = defined $args{shortname};
-     
     my $ms_connector = $self->getManager(manager_type => 'collector_manager');
-    my $nodes = $self->getNodes();
-     
-    my @hostnames = map { $_->{hostname} } @$nodes;
-     
+
+    my @hostnames = ();
+    my @nodes = $self->externalnodes;
+
+    for my $node (@nodes) {
+        if( ! ($node->externalnode_state eq 'disabled')) {
+            push @hostnames, $node->externalnode_hostname
+        }
+    }
+
     my $data = $ms_connector->retrieveData(
         nodelist => \@hostnames,
         %args,
