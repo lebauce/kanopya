@@ -309,6 +309,9 @@ sub new {
 
     # Populate relations
     $self->populateRelations(relations => $relations);
+
+    $self->{_altered} = 0;
+
     return $self;
 }
 
@@ -620,11 +623,14 @@ sub setAttr {
         }
     }
 
-    if(not $found) {
+    if (not $found) {
         $errmsg = ref($self) . " setAttr no attr name $args{name}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
-    } 
+    }
+
+    $self->{_altered} = 1;
+
     return $value;
 }
 
@@ -1397,7 +1403,12 @@ sub AUTOLOAD {
     return $self->getAttr(name => $accessor);
 }
 
-# DESTROY definition required by AUTOLOAD
-sub DESTROY { }
+sub DESTROY {
+    my $self = shift;
+
+    if ($self->{_altered}) {
+        $self->save();
+    }
+}
 
 1;
