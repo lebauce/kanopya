@@ -31,6 +31,7 @@ PERL5LIB=\
 /opt/kanopya/lib/administrator/:\
 /opt/kanopya/lib/executor/:\
 /opt/kanopya/lib/external/:\
+/opt/kanopya/lib/external/NetApp:\
 /opt/kanopya/lib/orchestrator/:\
 /opt/kanopya/lib/common
 export PERL5LIB
