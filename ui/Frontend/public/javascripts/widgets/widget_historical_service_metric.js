@@ -104,7 +104,8 @@ function timedGraph(first_graph_line, min, max, label, unit, div_id) {
             trendline: {
                 color : '#555555',
                 show  : $('#trendlineinput').attr('checked') ? true : false, 
-            }
+            },
+            pointLabels: { show: false },
         },
         axes:{
             xaxis:{

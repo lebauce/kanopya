@@ -125,6 +125,9 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
         }
     });
 
+    // add '%' at the end of point label values
+    $('#'+div_id).find('.jqplot-point-label').append('%');
+
     // Attach resize event handlers
     setGraphResizeHandlers(div_id, nodes_bar_graph);
 
