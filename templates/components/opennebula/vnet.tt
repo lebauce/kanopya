@@ -12,6 +12,6 @@ PHYDEV  = [% vnet_phydev %]
 [% END %] 
 [% ELSE %]
 VLAN    = NO
-BRIDGE  = vifbr0
+BRIDGE  = virbr0
 [% END %]
 LEASES  = [IP=[% vnet_netaddress %], MAC=[% vnet_mac %]]
