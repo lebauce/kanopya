@@ -150,7 +150,9 @@ sub getAvailableMemory {
     my $result = $self->getEContext->execute(command => "cat /proc/meminfo");
 
     # Keep the lines about free memory only
-    my @lines = grep { $_ =~ '^(MemFree:|Buffers:|Cached:)' } split('\n', $result->{stdout});
+    my @lines = grep { $_ =~ '^(MemTotal:|MemFree:|Buffers:|Cached:)' } split('\n', $result->{stdout});
+
+    my $total = (split('\s+', shift @lines))[1];
 
     # Total available memory is the sum of free, buffers and cached memory
     my $free = 0;
@@ -162,6 +164,7 @@ sub getAvailableMemory {
     # Return the free memory in bytes
     return {
         mem_effectively_available => $free * 1024,
+        mem_total                 => $total * 1024
     }
 }
 
@@ -174,7 +177,7 @@ sub getAvailableMemory {
 sub getTotalMemory {
     my ($self, %args) = @_;
 
-    throw Kanopya::Exception::NotImplemented();
+    return $self->getAvailableMemory()->{mem_total};
 }
 
 =head2 getTotalCpu
@@ -186,7 +189,13 @@ sub getTotalMemory {
 sub getTotalCpu {
     my ($self, %args) = @_;
 
-    throw Kanopya::Exception::NotImplemented();
+    # Get the memory infos from procfs
+    my $result = $self->getEContext->execute(command => "cat /proc/cpuinfo");
+
+    # Keep the lines about free memory only
+    my @lines = grep { $_ =~ '^processor(\s)+:' } split('\n', $result->{stdout});
+
+    return scalar @lines;
 }
 
 1;
