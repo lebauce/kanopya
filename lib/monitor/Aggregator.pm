@@ -126,7 +126,7 @@ sub update() {
     CLUSTER:
     for my $service_provider (@service_providers) {
         eval {
-            my $service_provider_id = $service_provider->getAttr(name => 'service_provider_id');
+            my $service_provider_id = $service_provider->id;
 
             eval {
                 $service_provider->getManager(manager_type => "collector_manager");

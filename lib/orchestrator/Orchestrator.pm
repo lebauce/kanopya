@@ -137,10 +137,10 @@ sub manage_aggregates {
                 $service_provider->getManager(manager_type => "collector_manager");
             };
             if ($@){
-                $log->info('*** Orchestrator skip service provider '.$service_provider_id.' because it has no collector manager ***');
+                $log->info('Orchestrator skip service provider '.$service_provider_id.' because it has no collector manager');
             }
             else{
-                $log->info('*** Orchestrator running for service provider '.$service_provider_id.' ***');
+                $log->info('Orchestrator running for service provider '.$service_provider_id);
                 eval{
                     $log->info( '<CM '.$service_provider_id.'>');
                     $self->clustermetricManagement(service_provider => $service_provider);
@@ -204,20 +204,6 @@ sub nodemetricManagement {
         'rules'             => \@rules,
         'service_provider'  => $service_provider,
     );
-
-#            if(0 < $rep){
-#
-#                $externalCluster->setAttr(
-#                    name => 'externalcluster_state',
-#                    value => 'warning',
-#                );
-#            }else{
-#                $externalCluster->setAttr(
-#                    name => 'externalcluster_state',
-#                    value => 'up',
-#                );
-#            }
-#            $externalCluster->save();
 }
 
 sub _evalAllRules {
@@ -254,7 +240,7 @@ sub _evalRule {
     my $rule             = $args{rule};
     my $service_provider = $args{service_provider};
 
-    my $service_provider_id = $service_provider->getId();
+    my $service_provider_id = $service_provider->id;
 
     my $rule_id          = $rule->getAttr(name => 'nodemetric_rule_id');
 
