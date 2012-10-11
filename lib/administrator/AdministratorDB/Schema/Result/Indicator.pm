@@ -139,6 +139,23 @@ __PACKAGE__->belongs_to(
 );
 
 
+=head2 collector_indicators
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
+
+=cut
+
+__PACKAGE__->has_many(
+  "collector_indicators",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.indicator_id" => "self.indicator_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+
 # Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 17:07:22
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7YfjHg4nM1lx3wdOlWTa+Q
 

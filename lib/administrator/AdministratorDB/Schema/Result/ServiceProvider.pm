@@ -245,21 +245,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 scom_indicators
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::ScomIndicator>
-
-=cut
-
-__PACKAGE__->has_many(
-  "scom_indicators",
-  "AdministratorDB::Schema::Result::ScomIndicator",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 service_provider
 
 Type: belongs_to
