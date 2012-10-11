@@ -98,7 +98,6 @@ sub retrieveData {
     return $res;
 }
 
-
 sub _computeValue {
     my ($self, %args) = @_;
 
@@ -113,32 +112,23 @@ sub _computeValue {
     return $value;
 }
 
-=head2 getIndicators
+=head2 new
 
-    Desc: Retrieve a list of indicators available (currently use SCOM indic)
-
-=cut
-
-sub getIndicators {
-    my ($self, %args) = @_;
-
-    my @indicators          = ScomIndicator->search (hash => {});
-
-    return \@indicators;
-}
-
-=head2 getIndicator
-
-    Desc: Return the indicator with the specified id (currently use SCOM indic)
+    new is redefined to create the collector indicators
 
 =cut
 
-sub getIndicator {
-    my ($self, %args) = @_;
+sub new {
+    my $class = shift;
+    my %args  = @_;
+    my $self  = $class->SUPER::new( %args );
 
-    General::checkParams(args => \%args, required => ['id']);
+    my @indicator_sets = Indicatorset->search(hash =>{});
+    $self->createCollectorIndicators(
+        indicator_sets => \@indicator_sets,
+    );
 
-    return ScomIndicator->get(id => $args{id});
+    return $self;
 }
 
 1;

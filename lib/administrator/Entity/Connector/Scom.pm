@@ -24,7 +24,7 @@ use warnings;
 use General;
 use Kanopya::Exceptions;
 use SCOM::Query;
-use ScomIndicator;
+use CollectorIndicator;
 use DateTime::Format::Strptime;
 use List::Util 'sum';
 
@@ -59,10 +59,8 @@ sub retrieveData {
 
     my $management_server_name = $self->getAttr(name => 'scom_ms_name');
     my $use_ssl                = $self->getAttr(name => 'scom_usessl');
-
     my %counters;
     while (my($oid,$object) = each (%{$args{indicators}})) {
-
         # TODO check indic format
         my ($object_name, @counter_name_tab) = split '/', $oid;
         my $counter_name = join('/',@counter_name_tab);
@@ -181,41 +179,11 @@ sub _format_data {
 sub _format_dt {
     my %args = @_;
     my $dt = $args{dt};
-    
+
     return $dt->dmy('/') . ' ' . $dt->hms(':');
 }
 
-=head2 getIndicators
-    Desc: Retrieve a list of SCOM indicators available for the intancied manager
 
-    Args: none
-
-    Return: \@indicators (object list)
-=cut
-
-sub getIndicators {
-    my ($self, %args) = @_;
-
-    my @indicators          = ScomIndicator->search (hash => {});
-
-    return \@indicators;
-}
-
-=head2 getIndicator
-
-    Desc: Return the indicator with the specified id
-    Args: indicator id
-    Return an indicator instance
-
-=cut
-
-sub getIndicator {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-    return ScomIndicator->get(id => $args{id});
-} 
 
 =head2 getCollectorType
     Desc: Usefull to give information about this component
