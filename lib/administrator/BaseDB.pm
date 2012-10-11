@@ -290,6 +290,16 @@ sub new {
     # Extract relation for futher handling
     my $relations = extractRelations(hash => $hash);
 
+    my @attrs = keys %args;
+    foreach my $attr (@attrs) {
+        my $relation = $class->getAttrDefs->{$attr . "_id"};
+
+        if ($relation && defined($relation->{relation}) && $args{$attr}->isa("BaseDB")) {
+            $args{$attr . "_id"} = $args{$attr}->id;
+            delete $args{$attr};
+        }
+    }
+
     my $attrs = $class->checkAttrs(attrs => $hash);
 
     # Get the class_type_id for class name
