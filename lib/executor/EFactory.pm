@@ -86,31 +86,7 @@ sub newEEntity {
 
     General::checkParams(args => \%args, required => ['data']);
 
-    if (not $args{data}->isa('Entity')) {
-        throw Kanopya::Exception::Internal(error => 'EFactory::newEEntity: ' . ref($args{data}) . ' is not an Entity.');
-    }
-
-    my $data = $args{data};
-    my %params = (data => $args{data});
-
-    my $class = General::getClassEEntityFromEntity(entity => $data);
-    #$log->debug("GetClassEEntityFromEntity return $class");
-
-    my $required = 0;
-    do {
-        my $location = General::getLocFromClass(entityclass => $class);
-
-        eval {
-            require $location;
-            $required = 1;
-        };
-        if ($@){
-            # Try to use the parent package
-            $class =~ s/\:\:[a-zA-Z0-9]+$//g;
-        }
-    } while ($required == 0 and $class ne 'EEntity');
-
-    return $class->new(%params);
+    return EEntity->new(entity => $args{data});
 }
 
 =head2 newEContext

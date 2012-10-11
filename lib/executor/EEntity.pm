@@ -64,15 +64,34 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['data']);
+    General::checkParams(args => \%args, required => ['entity']);
 
-    # $log->debug("Class is : $class");
+    if (not $args{entity}->isa('Entity')) {
+        throw Kanopya::Exception::Internal(error => 'EFactory::newEEntity: ' . ref($args{entity}) .
+                                                    ' is not an Entity.');
+    }
+
+    $class = General::getClassEEntityFromEntity(entity => $args{entity});
+
+    my $required = 0;
+    do {
+        my $location = General::getLocFromClass(entityclass => $class);
+
+        eval {
+            require $location;
+            $required = 1;
+        };
+        if ($@){
+            # Try to use the parent package
+            $class =~ s/\:\:[a-zA-Z0-9]+$//g;
+        }
+    } while ($required == 0 and $class ne 'EEntity');
 
     # TODO: Use Config module
     my $config = Kanopya::Config::get('executor');
 
     my $self = {
-        _entity   => $args{data},
+        _entity   => $args{entity},
         _executor => Entity->get(id => $config->{cluster}->{executor}),
         config    => $config
     };
