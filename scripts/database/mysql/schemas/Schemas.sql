@@ -1186,6 +1186,19 @@ CREATE TABLE `indicator` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+
+CREATE TABLE `collector_indicator` (
+  `collector_indicator_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `indicator_id` int(8) unsigned NOT NULL,
+  `collector_manager_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`collector_indicator_id`),
+  KEY `indicator_id` (`indicator_id`),
+  KEY `collector_manager_id` (`collector_manager_id`),
+  FOREIGN KEY (`indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`collector_manager_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+
+
 --
 -- Table structure for table `collect` (monitor)
 --
