@@ -489,31 +489,33 @@ sub monitoringDefaultInit {
         }
     }
 
+    if(defined $low_mean_cond_mem_id && $low_mean_cond_cpu_id && $low_mean_cond_net_id) {
+        my $params_rule = {
+            aggregate_rule_service_provider_id  => $service_provider_id,
+            aggregate_rule_formula              => 'id'.$low_mean_cond_mem_id.'&&'.'id'.$low_mean_cond_cpu_id.'&&'.'id'.$low_mean_cond_net_id,
+            aggregate_rule_state                => 'enabled',
+            aggregate_rule_label                => 'Cluster load',
+            aggregate_rule_description          => 'Mem, cpu and network usages are low, your cluster may be oversized',
+        };
+        AggregateRule->new(%$params_rule);
+    }
 
-   my $params_rule = {
-        aggregate_rule_service_provider_id  => $service_provider_id,
-        aggregate_rule_formula              => 'id'.$low_mean_cond_mem_id.'&&'.'id'.$low_mean_cond_cpu_id.'&&'.'id'.$low_mean_cond_net_id,
-        aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => 0,
-        aggregate_rule_label                => 'Cluster load',
-        aggregate_rule_description          => 'Mem, cpu and network usages are low, your cluster may be oversized',
-    };
-    AggregateRule->new(%$params_rule);
-
+    if(defined $active_session_indicator_id) {
         #SPECIAL TAKE SUM OF SESSION ID
-    my $cm_params = {
-        clustermetric_service_provider_id      => $service_provider_id,
-        clustermetric_indicator_id             => $active_session_indicator_id,
-        clustermetric_statistics_function_name => 'sum',
-        clustermetric_window_time              => '1200',
-    };
-    my $cm = Clustermetric->new(%$cm_params);
+        my $cm_params = {
+            clustermetric_service_provider_id      => $service_provider_id,
+            clustermetric_indicator_id             => $active_session_indicator_id,
+            clustermetric_statistics_function_name => 'sum',
+            clustermetric_window_time              => '1200',
+        };
+        my $cm = Clustermetric->new(%$cm_params);
 
-    my $acf_params = {
-        aggregate_combination_service_provider_id   => $service_provider_id,
-        aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
-    };
-    AggregateCombination->new(%$acf_params);
+        my $acf_params = {
+            aggregate_combination_service_provider_id   => $service_provider_id,
+            aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+        };
+        AggregateCombination->new(%$acf_params);
+    }
 }
 
 sub ruleGeneration{
