@@ -164,4 +164,26 @@ sub updatePinning {
     $self->getEContext->execute(command => "$cmd");
 }
 
+sub getMinEffectiveRamVm {
+    my ($self,%args) = @_;
+
+    my @virtual_machines = $self->virtual_machines;
+
+    my $min_vm  = shift @virtual_machines;
+    my $min_ram = EFactory::newEEntity(data => $min_vm)->getRamUsedByVm->{total};
+
+    for my $virtual_machine (@virtual_machines) {
+        my $ram = EFactory::newEEntity(data => $virtual_machine)->getRamUsedByVm->{total};
+        if ($ram < $min_ram) {
+            $min_ram = $ram;
+            $min_vm  = $virtual_machine;
+        }
+    }
+
+    return {
+        vm  => $min_vm,
+        ram => $min_ram,
+    }
+}
+
 1;
