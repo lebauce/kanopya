@@ -305,7 +305,7 @@ sub retrieveClusterHypervisors {
         my $hypervisor_view  = $self->getView(mo_ref => $hypervisor);
         my %hypervisor_infos = (
             name => $hypervisor_view->name,
-            type => 'hypervisor'
+            type => 'clusterHypervisor'
         );
 
         push @hypervisors_infos, \%hypervisor_infos;
