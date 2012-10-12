@@ -98,4 +98,15 @@ sub getMonitoringData {
     return $data->{$self->externalnode_hostname} || {};
 }
 
+sub disable {
+    my $self = shift;
+
+    my @verified_noderules = $self->verified_noderules;
+    while(@verified_noderules) {
+        (pop @verified_noderules)->delete();
+    }
+
+    $self->setAttr(name => 'externalnode_state', value => 'disabled');
+    $self->save();
+}
 1;

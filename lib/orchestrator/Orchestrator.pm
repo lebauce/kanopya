@@ -259,20 +259,10 @@ sub _evalRule {
     NODE:
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
 
-        my $node_state = $service_provider->getNodeState(hostname=> $host_name);
-
-        my $nodeEval;
-
-        if($node_state eq 'disabled'){
-            $log->info("Node <$host_name> has just been disabled, rule not evaluated");
-            next NODE;
-        }
-        else {
-            $log->info('Eval rule id <'.($rule->getAttr(name => 'nodemetric_rule_id')).'> on node hostname <'.$host_name.'>');
-            $nodeEval = $rule->evalOnOneNode(
-                monitored_values_for_one_node => $monitored_values_for_one_node
-            );
-        }
+        $log->info('Eval rule id <'.($rule->getAttr(name => 'nodemetric_rule_id')).'> on node hostname <'.$host_name.'>');
+        my $nodeEval = $rule->evalOnOneNode(
+            monitored_values_for_one_node => $monitored_values_for_one_node
+        );
 
         my $externalnode_id = Externalnode->find(hash => {
             externalnode_hostname => $host_name,
