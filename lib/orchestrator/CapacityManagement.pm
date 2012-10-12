@@ -976,6 +976,26 @@ sub _migrateVmModifyInfra{
         $self->{_hvs_mem_available}->{$hv_from_id} += $self->{_infra}->{vms}->{$vm_id}->{'ram'};
         $log->debug(Dumper $self->{_hvs_mem_available});
     }
+
+
+    # Modify RAM effective when overcommitment
+    if( defined $self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective}) {
+        $log->debug("RAM effective before hv <$hv_dest_id> <"
+                    .($self->{_infra}->{hvs}->{$hv_dest_id}->{hv_capa}->{ram_effective})
+                    ."> ; hv <$hv_from_id> <"
+                    .($self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective}).">"
+        );
+        $self->{_infra}->{hvs}->{$hv_dest_id}->{hv_capa}->{ram_effective} -= $self->{_infra}->{vms}->{$vm_id}->{'ram_effective'};
+        $self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective} += $self->{_infra}->{vms}->{$vm_id}->{'ram_effective'};
+        $log->debug("RAM effective before hv <$hv_dest_id> <"
+                    .($self->{_infra}->{hvs}->{$hv_dest_id}->{hv_capa}->{ram_effective})
+                    ."> ; hv <$hv_from_id> <"
+                    .($self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective}).">"
+        );
+    }
+
+
+
 }
 
 
