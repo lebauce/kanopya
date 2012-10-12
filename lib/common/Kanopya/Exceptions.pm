@@ -133,6 +133,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Execution',
         description => 'Entity already locked',
     },
+    Kanopya::Exception::Execution::ResourceBusy => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Resource busy',
+    },
     Kanopya::Exception::AuthenticationRequired => {
         isa         => 'Kanopya::Exception',
         description => 'Authentication required',

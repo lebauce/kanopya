@@ -63,6 +63,9 @@ sub createExport {
                          required => [ 'container', 'export_name' ],
                          optional => { 'typeio' => 'fileio', 'iomode' => 'wb' });
 
+    # Check if the disk is not already exported
+    $self->SUPER::createExport(%args);
+
     # TODO: Check if the given container is provided by the same
     #       storage provider than the iscsi storage provider.
 
@@ -95,7 +98,7 @@ sub createExport {
 
     $log->debug("Added iSCSI Export of device <$device> with target <$disk_targetname>");
 
-    if (exists $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('removeExport'),
             parameters => [ $self, "container_access", $container_access ]

@@ -103,7 +103,7 @@ sub consume {
     # Check if the quota exceed
     if (($self->current + $args{amount}) > $self->quota) {
         throw Kanopya::Exception::Quota(
-            error => "<$args{amount}> exceed the " . $self->resource . " quota <" . $self->quota . ">"
+            error => "<" . $self->current . " + $args{amount}> exceed the " . $self->resource . " quota <" . $self->quota . ">"
         );
     }
 

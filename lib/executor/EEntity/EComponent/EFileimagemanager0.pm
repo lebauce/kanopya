@@ -103,6 +103,9 @@ sub removeDisk{
               );
     }
 
+    # Check if the disk is removable
+    $self->SUPER::removeDisk(%args);
+
     $self->fileRemove(container => $args{container});
 
     $args{container}->delete();
@@ -113,9 +116,12 @@ sub removeDisk{
 
 sub createExport {
     my $self = shift;
-    my %args  = @_;
+    my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'container' ]);
+
+    # Check if the disk is not already exported
+    $self->SUPER::createExport(%args);
 
     # TODO: Check if the given container is provided by the same
     #       storage provider than the nfsd storage provider.
@@ -139,7 +145,7 @@ sub createExport {
 
     $log->info("Added NFS Export of device <$export_name>");
 
-    if (exists $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('removeExport'),
             parameters => [ $self, "container_access", $container_access ]

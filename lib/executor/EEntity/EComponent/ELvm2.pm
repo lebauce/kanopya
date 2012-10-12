@@ -81,6 +81,9 @@ sub removeDisk{
               );
     }
 
+    # Check if the disk is removable
+    $self->SUPER::removeDisk(%args);
+
     my $vg = $self->getMainVg();
     $self->lvRemove(lvm2_vg_id   => $vg->{vgid},
                     lvm2_lv_name => $args{container}->getAttr(name => 'container_name'),

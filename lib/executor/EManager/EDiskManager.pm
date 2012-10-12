@@ -55,5 +55,26 @@ sub mkfs {
     }
 }
 
+=head2 removeDisk
+
+    Parent method to check prerequisites for remove disk.
+    Call this method in overriden method in sub classes.
+
+=cut
+
+sub removeDisk{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args=>\%args, required => [ "container" ]);
+
+    # Check if the container has no container access
+    if (scalar(@{ $args{container}->getAccesses })) {
+        throw Kanopya::Exception::Execution::ResourceBusy(
+                  error => "Can not remove exported container $self"
+              );
+    }
+}
+
 1;
 

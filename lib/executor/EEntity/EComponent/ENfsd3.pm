@@ -26,9 +26,9 @@ use Entity::ContainerAccess::NfsContainerAccess;
 use EEntity::EContainerAccess::ELocalContainerAccess;
 
 use Kanopya::Exceptions;
-
 use String::Random;
 
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -51,6 +51,9 @@ sub createExport {
                   error => "Only local containers can be exported through NFS"
               );
     }
+
+    # Check if the disk is not already exported
+    $self->SUPER::createExport(%args);
 
     # Keep the old conf to be able to regenerate the conf file if the export fail.
     my $old_data = $self->getTemplateDataExports();
@@ -148,6 +151,8 @@ sub removeExport {
                                           )
                         );
 
+    $args{container_access}->delete();
+
     $self->generateExports(data => $self->getTemplateDataExports());
 
     my $retry = 5;
@@ -169,8 +174,6 @@ sub removeExport {
         }
         last;
     }
-
-    $args{container_access}->delete();
 }
 
 sub reload {

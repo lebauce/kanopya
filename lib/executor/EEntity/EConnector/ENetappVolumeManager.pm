@@ -95,6 +95,9 @@ sub removeDisk {
               );
     }
 
+    # Check if the disk is removable
+    $self->SUPER::removeDisk(%args);
+
     my $container_name = $args{container}->getAttr(name => 'container_name');
 
     $self->_getEntity()->volume_offline(name => $container_name);
@@ -119,6 +122,9 @@ sub createExport {
     General::checkParams(args     => \%args,
                          required => [ 'container', 'export_name' ],
                          optional => { 'client_options' => 'rw,sync,no_root_squash' });
+
+    # Check if the disk is not already exported
+    $self->SUPER::createExport(%args);
 
     my $manager_ip = $self->_getEntity->getServiceProvider->getMasterNodeIp;
     my $entity = Entity::ContainerAccess::NfsContainerAccess->new(

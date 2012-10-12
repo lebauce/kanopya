@@ -203,8 +203,8 @@ sub getTemplateDataExports {
     my $self = shift;
     my $nfsd3_exports = [];
 
-    my @exports = Entity::ContainerAccess->search(
-                      hash => { export_manager_id => $self->getAttr(name => "component_id") }
+    my @exports = Entity::ContainerAccess::NfsContainerAccess->search(
+                      hash => { export_manager_id => $self->id }
                   );
 
     for my $export (@exports) {

@@ -118,6 +118,9 @@ sub removeDisk {
               );
     }
 
+    # Check if the disk is removable
+    $self->SUPER::removeDisk(%args);
+
     $self->lun_destroy(path => $args{container}->getPath());
 
     $args{container}->delete();
@@ -171,6 +174,8 @@ sub createExport {
                          required => [ 'container', 'export_name' ],
                          optional => { 'typeio' => 'fileio',
                                        'iomode' => 'wb' });
+    # Check if the disk is not already exported
+    $self->SUPER::createExport(%args);
 
     my $api = $self->_getEntity();
     my $volume = $args{container}->getVolume();

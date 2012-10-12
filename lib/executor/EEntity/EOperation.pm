@@ -70,18 +70,7 @@ sub prepare {
 sub process {
     my $self = shift;
 
-    #eval {
-        $self->execute();
-    #};
-    #~ if ($@){
-        #~ my $error = $@;
-        #~ my $class = ref($self);
-        #~ $errmsg = "Operation <".$class."> failed an error occured :\n";
-        #~ $errmsg .= "$error\nOperation will be rollbacked";
-        #~ $log->error($errmsg);
-        #~ $self->{erollback}->undo();
-        #~ throw Kanopya::Exception::Execution::Rollbacked(error => $errmsg);
-    #~ }
+    $self->execute();
 }
 
 sub cancel {

@@ -18,11 +18,23 @@ use base "EManager";
 
 =head2 createExport
 
-    desc: Create an export for a container
+    Parent method to check prerequisites for exporting disk.
+    Call this method in overriden method in sub classes.
 
 =cut
 
 sub createExport {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args=>\%args, required => [ 'container' ]);
+
+    # Check if the container has no container access yet
+    if (scalar(@{ $args{container}->getAccesses })) {
+        throw Kanopya::Exception::Execution::ResourceBusy(
+                  error => "Can not export an already exported disk."
+              );
+    }
 }
 
 =head2 removeExport
