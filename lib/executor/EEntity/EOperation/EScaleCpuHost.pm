@@ -103,7 +103,7 @@ sub execute{
 sub finish {
       my $self = shift;
       # Delete all but cloudmanager
-      delete $self->{context}->{host};
+      # Do not delete host (need in Resubmit workflow)
       delete $self->{params}->{cpu_number};
 }
 
