@@ -48,7 +48,6 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EFactory;
 
-my $dir = Kanopya::Config::getKanopyaDir();
 my $log = get_logger("");
 my $errmsg;
 our $VERSION = '1.00';
@@ -88,7 +87,7 @@ sub prepare {
 
 sub execute{
     my $self = shift;
-
+    my $dir = Kanopya::Config::getKanopyaDir();
     $log->debug("Deploy component '$self->{comp_name}' version $self->{comp_version} category '$self->{comp_category}'");
     
     my $comp_fullname_lc = lc $self->{comp_name} . $self->{comp_version};
