@@ -81,16 +81,16 @@ sub methods {
             'description'   =>  'Retrieve a list of Clusters and Hypervisors (that are not in a cluster) registered in a Datacenter',
             'perm_holder'   =>  'entity',
         },
-        'retrieveVmsAndHypervisors' =>  {
-            'description'   =>  'Retrieve a list of Vms and Hypervisors that are registered in a Cluster',
+        'retrieveClusterHypervisors'     =>  {
+            'description'   =>  'Retrieve a list of Hypervisors that are registered in a Cluster',
             'perm_holder'   =>  'entity',
         },
-        'retrieveHypervisors'            =>  {
-            'description'   =>  'Retrieve list of Hypervisors registered in a Cluster',
+        'retrieveClusterVms'             =>  {
+            'description'   =>  'Retrieve a list of vms registered in a Cluster\'s hypervisor',
             'perm_holder'   =>  'entity',
         },
-        'retrieveVirtualMachines'        =>  {
-            'description'   =>  'Retrieve list of Virtual Machines registered under a vsphere view (Hypervisor or Cluster)',
+        'retrieveHypervisorVms'          =>  {
+            'description'   =>  'Retrieve a list of vms registered under a vsphere hypervisor',
             'perm_holder'   =>  'entity',
         },
         'register'                       =>  {
@@ -271,15 +271,15 @@ sub retrieveClustersAndHypervisors {
     return \@clusters_hypervisors_infos;
 }
 
-=head2 retrieveVmsAndHypervisors
+=head2 retrieveClusterHypervisors
 
-    Desc: Retrieve a cluster's elements (vms and hypervisors)
+    Desc: Retrieve a cluster's hypervisors
     Args: $cluster_name, $datacenter_name
-    Return: \@cluster_infos 
+    Return: \@hypervisors_infos
 
 =cut
 
-sub retrieveVmsAndHypervisors {
+sub retrieveClusterHypervisors {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['cluster_name', 'datacenter_name']);
@@ -290,41 +290,13 @@ sub retrieveVmsAndHypervisors {
                               hash_filter => { name => $args{datacenter_name}},
                           );
 
-    my $cluster_view = $self->findEntityView(
+    my $cluster_view    = $self->findEntityView(
                               view_type    => 'ClusterComputeResource',
                               hash_filter  => { name => $args{cluster_name}},
                               begin_entity => $datacenter_view,
                           );
 
     #retrieve the cluster's hypervisors
-    my $cluster_hypervisors = $self->retrieveHypervisors(
-        cluster_view => $cluster_view,
-    );
-
-    #retrieve the cluster's vms
-    my $cluster_vms = $self->retrieveVirtualMachines (
-        view => $cluster_view,
-    );
-
-    my @cluster_infos = (@$cluster_hypervisors, @$cluster_vms);
-
-    return \@cluster_infos;
-}
-
-=head2 retrieveHypervisors
-
-    Desc: Retrieve a cluster's hypervisors
-    Args: $cluster_view
-    Return: \@hypervisors_infos
-
-=cut
-
-sub retrieveHypervisors {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => ['cluster_view']);
-
-    my $cluster_view = $args{cluster_view};
     my $hosts_mor  = $cluster_view->host;
 
     my @hypervisors_infos;
@@ -342,39 +314,95 @@ sub retrieveHypervisors {
     return \@hypervisors_infos;
 }
 
-=head2 retrieveVirtualMachines
+=head2 retrieveClusterVms
 
-    Desc: Retrieve all the VM in vsphere inventory under a given view
-    Args: a $view that can be a cluster or an hypervisor one
+    Desc: Retrieve all the VM from a vsphere cluster hypervisor
+    Args: $cluster_name, $datacenter_name, $hypervisor_name
     Return: \@vms_infos
 
 =cut
 
-sub retrieveVirtualMachines {
+sub retrieveClusterVms {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['view']);
+    General::checkParams(args => \%args, required => ['cluster_name',
+                                                      'datacenter_name',
+                                                      'hypervisor_name']);
 
-    if (!ref $args{view} eq 'ClusterComputeResource' || !ref $args{view} eq 'HostSystem') {
-        $errmsg = 'given view'. ref $args{view} .' is not handled by this method';
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    #retrieve views
+    my $datacenter_view = $self->findEntityView(
+                              view_type   => 'Datacenter',
+                              hash_filter => { name => $args{datacenter_name}},
+                          );
+
+    my $cluster_view    = $self->findEntityView(
+                              view_type    => 'ClusterComputeResource',
+                              hash_filter  => { name => $args{cluster_name}},
+                              begin_entity => $datacenter_view,
+                          );
+
+    my $hypervisor_view = $self->findEntityView(
+                              view_type    => 'HostSystem',
+                              hash_filter  => { name => $args{hypervisor_name}},
+                              begin_entity => $cluster_view,
+                          );
+
+    #get the vm
+    my $vms_mor = $hypervisor_view->vm;
 
     my @vms_infos;
 
-    my $vms = $self->findEntityViews(
-                  view_type      => 'VirtualMachine',
-                  array_property => ['name'],
-                  begin_entity   => $args{view},
-              );
-
-    foreach my $vm (@$vms) {
-        my %vm_infos = (
+    foreach my $vm_mor (@$vms_mor) {
+        my $vm = $self->getView(mo_ref => $vm_mor);
+        my $vm_infos = {
             name => $vm->name,
             type => 'vm',
-        );
-        
-        push @vms_infos, \%vm_infos;
+        };
+
+        push @vms_infos, $vm_infos;
+    }
+
+    return \@vms_infos;
+}
+
+=head2 retrieveHypervisorVms
+
+    Desc: Retrieve all the VM from a vsphere hypervisor
+    Args: $datacenter_name, $hypervisor_name 
+    Return: \@vms_infos
+
+=cut
+
+sub retrieveHypervisorVms {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['datacenter_name', 'hypervisor_name']);
+
+    #retrieve views
+    my $datacenter_view = $self->findEntityView(
+                              view_type   => 'Datacenter',
+                              hash_filter => { name => $args{datacenter_name}},
+                          );
+
+    my $hypervisor_view = $self->findEntityView(
+                              view_type    => 'HostSystem',
+                              hash_filter  => { name => $args{hypervisor_name}},
+                              begin_entity => $datacenter_view,
+                          );
+
+    #get the vm
+    my $vms_mor = $hypervisor_view->vm;
+
+    my @vms_infos;
+
+    foreach my $vm_mor (@$vms_mor) {
+        my $vm = $self->getView(mo_ref => $vm_mor);
+        my $vm_infos = {
+            name => $vm->name,
+            type => 'vm',
+        };
+
+        push @vms_infos, $vm_infos;
     }
 
     return \@vms_infos;
@@ -537,10 +565,12 @@ sub findEntityViews {
 
 #TODO: find a way to make a clean generic registerComputeResource() that can be use
 #either for the cluster registration and for the single host registration
+#TODO: manage the possibility that the entities, for example clusters an be into vsphere
+#folders
 
 =head2 register
 
-    Desc: register vSphere items into kanopya
+    Desc: register vSphere items into kanopya service providers
     Args: $register_item, the object to be registered from the vsphere entity into Kanopya
           \%args is also relayed to the operation
 =cut
@@ -562,14 +592,31 @@ sub register {
         'network'    => 'registerNetwork',
     );
 
+    my @registered_items;
+    #For each item we first try to register it's parent, then the item itself
+    #reminder: any registered item is a service provider
     foreach my $register_item (@register_items) {
+
+        #'root' is the datacenter's parent type. We act like there is nothing above
+        #the datacenter level
+        my $parent;
+        if (!$register_item->{parent_type} eq 'root') {
+            my $parent_register_method = $register_methods{$register_item->{parent_type}};
+
+            $parent = $self->$parent_register_method(name => $register_item->{parent_name});
+        }
 
         my $register_method = $register_methods{$register_item->{type}};
 
-        delete $register_item->{type};
+        my $registered_item = $self->$register_method(
+                                  name   => $register_item->{name}, 
+                                  parent => $parent,
+                              );
 
-        $self->$register_method(%$register_item);
+        push @registered_items, $registered_item;
     }
+
+    return \@registered_items;
 }
 
 =head2 registerDatacenter
@@ -584,18 +631,18 @@ sub register {
 sub registerDatacenter {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['datacenter_name']);
+    General::checkParams(args => \%args, required => ['name']);
 
     #First we check if the datacenter already exist in Kanopya
     my $existing_datacenter;
     eval {
         $existing_datacenter = Vsphere5Datacenter->find(hash => {
-                                   vsphere5_datacenter_name => $args{datacenter_name},
-                                   vsphere5_id              => $self->id
+                                   vsphere5_datacenter_name => $args{name},
+                                   vsphere5_id              => $self->id,
                                });
     };
     if (defined $existing_datacenter) {
-        $errmsg  = 'The datacenter '. $args{datacenter_name} .' already exist in kanopya ';
+        $errmsg  = 'The datacenter '. $args{name} .' already exist in kanopya ';
         $errmsg .= 'with ID '. $existing_datacenter->id;
         $log->info($errmsg);
         return $existing_datacenter;
@@ -604,12 +651,12 @@ sub registerDatacenter {
         my $datacenter;
         eval {
             $datacenter = Vsphere5Datacenter->new(
-                              vsphere5_datacenter_name => $args{datacenter_name},
+                              vsphere5_datacenter_name => $args{name},
                               vsphere5_id              => $self->id
                           );
         };
         if ($@) {
-            $errmsg = 'Datacenter '. $args{datacenter_name} .' could not be created: '. $@;
+            $errmsg = 'Datacenter '. $args{name} .' could not be created: '. $@;
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
 
@@ -753,14 +800,14 @@ sub registerHypervisor {
 sub registerCluster {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['datacenter_name', 'cluster_name']);
+    General::checkParams(args => \%args, required => ['parent','name']);
 
-    #Try to register the given datacenter (return the datacenter if it already exist)
-    my $datacenter_name = $args{datacenter_name};
-    my $datacenter      = $self->registerDatacenter(datacenter_name => $datacenter_name);
+    #We consider that the only valable parent for a cluster is a Datacenter
+    my $datacenter      = $args{parent};
+    my $datacenter_name = $datacenter->vsphere5_datacenter_name;
 
     #Create a new service provider to hold the vsphere cluster hypervisors
-    my $cluster_name = $args{cluster_name};
+    my $cluster_name = $args{name};
     my $service_provider;
 
     eval {
