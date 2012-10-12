@@ -445,16 +445,14 @@ sub monitoringDefaultInit {
 
     #generate the scom indicators (only default)
     my $indicators = $self->insertCollectorIndicators(default => 1);
+    my $service_provider_id = $self->id;
 
-    my $service_provider_id = $self->getId();
-    my $collector           = $self->getManager(manager_type => "collector_manager");
-    #my $indicators          = $collector->getIndicators();
     my $active_session_indicator_id;
     my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
     my @funcs = qw(mean max min std dataOut);
 
     foreach my $indicator (@$indicators) {
-        my $indicator_id  = $indicator->getId;
+        my $indicator_id  = $indicator->id;
         my $indicator_oid = $indicator->indicator_oid;
 
         if ($indicator_oid eq 'Terminal Services/Active Sessions') {
@@ -716,7 +714,6 @@ sub generateUnderRules {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => 0,
     };
 
     $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' underloaded';
@@ -753,7 +750,6 @@ sub generateCoefficientOfVariationRules {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
         aggregate_rule_label                => 'Heterogeneity detected with '.$aggregate_combination->toString(),
         aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };

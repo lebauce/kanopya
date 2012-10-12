@@ -96,7 +96,6 @@ sub getMethods {
 
 sub new {
     my $class = shift;
-    my %args = @_;
 
     my $self = {};
     bless $self, $class;
@@ -199,7 +198,7 @@ sub nodemetricManagement {
     $log->info('Received values'.(Dumper $monitored_values));
 
     # Eval the rules
-    my $rep = $self->_evalAllRules(
+    return $self->_evalAllRules(
         'monitored_values'  => $monitored_values,
         'rules'             => \@rules,
         'service_provider'  => $service_provider,
@@ -354,7 +353,6 @@ sub _contructRetrieverOutput {
     my $rules               = $args{rules};
 
     my $service_provider    = Entity::ServiceProvider->find( hash => { service_provider_id => $service_provider_id});
-    my $indicators_name     = undef;
     my $indicators          = {};
 
     #Get all the rules relative to the cluster_id
@@ -392,7 +390,6 @@ sub _contructRetrieverOutput {
 sub clustermetricManagement{
     my ($self, %args) = @_;
     my $service_provider = $args{service_provider};
-    my $cluster_evaluation = {};
     my $service_provider_id = $service_provider->getId();
 
     # Get rules relative to a cluster
