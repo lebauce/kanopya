@@ -947,7 +947,7 @@ sub registerKanopyaMaster {
                      );
 
     my $admin_iface = Entity::Iface->new(
-                          iface_name     => 'eth0',
+                          iface_name     => $args{admin_interface},
                           iface_mac_addr => $args{mb_hw_address},
                           iface_pxe      => 0,
                           host_id        => $admin_host->id,

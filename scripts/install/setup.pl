@@ -260,6 +260,7 @@ my %datas = (
     kanopya_hostname         => $hostname,
     kanopya_initiator        => $kanopya_initiator,
     mb_hw_address            => $internal_net_interface_mac_add,
+    admin_interface          => $answers->{internal_net_interface},
     admin_password           => $answers->{dbpassword1},
     admin_kernel             => $release,
     tmstp                    => time()
