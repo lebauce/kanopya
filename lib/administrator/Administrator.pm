@@ -238,9 +238,12 @@ sub buildEntityright {
 
     General::checkParams(args => \%args, required => ['schema']);
 
-    my $user = $args{schema}->resultset('User')->find($ENV{EID});
+    if (defined ($config->{dbconf}->{god_mode}) && $config->{dbconf}->{god_mode} eq "1") {
+        return Entityright::System->new(user_id => 0, schema => $args{schema});
+    }
 
-    if($user->get_column('user_system')) {
+    my $user = $args{schema}->resultset('User')->find($ENV{EID});
+    if ($user->get_column('user_system')) {
         #$log->debug("Entityright build a new Entityright::System with EID ".$ENV{EID});
         return Entityright::System->new(user_id => $user->id, schema => $args{schema});
     } else {
