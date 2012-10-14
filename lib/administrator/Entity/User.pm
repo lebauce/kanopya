@@ -196,7 +196,7 @@ sub create {
 
 sub new {
     my $self = shift;
-    $self->create();
+    $self->create(@_);
 }
 
 =head2 setAttr
