@@ -39,8 +39,6 @@ BEGIN {
     push @INC, dirname(__FILE__);
 }
 
-use PopulateDB;
-
 die "You must be root to execute this scipts" if ( $< != 0 );
 
 #Scripts variables, used to set stuff like path, users, etc
@@ -334,6 +332,7 @@ print "done\n";
 
 # Populate DB with more data (perl script instead of sql)
 print "populate database...";
+require PopulateDB;
 populateDB(login    => $answers->{dbuser},
            password => $answers->{dbpassword1},
            %datas);
