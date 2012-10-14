@@ -34,6 +34,13 @@ use NetAddr::IP;
 use XML::Simple;
 use Date::Simple (':all');
 
+BEGIN {
+    use File::Basename;
+    push @INC, dirname(__FILE__);
+}
+
+use PopulateDB;
+
 die "You must be root to execute this scipts" if ( $< != 0 );
 
 #Scripts variables, used to set stuff like path, users, etc
@@ -253,7 +260,7 @@ my %datas = (
     kanopya_hostname         => $hostname,
     kanopya_initiator        => $kanopya_initiator,
     mb_hw_address            => $internal_net_interface_mac_add,
-    admin_password           => crypt($answers->{dbpassword1}, '$6$'.$answers->{crypt_salt}.'$'),
+    admin_password           => $answers->{dbpassword1},
     admin_kernel             => $release,
     tmstp                    => time()
 );
@@ -263,10 +270,6 @@ useTemplate(
     datas    => \%datas,
     conf     => $conf_vars->{data_sql},
     include  => $conf_vars->{data_dir}
-);
-
-%datas = (
-    initiatorname => $kanopya_initiator
 );
 
 useTemplate(
@@ -330,7 +333,9 @@ print "done\n";
 
 # Populate DB with more data (perl script instead of sql)
 print "populate database...";
-system ("perl $conf_vars->{populate_db_script} admin $answers->{dbpassword1}") == 0 or die "error while populate db: $!";
+populateDB(login    => $answers->{dbuser},
+           password => $answers->{dbpassword1},
+           %datas);
 print "done\n";
 
 #######################
