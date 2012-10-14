@@ -4,6 +4,9 @@ require('KIM/customers.js');
 require('KIM/servicetemplates.js');
 require('KIM/policies.js');
 
+$.getJSON("/api/cluster?cluster_name=Kanopya",
+          function (data) { kanopya_cluster = data[0].pk; });
+
 // each link will show the div with id "view_<id>" and hide all div in "#view-container"
 // onLoad handlers are called with params (content_container_id)
 var mainmenu_def = {
@@ -65,8 +68,8 @@ var mainmenu_def = {
     },
     'Administration'    : {
         'Kanopya'          : [
-            { label : 'Configuration', id : 'service_configuration', onLoad : function(cid) { require('KIM/services_config.js'); loadServicesConfig(cid, 1);}},
-            { label : 'Resources', id : 'service_resources', onLoad : function(cid) { require('KIM/services.js'); loadServicesResources(cid, 1);}},
+            { label : 'Configuration', id : 'service_configuration', onLoad : function(cid) { require('KIM/services_config.js'); loadServicesConfig(cid, kanopya_cluster);}},
+            { label : 'Resources', id : 'service_resources', onLoad : function(cid) { require('KIM/services.js'); loadServicesResources(cid, kanopya_cluster);}},
         ],
         'Right Management' : [
             { label : 'Users', id : 'users', onLoad : users.load_content },
