@@ -29,15 +29,15 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    powersupplycardmodel_name => { pattern => 'm/\w*/s',
+    powersupplycardmodel_name => { pattern => '\w*',
                           is_mandatory => 1,
                           is_extended => 0 },
     
-    powersupplycardmodel_brand => { pattern => 'm/\w*/s',
+    powersupplycardmodel_brand => { pattern => '[\w ]*',
                           is_mandatory => 1,
                           is_extended => 0 },
     
-    powersupplycardmodel_slotscount => { pattern => 'm//s',
+    powersupplycardmodel_slotscount => { pattern => '\d+',
                          is_mandatory => 1,
                          is_extended => 0 },
 };
