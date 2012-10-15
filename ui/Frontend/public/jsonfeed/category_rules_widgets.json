@@ -1,0 +1,16 @@
+{
+"result" :
+  {
+  "data" : [
+     {
+      "id" : "widget_nodes_state",
+      "title" : "Nodes warnings",
+      "description" : "Nodes warnings rules widget",
+      "creator" : "Hedera",
+      "url" : "widgets/widget_nodes_warns.html",
+      "image": "widgets/widget_nodes_warns.jpg",
+      "metadata" : {}
+    }
+  ]
+  }
+}
