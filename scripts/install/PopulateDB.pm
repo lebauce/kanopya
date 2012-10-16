@@ -31,6 +31,7 @@ use POSIX;
 use Date::Simple (':all');
 use Operationtype;
 use ComponentType;
+use ComponentTemplate;
 use ConnectorType;
 use Indicatorset;
 use Indicator;
@@ -532,11 +533,11 @@ sub registerComponents {
         );
         if (defined $component_type->[3]) {
             my $template_name = lc $component_type->[0];
-            $args{db}->resultset("ComponentTemplate")->create( {
+            ComponentTemplate->new(
                 component_template_name      => lc($component_type->[0]),
                 component_template_directory => $component_type->[3],
                 component_type_id            => $type->id
-            } );
+            );
         }
     }
 
@@ -855,8 +856,13 @@ sub registerKanopyaMaster {
                                  component_name    => $name,
                                  component_version => $version
                              } );
+        my $component_template;
+        eval {
+            $component_template = ComponentTemplate->find(hash => { component_template_name => lc $name })->id;
+        };
         my $comp = $class->new(
-            service_provider_id => $admin_cluster->id,
+            service_provider_id   => $admin_cluster->id,
+            component_template_id => $component_template,
             defined ($component->{conf}) ? %{$component->{conf}} : ()
         );
 
