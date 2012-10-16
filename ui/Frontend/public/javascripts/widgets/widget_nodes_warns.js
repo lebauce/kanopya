@@ -10,6 +10,17 @@ $('.widget').live('widgetLoadContent',function(e, obj){
 });
 
 function displayWarningNodesGrid(widget, sp_id) {
+
+    // GAUGE
+    var warn_node_gauge = widget.element.find('.warnNodesGauge');
+    warn_node_gauge.progressbar();
+
+    // Styling : orange bar and centered caption over bar
+    warn_node_gauge.find('.ui-progressbar-value').css('background', 'orange');
+    warn_node_gauge.css('position', 'relative');
+    warn_node_gauge.find('.caption').attr('style', 'position: absolute; width: 100%; text-align: center; line-height: 1.9em;');
+
+    // GRID
     var cont = widget.element.find('.nodesStateGrid');
     cont.attr('id', 'nodestate_grid_' + widget.element.attr('id'));
     var warn_noderules = {};
@@ -65,6 +76,7 @@ function displayWarningNodesGrid(widget, sp_id) {
     $.get(
             'api/externalnode?service_provider_id=' + sp_id,
             function(nodes) {
+                var total_nodes = nodes.length;
                 var checked_nodes = 0;
                 var warn_nodes = 0;
                 $.each(nodes, function(idx,node) {
@@ -84,7 +96,8 @@ function displayWarningNodesGrid(widget, sp_id) {
                                     // reload grid to apply sorting options at each addRow (progressive sorting)
                                     //cont.trigger('reloadGrid');
                                     warn_nodes++;
-                                    //cont.jqGrid('setColProp', 'name', {label : 'Nodes ' + warn_nodes}); 
+                                    warn_node_gauge.progressbar('value',warn_nodes*100/total_nodes);
+                                    warn_node_gauge.find('.caption').html(warn_nodes + '/' + total_nodes + ' nodes');
                                 }
                                 checked_nodes++;
                             }
@@ -92,7 +105,7 @@ function displayWarningNodesGrid(widget, sp_id) {
                 })
                 // Reload grid at the end (one time sorting, more optimized)
                 function sortGrid() {
-                    (nodes.length === checked_nodes) ? cont.trigger('reloadGrid') : setTimeout(sortGrid, 10);
+                    (total_nodes === checked_nodes) ? cont.trigger('reloadGrid') : setTimeout(sortGrid, 10);
                 }
                 sortGrid();
             }
