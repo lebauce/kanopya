@@ -21,10 +21,10 @@ function displayWarningNodesGrid(widget, sp_id) {
     warn_node_gauge.find('.caption').attr('style', 'position: absolute; width: 100%; text-align: center; line-height: 1.9em;');
 
     // GRID
-    var cont = widget.element.find('.nodesStateGrid');
-    cont.attr('id', 'nodestate_grid_' + widget.element.attr('id'));
+    var nodes_grid = widget.element.find('.nodesStateGrid');
+    nodes_grid.attr('id', 'nodestate_grid_' + widget.element.attr('id'));
     var warn_noderules = {};
-    cont.jqGrid({
+    nodes_grid.jqGrid({
         datatype : 'local',
         colNames : ['Node name', 'Warnings'],
         colModel : [
@@ -89,12 +89,12 @@ function displayWarningNodesGrid(widget, sp_id) {
                                 });
                                 var nb_warn_rules = warn_rules.length;
                                 if (nb_warn_rules > 0) {
-                                    cont.jqGrid('addRowData',
+                                    nodes_grid.jqGrid('addRowData',
                                                 node.pk,
                                                 {name : node.externalnode_hostname, warn_count : nb_warn_rules});
                                     warn_noderules[node.pk] = warn_rules;
                                     // reload grid to apply sorting options at each addRow (progressive sorting)
-                                    //cont.trigger('reloadGrid');
+                                    //nodes_grid.trigger('reloadGrid');
                                     warn_nodes++;
                                     warn_node_gauge.progressbar('value',warn_nodes*100/total_nodes);
                                     warn_node_gauge.find('.caption').html(warn_nodes + '/' + total_nodes + ' nodes');
@@ -103,11 +103,23 @@ function displayWarningNodesGrid(widget, sp_id) {
                             }
                     );
                 })
-                // Reload grid at the end (one time sorting, more optimized)
-                function sortGrid() {
-                    (total_nodes === checked_nodes) ? cont.trigger('reloadGrid') : setTimeout(sortGrid, 10);
+                // Wait end of all requests to apply specific management
+                function manageEndCheck() {
+                    if (total_nodes === checked_nodes) {
+                        if (warn_nodes === 0) {
+                            // No warnings, pretty display
+                            widget.element.find('.ui-jqgrid').hide();
+                            warn_node_gauge.css('background', 'lightGreen');
+                            warn_node_gauge.find('.caption').html('no warnings');
+                        } else {
+                            // Reload grid at the end (one time sorting, more optimized)
+                            nodes_grid.trigger('reloadGrid');
+                        }
+                    } else {
+                        setTimeout(manageEndCheck, 10);
+                    }
                 }
-                sortGrid();
+                manageEndCheck();
             }
     );
 
