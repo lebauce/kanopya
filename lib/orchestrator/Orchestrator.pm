@@ -444,7 +444,14 @@ sub clustermetricManagement{
         my $workflow_id;
 
         eval {
-            $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+
+            eval{ # Avoid the reinstantiation for each node
+                $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+            };
+            if($@){
+                $log->info('No workflow manager in service provider <'.($service_provider->getId()).'>')
+            }
+
             $workflow_def_id  = $aggregate_rule->getAttr(name => 'workflow_def_id');
             $workflow_id      = $aggregate_rule->getAttr(name => 'workflow_id');
 
@@ -1380,22 +1387,22 @@ sub run {
 =head2 updateOrchestratorConf
 
     Class : Public
-    Desc  : update values in the orchestrator.conf file 
+    Desc  : update values in the orchestrator.conf file
     Args  : $time_step
 
 =cut
 
 sub updateOrchestratorConf {
-    my ($class, %args) = @_; 
+    my ($class, %args) = @_;
 
     if ((not defined $args{time_step})) {
         throw Kanopya::Exception::Internal(
             error => 'An orchestration frequency must be provided for update'
-        );  
-    } 
+        );
+    }
 
     #get orchestrator configuration
-    my $configuration = Kanopya::Config::get('orchestrator'); 
+    my $configuration = Kanopya::Config::get('orchestrator');
 
     if (defined $args{time_step}) {
         $configuration->{time_step} = $args{time_step};
