@@ -754,10 +754,15 @@ sub registerKanopyaMaster {
                         );
 
     my $config = Kanopya::Config::get('executor');
+    
+    my $kanopya = Entity::ServiceProvider::Inside::Cluster->find(hash => {
+                      cluster_name => "Kanopya"
+                  } );
 
-    $config->{cluster}->{executor} = Entity::ServiceProvider::Inside::Cluster->find(hash => {
-                                         cluster_name => "Kanopya"
-                                     } )->id;
+    $config->{cluster}->{bootserver} = $kanopya->id;
+    $config->{cluster}->{executor} = $kanopya->id;
+    $config->{cluster}->{monitor} = $kanopya->id;
+    $config->{cluster}->{nas} = $kanopya->id;
 
     Kanopya::Config::set(subsystem => 'executor',
                          config    => $config);
