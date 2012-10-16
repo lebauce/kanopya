@@ -49,22 +49,17 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-sub new {
-    my $class = shift;
-    my %args = @_;
+sub getHostManager {
+    my $self = shift;
 
-    my $self = $class->SUPER::new(%args);
-
-    $self->{host_manager} = EFactory::newEEntity(data => $self->getHostManager);
-
-    return $self;
+    return EFactory::newEEntity(data => $self->SUPER::getHostManager);
 }
 
 sub start {
     my $self = shift;
     my %args = @_;
 
-    $self->{host_manager}->startHost(host => $self, hypervisor => $args{hypervisor});
+    $self->getHostManager->startHost(host => $self, hypervisor => $args{hypervisor});
 
     $self->setState(state => 'starting');
 
@@ -85,14 +80,14 @@ sub stop {
     my $self = shift;
     my %args = @_;
 
-    $self->{host_manager}->stopHost(host => $self);
+    $self->getHostManager->stopHost(host => $self);
 }
 
 sub postStart {
     my $self = shift;
     my %args = @_;
 
-    $self->{host_manager}->postStart(host => $self);
+    $self->getHostManager->postStart(host => $self);
 }
 
 sub ping {

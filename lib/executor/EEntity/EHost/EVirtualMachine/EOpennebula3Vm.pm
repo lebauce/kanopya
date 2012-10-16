@@ -28,7 +28,7 @@ my $log = get_logger("");
 sub timeOuted {
     my $self = shift;
 
-    $self->{host_manager}->forceDeploy(vm => $self, hypervisor => $self->hypervisor);
+    $self->getHostManager->forceDeploy(vm => $self, hypervisor => $self->hypervisor);
 }
 
 1;
