@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Kanopya::Config;
 use Entity::Component;
 use Entity::Host;
 use Externalnode::Node;
@@ -449,12 +450,12 @@ sub configureManagers {
     # Workaround to handle connectors that have btoh category.
     # We need to fix this when we willmerge inside/outside.
     my ($wok_disk_manager, $wok_export_manager);
+    my $kanopya = Entity->get(id => Kanopya::Config::get("executor")->{cluster}->{executor});
     eval {
         $wok_disk_manager   = $args{managers}->{disk_manager}->{manager_id};
         $wok_export_manager = $args{managers}->{export_manager}->{manager_id};
     };
     if ($wok_disk_manager and $wok_export_manager) {
-        my $kanopya = Entity->get(id => 1);
         # FileImagaemanager0 -> FileImagaemanager0
         if ($wok_disk_manager != $kanopya->getComponent(name => "Lvm", version => "2")->getAttr(name => 'component_id')) {
             $args{managers}->{export_manager}->{manager_id} = $wok_disk_manager;
@@ -464,14 +465,14 @@ sub configureManagers {
     # Install new managers or/and new managers params if required
     if (defined $args{managers}) {
         # Add default workflow manager
-        my $workflow_manager = Entity::Component::Kanopyaworkflow0->find(hash => { service_provider_id => 1 });
+        my $workflow_manager = $kanopya->getComponent(name => "Kanopyaworkflow", version => "0");
         $args{managers}->{workflow_manager} = {
             manager_id   => $workflow_manager->getId,
             manager_type => "workflow_manager"
         };
 
         # Add default collector manager
-        my $collector_manager = Entity::Component::Kanopyacollector1->find(hash => { service_provider_id => 1 });
+        my $collector_manager = $kanopya->getComponent(name => "Kanopyacollector", version => "1");
         $args{managers}->{collector_manager} = {
             manager_id   => $collector_manager->getId,
             manager_type => "collector_manager"
