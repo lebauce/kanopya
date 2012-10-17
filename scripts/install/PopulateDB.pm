@@ -1275,7 +1275,8 @@ sub login {
     # Activate god mode before the administrator loads it config
     $config->{dbconf}->{god_mode} = "1";
     Kanopya::Config::set(subsystem => "libkanopya", config => $config);
-    Administrator::loadConfig();
+
+    Administrator::_connectdb();
 
     # Restore the config to its original state, the administrator keeps its old one
     if (defined $god_mode) {
