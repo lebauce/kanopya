@@ -1417,7 +1417,12 @@ sub DESTROY {
     my $self = shift;
 
     if ($self->{_altered}) {
-        $self->save();
+        eval {
+            $self->save();
+        };
+        if ($@) {
+            $log->debug("Unable to save <$self> at destroy: " . $@);
+        }
     }
 }
 
