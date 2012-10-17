@@ -25,52 +25,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 use Data::Dumper;
 
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'econtainer' ]);
-
-    $args{data} = {
-        econtainer          => $args{econtainer},
-        device_connected    => '',
-        partition_connected => '',
-    };
-
-    bless $args{data}, $class;
-
-    my $self = $class->SUPER::new(%args);
-
-    bless $self, $class;
-    return $self;
-}
-
-sub save {}
-
-sub getContainer {
-    my $self = shift;
-
-    return $self->_getEntity->{econtainer};
-}
-
-sub getAttr {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'name' ]);
-
-    return $self->_getEntity->{$args{name}};
-}
-
-sub setAttr {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'name', 'value' ]);
-
-    $self->_getEntity->{$args{name}} = $args{value};
-}
-
 =head2 connect
 
 =cut
@@ -82,7 +36,7 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $file = $self->_getEntity->{econtainer}->getAttr(name => 'container_device');
+    my $file = $self->getContainer->container_device;
     my $device;
     if (-b $file) {
         $device = $file;
@@ -127,10 +81,10 @@ sub disconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $file = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_device');
+    my $file = $self->getContainer->container_device;
 
     if (! -b $file) {
-        my $device = $self->getAttr(name => 'device_connected');
+        my $device = $self->device_connected;
 
         $command = "losetup -d $device";
         $result  = $args{econtext}->execute(command => $command);
@@ -141,34 +95,6 @@ sub disconnect {
 
     $self->setAttr(name  => 'device_connected',
                    value => '');
-}
-
-sub tryDisconnectPartition {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    if (not defined ($self->{_entity}->{partition_connected})) {
-        # Manualy check if the device is connected, as we do not have this info in database.
-        my $device = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_name');
-
-        my $check_cmd = "losetup -a | grep $device";
-        my $result    = $args{econtext}->execute(command => $check_cmd);
-
-        if (not $result->{stdout}) {
-            return;
-        }
-        chomp($result->{stdout});
-        my $partition = $result->{stdout};
-        $partition =~ s/\: .*$//g;
-        chomp($partition);
-
-        $self->setAttr(name  => 'partition_connected',
-                       value => $partition);
-    }
-
-    $self->disconnectPartition(%args);
 }
 
 1;

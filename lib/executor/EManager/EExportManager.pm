@@ -30,10 +30,17 @@ sub createExport {
     General::checkParams(args=>\%args, required => [ 'container' ]);
 
     # Check if the container has no container access yet
-    if (scalar(@{ $args{container}->getAccesses })) {
-        throw Kanopya::Exception::Execution::ResourceBusy(
-                  error => "Can not export an already exported disk."
-              );
+    # For instance, we allow export when a container already exproted
+    # by a local container.
+    #
+    # TODO: Take into account shared, read-only and export type paramters
+    #       to allow multiple export when possible.
+    for my $access ($args{container}->container_accesses) {
+        if (not $access->isa('Entity::ContainerAccess::LocalContainerAccess')) {
+            throw Kanopya::Exception::Execution::ResourceBusy(
+                      error => "Can not export an already exported disk."
+                  );
+        }
     }
 }
 
@@ -43,8 +50,7 @@ sub createExport {
 
 =cut
 
-sub removeExport {
-}
+sub removeExport {}
 
 =head2 addExportClient
 
@@ -53,8 +59,7 @@ sub removeExport {
 
 =cut
 
-sub addExportClient {
-}
+sub addExportClient {}
 
 =head2 removeExportClient
 
@@ -63,9 +68,6 @@ sub addExportClient {
 
 =cut
 
-sub removeExportClient {
-}
-
+sub removeExportClient {}
 
 1;
-

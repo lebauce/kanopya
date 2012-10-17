@@ -21,9 +21,8 @@ use warnings;
 
 use General;
 use Template;
-use EFactory;
 use Entity::ContainerAccess::NfsContainerAccess;
-use EEntity::EContainerAccess::ELocalContainerAccess;
+use Entity::ContainerAccess::LocalContainerAccess;
 
 use Kanopya::Exceptions;
 use String::Random;
@@ -62,9 +61,12 @@ sub createExport {
                          device => $args{container}->getAttr(name => 'container_device')
                      );
 
-    my $elocal_access = EEntity::EContainerAccess::ELocalContainerAccess->new(
-                            econtainer => $args{container}
-                        );
+    # Create a local access to the container to be able to mount localy the device
+    # and then export the mountpoint with NFS.
+    my $elocal_access = EEntity->new(entity => Entity::ContainerAccess::LocalContainerAccess->create(
+                            container_id      => $args{container}->id,
+                            export_manager_id => 0,
+                        ));
 
     $elocal_access->mount(mountpoint => $mountpoint, econtext => $self->getEContext, erollback => $args{erollback});
 
@@ -137,21 +139,18 @@ sub removeExport {
 
     if (! $args{container_access}->isa("EEntity::EContainerAccess::ENfsContainerAccess")) {
         throw Kanopya::Exception::Internal::WrongType(
-                  error => "ContainerAccess must be a EEntity::EContainerAccess::ENfsContainerAccess, not " . 
+                  error => "ContainerAccess must be a EEntity::EContainerAccess::ENfsContainerAccess, not " .
                            ref($args{container_access})
               );
     }
 
-    my $device   = $args{container_access}->getContainer->getAttr(name => 'container_device');
+    my $device   = $args{container_access}->getContainer->container_device;
     my $mountdir = $self->getMountDir(device => $device);
 
-    my $elocal_access = EEntity::EContainerAccess::ELocalContainerAccess->new(
-                            econtainer => EFactory::newEEntity(
-                                             data => $args{container_access}->getContainer
-                                          )
-                        );
+    # Search the local access to the container, it should be created at the NFS export creation.
+    my $elocal_access = EEntity->new(entity => $args{container_access}->getContainer->getLocalAccess);
 
-    $args{container_access}->delete();
+    $args{container_access}->remove();
 
     $self->generateExports(data => $self->getTemplateDataExports());
 
@@ -174,6 +173,7 @@ sub removeExport {
         }
         last;
     }
+    $elocal_access->remove();
 }
 
 sub reload {

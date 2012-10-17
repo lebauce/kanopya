@@ -21,7 +21,7 @@ use base "EEntity::EContainer";
 use strict;
 use warnings;
 
-use EEntity::EContainerAccess::ELocalContainerAccess;
+use Entity::ContainerAccess::LocalContainerAccess;
 use File::Basename;
 
 use Log::Log4perl "get_logger";
@@ -29,48 +29,15 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 my $log = get_logger("");
 
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'path', 'size', 'filesystem' ]);
-
-    $args{data} = {
-        container_device     => $args{path},
-        container_size       => $args{size},
-        container_filesystem => $args{filesystem},
-        container_name       => basename($args{path}),
-    };
-
-    # Here bless $args{data} with this EEntity, to be able to call
-    # getAttr on the object returned by EEntity->_getEntity.
-    bless $args{data}, $class;
-
-    my $self = $class->SUPER::new(%args);
-
-    bless $self, $class;
-    return $self;
-}
-
-sub save {}
-
-sub getAttr {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'name' ]);
-
-    if ($self->_getEntity and $self->_getEntity->isa('EEntity::EContainer::ELocalContainer')) {
-        return $self->_getEntity->{$args{name}};
-    }
-    return $self->{$args{name}};
-}
-
 sub createDefaultExport {
     my $self = shift;
     my %args = @_;
 
-    return EEntity::EContainerAccess::ELocalContainerAccess->new(econtainer => $self);
+    # Local container access are not handled by a manager
+    return EEntity->new(entity => Entity::ContainerAccess::LocalContainerAccess(
+               container_id      => $self->id,
+               export_manager_id => 0,
+           ));
 }
 
 sub removeDefaultExport {
@@ -78,6 +45,9 @@ sub removeDefaultExport {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'container_access' ]);
+
+    # Local container access are not handled by a manager
+    $args{container_access}->remove();
 }
 
 sub getMountPoint {

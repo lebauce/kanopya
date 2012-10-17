@@ -41,7 +41,7 @@ use warnings;
 use Entity;
 use Entity::Gp;
 use EFactory;
-use EEntity::EContainer::ELocalContainer;
+use Entity::Container::LocalContainer;
 use General;
 
 use Log::Log4perl "get_logger";
@@ -59,20 +59,27 @@ sub createFromMasterimage {
                          required => [ "masterimage", "disk_manager",
                                        "manager_params", "erollback" ]);
 
-    my $master_container = EEntity::EContainer::ELocalContainer->new(
-                               path => $args{masterimage}->getAttr(name => 'masterimage_file'),
-                               size => $args{masterimage}->getAttr(name => 'masterimage_size'),
+    # Create a temporary local container to access to the masterimage file.
+    my $master_container = EEntity->new(entity => Entity::Container::LocalContainer->new(
+                               # This type of disk is not handled by a manager
+                               disk_manager_id      => 0,
+                               container_name       => $args{masterimage}->masterimage_name,
+                               container_size       => $args{masterimage}->masterimage_size,
                                # TODO: get this value from masterimage attrs.
-                               filesystem => 'ext3',
-                           );
+                               container_filesystem => 'ext3',
+                               container_freespace  => 0,
+                               container_device     => $args{masterimage}->masterimage_file,
+                           ));
 
-    # Instanciate a fake econtainer for the masterimage raw file.
     $self->create(
         src_container => $master_container,
         disk_manager  => $args{disk_manager},
         erollback     => $args{erollback},
         %{$args{manager_params}}
     );
+
+    # Remove the temporary container
+    $master_container->remove();
 
     my $components = $args{masterimage}->getProvidedComponents();
     foreach my $comp (@$components) {

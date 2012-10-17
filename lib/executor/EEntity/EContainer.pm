@@ -44,8 +44,8 @@ sub copy {
 
     General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
 
-    my $source_size = $self->getAttr(name => 'container_size');
-    my $dest_size   = $args{dest}->getAttr(name => 'container_size');
+    my $source_size = $self->container_size;
+    my $dest_size   = $args{dest}->container_size;
 
     # Check if the destination container is not to small.
     if ($dest_size < $source_size) {
