@@ -32,6 +32,12 @@ use Kanopya::Exceptions;
 use Entity;
 use Entity::ContainerAccess;
 
+use Data::Dumper;
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("");
+my $errmsg;
+
 use constant ATTR_DEF => {
     disk_manager_id => {
         pattern      => '^[0-9\.]*$',
@@ -100,6 +106,26 @@ sub getAccesses {
                           );
 
     return \@container_accesses;
+}
+
+=head2 getLocalAccess
+
+    desc: Return ths local access to the container if exists.
+
+=cut
+
+sub getLocalAccess {
+    my $self = shift;
+
+    for my $access ($self->container_accesses) {
+        if ($access->isa('Entity::ContainerAccess::LocalContainerAccess')) {
+            return $access;
+        }
+    }
+
+    throw Kanopya::Exception::Internal(
+              error => "No local access exists for this container <$self>"
+          );
 }
 
 =head2 getServiceProvider
