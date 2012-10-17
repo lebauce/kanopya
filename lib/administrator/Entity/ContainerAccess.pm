@@ -51,17 +51,17 @@ use constant ATTR_DEF => {
         label        => 'Export name',
         type         => 'string',
         pattern      => '^.*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1
     },
     container_access_ip => {
         pattern      => '^.*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     container_access_port => {
         pattern      => '^.*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     device_connected => {
