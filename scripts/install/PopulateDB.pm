@@ -780,6 +780,9 @@ sub registerKanopyaMaster {
             name => 'Iscsitarget1'
         },
         {
+            name => 'Fileimagemanager0'
+        },
+        {
             name => "Dhcpd3",
             conf => {
                 dhcpd3_domain_name =>  "hedera-technology.com",

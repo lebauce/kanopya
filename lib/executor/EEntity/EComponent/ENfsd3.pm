@@ -173,7 +173,8 @@ sub removeExport {
         }
         last;
     }
-    $elocal_access->remove();
+
+    $elocal_access->delete();
 }
 
 sub reload {

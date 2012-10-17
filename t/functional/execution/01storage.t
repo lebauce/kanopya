@@ -102,13 +102,12 @@ sub testDiskManager {
             lives_ok {
                 $export->umount(mountpoint => $mountpoint, econtext => $econtext);
             } 'Unmounting';
-            
+
             lives_ok {
                 $eexport_manager->removeExport(container_access => $export, econtext => $econtext);
             } "Removing export $export";
         }
     }
-    
     return $disk;
 }
 
