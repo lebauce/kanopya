@@ -127,6 +127,7 @@ my %resources = (
     "userextension"            => "UserExtension",
     "userprofile"              => "UserProfile",
     "vlan"                     => "Entity::Network::Vlan",
+    "vsphere5"                 => "Entity::Component::Vsphere5",
     "workflow"                 => "Workflow",
     "workflowdef"              => "WorkflowDef",
     "alert"                    => "Alert",
