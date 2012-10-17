@@ -1416,14 +1416,17 @@ sub AUTOLOAD {
 sub DESTROY {
     my $self = shift;
 
-    if ($self->{_altered}) {
-        eval {
-            $self->save();
-        };
-        if ($@) {
-            $log->debug("Unable to save <$self> at destroy: " . $@);
-        }
-    }
+     # Commented the following block because the exceptions raised
+     # by the call $self->save() are strangely not catched by the eval...
+#    eval {
+#        if ($self->{_altered}) {
+#            $self->save();
+#        }
+#    };
+#    if ($@) {
+#        my $err = $@;
+#        $log->debug("Unable to save <$self> at destroy: $err");
+#    }
 }
 
 1;
