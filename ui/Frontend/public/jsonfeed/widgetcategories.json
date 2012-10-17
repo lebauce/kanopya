@@ -11,7 +11,7 @@
     {
       "id":2,
       "title" : "Rules",
-      "amount" : 1,
+      "amount" : 2,
       "url" : "jsonfeed/category_rules_widgets.json"
     },
     {

@@ -2,13 +2,22 @@
 "result" :
   {
   "data" : [
-     {
-      "id" : "widget_nodes_state",
+    {
+      "id" : "widget_nodes_warns",
       "title" : "Nodes warnings",
       "description" : "Nodes warnings rules widget",
       "creator" : "Hedera",
       "url" : "widgets/widget_nodes_warns.html",
       "image": "widgets/widget_nodes_warns.png",
+      "metadata" : {}
+    },
+    {
+      "id" : "widget_rules_state",
+      "title" : "Rules state",
+      "description" : "Service and nodes rules state",
+      "creator" : "Hedera",
+      "url" : "widgets/widget_rules_state.html",
+      "image": "widgets/widget_rules_state.png",
       "metadata" : {}
     }
   ]
