@@ -2,7 +2,7 @@
 var registered_nodes = [];//List of nodes already registered in Kanopya
 
 //We format the data returned by API to respect jsTree structure
-function buildNodes (rawData, parentType, parentName, grandParentName) {
+function buildNodes (rawData, parentName, parentType, grandParentName) {
     var formattedData = [];
     //Initialize register nodes list
     registered_nodes = [];
@@ -14,16 +14,27 @@ function buildNodes (rawData, parentType, parentName, grandParentName) {
                 //'icon'        :   '',//value : /File or CSS(for eg Same name as Type)
             },
             'attr'  :   {
-                'type'          :   node.type,
                 'name'          :   node.name,
+                'treeType'      :   node.type,
                 'parent_type'   :   parentType,
                 'parent_name'   :   parentName,
             },
         };
-        if (node.type != 'vm') {
+//TODO always treeType except in formatCheckedNodes
+        //'treeType' used for display
+        //'type' : property to be returned
+        if (node.type == 'vm') {
+            treenode.attr['type'] = node.type;
+        }
+        else {
+            //Other nodes than VMs can be opened (they may contain children)
             treenode.state = 'closed';
             if (node.type == 'clusterHypervisor') {
+                treenode.attr['type'] = 'hypervisor';
                 treenode.attr['grand_parent_name'] = grandParentName;
+            }
+            else {
+                treenode.attr['type'] = node.type;
             }
         }
         if (node.registered == 1) {//Item already registered
@@ -66,10 +77,10 @@ function vmwareBrowser (event) {
     var url_base = '/api/vsphere5/' + vsphere_component_id;
 
 //TODO Use Type and Name values of node.parentElement
-    //Used to save Type and Name of the Parent Node fpr Childrens
-    var parentNodeType = null;
-    var parentNodeName = null;
-    var grandParentNodeName = null;
+    //Used to save Type and Name of the Parent Node for Childrens
+    var parentNodeTreeType = null;
+    var parentNodeTreeName = null;
+    var grandParentNodeTreeName = null;
 
     browser.append(tree_container);
     tree_container.jstree({
@@ -92,16 +103,16 @@ function vmwareBrowser (event) {
                                     url = url_base + '/retrieveDatacenters';
                                 }
                                 else {
-                                    if ( current_node.attr('type') == 'datacenter' ) {
+                                    if ( current_node.attr('treeType') == 'datacenter' ) {
                                         url = url_base + '/retrieveClustersAndHypervisors';
                                     }
-                                    else if ( current_node.attr('type') == 'cluster' ) {
+                                    else if ( current_node.attr('treeType') == 'cluster' ) {
                                        url = url_base + '/retrieveClusterHypervisors';
                                     }
-                                    else if ( current_node.attr('type') == 'clusterHypervisor' ) {
+                                    else if ( current_node.attr('treeType') == 'clusterHypervisor' ) {
                                        url = url_base + '/retrieveClusterVms';
                                     }
-                                    else if ( current_node.attr('type') == 'hypervisor' ) {
+                                    else if ( current_node.attr('treeType') == 'hypervisor' ) {
                                        url = url_base + '/retrieveHypervisorVms';
                                     }
                                 }
@@ -111,45 +122,45 @@ function vmwareBrowser (event) {
                 'data'    :     function(current_node) {
                     //For Initial Node, we don't send data
                     var data_sent = {};
-                    parentNodeType = 'tree';
-                    parentNodeName = 'root';
+                    parentNodeTreeType = 'tree';
+                    parentNodeTreeName = 'root';
 
                     //For other nodes, we send the Type and Name of node and node's parent
                     if ( current_node != -1 ) {//Not initial Node
-                        parentNodeType = current_node.attr('type');
-                        parentNodeName = current_node.attr('name');
-                        if ( current_node.attr('type') == 'datacenter' ) {
+                        parentNodeTreeType = current_node.attr('treeType');
+                        parentNodeTreeName = current_node.attr('name');
+                        if ( current_node.attr('treeType') == 'datacenter' ) {
                             //Retrieve Clusters and Hypervisors on a Datacenter
                             data_sent = {
                                'datacenter_name'    :    current_node.attr('name'),
                             };
-                            grandParentNodeName = null;
+                            grandParentNodeTreeName = null;
                         }
-                        else if ( current_node.attr('type') == 'cluster' ) {
+                        else if ( current_node.attr('treeType') == 'cluster' ) {
                             //Retrieve Hypervisors on a Cluster
                             data_sent = {
                                'datacenter_name'    :    current_node.attr('parent_name'),
                                'cluster_name'       :    current_node.attr('name'),
                             };
-                            //We save datacente name for Hypervisor
-                            grandParentNodeName = current_node.attr('parent_name');
+                            //We save datacenter name for Hypervisor
+                            grandParentNodeTreeName = current_node.attr('parent_name');
                         }
-                        else if ( current_node.attr('type') == 'clusterHypervisor' ) {
+                        else if ( current_node.attr('treeType') == 'clusterHypervisor' ) {
                             //Retrieve Virtual Machines on an Hypervisor hosted on a Cluster
                             data_sent = {
                                'datacenter_name'    :    current_node.attr('grand_parent_name'),
                                'cluster_name'       :    current_node.attr('parent_name'),
                                'hypervisor_name'    :    current_node.attr('name'),
                             };
-                            grandParentNodeName = null;
+                            grandParentNodeTreeName = null;
                         }
-                        else if ( current_node.attr('type') == 'hypervisor' ) {
+                        else if ( current_node.attr('treeType') == 'hypervisor' ) {
                             //Retrieve Virtual Machines on an Hypervisor hosted on a Datacenter
                             data_sent = {
                                'datacenter_name'    :    current_node.attr('parent_name'),
                                'hypervisor_name'    :    current_node.attr('name'),
                             };
-                            grandParentNodeName = null;
+                            grandParentNodeTreeName = null;
                         }
                     }
 
@@ -158,9 +169,9 @@ function vmwareBrowser (event) {
                 'success'   :   function (returnedData) {
                     var returnedFormattedData = buildNodes(
                             returnedData,
-                            parentNodeType,
-                            parentNodeName,
-                            grandParentNodeName
+                            parentNodeTreeName,
+                            parentNodeTreeType,
+                            grandParentNodeTreeName
                         );
 
                     return returnedFormattedData;
@@ -185,10 +196,10 @@ function vmwareBrowser (event) {
             Submit: function () {
                 var firstLevelTree = $(tree_container).children('ul').children('li');
                 var formattedCheckedNodes = formatCheckedNodes(firstLevelTree);
-
+console.log(formattedCheckedNodes);
 //TODO Check length if > 0
                 //Send Formatted checked nodes to API to be inserted in Kanopya Database
-
+/*
                 $.ajax({
                     type    :   'POST',
                     url     :   url_base + '/register',
@@ -200,7 +211,7 @@ function vmwareBrowser (event) {
                 }).fail(function (error_msg){
                     alert ('Error in data import ' + error_msg);
                 });
-
+*/
                 $(this).dialog('close');
             },
         },
