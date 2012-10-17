@@ -162,6 +162,7 @@ function nodemetricCombinationBarGraph(series, div_id, max, title, unit, mean_va
             tooltipAxes: 'x',
             showMarker:false,
             formatString: '%s' + unit,
+            tooltipLocation:'e'
         },
         canvasOverlay: {
             show: true,

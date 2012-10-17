@@ -18,7 +18,7 @@ function displayWarningNodesGrid(widget, sp_id) {
     // Styling : orange bar and centered caption over bar
     warn_node_gauge.find('.ui-progressbar-value').css('background', 'orange');
     warn_node_gauge.css('position', 'relative');
-    warn_node_gauge.find('.caption').attr('style', 'position: absolute; width: 100%; text-align: center; line-height: 1.9em;');
+    warn_node_gauge.find('.caption').attr('style', 'position: absolute; width: 100%; text-align: center; line-height: 1.9em; color: #666');
 
     // GRID
     var nodes_grid = widget.element.find('.nodesStateGrid');
@@ -35,6 +35,7 @@ function displayWarningNodesGrid(widget, sp_id) {
         sortorder       : 'desc',
         autowidth       : true,
         shrinkToFit     : true,
+        rowNum          : -1,
         subGrid         : true,
         subGridOptions: {
             "plusicon"  : "ui-icon-triangle-1-e",
@@ -71,6 +72,9 @@ function displayWarningNodesGrid(widget, sp_id) {
             });
         }
     });
+
+    widget.element.find('.ui-jqgrid').hide();
+    widget_loading_start( widget.element );
 
     // Populate grid with nodes having at least one verified rule
     $.get(
@@ -114,7 +118,9 @@ function displayWarningNodesGrid(widget, sp_id) {
                         } else {
                             // Reload grid at the end (one time sorting, more optimized)
                             nodes_grid.trigger('reloadGrid');
+                            widget.element.find('.ui-jqgrid').show();
                         }
+                        widget_loading_stop( widget.element );
                     } else {
                         setTimeout(manageEndCheck, 10);
                     }
