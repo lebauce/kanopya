@@ -34,7 +34,7 @@ __PACKAGE__->table("container");
 
 =head2 container_size
 
-  data_type: 'integer'
+  data_type: 'bigint'
   extra: {unsigned => 1}
   is_nullable: 0
 
@@ -75,7 +75,7 @@ __PACKAGE__->add_columns(
   "container_name",
   { data_type => "char", is_nullable => 0, size => 128 },
   "container_size",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
   "container_device",
   { data_type => "char", is_nullable => 0, size => 255 },
   "container_filesystem",
@@ -131,6 +131,21 @@ __PACKAGE__->might_have(
   "file_container",
   "AdministratorDB::Schema::Result::FileContainer",
   { "foreign.file_container_id" => "self.container_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 local_container
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::LocalContainer>
+
+=cut
+
+__PACKAGE__->might_have(
+  "local_container",
+  "AdministratorDB::Schema::Result::LocalContainer",
+  { "foreign.local_container_id" => "self.container_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -195,13 +210,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-10 14:42:11
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KS39qSimQufQ8fNbGo2LUg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-16 11:49:53
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FiBKQ3t5uMuzgXqGj6VDdQ
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-  { "foreign.entity_id" => "self.container_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+  { entity_id => "container_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;

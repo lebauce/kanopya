@@ -183,6 +183,23 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 local_container_access
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::LocalContainerAccess>
+
+=cut
+
+__PACKAGE__->might_have(
+  "local_container_access",
+  "AdministratorDB::Schema::Result::LocalContainerAccess",
+  {
+    "foreign.local_container_access_id" => "self.container_access_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nfs_container_access
 
 Type: might_have
@@ -214,13 +231,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-10 14:42:11
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:S23VmZWz/gww5DZCelXTXA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-16 11:49:53
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e7P6EqfS/iNXhqNpb1HSDw
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-  { "foreign.entity_id" => "self.container_access_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+  { entity_id => "container_access_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;

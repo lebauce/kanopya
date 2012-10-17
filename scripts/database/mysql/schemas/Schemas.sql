@@ -330,6 +330,16 @@ CREATE TABLE `file_container` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `file_container`
+-- Entity::Container::LocalContainer class
+
+CREATE TABLE `local_container` (
+  `local_container_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`local_container_id`),
+  FOREIGN KEY (`local_container_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `netapp_aggregate`
 -- Entity::NetappAggregate class
 
@@ -394,6 +404,16 @@ CREATE TABLE `file_container_access` (
   `file_container_access_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`file_container_access_id`),
   FOREIGN KEY (`file_container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `file_container_access`
+-- Entity::ContainerAccess::LocalContainerAccess class
+
+CREATE TABLE `local_container_access` (
+  `local_container_access_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`local_container_access_id`),
+  FOREIGN KEY (`local_container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
