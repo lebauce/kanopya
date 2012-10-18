@@ -230,7 +230,7 @@ sub retrieveDatacenters {
 
 sub retrieveClustersAndHypervisors {
     my ($self,%args) = @_;
-
+$log->debug(Dumper \%args);
     General::checkParams(args => \%args, required => ['datacenter_name']);
 
     my @clusters_hypervisors_infos;
@@ -580,10 +580,10 @@ sub findEntityViews {
 sub register {
     my ($self,%args) = @_;
 
+$log->debug(Dumper \%args);
     General::checkParams(args => \%args, required => ['register_items'],
                                          optional => {
                                              parent => undef});
-
     $self->negociateConnection();
 
     my @register_items = @{ $args{register_items} };
@@ -812,7 +812,7 @@ sub registerVm {
     my $node = Externalnode::Node->new(
                    inside_id             => $service_provider->id,
                    host_id               => $vm->id,
-                   master_node           => 0,
+                   master_node           => 1,
                    node_number           => 1,
                    node_state            => 'in:'.$time,
                    externalnode_hostname => $vm_view->name,
@@ -870,10 +870,10 @@ sub registerHypervisor {
 
         $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
                                 active                 => 1,
-                                cluster_name           => $cluster_name,
+                                cluster_name           => $service_provider_name,
                                 cluster_state          => 'up:'. time(),
                                 cluster_min_node       => 1,
-                                cluster_max_node       => scalar(@hypervisors),
+                                cluster_max_node       => 1,
                                 cluster_priority       => 500,
                                 cluster_si_shared      => 0,
                                 cluster_si_persistent  => 1,
@@ -894,15 +894,20 @@ sub registerHypervisor {
     my $kernel = Entity::Kernel->find(hash => {});
 
     my $host_state;
+    my $time;
+
     #we define the state time as now
     if ($hypervisor_view->runtime->connectionState->val    eq 'disconnected') {
-        $host_state = 'down: '.time();
+        $time       = time();
+        $host_state = 'down: '. $time;
     }
     elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {
-        $host_state = 'up: '.time();
+        $time       = time();
+        $host_state = 'up: '. $time;
     }
     elsif ($hypervisor_view->runtime->connectionState->val eq 'notResponding') {
-        $host_state = 'broken: '.time();
+        $time       = time();
+        $host_state = 'broken: '. $time;
     }
 
     my $hv = Entity::Host::Hypervisor->new(
@@ -923,8 +928,8 @@ sub registerHypervisor {
     my $node = Externalnode::Node->new(
                    inside_id             => $service_provider->id,
                    host_id               => $hv->id,
-                   master_node           => 0,
-                   node_number           => $hv_number + 1,
+                   master_node           => 1,
+                   node_number           => 1,
                    node_state            => 'in:'.$time,
                    externalnode_hostname => $hypervisor_view->name,
                );
