@@ -56,38 +56,4 @@ sub getMountPoint {
     return "/mnt/local_" . $self->getAttr(name => 'container_name');
 }
 
-sub copy {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
-
-    # When we copy to a loopback of a file on a NFS mountpoint
-    # where the server and the client are the same machine
-    # we encounter a kernel crash.
-    if ($args{dest}->isa("EEntity::EContainer::EFileContainer")) {
-        my $eexport_manager = EFactory::newEEntity(
-                              data => $args{dest}->container_access->getExportManager
-                          );
-
-        if ($eexport_manager->getEContext->isa("EContext::Local") and
-            $eexport_manager->isa("EEntity::EComponent::ENfsd3")) {
-
-            my $mountpoint = $eexport_manager->getMountDir(
-                                 device => $args{dest}->container_access->container->container_device
-                             );
-
-            my $container = EEntity::EContainer::ELocalContainer->new(
-                                path       => $mountpoint . '/' . $args{dest}->container_device,
-                                size       => $args{dest}->container_size,
-                                filesystem => $args{dest}->container_filesystem,
-                            );
-
-            return $self->copy(dest => $container, econtext => $args{econtext}, erollback => $args{erollback});
-        }
-    }
-
-    return $self->SUPER::copy(%args);
-}
-
 1;
