@@ -10,7 +10,7 @@ function buildNodes (rawData, parentName, parentType, grandParentName) {
         var treenode =  {
             'data'  :   {
                 'title'         :   node.name,
-//TODO Put icon depending on the type of the Node
+                //TODO Put icon depending on the type of the Node
                 //'icon'        :   '',//value : /File or CSS(for eg Same name as Type)
             },
             'attr'  :   {
@@ -20,7 +20,7 @@ function buildNodes (rawData, parentName, parentType, grandParentName) {
                 'parent_name'   :   parentName,
             },
         };
-//TODO always treeType except in formatCheckedNodes
+        //TODO always treeType except in formatCheckedNodes
         //'treeType' used for display
         //'type' : property to be returned
         if (node.type == 'vm') {
@@ -71,12 +71,12 @@ function vmwareBrowser (event) {
     var browser        = $('<div>');
     var tree_container = $('<div>', {id : 'vmware_tree'});
 
-//TODO Get ID directly from Kanopya (VirtualMachineManager)
+    //TODO Get ID directly from Kanopya (VirtualMachineManager)
     //Get the vSphere Component ID
     var vsphere_component_id = 100;
     var url_base = '/api/vsphere5/' + vsphere_component_id;
 
-//TODO Use Type and Name values of node.parentElement
+    //TODO Use Type and Name values of node.parentElement
     //Used to save Type and Name of the Parent Node for Childrens
     var parentNodeTreeType = null;
     var parentNodeTreeName = null;
@@ -88,7 +88,7 @@ function vmwareBrowser (event) {
         'themes'    :   {
            'url' : "css/jstree_themes/default/style.css",
          },
-//TODO ckeck already registered nodes
+        //TODO ckeck already registered nodes
         'checkbox'  :   {
             'override_ui'         :   true,//For checking nodes on load
          },
@@ -176,10 +176,9 @@ function vmwareBrowser (event) {
 
                     return returnedFormattedData;
                 },
-//TODO  Implement error function
-//                'error' :   function () {
-//
-//                },
+                /* TODO  Implement error function
+                'error' :   function () {
+                }, */
             },
         },
     });
@@ -187,7 +186,7 @@ function vmwareBrowser (event) {
     browser.dialog({
         title   :   'VMware Browser',
         modal   :   true,
-//TODO width's value in CSS rather specifing it here
+        //TODO width's value in CSS rather specifing it here
         width   :   '400 px',
         buttons :   {
             Cancel: function () {
@@ -196,10 +195,10 @@ function vmwareBrowser (event) {
             Submit: function () {
                 var firstLevelTree = $(tree_container).children('ul').children('li');
                 var formattedCheckedNodes = formatCheckedNodes(firstLevelTree);
-console.log(formattedCheckedNodes);
-//TODO Check length if > 0
+
+                //TODO Check length if > 0
                 //Send Formatted checked nodes to API to be inserted in Kanopya Database
-/*
+
                 $.ajax({
                     type    :   'POST',
                     url     :   url_base + '/register',
@@ -211,7 +210,7 @@ console.log(formattedCheckedNodes);
                 }).fail(function (error_msg){
                     alert ('Error in data import ' + error_msg);
                 });
-*/
+
                 $(this).dialog('close');
             },
         },
