@@ -24,6 +24,8 @@ use warnings;
 # circular reference here
 use Entity::ServiceProvider;
 
+use VerifiedNoderule;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -72,6 +74,21 @@ sub methods {
     };
 }
 
+=head2 new
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = $class->SUPER::new( %args );
+
+    $self->_undefRules();
+
+    return $self;
+}
+
 =head2 getMonitoringData
 
     Desc: call linked collector manager to retrieve indicators values for this node
@@ -106,6 +123,27 @@ sub getMonitoringData {
     return $data->{$self->externalnode_hostname} || {};
 }
 
+=head2 _undefRules
+
+    Set all nodemetric rules as 'undef' for this node
+
+=cut
+
+sub _undefRules {
+    my $self = shift;
+
+    my $sp      = $self->service_provider;
+    my $sp_id   = $sp->id;
+    my $node_id = $self->id;
+    foreach my $nm_rule ($sp->nodemetric_rules) {
+        VerifiedNoderule->new(
+            verified_noderule_externalnode_id       => $node_id,
+            verified_noderule_state                 => 'undef',
+            verified_noderule_nodemetric_rule_id    => $nm_rule->id,
+        );
+    }
+}
+
 sub disable {
     my $self = shift;
 
@@ -121,6 +159,7 @@ sub disable {
 sub enable {
     my $self = shift;
 
+    $self->_undefRules();
     $self->setAttr(name => 'externalnode_state', value => 'enabled');
     $self->save();
 }
