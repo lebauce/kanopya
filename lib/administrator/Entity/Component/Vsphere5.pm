@@ -565,8 +565,6 @@ sub findEntityViews {
 ## registration methods ##
 ##########################
 
-#TODO: find a way to make a clean generic registerComputeResource() that can be use
-#either for the cluster registration and for the single host registration
 #TODO: manage the possibility that the entities, for example clusters can be into vsphere
 #folders
 
@@ -580,7 +578,6 @@ sub findEntityViews {
 sub register {
     my ($self,%args) = @_;
 
-$log->debug(Dumper \%args);
     General::checkParams(args => \%args, required => ['register_items'],
                                          optional => {
                                              parent => undef});
@@ -608,16 +605,13 @@ $log->debug(Dumper \%args);
 
         push @registered_items, $registered_item;
 
-        if (defined $register_item->{children}) {
-            my @children;
-            push @children, $register_item->{children};
+        if (scalar(@{ $register_item->{children} }) != 0) {
 
-            $self->register(register_items => \@children, parent => $registered_item);
-        }
-        else {
-            return \@registered_items;
+            $self->register(register_items => $register_item->{children}, 
+                            parent         => $registered_item);
         }
     }
+    return \@registered_items;
 }
 
 =head2 registerDatacenter
@@ -807,7 +801,7 @@ sub registerVm {
              );
 
     #promote new hypervisor class to a vsphere5Vm one
-    $self->addVM(host => $vm, guest_id => $vm_view->guest->guestId);
+    $self->addVM(host => $vm, guest_id => $vm_view->summary->config->guestId);
 
     my $node = Externalnode::Node->new(
                    inside_id             => $service_provider->id,
