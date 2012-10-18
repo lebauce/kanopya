@@ -110,7 +110,9 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     host_hostname => {
-        pattern      => '^[\w\d.]*$',
+        label        => 'Hostname',
+        type         => 'string',
+        pattern      => '^[\w\d\-]*$',
         is_mandatory => 0,
         is_extended  => 0
     },
