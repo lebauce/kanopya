@@ -194,8 +194,7 @@ sub evalOnOneNode{
     $log->info("NM rule evaluation: $arrayString");
     #Evaluate the logic formula
     eval $arrayString;
-    my $store = ($res)?1:0;
-    return $res;
+    return ($res)?1:0;
 };
 
 sub isVerifiedForANode{
