@@ -312,7 +312,7 @@ sub getMethods {
 
 Return a hash ref containing all ATTR_DEF for each class in the hierarchy.
 
-@optional $args{group_by} outpout hash format policy (module|none)
+@optional group_by outpout hash format policy (module|none)
 
 @return the updated object
 
@@ -404,8 +404,8 @@ sub getAttrDefs {
 
 Check the value of an attrbiute with the pattertn defined in the ATTR_DEF.
 
-@param $args{name} the name of the attribute to check the value
-@param $args{value} the value to check with pattern
+@param name the name of the attribute to check the value
+@param value the value to check with pattern
 
 =end classdoc
 
@@ -436,8 +436,8 @@ Check attributes validity in the class hierarchy and build as the same time
 a hasref structure to pass to 'new' method of dbix resultset for
 the root class of the hierarchy.
 
-@param $args{attrs} hash containing keys/values of attributes to check
-@optional $args{trunc} a class name with its hierachy, allows to return
+@param attrs hash containing keys/values of attributes to check
+@optional trunc a class name with its hierachy, allows to return
           a sub hash exluding attributes of classes in this hierachy.
 
 @return the hash of keys/values of attributes of each module in the class hierachy,
@@ -522,8 +522,8 @@ sub checkAttrs {
 
 Build a new dbix from class name and attributes, and insert it in database.
 
-@param $args{attrs} hash containing keys / values of the new dbix attributes
-@optional $args{subclass} a class name to force building a sub type dbix of the class.
+@param attrs hash containing keys / values of the new dbix attributes
+@optional subclass a class name to force building a sub type dbix of the class.
 
 @return the object hash with the private _dbix.
 
@@ -568,7 +568,7 @@ sub newDBix {
 
 Construct the proper BaseDB based instance from a DBIx row
 
-@param $args{row} a dbix row representing the object table row
+@param row a dbix row representing the object table row
 
 @return the object instance.
 
@@ -602,7 +602,7 @@ sub fromDBIx {
 
 Retrieve a value given a name attribute, search this atribute throw the whole class hierarchy.
 
-@param $args{name} name of the attribute to get the value
+@param name name of the attribute to get the value
 
 @return the attribute value
 
@@ -708,8 +708,8 @@ sub getAttrs {
 Set one name attribute with the given value, search this attribute throw the whole 
 class hierarchy, and check attribute validity.
 
-@param $args{name} the name of the attribute to set the value
-@param $args{value} the value to set
+@param name the name of the attribute to set the value
+@param value the value to set
 
 @return the value set
 
@@ -760,7 +760,7 @@ sub setAttr {
 
 Retrieve one instance from an id
 
-@param $args{id} the id of the object to get
+@param id the id of the object to get
 
 @return the object instance
 
@@ -809,7 +809,7 @@ sub get {
 Return the class type name from a class type id, at the first call,
 get all the entries and cache them into a hash for *LOT* faster accesses.
 
-@param $args{id} the id of the class type
+@param id the id of the class type
 
 @return the class type name
 
@@ -916,12 +916,12 @@ Return the entries that match the 'hash' filter. It also accepts more or less
 the same parameters than DBIx 'search' method. It fetches the attributes of 
 the whole class hierarchy and returns an object as a BaseDB derived object.
 
-@param $args{hash} the keys/values describing the researched objects
-@optional $args{page} the number of the requested page among all pages
+@param hash the keys/values describing the researched objects
+@optional page the number of the requested page among all pages
           of the object list.
-@optional $args{rows} the number of object entry in a page
-@optional $args{order_by} the sorting policy for output list
-@optional $args{dataType} the output format
+@optional rows the number of object entry in a page
+@optional order_by the sorting policy for output list
+@optional dataType the output format
 
 @return the matching object list
 
@@ -1087,7 +1087,7 @@ sub save {
 
 Remove records from the entire class hierarchy.
 
-@optional $args{trunc} a class name with its hierachy, allows to delete
+@optional trunc a class name with its hierachy, allows to delete
           a part of the class hierachy only.
 
 =end classdoc
@@ -1148,9 +1148,9 @@ sub toString {
 Return the object as a hash so that it can be safely be converted to JSON.
 Should be named differently but hey...
 
-@optional $args{model} switch to model mode, return the object description
+@optional model switch to model mode, return the object description
           instead of attributes values
-@optional $args{no_relations} force to remove the relations from the atrribute definition
+@optional no_relations force to remove the relations from the atrribute definition
 
 @return the hash representing the object or the model depending on $args{model} option
 
@@ -1249,7 +1249,7 @@ sub toJSON {
 
 Extract relations sub hashes from the hash represeting the object.
 
-@param $args{hash} hash representing the object.
+@param hash hash representing the object.
 
 @return the original hash containing the relations sub hashes only
 
@@ -1280,7 +1280,7 @@ sub extractRelations {
 Create or update relations. If a relation has the primary key set in this attributes,
 we update the object, create it instead.
 
-@param $args{relations} hash containing object relations only
+@param relations hash containing object relations only
 
 =end classdoc
 
@@ -1361,7 +1361,7 @@ sub populateRelations {
 
 Return the primary(ies) key(s) of a row.
 
-@param $args{row} hash dbix row of the object
+@param row hash dbix row of the object
 
 @return the primary key value
 
@@ -1393,7 +1393,7 @@ sub getRowPrimaryKey {
 Generic method to get the name of the attribute that identify the object.
 Search for an attribute ending by '_name' within all attributes.
 
-@optional $args{attrs} the attribute defintion of the object 
+@optional attrs the attribute defintion of the object 
 
 @return the name of the attribute that identify the object
 
@@ -1482,7 +1482,7 @@ sub getPrimaryKey {
 Parse ths dbix object relation definition to extract the foreign key
 of the relation that link it to the object.
 
-@param $args{cond} the 'cond' value of the dbix relation desciption hash
+@param cond the 'cond' value of the dbix relation desciption hash
 
 @return the foreign key name of the relation
 
@@ -1507,7 +1507,7 @@ sub getForeignKeyFromCond {
 Parse ths dbix object relation definition to extract the foreign key
 of the relation that link it to the object.
 
-@param $args{cond} the 'cond' value of the dbix relation desciption hash
+@param cond the 'cond' value of the dbix relation desciption hash
 
 @return the foreign key name of the relation
 
@@ -1757,8 +1757,8 @@ sub requireClass {
 Method used by the api as entry point for methods calls.
 It is convenient for centralizing permmissions checking.
 
-@param $args{method} the method name to call
-@optional $args{params} method call parameters
+@param method the method name to call
+@optional params method call parameters
  
 =end classdoc
  
