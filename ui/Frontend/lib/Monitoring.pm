@@ -124,7 +124,7 @@ ajax '/serviceprovider/:spid/nodesview/histogram' => sub {
         push @nbof_nodes_per_partition, 1;
 
         #then we push into the array the number of undef nodes values
-        push @partitions_scopes, 'undef';
+        push @partitions_scopes, 'no value';
         push @nbof_nodes_per_partition, scalar(@{$compute_result->{'undef'}});
 
         return to_json {partitions => \@partitions_scopes, nbof_nodes_in_partition => \@nbof_nodes_per_partition, nodesquantity => $nodes_quantity};
@@ -142,7 +142,7 @@ ajax '/serviceprovider/:spid/nodesview/histogram' => sub {
         }
 
         #we add to the lists the undef values
-        push @partitions_scopes, 'undef';
+        push @partitions_scopes, 'no value';
         push @nbof_nodes_per_partition, scalar(@{$compute_result->{'undef'}});
 
         return to_json {partitions => \@partitions_scopes, nbof_nodes_in_partition => \@nbof_nodes_per_partition, nodesquantity => $nodes_quantity};

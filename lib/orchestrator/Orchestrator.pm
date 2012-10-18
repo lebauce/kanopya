@@ -98,7 +98,6 @@ sub getMethods {
 
 sub new {
     my $class = shift;
-    my %args = @_;
 
     my $self = {};
     bless $self, $class;
@@ -139,10 +138,10 @@ sub manage_aggregates {
                 $service_provider->getManager(manager_type => "collector_manager");
             };
             if ($@){
-                $log->info('*** Orchestrator skip service provider '.$service_provider_id.' because it has no collector manager ***');
+                $log->info('Orchestrator skip service provider '.$service_provider_id.' because it has no collector manager');
             }
             else{
-                $log->info('*** Orchestrator running for service provider '.$service_provider_id.' ***');
+                $log->info('Orchestrator running for service provider '.$service_provider_id);
                 eval{
                     $log->info( '<CM '.$service_provider_id.'>');
                     $self->clustermetricManagement(service_provider => $service_provider);
@@ -201,25 +200,11 @@ sub nodemetricManagement {
     $log->info('Received values'.(Dumper $monitored_values));
 
     # Eval the rules
-    my $rep = $self->_evalAllRules(
+    return $self->_evalAllRules(
         'monitored_values'  => $monitored_values,
         'rules'             => \@rules,
         'service_provider'  => $service_provider,
     );
-
-#            if(0 < $rep){
-#
-#                $externalCluster->setAttr(
-#                    name => 'externalcluster_state',
-#                    value => 'warning',
-#                );
-#            }else{
-#                $externalCluster->setAttr(
-#                    name => 'externalcluster_state',
-#                    value => 'up',
-#                );
-#            }
-#            $externalCluster->save();
 }
 
 sub _evalAllRules {
@@ -256,7 +241,7 @@ sub _evalRule {
     my $rule             = $args{rule};
     my $service_provider = $args{service_provider};
 
-    my $service_provider_id = $service_provider->getId();
+    my $service_provider_id = $service_provider->id;
 
     my $rule_id          = $rule->getAttr(name => 'nodemetric_rule_id');
 
@@ -276,20 +261,10 @@ sub _evalRule {
     NODE:
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
 
-        my $node_state = $service_provider->getNodeState(hostname=> $host_name);
-
-        my $nodeEval;
-
-        if($node_state eq 'disabled'){
-            $log->info("Node <$host_name> has just been disabled, rule not evaluated");
-            next NODE;
-        }
-        else {
-            $log->info('Eval rule id <'.($rule->getAttr(name => 'nodemetric_rule_id')).'> on node hostname <'.$host_name.'>');
-            $nodeEval = $rule->evalOnOneNode(
-                monitored_values_for_one_node => $monitored_values_for_one_node
-            );
-        }
+        $log->info('Eval rule id <'.($rule->getAttr(name => 'nodemetric_rule_id')).'> on node hostname <'.$host_name.'>');
+        my $nodeEval = $rule->evalOnOneNode(
+            monitored_values_for_one_node => $monitored_values_for_one_node
+        );
 
         my $externalnode_id = Externalnode->find(hash => {
             externalnode_hostname => $host_name,
@@ -370,7 +345,6 @@ sub _contructRetrieverOutput {
     my $rules               = $args{rules};
 
     my $service_provider    = Entity::ServiceProvider->find( hash => { service_provider_id => $service_provider_id});
-    my $indicators_name     = undef;
     my $indicators          = {};
 
     #Get all the rules relative to the cluster_id
@@ -408,7 +382,6 @@ sub _contructRetrieverOutput {
 sub clustermetricManagement{
     my ($self, %args) = @_;
     my $service_provider = $args{service_provider};
-    my $cluster_evaluation = {};
     my $service_provider_id = $service_provider->getId();
 
     # Get rules relative to a cluster

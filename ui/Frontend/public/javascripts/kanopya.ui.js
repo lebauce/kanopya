@@ -84,9 +84,15 @@ $(document).ready(function () {
                        onresize : function () {
                            // Manage current jqgrid resizing
                            $('.current_content .ui-jqgrid-btable').each( function () {
-                               // Also manage grid inside an accordion
-                               var new_width = $(this).closest('.ui-accordion-content').width() || $('.current_content').width();
-                               $(this).jqGrid('setGridWidth', new_width);
+                               // TODO sent an event to each grid and let them manage their resizing
+                               if ($(this).hasClass('widget-grid')) {
+                                   // grid inside dashboard widget
+                                   $(this).jqGrid('setGridWidth', $(this).closest('.widget-grid-container').width() - 2)
+                               } else {
+                                   // Also manage grid inside an accordion
+                                   var new_width = $(this).closest('.ui-accordion-content').width() || $('.current_content').width();
+                                   $(this).jqGrid('setGridWidth', new_width);
+                               }
                            } );
 
                            // Manage current jqplot resizing
