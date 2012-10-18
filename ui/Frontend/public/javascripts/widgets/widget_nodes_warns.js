@@ -35,7 +35,7 @@ function displayWarningNodesGrid(widget, sp_id) {
         sortorder       : 'desc',
         autowidth       : true,
         shrinkToFit     : true,
-        rowNum          : -1,
+        rowNum          : 1000,
         subGrid         : true,
         subGridOptions: {
             "plusicon"  : "ui-icon-triangle-1-e",
@@ -78,7 +78,7 @@ function displayWarningNodesGrid(widget, sp_id) {
 
     // Populate grid with nodes having at least one verified rule
     $.get(
-            'api/externalnode?service_provider_id=' + sp_id,
+            'api/serviceprovider/' + sp_id + '/externalnodes?externalnode_state=<>,disabled',
             function(nodes) {
                 var total_nodes = nodes.length;
                 var checked_nodes = 0;

@@ -53,7 +53,7 @@ function displayRulesGraph(widget, sp_id) {
     var nodes_graph_cont  = widget.element.find('.node_rules_state_overview');
     nodes_graph_cont.append($('<div>', {id : nrules_graph_div_id}));
     $.get(
-            'api/externalnode?service_provider_id=' + sp_id,
+            'api/serviceprovider/' + sp_id + '/externalnodes?externalnode_state=<>,disabled',
             function(nodes) {
                 var total_nodes = nodes.length;
                 var checked_nodes = 0;
