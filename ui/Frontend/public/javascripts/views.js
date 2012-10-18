@@ -194,6 +194,7 @@ function create_grid(options) {
     options.gridComplete    = options.gridComplete || $.noop;
 
     // Add delete action column (by default)
+    var deleteHandler = $.noop;
     var actions_col_idx = options.colNames.length;
     if (options.action_delete === undefined || options.action_delete != 'no') {
         var delete_url_base    = (options.action_delete && options.action_delete.url) || options.url;
@@ -208,17 +209,21 @@ function create_grid(options) {
                 remove_action += '<div class="ui-pg-div ui-inline-del"';
                 remove_action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
                 remove_action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
-                remove_action += 'onclick="removeGridEntry(\'' +  options.grid_id + '\',' + row.pk + ',\'' + delete_url_base;
-
-                if (delete_method_call) {
-                    remove_action += ',\'' + delete_method_call;
-                }
-
-                remove_action += '\')" style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
+                remove_action += ' style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
                 remove_action += '<span class="ui-icon ui-icon-trash"></span>';
                 remove_action += '</div>';
+
                 return remove_action;
             }});
+
+        // Delete handler
+        if (options.action_delete && options.action_delete.callback) {
+            deleteHandler = options.action_delete.callback;
+        } else {
+            deleteHandler = function(rowid) {
+                removeGridEntry( options.grid_id, rowid, delete_url_base, delete_method_call );
+            }
+        }
 
     } else if (options.treeGrid === true) {
         // TreeGrids strangely want an additional column so we push an empty one...
@@ -235,7 +240,12 @@ function create_grid(options) {
             repeatitems: false,
         },
 
-        afterInsertRow  : function(rowid, rowdata, rowelem) { return options.afterInsertRow(this, rowid, rowdata, rowelem); },
+        afterInsertRow  : function(rowid, rowdata, rowelem) {
+                              // Manage delete action callback
+                              $(this).find('#'+rowid+' .ui-inline-del').click( function() {deleteHandler(rowid)} );
+                              // Callback custom handler
+                              return options.afterInsertRow(this, rowid, rowdata, rowelem);
+                          },
         gridComplete    : options.gridComplete,
 
         treeGrid        : options.treeGrid      || false,
@@ -262,12 +272,15 @@ function create_grid(options) {
 //        },
 
         onCellSelect    : function(rowid, index, contents, target) {
+            // Test if some options disable details
             if (index != actions_col_idx && ! options.deactivate_details && ! options.colModel[index].nodetails) {
-                var row_data = $('#' + options.grid_id).getRowData(rowid);
-                show_detail(options.grid_id, grid_class, rowid, row_data, options.details)
+                // Callback before show details, must return true if defined
+                if ((! options.beforeShowDetails) || options.beforeShowDetails(options.grid_id, rowid)) {
+                    var row_data = $('#' + options.grid_id).getRowData(rowid);
+                    show_detail(options.grid_id, grid_class, rowid, row_data, options.details)
+                }
             }
         },
-
         loadError       : function (xhr, status, error) {
             var error_msg = xhr.responseText;
             alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 

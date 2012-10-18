@@ -187,7 +187,8 @@ function nodeTimedGraph(graph_lines, graph_labels, min, max, label, ylabel, div_
             trendline: {
                 color : '#555555',
                 show  : $('#trendlineinput').attr('checked') ? true : false,
-            }
+            },
+            pointLabels: { show: false },
         },
         legend: {
             labels  : graph_labels,

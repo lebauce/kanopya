@@ -10,6 +10,12 @@
     },
     {
       "id":2,
+      "title" : "Rules",
+      "amount" : 2,
+      "url" : "jsonfeed/category_rules_widgets.json"
+    },
+    {
+      "id":3,
       "title" : "Info",
       "amount" : 1,
       "url" : "jsonfeed/category_info_widgets.json"

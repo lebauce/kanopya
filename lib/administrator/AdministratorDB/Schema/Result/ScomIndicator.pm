@@ -120,7 +120,7 @@ Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 __PACKAGE__->belongs_to(
   "service_provider",
-  "AdministatorDB::Schema::Result::ServiceProvider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
   { service_provider_id => "service_provider_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );

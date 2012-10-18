@@ -75,7 +75,6 @@ sub new {
     my $self = $class->SUPER::new(
         service_provider_id => $args{inside_id}, #needed to create externalnode
         externalnode_hostname           => $host->getAttr(name => 'host_hostname'), #needed to create externalnode
-        externalnode_state              => 'disabled',
         %args,
     );
     return $self;

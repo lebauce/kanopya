@@ -319,13 +319,13 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
     $('<div id="node_monitoring_accordion_container">').appendTo(divacc);
     var container = $("#" + container_id);
-    
+
     $("<p>", { html : "Nodemetric Combinations  : " }).appendTo('#service_monitoring_accordion_container');
-    var loadServicesMonitoringGridId = 'service_resources_nodemetric_combination_' + elem_id;
+    var nodemetriccombi_grid_id = 'service_resources_nodemetric_combination_' + elem_id;
     create_grid( {
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_combinations',
         content_container_id: 'node_monitoring_accordion_container',
-        grid_id: loadServicesMonitoringGridId,
+        grid_id: nodemetriccombi_grid_id,
         afterInsertRow: function(grid, rowid) {
             var id  = $(grid).getCell(rowid, 'pk');
             var url = '/api/nodemetriccombination/' + id + '/toString';
@@ -347,7 +347,9 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         },
         deactivate_details  : mode_policy,
         action_delete: {
-            url : '/api/nodemetriccombination',
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/nodemetriccombination/', id, [nodemetriccombi_grid_id]);
+            }
         }
     } );
     createNodemetricCombination('node_monitoring_accordion_container', elem_id, (external !== '') ? true : false);
@@ -356,12 +358,13 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
     $('<div id="service_monitoring_accordion_container">').appendTo(divacc);
    
-    var loadServicesMonitoringGridId = 'service_resources_clustermetrics_' + elem_id;
+    var clustermetric_grid_id = 'service_resources_clustermetrics_' + elem_id;
+    var aggregatecombi_grid_id = 'service_resources_aggregate_combinations_' + elem_id;
     create_grid( {
         caption : 'Metrics',
         url: '/api/serviceprovider/' + elem_id + '/clustermetrics',
         content_container_id: 'service_monitoring_accordion_container',
-        grid_id: loadServicesMonitoringGridId,
+        grid_id: clustermetric_grid_id,
         afterInsertRow: function(grid, rowid) {
             var id  = $(grid).getCell(rowid, 'clustermetric_indicator_id');
             var url = '/api/' + indicator_type + 'indicator/' + id + '/toString';
@@ -376,19 +379,20 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
             { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
         ],
         action_delete: {
-            url : '/api/clustermetric',
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/clustermetric/', id, [clustermetric_grid_id, aggregatecombi_grid_id]);
+            }
         },
         deactivate_details  : mode_policy,
     } );
     createServiceMetric('service_monitoring_accordion_container', elem_id, (external !== '') ? true : false);
     
     $("<p>").appendTo('#service_monitoring_accordion_container');
-    var loadServicesMonitoringGridId = 'service_resources_aggregate_combinations_' + elem_id;
     create_grid( {
         caption: 'Metric combinations',
         url: '/api/serviceprovider/' + elem_id + '/aggregate_combinations',
         content_container_id: 'service_monitoring_accordion_container',
-        grid_id: loadServicesMonitoringGridId,
+        grid_id: aggregatecombi_grid_id,
         afterInsertRow: function(grid, rowid) {
             var id  = $(grid).getCell(rowid, 'pk');
             var url = '/api/aggregatecombination/' + id + '/toString';
@@ -408,7 +412,9 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         },
         deactivate_details  : mode_policy,
         action_delete: {
-            url : '/api/aggregatecombination',
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/aggregatecombination/', id, [aggregatecombi_grid_id]);
+            }
         },
     } );
     createServiceConbination('service_monitoring_accordion_container', elem_id);

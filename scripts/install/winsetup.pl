@@ -88,29 +88,20 @@ print 'You will have to restart a shell session to enjoy the newly configured PE
 #Directories Creation#
 ######################
 
-print 'creating log directory'."\n";
-$cmd = 'mkdir '.$log_directory;
-print $cmd."\n";
-$exec = `$cmd 2>&1`;
-print $exec."\n";
+sub createDir {
+    my ($type, $path) = @_;
+    print "creating $type directory\n";
+    $cmd = 'mkdir '.$path;
+    print $cmd."\n";
+    $exec = `$cmd 2>&1`;
+    print $exec."\n";
+}
 
-print 'creating monitor temp directory'."\n";
-$cmd = 'mkdir '.$tmp_monitor;
-print $cmd."\n";
-$exec = `$cmd 2>&1`;
-print $exec."\n";
-
-print 'creating orchestrator temp directory'."\n";
-$cmd = 'mkdir '.$tmp_orchestrator;
-print $cmd."\n";
-$exec = `$cmd 2>&1`;
-print $exec."\n";
-
-print 'creating time data temp directory'."\n";
-$cmd = 'mkdir '.$timedata_dir;
-print $cmd."\n";
-$exec = `$cmd 2>&1`;
-print $exec."\n";
+createDir('log', $log_directory);
+createDir('workflows log', $log_directory.'workflows\\');
+createDir('monitor temp', $tmp_monitor);
+createDir('orchestrator temp', $tmp_orchestrator);
+createDir('time data temp', $timedata_dir);
 
 ################
 #Database Setup#

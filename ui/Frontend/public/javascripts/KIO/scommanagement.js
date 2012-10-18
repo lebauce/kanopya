@@ -35,6 +35,11 @@ function scomManagement(cid, eid) {
             { name: 'indicator_max', index: 'indicator_max', width: 200 },
             { name: 'indicator_unit', index: 'indicator_unit', width: 200 },
         ],
+        action_delete           : {
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/indicator/', id, [indicators_grid_id]);
+            }
+        }
     } );
 
     function createIndicator(cid, eid) {

@@ -24,6 +24,8 @@ use warnings;
 # circular reference here
 use Entity::ServiceProvider;
 
+use VerifiedNoderule;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -61,7 +63,30 @@ sub methods {
             'description'   => 'getMonitoringData',
             'perm_holder'   => 'entity'
         },
+        'enable'   => {
+            'description'   => 'Enable node',
+            'perm_holder'   => 'entity'
+        },
+        'disable'   => {
+            'description'   => 'Disable node',
+            'perm_holder'   => 'entity'
+        },
     };
+}
+
+=head2 new
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = $class->SUPER::new( %args );
+
+    $self->_undefRules();
+
+    return $self;
 }
 
 =head2 getMonitoringData
@@ -96,6 +121,47 @@ sub getMonitoringData {
     );
 
     return $data->{$self->externalnode_hostname} || {};
+}
+
+=head2 _undefRules
+
+    Set all nodemetric rules as 'undef' for this node
+
+=cut
+
+sub _undefRules {
+    my $self = shift;
+
+    my $sp      = $self->service_provider;
+    my $sp_id   = $sp->id;
+    my $node_id = $self->id;
+    foreach my $nm_rule ($sp->nodemetric_rules) {
+        VerifiedNoderule->new(
+            verified_noderule_externalnode_id       => $node_id,
+            verified_noderule_state                 => 'undef',
+            verified_noderule_nodemetric_rule_id    => $nm_rule->id,
+        );
+    }
+}
+
+sub disable {
+    my $self = shift;
+
+    my @verified_noderules = $self->verified_noderules;
+    while(@verified_noderules) {
+        (pop @verified_noderules)->delete();
+    }
+
+    $self->setAttr(name => 'externalnode_state', value => 'disabled');
+    $self->save();
+}
+
+sub enable {
+    my $self = shift;
+
+    $self->_undefRules();
+    $self->setAttr(name => 'externalnode_state', value => 'enabled');
+    $self->save();
 }
 
 1;

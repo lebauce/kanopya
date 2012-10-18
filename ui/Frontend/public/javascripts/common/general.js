@@ -1,5 +1,13 @@
 /* This file is a collection of general and common tools for javascript/jQuery Kanopya UI */
 
+Object.size = function(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
+
 // getMathematicOperator is function that take in input a formula and return the mathemathic operand present in.
 
 function getMathematicOperator(formula) {
@@ -216,7 +224,7 @@ function toInputType(type) {
 }
 
 /*
- * Return the final value from user input and selected unit
+ * Return the final value from user input and selected unit (if exists)
  * Manage the case where input can contain '+' and '-'
  */
 
@@ -226,7 +234,7 @@ function getRawValue(val, unit_field_id) {
         val = val.substr(1);
         return prefix + (val * getUnitMultiplicator(unit_field_id));
     }
-    return val * getUnitMultiplicator(unit_field_id);
+    return isNaN( parseInt(val)) ? val : val * getUnitMultiplicator(unit_field_id);
 }
 
 function ajax(method, route, data, onsuccess, onerror) {
@@ -265,3 +273,86 @@ function ucfirst(str) {
 }
 
 String.prototype.ucfirst    = function() { return ucfirst(this); };
+
+/*
+ * Inform user and display a confirm dialog for deletion for object with potential dependencies (i.e implementing getDependencies)
+ * Display the dependencies tree
+ * Args:
+ *  url         : base route to access object
+ *  id          : target entity id
+ *  grid_ids    : arrays of the grid id impacted by dependencies deletion (if defined then refresh the grids)
+ */
+function confirmDeleteWithDependencies(url, id, grid_ids) {
+    $.post(
+            url + id + '/getDependencies',
+            function(dependencies) {
+                function makejsTree(data) {
+                    var treedata = [];
+                    $.each(data, function(k,v) {
+                        var treenode = {
+                                data    : k
+                        }
+                        if (Object.size(v) > 0) {
+                            treenode.state = 'open';
+                            treenode.children = makejsTree( v );
+                        }
+                        treedata.push( treenode );
+                    });
+                    return treedata;
+                };
+
+                var confirm_button_label;
+                var cancel_button_label;
+                var browser = $('<div>');
+                if (Object.size(dependencies) > 0) {
+                    var tree_cont = $('<div>', {style : 'height:300px'});
+                    var msg = $('<span>', {html : 'This object has some dependencies. Are you sure you want to delete it and all its dependencies?'});
+                    browser.append(msg).append($('<hr>')).append($('<h3>', {html : 'Dependencies :'}));
+                    browser.append(tree_cont);
+                    require('jquery/jquery.jstree.js');
+                    tree_cont.jstree({
+                        "plugins"   : ["themes","json_data","ui"],
+                        "themes"    : {
+                            url : "css/jstree_themes/default/style.css",
+                            icons : false
+                        },
+                        "json_data" : {
+                            "data"                  : makejsTree(dependencies),
+                            "progressive_render"    : true
+                        }
+                    });
+                    confirm_button_label = 'Delete all';
+                    cancel_button_label  = 'Cancel';
+                } else {
+                    browser.append($('<span>', { html : 'Are you sure?'}));
+                    confirm_button_label = 'Yes';
+                    cancel_button_label  = 'No';
+                }
+
+                var buttons = {};
+                buttons[confirm_button_label] = function () {
+                    $.ajax({
+                        type    : 'DELETE',
+                        url     : url + id,
+                        success : function() {
+                            $.each( grid_ids, function(idx,grid_id) {$('#' + grid_id).trigger('reloadGrid')});
+                        }
+                    });
+                    $(this).dialog("close");
+                }
+                buttons[cancel_button_label] = function () {
+                    $(this).dialog("close");
+                }
+
+                browser.dialog({
+                    title   : 'Confirm delete',
+                    modal   : true,
+                    width   : '400px',
+                    buttons : buttons,
+                    close: function (event, ui) {
+                        $(this).remove();
+                    }
+                });
+            }
+    );
+}

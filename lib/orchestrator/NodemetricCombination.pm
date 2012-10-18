@@ -64,7 +64,11 @@ sub methods {
         },
         'getUnit'   => {
             'description' => 'getUnit',
-            'perm_holder' => 'entity',  
+            'perm_holder' => 'entity',
+        },
+        'getDependencies' => {
+            'description' => 'return dependencies tree for this object',
+            'perm_holder' => 'entity',
         },
     }
 }
@@ -114,7 +118,7 @@ sub toString {
         my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
         my $collector           = $service_provider->getManager(manager_type => "collector_manager");
 
-        #Split aggregate_rule id from $formula
+        #Split nodemetric_rule id from $formula
         my @array = split(/(id\d+)/,$formula);
         #replace each rule id by its evaluation
         for my $element (@array) {
@@ -135,7 +139,7 @@ sub getDependantIndicatorIds{
 
     my @indicator_ids;
 
-    #Split aggregate_rule id from $formula
+    #Split nodemetric_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
 
     #replace each rule id by its evaluation
@@ -188,7 +192,6 @@ sub computeValueFromMonitoredValues {
 
     my $res = -1;
     my $arrayString = '$res = '."@array";
-    #print $arrayString."\n";
 
     #Evaluate the logic formula
     eval $arrayString;
@@ -240,7 +243,7 @@ sub getUnit {
     my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
     my $collector           = $service_provider->getManager(manager_type => "collector_manager");
 
-    #Split aggregate_rule id from $formula
+    #Split nodemtric_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
     my $ref_element;
@@ -266,5 +269,23 @@ sub getUnit {
     return join('',@array);
 }
 
+sub getDependencies {
+    my $self = shift;
+    my @conditions = $self->nodemetric_conditions;
+    my %dependencies;
 
+    for my $condition (@conditions) {
+        $dependencies{$condition->nodemetric_condition_label} = $condition->getDependencies;
+    }
+    return \%dependencies;
+}
+
+sub delete {
+    my $self = shift;
+    my @conditions = $self->nodemetric_conditions;
+    while (@conditions) {
+        (pop @conditions)->delete();
+    }
+    return $self->SUPER::delete();
+}
 1;
