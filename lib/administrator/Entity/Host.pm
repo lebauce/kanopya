@@ -383,7 +383,7 @@ sub setNodeState {
     my $current_state = $self->getNodeState();
 
     my $node = $self->node;
-    $node->setAttr(name => 'node_prev_state', value => $current_state);
+    $node->setAttr(name => 'node_prev_state', value => $current_state || "");
     $node->setAttr(name => 'node_state', value => $new_state . ":" . time);
     $node->save();
 }
