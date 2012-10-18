@@ -272,12 +272,15 @@ function create_grid(options) {
 //        },
 
         onCellSelect    : function(rowid, index, contents, target) {
+            // Test if some options disable details
             if (index != actions_col_idx && ! options.deactivate_details && ! options.colModel[index].nodetails) {
-                var row_data = $('#' + options.grid_id).getRowData(rowid);
-                show_detail(options.grid_id, grid_class, rowid, row_data, options.details)
+                // Callback before show details, must return true if defined
+                if ((! options.beforeShowDetails) || options.beforeShowDetails(options.grid_id, rowid)) {
+                    var row_data = $('#' + options.grid_id).getRowData(rowid);
+                    show_detail(options.grid_id, grid_class, rowid, row_data, options.details)
+                }
             }
         },
-
         loadError       : function (xhr, status, error) {
             var error_msg = xhr.responseText;
             alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 

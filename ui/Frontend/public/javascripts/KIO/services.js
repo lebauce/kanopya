@@ -116,7 +116,7 @@ function loadServicesResources (container_id, elem_id) {
             $(grid).find('tr#' + rowid).css('background', 'lightgrey');
         }
         var cell = $(grid).find('tr#' + rowid).find('td[aria-describedby="' + loadServicesResourcesGridId + '_activate_control"]');
-        var activateButton  = $('<div>', {html : node_disabled ? 'Enable' : 'Disable', css : 'position:center'}).button().appendTo(cell);
+        var activateButton  = $('<div>', {'class' : 'node_control', html : node_disabled ? 'Enable' : 'Disable', css : 'position:center'}).button().appendTo(cell);
         $(activateButton).attr('style', 'margin-top:0px;');
         $(activateButton).click(function() {
             var action          = $(this).find('.ui-button-text').html().toLowerCase();
@@ -149,6 +149,15 @@ function loadServicesResources (container_id, elem_id) {
             addResourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, 'external');
             // Manage enable/disable state and control
             manageNodeEnabling(grid, rowid, rowdata, rowelem);
+        },
+        beforeShowDetails: function(gridid, rowid) {
+            var control = $('#'+gridid).find('tr#' + rowid).find('.node_control');
+            var is_disable = control.find('.ui-button-text').html() === 'Enable';
+            if (is_disable) {
+                alert('This node is disabled');
+                return false;
+            }
+            return true;
         },
         colNames: [ 'id', 'Hostname', 'Rules State', '' ],
         colModel: [
