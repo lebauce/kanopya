@@ -1,16 +1,46 @@
-# base class to manage inheritance throw relational database
+#    Copyright © 2012 Hedera Technology SAS
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+
+=begin classdoc
+
+Base class to manage inheritance throw relational database.
+
+@since    2012-Jun-10
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
 
 package BaseDB;
 
 use strict;
 use warnings;
-use Data::Dumper;
-use Administrator;
+
 use General;
-use POSIX qw(ceil);
-use Hash::Merge;
+use Administrator;
+
 use Class::ISA;
+use Hash::Merge;
+use POSIX qw(ceil);
 use vars qw($AUTOLOAD);
+
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("basedb");
@@ -46,49 +76,247 @@ sub methods {
 }
 
 
-=head2
+=pod
 
-    Return all the available methods for this object
+=begin classdoc
+
+Create a new instance of the class. It inserts a entry for every class
+of the hierarchy, every entry having a foreign key to its parent entry
+
+@return a class instance
+
+=end classdoc
+
+=cut
+
+sub new {
+    my ($class, %args) = @_;
+    my $hash = \%args;
+
+    # Extract relation for futher handling
+    my $relations = extractRelations(hash => $hash);
+
+    my @attrs = keys %args;
+    foreach my $attr (@attrs) {
+        my $relation = $class->getAttrDefs->{$attr . "_id"};
+
+        if ($relation && defined($relation->{relation}) && $args{$attr}->isa("BaseDB")) {
+            $args{$attr . "_id"} = $args{$attr}->id;
+            delete $args{$attr};
+        }
+    }
+
+    my $attrs = $class->checkAttrs(attrs => $hash);
+
+    # Get the class_type_id for class name
+    my $adm = Administrator->new();
+    eval {
+        my $rs = $adm->_getDbixFromHash(table => "ClassType",
+                                        hash  => { class_type => $class })->single;
+
+        $attrs->{class_type_id} = $rs->get_column('class_type_id');
+    };
+    if ($@) {
+        # Unregistred or abstract class, assuming it is not an Entity.
+    }
+
+    my $self = $class->newDBix(attrs => $attrs);
+    bless $self, $class;
+
+    # Populate relations
+    $self->populateRelations(relations => $relations);
+
+#    $self->{_altered} = 0;
+
+    return $self;
+}
+
+
+=pod
+
+=begin classdoc
+
+Update an instance by setting values for attribute taht differs,
+also handle the update of relations.
+
+@return the updated object
+
+=end classdoc
+
+=cut
+
+sub update {
+    my ($self, %args) = @_;
+    my $hash = \%args;
+
+    # Extract relation for futher handling
+    my $relations = extractRelations(hash => $hash);
+    delete $hash->{id};
+
+    my $updated = 0;
+    for my $attr (keys %$hash) {
+        my $currentvalue = $self->getAttr(name => $attr);
+        if ("$hash->{$attr}" ne "$currentvalue") {
+            $self->setAttr(name => $attr, value => $hash->{$attr});
+
+            if (not $updated) { $updated = 1; }
+        }
+    }
+    if ($updated) { $self->save(); }
+
+    # Populate relations
+    $self->populateRelations(relations => $relations);
+    return $self;
+}
+
+
+=pod
+
+=begin classdoc
+
+Extend an object instance to a concreter type.
+
+@return the promoted object
+
+=end classdoc
+
+=cut
+
+sub promote {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'promoted' ]);
+
+    my $adm = Administrator->new();
+
+    # Check if the new type is in the same hierarchy
+    my $baseclass = ref($args{promoted});
+    if (not ($class =~ m/$baseclass/)) {
+        $errmsg = "Unable to promote " . ref($args{promoted}) . " to " . $class;
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+
+    my $pattern = $baseclass . '::';
+    my $subclass = $class;
+    $subclass =~ s/^$pattern//g;
+
+    # Set the primary key to the parent primary key value.
+    my $primary_key = ($adm->{db}->source(_rootTable($subclass))->primary_columns)[0];
+    $args{$primary_key} = $args{promoted}->id;
+
+    # Merge the base object attributtes and new ones for attrs checking
+    my %totalargs = (%args, $args{promoted}->getAttrs);
+    delete $totalargs{promoted};
+
+    # Then extract only the attrs for new tables for insertion
+    my $attrs = $class->checkAttrs(attrs => \%totalargs,
+                                   trunc => $baseclass . '::' . _rootTable($subclass));
+
+    my $self = $class->newDBix(attrs => $attrs, subclass => $subclass);
+
+    bless $self, $class;
+
+    # Set the class type to the new promotion class
+    eval {
+        my $rs = $adm->_getDbixFromHash(table => "ClassType",
+                                        hash  => { class_type => $class })->single;
+
+        $self->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
+        $self->save();
+    };
+    if ($@) {
+        # Unregistred or abstract class name <$class>, assuming it is not an Entity.
+    }
+    return $self;
+}
+
+
+=pod
+
+=begin classdoc
+
+Generalize an object instance to a parent type.
+
+@return the demoted object
+
+=end classdoc
+
+=cut
+
+sub demote {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'demoted' ]);
+
+    my $adm = Administrator->new();
+
+    # Check if the new type is in the same hierarchy
+    my $baseclass = ref($args{demoted});
+    if (not ($baseclass =~ m/$class/)) {
+        $errmsg = "Unable to demote " . ref($args{demoted}) . " to " . $class;
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+
+    # Delete row of tables bellow $class
+    $args{demoted}->delete(trunc => $class);
+
+    bless $args{demoted}, $class;
+
+    # Set the class type to the new promotion class
+    eval {
+        my $rs = $adm->_getDbixFromHash(table => "ClassType",
+                                        hash  => { class_type => $class })->single;
+
+        $args{demoted}->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
+        $args{demoted}->save();
+    };
+    if ($@) {
+        # Unregistred or abstract class name <$class>, assuming it is not an Entity.
+    }
+    return $args{demoted};
+}
+
+=pod
+
+=begin classdoc
+
+Build the full list of methods by concatenating methods hash of each classes
+in the hierarchy, it also support miulti inherintance by using Class::ISA::self_and_super_path.
+
+@return the hash of methods exported to the api for this class.
+
+=end classdoc
 
 =cut
 
 sub getMethods {
-  my $self      = shift;
-  my $class     = ref($self) || $self;
-  my $methods   = {};
-  my @supers    = Class::ISA::self_and_super_path($class);
-  my $merge     = Hash::Merge->new();
-  for my $sup (@supers) {
-    if ($sup->can('methods')) {
-      $methods    = $merge->merge( $methods, $sup->methods() );
-    }
-  }
-  return $methods;
+    my $self  = shift;
+    my $class = ref($self) || $self;
+
+    my $methods = {};
+    my @supers  = Class::ISA::self_and_super_path($class);
+    my $merge   = Hash::Merge->new();
+
+    for my $sup (@supers) {
+        if ($sup->can('methods')) {
+            $methods = $merge->merge($methods, $sup->methods());
+        }
+     }
+     return $methods;
 }
 
-=head2
 
-    Based on a class name, requireClass imports the right Perl module
-    of the corresponding class
+=pod
 
-=cut
+=begin classdoc
 
-sub requireClass {
-    my $location = shift;
-    $location =~ s/\:\:/\//g;
-    $location .= '.pm';
-    eval { require $location; };
-    if ($@) {
-        throw Kanopya::Exception::Internal::UnknownClass(
-            error => "Could not find $location :\n$@"
-        );
-    }
-}
+Return a hash ref containing all ATTR_DEF for each class in the hierarchy.
 
-=head2
+@optional $args{group_by} outpout hash format policy (module|none)
 
-    Return a hash ref containing all ATTR_DEF for each class
-    in the hierarchy
+@return the updated object
+
+=end classdoc
 
 =cut
 
@@ -169,10 +397,17 @@ sub getAttrDefs {
     return $result;
 }
 
-=head2
 
-    Check attribute validity in the class hierarchy
-    Return dbix class row where the attr is found
+=pod
+
+=begin classdoc
+
+Check the value of an attrbiute with the pattertn defined in the ATTR_DEF.
+
+@param $args{name} the name of the attribute to check the value
+@param $args{value} the value to check with pattern
+
+=end classdoc
 
 =cut
 
@@ -180,13 +415,7 @@ sub checkAttr {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
 
-    General::checkParams(args => \%args, required => ['name']);
-
-    if(! exists $args{value}) {
-        $errmsg = ref($self) . " checkAttr need a value named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => [ 'name', 'value' ]);
 
     my $attributes_def = $class->getAttrDefs();
     if (exists $attributes_def->{$args{name}} && defined $args{value} &&
@@ -198,11 +427,23 @@ sub checkAttr {
     }
 }
 
-=head2
 
-    Check attributes validity in the class hierarchy
-    and build as the same time a hasref structure to pass to 'new' method
-    of dbix resultset for the root class of the hierarchy
+=pod
+
+=begin classdoc
+
+Check attributes validity in the class hierarchy and build as the same time
+a hasref structure to pass to 'new' method of dbix resultset for
+the root class of the hierarchy.
+
+@param $args{attrs} hash containing keys/values of attributes to check
+@optional $args{trunc} a class name with its hierachy, allows to return
+          a sub hash exluding attributes of classes in this hierachy.
+
+@return the hash of keys/values of attributes of each module in the class hierachy,
+        sorted by module name.
+
+=end classdoc
 
 =cut
 
@@ -211,10 +452,9 @@ sub checkAttrs {
     my $class = ref($self) || $self;
     my $final_attrs = {};
 
+    General::checkParams(args => \%args, required => [ 'attrs' ], optional => { 'trunc' => undef });
+
     my $attributes_def = $class->getAttrDefs(group_by => 'module');
-
-    General::checkParams(args => \%args, required => ['attrs']);
-
     foreach my $module (keys %$attributes_def) {
         $final_attrs->{$module} = {};
     }
@@ -275,187 +515,30 @@ sub checkAttrs {
     return $result;
 }
 
-=head2
 
-    Create a new instance of the class.
-    It inserts a entry for every class of the hierarchy,
-    every entry having a foreign key to its parent entry
+=pod
 
-=cut
+=begin classdoc
 
-sub new {
-    my ($class, %args) = @_;
-    my $hash = \%args;
+Build a new dbix from class name and attributes, and insert it in database.
 
-    # Extract relation for futher handling
-    my $relations = extractRelations(hash => $hash);
+@param $args{attrs} hash containing keys / values of the new dbix attributes
+@optional $args{subclass} a class name to force building a sub type dbix of the class.
 
-    my @attrs = keys %args;
-    foreach my $attr (@attrs) {
-        my $relation = $class->getAttrDefs->{$attr . "_id"};
+@return the object hash with the private _dbix.
 
-        if ($relation && defined($relation->{relation}) && $args{$attr}->isa("BaseDB")) {
-            $args{$attr . "_id"} = $args{$attr}->id;
-            delete $args{$attr};
-        }
-    }
-
-    my $attrs = $class->checkAttrs(attrs => $hash);
-
-    # Get the class_type_id for class name
-    my $adm = Administrator->new();
-    eval {
-        my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                        hash  => { class_type => $class })->single;
-
-        $attrs->{class_type_id} = $rs->get_column('class_type_id');
-    };
-    if ($@) {
-        # Unregistred or abstract class, assuming it is not an Entity.
-    }
-
-    my $self = $class->newDBix(attrs => $attrs);
-    bless $self, $class;
-
-    # Populate relations
-    $self->populateRelations(relations => $relations);
-
-    $self->{_altered} = 0;
-
-    return $self;
-}
-
-=head2
-
-    Update an instance by setting values for attribute taht differs,
-    also handle the update of relations.
+=end classdoc
 
 =cut
-
-sub update {
-    my ($self, %args) = @_;
-    my $hash = \%args;
-
-    # Extract relation for futher handling
-    my $relations = extractRelations(hash => $hash);
-    delete $hash->{id};
-
-    my $updated = 0;
-    for my $attr (keys %$hash) {
-        my $currentvalue = $self->getAttr(name => $attr);
-        if ("$hash->{$attr}" ne "$currentvalue") {
-            $self->setAttr(name => $attr, value => $hash->{$attr});
-
-            if (not $updated) { $updated = 1; }
-        }
-    }
-    if ($updated) { $self->save(); }
-
-    # Populate relations
-    $self->populateRelations(relations => $relations);
-    return $self;
-}
-
-=head2
-
-    Extend an object instance to a concreter type.
-
-=cut
-
-sub promote {
-    my ($class, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'promoted' ]);
-
-    my $adm = Administrator->new();
-
-    # Check if the new type is in the same hierarchy
-    my $baseclass = ref($args{promoted});
-    if (not ($class =~ m/$baseclass/)) {
-        $errmsg = "Unable to promote " . ref($args{promoted}) . " to " . $class;
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-
-    my $pattern = $baseclass . '::';
-    my $subclass = $class;
-    $subclass =~ s/^$pattern//g;
-
-    # Set the primary key to the parent primary key value.
-    my $primary_key = ($adm->{db}->source(_rootTable($subclass))->primary_columns)[0];
-    $args{$primary_key} = $args{promoted}->id;
-
-    # Merge the base object attributtes and new ones for attrs checking
-    my %totalargs = (%args, $args{promoted}->getAttrs);
-    delete $totalargs{promoted};
-
-    # Then extract only the attrs for new tables for insertion
-    my $attrs = $class->checkAttrs(attrs => \%totalargs,
-                                   trunc => $baseclass . '::' . _rootTable($subclass));
-
-    my $self = $class->newDBix(attrs => $attrs, subclass => $subclass);
-
-    bless $self, $class;
-
-    # Set the class type to the new promotion class
-    eval {
-        my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                        hash  => { class_type => $class })->single;
-
-        $self->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
-        $self->save();
-    };
-    if ($@) {
-        # Unregistred or abstract class name <$class>, assuming it is not an Entity.
-    }
-    return $self;
-}
-
-=head2
-
-    Generalize an object instance to a parent type.
-
-=cut
-
-sub demote {
-    my ($class, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'demoted' ]);
-
-    my $adm = Administrator->new();
-
-    # Check if the new type is in the same hierarchy
-    my $baseclass = ref($args{demoted});
-    if (not ($baseclass =~ m/$class/)) {
-        $errmsg = "Unable to demote " . ref($args{demoted}) . " to " . $class;
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-
-    # Delete row of tables bellow $class
-    $args{demoted}->delete(trunc => $class);
-
-    bless $args{demoted}, $class;
-
-    # Set the class type to the new promotion class
-    eval {
-        my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                        hash  => { class_type => $class })->single;
-
-        $args{demoted}->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
-        $args{demoted}->save();
-    };
-    if ($@) {
-        # Unregistred or abstract class name <$class>, assuming it is not an Entity.
-    }
-    return $args{demoted};
-}
 
 sub newDBix {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'attrs' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'attrs' ],
+                         optional => { 'subclass' => $class });
 
     my $adm = Administrator->new();
-    my $subclass = defined $args{subclass} ? $args{subclass} : $class;
     my $dbixroot = $adm->_newDbix(table => _rootTable($subclass), row => $args{attrs});
 
     eval {
@@ -478,10 +561,18 @@ sub newDBix {
     };
 }
 
-=head2
 
-    Construct the proper BaseDB based instance from
-    a DBIx row
+=pod
+
+=begin classdoc
+
+Construct the proper BaseDB based instance from a DBIx row
+
+@param $args{row} a dbix row representing the object table row
+
+@return the object instance.
+
+=end classdoc
 
 =cut
 
@@ -494,8 +585,8 @@ sub fromDBIx {
 
     requireClass($name);
 
-    # We need to use prefetch to get the parent/childs attrs,
-    # and use the concrete class type. Use 'get' for instance.
+    # TODO: We need to use prefetch to get the parent/childs attrs,
+    #       and use the concrete class type. Use 'get' for instance.
 
 #    return bless {
 #        _dbix      => $args{row},
@@ -504,24 +595,32 @@ sub fromDBIx {
     return $name->get(id => getRowPrimaryKey(row => $args{row}));
 }
 
-=head2
 
-    Retrieve a value given a name attribute ; search this
-    atribute throw the whole class hierarchy
+=pod
+
+=begin classdoc
+
+Retrieve a value given a name attribute, search this atribute throw the whole class hierarchy.
+
+@param $args{name} name of the attribute to get the value
+
+@return the attribute value
+
+=end classdoc
 
 =cut
 
 sub getAttr {
-    my $self = shift;
+    my $self  = shift;
     my $class = ref($self);
-    my %args = @_;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => ['name']);
 
     my $dbix = $self->{_dbix};
     my $attr = $class->getAttrDef()->{$args{name}};
     my $value = undef;
     my $found = 1;
-
-    General::checkParams(args => \%args, required => ['name']);
 
     # Recursively search in the dbix objets, following
     # the 'parent' relation
@@ -567,9 +666,16 @@ sub getAttr {
     return $value;
 }
 
-=head2
 
-    Retrieve all keys/values in the class hierarchy
+=pod
+
+=begin classdoc
+
+Retrieve all keys/values in the class hierarchy
+
+@return a hash containing all object attributes with values
+
+=end classdoc
 
 =cut
 
@@ -594,24 +700,27 @@ sub getAttrs {
    return %attrs;
 }
 
-=head2
 
-    Set one name attribute with the given value ;
-    search this attribute throw the whole class hierarchy,
-    and check attribute validity
+=pod
+
+=begin classdoc
+
+Set one name attribute with the given value, search this attribute throw the whole 
+class hierarchy, and check attribute validity.
+
+@param $args{name} the name of the attribute to set the value
+@param $args{value} the value to set
+
+@return the value set
+
+=end classdoc
 
 =cut
 
 sub setAttr {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['name']);
-
-    if(! exists $args{value}) {
-        $errmsg = ref($self) . " setAttr need a value named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => [ 'name', 'value' ]);
 
     my ($name, $value) = ($args{name}, $args{value});
     my $dbix = $self->{_dbix};
@@ -620,7 +729,7 @@ sub setAttr {
     my $found = 0;
     while(1) {
         # Search for attr in this dbix
-        if ( $dbix->has_column($name) ) {
+        if ($dbix->has_column($name)) {
             $dbix->set_column($name, $value);
             $found = 1;
             last;
@@ -639,21 +748,30 @@ sub setAttr {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    $self->{_altered} = 1;
+#    $self->{_altered} = 1;
 
     return $value;
 }
 
-=head2
 
-    Retrieve one instance from an id
+=pod
+
+=begin classdoc
+
+Retrieve one instance from an id
+
+@param $args{id} the id of the object to get
+
+@return the object instance
+
+=end classdoc
 
 =cut
 
 sub get {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['id']);
+    General::checkParams(args => \%args, required => [ 'id' ]);
 
     my $adm = Administrator->new();
     eval {
@@ -683,18 +801,28 @@ sub get {
     return $self;
 }
 
-=head2
 
-    Return the class type name from a class type id
-    At the first call, get all the entries and cache them
-    into a hash for *LOT* faster accesses
+=pod
+
+=begin classdoc
+
+Return the class type name from a class type id, at the first call,
+get all the entries and cache them into a hash for *LOT* faster accesses.
+
+@param $args{id} the id of the class type
+
+@return the class type name
+
+=end classdoc
 
 =cut
 
 sub getClassType {
     my %args = @_;
-    my $adm = Administrator->new();
 
+    General::checkParams(args => \%args, required => [ 'id' ]);
+
+    my $adm = Administrator->new();
     if (not %class_type_cache) {
         my $class_types = $adm->_getDbixFromHash(table => "ClassType",
                                                  hash  => { });
@@ -707,10 +835,16 @@ sub getClassType {
     return $class_type_cache{$args{id}};
 }
 
-=head2
 
-    Return the join query required to get all the attributes
-    of the whole class hierarchy
+=pod
+
+=begin classdoc
+
+Build the join query required to get all the attributes of the whole class hierarchy.
+
+@return the join query
+
+=end classdoc
 
 =cut
 
@@ -733,10 +867,16 @@ sub getJoin {
     return $parent_join;
 }
 
-=head2
 
-    Return the JOIN query to get the attributes of a multi level
-    depth relationship
+=pod
+
+=begin classdoc
+
+Build the JOIN query to get the attributes of a multi level depth relationship.
+
+@return the join query
+
+=end classdoc
 
 =cut
 
@@ -767,14 +907,25 @@ sub getJoinQuery {
     return $joins;
 }
 
-=head2
 
-    Return the entries that match the 'hash' filter
-    It also accepts more or less the same parameters than
-    DBIx 'search' method.
+=pod
 
-    It fetches the attributes of the whole class hierarchy
-    and returns an object as a BaseDB derived object
+=begin classdoc
+
+Return the entries that match the 'hash' filter. It also accepts more or less 
+the same parameters than DBIx 'search' method. It fetches the attributes of 
+the whole class hierarchy and returns an object as a BaseDB derived object.
+
+@param $args{hash} the keys/values describing the researched objects
+@optional $args{page} the number of the requested page among all pages
+          of the object list.
+@optional $args{rows} the number of object entry in a page
+@optional $args{order_by} the sorting policy for output list
+@optional $args{dataType} the output format
+
+@return the matching object list
+
+=end classdoc
 
 =cut
 
@@ -782,7 +933,10 @@ sub search {
     my ($class, %args) = @_;
     my @objs = ();
 
-    General::checkParams(args => \%args, required => ['hash']);
+    General::checkParams(args     => \%args,
+                         required => [ 'hash' ],
+                         optional => { 'page' => undef, 'rows' => undef,
+                                       'order_by' => undef, 'dataType' => undef });
 
     my $table = _buildClassNameFromString($class);
     my $adm = Administrator->new();
@@ -865,17 +1019,23 @@ sub search {
     return @objs;
 }
 
-=head2
 
-    Return a single element matching the specified criterias
-    Take the same arguments as 'search'
+=pod
+
+=begin classdoc
+
+Return a single element matching the specified criterias take the same arguments as 'search'.
+
+@return the matching object
+
+=end classdoc
 
 =cut
 
 sub find {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['hash']);
+    General::checkParams(args => \%args, required => [ 'hash' ]);
 
     my @objects = $class->search(%args);
 
@@ -888,10 +1048,16 @@ sub find {
     return $object;
 }
 
-=head2
 
-    Store the object in the database.
-    Create it if it doesn't exist, update it otherwise.
+=pod
+
+=begin classdoc
+
+Return a single element matching the specified criterias take the same arguments as 'search'.
+
+@return the matching object
+
+=end classdoc
 
 =cut
 
@@ -914,15 +1080,25 @@ sub save {
     return $id;
 }
 
-=head2
 
-    Remove records from the entire class hierarchy
+=pod
+
+=begin classdoc
+
+Remove records from the entire class hierarchy.
+
+@optional $args{trunc} a class name with its hierachy, allows to delete
+          a part of the class hierachy only.
+
+=end classdoc
 
 =cut
 
 sub delete {
     my ($self, %args) = @_;
     my $dbix = $self->{_dbix};
+
+    General::checkParams(args => \%args, optional => { 'trunc' => undef });
 
     if (defined $args{trunc}) {
         $args{trunc} = _buildClassNameFromString($args{trunc});
@@ -946,9 +1122,16 @@ sub delete {
     $dbix->delete;
 }
 
-=head2
 
-    Return the string representation of the object
+=pod
+
+=begin classdoc
+
+Generic method to build the string representation of the object.
+
+@return the string the representing the object
+
+=end classdoc
 
 =cut
 
@@ -957,10 +1140,21 @@ sub toString {
     return ref($self);
 }
 
-=head2
 
-    Return the object as a hash so that it can be safely be
-    converted to JSON. Should be named differently but hey...
+=pod
+
+=begin classdoc
+
+Return the object as a hash so that it can be safely be converted to JSON.
+Should be named differently but hey...
+
+@optional $args{model} switch to model mode, return the object description
+          instead of attributes values
+@optional $args{no_relations} force to remove the relations from the atrribute definition
+
+@return the hash representing the object or the model depending on $args{model} option
+
+=end classdoc
 
 =cut
 
@@ -1048,9 +1242,18 @@ sub toJSON {
     return $hash;
 }
 
-=head2
 
-    Remove relations values from values, and return its.
+=pod
+
+=begin classdoc
+
+Extract relations sub hashes from the hash represeting the object.
+
+@param $args{hash} hash representing the object.
+
+@return the original hash containing the relations sub hashes only
+
+=end classdoc
 
 =cut
 
@@ -1069,9 +1272,17 @@ sub extractRelations {
     return $relations;
 }
 
-=head2
 
-    Create or update relations.
+=pod
+
+=begin classdoc
+
+Create or update relations. If a relation has the primary key set in this attributes,
+we update the object, create it instead.
+
+@param $args{relations} hash containing object relations only
+
+=end classdoc
 
 =cut
 
@@ -1143,9 +1354,18 @@ sub populateRelations {
     }
 }
 
-=head2
 
-    Return the primary(ies) key(s) of a row.
+=pod
+
+=begin classdoc
+
+Return the primary(ies) key(s) of a row.
+
+@param $args{row} hash dbix row of the object
+
+@return the primary key value
+
+=end classdoc
 
 =cut
 
@@ -1165,9 +1385,19 @@ sub getRowPrimaryKey {
     return $id;
 }
 
-=head2
 
-    Get the name of the attribute that identify the object.
+=pod
+
+=begin classdoc
+
+Generic method to get the name of the attribute that identify the object.
+Search for an attribute ending by '_name' within all attributes.
+
+@optional $args{attrs} the attribute defintion of the object 
+
+@return the name of the attribute that identify the object
+
+=end classdoc
 
 =cut
 
@@ -1187,9 +1417,16 @@ sub getLabelAttr {
     return undef;
 }
 
-=head2
 
-    Generic creation method.
+=pod
+
+=begin classdoc
+
+Generic method for object creation.
+
+@return the created object instance
+
+=end classdoc
 
 =cut
 
@@ -1197,12 +1434,17 @@ sub create {
     my $class = shift;
     my %args = @_;
 
-    $class->new(%args);
+    return $class->new(%args);
 }
 
-=head2
 
-    Generic deletion method.
+=pod
+
+=begin classdoc
+
+Generic method for object deletion.
+
+=end classdoc
 
 =cut
 
@@ -1214,9 +1456,15 @@ sub remove {
 }
 
 
-=head2
+=pod
 
-    Get the primary key column name
+=begin classdoc
+
+Get the primary key column name
+
+@return the primary key column name.
+
+=end classdoc
 
 =cut
 
@@ -1226,74 +1474,46 @@ sub getPrimaryKey {
     return ($self->{_dbix}->result_source->primary_columns)[0];
 }
 
-=head2
 
-    Get the primary key of the object
+=pod
 
-=cut
+=begin classdoc
 
-sub getId {
-    my $self = shift;
+Parse ths dbix object relation definition to extract the foreign key
+of the relation that link it to the object.
 
-    return $self->id;
-}
+@param $args{cond} the 'cond' value of the dbix relation desciption hash
 
-=head2
+@return the foreign key name of the relation
 
-    Get the primary key of the object
+=end classdoc
 
 =cut
-
-sub id {
-    my $self = shift;
-
-    return $self->{_dbix}->get_column($self->getPrimaryKey);
-}
-
-=head2
-
-    Return the parent class name
-
-=cut
-
-sub _parentClass {
-    my ($class) = @_;
-    $class =~ s/\:\:[a-zA-Z0-9]+$//g;
-    return $class;
-}
-
-=head2
-
-    Remove the top of hierarchy class
-
-=cut
-
-sub _childClass {
-    my ($class) = @_;
-    $class =~ s/^[a-zA-Z0-9]+\:\://g;
-    return $class;
-}
-
-=head2
-
-    Return the class name without its hierarchy
-
-=cut
-
-sub _buildClassNameFromString {
-    my ($class) = @_;
-    $class =~ s/.*\:\://g;
-    return $class;
-}
 
 sub getForeignKeyFromCond {
     my (%args) = @_;
-    
+
     General::checkParams(args => \%args, required => [ 'cond' ]);
-    
+
     $args{cond} =~ s/.*foreign\.//g;
     return $args{cond};
 }
+
+
+=pod
+
+=begin classdoc
+
+Parse ths dbix object relation definition to extract the foreign key
+of the relation that link it to the object.
+
+@param $args{cond} the 'cond' value of the dbix relation desciption hash
+
+@return the foreign key name of the relation
+
+=end classdoc
+
+=cut
 
 sub getKeyFromCond {
     my (%args) = @_;
@@ -1304,10 +1524,113 @@ sub getKeyFromCond {
     return $args{cond};
 }
 
-=head2
 
-    Get the class name at the top of the hierarchy
-    of a full class name
+=pod
+
+=begin classdoc
+
+@deprecated
+
+Get the primary key of the object
+
+@return the primary key value
+
+=end classdoc
+
+=cut
+
+sub getId {
+    my $self = shift;
+
+    return $self->id;
+}
+
+
+=pod
+
+=begin classdoc
+
+Get the primary key of the object
+
+@return the primary key value
+
+=end classdoc
+
+=cut
+
+sub id {
+    my $self = shift;
+
+    return $self->{_dbix}->get_column($self->getPrimaryKey);
+}
+
+
+=pod
+
+=begin classdoc
+
+@param $class the full class name with the hierachy
+
+@return the parent class name
+
+=end classdoc
+
+=cut
+
+sub _parentClass {
+    my ($class) = @_;
+    $class =~ s/\:\:[a-zA-Z0-9]+$//g;
+    return $class;
+}
+
+
+=pod
+
+=begin classdoc
+
+@param $class the full class name with the hierachy
+
+@return the class name at the bottom of the hierarchy
+
+=end classdoc
+
+=cut
+
+sub _childClass {
+    my ($class) = @_;
+    $class =~ s/^[a-zA-Z0-9]+\:\://g;
+    return $class;
+}
+
+
+=pod
+
+=begin classdoc
+
+@param $class the full class name with the hierachy
+
+@return the class name without its hierarchy
+
+=end classdoc
+
+=cut
+
+sub _buildClassNameFromString {
+    my ($class) = @_;
+    $class =~ s/.*\:\://g;
+    return $class;
+}
+
+
+=pod
+
+=begin classdoc
+
+@param $class the full class name with the hierachy
+
+@return the class name at the top of the hierarchy of a full class name.
+
+=end classdoc
 
 =cut
 
@@ -1317,9 +1640,18 @@ sub _rootTable {
     return $class;
 }
 
-=head2
 
-    Convert a class name to table name
+=pod
+
+=begin classdoc
+
+Convert a class name to table name
+
+@param $class the full class name with the hierachy
+
+@return the table name
+
+=end classdoc
 
 =cut
 
@@ -1332,10 +1664,19 @@ sub _classToTable {
     return $table;
 }
 
-=head2
 
-    Normalize the specified name by removing underscores
-    and upper casing the characters that follows
+=pod
+
+=begin classdoc
+
+Normalize the specified name by removing underscores and upper casing 
+the characters that follows.
+
+@param $name any name of database table
+
+@return the normalized name
+
+=end classdoc
 
 =cut
 
@@ -1352,10 +1693,18 @@ sub normalizeName {
     return ucfirst($name);
 };
 
-=head2
 
-    Returns the name of the Kanopya class for the
-    specified DBIx table schema
+=pod
+
+=begin classdoc
+
+Build the name of the Kanopya class for the specified DBIx table schema.
+
+@param $source a dbix result source
+
+@return the class name
+
+=end classdoc
 
 =cut
 
@@ -1374,11 +1723,45 @@ sub classFromDbix {
     return normalizeName($name);
 }
 
-=head2
 
-    Method used by the api as entry point for methods calls.
-    It is convenient for centralizing permmissions checking.
+=pod
 
+=begin classdoc
+
+Dinamically load a module from the class name.
+
+@param $class Class name corresponding to the module to load.
+ 
+=end classdoc
+ 
+=cut
+
+sub requireClass {
+    my $class = shift;
+    $class =~ s/\:\:/\//g;
+    my $location = $class . '.pm';
+
+    eval { require $location; };
+    if ($@) {
+        throw Kanopya::Exception::Internal::UnknownClass(
+            error => "Could not find $location :\n$@"
+        );
+    }
+}
+
+
+=pod
+
+=begin classdoc
+
+Method used by the api as entry point for methods calls.
+It is convenient for centralizing permmissions checking.
+
+@param $args{method} the method name to call
+@optional $args{params} method call parameters
+ 
+=end classdoc
+ 
 =cut
 
 sub methodCall {
@@ -1395,12 +1778,18 @@ sub methodCall {
     return $self->$method(%{$args{params}});
 }
 
-=head2
 
-    We define an AUTOLOAD to mimic the DBIx behaviour.
-    It simply calls 'getAttr' that returns the specified
-    attribute or the relation blessed to a BaseDB object
+=pod
 
+=begin classdoc
+
+We define an AUTOLOAD to mimic the DBIx behaviour, it simply calls 'getAttr'
+that returns the specified attribute or the relation blessed to a BaseDB object.
+
+@return the value returned by the call of the requested attribute.
+
+=end classdoc
+ 
 =cut
 
 sub AUTOLOAD {
@@ -1412,6 +1801,17 @@ sub AUTOLOAD {
 
     return $self->getAttr(name => $accessor);
 }
+
+
+=pod
+
+=begin classdoc
+
+Method called at the object deletion.
+
+=end classdoc
+ 
+=cut
 
 sub DESTROY {
     my $self = shift;

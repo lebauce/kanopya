@@ -44,21 +44,23 @@ package Administrator;
 
 use strict;
 use warnings;
+
+use General;
+use Entityright;
+use Entityright::User;
+use Entityright::System;
+use MonitorManager;
+use NetworkManager;
+use RulesManager;
+use AdministratorDB::Schema;
+use Kanopya::Exceptions;
+use Kanopya::Config;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
-use AdministratorDB::Schema;
-use Entityright;
-use Kanopya::Exceptions;
-use Kanopya::Config;
-use General;
 use XML::Simple;
 use DateTime;
-use NetworkManager;
-use RulesManager;
-use MonitorManager;
-use Entityright::User;
-use Entityright::System;
 
 our $VERSION = "1.00";
 
