@@ -80,6 +80,8 @@ sub methods {
 
 =begin classdoc
 
+@constructor
+
 Create a new instance of the class. It inserts a entry for every class
 of the hierarchy, every entry having a foreign key to its parent entry
 

@@ -44,6 +44,16 @@ sub copy {
 
     General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
 
+    my $source_size = $self->container_size;
+    my $dest_size   = $args{dest}->container_size;
+
+    # Check if the destination container is not to small.
+    if ($dest_size < $source_size) {
+        throw Kanopya::Exception::Execution(
+                  error => "Source container <$source_size> is larger than the dest container <$dest_size>."
+              );
+    }
+
     # When we copy to a loopback of a file on a NFS mountpoint
     # where the server and the client are the same machine
     # we encounter a kernel crash.
@@ -71,16 +81,6 @@ sub copy {
 
             return $result;
         }
-    }
-
-    my $source_size = $self->container_size;
-    my $dest_size   = $args{dest}->container_size;
-
-    # Check if the destination container is not to small.
-    if ($dest_size < $source_size) {
-        throw Kanopya::Exception::Execution(
-                  error => "Source container <$source_size> is larger than the dest container <$dest_size>."
-              );
     }
 
     # TODO: copy locally without exporting caontiners if they are
