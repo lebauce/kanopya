@@ -25,7 +25,7 @@ use General;
 use EFactory;
 
 use Kanopya::Exceptions;
-use EEntity::EContainer::ELocalContainer;
+use Entity::Container::LocalContainer;
 
 use Log::Log4perl "get_logger";
 
@@ -59,9 +59,9 @@ sub copy {
     # where the server and the client are the same machine
     # we encounter a kernel crash.
     if ($args{dest}->isa("EEntity::EContainer::EFileContainer")) {
-        my $eexport_manager = EFactory::newEEntity(
-                              data => $args{dest}->container_access->getExportManager
-                          );
+        my $eexport_manager = Entity->new(
+                                  entity => $args{dest}->container_access->getExportManager
+                              );
 
         if ($eexport_manager->getEContext->isa("EContext::Local") and
             $eexport_manager->isa("EEntity::EComponent::ENfsd3")) {
@@ -70,11 +70,14 @@ sub copy {
                                  device => $args{dest}->container_access->container->container_device
                              );
 
-            my $container = EEntity::EContainer::ELocalContainer->new(
-                                path       => $mountpoint . '/' . $args{dest}->container_device,
-                                size       => $args{dest}->container_size,
-                                filesystem => $args{dest}->container_filesystem,
-                            );
+            my $container = Entity->new(entity => Entity::Container::LocalContainer->new(
+                                disk_manager_id      => 0,
+                                container_name       => $args{dest}->container_name,
+                                container_size       => $args{dest}->container_size,
+                                container_filesystem => $args{dest}->container_filesystem,
+                                container_device     => $mountpoint . '/' . $args{dest}->container_device,
+                                container_freespace  => 0,
+                            ));
 
             my $result = $self->copy(dest => $container, econtext => $args{econtext}, erollback => $args{erollback});
 
