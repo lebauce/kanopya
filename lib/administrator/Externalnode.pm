@@ -61,6 +61,14 @@ sub methods {
             'description'   => 'getMonitoringData',
             'perm_holder'   => 'entity'
         },
+        'enable'   => {
+            'description'   => 'Enable node',
+            'perm_holder'   => 'entity'
+        },
+        'disable'   => {
+            'description'   => 'Disable node',
+            'perm_holder'   => 'entity'
+        },
     };
 }
 
@@ -109,4 +117,12 @@ sub disable {
     $self->setAttr(name => 'externalnode_state', value => 'disabled');
     $self->save();
 }
+
+sub enable {
+    my $self = shift;
+
+    $self->setAttr(name => 'externalnode_state', value => 'enabled');
+    $self->save();
+}
+
 1;
