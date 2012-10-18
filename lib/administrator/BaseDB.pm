@@ -539,7 +539,7 @@ sub newDBix {
                          optional => { 'subclass' => $class });
 
     my $adm = Administrator->new();
-    my $dbixroot = $adm->_newDbix(table => _rootTable($subclass), row => $args{attrs});
+    my $dbixroot = $adm->_newDbix(table => _rootTable($args{subclass}), row => $args{attrs});
 
     eval {
         $dbixroot->insert;
