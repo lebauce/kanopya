@@ -200,15 +200,16 @@ function vmwareBrowser (event) {
                 //Send Formatted checked nodes to API to be inserted in Kanopya Database
 
                 $.ajax({
-                    type    :   'POST',
-                    url     :   url_base + '/register',
-                    data    :   {
+                    type        :   'POST',
+                    url         :   url_base + '/register',
+                    contentType : 'application/json',
+                    data        :   JSON.stringify({
                         'register_items'    :   formattedCheckedNodes,
-                    },
+                    }),
                 }).done(function (success_msg){
-                    alert ('Data imported successfully ' + success_msg);
+                    alert ('Data imported successfully in Kanopya ');
                 }).fail(function (error_msg){
-                    alert ('Error in data import ' + error_msg);
+                    alert ('Error in data import ');
                 });
 
                 $(this).dialog('close');
