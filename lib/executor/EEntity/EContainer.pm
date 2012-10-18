@@ -24,6 +24,7 @@ use warnings;
 use General;
 use EFactory;
 
+use EEntity;
 use Kanopya::Exceptions;
 use Entity::Container::LocalContainer;
 
@@ -59,7 +60,7 @@ sub copy {
     # where the server and the client are the same machine
     # we encounter a kernel crash.
     if ($args{dest}->isa("EEntity::EContainer::EFileContainer")) {
-        my $eexport_manager = Entity->new(
+        my $eexport_manager = EEntity->new(
                                   entity => $args{dest}->container_access->getExportManager
                               );
 
@@ -70,7 +71,7 @@ sub copy {
                                  device => $args{dest}->container_access->container->container_device
                              );
 
-            my $container = Entity->new(entity => Entity::Container::LocalContainer->new(
+            my $container = EEntity->new(entity => Entity::Container::LocalContainer->new(
                                 disk_manager_id      => 0,
                                 container_name       => $args{dest}->container_name,
                                 container_size       => $args{dest}->container_size,
