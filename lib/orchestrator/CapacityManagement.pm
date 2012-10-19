@@ -58,11 +58,11 @@ sub new {
     my $self = {};
     bless $self, $class;
 
-    if(defined $args{test}){
-        General::checkParams(args => \%args, required => ['infra']);
+    $self->{_operationPlan} = [];
 
+    # Either the infra is get by params, or it is directly constructed
+    if(defined $args{infra}){
         $self->{_infra} = $args{infra};
-        $self->{_test}  = 1;
     }
     else {
         General::checkParams(args => \%args, optional => { cluster_id            => undef,
@@ -86,16 +86,11 @@ sub new {
 
         $self->{_admin}                 = Administrator->new();
         $self->{_infra}                 = $self->_constructInfra();
-        $self->{_operationPlan}         = [];
 
         # Get availble memory for all cloud manager hosts (hypervisors)
-        $self->{_hvs_mem_available} = undef;
-
         my $overcommitment_factors =  $self->{_cloud_manager}->getOvercommitmentFactors();
         $log->info('Overcommitment cpu    factor <'.($overcommitment_factors->{overcommitment_cpu_factor}).'>');
         $log->info('Overcommitment memory factor <'.($overcommitment_factors->{overcommitment_memory_factor}).'>');
-
-        $self->{_hvs_mem_available} = {};
 
         # Add extra information to hypervisors
         my $hypervisors = $self->{_cloud_manager}->getHypervisors();
@@ -106,7 +101,7 @@ sub new {
             $self->{_hvs_mem_available}->{$hypervisor->id} = $hypervisor_available_memory->{mem_theoretically_available};
             $self->{_infra}->{hvs}->{$hypervisor->id}->{hv_capa}->{ram_effective} = $hypervisor_available_memory->{mem_effectively_available};
 
-        # Manage CPU Overcommitment when cloud_manager is defined
+            # Manage CPU Overcommitment when cloud_manager is defined
 
             $self->{_infra}->{hvs}->{$hypervisor->id}
                                   ->{hv_capa}->{cpu} *= $overcommitment_factors->{overcommitment_cpu_factor};
@@ -294,7 +289,7 @@ sub isMigrationAuthorized{
 sub optimIaas{
     my ($self,%args) = @_;
     my $infra = $self->{_infra};
-
+    $self->{_operationPlan} = [];
     $log->debug('Infra before optimiaas = '.(Dumper $infra));
     my $hv_selected_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
     my $optim;
@@ -429,7 +424,13 @@ sub getHypervisorIdForVM{
         wanted_metrics   => $wanted_values,
     );
 
-    $log->debug('Selected hv <' . $hv->{hv_id} . '>');
+    if (defined $hv->{hv_id}) {
+        $log->debug('Selected hv <' . $hv->{hv_id} . '>');
+    }
+    else {
+        $log->debug('No free hypervisor');
+    }
+
     return $hv->{hv_id};
 }
 
@@ -451,6 +452,7 @@ sub scaleMemoryHost{
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['host_id','memory']);
 
+    $self->{_operationPlan} = [];
     #Firstly Check
     my $sign = substr($args{memory},0,1); # get the first value
     my $mem_input;
@@ -538,7 +540,7 @@ sub scaleCpuHost{
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['host_id','vcpu_number']);
-
+    $self->{_operationPlan} = [];
 
      my $sign = substr($args{vcpu_number},0,1); # get the first value
      my $vcpu_input;
@@ -623,18 +625,15 @@ sub _scaleMetric {
     my $vm_id            = $args{vm_id};
     my $new_value        = $args{new_value};
     my $hv_selection_ids = $args{hv_selection_ids};
-
     my $infra            = $self->{_infra};
 
     my $old_value = $infra->{vms}->{$vm_id}->{$scale_metric};
     my $delta     = $new_value - $old_value;
 
-
-    my $hv_id    = $self->_getHvIdFromVmId(
-                      hvs   => $infra->{hvs},
-                      vm_id => $vm_id,
-                   );
-
+    my $hv_id = $self->_getHvIdFromVmId(
+                    hvs   => $infra->{hvs},
+                    vm_id => $vm_id,
+                );
 
     if($delta < 0 && $new_value > 0){
         # NO SCALING PROBLEM WHEN SIZE IS DECREASING
@@ -744,49 +743,45 @@ sub _scaleOnNewHV {
 
     # MIGRATE HOST
     # NO HOST CONTEXT ! WILL BE HERITATE BY POST START NODE
-    if(!defined $self->{_test}){
-        push @{$self->{_operationPlan}}, {
-            type => 'MigrateHost',
-            priority => 1,
-            params => {
-                context => {
-                    vm => Entity->get(id=>$vm_id),
-                }
+
+    push @{$self->{_operationPlan}}, {
+        type => 'MigrateHost',
+        priority => 1,
+        params => {
+            context => {
+                vm => Entity->get(id=>$vm_id),
             }
-        };
-    }
+        }
+    };
+
     $log->info("=> migration $vm_id to new started HV");
 
     # SCALE HOST
     if ($scale_metric eq 'ram'){
         $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
-        if(!defined $self->{_test}){
-            push @{$self->{_operationPlan}}, {
-                type => 'ScaleMemoryHost',
-                priority => 1,
-                params => {
-                    context => {
-                        host => Entity->get(id => $vm_id),
-                    },
-                    memory  => $new_value,
-                }
-            };
-        }
+        push @{$self->{_operationPlan}}, {
+            type => 'ScaleMemoryHost',
+            priority => 1,
+            params => {
+                context => {
+                    host => Entity->get(id => $vm_id),
+                },
+                memory  => $new_value,
+            }
+        };
     }
     elsif ($scale_metric eq 'cpu') {
         $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
-        if(!defined $self->{_test}){
-            push @{$self->{_operationPlan}}, {
-                type => 'ScaleCpuHost',
-                priority => 1,
-                params => {
-                    context => {
-                        host => Entity->get(id => $vm_id),
-                    },
-                    cpu_number => $new_value,
-                }
-            };
-        }
+        push @{$self->{_operationPlan}}, {
+            type => 'ScaleCpuHost',
+            priority => 1,
+            params => {
+                context => {
+                    host => Entity->get(id => $vm_id),
+                },
+                cpu_number => $new_value,
+            }
+        };
     }
 }
 
@@ -909,36 +904,31 @@ sub _scaleOrder{
     my $scale_metric      = $args{scale_metric};
     $vms->{$vm_id}->{$scale_metric} = $new_value;
 
-
-    if ($scale_metric eq 'ram'){
+    if ($scale_metric eq 'ram') {
         $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
-        if(!defined $self->{_test}){
-            push @{$self->{_operationPlan}}, {
-                type => 'ScaleMemoryHost',
-                priority => 1,
-                params => {
-                    context => {
-                        host => Entity->get(id => $vm_id),
-                    },
-                    memory  => $new_value,
-                }
-            };
-        }
+        push @{$self->{_operationPlan}}, {
+            type => 'ScaleMemoryHost',
+            priority => 1,
+            params => {
+                context => {
+                    host => Entity->get(id => $vm_id),
+                },
+                memory  => $new_value,
+            }
+        };
     }
     elsif ($scale_metric eq 'cpu') {
         $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
-        if(!defined $self->{_test}){
-            push @{$self->{_operationPlan}}, {
-                type => 'ScaleCpuHost',
-                priority => 1,
-                params => {
-                    context => {
-                        host => Entity->get(id => $vm_id),
-                    },
-                    cpu_number => $new_value,
-                }
-            };
-        }
+        push @{$self->{_operationPlan}}, {
+            type => 'ScaleCpuHost',
+            priority => 1,
+            params => {
+                context => {
+                    host => Entity->get(id => $vm_id),
+                },
+                cpu_number => $new_value,
+            }
+        };
     }
 }
 
@@ -1013,18 +1003,16 @@ sub _migrateVmOrder{
     my $hv_dest_id = $args{hv_dest_id};
 
     $log->info("Enqueuing MigrateHost of host $vm_id to hypervisor $hv_dest_id");
-    if(!defined $self->{_test}){
-        push @{$self->{_operationPlan}}, {
-            type => 'MigrateHost',
-            priority => 1,
-            params => {
-               context => {
-                   vm           => Entity->get(id=>$vm_id),
-                   host         => Entity->get(id=>$hv_dest_id),
-               }
-            }
-          };
-    }
+    push @{$self->{_operationPlan}}, {
+        type => 'MigrateHost',
+        priority => 1,
+        params => {
+           context => {
+               vm           => Entity->get(id=>$vm_id),
+               host         => Entity->get(id=>$hv_dest_id),
+           }
+        }
+      };
     $log->info("=> migration $vm_id to $hv_dest_id");
 }
 
