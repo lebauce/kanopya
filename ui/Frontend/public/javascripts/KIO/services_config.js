@@ -176,13 +176,19 @@ function loadServicesConfig (container_id, elem_id) {
     });
 }
 
+/*
+ * We manage here param info/def for all possible manager params of all managers
+ * UGLY
+ * TODO other (same mecanism as attr_def)
+ */
 function _managerParams() {
     var params  = {
-        'ad_nodes_base_dn'  : 'Nodes container DN'
+        'ad_nodes_base_dn'  : { label : 'Nodes container DN', mandatory : 1 },
+        'mockmonit_config'  : { label : 'Configuration', type : 'textarea' }
     };
 
     return (function(name) {
-        return params[name];
+        return params[name] ? params[name] : { label : name };
     });
 }
 var managerParams = _managerParams();
@@ -260,12 +266,13 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                                 }
                             });
                         }
-
                         for (var i in data) if (data.hasOwnProperty(i)) {
                             $(fieldset).append($('<label>', {
-                                text : managerParams(data[i]) + " : ",
+                                text : managerParams(data[i]).label + " : ",
                                 for : data[i]
-                            })).append($("<input>", { name : data[i], id : data[i], value : current_params[data[i]] }));
+                            })).append($('<'+ (managerParams(data[i]).type || 'input') +'>',
+                                        { name : data[i], id : data[i], value : current_params[data[i]] })
+                            );
 
                             // Specific management for custom form
                             if (connectortype == 'DirectoryServiceManager' && data[i] == 'ad_nodes_base_dn') {
@@ -303,7 +310,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                         var params  = {};
                         var ok      = true;
                         $(fieldset).find(':input:not(:button)').each(function() {
-                            if ($(this).val() == null || $(this).val() === '') {
+                            if ( managerParams($(this).attr('name')).mandatory && ($(this).val() == null || $(this).val() === '')) {
                               ok                            = false;
                             } else {
                               params[$(this).attr('name')]  = $(this).val();
