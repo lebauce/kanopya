@@ -12,55 +12,19 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Kanopya::Exceptions;
+=pod
 
-use Data::Dumper;
+=begin classdoc
 
-=head1 NAME
+Kanopya Exceptions declaration
 
-<KanopyaExceptions> – <General class containing Kanopya exceptions>
+@since    2011-Jan-13
 
-=head1 VERSION
-
-This documentation refers to <KanopyaExceptions> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <KanopyaExceptions>;
-
-throw Kanopya::Exception(error => $errmsg);
-
-throw Kanopya::Exception::DB(error => $errmsg);
-
-throw Kanopya::Exception::Network(error => $errmsg);
-
-throw Kanopya::Exception::Internal(error => $errmsg);
-
-throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-
-throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-
-throw Kanopya::Exception::Execution(error => $errmsg);
-
-throw Kanopya::Exception::Execution::OperationReported(error => $errmsg);
-
-throw Kanopya::Exception::AuthentificationRequired(error => $errmsg);
-
-throw Kanopya::Exception::LoginFailed(error => $errmsg);
-
-throw Kanopya::Exception::Permission(error => $errmsg);
-
-throw Kanopya::Exception::Permission::Denied(error => $errmsg);
-
-=head1 DESCRIPTION
-
-This is Kanopya Exceptions package documentation.
-Kanopya has it own exception to manage internal error and show to user comprehensive error message.
+=end classdoc
 
 =cut
 
-
-
+package Kanopya::Exceptions;
 
 use Exception::Class (
     Kanopya::Exception => {
@@ -169,8 +133,7 @@ Kanopya::Exception->Trace(0);
 
 # Override method called when exception is stringified
 sub Kanopya::Exception::full_message {
-     my $self = shift;
-
+    my $self = shift;
     my $except_string = $self->description . ": ";
     $except_string .= $self->message if ($self->message ne "");
 
@@ -180,64 +143,6 @@ sub Kanopya::Exception::full_message {
     }
 
      return $except_string;
-
 }
-
-
-=head1 DIAGNOSTICS
-
-No exception
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
-
-=head1 DEPENDENCIES
-
-This module depends of
-
-=over
-
-=item Exception::Class module perl implementing exceptions
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
-
-=cut
 
 1;
