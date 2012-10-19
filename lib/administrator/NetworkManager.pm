@@ -711,25 +711,6 @@ sub getRoutes {
     return $routearray;
 }
 
-=head generateMacAddress
 
-return a mac address auto generated and not used by any host
-
-=cut
-
-sub generateMacAddress {
-	my $self = shift;
-	my $macaddress;
-	my @hosts = ();
-	my $regexp = '00:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}';  
-	do {
-		$macaddress = random_regex($regexp);
-		@hosts = $self->{db}->resultset('Iface')->search(
-			{ iface_mac_addr => $macaddress },
-			{ rows => 1 }
-		);
-	} while( scalar(@hosts) );
-	return $macaddress;
-}
 
 1;

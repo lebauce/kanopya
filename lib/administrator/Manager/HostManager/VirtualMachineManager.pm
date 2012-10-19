@@ -20,7 +20,7 @@ package Manager::HostManager::VirtualMachineManager;
 use base "Manager::HostManager";
 
 use Entity::Host::VirtualMachine;
-
+use Entity::Iface;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
@@ -43,11 +43,10 @@ sub createVirtualHost {
                  active             => 1,
              );
 
-    my $adm = Administrator->new();
     foreach (0 .. $args{ifaces}-1) {
         $vm->addIface(
             iface_name     => 'eth' . $_,
-            iface_mac_addr => $adm->{manager}->{network}->generateMacAddress(),
+            iface_mac_addr => Entity::Iface->generateMacAddress(),,
             iface_pxe      => 0,
         );
     }
