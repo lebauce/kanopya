@@ -1305,7 +1305,8 @@ sub getNodesMetrics {
 
     General::checkParams(args => \%args, required => [ 'time_span', 'indicators' ]);
 
-    my $collector_manager = $self->getManager(manager_type => "collector_manager");
+    my $collector_manager   = $self->getManager(manager_type => "collector_manager");
+    my $mparams             = $self->getManagerParameters( manager_type => 'collector_manager' );
 
     my $nodes = $self->getHosts();
     my @nodelist;
@@ -1317,7 +1318,8 @@ sub getNodesMetrics {
     return $collector_manager->retrieveData(
                nodelist   => \@nodelist,
                time_span  => $args{'time_span'},
-               indicators => $args{'indicators'}
+               indicators => $args{'indicators'},
+               %$mparams
            );
 }
 

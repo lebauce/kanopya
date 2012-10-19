@@ -332,7 +332,8 @@ sub getNodesMetrics {
     General::checkParams(args => \%args, required => ['indicators', 'time_span']);
 
     my $shortname = defined $args{shortname};
-    my $ms_connector = $self->getManager(manager_type => 'collector_manager');
+    my $ms_connector    = $self->getManager(manager_type => 'collector_manager');
+    my $mparams         = $self->getManagerParameters( manager_type => 'collector_manager' );
 
     my @hostnames = ();
     my @nodes = $self->externalnodes;
@@ -346,6 +347,7 @@ sub getNodesMetrics {
     my $data = $ms_connector->retrieveData(
         nodelist => \@hostnames,
         %args,
+        %$mparams
     );
 
     if ($shortname) {
