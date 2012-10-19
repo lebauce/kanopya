@@ -1,6 +1,5 @@
-# General.pm - This lib contain general function used in microCluster system
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -13,31 +12,19 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
+=pod
 
-General - Common Lib
+=begin classdoc
 
-=head1 SYNOPSIS
+Base class to manage inheritance throw relational database.
 
-    use General;
-    
-    # Get EEntity Location from Entity
-    my $execloc = General::getLocEEntityFromEntity($entity : Entity);
-    
-    # Get EEntity Class name from Entity
-    my $execclass = General::getClassEEntityFromEntity($entity : Entity);
+@since    2010-Nov-23
 
-
-=head1 DESCRIPTION
-
-Executor is the main object use to create execution objects
-
-=head1 METHODS
+=end classdoc
 
 =cut
+
 package General;
 
 use strict;
@@ -46,50 +33,26 @@ use warnings;
 use Kanopya::Exceptions;
 use Kanopya::Config;
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
 
-sub cryptPassword {
-    my %args = @_;
-    my $salt = Kanopya::Config::get('libkanopya')->{crypt}->{salt};
-    my $cryptpasswd = crypt($args{password}, '$6$'.$salt.'$');
-    return $cryptpasswd;
-}
+=pod
 
-=head2 getTemplateConfiguration
+=begin classdoc
 
-    Desc: return hashref used to configure Template instance
+General sub to validate required/optional arguments passed to methodes
+ 
+@param args hash reference containing arguments to validate
 
-=cut
+@param required array reference of strings (for required arguments)
 
-sub getTemplateConfiguration {
-    return {
-        INCLUDE_PATH => '/templates/internal/',
-        INTERPOLATE  => 1,     # expand "$var" in plain text
-        POST_CHOMP   => 0,     # cleanup whitespace
-        EVAL_PERL    => 1,     # evaluate Perl code blocks
-        RELATIVE     => 1,     # desactive par defaut
-    };
-}
+@optional optional array reference of strings (for optional arguments)
 
-=head2
-
-    Class : Public
-
-    Desc : General sub for check existence of required parameters
-
-    Args : 
-        0: hash ref to check (caller args)
-        1: array ref of required params name 
-
-    Throw bad param exception if one param is missing
+=end classdoc
 
 =cut
 
-# TODO log on corresponding caller logger
-# Usage: General::checkParams( args => \%args, required => ['param1', 'param2'] );
 sub checkParams {
     my %args = @_;
     
@@ -101,12 +64,6 @@ sub checkParams {
         if (! exists $caller_args->{$param} or ! defined $caller_args->{$param}) {
             $errmsg = "$caller_sub_name needs a '$param' named argument!";
 
-            if (not $args{quiet}) {
-                # Log in general logger
-                # TODO log in the logger corresponding to caller package;
-                $log->error($errmsg);
-            } 
-            
             throw Kanopya::Exception::Internal::MissingParam(sub_name   => $caller_sub_name,
                                                              param_name => $param );
         }
@@ -121,46 +78,74 @@ sub checkParams {
     }
 }
 
+=pod
 
+=begin classdoc
 
-#TODO Tester si les regexp fonctionne en simulant le use.
-sub getLocFromClass{
+generate SHA512-hashed password using salt value stored in 
+libkanopya.conf file 
+ 
+@param password clear password (string) 
+ 
+@return SHA512-hashed password (string)
+
+=end classdoc
+
+=cut
+
+sub cryptPassword {
     my %args = @_;
-    
-       if (! exists $args{entityclass} or ! defined $args{entityclass}) { 
-        $errmsg = "getLocFromClass need a  entityclass named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    my $data = $args{entityclass};
+    checkParams(args => \%args, required => ['password']);
+    my $salt = Kanopya::Config::get('libkanopya')->{crypt}->{salt};
+    my $cryptpasswd = crypt($args{password}, '$6$'.$salt.'$');
+    return $cryptpasswd;
+}
+
+=pod
+
+=begin classdoc
+
+retrieve full path to entity class package
+ 
+@param entityclass entity class package name string  
+ 
+@return full path to the package file string
+
+=end classdoc
+
+=cut
+
+sub getLocFromClass {
+    my %args = @_;
+    checkParams(args => \%args, required => ['entityclass']);
     my $location = $args{entityclass};
     $location =~ s/\:\:/\//g;
     return $location . ".pm";
 }
 
+=pod 
 
+=begin classdoc
 
-=head2 getAsArrayRef
+@param 
     
-    Class : Public
+Util for hash loaded from an xml file with xml::simple and list management.
+<tag> could be mapped with a hash (if only one defined in xml) or an array of hash (if list of <tag>).
+This sub returns a array ref of <tag> in all cases.
+WARNING: don't use attribute ['name','id','key'] (see @DefKeyAttr in XML::Simple) in your xml tag when list context!
     
-    Desc :     Util for hash loaded from an xml file with xml::simple and list management.
-            <tag> could be mapped with a hash (if only one defined in xml) or an array of hash (if list of <tag>).
-            This sub returns a array ref of <tag> in all cases.
-            
-            WARNING: don't use attribute ['name','id','key'] (see @DefKeyAttr in XML::Simple) in your xml tag when list context!
+@param data hash ref where one key is <tag> (but value could be hash ref or array ref)
+
+@param tag string :the name of the tag 
     
-    Args :
-        data : hash ref where one key is <tag> (but value could be hash ref or array ref)
-        tag : string :the name of the tag 
+@return array ref with all hash ref corresponding to tag (in data).
     
-    Return : Array ref with all hash ref corresponding to tag (in data).
-    
+=end classdoc
+
 =cut
 
 sub getAsArrayRef {
     my %args = @_;
-    
     my $data = $args{data};
     my $elems = $data->{ $args{tag} };
     if ( ref $elems eq 'ARRAY' ) {
@@ -169,28 +154,29 @@ sub getAsArrayRef {
     return $elems ? [$elems] : [];
 }
 
-=head2 getAsHashRef
+=pod
+
+=begin classdoc
+
+Util for hash loaded from an xml file with xml::simple and list management.
+Map the value of an element of <tag> with the hash correponding to all elements of <tag> (without the key element)
+for all <tag> in data.
+WARNING: don't use attribute ['name','id','key'] (see @DefKeyAttr in XML::Simple) in your xml tag when list context!
     
-    Class : Public
-    
-    Desc :     Util for hash loaded from an xml file with xml::simple and list management.
-            Map the value of an element of <tag> with the hash correponding to all elements of <tag> (without the key element)
-            for all <tag> in data.
-            
-            WARNING: don't use attribute ['name','id','key'] (see @DefKeyAttr in XML::Simple) in your xml tag when list context!
-    
-    Args :
-        data : hash ref where one key is <tag> (but value could be hash ref or array ref)
-        tag : string : the name of the tag 
-        key : string : name of a element of <tag> we want as key in the resulting hash
+@param data hash ref where one key is <tag> (but value could be hash ref or array ref)
+
+@param tag : string : the name of the tag 
         
-    Return : The resulting hash ref.
+@param key : string : name of a element of <tag> we want as key in the resulting hash
+        
+@return : The resulting hash ref.
     
+=end classdoc
+
 =cut
 
 sub getAsHashRef {
-    my %args = @_;
-    
+    my %args = @_;    
     my $key = $args{key};
     my $array = getAsArrayRef( data => $args{data}, tag => $args{tag} );
     my %res = ();
@@ -202,30 +188,52 @@ sub getAsHashRef {
     return \%res;
 }
 
+=pod
+
+=begin classdoc
+
+split a size string into 2 elements, value and units
+ 
+@param size : string : XY where X is a positive number and Y a character among B, K, M, G, T, P or E
+ 
+@return array : first element is the value, second element is the unit
+
+=end classdoc
+
+=cut
+
 sub convertSizeFormat {
     my %args = @_;
-    if(! exists $args{size} or ! defined $args{size}) {
-        $errmsg = "convertSizeFormat needs size named argument";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
-    }
+    checkParams(args => \%args, required => ['size']);
+    
     if($args{size} !~ /^(\d+)([BKMGTPE])$/) {
         $errmsg = "convertSizeFormat bad size argument $args{size} ; must be XY where X is a positive number and Y a character among B, K, M, G, T, P or E";
         $log->warn($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
-     
     }
     return ($1, $2);   
 }
 
+=pod
+
+=begin classdoc
+
+convert in bytes a value expressed in units  
+ 
+@param value the size to convert in bytes
+
+@param units the value size unit
+ 
+@return the converted value in units
+
+=end classdoc
+
+=cut
+
 sub convertToBytes {
     my %args = @_;
-    if((! exists $args{value} or ! defined $args{value}) ||
-       (! exists $args{units} or ! defined $args{units})) {
-        $errmsg = "convertToBytes needs value and units named arguments!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    checkParams(args => \%args, required => ['value','units']);
+
     if($args{units} !~ /^[BKMGTPE]$/) {
         $errmsg = "convertToBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
         $log->error($errmsg);
@@ -236,14 +244,26 @@ sub convertToBytes {
     return $args{value} * (1024**$convert{$args{units}});
 }
 
+=pod
+
+=begin classdoc
+
+convert a value expressed in bytes to the desired unit
+ 
+@param value the bytes size to convert
+
+@param units the size unit to convert to
+ 
+@return the converted value in units
+
+=end classdoc
+
+=cut
+
 sub convertFromBytes {
     my %args = @_;
-    if((! exists $args{value} or ! defined $args{value}) ||
-       (! exists $args{units} or ! defined $args{units})) {
-        $errmsg = "convertFromBytes needs value and units named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    checkParams(args => \%args, required => ['value','units']);
+    
     if($args{units} !~ /^[BKMGTPE]$/) {
         $errmsg = "convertFromBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
         $log->error($errmsg);
@@ -251,37 +271,40 @@ sub convertFromBytes {
     } 
     my %convert = ('B' => 0, 'K' => 1, 'M' => 2, 'G' => 3, 'T' => 4, 'P' => 5, 'E' => 6);  
     
-    if(! $args{value}) { return 0; }
+    if(! $args{value}) { 
+        return 0; 
+    }
     
     return $args{value} / (1024**$convert{$args{units}}); 
 }
 
-=head2
+=pod
 
-    Desc : bytesToHuman is a method for converting bytes values to human readable
-           value, rounded and with the right unit.
-           Example of return : 13.95 M (for value = 14630307)
-    
-    Args : bytesToHuman expect two argumens 'value' and 'precision'
-            value :     value of size in bytes
-            precision : precision of rounding (the number of bit displayed included 
-                        the separator character '.'. For example, a precision of 5 chars will
-                        display 13.95 M, a precision of 7 chars will display 13.9502 M, etc)
-    
-    Return : scalar containing rounded value with correct unit (Example of return : '13.95 M')
-    
+=begin classdoc
+
+bytesToHuman is a method for converting bytes values to human readable
+value, rounded and with the right unit.
+Example of return : 13.95 M (for value = 14630307)
+ 
+@param value : value of size in bytes
+
+@param precision : precision of rounding (the number of bit displayed included 
+                   the separator character '.'. For example, a precision of 5 chars will
+                   display 13.95 M, a precision of 7 chars will display 13.9502 M, etc)
+ 
+@return scalar containing rounded value with correct unit (Example of return : '13.95 M')
+
+=end classdoc
+
 =cut
 
 sub bytesToHuman {
     my %args = @_;
-    # Check if argument is provided ;
-    if((! exists $args{value} or ! defined $args{value}) ||
-       (! exists $args{precision} or ! defined $args{precision})) {
-        $errmsg = "bytesToHuman needs value named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    checkParams(args => \%args, required => ['value','precision']);
+
+    if(! $args{value}) { 
+        return 0; 
     }
-    if(! $args{value}) { return 0; }
     
     my $value = $args{value};
     my $precision = $args{precision}; # This include the separator '.' char
@@ -338,8 +361,26 @@ sub bytesToHuman {
 
 }
 
-=head2
-    TODO : humanToBytes (Convert from K,M,G,T ... to bytes size)
+=pod
+
+=begin classdoc
+
+return hash reference to pass to Template instanciation
+ 
+@return hash reference to pass to Template->new 
+
+=end classdoc
+
 =cut
+
+sub getTemplateConfiguration {
+    return {
+        INCLUDE_PATH => '/templates/internal/',
+        INTERPOLATE  => 1,     # expand "$var" in plain text
+        POST_CHOMP   => 0,     # cleanup whitespace
+        EVAL_PERL    => 1,     # evaluate Perl code blocks
+        RELATIVE     => 1,     # desactive par defaut
+    };
+}
 
 1;
