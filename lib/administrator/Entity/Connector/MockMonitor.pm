@@ -15,6 +15,30 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
+
+=head1 NAME
+
+Entity::Connector::MockMonitor
+
+=head1 SYNOPSIS
+
+=head1 DESCRIPTION
+
+Mock collector manager giving values for requested nodes and indicators according to configuration.
+
+Configuration example (JSON format):
+{
+    'default' : {'const' : 200},
+    'nodes' : {
+        'node1' : {'const' : null},
+        'node2' : {'const' : 100},
+        'node3' : {'rand'  : [0,100]},
+    },
+    'indics' : {'indic1' : {'const':null}}
+}
+
+=cut
+
 package Entity::Connector::MockMonitor;
 use base 'Entity::Connector';
 use base 'Manager::CollectorManager';
@@ -23,33 +47,70 @@ use strict;
 use warnings;
 use General;
 use Kanopya::Exceptions;
+use JSON -support_by_pp;
+
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
-
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getManagerParamsDef {
+    return [
+        'mockmonit_config'
+      ];
+}
 
 # Retriever interface method implementation
 # args: nodes => [<node_id>], indicators => [<indicator_id>], time_span => <seconds>
 # with:
 #     <node_id> : node id
 #     <indicator_id> : indicator id
-# return: { <node_id> => { <counter_id> => rand } }
+# return: { <node_id> => { <counter_id> => <generated value according to conf> } }
 sub retrieveData {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['nodelist', 'indicators', 'time_span']);
 
-    my $res;
+    my $conf = {
+        default => {
+            'rand' => [0,100]
+        }
+    };
+    my $config = $args{mockmonit_config};
+    if ($config) {
+        my $loaded_conf = from_json($config, {allow_singlequote => 1, relaxed => 1});
+        if (not exists $loaded_conf->{default}) {$loaded_conf->{default} = $conf->{default}};
+        $conf = $loaded_conf;
+    }
 
+    my $res;
     foreach my $node (@{$args{nodelist}}) {
-        my %counters_value = map { $_ => rand(100) } keys %{$args{indicators}};
+        my %counters_value = map {
+            $_ => $self->_computeValue( generator => ($conf->{nodes}->{$node} || $conf->{indics}->{$_} || $conf->{default}) )
+        } keys %{$args{indicators}};
         $res->{$node} = \%counters_value;
-    } 
+    }
 
     return $res;
+}
+
+
+sub _computeValue {
+    my ($self, %args) = @_;
+
+    my $gen = $args{generator};
+    my $value;
+    if ($gen->{'rand'}) {
+        my $range = $gen->{'rand'};
+        $value = $range->[0] + rand($range->[1] - $range->[0]);
+    } elsif (exists $gen->{'const'}) {
+        $value = $gen->{'const'};
+    }
+    return $value;
 }
 
 =head2 getIndicators
