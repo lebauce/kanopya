@@ -61,15 +61,16 @@ Entity>new($data : hash EntityData) creates a new entity execution object.
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     $args{entity} = $args{entity} || $args{data};
 
     General::checkParams(args => \%args, required => ['entity']);
 
     if ($args{entity}->isa('Entity') && !$args{entity}->isa('Entity::Operation')) {
-        $class = General::getClassEEntityFromEntity(entity => $args{entity});
+        my $entityclass = ref($args{entity});
+        $entityclass =~s/\:\:/\:\:E/g;
+        $class = "E".$entityclass;
 
         while ($class ne "EEntity") {
             my $location = General::getLocFromClass(entityclass => $class);
@@ -87,7 +88,7 @@ sub new {
         }
     }
 
-    # TODO: Use Config module
+    
     my $config = Kanopya::Config::get('executor');
 
     my $self = {

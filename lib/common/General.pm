@@ -121,24 +121,7 @@ sub checkParams {
     }
 }
 
-sub getClassEEntityFromEntity{
-    my %args = @_;
-    my $data = $args{entity};
-#    $log->debug("Try to get Eentity class from object". ref($data));
-    
-    if(! exists($args{entity})) {
-        $errmsg = "Try to get Eentity class from object not entity : ". ref($args{entity});
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);    
-    }
-         
-    my $entityclass = ref($args{entity});
-    my $class = $entityclass;
-    $class =~s/\:\:/\:\:E/g;
-    $class = "E".$class;
-#    $log->debug("$class retrieved from ".ref($args{entity}));
-    return $class;
-}
+
 
 #TODO Tester si les regexp fonctionne en simulant le use.
 sub getLocFromClass{
@@ -155,20 +138,7 @@ sub getLocFromClass{
     return $location . ".pm";
 }
 
-sub getClassEntityFromType{
-    my %args = @_;
-    
-    if (! exists $args{type} or ! defined $args{type}) { 
-        $errmsg = "getClassEntityFromType need a  type named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-        
-    
-    my $requested_type = $args{type};
-    my $obj_class = "Entity::$requested_type";
-    return $obj_class;
-}
+
 
 =head2 getAsArrayRef
     

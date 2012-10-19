@@ -456,16 +456,16 @@ sub _newDbix {
 =cut
 
 sub _getEntityClass{
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     my $entity_class;
 
     General::checkParams(args => \%args, required => ['type']);
 
-    if (defined $args{class_path} && exists $args{class_path}){
-        $entity_class = $args{class_path}}
-    else {
-        $entity_class = General::getClassEntityFromType(%args);}
+    if (defined $args{class_path} && exists $args{class_path}) {
+        $entity_class = $args{class_path}
+    } else {
+        $entity_class = 'Entity::'.$args{type};
+    }
     my $location = General::getLocFromClass(entityclass => $entity_class);
     eval { require $location; };
     if ($@){
