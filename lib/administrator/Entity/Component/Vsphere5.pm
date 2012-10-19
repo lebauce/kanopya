@@ -230,7 +230,7 @@ sub retrieveDatacenters {
 
 sub retrieveClustersAndHypervisors {
     my ($self,%args) = @_;
-$log->debug(Dumper \%args);
+
     General::checkParams(args => \%args, required => ['datacenter_name']);
 
     my @clusters_hypervisors_infos;
@@ -672,8 +672,10 @@ sub registerVm {
 
     General::checkParams(args => \%args, required => ['parent', 'name']);
 
-    my $parent_service_provider = $args{parent};
-    my $service_provider_name   = $args{name};
+    my $parent_service_provider     = $args{parent};
+    my $service_provider_name       = $args{name};
+    #We substitute terms in (new string) to match cluster_name pattern
+    (my $service_provider_renamed   = $service_provider_name) =~ s/[^\w\d+]/_/g;
 
     #Get the datacenter used by the hosting hypervisor(s) 
     my @hypervisors_nodes;
@@ -717,7 +719,7 @@ sub registerVm {
 
         $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
                                 active                 => 1,
-                                cluster_name           => $service_provider_name,
+                                cluster_name           => $service_provider_renamed,
                                 cluster_state          => 'up:'. time(),
                                 cluster_min_node       => 1,
                                 cluster_max_node       => 1,
@@ -795,7 +797,7 @@ sub registerVm {
                  active             => 1,
                  host_ram           => $vm_view->summary->config->memorySizeMB,
                  host_core          => $vm_view->summary->config->numCpu,
-                 host_hostname      => $vm_view->name,
+                 host_hostname      => $service_provider_renamed,
                  host_state         => $host_state,
                  hypervisor_id      => $hosting_hypervisor_id,
              );
@@ -835,9 +837,11 @@ sub registerHypervisor {
         return $args{parent}; 
     }
 
-    my $datacenter            = $args{parent};
-    my $service_provider_name = $args{name};
-    my $datacenter_name       = $datacenter->vsphere5_datacenter_name;
+    my $datacenter                  = $args{parent};
+    my $service_provider_name       = $args{name};
+    #We substitute terms in (new string) to match cluster_name pattern
+    (my $service_provider_renamed   = $service_provider_name) =~ s/[^\w\d+]/_/g;
+    my $datacenter_name             = $datacenter->vsphere5_datacenter_name;
 
     #Get the datacenter view
     my $datacenter_view = $self->findEntityView(
@@ -864,7 +868,7 @@ sub registerHypervisor {
 
         $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
                                 active                 => 1,
-                                cluster_name           => $service_provider_name,
+                                cluster_name           => $service_provider_renamed,
                                 cluster_state          => 'up:'. time(),
                                 cluster_min_node       => 1,
                                 cluster_max_node       => 1,
@@ -945,9 +949,11 @@ sub registerCluster {
     General::checkParams(args => \%args, required => ['parent','name']);
 
     #We consider that the only valable parent for a cluster is a Datacenter
-    my $datacenter      = $args{parent};
-    my $datacenter_name = $datacenter->vsphere5_datacenter_name;
-    my $cluster_name    = $args{name};
+    my $datacenter          = $args{parent};
+    my $datacenter_name     = $datacenter->vsphere5_datacenter_name;
+    my $cluster_name        = $args{name};
+    #We substitute terms in (new string) to match cluster_name pattern
+    (my $cluster_renamed    = $cluster_name) =~ s/[^\w\d+]/_/g;
 
     #get Datacenter and Cluster views from vsphere
     my $datacenter_view  = $self->findEntityView(
@@ -962,7 +968,6 @@ sub registerCluster {
                                },
                                begin_entity => $datacenter_view,
                            );
-
     #Get the cluster's hypervisors
     my @hypervisors = @{ $cluster_view->host };
 
@@ -975,7 +980,7 @@ sub registerCluster {
 
         $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
                                 active                 => 1,
-                                cluster_name           => $cluster_name,
+                                cluster_name           => $cluster_renamed,
                                 cluster_state          => 'up:'. time(),
                                 cluster_min_node       => 1,
                                 cluster_max_node       => scalar(@hypervisors),
