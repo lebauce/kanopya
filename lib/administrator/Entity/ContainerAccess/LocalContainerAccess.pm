@@ -1,4 +1,5 @@
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,6 +13,22 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+
+=begin classdoc
+
+Concrete class for local container accesses. A local container access is used to
+access to containers locally the same way as a remote container, avoiding to 
+export the disk and monting it loccally from the remote access protocol. 
+
+@since    2012-Feb-23
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package Entity::ContainerAccess::LocalContainerAccess;
 use base "Entity::ContainerAccess";
 
@@ -23,6 +40,22 @@ use Entity::Container;
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Overrides the generic container access constructor to ensure that only one 
+local access exists for a container.
+
+@return a local container access instance
+
+=end classdoc
+
+=cut
 
 sub new {
     my $class = shift;
@@ -39,6 +72,9 @@ sub new {
                   );
         }
     }
+
+    # This type of export is not handled by a manager
+    $args{export_manager_id} = 0;
 
     return $class->SUPER::new(%args);
 }

@@ -64,8 +64,7 @@ sub createExport {
     # Create a local access to the container to be able to mount localy the device
     # and then export the mountpoint with NFS.
     my $elocal_access = EEntity->new(entity => Entity::ContainerAccess::LocalContainerAccess->create(
-                            container_id      => $args{container}->id,
-                            export_manager_id => 0,
+                            container_id => $args{container}->id,
                         ));
 
     $elocal_access->mount(mountpoint => $mountpoint, econtext => $self->getEContext, erollback => $args{erollback});

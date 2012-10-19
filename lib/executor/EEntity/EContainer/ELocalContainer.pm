@@ -35,8 +35,7 @@ sub createDefaultExport {
 
     # Local container access are not handled by a manager
     return EEntity->new(entity => Entity::ContainerAccess::LocalContainerAccess->new(
-               container_id      => $self->id,
-               export_manager_id => 0,
+               container_id => $self->id,
            ));
 }
 

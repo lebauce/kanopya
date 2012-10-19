@@ -1,4 +1,5 @@
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,23 +15,26 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
+=pod
 
-Entity::Container
+=begin classdoc
 
-=head1 SYNOPSIS
+Base class for containers. A container represent a disk provided by a disk manager,
+it is identified by a name, a device path, and could contains a filesystem and data. 
 
-=head1 DESCRIPTION
+@since    2012-Feb-23
+@instance hash
+@self     $self
+
+=end classdoc
 
 =cut
 
 package Entity::Container;
 use base "Entity";
 
-use Kanopya::Exceptions;
-
 use Entity;
-use Entity::ContainerAccess;
+use Kanopya::Exceptions;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -74,43 +78,34 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 
-=head2 toString
+=pod
 
-    desc: return a string representation of the entity
+=begin classdoc
 
-=cut
+@return the existing container accesses of the container 
 
-sub toString {
-    my $self = shift;
-
-    my $container_id = $self->getAttr(name => 'container_id');
-    my $mananger_id  = $self->getAttr(name => 'disk_manager_id');
-
-    my $string = "Container, id = $container_id, " .
-                 "disk_manager_id = $mananger_id";
-
-    return $string;
-}
-
-=head2 getAccesses
-
-    desc: Return all accesses linked to this container.
+=end classdoc
 
 =cut
 
 sub getAccesses {
     my $self = shift;
 
-    @container_accesses = Entity::ContainerAccess->search(
-                              hash => { container_id => $self->getAttr(name => 'container_id') }
-                          );
-
+    my @container_accesses = $self->container_accesses;
     return \@container_accesses;
 }
 
-=head2 getLocalAccess
 
-    desc: Return ths local access to the container if exists.
+=pod
+
+=begin classdoc
+
+Get a possible local container access to the container. Throwing an internal exception
+if no local access exists.
+
+@return the local container access to the container
+
+=end classdoc
 
 =cut
 
@@ -128,37 +123,84 @@ sub getLocalAccess {
           );
 }
 
-=head2 getServiceProvider
 
-    desc: Return the service provider that provides the component/conector
-          that manage the exported container.
+=pod
+
+=begin classdoc
+
+Get the service provider on wich is installed the component that provides the container.
+
+@return the service provider.
+
+=end classdoc
 
 =cut
 
 sub getServiceProvider {
     my $self = shift;
 
-    my $service_provider_id = $self->getDiskManager->getAttr(name => 'service_provider_id');
-
-    return Entity::ServiceProvider->get(id => $service_provider_id);
+    return $self->getDiskManager->service_provider;
 }
 
-=head2 getDiskManager
 
-    desc: Return the component/conector that manage this container.
+=pod
+
+=begin classdoc
+
+Accessor to get the component that provides the container.
+
+@return the component that provides the container.
+
+=end classdoc
 
 =cut
 
 sub getDiskManager {
     my $self = shift;
 
-    return Entity->get(id => $self->getAttr(name => 'disk_manager_id'));
+    return Entity->get(id => $self->disk_manager_id);
 }
+
+
+=pod
+
+=begin classdoc
+
+Build the mountpoint path on wich can be mounted the container device. 
+
+@return a mountpoint for the container device
+
+=end classdoc
+
+=cut
 
 sub getMountPoint {
     my $self = shift;
 
-    return "/mnt/" . $self->getAttr(name => 'container_id');
+    return "/mnt/" . $self->id;
+}
+
+
+=pod
+
+=begin classdoc
+
+@return a generic string representation of the container
+
+=end classdoc
+
+=cut
+
+sub toString {
+    my $self = shift;
+
+    my $container_id = $self->getAttr(name => 'container_id');
+    my $mananger_id  = $self->getAttr(name => 'disk_manager_id');
+
+    my $string = "Container, id = $container_id, " .
+                 "disk_manager_id = $mananger_id";
+
+    return $string;
 }
 
 1;
