@@ -125,7 +125,7 @@ function loadServicesConfig (container_id, elem_id) {
                                         if (Object.keys(manager_params).length > 0) {
                                             $("<td>").append($("<a>", { text : 'Configure' }).button({ icons : { primary : 'ui-icon-wrench' } })).bind('click', { manager : data[i] }, function(event) {
                                                 var manager = event.data.manager;
-                                                createmanagerDialog(manager.manager_type, elem_id, $.noop, false, manager.pk);
+                                                createmanagerDialog(manager.manager_type, elem_id, $.noop, false, manager.pk, manager.manager_id);
                                             }).appendTo(l);
                                         } else {
                                             // Don't show configuration button if no parameters for this manager
@@ -200,7 +200,7 @@ function _managerConnectorTranslate() {
 }
 var managerConnectorTranslate = _managerConnectorTranslate();
 
-function createmanagerDialog(managertype, sp_id, callback, skippable, instance_id) {
+function createmanagerDialog(managertype, sp_id, callback, skippable, instance_id, comp_id) {
     var that        = this;
     var mode_config = instance_id && instance_id > 0;
     callback        = callback || $.noop;
@@ -275,12 +275,14 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                     }
                 });
             });
-            $(select).trigger('change');
 
             // Don't show the manager dropdown list if we are configuring an alredy linked manager instance
+            // Set the value to the correct manager id (used to load params)
             if (mode_config) {
+                $(select).val(comp_id);
                 $(select).hide();
             }
+            $(select).trigger('change');
 
             $("<div>").append($(select)).append(fieldset).appendTo('body').dialog({
                 title           : mode_config ? connectortype + ' configuration' : 'Link to a ' + connectortype,
