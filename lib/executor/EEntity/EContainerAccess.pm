@@ -15,6 +15,23 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+Execution class for ContainerAccess. Provides methods for copy,
+connect and mount container accesses. Some container access support connection,
+i.e. we can access it as a device on the client host like Iscsi lun, and others
+support the mount only like Nfs export.
+
+@since    2012-Feb-29
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package EEntity::EContainerAccess;
 use base "EEntity";
 
@@ -23,23 +40,32 @@ use warnings;
 
 use General;
 use EFactory;
-
-use Data::Dumper;
-
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
 
-our $VERSION = '1.00';
 
-=head2 copy
+=pod
 
-    desc: Copy content of a source container access to dest.
-          Try to copy at the device level, mount the both container and copy
-          files instead.
+=begin classdoc
+
+Copy contents of the source container access ($self) to destination container access.
+Try to copy at the device level by connecting both access as device on the executor,
+mount the both container accesses and copy files instead if one the both do not 
+support the device level.
+After the copy, if the destionation container access is larger than the source one,
+resizing the filesystem to fit to the total container length.
+
+@param dest the destination container access
+@param econtext the econtext object to execute commands
+
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
@@ -151,10 +177,20 @@ sub copy {
     }
 }
 
-=head2 mount
 
-    desc: Generic mount method. Connect to the container_access,
-          and mount the corresponding device on givven mountpoint.
+=pod
+
+=begin classdoc
+
+Generic mount method. Connect to the container access, and mount the 
+corresponding device on the given mountpoint.
+
+@param mountpoint the path to use xhen monting the container access
+@param econtext the econtext object to execute commands
+
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
@@ -193,10 +229,20 @@ sub mount {
     }
 }
 
-=head2 umount
 
-    desc: Generic umount method. Umount, disconnect from the container access,
-          and remove the mountpoint.
+=pod
+
+=begin classdoc
+
+Generic umount method. Umount, disconnect from the container access, 
+and remove the mountpoint.
+
+@param mountpoint the path to use xhen monting the container access
+@param econtext the econtext object to execute commands
+
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
@@ -222,7 +268,7 @@ sub umount {
         $counter--;
         sleep(1);
     }
-    
+
     if ($result->{exitcode} != 0 ) {
         throw Kanopya::Exception::Execution(
                   error => "Unable to umount $args{mountpoint}: " .
@@ -242,9 +288,17 @@ sub umount {
     # TODO: insert an eroolback with mount method ?
 }
 
-=head2 connect
 
-    desc: Abstract method.
+=pod
+
+=begin classdoc
+
+Abstract method for container access connection.
+
+@param econtext the econtext object to execute commands
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
@@ -257,9 +311,17 @@ sub connect {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 disconnect
 
-    desc: Abstract method.
+=pod
+
+=begin classdoc
+
+Abstract method for container access disconnection.
+
+@param econtext the econtext object to execute commands
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
@@ -271,6 +333,21 @@ sub disconnect {
 
     throw Kanopya::Exception::NotImplemented();
 }
+
+
+=pod
+
+=begin classdoc
+
+Get the offset of the first partition in the container using parted output.
+
+@param econtext the econtext object to execute commands
+
+@return the offset of the first partition.
+
+=end classdoc
+
+=cut
 
 sub getPartitionStart {
     my $self = shift;
@@ -305,6 +382,21 @@ sub getPartitionStart {
     return $part_start;
 }
 
+
+=pod
+
+=begin classdoc
+
+Get the number of partitions in the container using parted output.
+
+@param econtext the econtext object to execute commands
+
+@return the number of partitions
+
+=end classdoc
+
+=cut
+
 sub getPartitionCount {
     my $self = shift;
     my %args = @_;
@@ -314,7 +406,7 @@ sub getPartitionCount {
 
     my $device = $self->getAttr(name => 'device_connected');
     if (! $device) {
-        my $msg = "A container access must be connected before getting partition start.";
+        my $msg = "A container access must be connected before getting partition count.";
         throw Kanopya::Exception::Execution(error => $msg);
     }
 
@@ -331,6 +423,21 @@ sub getPartitionCount {
     my @lines = split('\n', $result->{stdout});
     return (scalar @lines) - 2;
 }
+
+
+=pod
+
+=begin classdoc
+
+Connect the first partition of a container as a device if exists.
+
+@param econtext the econtext object to execute commands
+
+@return the device
+
+=end classdoc
+
+=cut
 
 sub connectPartition {
     my $self = shift;
@@ -377,6 +484,19 @@ sub connectPartition {
     }
 }
 
+
+=pod
+
+=begin classdoc
+
+Disconnect the first partition of a container as a device if exists.
+
+@param econtext the econtext object to execute commands
+
+=end classdoc
+
+=cut
+
 sub disconnectPartition {
     my $self = shift;
     my %args = @_;
@@ -400,6 +520,21 @@ sub disconnectPartition {
     $self->save();
 }
 
+
+=pod
+
+=begin classdoc
+
+Check if the container is already connected, connect it instead.
+
+@param econtext the econtext object to execute commands
+
+@return the device
+
+=end classdoc
+
+=cut
+
 sub tryConnect {
     my $self = shift;
     my %args = @_;
@@ -413,6 +548,19 @@ sub tryConnect {
     }
     return $self->connect(%args);
 }
+
+
+=pod
+
+=begin classdoc
+
+Disconnect the container if connected, doing nothing instead.
+
+@param econtext the econtext object to execute commands
+
+=end classdoc
+
+=cut
 
 sub tryDisconnect {
     my $self = shift;
@@ -428,6 +576,21 @@ sub tryDisconnect {
     $self->disconnect(%args);
 }
 
+
+=pod
+
+=begin classdoc
+
+Check if the partition is already connected, connect it instead.
+
+@param econtext the econtext object to execute commands
+
+@return the partition device
+
+=end classdoc
+
+=cut
+
 sub tryConnectPartition {
     my $self = shift;
     my %args = @_;
@@ -441,6 +604,19 @@ sub tryConnectPartition {
     }
     return $self->connectPartition(%args);
 }
+
+
+=pod
+
+=begin classdoc
+
+Disconnect the first partition if connected, doing nothing instead.
+
+@param econtext the econtext object to execute commands
+
+=end classdoc
+
+=cut
 
 sub tryDisconnectPartition {
     my $self = shift;
@@ -456,6 +632,20 @@ sub tryDisconnectPartition {
     $self->disconnectPartition(%args);
 }
 
+
+=pod
+
+=begin classdoc
+
+Default method to get the block size to use for copy. Should be overriden
+in sub classe if required.
+
+@return the block size to use for copy
+
+=end classdoc
+
+=cut
+
 sub getPreferredBlockSize {
     my $self = shift;
     my %args = @_;
@@ -464,12 +654,3 @@ sub getPreferredBlockSize {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

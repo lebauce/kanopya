@@ -15,6 +15,20 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+Execution class for Container. Provides methods for copy of containers.
+
+@since    2012-Feb-29
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package EEntity::EContainer;
 use base "EEntity";
 
@@ -23,7 +37,6 @@ use warnings;
 
 use General;
 use EFactory;
-
 use EEntity;
 use Kanopya::Exceptions;
 use Entity::Container::LocalContainer;
@@ -33,10 +46,22 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-our $VERSION = '1.00';
 
+=pod
 
-=head2 copy
+=begin classdoc
+
+Copy the source container contents to the destination copntainer. To copy a container to another, 
+both must be exported, then connected/mounted on the executor and contents copyied.
+This method create a container access for both containers with default export manager of each,
+then call copy on the container acesses.
+
+@param dest the destination container
+@param econtext the econtext object to execute commands
+
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
@@ -108,7 +133,16 @@ sub copy {
                                      erollback        => $args{erollback});
 }
 
-=head2 createDefaultExport
+
+=pod
+
+=begin classdoc
+
+Generic method for creating an export of a container usable to copy it.
+
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
@@ -128,7 +162,17 @@ sub createDefaultExport {
     return $container_access;
 }
 
-=head2 removeDefaultExport
+
+=pod
+
+=begin classdoc
+
+Generic method for removing the default export created for the copy
+
+@param container_access the container access to remove
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
@@ -145,6 +189,17 @@ sub removeDefaultExport {
 
 }
 
+
+=pod
+
+=begin classdoc
+
+Abstract method to get a default manager to export the container for copy.
+
+=end classdoc
+
+=cut
+
 sub getDefaultExportManager {
     my $self = shift;
     my %args = @_;
@@ -153,12 +208,3 @@ sub getDefaultExportManager {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
