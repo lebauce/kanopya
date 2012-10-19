@@ -89,37 +89,8 @@ sub prerequisites {
     if (not $node_ip) {
         throw Kanopya::Exception::Internal(error => "Host <$host_id> has no admin ip.");
     }
-
-    # TODO Put this code in new Virtual Machione / Hypervisor / Host class
-    if ((defined $self->{context}->{host_manager})
-     && ($self->{context}->{host_manager}->getHostType() eq 'Virtual Machine')) {
-        my $vm_state = $self->{context}->{host_manager}->getVMState(
-                           host => $self->{context}->{host},
-        );
-        $log->info('Vm <'.$self->{context}->{host}->getId().'> opennebula status <'.($vm_state->{state}).'>');
-        if ($vm_state->{state} eq 'runn') {
-            $log->info('VM running try to contact it');
-        }
-        elsif ($vm_state->{state} eq 'boot') {
-            $log->info('VM still booting');
-            return $delay;
-        }
-        elsif ($vm_state->{state} eq 'fail' ) {
-            my $lastmessage = $self->{context}->{host_manager}->vmLoggedErrorMessage(opennebula3_vm => $self->{context}->{host});
-            throw Kanopya::Exception(error => 'Vm fail on boot: '.$lastmessage);
-        }
-        elsif ($vm_state->{state} eq 'pend' ) {
-            $log->info('timeout in '.($broken_time - $starting_time).' s');
-            $log->info('VM still pending'); #TODO check HV state
-            return $delay;
-        }
-    }
-
-    # Instanciate an econtext to try initiating an ssh connexion.
-    eval {
-        $self->{context}->{host}->getEContext;
-    };
-    if ($@) {
+    
+    if (! $self->{context}->{host}->checkUp()) {
         $log->info("Host <$host_id> not yet reachable at <$node_ip>");
         return $delay;
     }

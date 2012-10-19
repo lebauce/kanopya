@@ -28,6 +28,14 @@ __PACKAGE__->table("fileimagemanager0");
 
 =cut
 
+=head2 image_type
+
+  data_type: 'integer'
+  is_nullable: 0
+  size: 128
+
+=cut
+
 __PACKAGE__->add_columns(
   "fileimagemanager0_id",
   {
@@ -35,6 +43,12 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "image_type",
+  {
+    data_type => "char",
+    is_nullable => 0,
+    size => 128,
   },
 );
 __PACKAGE__->set_primary_key("fileimagemanager0_id");

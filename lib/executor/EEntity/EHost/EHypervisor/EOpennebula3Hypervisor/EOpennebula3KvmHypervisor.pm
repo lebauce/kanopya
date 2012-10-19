@@ -69,8 +69,8 @@ sub getAvailableMemory {
 
 =head2 getVmResources
 
-    Return virtual machines resources. If no resssource type(s)
-    specified in parameters, return all know ressouces.
+    Return virtual machine resources. If no resource type(s)
+    is specified in parameters, return all known resources.
 
 =cut
 

@@ -158,7 +158,7 @@ sub _constructInfra{
                 ram => $hypervisor->host_ram,
                 cpu => $hypervisor->host_core,
             },
-            vm_ids => [],
+            vm_ids  => [],
         };
         my @hypervisor_vms = $hypervisor->getVms();
         for my $vm (@hypervisor_vms) {

@@ -14,7 +14,7 @@
 
 =head1 NAME
 
-EOperation::ECreateDisk - Operation class implementing disk creation
+EOperation::ESynchronize - Operation class implementing component synchronization 
 
 =head1 SYNOPSIS
 
@@ -28,7 +28,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EEntity::EOperation::ECreateDisk;
+package EEntity::EOperation::ESynchronize;
 use base "EEntity::EOperation";
 
 use strict;
@@ -53,37 +53,20 @@ our $VERSION = '1.00';
 =cut
 
 sub prepare {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => $self->{context}, required => [ "disk_manager" ]);
-
-    General::checkParams(args     => $self->{params},
-                         required => [ "name", "size", "filesystem" ]);
-
-    # Check service provider state
-    my $storage_provider = $self->{context}->{disk_manager}->_getEntity->getServiceProvider;
-    my ($state, $timestamp) = $storage_provider->getState();
-    if ($state ne 'up'){
-        $errmsg = "Service provider has to be up !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-}
+    General::checkParams(args => $self->{context}, required => [ "entity" ]);
+    
+  }
 
 sub execute {
     my $self = shift;
 
-    my $container = $self->{context}->{disk_manager}->createDisk(
-                        name       => $self->{params}->{name},
-                        size       => $self->{params}->{size},
-                        filesystem => $self->{params}->{filesystem},
-                        erollback  => $self->{erollback},
-                        %{ $self->{params} }
-                    );
-
-    $log->info("New container <" . $container->getAttr(name => 'container_name') . "> created");
+    $self->{context}->{entity}->synchronize(
+        erollback => $self->{erollback},
+        %{ $self->{params} },
+    );
 }
 
 =head1 DIAGNOSTICS

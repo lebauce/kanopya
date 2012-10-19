@@ -42,8 +42,8 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 sub connect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);

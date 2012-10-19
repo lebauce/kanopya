@@ -66,8 +66,7 @@ then call copy on the container acesses.
 =cut
 
 sub copy {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
 
@@ -147,8 +146,7 @@ Generic method for creating an export of a container usable to copy it.
 =cut
 
 sub createDefaultExport {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $export_manager = EFactory::newEEntity(data => $self->getDefaultExportManager());
 
@@ -177,8 +175,7 @@ Generic method for removing the default export created for the copy
 =cut
 
 sub removeDefaultExport {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'container_access' ]);
 
@@ -201,8 +198,7 @@ Abstract method to get a default manager to export the container for copy.
 =cut
 
 sub getDefaultExportManager {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     throw Kanopya::Exception::NotImplemented();
 }

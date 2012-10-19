@@ -101,7 +101,7 @@ sub create {
 
     # Creation of the device based on distribution device
     my $container = $args{disk_manager}->createDisk(
-                        name       => $self->getAttr(name => 'systemimage_name'),
+                        name       => $self->systemimage_name,
                         size       => $args{systemimage_size},
                         filesystem => $args{src_container}->getAttr(name => 'container_filesystem'),
                         erollback  => $args{erollback},
@@ -116,14 +116,14 @@ sub create {
                                erollback => $args{erollback});
 
     $self->setAttr(name  => "container_id",
-                   value => $container->getAttr(name => 'container_id'));
+                   value => $container->id);
 
     $self->setAttr(name => "active", value => 0);
     $self->save();
 
-    $log->info('System image <' . $self->getAttr(name => 'systemimage_name') . '> creation complete');
+    $log->info('System image <' . $self->systemimage_name . '> creation complete');
 
-    return $self->getAttr(name => "systemimage_id");
+    return $self->id;
 }
 
 sub generateAuthorizedKeys {

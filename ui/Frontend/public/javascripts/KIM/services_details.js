@@ -5,7 +5,11 @@ function loadServicesDetails(cid, eid, is_iaas) {
     var table       = $("<tr>").appendTo($("<table>").css('width', '100%').appendTo(container));
     var div = $('<div>', { id: divId}).appendTo($("<td>").appendTo(table));
      $('<h4>Details</h4>').appendTo(div);
-        
+
+    //VMware Browser Tree
+    require('KIM/vmware.js');
+    $('<button>',{html:'Browse VMware'}).click(vmwareBrowser).appendTo(container);
+
     var service_opts = {
         name   : 'cluster',
         filters : { expand : 'kernel,masterimage,user,service_template' },

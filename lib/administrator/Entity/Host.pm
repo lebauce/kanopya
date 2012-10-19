@@ -134,7 +134,7 @@ use constant ATTR_DEF => {
     host_hostname => {
         label        => 'Hostname',
         type         => 'string',
-        pattern      => '^[\w\-]*$',
+        pattern      => '^[\w\d\-\.]*$',
         is_mandatory => 0,
         is_editable  => 0,
     },
@@ -840,6 +840,11 @@ sub toString {
 sub getClusterId {
     my $self = shift;
     return $self->node->service_provider->id;
+}
+
+sub getCluster {
+    my $self = shift;
+    return $self->node->service_provider;
 }
 
 sub getPowerSupplyCardId {

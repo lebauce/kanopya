@@ -70,8 +70,8 @@ resizing the filesystem to fit to the total container length.
 =cut
 
 sub copy {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
@@ -195,8 +195,8 @@ corresponding device on the given mountpoint.
 =cut
 
 sub mount {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
@@ -247,8 +247,8 @@ and remove the mountpoint.
 =cut
 
 sub umount {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
@@ -303,8 +303,7 @@ Abstract method for container access connection.
 =cut
 
 sub connect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -326,8 +325,7 @@ Abstract method for container access disconnection.
 =cut
 
 sub disconnect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -350,8 +348,8 @@ Get the offset of the first partition in the container using parted output.
 =cut
 
 sub getPartitionStart {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
@@ -398,8 +396,8 @@ Get the number of partitions in the container using parted output.
 =cut
 
 sub getPartitionCount {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
@@ -440,8 +438,8 @@ Connect the first partition of a container as a device if exists.
 =cut
 
 sub connectPartition {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
@@ -498,8 +496,8 @@ Disconnect the first partition of a container as a device if exists.
 =cut
 
 sub disconnectPartition {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
@@ -536,8 +534,7 @@ Check if the container is already connected, connect it instead.
 =cut
 
 sub tryConnect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -563,8 +560,7 @@ Disconnect the container if connected, doing nothing instead.
 =cut
 
 sub tryDisconnect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -592,8 +588,7 @@ Check if the partition is already connected, connect it instead.
 =cut
 
 sub tryConnectPartition {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -619,8 +614,7 @@ Disconnect the first partition if connected, doing nothing instead.
 =cut
 
 sub tryDisconnectPartition {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -647,8 +641,7 @@ in sub classe if required.
 =cut
 
 sub getPreferredBlockSize {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     return '1M';
 }

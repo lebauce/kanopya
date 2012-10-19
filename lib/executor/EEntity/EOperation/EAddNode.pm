@@ -91,12 +91,10 @@ sub prerequisites {
                                 value => $host_manager_params->{ram},
                                 units => $host_manager_params->{ram_unit},
                             );
-
         my $cm = CapacityManagement->new(
                      cluster_id    => $cluster->getId(),
                      cloud_manager => $self->{context}->{host_manager},
                  );
-
         my $hypervisor_id = $cm->getHypervisorIdForVM(
                                 # blacklisted_hv_ids => $self->{params}->{blacklisted_hv_ids},
                                 selected_hv_ids => \@hv_in_ids,
@@ -136,7 +134,6 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
-
     # Get the disk manager for disk creation
     my $disk_manager = $self->{context}->{cluster}->getManager(manager_type => 'disk_manager');
     $self->{context}->{disk_manager} = EFactory::newEEntity(data => $disk_manager);
@@ -146,12 +143,12 @@ sub prepare {
     $self->{context}->{export_manager} = EFactory::newEEntity(data => $export_manager);
 
     # Get the masterimage for node systemimage creation.
-    my $masterimage =  Entity::Masterimage->get(id => $self->{context}->{cluster}->getAttr(name => 'masterimage_id'));
+    my $masterimage =  Entity::Masterimage->get(id => $self->{context}->{cluster}->masterimage_id);
     $self->{context}->{masterimage} = EFactory::newEEntity(data => $masterimage);
 
     # Check if a host is specified.
     if (defined $self->{context}->{host}) {
-        my $host_manager_id = $self->{context}->{host}->getAttr(name => 'host_manager_id');
+        my $host_manager_id = $self->{context}->{host}->host_manager_id;
         my $cluster_host_manager_id = $self->{context}->{cluster}->getManager(manager_type => 'host_manager')->getId;
 
         # Check if the specified host is managed by the cluster host manager
@@ -166,12 +163,12 @@ sub prepare {
     $self->{params}->{node_number} = $self->{context}->{cluster}->getNewNodeNumber();
     $log->debug("Node number for this new node: $self->{params}->{node_number} ");
 
-    my $maxnode = $self->{context}->{cluster}->getAttr(name => 'cluster_max_node');
+    my $maxnode = $self->{context}->{cluster}->cluster_max_node;
     if ($maxnode < $self->{params}->{node_number}) {
         throw Kanopya::Exception::Internal::WrongValue(error => "Too many nodes, limited to " . $maxnode);
     }
 
-    my $systemimage_name = $self->{context}->{cluster}->getAttr(name => 'cluster_name') . '_' .
+    my $systemimage_name = $self->{context}->{cluster}->cluster_name . '_' .
                            $self->{params}->{node_number};
 
     # Check for existing systemimage for this node.
@@ -258,7 +255,7 @@ sub execute {
     }
 
     # Export system image for node if required.
-    if (not $self->{context}->{systemimage}->getAttr(name => 'active')) {
+    if (not $self->{context}->{systemimage}->active) {
         $self->{context}->{systemimage}->activate(
             export_manager => $self->{context}->{export_manager},
             manager_params => $self->{context}->{cluster}->getManagerParameters(manager_type => 'export_manager'),
