@@ -22,4 +22,15 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    # This type of disk is not handled by a manager
+    $args{disk_manager_id} = 0;
+    $args{container_freespace} = 0;
+
+    return $class->SUPER::new(%args);
+}
+
 1;

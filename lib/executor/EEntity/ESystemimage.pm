@@ -61,13 +61,10 @@ sub createFromMasterimage {
 
     # Create a temporary local container to access to the masterimage file.
     my $master_container = EEntity->new(entity => Entity::Container::LocalContainer->new(
-                               # This type of disk is not handled by a manager
-                               disk_manager_id      => 0,
                                container_name       => $args{masterimage}->masterimage_name,
                                container_size       => $args{masterimage}->masterimage_size,
                                # TODO: get this value from masterimage attrs.
                                container_filesystem => 'ext3',
-                               container_freespace  => 0,
                                container_device     => $args{masterimage}->masterimage_file,
                            ));
 

@@ -72,12 +72,10 @@ sub copy {
                              );
 
             my $container = EEntity->new(entity => Entity::Container::LocalContainer->new(
-                                disk_manager_id      => 0,
                                 container_name       => $args{dest}->container_name,
                                 container_size       => $args{dest}->container_size,
                                 container_filesystem => $args{dest}->container_filesystem,
                                 container_device     => $mountpoint . '/' . $args{dest}->container_device,
-                                container_freespace  => 0,
                             ));
 
             my $result = $self->copy(dest => $container, econtext => $args{econtext}, erollback => $args{erollback});
