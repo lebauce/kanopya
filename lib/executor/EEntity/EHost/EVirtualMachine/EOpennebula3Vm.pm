@@ -57,7 +57,6 @@ sub checkUp {
         throw Kanopya::Exception(error => 'Vm fail on boot: '.$lastmessage);
     }
     elsif ($vm_state->{state} eq 'pend' ) { 
-        $log->info('timeout in '.($broken_time - $starting_time).' s');
         $log->info('VM still pending'); #TODO check HV state
         return 0;
     }
