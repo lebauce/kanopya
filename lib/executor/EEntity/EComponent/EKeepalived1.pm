@@ -52,7 +52,8 @@ sub addNode {
         # retrieved loadbalanced components and there ports
         my $ports = [];
         foreach my $component(@components) {
-            if($component->getClusterizationType() eq 'loadbalanced') {
+            my $clusterization = $component->getClusterizationType();
+            if (defined ($clusterization) && ($clusterization eq 'loadbalanced')) {
                 my $netconf = $component->getNetConf();
                 foreach my $port (keys %$netconf) {
                     push(@$ports, $port); 
