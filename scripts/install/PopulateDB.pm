@@ -314,7 +314,7 @@ sub registerKernels {
     my %args = @_;
 
     my @kernels = (
-        [ '2.6.39.3', '2.6.39.3', 'generic kernel with lots of modules' ],
+        [ '2.6.32.33', '2.6.32.33', 'Debian generic kernel' ],
         [ '2.6.32-5-xen-amd64' , '2.6.32-5-xen-amd64', 'Kernel for Xen hypervisors' ],
         [ '3.2.6-xenvm', '3.2.6-xenvm', 'Kernel for xen virtual machines' ],
         [ '2.6.32-279.5.1.el6.x86_64', '2.6.32-279.5.1.el6.x86_64', 'Kernel for KVM hypervisors' ]
