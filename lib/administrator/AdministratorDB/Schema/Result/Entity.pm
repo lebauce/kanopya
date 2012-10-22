@@ -584,7 +584,7 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 workflow_workflow
+=head2 workflow
 
 Type: might_have
 
@@ -593,7 +593,7 @@ Related object: L<AdministratorDB::Schema::Result::Workflow>
 =cut
 
 __PACKAGE__->might_have(
-  "workflow_workflow",
+  "workflow",
   "AdministratorDB::Schema::Result::Workflow",
   { "foreign.workflow_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
