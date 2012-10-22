@@ -417,7 +417,7 @@ sub checkAttr {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
 
-    General::checkParams(args => \%args, required => [ 'name', 'value' ]);
+    General::checkParams(args => \%args, required => [ 'name' ], optional => {'value' => undef});
 
     my $attributes_def = $class->getAttrDefs();
     if (exists $attributes_def->{$args{name}} && defined $args{value} &&
@@ -722,7 +722,7 @@ class hierarchy, and check attribute validity.
 sub setAttr {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'name', 'value' ]);
+    General::checkParams(args => \%args, required => [ 'name' ], optional => { 'value' => undef });
 
     my ($name, $value) = ($args{name}, $args{value});
     my $dbix = $self->{_dbix};
