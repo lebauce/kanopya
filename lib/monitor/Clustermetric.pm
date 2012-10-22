@@ -41,7 +41,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    clustermetric_statistics_function_name =>  {pattern       => '^(mean|variance|std|max|min|kurtosis|skewness|dataOut|sum)$',
+    clustermetric_statistics_function_name =>  {pattern       => '^(mean|variance|std|max|min|kurtosis|skewness|dataOut|sum|count)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
