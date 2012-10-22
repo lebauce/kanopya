@@ -1383,8 +1383,7 @@ sub generateOverLoadNodemetricRules {
 sub generateDefaultMonitoringConfiguration {
     my ($self, %args) = @_;
 
-    my $collector = $self->getManager(manager_type => "collector_manager");
-    my $indicators = $collector->getIndicators();
+    my $indicators = $self->getManager(manager_type => "collector_manager")->getIndicators();
     my $service_provider_id = $self->getId;
 
     # We create a nodemetric combination for each indicator

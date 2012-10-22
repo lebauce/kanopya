@@ -89,6 +89,7 @@ eval{
 
     $node3->disable();
 
+    sleep(5);
     $aggregator->update();
 
     # Reload object to get changes

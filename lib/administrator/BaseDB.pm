@@ -707,7 +707,7 @@ sub getAttrs {
 
 =begin classdoc
 
-Set one name attribute with the given value, search this attribute throw the whole 
+Set one name attribute with the given value, search this attribute throw the whole
 class hierarchy, and check attribute validity.
 
 @param name the name of the attribute to set the value
@@ -914,8 +914,8 @@ sub getJoinQuery {
 
 =begin classdoc
 
-Return the entries that match the 'hash' filter. It also accepts more or less 
-the same parameters than DBIx 'search' method. It fetches the attributes of 
+Return the entries that match the 'hash' filter. It also accepts more or less
+the same parameters than DBIx 'search' method. It fetches the attributes of
 the whole class hierarchy and returns an object as a BaseDB derived object.
 
 @param hash the keys/values describing the researched objects
@@ -1395,7 +1395,7 @@ sub getRowPrimaryKey {
 Generic method to get the name of the attribute that identify the object.
 Search for an attribute ending by '_name' within all attributes.
 
-@optional attrs the attribute defintion of the object 
+@optional attrs the attribute defintion of the object
 
 @return the name of the attribute that identify the object
 
@@ -1671,7 +1671,7 @@ sub _classToTable {
 
 =begin classdoc
 
-Normalize the specified name by removing underscores and upper casing 
+Normalize the specified name by removing underscores and upper casing
 the characters that follows.
 
 @param $name any name of database table
@@ -1733,9 +1733,9 @@ sub classFromDbix {
 Dinamically load a module from the class name.
 
 @param $class Class name corresponding to the module to load.
- 
+
 =end classdoc
- 
+
 =cut
 
 sub requireClass {
@@ -1761,9 +1761,9 @@ It is convenient for centralizing permmissions checking.
 
 @param method the method name to call
 @optional params method call parameters
- 
+
 =end classdoc
- 
+
 =cut
 
 sub methodCall {
@@ -1791,7 +1791,7 @@ that returns the specified attribute or the relation blessed to a BaseDB object.
 @return the value returned by the call of the requested attribute.
 
 =end classdoc
- 
+
 =cut
 
 sub AUTOLOAD {
@@ -1812,7 +1812,7 @@ sub AUTOLOAD {
 Method called at the object deletion.
 
 =end classdoc
- 
+
 =cut
 
 sub DESTROY {
