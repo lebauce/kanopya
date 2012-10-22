@@ -170,8 +170,6 @@ sub prepare {
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
-
-    # We stop host (to update powersupply)
     $self->{context}->{host}->stop();
 
     # Remove Host from the dhcp

@@ -292,14 +292,7 @@ sub new {
         manager => {}
     };
 
-    # Load Manager
-
-    $self->{manager}->{network} = NetworkManager->new(
-        schemas => $schema,
-        internalnetwork => $config->{internalnetwork},
-        dmznetwork => $config->{dmznetwork}
-    );
-
+    # Load Managers
     $self->{manager}->{rules} = RulesManager->new( schemas => $schema );
     $self->{manager}->{monitor} = MonitorManager->new( schemas=>$schema );
 

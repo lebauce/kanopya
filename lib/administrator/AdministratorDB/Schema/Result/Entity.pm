@@ -194,7 +194,7 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 entity_lock
+=head2 entity_lock_entity
 
 Type: might_have
 
@@ -203,7 +203,7 @@ Related object: L<AdministratorDB::Schema::Result::EntityLock>
 =cut
 
 __PACKAGE__->might_have(
-  "entity_lock",
+  "entity_lock_entity",
   "AdministratorDB::Schema::Result::EntityLock",
   { "foreign.entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -311,21 +311,6 @@ __PACKAGE__->might_have(
   "iface",
   "AdministratorDB::Schema::Result::Iface",
   { "foreign.iface_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 infrastructure
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Infrastructure>
-
-=cut
-
-__PACKAGE__->might_have(
-  "infrastructure",
-  "AdministratorDB::Schema::Result::Infrastructure",
-  { "foreign.infrastructure_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -524,36 +509,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 powersupplycard
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Powersupplycard>
-
-=cut
-
-__PACKAGE__->might_have(
-  "powersupplycard",
-  "AdministratorDB::Schema::Result::Powersupplycard",
-  { "foreign.powersupplycard_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 powersupplycardmodel
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Powersupplycardmodel>
-
-=cut
-
-__PACKAGE__->might_have(
-  "powersupplycardmodel",
-  "AdministratorDB::Schema::Result::Powersupplycardmodel",
-  { "foreign.powersupplycardmodel_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 processormodel
 
 Type: might_have
@@ -614,21 +569,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 tier
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Tier>
-
-=cut
-
-__PACKAGE__->might_have(
-  "tier",
-  "AdministratorDB::Schema::Result::Tier",
-  { "foreign.tier_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 user
 
 Type: might_have
@@ -653,9 +593,7 @@ Related object: L<AdministratorDB::Schema::Result::Workflow>
 =cut
 
 __PACKAGE__->might_have(
-  # WARNING: We need to rename this relation from 'workflow_workflow' to 'workflow'
-  #          as dbix loader generate this relation with this strange name.
-  "workflow",
+  "workflow_workflow",
   "AdministratorDB::Schema::Result::Workflow",
   { "foreign.workflow_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -677,9 +615,9 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-05 18:05:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3SwZgl01sCKE2CBFktG4fA
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-10-22 09:48:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1+XLgzLhLlZ9vFSganCDXg
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# You can replace this text with custom content, and it will be preserved on regeneration
 1;

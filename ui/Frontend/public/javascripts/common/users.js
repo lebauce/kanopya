@@ -160,7 +160,7 @@ function groupsList (container_id, elem_id) {
             gp_type: {
                 type: 'select',
                 options:  [ 'User', 'Cluster', 'System image', 'Host',
-                            'Processor model', 'Host model', 'Powersupply card model',
+                            'Processor model', 'Host model',
                             'Distribution', 'Kernel'
                 ]
             },

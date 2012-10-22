@@ -62,19 +62,14 @@ use Entity::Component::Kanopyacollector1;
 use Entity::Component::Kanopyaworkflow0;
 use Entity::Component::Linux0;
 use Entity::Component::Mailnotifier0;
-use Entity::Powersupplycardmodel;
 
 my @classes = (
     'Entity::Gp',
     'Entity::Host',
     'Entity::Hostmodel',
-    'Entity::Infrastructure',
     'Entity::Kernel',
-    'Entity::Powersupplycard',
-    'Entity::Powersupplycardmodel',
     'Entity::Processormodel',
     'Entity::Systemimage',
-    'Entity::Tier',
     'Entity::User',
     'Entity::ServiceProvider::Inside::Cluster',
     'Entity::ServiceProvider::Inside::Server',
@@ -101,7 +96,6 @@ my @classes = (
     'Entity::Component::Opennebula3',
     'Entity::Component::Openssh5',
     'Entity::Component::Php5',
-    'Entity::Component::Pleskpanel10',
     'Entity::Component::Snmpd5',
     'Entity::Component::Syslogng3',
     'Entity::Component::Nfsd3',
@@ -205,14 +199,6 @@ sub registerUsers {
         { name    => 'Operationtype',
           type    => 'Operationtype',
           desc    => 'Operationtype master group containing all operations',
-          system  => 1 },
-        { name    => 'Powersupplycardmodel',
-          type    => 'Powersupplycardmodel',
-          desc    => 'Powersupplycardmodel master group  containing all powersupply card models',
-          system  => 1 },
-        { name    => 'Powersupplycard',
-          type    => 'Powersupplycard',
-          desc    => 'Powersupplycard master group  containing all power supply cards',
           system  => 1 },
         { name    => 'Masterimage',
           type    => 'Masterimage',
@@ -435,12 +421,6 @@ sub registerProcessorModels {
             }
         }
     }
-
-    Entity::Powersupplycardmodel->new(
-        powersupplycardmodel_name       => 'HEDERATECH',
-        powersupplycardmodel_brand      => 'Hedera Technology',
-        powersupplycardmodel_slotscount => 12
-    );
 }
 
 sub registerOperations {
@@ -478,7 +458,7 @@ sub registerOperations {
         [ 'AddNode', 'Preparing a new node' ],
         [ 'ScaleCpuHost', 'Scaling node cpu' ],
         [ 'ScaleMemoryHost', 'Scaling node memory' ],
-        [ 'CancelWorkflow', 'Canceling wokfl<ow' ],  
+        [ 'CancelWorkflow', 'Canceling wokflow' ],  
         [ 'LaunchSCOWorkflow' ],
         [ 'UpdatePuppetCluster' ],
         [ 'UpdateComponent' ],

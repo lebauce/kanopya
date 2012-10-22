@@ -61,12 +61,6 @@ use constant ATTR_DEF => {
         is_extended    => 0,
         is_editable    => 0
     },
-    tier_id => {
-        pattern        => '^\d*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 0
-    },
     component_template_id => {
         pattern        => '^\d*$',
         is_mandatory   => 0,

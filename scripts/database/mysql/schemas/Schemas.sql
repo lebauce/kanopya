@@ -143,15 +143,6 @@ CREATE TABLE `service_provider_manager` (
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Table structure for table `server`
--- Entity::ServiceProvider::Inside::Server class
-
-CREATE TABLE `server` (
-  `server_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`server_id`),
-  FOREIGN KEY (`server_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 --
 -- Table structure for table `outside`
 -- Entity::ServiceProvider::Outside class
@@ -252,20 +243,6 @@ CREATE TABLE `processormodel` (
   PRIMARY KEY (`processormodel_id`),
   FOREIGN KEY (`processormodel_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`processormodel_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `powersupplycardmodel`
--- Entity::Powersupplycardmodel class
-
-CREATE TABLE `powersupplycardmodel` (
-  `powersupplycardmodel_id` int(8) unsigned NOT NULL,
-  `powersupplycardmodel_brand` char(64) NOT NULL,
-  `powersupplycardmodel_name` char(32) NOT NULL,
-  `powersupplycardmodel_slotscount` int(2) unsigned NOT NULL,
-  PRIMARY KEY (`powersupplycardmodel_id`),
-  FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`powersupplycardmodel_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -466,7 +443,6 @@ CREATE TABLE `host` (
   `processormodel_id` int(8) unsigned NULL DEFAULT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
   `host_serial_number` char(64) NOT NULL,
-  `host_powersupply_id` int(8) unsigned,
   `host_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   `host_initiatorname` char(64) DEFAULT NULL,
@@ -482,9 +458,7 @@ CREATE TABLE `host` (
   KEY (`processormodel_id`),
   FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`kernel_id`),
-  FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`host_powersupply_id`),
-  FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -543,39 +517,6 @@ CREATE TABLE `harddisk` (
   PRIMARY KEY (`harddisk_id`),
   KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `powersupplycard`
--- Entity::Powersupplycard class
-
-CREATE TABLE `powersupplycard` (
-  `powersupplycard_id` int(8) unsigned NOT NULL,
-  `powersupplycard_name` char(64) NOT NULL,
-  `ipv4_internal_id` int(8) unsigned DEFAULT NULL,
-  `powersupplycardmodel_id` int(8) unsigned DEFAULT NULL,
-  `powersupplycard_mac_address` char(32) NOT NULL,
-  `active` int(1),
-  PRIMARY KEY (`powersupplycard_id`),
-  FOREIGN KEY (`powersupplycard_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`powersupplycardmodel_id`),
-  FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `powersupplycardmodel` (`powersupplycardmodel_id`)  ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`ipv4_internal_id`),
-  FOREIGN KEY (`ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`)  ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
---
--- Table structure for table `powersupply`
---
-
-CREATE TABLE `powersupply` (
-  `powersupply_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `powersupplycard_id` int(8) unsigned NOT NULL,
-  `powersupplyport_number` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`powersupply_id`),
-  KEY (`powersupplycard_id`),
-  FOREIGN KEY (`powersupplycard_id`) REFERENCES `powersupplycard` (`powersupplycard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -898,83 +839,6 @@ CREATE TABLE `network_poolip` (
   FOREIGN KEY (`poolip_id`) REFERENCES `poolip` (`poolip_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
-
---
--- Table structure for table `ipv4_internal`
---
-
-CREATE TABLE `ipv4_internal` (
-  `ipv4_internal_id` int(8) UNSIGNED NOT NULL AUTO_INCREMENT ,
-  `ipv4_internal_address` char(15) NOT NULL ,
-  `ipv4_internal_mask` char(15) NOT NULL ,
-  `ipv4_internal_default_gw` char(15) NULL ,
-  PRIMARY KEY (`ipv4_internal_id`),
-  UNIQUE KEY (`ipv4_internal_address`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `ipv4_dmz`
---
-
-CREATE TABLE `ipv4_dmz` (
-  `ipv4_dmz_id` int(8) UNSIGNED NOT NULL AUTO_INCREMENT ,
-  `ipv4_dmz_address` char(15) NOT NULL ,
-  `ipv4_dmz_mask` char(15) NOT NULL ,
-  `tier_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`ipv4_dmz_id`),
-  UNIQUE KEY (`ipv4_dmz_address`),
-  KEY (`tier_id`),
-  FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `ipv4_public`
---
-
-CREATE TABLE `ipv4_public` (
-  `ipv4_public_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `ipv4_public_address` char(15) NOT NULL,
-  `ipv4_public_mask` char(15) NOT NULL,
-  `ipv4_public_default_gw` char(15) DEFAULT NULL,
-  `cluster_id` int(8) unsigned DEFAULT NULL,
-  `infrastructure_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`ipv4_public_id`),
-  KEY (`cluster_id`),
-  FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
-  KEY (`infrastructure_id`),
-  FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE SET NULL ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `ipv4_route`
---
-
-CREATE TABLE `ipv4_route` (
-  `ipv4_route_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `ipv4_route_destination` char(15) NOT NULL,
-  `ipv4_route_gateway` char(15) DEFAULT NULL,
-  `ipv4_route_context` char(10) NOT NULL, -- Context could be internal or public
-  PRIMARY KEY (`ipv4_route_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `cluster_ipv4_route`
---
-
-CREATE TABLE `cluster_ipv4_route` (
-  `cluster_ipv4_route_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `cluster_id` int(8) unsigned NOT NULL,
-  `ipv4_route_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`cluster_ipv4_route_id`),
-  UNIQUE KEY (`cluster_id`,`ipv4_route_id`),
-  KEY (`cluster_id`),
-  FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`ipv4_route_id`),
-  FOREIGN KEY (`ipv4_route_id`) REFERENCES `ipv4_route` (`ipv4_route_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
 --
 -- Table structure for table `user`
 -- Entity::User class
@@ -1090,49 +954,6 @@ CREATE TABLE `message` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for `infrastructure`
--- Entity::Infrastructure class
-
-CREATE TABLE `infrastructure` (
-  `infrastructure_id` int(8) unsigned NOT NULL,
-  `infrastructure_reference` char(64) NOT NULL,
-  `infrastructure_min_node` int(2) unsigned NOT NULL,
-  `infrastructure_max_node` int(2) unsigned NOT NULL,
-  `infrastructure_domainname` char(64) NOT NULL,
-  `infrastructure_nameserver` char(15) NOT NULL,
-  `infrastructure_name` char(32) NOT NULL,
-  `infrastructure_desc` char(255) DEFAULT NULL,
-  `infrastructure_version` char(32) NOT NULL,
-  `infrastructure_tier_number` int(1),
-  `infrastructure_state` char(32) NOT NULL DEFAULT 'down:0',
-  `infrastructure_prev_state` char(32),
-  `infrastructure_priority` int(1) unsigned NOT NULL,
-  PRIMARY KEY (`infrastructure_id`),
-  FOREIGN KEY (`infrastructure_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for `tier`
--- Entity::Tier class
--- #TODO Warning Here delete tier when cluster removed by when cluster will be used by tier then they will not be destroyed when cluster are.
-
-CREATE TABLE `tier` (
-  `tier_id` int(8) unsigned NOT NULL,
-  `infrastructure_id` int(8) unsigned NOT NULL,
-  `cluster_id` int(8) unsigned,
-  `tier_name` char(32) NOT NULL,
-  `tier_rank` int(1) NOT NULL,
-  `tier_data_src` char(128) NOT NULL,
-  `tier_poststart_script` char(64),
-  PRIMARY KEY (`tier_id`),
-  FOREIGN KEY (`tier_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`infrastructure_id`),
-  FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`cluster_id`),
-  FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
 -- Component management tables
 --
 
@@ -1156,7 +977,6 @@ CREATE TABLE `component` (
   `component_id` int(8) unsigned NOT NULL,
   `service_provider_id` int(8) unsigned,
   `component_type_id` int(8) unsigned NOT NULL,
-  `tier_id` int(8) unsigned,
   `component_template_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`component_id`),
   FOREIGN KEY (`component_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -1165,9 +985,7 @@ CREATE TABLE `component` (
   KEY (`component_template_id`),
   FOREIGN KEY (`component_template_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`component_type_id`),
-  FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`tier_id`),
-  FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1381,25 +1199,6 @@ CREATE TABLE `collect` (
   KEY (`service_provider_id`),
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `graph` (monitor)
---
-
-CREATE TABLE `graph` (
-  `indicatorset_id` int(8) unsigned NOT NULL,
-  `cluster_id` int(8) unsigned NOT NULL,
-  `graph_type` char(32) NOT NULL,
-  `graph_percent` int(1) unsigned,
-  `graph_sum` int(1) unsigned,
-  `graph_indicators` char(128),
-  PRIMARY KEY (`indicatorset_id`, `cluster_id`),
-  KEY (`indicatorset_id`),
-  FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`cluster_id`),
-  FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 
 --
 -- Table structure for table `clustermetric`

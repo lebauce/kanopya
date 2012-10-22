@@ -27,7 +27,6 @@ use Entity::Component;
 use Entity::Host;
 use Externalnode::Node;
 use Entity::Systemimage;
-use Entity::Tier;
 use Externalnode::Node;
 use Entity::Operation;
 use Entity::Workflow;
@@ -832,23 +831,7 @@ sub deactivate {
 
 
 
-sub getTiers {
-    my $self = shift;
 
-    my %tiers;
-    my $rs_tiers = $self->{_dbix}->tiers;
-    if (! defined $rs_tiers) {
-        return;
-    }
-    else {
-        my %tiers;
-        while ( my $tier_row = $rs_tiers->next ) {
-            my $tier_id = $tier_row->get_column("tier_id");
-            $tiers{$tier_id} = Entity::Tier->get(id => $tier_id);
-        }
-    }
-    return \%tiers;
-}
 
 
 =head2 toString
@@ -1108,26 +1091,6 @@ sub getCurrentNodesCount {
     else {
         return 0;
     }
-}
-
-sub getPublicIps {
-    my $self = shift;
-
-    my $publicip_rs = $self->{_dbix}->ipv4_publics;
-    my $i =0;
-    my @pub_ip =();
-    while ( my $publicip_row = $publicip_rs->next ) {
-        my $publicip = {publicip_id => $publicip_row->get_column('ipv4_public_id'),
-                        address => $publicip_row->get_column('ipv4_public_address'),
-                        netmask => $publicip_row->get_column('ipv4_public_mask'),
-                        gateway => $publicip_row->get_column('ipv4_public_default_gw'),
-                        name     => "eth0:$i",
-                        cluster_id => $self->{_dbix}->get_column('cluster_id'),
-        };
-        $i++;
-        push @pub_ip, $publicip;
-    }
-    return \@pub_ip;
 }
 
 =head2 getQoSConstraints

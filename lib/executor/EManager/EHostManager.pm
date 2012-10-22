@@ -24,7 +24,6 @@ use warnings;
 use Kanopya::Exceptions;
 use DecisionMaker::HostSelector;
 
-use Entity::Powersupplycard;
 use Entity::Processormodel;
 use Entity::Hostmodel;
 use Entity::Kernel;
@@ -58,17 +57,6 @@ sub createHost {
         $errmsg = "Wrong kernel_id attribute detected <$args{kernel_id}>\n" . $@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    if (defined $args{powersupplyport_number} and defined $args{powersupplycard_id}) {
-        # Check power supply
-        # Search if there is a power supply defined
-        my $powersupplycard = Entity::Powersupplycard->get(id => $args{powersupplycard_id});
-        if ($powersupplycard->isPortUsed(powersupplyport_number => $args{powersupplyport_number})) {
-            $errmsg = "This power supply port is already recorded!";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal(error => $errmsg);
-        }
     }
 
     my $host = $self->_getEntity()->addHost(%args);

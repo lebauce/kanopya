@@ -37,7 +37,6 @@ use warnings;
 
 use Entity;
 use EFactory;
-use Entity::Powersupplycard;
 
 use String::Random;
 use Template;

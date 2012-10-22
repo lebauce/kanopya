@@ -25,7 +25,6 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-use Entity::Powersupplycard;
 use Entity::Processormodel;
 use Entity::Hostmodel;
 use Entity::Kernel;
@@ -92,23 +91,6 @@ sub addHost {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    # Add power supply card if required
-    if(exists $args{powersupplycard_id}) {
-        eval {
-            General::checkParams(args => \%args, required => [ "powersupplycard_id",
-                                                               "powersupplyport_number" ]);
-
-            my $powersupplycard = Entity::Powersupplycard->get(id => $args{powersupplycard_id});
-            my $powersupply_id  = $powersupplycard->addPowerSupplyPort(
-                                      powersupplyport_number => $args{powersupplyport_number}
-                                  );
-
-            $host->setAttr(name  => 'host_powersupply_id', value => $powersupply_id);
-        };
-        if($@) {
-            $log->info("No power supply card provided for host <" . $host->getAttr(name => 'host_id') . ">")
-        }
-    }
     # Set initial state to down
     $host->setAttr(name => 'host_state', value => 'down:' . time);
 
@@ -123,25 +105,12 @@ sub addHost {
 =cut
 
 sub delHost {
-    my $self = shift;
-    my %args  = @_;
-    my ($powersupplycard, $powersupplyid);
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $powersupplycard_id = $args{host}->getPowerSupplyCardId();
-    if ($powersupplycard_id) {
-        $powersupplycard = Entity::Powersupplycard->get(id => $powersupplycard_id);
-        $powersupplyid   = $args{host}->getAttr(name => 'host_powersupply_id');
-    }
-
     # Delete the host from db
     $args{host}->delete();
-
-    if ($powersupplycard_id){
-        $log->debug("Deleting powersupply with id <$powersupplyid> on the card : <$powersupplycard>");
-        $powersupplycard->delPowerSupply(powersupply_id => $powersupplyid);
-    }
 }
 
 =head2 createHost

@@ -59,13 +59,6 @@ __PACKAGE__->table("host");
   is_nullable: 0
   size: 64
 
-=head2 host_powersupply_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
 =head2 host_desc
 
   data_type: 'char'
@@ -150,13 +143,6 @@ __PACKAGE__->add_columns(
   },
   "host_serial_number",
   { data_type => "char", is_nullable => 0, size => 64 },
-  "host_powersupply_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
   "host_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
   "active",
@@ -268,26 +254,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 host_powersupply
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Powersupply>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "host_powersupply",
-  "AdministratorDB::Schema::Result::Powersupply",
-  { powersupply_id => "host_powersupply_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
 =head2 hypervisor
 
 Type: might_have
@@ -349,8 +315,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-19 15:18:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:x4KaHGJX/lb7ikHxUeksDw
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-10-22 09:48:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zBDbyKxVhVZSRpZn9MkADA
 
 __PACKAGE__->belongs_to(
   "parent",

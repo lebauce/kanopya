@@ -46,8 +46,6 @@ processormodel_id : Int : Identifier of host processor model
 kernel_id : Int : kernel identifier which will be used by host if non specified by cluster
 host_serial_number : String : This is the serial number attributed to host
 
-host_powersupply_id : Int : Facultative identifier to know which powersupplycard and port is used.
-Powersupplyid is created during host creation.
 host_desc :  String : This is a free field to enter a description of host. It is generally used to
 specify owner, team, ...
 
@@ -107,14 +105,6 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_editable  => 1,
-    },
-    host_powersupply_id => {
-        label        => 'Power supply card',
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\w*$',
-        is_mandatory => 0,
         is_editable  => 1,
     },
     host_desc => {
@@ -845,17 +835,6 @@ sub getClusterId {
 sub getCluster {
     my $self = shift;
     return $self->node->service_provider;
-}
-
-sub getPowerSupplyCardId {
-    my $self = shift;
-    my $row = $self->host_powersupply;
-    if (defined $row) {
-        return $row->id;
-    }
-    else {
-        return;
-    }
 }
 
 sub getModel {

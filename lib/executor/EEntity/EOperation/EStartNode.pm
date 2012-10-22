@@ -114,16 +114,6 @@ sub execute {
 
     # Firstly compute the node configuration
     
-    if ((exists $self->{context}->{powersupplycard} and defined $self->{context}->{powersupplycard}) and
-        (exists $self->{params}->{powersupplyport_number} and defined $self->{params}->{powersupplyport_number})) {
-        my $powersupply_id = $self->{context}->{powersupplycard}->addPowerSupplyPort(
-                                 powersupplyport_number => $self->{params}->{powersupplyport_number}
-                             );
-
-        $self->{context}->{host}->setAttr(name  => 'host_powersupply_id',
-                                          value => $powersupply_id);
-    }
-
     my $mount_options = $self->{context}->{cluster}->getAttr(name => 'cluster_si_shared')
                       ? "ro,noatime,nodiratime" : "defaults";
 
@@ -365,27 +355,7 @@ sub _generateNetConf {
         }
     }
 
-    #~ if (not $self->{context}->{cluster}->getMasterNodeId()) {
-        #~ my $i = 1;
-        #~ my $tiers = $self->{context}->{cluster}->getTiers();
-        #~ if ($tiers) {
-            #~ foreach my $tier_key (keys %$tiers){
-                #~ my $dmz_ips = $tiers->{$tier_key}->getDmzIps();
-                #~ foreach my $dmz_ip (@$dmz_ips){
-                    #~ my $tmp_iface = {
-                        #~ name    => "eth0:$i",
-                        #~ address => $dmz_ip->{address},
-                        #~ netmask => $dmz_ip->{netmask}
-                    #~ };
-                    #~ push (@net_ifaces, $tmp_iface);
-                    #~ $i++;
-                #~ }
-            #~ }
-        #~ }
-        #~ @net_ifaces = (@net_ifaces, @{$self->{context}->{cluster}->getPublicIps()});
-    #~ }
-
-     my $file = $self->{context}->{cluster}->generateNodeFile(
+    my $file = $self->{context}->{cluster}->generateNodeFile(
         cluster       => $self->{context}->{cluster},
         host          => $self->{context}->{host},
         file          => '/etc/network/interfaces',

@@ -22,7 +22,6 @@ use base "Manager::HostManager";
 use strict;
 use warnings;
 
-use Entity::Powersupplycard;
 use Manager::HostManager;
 use Kanopya::Exceptions;
 

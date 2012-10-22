@@ -47,7 +47,6 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Kernel;
 use Entity::Hostmodel;
 use Entity::Processormodel;
-use Entity::Powersupplycard;
 use Entity::Gp;
 use ERollback;
 
