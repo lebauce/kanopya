@@ -19,13 +19,13 @@ use strict;
 use warnings;
 use General;
 use Data::Dumper;
-use BaseDB;
 use XML::Simple;
 use Entity::ServiceProvider;
 use Indicator;
 use TimeData::RRDTimeData;
 use Clustermetric;
 use Kanopya::Config;
+use Message;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -136,7 +136,6 @@ sub update() {
                 $log->info('*** Aggregator collecting for service provider '. $service_provider_id.' ***');
 
                 # Construct input of the collector retriever
-                $DB::single = 1;
                 my $host_indicator_for_retriever = $self->_contructRetrieverOutput(
                                                        service_provider_id => $service_provider_id
                                                    );
@@ -277,9 +276,10 @@ sub run {
     my $self = shift;
     my $running = shift;
 
-    $self->{_admin}->addMessage(from    => 'Aggregator',
-                                level   => 'info',
-                                content => "Kanopya Aggregator started."
+    Message->send(
+        from    => 'Aggregator',
+        level   => 'info',
+        content => "Kanopya Aggregator started."
     );
 
     while ($$running) {
@@ -298,7 +298,7 @@ sub run {
         }
     }
 
-    $self->{_admin}->addMessage(
+    Message->send(
         from    => 'Aggregator',
         level   => 'warning',
         content => "Kanopya Aggregator stopped"

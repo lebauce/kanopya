@@ -490,23 +490,7 @@ sub registerTemplate {
 ## methodes for fast usage in web ui ##
 ########################################
 
-# add a new message
-sub addMessage {
-    my $self = shift;
-    my %args = @_;
 
-    General::checkParams(args => \%args, required => ['level', 'from', 'content']);
-
-    $self->{db}->resultset('Message')->create({
-        user_id => $self->{_rightschecker}->{_user},
-        message_from => $args{from},
-        message_creationdate => \"CURRENT_DATE()",
-        message_creationtime => \"CURRENT_TIME()",
-        message_level => $args{level},
-        message_content => $args{content}
-    });
-    return;
-}
 
 =head2
 

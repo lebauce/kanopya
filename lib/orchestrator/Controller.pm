@@ -26,7 +26,7 @@ use Model::MVAModel;
 use MultiTuning;
 use Actuator;
 use Kanopya::Config;
-
+use Message;
 
 use Log::Log4perl "get_logger";
 
@@ -1267,7 +1267,7 @@ sub run {
     my $self = shift;
     my $running = shift;
     
-    #$self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
+    #Message->send(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
     
     while ( $$running ) {
 
@@ -1285,7 +1285,7 @@ sub run {
 
     }
     
-    #$self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
+    #Message->send(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
 }
 
 

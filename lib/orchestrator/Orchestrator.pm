@@ -64,6 +64,7 @@ use NodemetricCombination;
 use WorkflowDef;
 use WorkflowNoderule;
 use Entity::Workflow;
+use Message;
 
 use Log::Log4perl "get_logger";
 
@@ -1335,7 +1336,11 @@ sub run {
     my $self = shift;
     my $running = shift;
 
-    $self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
+    Message->send(
+        from    => 'Orchestrator',
+        level   => 'info',
+        content => "Kanopya Orchestrator started."
+    );
 
     while ( $$running ) {
         # Load conf
@@ -1354,7 +1359,11 @@ sub run {
         }
     }
 
-    $self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
+    Message->send(
+        from    => 'Orchestrator',
+        level   => 'warning',
+        content => "Kanopya Orchestrator stopped"
+    );
 }
 
 =head2 updateOrchestratorConf

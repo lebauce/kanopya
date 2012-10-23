@@ -46,6 +46,7 @@ use Clone qw(clone);
 use List::Util;
 use Administrator;
 use EFactory;
+use Message;
 use Entity::ServiceProvider::Inside::Cluster;
 # logger
 use Log::Log4perl "get_logger";
@@ -169,7 +170,7 @@ sub _constructInfra{
             push @{$hvs->{$hypervisor->getId}->{vm_ids}}, $vm->getId;
 
 #            my $msg = "Warning capacity management detect an inconcistency in DB VM <$vm_id> in hypervisor <$hvid>";
-#            $self->{_admin}->addMessage(
+#            Message->send(
 #               from    => 'Capacity Management',
 #               level   => 'info',
 #               content =>$msg,
@@ -465,11 +466,11 @@ sub scaleMemoryHost{
     }
 
     if($mem_input =~ /\D/){
-        $self->{_admin}->addMessage(
-                           from    => 'Capacity Management',
-                           level   => 'info',
-                           content => "Wrong format for scale in memory value (typed : $args{memory})",
-                        );
+        Message->send(
+           from    => 'Capacity Management',
+           level   => 'info',
+           content => "Wrong format for scale in memory value (typed : $args{memory})",
+        );
         $log->warn("*** Wrong format for scale in memory value (typed : $args{memory})*** ");
         return $self->{_operationPlan};
     }
@@ -483,28 +484,29 @@ sub scaleMemoryHost{
     } elsif ($sign =~ /\d/) {
         $memory = $mem_input;
     }else{
-        $self->{_admin}->addMessage(
-                            from    => 'Capacity Management',
-                            level   => 'info',
-                            content => "Wrong format for scale in memory value (typed : $args{memory})",
-                         );
+        Message->send(
+            from    => 'Capacity Management',
+            level   => 'info',
+            content => "Wrong format for scale in memory value (typed : $args{memory})",
+        );
         $log->warn("*** Wrong format for scale in memory value (typed : $args{memory})*** ");
         return $self->{_operationPlan};
     }
 
     if($memory <= 0 ){
-        $self->{_admin}->addMessage(
-                             from    => 'Capacity Management',
-                             level   => 'info',
-                             content => "Scale in memory value must be strictly positive (typed : $args{memory}");
+        Message->send(
+            from    => 'Capacity Management',
+            level   => 'info',
+            content => "Scale in memory value must be strictly positive (typed : $args{memory}"
+        );
         $log->warn("*** Cannot Scale Ram to a negative value (typed : $args{memory})*** ");
     }
     elsif ($args{memory_limit} && ($memory > $args{memory_limit})) {
-            $self->{_admin}->addMessage(
-                                from    => 'Capacity Management',
-                                level   => 'info',
-                                content => "Scale in is limited to <".($args{memory_limit})."> B, (<$memory> B requested)",
-                             );
+        Message(
+            from    => 'Capacity Management',
+            level   => 'info',
+            content => "Scale in is limited to <".($args{memory_limit})."> B, (<$memory> B requested)",
+        );
         $log->warn("Scale in is limited to <".($args{memory_limit})."> B, (<$memory> B requested)");
     }
     else {
@@ -561,11 +563,11 @@ sub scaleCpuHost{
     } elsif ($sign =~ /\d/) {
         $cpu = $vcpu_input;
     }else{
-        $self->{_admin}->addMessage(
-                            from    => 'Capacity Management',
-                            level   => 'info',
-                            content => "Wrong format for scale in memory value (typed : $args{vcpu_number})",
-                         );
+        Message->send(
+            from    => 'Capacity Management',
+            level   => 'info',
+            content => "Wrong format for scale in memory value (typed : $args{vcpu_number})",
+        );
         $log->warn("*** Wrong format for scale in cpu value (typed : $args{vcpu_number})*** ");
         return $self->{_operationPlan};
     }
@@ -573,27 +575,27 @@ sub scaleCpuHost{
 
 
     if($cpu =~ /\D/){
-        $self->{_admin}->addMessage(
-                            from    => 'Capacity Management',
-                            level   => 'info',
-                            content => "Wrong format for scale in cpu value (typed : $args{vcpu_number})",
-                         );
+        Message->send(
+            from    => 'Capacity Management',
+            level   => 'info',
+            content => "Wrong format for scale in cpu value (typed : $args{vcpu_number})",
+        );
         $log->warn("*** WRONG FORMAT FOR CPU VALUE (typed : $args{vcpu_number}) *** ");
     }
     elsif($cpu <= 0 ){
-        $self->{_admin}->addMessage(
-                             from    => 'Capacity Management',
-                             level   => 'info',
-                             content => "Scale in cpu value must be strictly positive (typed : $args{vcpu_number})",
-                         );
+        Message->send(
+            from    => 'Capacity Management',
+            level   => 'info',
+            content => "Scale in cpu value must be strictly positive (typed : $args{vcpu_number})",
+        );
         $log->warn("*** Cannot scale CPU to a negative value (typed : $args{vcpu_number}) *** ");
     }
     elsif ($args{cpu_limit} && ($cpu > $args{cpu_limit})) {
-            $self->{_admin}->addMessage(
-                                from    => 'Capacity Management',
-                                level   => 'info',
-                                content => "Scale in is limited to $args{cpu_limit} CPU, ($cpu CPU requested)",
-                             );
+        Message->send(
+            from    => 'Capacity Management',
+            level   => 'info',
+            content => "Scale in is limited to $args{cpu_limit} CPU, ($cpu CPU requested)",
+        );
         $log->warn("Scale in is limited to $args{cpu_limit} CPU, ($cpu CPU requested)");
     }
     else {
@@ -694,7 +696,7 @@ sub _scaleMetric {
                     );
                 }
                 else{
-                    $self->{_admin}->addMessage(
+                    Message->send(
                         from    => 'Capacity Management',
                         level   => 'info',
                         content => "NOT ENOUGH PLACE TO CHANGE $scale_metric OF $vm_id TO VALUE $new_value",
