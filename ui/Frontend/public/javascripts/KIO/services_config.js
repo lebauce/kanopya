@@ -354,7 +354,8 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                                 complete      : function() {
                                     $("div#waiting_default_insert").dialog("destroy");
                                 },
-                                error         : function() {
+                                error         : function(error) {
+                                    alert(error.responseText);
                                     if (skippable) callback();
                                 }
                             });
