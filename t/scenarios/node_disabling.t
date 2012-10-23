@@ -28,7 +28,7 @@ lives_ok {
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 my $adm = Administrator->new;
-$adm->{db}->txn_begin;
+$adm->beginTransaction;
 
 my $acomb1;
 my $nrule1;
@@ -150,10 +150,10 @@ eval{
             verified_noderule_state              => 'verified',
         });
     } 'Run orchestrator, disabled node 3 and check rule not verified';
-    $adm->{db}->txn_rollback;
+    $adm->rollbackTransaction;
 };
 if($@) {
-    $adm->{db}->txn_rollback;
+    $adm->rollbackTransaction;
     my $error = $@;
     print $error."\n";
 }

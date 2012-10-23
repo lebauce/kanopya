@@ -39,7 +39,7 @@ lives_ok {
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 my $adm = Administrator->new;
-$adm->{db}->txn_begin;
+$adm->beginTransaction;
 
 eval{
     my $executor = Executor->new();
@@ -358,11 +358,11 @@ eval{
         });
     } 'Check service WorkflowNoderule has been deleted';
 
-    #$adm->{db}->txn_commit;
-    $adm->{db}->txn_rollback;
+    #$adm->commitTransaction;
+    $adm->rollbackTransaction;
 };
 if($@) {
-    $adm->{db}->txn_rollback;
+    $adm->rollbackTransaction;
     my $error = $@;
     print $error."\n";
 }

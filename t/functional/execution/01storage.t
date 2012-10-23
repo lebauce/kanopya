@@ -112,7 +112,7 @@ sub testDiskManager {
 }
 
 eval {
-    $adm->{db}->txn_begin;
+    $adm->beginTransaction;
 
     my $econtext;
     lives_ok {
@@ -299,7 +299,7 @@ eval {
         @exports = @nextexports;
     }
 
-    $adm->{db}->txn_rollback;
+    $adm->rollbackTransaction;
 };
 if($@) {
     my $error = $@;

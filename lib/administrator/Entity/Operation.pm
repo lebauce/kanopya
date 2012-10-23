@@ -198,7 +198,7 @@ sub new {
     };
     if ($@) {
         $log->error($@);
-        $adm->{db}->txn_rollback;
+        $adm->rollbackTransaction;
     }
 
     if (defined $args{params}) {
@@ -483,7 +483,7 @@ sub lockContext {
         }
     };
     if ($@) {
-        $adm->{db}->txn_rollback;
+        $adm->rollbackTransaction;
         throw $@;
     }
     $adm->commitTransaction;

@@ -101,7 +101,7 @@ sub validation {
     my $adm    = Administrator->new();
     my $config = General::getTemplateConfiguration();
 
-    $adm->{db}->txn_begin;
+    $adm->beginTransaction;
 
     # Search for all context entites if notification/validation required
     my $validation = 0;
@@ -182,7 +182,7 @@ sub validation {
         }
     }
 
-    $adm->{db}->txn_commit;
+    $adm->commitTransaction;
 
     return not $validation;
 }

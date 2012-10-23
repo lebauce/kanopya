@@ -54,7 +54,7 @@ eval {
     my $executor = new_ok("Executor", \@args, "Instantiate an executor");
 
     if ($testing) {
-        $db->txn_begin;
+        $adm->beginTransaction;
     }
 
     my $hostmodel;
