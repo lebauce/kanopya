@@ -903,47 +903,7 @@ sub _isNodeMigrating {
     return 0;
 }
 
-=head2 _isOpInQueue
 
-    Class : Private
-
-    Desc : Check if there is an operation of the specified type associated to the cluster
-
-    Args :
-        cluster: name of the cluster
-        type: operation type name (corresponding to operation class name)
-
-    Return :
-        0 : not found
-        1 : there is a operation of this type for this cluster
-
-=cut
-
-sub _isOpInQueue {
-    my $self = shift;
-    my %args = @_;
-
-    my $cluster = $args{cluster};
-    my $type = $args{type};
-
-    my $adm = $self->{_admin};
-
-    #TODO keep cluster id from the beginning (get by name is not really good)
-    my $cluster_id = Entity::ServiceProvider::Inside::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
-
-
-    foreach my $op ( @{ $adm->getOperations() } ) {
-        if ($op->{'TYPE'} eq $type) {
-            foreach my $param ( @{ $op->{'PARAMETERS'} } ) {
-                if ( ($param->{'PARAMNAME'} eq 'cluster_id') && ($param->{'VAL'} eq $cluster_id) ) {
-                    return 1;
-                }
-            }
-        }
-    }
-
-    return 0;
-}
 
 =head2 _canAddNode
 
