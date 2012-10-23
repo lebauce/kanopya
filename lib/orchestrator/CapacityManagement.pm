@@ -230,7 +230,7 @@ sub isScalingAuthorized{
 
     General::checkParams(args     => \%args,
                          required => [ 'vm_id', 'hv_id', 'resource_type', 'wanted_resource' ]);
-
+    #TODO : remove hv_id param since we can get it
     my $vm_id           = $args{vm_id};
     my $hv_id           = $args{hv_id};
     my $resource_type   = $args{resource_type};
@@ -393,8 +393,13 @@ sub _applyMigrationPlan{
 
     if (defined $replace_master_id) {
       $log->info("Master id <$master_hv_id> will replace <$replace_master_id> ");
-        for my $vm_id (@{$self->{_infra}->{hvs}->{$replace_master_id}->{vm_ids}}) {
+        my $vms_ids  = clone($self->{_infra}->{hvs}->{$replace_master_id}->{vm_ids});
+        for my $vm_id (@{$vms_ids}) {
             push @$plan, {vm_id => $vm_id, hv_id => $master_hv_id};
+            $self->_migrateVmModifyInfra(
+                vm_id       => $vm_id,
+                hv_dest_id  => $master_hv_id,
+            );
         }
     }
 
@@ -1648,6 +1653,7 @@ sub flushHypervisor {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['hv_id']);
 
+    $self->{_operationPlan} = [];
     my $flush_results = $self->_getFlushHypervisorPlan(hv_id => $args{hv_id});
 
     $self->_applyMigrationPlan(
