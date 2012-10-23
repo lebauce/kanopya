@@ -485,57 +485,6 @@ sub registerTemplate {
     return $self->{db}->resultset('ComponentTemplate')->create(\%args)->get_column("component_template_id");
 }
 
-
-########################################
-## methodes for fast usage in web ui ##
-########################################
-
-sub getOperations {
-    my $self = shift;
-    my $Operations = $self->{db}->resultset('Operation')->search(undef, {
-        order_by => { -asc => [qw/execution_rank/] },
-        '+columns' => {'user_login' => 'user.user_login'},
-#        '+columns' => [ 'user.user_login' ],
-        join => [ 'user' ]
-    });
-
-    my $arr = [];
-    while (my $op = $Operations->next) {
-
-        my $opparams = [];
-        my $execution_time;
-        my $Parameters = $self->{db}->resultset('OperationParameter')->search({operation_id=>$op->get_column('operation_id')});
-
-        while (my $param = $Parameters->next) {
-            push @$opparams, {
-                'PARAMNAME' => $param->get_column('name'),
-                'VAL' => $param->get_column('value')
-            };
-        }
-        if( defined $op->get_column('hoped_execution_time') ) {
-            my $dt = DateTime->from_epoch(epoch => $op->get_column('hoped_execution_time'), time_zone => 'Europe/Paris');
-            $execution_time = $dt->ymd()." ".$dt->hms();
-
-        } else {
-            $execution_time = 'no';
-        }
-        push @$arr, {
-            'ID' => $op->get_column('operation_id'),
-            'TYPE' => $op->get_column('type'),
-            'FROM' => $op->get_column('user_login'),
-            'CREATION' => $op->get_column('creation_date')." ".$op->get_column('creation_time'),
-            #'PLANNED' => $execution_time,
-            'RANK' => $op->get_column('execution_rank'),
-            'PRIORITY' => $op->get_column('priority'),
-            'PARAMETERS' => $opparams,
-        };
-    }
-    return $arr;
-
-}
-
-
-
 sub getRightChecker {
     my $self = shift;
 
