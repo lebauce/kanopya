@@ -504,7 +504,8 @@ sub registerComponents {
         [ 'Kanopyaworkflow', '0', 'Workflowmanager' ], 
         [ 'Mailnotifier', '0', 'Notificationmanager' ],
         [ 'Memcached', '1', 'Cache' ],
-        [ 'Php', '5', 'Lib' ]
+        [ 'Php', '5', 'Lib' ],
+        [ 'Vsphere', '5', 'Cloudmanager' ],
     ];
 
     for my $component_type (@{$components}) {
