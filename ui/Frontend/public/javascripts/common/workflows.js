@@ -169,7 +169,7 @@ function sco_workflow(container_id) {
     var connectorTypeId;
     $.ajax({
         type        : 'POST',
-        url         : '/api/serviceprovider/1/findManager',
+        url         : '/api/serviceprovider/findManager',
         contentType : 'application/json',
         data        : JSON.stringify({ 'category' : 'WorkflowManager' }),
         success     : function(data) {
@@ -180,25 +180,23 @@ function sco_workflow(container_id) {
                     type    : 'GET',
                     async   : false,
                     success : function(data) {
-                        workflowmanagers[i].service_provider    = data;
-                        for (var prop in data) if (data.hasOwnProperty(prop)) {
-                            if ((new RegExp("_name$")).test(prop)) {
-                                workflowmanagers[i].service_provider_name = data[prop];
-                            }
-                        }
+                        workflowmanagers[i].service_provider        = data;
+                        workflowmanagers[i].service_provider_name   = data.label;
                     }
                 });
             }
             create_grid({
                 grid_id                 : 'workflowmanagement',
                 content_container_id    : container_id,
-                colNames                : [ 'Id', 'Service', 'Name' ],
+                caption                 : 'Workflow manager',
+                colNames                : [ 'Id', 'Service', 'Type' ],
                 colModel                : [
-                    { name : 'id', index : 'id', width : 60, sorttype : 'int' },
+                    { name : 'id', index : 'id', width : 60, sorttype : 'int', hidden : true },
                     { name : 'service_provider_name', index : 'service_provider_name'},
                     { name : 'name', index : 'name' },
                 ],
                 data                    : workflowmanagers,
+                action_delete           : 'no'
             });
         }
     });
