@@ -73,6 +73,7 @@ eval{
 
 
     test_hypervisor_selection();
+    test_migration_authorization();
     test_scale_memory();
     test_scale_cpu();
     test_optimiaas();
@@ -83,6 +84,16 @@ if($@) {
     $adm->{db}->txn_rollback;
     my $error = $@;
     print $error."\n";
+}
+
+sub test_migration_authorization {
+    my $cm = CapacityManagement->new(infra => getTestInfraForScaling());
+
+    ok (
+        $cm->isMigrationAuthorized(vm_id => $vms[2]->id, hv_id => 1) == 0
+        && $cm->isMigrationAuthorized(vm_id => $vms[1]->id, hv_id => 2) == 1,
+        'Check Migration authorization'
+    );
 }
 
 sub test_hypervisor_selection {
