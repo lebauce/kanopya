@@ -1,6 +1,5 @@
-# Administrator.pm - Object class of Administrator server
-
-#    Copyright 2011 Hedera Technology SAS
+#    Copyright © 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,48 +13,18 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
-
-=head1 NAME
-
-Administrator - Administrator object
-
-=head1 SYNOPSIS
-
-    use Administrator;
-
-    # Creates administrator
-    my $adm = Administrator->new();
-
-    # Get object
-    $adm->getobject($type : String, %ObjectDefinition);
-
-
-=head1 DESCRIPTION
-
-Administrator is the main object use to create administrator objects
-
-=head1 METHODS
-
-=cut
-
 package Administrator;
 
 use strict;
 use warnings;
 
 use General;
-use Entityright;
 use Entityright::User;
 use Entityright::System;
 use AdministratorDB::Schema;
 use Kanopya::Exceptions;
 use Kanopya::Config;
 use Log::Log4perl "get_logger";
-use Data::Dumper;
-use XML::Simple;
-use DateTime;
 
 our $VERSION = "1.00";
 
@@ -165,7 +134,6 @@ sub authenticate {
         throw Kanopya::Exception::AuthenticationFailed(error => $errmsg);
     } else {
         $log->debug("Authentication succeed for login ".$args{login});
-        #$rchecker = Entityright::build(dbixuser => $user_data, schema => $schema);
         $ENV{EID} = $user_data->id;
     }
 }
@@ -381,28 +349,6 @@ sub _getDbixFromHash {
     return $dbix;
 }
 
-=head2 _getAllDbix
-
-    Class : Private
-
-    Desc : Get all dbix class of table
-
-    args:
-        table : String : Table name
-    return: resultset (dbix)
-
-=cut
-
-sub _getAllDbix {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['table']);
-
-    my $entitylink = lc($args{table})."_entity";
-    return $self->{db}->resultset( $args{table} )->search(undef);
-}
-
 =head2 _newDbix
 
     Class : Private
@@ -425,39 +371,6 @@ sub _newDbix {
 
     my $new_obj = $self->{db}->resultset($args{table})->new($args{row});
     return $new_obj;
-}
-
-=head2 _getEntityClass
-
-    Class : Private
-
-    Desc : Make good require during an Entity Instanciation
-
-    args:
-        type : concrete entity type
-    return: Entity class
-
-=cut
-
-sub _getEntityClass{
-    my ($self, %args) = @_;
-    my $entity_class;
-
-    General::checkParams(args => \%args, required => ['type']);
-
-    if (defined $args{class_path} && exists $args{class_path}) {
-        $entity_class = $args{class_path}
-    } else {
-        $entity_class = 'Entity::'.$args{type};
-    }
-    my $location = General::getLocFromClass(entityclass => $entity_class);
-    eval { require $location; };
-    if ($@){
-        $errmsg = "Administrator->_getEntityClass type or class_path invalid! (location is $location)";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    return $entity_class;
 }
 
 sub registerComponent {
