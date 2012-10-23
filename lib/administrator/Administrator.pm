@@ -50,15 +50,13 @@ use Entityright;
 use Entityright::User;
 use Entityright::System;
 use MonitorManager;
-use NetworkManager;
+
 use RulesManager;
 use AdministratorDB::Schema;
 use Kanopya::Exceptions;
 use Kanopya::Config;
-
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use NetAddr::IP;
 use XML::Simple;
 use DateTime;
 
@@ -493,11 +491,4 @@ sub getRightChecker {
 
 1;
 
-__END__
 
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
