@@ -1237,8 +1237,10 @@ sub toJSON {
     else {
         $hash->{pk} = $self->id;
 
-        my $label = $self->getLabelAttr(attrs => $hash);
-        $hash->{label} = $label ? $self->getAttr(name => $label) : $self->id;
+        if (! defined ($hash->{label})) {
+            my $label = $self->getLabelAttr(attrs => $hash);
+            $hash->{label} = $label ? $self->getAttr(name => $label) : $self->id;
+        }
     }
 
     return $hash;
