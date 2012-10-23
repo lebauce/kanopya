@@ -94,7 +94,7 @@ function associateAdminManager(sp_id, component_category, manager_type) {
 
     // Get manager id
     $.ajax({
-        url     : '/api/serviceprovider/1/findManager',
+        url     : '/api/serviceprovider/findManager',
         type    : 'POST',
         async   : false,
         data    : {
