@@ -282,7 +282,52 @@ sub test_optimiaas {
         ok (
             $operation->{type} eq 'MigrateHost'
             && $operation->{params}->{context}->{host}->id == $waited_migrations{$vm_index{$operation->{params}->{context}->{vm}->id}},
-            'Check migration vm '.($vm_index{$operation->{params}->{context}->{vm}->id})
+            'Optimiaas - Check migration '.($vm_index{$operation->{params}->{context}->{vm}->id})
+        );
+    }
+
+    #Delete empty hvs
+    delete $cm->{_infra}->{hvs}->{5};
+    delete $cm->{_infra}->{hvs}->{2};
+    delete $cm->{_infra}->{hvs}->{7};
+    delete $cm->{_infra}->{hvs}->{3};
+
+    ok ($cm->flushHypervisor(hv_id => 4)->{num_failed} == 4 &&
+        scalar @{$cm->flushHypervisor(hv_id => 4)->{operation_plan}} == 0,
+        'Flush hypervisor - case: no vm can migrate'
+    );
+
+    # Remove vm 9 (5GB RAM)
+    my @temp = grep {($_ != $vms[9]->id)} @{$cm->{_infra}->{hvs}->{1}->{vm_ids}};
+    $cm->{_infra}->{hvs}->{1}->{vm_ids} = \@temp;
+
+    my $flush_res = $cm->flushHypervisor(hv_id => 4);
+
+    %waited_migrations = (7 => 1, 8 => 1);
+
+    ok ($flush_res->{num_failed} == 2, 'Flush hypervisor - Check 2 vms can not be migrated ');
+
+    for my $operation (@{$flush_res->{operation_plan}}) {
+        ok (
+            $operation->{type} eq 'MigrateHost'
+            && $operation->{params}->{context}->{host}->id == $waited_migrations{$vm_index{$operation->{params}->{context}->{vm}->id}},
+            'Flush hypervisor - Flush hypervisor vm '.($vm_index{$operation->{params}->{context}->{vm}->id})
+        );
+    }
+
+    # Remove vm 6 (4GB RAM)
+    @temp = grep {($_ != $vms[6]->id)} @{$cm->{_infra}->{hvs}->{1}->{vm_ids}};
+    $cm->{_infra}->{hvs}->{1}->{vm_ids} = \@temp;
+
+    $flush_res = $cm->flushHypervisor(hv_id => 4);
+    ok ($flush_res->{num_failed} == 0, 'Check vms can be be migrated ');
+
+    %waited_migrations = (3 => 1, 5 => 1);
+    for my $operation (@{$flush_res->{operation_plan}}) {
+        ok (
+            $operation->{type} eq 'MigrateHost'
+            && $operation->{params}->{context}->{host}->id == $waited_migrations{$vm_index{$operation->{params}->{context}->{vm}->id}},
+            'Flush hypervisor - Flush hypervisor vm '.($vm_index{$operation->{params}->{context}->{vm}->id})
         );
     }
 }
