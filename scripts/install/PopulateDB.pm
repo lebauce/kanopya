@@ -141,7 +141,10 @@ my @classes = (
     'Entity::ServiceTemplate',
     'Entity::Policy',
     'Entity::Operation',
-    'Entity::Workflow'
+    'Entity::Workflow',
+    'Entity::Host::Hypervisor::Vsphere5Hypervisor',
+    'Entity::Host::VirtualMachine::Vsphere5Vm',
+    'Entity::Component::Vsphere5'
 );
 
 sub registerClassTypes {
@@ -466,7 +469,8 @@ sub registerOperations {
         [ 'LaunchOptimiaasWorkflow' ],
         [ 'ProcessRule', 'Processing triggered rule' ],
         [ 'ResubmitNode', 'Resubmit a virtual machine to the IAAS' ],
-        [ 'RelieveHypervisor', 'Relieve the hypervisor by migrating one VM' ]
+        [ 'RelieveHypervisor', 'Relieve the hypervisor by migrating one VM' ],
+        [ 'Synchronize', 'Synchronize a component' ]
     ];
 
     for my $operation (@{$operations}) {
@@ -680,6 +684,32 @@ sub registerIndicators {
                 [ 'ifOutOctets', 16, undef, undef, 'FF000099', 'Octets/sec', undef ],
                 [ 'ifOutErrors', 20, undef, undef, 'FF000099', 'Packets|TU/sec', undef ],
                 [ 'ifInErrors', 14, undef, undef, 'FF000099', 'Packets|TU/sec', undef ]
+            ]
+        },
+        {
+            set => {
+                name     => 'vsphere_vm',
+                provider => 'VsphereProvider',
+                type     => 'GAUGE',
+             },
+            indicators => [
+                [ 'vm_cpu_total', 'summary.config.numCpu', undef, undef, 'FF000099', 'Cores', undef ],
+                [ 'vm_cpu_usage', 'summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
+                [ 'vm_mem_total', 'summary.config.memorySizeMB', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'vm_mem_usage', 'summary.quickStats.hostMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
+            ]
+        },
+        {
+            set => {
+                name     => 'vsphere_host',
+                provider => 'VsphereProvider',
+                type     => 'GAUGE',
+             },
+            indicators => [
+                [ 'hv_cpu_total', 'summary.hardware.numCpuCores', undef, undef, 'FF000099', 'Cores', undef ],
+                [ 'hv_cpu_usage', 'summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
+                [ 'hv_mem_total', 'summary.hardware.memorySize', undef, undef, 'FF000099', 'Bytes', undef ],
+                [ 'hv_mem_usage', 'summary.quickStats.overallMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
             ]
         }
     ];
