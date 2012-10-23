@@ -19,6 +19,9 @@ lives_ok {
     use Entity::Component;
     use Entity::ServiceProvider::Outside::Externalcluster;
     use CapacityManagement;
+    use Entity::Component::Opennebula3;
+    use ComponentType;
+
 } 'All uses';
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -27,11 +30,26 @@ $adm->{db}->txn_begin;
 
 my @vms;
 my $coef = 1024**3;
+my $service_provider;
+my $service_provider_hypervisors;
+my $one;
 
 eval{
     lives_ok {
-        my $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
+        $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
                 externalcluster_name => 'Test Service Provider',
+        );
+
+        $service_provider_hypervisors = Entity::ServiceProvider::Outside::Externalcluster->new(
+                externalcluster_name => 'Test Hypervisor Externacluster',
+        );
+
+        $one = $service_provider_hypervisors->addComponentFromType(
+            component_type_id => ComponentType->find(
+                hash => {
+                    component_name => 'Opennebula',
+                }
+            )->id,
         );
 
         # Create entity with random arguments because only used for their ids
@@ -45,6 +63,14 @@ eval{
             );
         }
     } 'Fake service provider and nodes creation for scale operations';
+
+     lives_ok{
+        $service_provider->addManager(
+            manager_id   => $one->id,
+            manager_type => 'host_manager',
+        );
+    } 'Add opennebula to service provider';
+
 
     test_hypervisor_selection();
     test_scale_memory();
@@ -65,7 +91,7 @@ sub test_hypervisor_selection {
     my $infra = getTestInfraForScaling();
     my $cm    = CapacityManagement->new(infra => $infra);
 
-    my %wanted_values; 
+    my %wanted_values;
 
     %wanted_values = ( cpu => 1, ram => 6*$coef);
     ok (
@@ -294,5 +320,22 @@ sub test_scale_memory {
         && $operations[1]->{params}->{memory} == 8*$coef
         && $operations[1]->{params}->{context}->{host}->id == $vms[1]->id,
         'Scale in memory - case: need migration of another vm'
+    );
+
+    $cm->{_cluster_id} = $service_provider->id;
+    @operations = @{$cm->scaleMemoryHost(host_id => $vms[1]->id, memory => '+'.(3*$coef))};
+
+    ok (
+        $operations[0]->{type} eq 'AddNode'
+        && $operations[0]->{params}->{context}->{cluster}->id eq $service_provider_hypervisors->id
+        && $operations[1]->{type} eq 'PreStartNode'
+        && $operations[2]->{type} eq 'StartNode'
+        && $operations[3]->{type} eq 'PostStartNode'
+        && $operations[4]->{type} eq 'MigrateHost'
+        && $operations[4]->{params}->{context}->{vm}->id == $vms[1]->id
+        && $operations[5]->{type} eq 'ScaleMemoryHost'
+        && $operations[5]->{params}->{memory} == 11*$coef
+        && $operations[5]->{params}->{context}->{host}->id == $vms[1]->id,
+        'Scale in memory - case: need to start a new hypervisor'
     );
 }
