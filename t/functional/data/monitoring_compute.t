@@ -38,7 +38,6 @@ my ($indic1, $indic2);
 my $service_provider;
 my $aggregator;
 eval{
-
     $aggregator= Aggregator->new();
 
     $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
@@ -118,6 +117,7 @@ if($@) {
     $adm->rollbackTransaction;
     my $error = $@;
     print $error."\n";
+    fail('Exception occurs');
 }
 
 sub testClusterMetric {
