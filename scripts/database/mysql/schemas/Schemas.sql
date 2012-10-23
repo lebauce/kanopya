@@ -1224,7 +1224,7 @@ CREATE TABLE `aggregate_combination` (
   `aggregate_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `aggregate_combination_label` char(255),
   `aggregate_combination_service_provider_id` int(8) unsigned NOT NULL,
-  `aggregate_combination_formula` char(32) NOT NULL,
+  `aggregate_combination_formula` char(255) NOT NULL,
   KEY (`aggregate_combination_service_provider_id`),
   FOREIGN KEY (`aggregate_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
@@ -1284,7 +1284,7 @@ CREATE TABLE `nodemetric_combination` (
   `nodemetric_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `nodemetric_combination_label` char(255),
   `nodemetric_combination_service_provider_id`  int(8) unsigned NOT NULL,
-  `nodemetric_combination_formula` char(32) NOT NULL,
+  `nodemetric_combination_formula` char(255) NOT NULL,
   KEY (`nodemetric_combination_service_provider_id`),
   FOREIGN KEY (`nodemetric_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
