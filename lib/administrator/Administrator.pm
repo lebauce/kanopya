@@ -490,41 +490,6 @@ sub registerTemplate {
 ## methodes for fast usage in web ui ##
 ########################################
 
-
-
-=head2
-
-    Desc:
-    
-    Args: limit -> This arg will specify the maximum number of messages returned
-    by method. If he's not provided, limite is set by default to 10.
-
-=cut
-
-sub getMessages {
-    my $self  = shift;
-    my %args  = @_;
-    my $limit = $args{limit} || 10;
-
-    my $r = $self->{db}->resultset('Message')->search(undef, {
-        order_by => { -desc => [qw/message_id/], },
-        rows => $limit
-    });
-    my @arr = ();
-    while (my $row = $r->next) {
-        push @arr, {
-            'id' => $row->get_column('message_id'),
-            'from' => $row->get_column('message_from'),
-            'level' => $row->get_column('message_level'),
-            'date' => $row->get_column('message_creationdate'),
-            'time' => $row->get_column('message_creationtime'),
-            'content' => $row->get_column('message_content'),
-
-        };
-    }
-    return @arr;
-}
-
 sub getOperations {
     my $self = shift;
     my $Operations = $self->{db}->resultset('Operation')->search(undef, {
