@@ -294,6 +294,12 @@ sub test_scale_memory {
     my $cm    = CapacityManagement->new(infra=>$infra);
 
     ok (
+        $cm->isScalingAuthorized(vm_id => $vms[1]->id, hv_id => 1, resource_type => 'ram', wanted_resource => 3*$coef) == 1
+        && $cm->isScalingAuthorized(vm_id => $vms[1]->id, hv_id => 1, resource_type => 'ram', wanted_resource => 5*$coef) == 0,
+        'Check scale memory authorization'
+    );
+
+    ok (
         scalar @{$cm->scaleMemoryHost(host_id => $vms[1]->id, memory => 2*$coef)} == 0,
         'Scale in memory - case: same value'
     );
