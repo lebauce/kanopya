@@ -104,6 +104,8 @@ sub new {
 
     overload ServiceProvider::addManager to insert initial monitoring configuration when adding a collector manager
 
+    Args: (optionnal) no_default_conf : do not insert default monitoring configuration (link only to indicators. no metrics, no rules)
+
 =cut
 
 sub addManager {
@@ -113,7 +115,7 @@ sub addManager {
     my $manager = $self->SUPER::addManager( %args );
 
     if ($args{"manager_type"} eq 'collector_manager') {
-        $self->monitoringDefaultInit();
+        $self->monitoringDefaultInit( no_default_conf => $args{no_default_conf} );
     }
 
     return $manager;
@@ -438,15 +440,21 @@ sub insertCollectorIndicators {
     TODO : more generic (unhardcode SCOM, metrics depend on monitoring service)
     TODO : default init must be done when instanciating data collector.
 
+    Args: (optionnal) no_default_conf : do not insert default monitoring configuration (link only to indicators. no metrics, no rules)
+
 =cut
 
 sub monitoringDefaultInit {
     my $self = shift;
+    my %args = @_;
 
     my $adm = Administrator->new();
 
     #generate the scom indicators (only default)
     my $indicators = $self->insertCollectorIndicators(default => 1);
+
+    return if ($args{no_default_conf});
+
     my $service_provider_id = $self->id;
 
     my $active_session_indicator_id;
