@@ -588,7 +588,7 @@ function rule_nodes_tab(cid, rule_id, service_provider_id) {
     
     var loadNodeRulesTabGridId = 'rule_nodes_tabs';
     create_grid( {
-        url: '/api/externalnode?service_provider_id=' + service_provider_id,
+        url: '/api/externalnode?externalnode_state=<>,disabled&service_provider_id=' + service_provider_id,
         content_container_id: cid,
         grid_id: loadNodeRulesTabGridId,
         grid_class: 'rule_nodes_grid',
