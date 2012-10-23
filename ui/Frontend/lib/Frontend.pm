@@ -6,7 +6,6 @@ use Dancer::Plugin::Ajax;
 
 use Login;
 use KIO::Services;
-use Messager;
 use Monitoring;
 use Validation;
 use REST::api;
