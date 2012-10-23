@@ -9,7 +9,6 @@
 
 use strict;
 use warnings;
-
 use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
@@ -37,10 +36,10 @@ $adm->beginTransaction;
 
 my ($indic1, $indic2);
 my $service_provider;
-
+my $aggregator;
 eval{
 
-    my $aggregator= Aggregator->new();
+    $aggregator= Aggregator->new();
 
     $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
@@ -105,6 +104,8 @@ eval{
     testNodemetricCombination(
         service_provider    => $service_provider,
     );
+
+    testStatisticFunctions();
 
     testBigAggregation(
         service_provider    => $service_provider,
@@ -362,8 +363,8 @@ sub testBigAggregation {
     my $service_provider    = $args{service_provider};
     my $aggregator          = $args{aggregator};
 
-    Externalnode->find(hash => {externalnode_hostname => 'node_1'})->delete();
-    Externalnode->find(hash => {externalnode_hostname => 'node_2'})->delete();
+    # Delete all nodes
+    map {$_->delete()} Externalnode->search(hash => {});
 
     # Create nodes
     for my $i (1..$nodes_count) {
@@ -410,4 +411,66 @@ sub testBigAggregation {
     sleep 1; # Avoid updating rrd at same time
     $aggregator->update();
     is($cm->getLastValueFromDB(), 23+24+25, 'Correctly aggregated when lot of undef values');
+}
+
+sub testStatisticFunctions {
+
+    # Delete all nodes
+    map {$_->delete()} Externalnode->search(hash => {});
+
+    # Create nodes
+    for my $i (0..9) {
+        Externalnode->new(
+            externalnode_hostname => 'node_' . $i,
+            service_provider_id   => $service_provider->id,
+            externalnode_state    => 'up',
+        );
+    }
+
+    my $mock_conf  = "{'default':{'const':null},"
+                   . "'nodes':{'node_0':{'const':0},
+                               'node_1':{'const':60},
+                               'node_2':{'const':60},
+                               'node_3':{'const':70},
+                               'node_4':{'const':75},
+                               'node_5':{'const':75},
+                               'node_6':{'const':85},
+                               'node_7':{'const':90},
+                               'node_8':{'const':100},
+                               'node_9':{'const':110},
+                      }}";
+
+    $service_provider->addManagerParameter(
+        manager_type    => 'collector_manager',
+        name            => 'mockmonit_config',
+        value           => $mock_conf
+    );
+
+    my @funcs = ('sum','mean','std','variance','max','min','kurtosis','skewness');
+    my @cms = ();
+    for my $func (@funcs) {
+        push @cms,
+            Clustermetric->new(
+                clustermetric_service_provider_id       => $service_provider->id,
+                clustermetric_indicator_id              => ($indic1->id),
+                clustermetric_statistics_function_name  => $func,
+                clustermetric_window_time               => '1200',
+            );
+    }
+
+    my @acs = ();
+    for my $cm (@cms) {
+        push @acs,
+            AggregateCombination->new(
+                aggregate_combination_service_provider_id   =>  $service_provider->id,
+                aggregate_combination_formula               => 'id'.($cm->id),
+            );
+    }
+
+    $aggregator->update();
+    my @values = (725,72.5,30.2076149339864,912.5,110,0,3.61461544647883,-1.53239355172722);
+    for my $ac (@acs) {
+        is($ac->computeLastValue(),shift @values,'Check function '.shift @funcs);
+    }
+
 }
