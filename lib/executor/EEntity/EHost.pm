@@ -92,7 +92,7 @@ sub postStart {
 sub ping {
     my ($self) = @_;
     my $ip = $self->getAdminIp;
-    my $ping = Net::Ping->new();
+    my $ping = Net::Ping->new("icmp");
     my $pingable = $ping->ping($ip, 2);
     $ping->close();
     return $pingable ? $pingable : 0;
@@ -101,10 +101,7 @@ sub ping {
 sub checkUp {
     my ($self, %args) = @_;
 
-    my $ip = $self->getAdminIp;
-    my $ping = Net::Ping->new();
-    my $pingable = $ping->ping($ip);
-    $ping->close();
+    my $pingable = $self->ping();
 
     if ($pingable) {
         eval {
