@@ -44,7 +44,7 @@ use Entity::Iface;
 use Ip;
 use Externalnode::Node;
 use ServiceProviderManager;
-use Lvm2Vg;
+use Entity::Component::Lvm2::Lvm2Vg;
 use Scope;
 use ScopeParameter;
 use Entity::Component::Lvm2;
@@ -928,7 +928,7 @@ sub registerKanopyaMaster {
         $installed->{$component->{name}} = $comp;
     }
 
-    my $vg = Lvm2Vg->new(
+    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
         lvm2_id           => $installed->{"Lvm"}->id,
         lvm2_vg_name      => $args{kanopya_vg_name},
         lvm2_vg_freespace => $args{kanopya_vg_free_space},
