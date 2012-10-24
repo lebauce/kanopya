@@ -73,6 +73,10 @@ sub methods {
             description => 'update an object',
             perm_holder => 'mastergroup',
         },
+        update => {
+            description => 'get an object',
+            perm_holder => 'mastergroup',
+        },
         methodCall => {
             description => 'Call an object method',
         },
@@ -1857,9 +1861,14 @@ sub methodCall {
 
     General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
 
-    # Call the requested method
+    # Basically, we allows 'get' only on classes not managed by permissions
     my $method = $args{method};
-    return $self->$method(%{$args{params}});
+    if ($args{method} eq 'get' or $self->isa('Entity')) {
+        return $self->$method(%{$args{params}});
+    }
+
+    my $msg = "Permission denied for <$method> on <$self>";
+    throw Kanopya::Exception::Permission::Denied(error => $msg);
 }
 
 

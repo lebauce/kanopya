@@ -512,11 +512,6 @@ sub methodCall {
     $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder_id, method => $args{method});
     if (not $granted) {
         my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
-        Message->send(
-            from    => 'Permissions checker',
-            level   => 'error',
-            content => $msg
-        );
         throw Kanopya::Exception::Permission::Denied(error => $msg);
     }
 
