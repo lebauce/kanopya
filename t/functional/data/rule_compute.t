@@ -11,7 +11,6 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/rule_compute.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
-
 lives_ok {
     use Administrator;
     use Aggregator;
@@ -19,9 +18,13 @@ lives_ok {
     use Entity::ServiceProvider::Outside::Externalcluster;
     use Entity::Connector::MockMonitor;
     use Clustermetric;
+    use AggregateCondition;
     use AggregateCombination;
+    use AggregateRule;
     use NodemetricCombination;
-
+    use NodemetricCondition;
+    use NodemetricRule;
+    use VerifiedNoderule;
 } 'All uses';
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -30,13 +33,15 @@ $adm->beginTransaction;
 
 my ($indic1);
 my ($ac_f, $ac_t);
+my ($nc_f, $nc_t);
+my ($node,$node2);
 my $service_provider;
 my $aggregator;
 my $orchestrator;
 
 eval{
 
-    $aggregator= Aggregator->new();
+    $aggregator   = Aggregator->new();
     $orchestrator = Orchestrator->new();
 
     $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
@@ -59,9 +64,16 @@ eval{
         );
     } 'Add mock monitor to service provider';
 
-    # Create node 1
-    Externalnode->new(
+    # Create node
+    $node = Externalnode->new(
         externalnode_hostname => 'node_1',
+        service_provider_id   => $service_provider->id,
+        externalnode_state    => 'up',
+    );
+
+    # Create node
+    $node2 = Externalnode->new(
+        externalnode_hostname => 'node_2',
         service_provider_id   => $service_provider->id,
         externalnode_state    => 'up',
     );
@@ -74,6 +86,7 @@ eval{
         }
     );
 
+    test_nodemetric_rules();
     test_aggregate_rules();
 
     $adm->rollbackTransaction;
@@ -82,6 +95,88 @@ if($@) {
     $adm->rollbackTransaction;
     my $error = $@;
     print $error."\n";
+}
+
+sub test_nodemetric_rules {
+
+    # Create nodemetric rule objects
+    my $ncomb = NodemetricCombination->new(
+        nodemetric_combination_service_provider_id => $service_provider->id,
+        nodemetric_combination_formula => 'id'.($indic1->id),
+    );
+
+    $nc_f = NodemetricCondition->new(
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        nodemetric_condition_combination_id => $ncomb->id,
+        nodemetric_condition_comparator => '<',
+        nodemetric_condition_threshold => '0',
+    );
+
+    $nc_t = NodemetricCondition->new(
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        nodemetric_condition_combination_id => $ncomb->id,
+        nodemetric_condition_comparator => '>',
+        nodemetric_condition_threshold => '0',
+    );
+
+    $service_provider->addManagerParameter(
+        manager_type    => 'collector_manager',
+        name            => 'mockmonit_config',
+        value           =>  "{'default':{'const':50},'nodes':{'node_2':{'const':null}}}",
+    );
+
+    $aggregator->update();
+
+    my $nr_f = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_f->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $nr_t = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_t->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    $orchestrator->manage_aggregates();
+
+    dies_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $nr_f->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node rule false';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $nr_t->id,
+            verified_noderule_state              => 'verified',
+        });
+    } 'Check node rule true';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node2->id,
+            verified_noderule_nodemetric_rule_id => $nr_t->id,
+            verified_noderule_state              => 'undef',
+        });
+    } 'Check node undef - rule 1';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node2->id,
+            verified_noderule_nodemetric_rule_id => $nr_t->id,
+            verified_noderule_state              => 'undef',
+        });
+    } 'Check node undef- rule 2';
+
+    test_not_n();
+    test_or_n();
+    test_and_n();
+    test_big_formulas_n();
 }
 
 sub test_aggregate_rules {
@@ -122,7 +217,7 @@ sub test_aggregate_rules {
     $service_provider->addManagerParameter(
         manager_type    => 'collector_manager',
         name            => 'mockmonit_config',
-        value           => "{'default':{ 'const':50 }}",
+        value           =>  "{'default':{'const':50},'nodes':{'node_2':{'const':null}}}",
     );
 
     $aggregator->update();
@@ -135,6 +230,67 @@ sub test_aggregate_rules {
     test_or();
     test_and();
     test_big_formulas();
+}
+
+sub test_and_n {
+
+    my $r1 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_f->id.' && '.'id'.$nc_f->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r2 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_f->id.' && '.'id'.$nc_t->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r3 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_t->id.' && '.'id'.$nc_f->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r4 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_t->id.' && '.'id'.$nc_t->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    $orchestrator->manage_aggregates();
+
+    dies_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r1->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node 0 && 0';
+
+    dies_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r2->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node 0 && 1';
+
+    dies_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r3->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node 1 && 0';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r4->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node 1 && 1';
 }
 
 sub test_and {
@@ -167,6 +323,66 @@ sub test_and {
     is($rule2->eval, 0, 'Check 1 && 0 rule');
     is($rule3->eval, 0, 'Check 0 && 1 rule');
     is($rule4->eval, 0, 'Check 0 && 0 rule');
+}
+sub test_or_n {
+
+    my $r1 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_f->id.' || '.'id'.$nc_f->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r2 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_f->id.' || '.'id'.$nc_t->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r3 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_t->id.' || '.'id'.$nc_f->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r4 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_t->id.' || '.'id'.$nc_t->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    $orchestrator->manage_aggregates();
+
+    dies_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r1->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node 0 || 0';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r2->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node 0 || 1';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r3->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node 1 || 0';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r4->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node 1 || 1';
 }
 
 sub test_or {
@@ -201,6 +417,76 @@ sub test_or {
     is($rule4->eval, 0, 'Check 0 || 0 rule');
 }
 
+sub test_not_n {
+
+    my $r1 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => '! id'.$nc_f->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r2 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => '! id'.$nc_t->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r3 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'not ! id'.$nc_f->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r4 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'not ! id'.$nc_t->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    $orchestrator->manage_aggregates();
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r1->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node rule ! 0';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node2->id,
+            verified_noderule_nodemetric_rule_id => $r1->id,
+            verified_noderule_state              => 'undef',
+        })
+    } 'Check node rule ! undef';
+
+    dies_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r2->id,
+            verified_noderule_state              => 'verified',
+        });
+    } 'Check node rule ! 1';
+
+    dies_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r3->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node rule not ! 0';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r4->id,
+            verified_noderule_state              => 'verified',
+        });
+    } 'Check node rule not ! 1';
+
+}
+
+
 sub test_not{
     my $rule1 = AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
@@ -228,13 +514,13 @@ sub test_not{
 
     my $rule5 = AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
-        aggregate_rule_formula => '!! id'.$ac_t->id,
+        aggregate_rule_formula => 'not ! id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule6 = AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
-        aggregate_rule_formula => '!!! id'.$ac_t->id,
+        aggregate_rule_formula => '! not ! id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
@@ -243,8 +529,28 @@ sub test_not{
     is($rule2->eval, 0, 'Check ! 1 rule');
     is($rule3->eval, 0, 'Check 0 rule');
     is($rule4->eval, 1, 'Check ! 0 rule');
-    is($rule5->eval, 1, 'Check !! 1 rule');
-    is($rule6->eval, 0, 'Check !!! 1 rule');
+    is($rule5->eval, 1, 'Check not ! 1 rule');
+    is($rule6->eval, 0, 'Check ! not ! 1 rule');
+}
+
+sub test_big_formulas_n {
+
+    my $r1 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => '(!('.'id'.$nc_t->id.' && (!'.'id'.$nc_f->id.') && '.'id'.$nc_t->id.')) || ! ('.'id'.$nc_t->id.' && '.'id'.$nc_f->id.')',
+        nodemetric_rule_state => 'enabled'
+    );
+
+    $orchestrator->manage_aggregates();
+
+   lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r1->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check node (!(1 && (!0) && 1)) || ! (1 && 0)';
+
 }
 
 sub test_big_formulas {
