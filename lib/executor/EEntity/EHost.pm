@@ -108,7 +108,8 @@ sub checkUp {
             $self->getEContext;
         };
         if ($@) {
-            $log->info("Ehost->checkUp for host <$ip>, host pingable but not sshable");
+            $log->info("Ehost->checkUp for host <" . $self->getAdminIp .
+                       ">, host pingable but not sshable");
             return 0;
         }
     }
