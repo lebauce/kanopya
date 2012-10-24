@@ -16,13 +16,13 @@ function loadServiceEventsAlerts(container_id, elem_id) {
     
     $('#accordionworkflows').accordion({
         autoHeight  : false,
-        active      : 0,
+        active      : false,
         collapsible : true,
         change      : function (event, ui) {
             // Set all grids size to fit accordion content
             ui.newContent.find('.ui-jqgrid-btable').jqGrid('setGridWidth', ui.newContent.width());
         }
-    });
+    }).accordion('option', 'active', 0); // trigger change callback
     
     /* alerts part */
     
@@ -34,11 +34,11 @@ function loadServiceEventsAlerts(container_id, elem_id) {
     
     $('#accordionalerts').accordion({
         autoHeight  : false,
-        active      : 0,
+        active      : false,
         collapsible : true,
         change      : function (event, ui) {
             // Set all grids size to fit accordion content
             ui.newContent.find('.ui-jqgrid-btable').jqGrid('setGridWidth', ui.newContent.width());
         }
-    });
+    }).accordion('option', 'active', 0); // trigger change callback
 }
