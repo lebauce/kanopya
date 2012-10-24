@@ -15,35 +15,23 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Lvm2Vg;
+package Entity::Component::Opennebula3::Opennebula3Repository;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
-    lvm2_id => {
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d+$',
-        is_mandatory => 1,
-    },
-    lvm2_vg_name => {
+    repository_name => {
         label        => 'Name',
         type         => 'string',
+        pattern      => '^.*$',
         is_mandatory => 1,
-        is_editable  => 0,
+        is_editable  => 1,
     },
-    lvm2_vg_freespace => {
-        label        => 'Free space',
-        type         => 'string',
-        unit         => 'byte',
+    container_access_id => {
+        label        => 'Container access',
+        type         => 'relation',
+        relation     => 'single',
         is_mandatory => 1,
-        is_editable  => 0,
-    },
-    lvm2_vg_size => {
-        label        => 'Total size',
-        type         => 'string',
-        unit         => 'byte',
-        is_mandatory => 1,
-        is_editable  => 0,
+        is_editable  => 1,
     },
 };
 

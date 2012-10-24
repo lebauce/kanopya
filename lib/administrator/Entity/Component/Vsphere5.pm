@@ -1,5 +1,5 @@
-# Vsphere5.pm - Vsphere5 component
 #    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -45,9 +45,6 @@ use warnings;
 use VMware::VIRuntime;
 
 use General;
-
-use Data::Dumper;
-use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
 use Vsphere5Repository;
 use Vsphere5Datacenter;
@@ -59,6 +56,9 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::ContainerAccess;
+
+use Data::Dumper;
+use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
 my $errmsg;

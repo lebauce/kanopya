@@ -353,17 +353,16 @@ sub getAttrDefs {
     General::checkParams(args => \%args, optional => { 'group_by' => 'none' });
 
     my $attributedefs = {};
-    my @classes = split(/::/, (split("=", "$class"))[0]);
+    my $modulename = $class;
+    my @hierachy = $class->getClassHierarchy;
 
-    my $currentclass;
-    while(@classes) {
-        $currentclass = join('::', @classes);
-
+    while(@hierachy) {
         my $attr_def = {};
-        if ($currentclass ne "BaseDB") {
-            requireClass($currentclass);
+
+        if ($modulename ne "BaseDB") {
+            requireClass($modulename);
             eval {
-                $attr_def = $currentclass->getAttrDef();
+                $attr_def = $modulename->getAttrDef();
             };
 
             my $schema;
@@ -372,7 +371,7 @@ sub getAttrDefs {
             };
             if ($@) {
                 my $adm = Administrator->new();
-                $schema = $adm->{db}->source(_buildClassNameFromString($currentclass));
+                $schema = $adm->{db}->source(_buildClassNameFromString($modulename));
             }
 
             my @relnames = $schema->relationships();
@@ -405,15 +404,17 @@ sub getAttrDefs {
         }
 
         if ($attr_def) {
-            $attributedefs->{$currentclass} = $attr_def;
+            $attributedefs->{$modulename} = $attr_def;
         }
-        pop @classes;
+
+        $modulename = _parentClass($modulename);
+        pop @hierachy;
     }
 
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
     # Add the BaseDB attrs to the upper class attrs
-    $attributedefs->{$currentclass} = $merge->merge($attributedefs->{$currentclass}, BaseDB::getAttrDef());
+    $attributedefs->{$modulename} = $merge->merge($attributedefs->{$modulename}, BaseDB::getAttrDef());
 
     if ($args{group_by} eq 'module') {
         return $attributedefs;
@@ -613,9 +614,39 @@ sub fromDBIx {
 
     General::checkParams(args => \%args, required => [ 'row' ]);
 
-    my $name = classFromDbix($args{row}->result_source);
+    my $modulename = classFromDbix($args{row}->result_source);
 
-    requireClass($name);
+    eval {
+        requireClass($modulename);
+    };
+    if ($@) {
+        my $err = $@;
+
+        # Ugly fix to be able to require inner classes of components.
+        # From the dbix row, we can retrieve the class name only, but inner classes
+        # of components, that simply directly inherit from BaseDB, are located in
+        # a sub directory of the component directory (lib/administrator/Entity/Component)
+        # in funtion of the name of the component that belongs to.
+        #
+        # So if a required failled on a location builder by classFromDbix, try to
+        # consider the module as a inner class of a component, by deducing the location
+        # from the class name. E.g. with the class name Opennebula3Hypervisor, we can 
+        # deduce the location: lib/administrator/Entity/Component/Opennebula3/.
+        if (not $modulename =~ m/Entity/ and $modulename =~ m/\d/) {
+            (my $component = $modulename) =~ s/\d.*//g;
+            (my $version   = $modulename) =~ s/[a-zA-Z]*//g;
+
+            $modulename = 'Entity::Component::' . $component . $version . '::' . $modulename;
+            eval {
+                requireClass($modulename);
+            };
+            if ($@) {
+                # The module seems not to be a inner class of a component
+                # re-throw the original exception.
+                throw $err;
+            }
+        }
+    }
 
     # TODO: We need to use prefetch to get the parent/childs attrs,
     #       and use the concrete class type. Use 'get' for instance.
@@ -624,7 +655,7 @@ sub fromDBIx {
 #        _dbix      => $args{row},
 #    }, $name;
 
-    return $name->get(id => getRowPrimaryKey(row => $args{row}));
+    return $modulename->get(id => getRowPrimaryKey(row => $args{row}));
 }
 
 
@@ -814,15 +845,10 @@ sub get {
         $log->debug("Unable to retreive concrete class name, using $class.");
     }
 
-    my $table = _buildClassNameFromString($class);
-    my $location = General::getLocFromClass(entityclass => $class);
-    eval { require $location; };
-    if ($@) {
-        throw Kanopya::Exception::Internal::UnknownClass(
-                  error => "Could not find $location :\n$@"
-              );
-    }
+    # Try to use the corresponding module
+    requireClass($class);
 
+    my $table = _buildClassNameFromString($class);
     my $dbix = $adm->getRow(id => $args{id}, table => $table);
     my $self = {
         _dbix => $dbix,
@@ -882,18 +908,19 @@ Build the join query required to get all the attributes of the whole class hiera
 
 sub getJoin {
     my ($class) = @_;
-
-    my $parent_join;
-    my @hierarchy = split(/::/, $class);
-    my $depth = scalar @hierarchy;
-    my $n = $depth;
     my $adm = Administrator->new();
-    while ($n > 0) {
-        last if $hierarchy[$n - 1] eq "BaseDB";
-        $parent_join = $adm->{db}->source($hierarchy[$n - 1])->has_relationship("parent") ?
+
+    my @hierarchy = $class->getClassHierarchy;
+    my $depth = scalar @hierarchy;
+
+    my $current = $depth;
+    my $parent_join;
+    while ($current > 0) {
+        last if $hierarchy[$current - 1] eq "BaseDB";
+        $parent_join = $adm->{db}->source($hierarchy[$current - 1])->has_relationship("parent") ?
                            ($parent_join ? { parent => $parent_join } : { "parent" => undef }) :
                            $parent_join;
-        $n -= 1;
+        $current -= 1;
     }
 
     return $parent_join;
@@ -971,8 +998,8 @@ sub search {
                                        'order_by' => undef, 'dataType' => undef });
 
     my $table = _buildClassNameFromString($class);
-    my $adm = Administrator->new();
-    my $join = $class->getJoin() || {};
+    my $adm   = Administrator->new();
+    my $join  = $class->getJoin() || {};
 
     for my $filter (keys %{$args{hash}}) {
         my @comps = split('\.', $filter);
@@ -991,17 +1018,12 @@ sub search {
         }
     }
 
-    my $rs = $adm->_getDbixFromHash('table'    => $table,
-                                    'hash'     => $args{hash},
-                                    'page'     => $args{page},
-                                    'join'     => $join,
-                                    'rows'     => $args{rows},
-                                    'order_by' => $args{order_by});
+    my $rs = $adm->_getDbixFromHash('table' => $table,      'hash'     => $args{hash},
+                                    'page'  => $args{page}, 'join'     => $join,
+                                    'rows'  => $args{rows}, 'order_by' => $args{order_by});
 
-    while ( my $row = $rs->next ) {
-        my $obj = {
-             _dbix => $row,
-        };
+    while (my $row = $rs->next) {
+        my $obj = { _dbix => $row };
 
         my $parent = $row;
         while ($parent->can('parent')) {
@@ -1227,11 +1249,11 @@ sub toJSON {
         my $adm = Administrator->new();
         my @hierarchy = split(/::/, $class);
         my $depth = scalar @hierarchy;
-        my $n = $depth;
+        my $current = $depth;
         my $parent;
 
-        for (my $n = $depth - 1; $n >= 0; $n--) {
-            $parent = $adm->{db}->source($hierarchy[$n]);
+        for (my $current = $depth - 1; $current >= 0; $current--) {
+            $parent = $adm->{db}->source($hierarchy[$current]);
             my @relnames = $parent->relationships();
             for my $relname (@relnames) {
                 my $relinfo = $parent->relationship_info($relname);
@@ -1244,7 +1266,7 @@ sub toJSON {
                     $resource =~ s/_//g;
 
                     $hash->{relations}->{$relname} = $relinfo;
-                    $hash->{relations}->{$relname}->{from} = $hierarchy[$n];
+                    $hash->{relations}->{$relname}->{from} = $hierarchy[$current];
                     $hash->{relations}->{$relname}->{resource} = $resource;
 
                     # We must have relation attrs within attrdef to keep
@@ -1335,6 +1357,7 @@ sub populateRelations {
 
         my $relation_schema = $self->{_dbix}->$relation->result_source;
         my $relationclass = classFromDbix($relation_schema);
+
         requireClass($relationclass);
 
         # Deduce the foreign key attr for link entries in relations multi
@@ -1561,6 +1584,35 @@ sub getKeyFromCond {
 
 =begin classdoc
 
+Build an array of the full class hierachy. Module names follow the usual
+perl module hierachy, except some exceptions:
+
+- Components should come with their own classes that directly inherit from
+  BaseDB, but those classes are located in a sub directory of the Component directory.
+
+@return the array containing all classes in the hierarchy.
+
+=end classdoc
+
+=cut
+
+sub getClassHierarchy {
+    my $class = shift;
+
+    my $classpath = (split("=", "$class"))[0];
+    my @hierarchy = split(/::/, $classpath);
+
+    if (defined $hierarchy[-3] and $hierarchy[-3] eq 'Component') {
+        return _buildClassNameFromString($class);
+    }
+    return wantarray ? @hierarchy : \@hierarchy;
+}
+
+
+=pod
+
+=begin classdoc
+
 @deprecated
 
 Get the primary key of the object
@@ -1668,6 +1720,8 @@ sub _buildClassNameFromString {
 
 sub _rootTable {
     my ($class) = @_;
+
+    $class = join('::', $class->getClassHierarchy);
     $class =~ s/\:\:.*$//g;
     return $class;
 }
@@ -1751,7 +1805,6 @@ sub classFromDbix {
         $source = $source->related_source("parent");
         $name = ucfirst($source->from) . "::" . $name;
     }
-
     return normalizeName($name);
 }
 
@@ -1770,8 +1823,7 @@ Dinamically load a module from the class name.
 
 sub requireClass {
     my $class = shift;
-    $class =~ s/\:\:/\//g;
-    my $location = $class . '.pm';
+    my $location = General::getLocFromClass(entityclass => $class);
 
     eval { require $location; };
     if ($@) {

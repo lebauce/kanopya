@@ -15,7 +15,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Opennebula3Hypervisor;
+package Entity::Component::Opennebula3::Opennebula3Hypervisor;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
