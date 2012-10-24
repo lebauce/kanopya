@@ -364,32 +364,8 @@ sub setupREST {
                 } else {
                     %params = params;
                 }
+                $obj = jsonify($class->methodCall(method => 'create', params => \%params));
 
-                if ($class->can('create')) {
-                    $obj = jsonify($class->methodCall(method => 'create', params => \%params));
-                }
-                else {
-                    # We probably do not want to directly enqueue operations,
-                    # as permissions are checked from methods calls.
-
-#                    eval {
-#                        my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
-#                        $location =~ s/\:\:/\//g;
-#                        require $location;
-#                        $obj = Entity::Operation->enqueue(
-#                            priority => 200,
-#                            type     => 'Add' . ucfirst($resource),
-#                            params   => $hash
-#                        );
-#                        $obj = Entity::Operation->get(id => $obj->getId)->toJSON;
-#                    };
-#
-#                    if ($@) {
-#                        $obj = $class->new(params)->toJSON();
-#                    };
-
-                     $obj = $class->new(%params)->toJSON();
-                }
                 return to_json($obj);
             },
 
@@ -398,7 +374,7 @@ sub setupREST {
                 require (General::getLocFromClass(entityclass => $class));
 
                 my $obj = $class->get(id => params->{id});
-                $obj->can("remove") ? $obj->methodCall(method => 'remove') : $obj->delete();
+                $obj->methodCall(method => 'remove');
 
                 return to_json( { status => "success" } );
             },
@@ -425,7 +401,7 @@ sub setupREST {
             require (General::getLocFromClass(entityclass => $class));
 
             my ($id, $filters) = splat;
-            my $obj = $class->get(id => $id);
+            my $obj = $class->methodCall(method => 'get', params => { id => $id });
 
             my @filters = split("/", $filters);
             my @objs;
