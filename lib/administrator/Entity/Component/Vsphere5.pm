@@ -722,7 +722,7 @@ sub registerVm {
     };
     if (defined $existing_service_provider) {
         $errmsg  = 'vSphere component will not create new service provider for hypervisor ';
-        $errmsg .= $cluster_name. ' because one with the same name already exist in kanopya';
+        $errmsg .= $service_provider_name. ' because this name already exist in kanopya';
         $log->info($errmsg);
         return $existing_service_provider;
     }
@@ -886,7 +886,7 @@ sub registerHypervisor {
     };
     if (defined $existing_service_provider) {
         $errmsg  = 'vSphere component will not create new service provider for hypervisor ';
-        $errmsg .= $cluster_name. ' because one with the same name already exist in kanopya';
+        $errmsg .= $service_provider_name. ' because this name already exist in kanopya';
         $log->info($errmsg);
         return $existing_service_provider;
     }
