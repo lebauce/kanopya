@@ -711,110 +711,126 @@ sub registerVm {
                       begin_entity => $datacenter_view,
                   );
 
-    #Create a new service provider to register the hypervisor
-    my $service_provider;
+    #Check if a service provider called $service_provider_name already exist and
+    #Create a new one to hold the vsphere vm if none exists
+    my $existing_service_provider;
 
     eval {
-        my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
-
-        $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
-                                active                 => 1,
-                                cluster_name           => $service_provider_renamed,
-                                cluster_state          => 'up:'. time(),
-                                cluster_min_node       => 1,
-                                cluster_max_node       => 1,
-                                cluster_priority       => 500,
-                                cluster_si_shared      => 0,
-                                cluster_si_persistent  => 1,
-                                cluster_domainname     => 'my.domain',
-                                cluster_basehostname   => 'vsphere_service_'. $vm_view->summary->vm->value,
-                                cluster_nameserver1    => '127.0.0.1',
-                                cluster_nameserver2    => '127.0.0.1',
-                                cluster_boot_policy    => '',
-                                user_id                => $admin_user->user_id,
-                            );
+        $existing_service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
+                                         cluster_name => $service_provider_name,
+                                     });
     };
-    if ($@) {
-        print $@;
-        $errmsg = 'Could not create new service provider to register vsphere vm: '. $@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    #Resolve which hypervisor in the parent service provider is hosting the VM
-    #1) if the parent is a single hypervisor, get it's id directly
-    #2) if the parent is a cluster, loop into the hypervisor's list, retrieve it's view from
-    #Vsphere, and check if it is hosting the vm
-    my $hosting_hypervisor_id;
-    if (scalar (@hypervisors_nodes) == 1) {
-        $hosting_hypervisor_id = $hypervisors_nodes[0]->host->id;
+    if (defined $existing_service_provider) {
+        $errmsg  = 'vSphere component will not create new service provider for hypervisor ';
+        $errmsg .= $cluster_name. ' because one with the same name already exist in kanopya';
+        $log->info($errmsg);
+        return $existing_service_provider;
     }
     else {
-        HOSTING_HYPERVISOR:
-        foreach my $hypervisor_node (@hypervisors_nodes) {
-            my $hypervisor_view = $self->findEntityView(
-                                      view_type    => 'HostSystem',
-                                      hash_filter  => {
-                                            name => $hypervisor_node->host->host_hostname,
-                                      },
-                                      begin_entity => $datacenter_view,
-                                  );
-            my @vms = $hypervisor_view->vm;
-            foreach my $vm (@vms) {
-                my $view = $self->getView(mo_ref => $vm);
-                if ($view->name eq $vm_view->name) {
-                    $hosting_hypervisor_id = $hypervisor_node->host->id;
-                    last HOSTING_HYPERVISOR;
+        my $service_provider;
+
+        eval {
+            my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
+
+            $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
+                                    active                 => 1,
+                                    cluster_name           => $service_provider_name,
+                                    cluster_state          => 'up:'. time(),
+                                    cluster_min_node       => 1,
+                                    cluster_max_node       => 1,
+                                    cluster_priority       => 500,
+                                    cluster_si_shared      => 0,
+                                    cluster_si_persistent  => 1,
+                                    cluster_domainname     => 'my.domain',
+                                    cluster_basehostname   => 'vsphere_service_'. $vm_view->summary->vm->value,
+                                    cluster_nameserver1    => '127.0.0.1',
+                                    cluster_nameserver2    => '127.0.0.1',
+                                    cluster_boot_policy    => '',
+                                    user_id                => $admin_user->user_id,
+                                );
+        };
+        if ($@) {
+            print $@;
+            $errmsg = 'Could not create new service provider to register vsphere vm: '. $@;
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+
+        #Resolve which hypervisor in the parent service provider is hosting the VM
+        #1) if the parent is a single hypervisor, get it's id directly
+        #2) if the parent is a cluster, loop into the hypervisor's list, retrieve it's view from
+        #Vsphere, and check if it is hosting the vm
+        my $hosting_hypervisor_id;
+        if (scalar (@hypervisors_nodes) == 1) {
+            $hosting_hypervisor_id = $hypervisors_nodes[0]->host->id;
+        }
+        else {
+            HOSTING_HYPERVISOR:
+            foreach my $hypervisor_node (@hypervisors_nodes) {
+                my $hypervisor_view = $self->findEntityView(
+                                          view_type    => 'HostSystem',
+                                          hash_filter  => {
+                                                name => $hypervisor_node->host->host_hostname,
+                                          },
+                                          begin_entity => $datacenter_view,
+                                      );
+                my @vms = $hypervisor_view->vm;
+                foreach my $vm (@vms) {
+                    my $view = $self->getView(mo_ref => $vm);
+                    if ($view->name eq $vm_view->name) {
+                        $hosting_hypervisor_id = $hypervisor_node->host->id;
+                        last HOSTING_HYPERVISOR;
+                    }
                 }
             }
         }
+
+        # Use the first kernel found...
+        my $kernel = Entity::Kernel->find(hash => {});
+
+        my $host_state;
+        my $time;
+
+        #we define the state time as now
+        if ($vm_view->runtime->connectionState->val    eq 'disconnected') {
+            $time       = time();
+            $host_state = 'down: '. $time;
+        }
+        elsif ($vm_view->runtime->connectionState->val eq 'connected') {
+            $time       = time();
+            $host_state = 'up: '. $time;
+        }
+        elsif ($vm_view->runtime->connectionState->val eq 'inaccessible') {
+            $time       = time();
+            $host_state = 'broken: '. $time;
+        }
+
+        my $vm = Entity::Host::VirtualMachine->new(
+                     host_manager_id    => $self->id,
+                     kernel_id          => $kernel->id,
+                     host_serial_number => '',
+                     host_desc          => $datacenter_name. ' vm',
+                     active             => 1,
+                     host_ram           => $vm_view->summary->config->memorySizeMB,
+                     host_core          => $vm_view->summary->config->numCpu,
+                     host_hostname      => $vm_view->name,
+                     host_state         => $host_state,
+                     hypervisor_id      => $hosting_hypervisor_id,
+                 );
+
+        #promote new hypervisor class to a vsphere5Vm one
+        $self->addVM(host => $vm, guest_id => $vm_view->summary->config->guestId);
+
+        my $node = Externalnode::Node->new(
+                       inside_id             => $service_provider->id,
+                       host_id               => $vm->id,
+                       master_node           => 1,
+                       node_number           => 1,
+                       node_state            => 'in:'.$time,
+                       externalnode_hostname => $vm_view->name,
+                   );
+
+        return $service_provider;
     }
-
-    # Use the first kernel found...
-    my $kernel = Entity::Kernel->find(hash => {});
-
-    my $host_state;
-    my $time;
-
-    #we define the state time as now
-    if ($vm_view->runtime->connectionState->val    eq 'disconnected') {
-        $time       = time();
-        $host_state = 'down: '. $time;
-    }
-    elsif ($vm_view->runtime->connectionState->val eq 'connected') {
-        $time       = time();
-        $host_state = 'up: '. $time;
-    }
-    elsif ($vm_view->runtime->connectionState->val eq 'inaccessible') {
-        $time       = time();
-        $host_state = 'broken: '. $time;
-    }
-
-    my $vm = Entity::Host::VirtualMachine->new(
-                 host_manager_id    => $self->id,
-                 kernel_id          => $kernel->id,
-                 host_serial_number => '',
-                 host_desc          => $datacenter_name. ' vm',
-                 active             => 1,
-                 host_ram           => $vm_view->summary->config->memorySizeMB,
-                 host_core          => $vm_view->summary->config->numCpu,
-                 host_hostname      => $service_provider_renamed,
-                 host_state         => $host_state,
-                 hypervisor_id      => $hosting_hypervisor_id,
-             );
-
-    #promote new hypervisor class to a vsphere5Vm one
-    $self->addVM(host => $vm, guest_id => $vm_view->summary->config->guestId);
-
-    my $node = Externalnode::Node->new(
-                   inside_id             => $service_provider->id,
-                   host_id               => $vm->id,
-                   master_node           => 1,
-                   node_number           => 1,
-                   node_state            => 'in:'.$time,
-                   externalnode_hostname => $vm_view->name,
-               );
-
-    return $service_provider;
 }
 
 =head2 registerHypervisor
@@ -859,80 +875,96 @@ sub registerHypervisor {
                               begin_entity => $datacenter_view,
                           );
 
-    #Create a new service provider to register the hypervisor
-    my $service_provider;
+    #Check if a service provider called $service_provider_name already exist and
+    #Create a new one to hold the vsphere cluster hypervisors if none exists
+    my $existing_service_provider;
 
     eval {
-        my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
-        my $cluster_basehostname = 'vsphere_service_'. $hypervisor_view->summary->host->value;
-
-        $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
-                                active                 => 1,
-                                cluster_name           => $service_provider_renamed,
-                                cluster_state          => 'up:'. time(),
-                                cluster_min_node       => 1,
-                                cluster_max_node       => 1,
-                                cluster_priority       => 500,
-                                cluster_si_shared      => 0,
-                                cluster_si_persistent  => 1,
-                                cluster_domainname     => 'my.domain',
-                                cluster_basehostname   => $cluster_basehostname,
-                                cluster_nameserver1    => '127.0.0.1',
-                                cluster_nameserver2    => '127.0.0.1',
-                                cluster_boot_policy    => '',
-                                user_id                => $admin_user->user_id,
-                            );
+        $existing_service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
+                                         cluster_name => $service_provider_name,
+                                     });
     };
-    if ($@) {
-        $errmsg = 'Could not create new service provider to register vsphere hypervisor: '. $@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    if (defined $existing_service_provider) {
+        $errmsg  = 'vSphere component will not create new service provider for hypervisor ';
+        $errmsg .= $cluster_name. ' because one with the same name already exist in kanopya';
+        $log->info($errmsg);
+        return $existing_service_provider;
     }
+    else {
+        my $service_provider;
 
-    # Use the first kernel found...
-    my $kernel = Entity::Kernel->find(hash => {});
+        eval {
+            my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
+            my $cluster_basehostname = 'vsphere_service_'. $hypervisor_view->summary->host->value;
 
-    my $host_state;
-    my $time;
+            $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
+                                    active                 => 1,
+                                    cluster_name           => $service_provider_name,
+                                    cluster_state          => 'up:'. time(),
+                                    cluster_min_node       => 1,
+                                    cluster_max_node       => 1,
+                                    cluster_priority       => 500,
+                                    cluster_si_shared      => 0,
+                                    cluster_si_persistent  => 1,
+                                    cluster_domainname     => 'my.domain',
+                                    cluster_basehostname   => $cluster_basehostname,
+                                    cluster_nameserver1    => '127.0.0.1',
+                                    cluster_nameserver2    => '127.0.0.1',
+                                    cluster_boot_policy    => '',
+                                    user_id                => $admin_user->user_id,
+                                );
+        };
+        if ($@) {
+            $errmsg = 'Could not create new service provider to register vsphere hypervisor: '. $@;
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
 
-    #we define the state time as now
-    if ($hypervisor_view->runtime->connectionState->val    eq 'disconnected') {
-        $time       = time();
-        $host_state = 'down: '. $time;
+        # Use the first kernel found...
+        my $kernel = Entity::Kernel->find(hash => {});
+
+        my $host_state;
+        my $time;
+
+        #we define the state time as now
+        if ($hypervisor_view->runtime->connectionState->val    eq 'disconnected') {
+            $time       = time();
+            $host_state = 'down: '. $time;
+        }
+        elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {
+            $time       = time();
+            $host_state = 'up: '. $time;
+        }
+        elsif ($hypervisor_view->runtime->connectionState->val eq 'notResponding') {
+            $time       = time();
+            $host_state = 'broken: '. $time;
+        }
+
+        my $hv = Entity::Host::Hypervisor->new(
+                     host_manager_id    => $self->id,
+                     kernel_id          => $kernel->id,
+                     host_serial_number => '',
+                     host_desc          => $datacenter_name. ' hypervisor',
+                     active             => 1,
+                     host_ram           => $hypervisor_view->hardware->memorySize,
+                     host_core          => $hypervisor_view->summary->hardware->numCpuCores,
+                     host_hostname      => $hypervisor_view->name,
+                     host_state         => $host_state,
+                 );
+
+        #promote new hypervisor class to a vsphere5Hypervisor one
+        $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id);
+
+        my $node = Externalnode::Node->new(
+                       inside_id             => $service_provider->id,
+                       host_id               => $hv->id,
+                       master_node           => 1,
+                       node_number           => 1,
+                       node_state            => 'in:'.$time,
+                       externalnode_hostname => $hypervisor_view->name,
+                   );
+
+        return $service_provider;
     }
-    elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {
-        $time       = time();
-        $host_state = 'up: '. $time;
-    }
-    elsif ($hypervisor_view->runtime->connectionState->val eq 'notResponding') {
-        $time       = time();
-        $host_state = 'broken: '. $time;
-    }
-
-    my $hv = Entity::Host::Hypervisor->new(
-                 host_manager_id    => $self->id,
-                 kernel_id          => $kernel->id,
-                 host_serial_number => '',
-                 host_desc          => $datacenter_name. ' hypervisor',
-                 active             => 1,
-                 host_ram           => $hypervisor_view->hardware->memorySize,
-                 host_core          => $hypervisor_view->summary->hardware->numCpuCores,
-                 host_hostname      => $hypervisor_view->name,
-                 host_state         => $host_state,
-             );
-
-    #promote new hypervisor class to a vsphere5Hypervisor one
-    $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id);
-
-    my $node = Externalnode::Node->new(
-                   inside_id             => $service_provider->id,
-                   host_id               => $hv->id,
-                   master_node           => 1,
-                   node_number           => 1,
-                   node_state            => 'in:'.$time,
-                   externalnode_hostname => $hypervisor_view->name,
-               );
-
-    return $service_provider;
 }
 
 =head2 registerCluster
@@ -971,86 +1003,102 @@ sub registerCluster {
     #Get the cluster's hypervisors
     my @hypervisors = @{ $cluster_view->host };
 
-    #Create a new service provider to hold the vsphere cluster hypervisors
-    my $service_provider;
+    #Check if a service provider called $cluster_name already exist and
+    #Create a new one to hold the vsphere cluster hypervisors if none exists
+    my $existing_service_provider;
 
     eval {
-        my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
-        my $cluster_basehostname = 'vsphere_service_'. lc $cluster_view->name. '_' .time();
-
-        $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
-                                active                 => 1,
-                                cluster_name           => $cluster_renamed,
-                                cluster_state          => 'up:'. time(),
-                                cluster_min_node       => 1,
-                                cluster_max_node       => scalar(@hypervisors),
-                                cluster_priority       => 500,
-                                cluster_si_shared      => 0,
-                                cluster_si_persistent  => 1,
-                                cluster_domainname     => 'my.domain',
-                                cluster_basehostname   => $cluster_basehostname,
-                                cluster_nameserver1    => '127.0.0.1',
-                                cluster_nameserver2    => '127.0.0.1',
-                                cluster_boot_policy    => '',
-                                user_id                => $admin_user->user_id,
-                            );
+        $existing_service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
+                                         cluster_name => $cluster_name,
+                                     });
     };
-    if ($@) {
-        $errmsg = 'Could not create new service provider to register vsphere cluster: '. $@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    if (defined $existing_service_provider) {
+        $errmsg  = 'vSphere component will not create new service provider for cluster ';
+        $errmsg .= $cluster_name. ' because one with the same name already exist in kanopya';
+        $log->info($errmsg);
+        return $existing_service_provider;
     }
+    else {
+        my $service_provider;
 
-    # Use the first kernel found...
-    my $kernel = Entity::Kernel->find(hash => {});
+        eval {
+            my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
+            my $cluster_basehostname = 'vsphere_service_'. lc $cluster_view->name. '_' .time();
 
-    foreach my $hv_number (0..$#hypervisors) {
-        my $hypervisor = $hypervisors[$hv_number];
-
-        #Get hypervisor's view from it's MOR
-        my $hypervisor_view = $self->getView(mo_ref => $hypervisor);
-        my $host_state;
-        my $time;
-
-        #we define the state time as now
-        if ($hypervisor_view->runtime->connectionState->val    eq 'disconnected') {
-            $time = time();            
-            $host_state = 'down: '.$time;
+            $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
+                                    active                 => 1,
+                                    cluster_name           => $cluster_name,
+                                    cluster_state          => 'up:'. time(),
+                                    cluster_min_node       => 1,
+                                    cluster_max_node       => scalar(@hypervisors),
+                                    cluster_priority       => 500,
+                                    cluster_si_shared      => 0,
+                                    cluster_si_persistent  => 1,
+                                    cluster_domainname     => 'my.domain',
+                                    cluster_basehostname   => $cluster_basehostname,
+                                    cluster_nameserver1    => '127.0.0.1',
+                                    cluster_nameserver2    => '127.0.0.1',
+                                    cluster_boot_policy    => '',
+                                    user_id                => $admin_user->user_id,
+                                );
+        };
+        if ($@) {
+            $errmsg = 'Could not create new service provider to register vsphere cluster: '. $@;
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
-        elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {
-            $time = time();            
-            $host_state = 'up: '.$time;
+
+        # Use the first kernel found...
+        my $kernel = Entity::Kernel->find(hash => {});
+
+        foreach my $hv_number (0..$#hypervisors) {
+            my $hypervisor = $hypervisors[$hv_number];
+
+            #Get hypervisor's view from it's MOR
+            my $hypervisor_view = $self->getView(mo_ref => $hypervisor);
+            my $host_state;
+            my $time;
+
+            #we define the state time as now
+            if ($hypervisor_view->runtime->connectionState->val    eq 'disconnected') {
+                $time = time();            
+                $host_state = 'down: '.$time;
+            }
+            elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {
+                $time = time();            
+                $host_state = 'up: '.$time;
+            }
+            elsif ($hypervisor_view->runtime->connectionState->val eq 'notResponding') {
+                $time = time();            
+                $host_state = 'broken: '.$time;
+            }
+
+            my $hv = Entity::Host::Hypervisor->new(
+                         host_manager_id    => $self->id,
+                         kernel_id          => $kernel->id,
+                         host_serial_number => '',
+                         host_desc          => $cluster_name.' hypervisor',
+                         active             => 1,
+                         host_ram           => $hypervisor_view->hardware->memorySize,
+                         host_core          => $hypervisor_view->summary->hardware->numCpuCores,
+                         host_hostname      => $hypervisor_view->name,
+                         host_state         => $host_state,
+                    );
+
+            #promote new hypervisor class to a vsphere5Hypervisor one
+            $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id);
+
+            my $node = Externalnode::Node->new(
+                           inside_id             => $service_provider->id,
+                           host_id               => $hv->id,
+                           master_node           => 0,
+                           node_number           => $hv_number + 1,
+                           node_state            => 'in:'.$time,
+                           externalnode_hostname => $hypervisor_view->name,
+                       );
         }
-        elsif ($hypervisor_view->runtime->connectionState->val eq 'notResponding') {
-            $time = time();            
-            $host_state = 'broken: '.$time;
-        }
-
-        my $hv = Entity::Host::Hypervisor->new(
-                     host_manager_id    => $self->id,
-                     kernel_id          => $kernel->id,
-                     host_serial_number => '',
-                     host_desc          => $cluster_name.' hypervisor',
-                     active             => 1,
-                     host_ram           => $hypervisor_view->hardware->memorySize,
-                     host_core          => $hypervisor_view->summary->hardware->numCpuCores,
-                     host_hostname      => $hypervisor_view->name,
-                     host_state         => $host_state,
-                 );
-
-        #promote new hypervisor class to a vsphere5Hypervisor one
-        $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id);
-
-        my $node = Externalnode::Node->new(
-                       inside_id             => $service_provider->id,
-                       host_id               => $hv->id,
-                       master_node           => 0,
-                       node_number           => $hv_number + 1,
-                       node_state            => 'in:'.$time,
-                       externalnode_hostname => $hypervisor_view->name,
-                   );
-    }
 
     return $service_provider;
+    }        
 }
 
 ###########################
@@ -1072,20 +1120,15 @@ sub setConf {
 
     my $conf = $args{conf};
 
-    if (defined $conf->{login}) {
-        $self->setAttr(name => 'vsphere5_login', value => $conf->{login});
-        $self->save();
-    }
-    if (defined $conf->{password}) {
-        $self->setAttr(name => 'vsphere5_pwd', value => $conf->{password});
-        $self->save();
-    }
     if (defined $conf->{repositories}) {
         while (my ($repo,$container) = each (%{$conf->{repositories}})) {
             $self->addRepository(repository_name     => $repo,
                                  container_access_id => $container->{container_access_id});
         }
+        delete $conf->{repositories};
     }
+
+    $self->SUPER::setConf(conf => $conf);
 }
 
 
