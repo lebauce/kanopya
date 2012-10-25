@@ -140,16 +140,14 @@ eval {
     };
     if ($@) {
     	lives_ok {
-          Entity::Operation->enqueue(
-           	priority => 200,
-            	type     => 'DeployMasterimage',
-            	params   => { file_path => "/vagrant/squeeze-amd64-xenvm.tar.bz2",
-               	              keep_file => 1 },
+          Entity::Masterimage->new(
+                masterimage_name => 'squeeze',
+                masterimage_file => '/vagrant/squeeze-amd64-xenvm.tar.bz2',
+                masterimage_desc => '',
+                masterimage_os   => 'tortue',
+                masterimage_size => '666',
         	);
     	} 'Deploy Virtual machine master image';
-    
-       lives_ok { $executor->oneRun; } 'DeployMasterimage operation execution succeed';
-       lives_ok { $executor->oneRun; } 'DeployMasterimage operation execution succeed';
 
         $vm_masterimage = Entity::Masterimage->find( hash => {
                               masterimage_name => { like => "%squeeze%" }
@@ -274,7 +272,7 @@ eval {
     #$DB::single = 1;
     my ($cluster, $cluster_id);
     lives_ok {
-        $cluster = Entity::ServiceProvider::Inside::Cluster->getCluster(
+        $cluster = Entity::ServiceProvider::Inside::Cluster->find(
                        hash => { cluster_name => 'VSphere'}
                    );
     } 'retrieve Cluster via name';
@@ -332,16 +330,16 @@ eval {
 
     lives_ok {
         $vsphere->setConf(conf => {
-            login    => 'Administrator@hedera.forest',
-            password => 'H3d3r4#234',
-
-            repositories => {
+            vsphere5_login => 'Administrator@hedera.forest',
+            vsphere5_pwd   => 'H3d3r4#234',
+            vsphere5_url   => '192.168.1.160',
+            repositories   => {
                 'image_repo' => {
                     container_access_id   => $nfs->id,
                 }
             }
         });
-    } 'configuring VSphere image repository';
+    } 'configuring Vsphere component';
 
     my $datacenter;
     lives_ok {
