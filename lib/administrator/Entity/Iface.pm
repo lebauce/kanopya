@@ -198,17 +198,17 @@ return a mac address auto generated and not used by any host
 
 sub generateMacAddress {
     my ($class) = @_;
-	my $macaddress;
-	my @ifaces = ();
-	my $regexp = '00:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}';  
-	do {
-		$macaddress = random_regex($regexp);
-		@ifaces = $class->search(
-			{ iface_mac_addr => $macaddress },
-			{ rows => 1 }
-		);
-	} while( scalar(@ifaces) );
-	return $macaddress;
+    my $macaddress;
+    my @ifaces = ();
+    my $regexp = '00:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}';  
+
+    do {
+         $macaddress = random_regex($regexp);
+         @ifaces = $class->search(hash => { iface_mac_addr => $macaddress },
+                                  rows => 1);
+    } while( scalar(@ifaces) );
+
+    return $macaddress;
 }
 
 1;
