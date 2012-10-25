@@ -354,12 +354,13 @@ sub _contructRetrieverOutput {
 
             my $condition = NodemetricCondition->get('id' => $condition_id);
 
-            # Get the related combination id (in order to parse its formula)
-            my $combination_id = $condition->getAttr(name => 'nodemetric_condition_combination_id');
 
-            my $combination = Combination::NodemetricCombination->get('id' => $combination_id);
+            # Get the related combination id (in order to parse its formula)
+
             # get the indicator ids used in combination formula
-            my @indicator_ids = $combination->getDependantIndicatorIds();
+            # my @indicator_ids = $combination->getDependantIndicatorIds();
+
+            my @indicator_ids = $condition->getDependantIndicatorIds();
 
             for my $indicator_id (@indicator_ids) {
                 my $indicator = Indicator->get(id => $indicator_id);

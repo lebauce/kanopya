@@ -388,4 +388,13 @@ sub delete {
     }
     return $self->SUPER::delete();
 }
+
+sub getDependantIndicatorIds {
+    return ();
+}
+
+sub computeValueFromMonitoredValues {
+    my $self = shift;
+    return $self->computeLastValue()
+}
 1;

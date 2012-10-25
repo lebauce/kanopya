@@ -183,4 +183,12 @@ sub delete {
     }
     return $self->SUPER::delete();
 }
+
+sub getDependantIndicatorIds {
+    my $self = shift;
+    my $combination = $self->left_combination;
+    return $combination->getDependantIndicatorIds();
+}
+
+
 1;
