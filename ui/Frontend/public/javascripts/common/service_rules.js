@@ -252,30 +252,45 @@ function createNodemetricCondition(container_id, elem_id) {
     $('#' + container_id).append(button);
 };
 
-function importRuleButton(container_id, sp_id, grid_ids) {
-    function loadRuleTree() {
-        // Build rules tree
-        var rules_tree = [];
+/*
+ * Allow clone and import of objects in a service provider (sp_id)
+ * Display all object of specified type (sorted by service provider)
+ * Allow user to select objects and import them
+ *
+ * @param container_id id of the dom elment to add the import button
+ * @param sp_id        id of the service provider where to import selected objects
+ * @param obj_info     hash of type info of objects to import :
+ *      type        : object type (api)
+ *      name        : object user friendly name
+ *      relation    : relationship name from service provider to object type
+ *      label_attr  : name of the object label attr
+ *      desc_attr   : name of the object description attr
+ * @param grid_ids     list of id of grid to refresh after import
+ */
+function importItemButton(container_id, sp_id, obj_info, grid_ids) {
+    function loadItemTree() {
+        // Build items tree
+        var items_tree = [];
         $.get('/api/serviceprovider').success( function(serviceproviders) {
             var count   = serviceproviders.length;
             var treated = 0;
-            var rules = [];
+            var items = [];
             $.each(serviceproviders, function(i,sp) {
-                $.get('/api/serviceprovider/' + sp.pk + '/nodemetric_rules').success( function(rules) {
-                    $.each(rules, function(i,rule) {
-                        rules.push({
-                            data : rule.nodemetric_rule_label,
+                $.get('/api/serviceprovider/' + sp.pk + '/' + obj_info.relation).success( function(items) {
+                    $.each(items, function(i,item) {
+                        items.push({
+                            data : item[obj_info.label_attr],
                             attr : {
-                                rule_id : rule.pk,
-                                rule_desc : rule.nodemetric_rule_description
+                                item_id : item.pk,
+                                item_desc : item[obj_info.desc_attr]
                             }
                         });
                     });
-                    // Add only service with rules
-                    if (rules.length > 0) {
-                        rules_tree.push( {
+                    // Add only service with items
+                    if (items.length > 0) {
+                        items_tree.push( {
                             data        : sp.label,
-                            children    : rules
+                            children    : items
                         } );
                     }
                     treated++;
@@ -285,10 +300,10 @@ function importRuleButton(container_id, sp_id, grid_ids) {
             function displayTree() {
                 if (count == treated) {
                     var browser = $('<div>');
-                    var msg     = $('<span>', {html : 'Select rules to import from existing services'});
+                    var msg     = $('<span>', {html : 'Select ' + obj_info.name + 's to import from existing services'});
                     browser.append(msg).append($('<hr>'));
                     var tree_cont   = $('<div>', {style : 'height:300px;overflow:auto'}).appendTo(browser);
-                    var rule_detail = $('<div>').appendTo(browser);
+                    var item_detail = $('<div>').appendTo(browser);
                     require('jquery/jquery.jstree.js');
                     tree_cont.jstree({
                         "plugins"   : ["themes","json_data", "ui", "checkbox"],
@@ -297,27 +312,27 @@ function importRuleButton(container_id, sp_id, grid_ids) {
                             icons : false
                         },
                         "json_data" : {
-                            "data"                  : rules_tree,
+                            "data"                  : items_tree,
                             "progressive_render"    : true
                         }
                     }).bind("hover_node.jstree", function (event, data) {
                         var node = data.rslt.obj;
-                        if (node.attr('rule_id')) {
-                            rule_detail.html('Description: ' + node.attr("rule_desc"));
+                        if (node.attr('item_id')) {
+                            item_detail.html('Description: ' + node.attr("item_desc"));
                         }
                     }).bind("dehover_node.jstree", function (event, data) {
-                        rule_detail.html('');
+                        item_detail.html('');
                     });
 
                     function importChecked() {
-                        var checked_rules = tree_cont.jstree('get_checked',null,true)
+                        var checked_items = tree_cont.jstree('get_checked',null,true)
                         var treated_count = 0;
-                        checked_rules.each( function() {
-                            var rule_id = $(this).attr('rule_id');
-                            if (rule_id) {
+                        checked_items.each( function() {
+                            var item_id = $(this).attr('item_id');
+                            if (item_id) {
                                 $.ajax({
                                     type    : 'POST',
-                                    url     : '/api/nodemetricrule/' + rule_id + '/clone',
+                                    url     : '/api/' + obj_info.type + '/' + item_id + '/clone',
                                     data    : {dest_service_provider_id : sp_id},
                                     success : function () { treated_count++ },
                                     error   : function (error) {alert(error.responseText)}
@@ -327,7 +342,7 @@ function importRuleButton(container_id, sp_id, grid_ids) {
                             }
                         });
                         function endImport() {
-                            if (treated_count == checked_rules.length) {
+                            if (treated_count == checked_items.length) {
                                 $.each(grid_ids, function(i,grid_id) {
                                     $('#'+grid_id).trigger('reloadGrid');
                                 });
@@ -341,7 +356,7 @@ function importRuleButton(container_id, sp_id, grid_ids) {
 
                     // Show dialog
                     browser.dialog({
-                        title   : 'Import rules',
+                        title   : 'Import ' + obj_info.name + 's',
                         modal   : true,
                         width   : '400px',
                         buttons : {
@@ -363,10 +378,10 @@ function importRuleButton(container_id, sp_id, grid_ids) {
     }
 
     // Create and bind import button
-    $("<button>", {html : 'Import rules'})
+    $("<button>", {html : 'Import ' + obj_info.name + 's'})
     .button({ icons : { primary : 'ui-icon-plusthick' } })
     .appendTo('#' + container_id)
-    .click( loadRuleTree );
+    .click( loadItemTree );
 }
 
 function createNodemetricRule(container_id, elem_id) {
@@ -609,9 +624,16 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     } );
     
     createNodemetricRule('node_accordion_container', elem_id);
-    importRuleButton(
+    importItemButton(
             'node_accordion_container',
             elem_id,
+            {
+                name        : 'node rule',
+                relation    : 'nodemetric_rules',
+                label_attr  : 'nodemetric_rule_label',
+                desc_attr   : 'nodemetric_rule_description',
+                type        : 'nodemetricrule'
+            },
             [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]
     );
 
@@ -711,9 +733,16 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         },
     } );
     createServiceRule('service_accordion_container', elem_id);
-    importRuleButton(
+    importItemButton(
             'service_accordion_container',
             elem_id,
+            {
+                name        : 'service rule',
+                relation    : 'aggregate_rules',
+                label_attr  : 'aggregate_rule_label',
+                desc_attr   : 'aggregate_rule_description',
+                type        : 'aggregaterule'
+            },
             [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]
     );
 
