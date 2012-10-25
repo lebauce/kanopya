@@ -41,9 +41,9 @@ sub timeOuted {
 sub checkUp {
     my $self = shift;
 
-    my $vm_state = $self->{host_manager}->getVMState(host => $self);
+    my $vm_state = $self->getHostManager->getVMState(host => $self);
 
-    $log->info('Vm <'.$self->{host}->getId().'> opennebula status <'.($vm_state->{state}).'>');
+    $log->info('VM <' . $self->id . '> opennebula status <' . ($vm_state->{state}) . '>');
 
     if ($vm_state->{state} eq 'runn') {
         $log->info('VM running try to contact it');
@@ -53,8 +53,8 @@ sub checkUp {
         return 0;
     }
     elsif ($vm_state->{state} eq 'fail' ) {
-        my $lastmessage = $self->{host_manager}->vmLoggedErrorMessage(opennebula3_vm => $self->{host});
-        throw Kanopya::Exception(error => 'Vm fail on boot: '.$lastmessage);
+        my $lastmessage = $self->getHostManager->vmLoggedErrorMessage(opennebula3_vm => $self);
+        throw Kanopya::Exception(error => 'Vm fail on boot: ' . $lastmessage);
     }
     elsif ($vm_state->{state} eq 'pend' ) { 
         $log->info('VM still pending'); #TODO check HV state
