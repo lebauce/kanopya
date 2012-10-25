@@ -26,6 +26,13 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
+    class_type_id => {
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

@@ -144,7 +144,10 @@ my @classes = (
     'Entity::Workflow',
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
     'Entity::Host::VirtualMachine::Vsphere5Vm',
-    'Entity::Component::Vsphere5'
+    'Entity::Component::Vsphere5',
+    'Combination',
+    'Combination::NodemetricCombination',
+    'Combination::AggregateCombination'
 );
 
 sub registerClassTypes {

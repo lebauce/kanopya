@@ -1238,7 +1238,9 @@ CREATE TABLE `clustermetric` (
 --
 
 CREATE TABLE `combination` (
-  `combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY
+  `combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `class_type_id` int(8) unsigned NOT NULL,
+   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1325,12 +1327,12 @@ CREATE TABLE `nodemetric_condition` (
   `nodemetric_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `nodemetric_condition_label` char(255),
   `nodemetric_condition_service_provider_id`  int(8) unsigned NOT NULL,
-  `nodemetric_condition_combination_id` int(8) unsigned NOT NULL,
+  `left_combination_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_comparator` char(32) NOT NULL,
   `nodemetric_condition_threshold` double NOT NULL,
   PRIMARY KEY (`nodemetric_condition_id`),
-  KEY (`nodemetric_condition_combination_id`),
-  FOREIGN KEY (`nodemetric_condition_combination_id`) REFERENCES `nodemetric_combination` (`nodemetric_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`left_combination_id`),
+  FOREIGN KEY (`left_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`nodemetric_condition_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

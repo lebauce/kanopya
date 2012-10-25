@@ -30,6 +30,13 @@ __PACKAGE__->table("combination");
   is_auto_increment: 1
   is_nullable: 0
 
+=head2 class_type_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -38,6 +45,13 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_auto_increment => 1,
+    is_nullable => 0,
+  },
+  "class_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
     is_nullable => 0,
   },
 );
@@ -71,6 +85,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 class_type
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ClassType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "class_type",
+  "AdministratorDB::Schema::Result::ClassType",
+  { class_type_id => "class_type_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 =head2 nodemetric_combination
 
 Type: might_have
@@ -86,9 +115,24 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nodemetric_conditions
 
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 13:06:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XOc6cPTjLdox3LP2COQsew
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NodemetricCondition>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nodemetric_conditions",
+  "AdministratorDB::Schema::Result::NodemetricCondition",
+  { "foreign.left_combination_id" => "self.combination_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 16:26:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tNVjYwpkENEhYBpUU/xtXw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
