@@ -1810,6 +1810,98 @@ sub methodCall {
     return $self->$method(%{$args{params}});
 }
 
+=pod
+
+=begin classdoc
+
+Method used during cloning and import process of object linked to another object (belongs_to relationship)
+Clone this object and link the clone to the specified related object
+Only clone if object doesn't alredy exist in destination object (based on label_attr_name arg)
+Subclass can redefine _cloneAttrs() to handle specific attrs cloning
+
+@param dest_object_id id of the related object where to import cloned object
+@param relationship name of the belongs_to relationship linking to owner object
+@param label_attr_name name of the attr used to know if object already exists in related objects of dest
+@optional attrs_clone_handler function called to handle specific attrs cloning, must return the new attrs hash
+
+@return the cloned object
+
+=end classdoc
+
+=cut
+
+sub _importToRelated {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_obj_id', 'relationship', 'label_attr_name']);
+
+    my $dest_obj_id  = $args{dest_obj_id};
+    my %attrs       = $self->getAttrs();
+
+    my $class = caller();
+
+    # Don't clone If already exists (based on label_attr_name)
+    my $obj = eval {
+        return $class->find( hash => {
+            $args{relationship} . '_id' => $dest_obj_id,
+            $args{label_attr_name}      => $attrs{$args{label_attr_name}}
+        });
+    };
+    return $obj if $obj;
+
+    # Set the service provider id to the dest service provider id
+    $attrs{$args{relationship} . '_id'} = $dest_obj_id;
+
+    # Specific attrs cloning handler callback
+    if ($args{attrs_clone_handler}) {
+        %attrs = $args{attrs_clone_handler}(attrs => \%attrs);
+    }
+    # Remove the src service provider id
+    delete $attrs{$self->getPrimaryKey()};
+
+    # Create the object
+    my $clone_elem = $class->new( %attrs );
+
+    return $clone_elem;
+}
+
+=pod
+
+=begin classdoc
+
+Utility method used to clone a formula
+Clone all objects used in formula and translate formula to use cloned object ids
+
+@param dest_sp_id id of the service provider where to import all cloned objects
+@param formula string representing a formula (i.e operators and object ids in the format "idXXX")
+@param formula_object_class class of object used in formula
+
+@return the cloned object
+
+=end classdoc
+
+=cut
+
+sub _cloneFormula {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_sp_id', 'formula', 'formula_object_class']);
+
+    my $formula = $args{formula};
+    # Get ids in formula
+    my %ids = map { $_ => undef } ($formula =~ m/id(\d+)/g);
+    # Clone objects used in formula
+    %ids = map {
+        $_ =>   $args{formula_object_class}
+                ->get( id => $_)
+                ->clone( dest_service_provider_id => $args{dest_sp_id} )
+                ->id
+    } keys %ids;
+    # Replace ids in formula with cloned objects ids
+    $formula =~ s/id(\d+)/id$ids{$1}/g;
+
+    return $formula;
+}
 
 =pod
 
