@@ -252,6 +252,123 @@ function createNodemetricCondition(container_id, elem_id) {
     $('#' + container_id).append(button);
 };
 
+function importRuleButton(container_id, sp_id, grid_ids) {
+    function loadRuleTree() {
+        // Build rules tree
+        var rules_tree = [];
+        $.get('/api/serviceprovider').success( function(serviceproviders) {
+            var count   = serviceproviders.length;
+            var treated = 0;
+            var rules = [];
+            $.each(serviceproviders, function(i,sp) {
+                $.get('/api/serviceprovider/' + sp.pk + '/nodemetric_rules').success( function(rules) {
+                    $.each(rules, function(i,rule) {
+                        rules.push({
+                            data : rule.nodemetric_rule_label,
+                            attr : {
+                                rule_id : rule.pk,
+                                rule_desc : rule.nodemetric_rule_description
+                            }
+                        });
+                    });
+                    // Add only service with rules
+                    if (rules.length > 0) {
+                        rules_tree.push( {
+                            data        : sp.label,
+                            children    : rules
+                        } );
+                    }
+                    treated++;
+                });
+            });
+
+            function displayTree() {
+                if (count == treated) {
+                    var browser = $('<div>');
+                    var msg     = $('<span>', {html : 'Select rules to import from existing services'});
+                    browser.append(msg).append($('<hr>'));
+                    var tree_cont   = $('<div>', {style : 'height:300px;overflow:auto'}).appendTo(browser);
+                    var rule_detail = $('<div>').appendTo(browser);
+                    require('jquery/jquery.jstree.js');
+                    tree_cont.jstree({
+                        "plugins"   : ["themes","json_data", "ui", "checkbox"],
+                        "themes"    : {
+                            url : "css/jstree_themes/default/style.css",
+                            icons : false
+                        },
+                        "json_data" : {
+                            "data"                  : rules_tree,
+                            "progressive_render"    : true
+                        }
+                    }).bind("hover_node.jstree", function (event, data) {
+                        var node = data.rslt.obj;
+                        if (node.attr('rule_id')) {
+                            rule_detail.html('Description: ' + node.attr("rule_desc"));
+                        }
+                    }).bind("dehover_node.jstree", function (event, data) {
+                        rule_detail.html('');
+                    });
+
+                    function importChecked() {
+                        var checked_rules = tree_cont.jstree('get_checked',null,true)
+                        var treated_count = 0;
+                        checked_rules.each( function() {
+                            var rule_id = $(this).attr('rule_id');
+                            if (rule_id) {
+                                $.ajax({
+                                    type    : 'POST',
+                                    url     : '/api/nodemetricrule/' + rule_id + '/clone',
+                                    data    : {dest_service_provider_id : sp_id},
+                                    success : function () { treated_count++ },
+                                    error   : function (error) {alert(error.responseText)}
+                                });
+                            } else {
+                                treated_count++;
+                            }
+                        });
+                        function endImport() {
+                            if (treated_count == checked_rules.length) {
+                                $.each(grid_ids, function(i,grid_id) {
+                                    $('#'+grid_id).trigger('reloadGrid');
+                                });
+                                browser.dialog("close");
+                            } else {
+                                setTimeout(endImport, 10);
+                            }
+                        }
+                        endImport();
+                    }
+
+                    // Show dialog
+                    browser.dialog({
+                        title   : 'Import rules',
+                        modal   : true,
+                        width   : '400px',
+                        buttons : {
+                            'Import' : importChecked,
+                            'Cancel' : function () {
+                                $(this).dialog("close");
+                            }
+                        },
+                        close: function (event, ui) {
+                            $(this).remove();
+                        }
+                    });
+                } else {
+                    setTimeout(displayTree, 10);
+                }
+            }
+            displayTree()
+        });
+    }
+
+    // Create and bind import button
+    $("<button>", {html : 'Import rules'})
+    .button({ icons : { primary : 'ui-icon-plusthick' } })
+    .appendTo('#' + container_id)
+    .click( loadRuleTree );
+}
+
 function createNodemetricRule(container_id, elem_id) {
     var service_fields  = {
         nodemetric_rule_label    : {
@@ -492,6 +609,12 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     } );
     
     createNodemetricRule('node_accordion_container', elem_id);
+    importRuleButton(
+            'node_accordion_container',
+            elem_id,
+            [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]
+    );
+
     // Here's the second part of the accordion :
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
     $('<div id="service_accordion_container">').appendTo(divacc);
@@ -588,6 +711,11 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         },
     } );
     createServiceRule('service_accordion_container', elem_id);
+    importRuleButton(
+            'service_accordion_container',
+            elem_id,
+            [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]
+    );
 
     $('#accordionrule').accordion({
         autoHeight  : false,
