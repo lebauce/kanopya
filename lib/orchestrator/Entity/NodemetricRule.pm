@@ -101,6 +101,10 @@ sub methods {
     'isVerifiedForANode'    => {
       'description' => 'isverifiedForANode',
       'perm_holder' => 'entity'
+    },
+    'clone'    => {
+      'description' => 'clone this object and link to a service provider',
+      'perm_holder' => 'entity'
     }
   }
 }
@@ -355,6 +359,42 @@ sub setAllRulesUndefForANode{
                 verified_noderule_state              => 'undef',
         });
     }
+}
+
+=pod
+
+=begin classdoc
+
+Method used to clone the rule and link the clone to the specified service provider
+
+@param dest_service_provider_id id of the service provider where to clone the rule
+
+=end classdoc
+
+=cut
+
+sub clone {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_service_provider_id']);
+
+    my $attrs_cloner = sub {
+        my %args = @_;
+        my $attrs = $args{attrs};
+        $attrs->{nodemetric_rule_formula}  = $self->_cloneFormula(
+            dest_sp_id              => $attrs->{nodemetric_rule_service_provider_id},
+            formula                 => $attrs->{nodemetric_rule_formula},
+            formula_object_class    => 'NodemetricCondition'
+        );
+        return %$attrs;
+    };
+
+    $self->_importToRelated(
+        dest_obj_id         => $args{'dest_service_provider_id'},
+        relationship        => 'nodemetric_rule_service_provider',
+        label_attr_name     => 'nodemetric_rule_label',
+        attrs_clone_handler => $attrs_cloner
+    );
 }
 
 1;
