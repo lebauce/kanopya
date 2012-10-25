@@ -27,7 +27,7 @@ __PACKAGE__->table("nodemetric_combination");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 nodemetric_combination_label
@@ -47,7 +47,7 @@ __PACKAGE__->table("nodemetric_combination");
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 255
 
 =cut
 
@@ -56,7 +56,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "nodemetric_combination_label",
@@ -69,7 +69,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "nodemetric_combination_formula",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 255 },
 );
 
 =head1 PRIMARY KEY
@@ -85,6 +85,21 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("nodemetric_combination_id");
 
 =head1 RELATIONS
+
+=head2 nodemetric_combination
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Combination>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "nodemetric_combination",
+  "AdministratorDB::Schema::Result::Combination",
+  { combination_id => "nodemetric_combination_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 =head2 nodemetric_combination_service_provider
 
@@ -121,9 +136,15 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 17:15:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:q7OBszCqQh4EXRS57Trviw
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 13:06:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oveDaxKBT6qh+bzlPTiTkA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+ __PACKAGE__->belongs_to(
+   "parent",
+     "AdministratorDB::Schema::Result::Combination",
+         { "foreign.combination_id" => "self.nodemetric_combination_id" },
+             { cascade_copy => 0, cascade_delete => 1 }
+ );
 1;
