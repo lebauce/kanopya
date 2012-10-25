@@ -1344,6 +1344,7 @@ CREATE TABLE `nodemetric_condition` (
   `nodemetric_condition_label` char(255),
   `nodemetric_condition_service_provider_id`  int(8) unsigned NOT NULL,
   `left_combination_id` int(8) unsigned NOT NULL,
+  `right_combination_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_comparator` char(32) NOT NULL,
   `nodemetric_condition_threshold` double NOT NULL,
   PRIMARY KEY (`nodemetric_condition_id`),

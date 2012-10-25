@@ -50,6 +50,12 @@ __PACKAGE__->table("nodemetric_condition");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 right_combination_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =head2 nodemetric_condition_comparator
 
   data_type: 'char'
@@ -87,6 +93,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "right_combination_id",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "nodemetric_condition_comparator",
   { data_type => "char", is_nullable => 0, size => 32 },
   "nodemetric_condition_threshold",

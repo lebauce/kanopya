@@ -18,7 +18,7 @@ use warnings;
 use base 'BaseDB';
 use Combination;
 require 'NodemetricRule.pm';
-
+use Combination::ConstantCombination;
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
@@ -41,7 +41,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    nodemetric_condition_threshold =>  {pattern       => '^.*$',
+    right_combination_id     =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -65,6 +65,17 @@ sub methods {
 sub new {
     my $class = shift;
     my %args = @_;
+
+    if ( defined $args{nodemetric_condition_threshold}  ) {
+        my $comb =  Combination::ConstantCombination->new (
+            service_provider_id => $args{nodemetric_condition_service_provider_id},
+            value => $args{nodemetric_condition_threshold}
+        );
+        delete $args{nodemetric_condition_threshold};
+        $args{right_combination_id} = $comb->id;
+    }
+
+
     my $self = $class->SUPER::new(%args);
 
     if(!defined $args{nodemetric_condition_label} || $args{nodemetric_condition_label} eq ''){
