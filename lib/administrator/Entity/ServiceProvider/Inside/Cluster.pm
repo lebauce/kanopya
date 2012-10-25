@@ -30,9 +30,9 @@ use Entity::Systemimage;
 use Externalnode::Node;
 use Entity::Operation;
 use Entity::Workflow;
-use NodemetricCombination;
+use Combination::NodemetricCombination;
 use Clustermetric;
-use AggregateCombination;
+use Combination::AggregateCombination;
 use Entity::Policy;
 use Administrator;
 use General;
@@ -609,7 +609,7 @@ sub configureBillingLimits {
                 clustermetric_window_time              => '1200',
             );
 
-            AggregateCombination->new(
+            Combination::AggregateCombination->new(
                 aggregate_combination_label               => "Billing" . $name,
                 aggregate_combination_service_provider_id => $self->getId,
                 aggregate_combination_formula             => 'id' . $cm->getId
@@ -1376,7 +1376,7 @@ sub generateDefaultMonitoringConfiguration {
                 aggregate_combination_service_provider_id   => $service_provider_id,
                 aggregate_combination_formula               => 'id' . $cm->getId
             };
-            my $clustermetric_combination = AggregateCombination->new(%$acf_params);
+            my $clustermetric_combination = Combination::AggregateCombination->new(%$acf_params);
         }
     }
 }

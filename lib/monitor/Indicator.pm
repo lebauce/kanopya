@@ -108,7 +108,7 @@ sub getDependencies {
     my %dependencies;
 
     my @related_collector_indicators = $self->collector_indicators;
-    my @all_the_nodemetric_combinations = NodemetricCombination->search(hash => {});
+    my @all_the_nodemetric_combinations = Combination::NodemetricCombination->search(hash => {});
 
     # Service
     for my $collector_indicator (@related_collector_indicators) {

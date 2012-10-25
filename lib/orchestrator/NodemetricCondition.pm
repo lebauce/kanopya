@@ -16,7 +16,7 @@ package NodemetricCondition;
 use strict;
 use warnings;
 use base 'BaseDB';
-use NodemetricCombination;
+use Combination;
 require 'NodemetricRule.pm';
 
 use Data::Dumper;
@@ -25,10 +25,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    nodemetric_condition_id               =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
     nodemetric_condition_label     =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
@@ -115,7 +111,7 @@ sub toString {
         my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
         my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
 
-        return NodemetricCombination->get('id'=>$combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
+        return Combination::NodemetricCombination->get('id'=>$combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
     }
 };
 
@@ -129,7 +125,7 @@ sub evalOnOneNode{
     my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
     my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
 
-    my $combination    = NodemetricCombination->get('id' => $combination_id);
+    my $combination    = Combination::NodemetricCombination->get('id' => $combination_id);
     my $value          = $combination->computeValueFromMonitoredValues(
                                            monitored_values_for_one_node => $monitored_values_for_one_node
                                        );

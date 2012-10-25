@@ -16,7 +16,7 @@ package AggregateCondition;
 use strict;
 use warnings;
 use TimeData::RRDTimeData;
-use AggregateCombination;
+use Combination::AggregateCombination;
 require 'AggregateRule.pm';
 use base 'BaseDB';
 use Data::Dumper;
@@ -127,7 +127,7 @@ sub toString {
         my $comparator                 = $self->getAttr(name => 'comparator');
         my $threshold                  = $self->getAttr(name => 'threshold');
 
-        return AggregateCombination->get('id'=>$aggregate_combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
+        return Combination::AggregateCombination->get('id'=>$aggregate_combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
     }
 }
 
@@ -138,7 +138,7 @@ sub eval{
     my $comparator      = $self->getAttr(name => 'comparator');
     my $threshold       = $self->getAttr(name => 'threshold');
 
-    my $agg_combination = AggregateCombination->get('id' => $aggregate_combination_id);
+    my $agg_combination = Combination::AggregateCombination->get('id' => $aggregate_combination_id);
     my $value = $agg_combination->computeLastValue();
     if(defined $value){
         my $evalString = $value.$comparator.$threshold;
@@ -165,7 +165,7 @@ sub eval{
 
 sub getCombination{
     my ($self) = @_;
-    return AggregateCombination->get('id' => $self->getAttr(name => 'aggregate_combination_id'));
+    return Combination::AggregateCombination->get('id' => $self->getAttr(name => 'aggregate_combination_id'));
 }
 
 sub getDependencies {

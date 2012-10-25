@@ -19,9 +19,9 @@ lives_ok {
     use Entity::Connector::MockMonitor;
     use Clustermetric;
     use AggregateCondition;
-    use AggregateCombination;
+    use Combination::AggregateCombination;
     use AggregateRule;
-    use NodemetricCombination;
+    use Combination::NodemetricCombination;
     use NodemetricCondition;
     use NodemetricRule;
     use VerifiedNoderule;
@@ -100,7 +100,7 @@ if($@) {
 sub test_nodemetric_rules {
 
     # Create nodemetric rule objects
-    my $ncomb = NodemetricCombination->new(
+    my $ncomb = Combination::NodemetricCombination->new(
         nodemetric_combination_service_provider_id => $service_provider->id,
         nodemetric_combination_formula => 'id'.($indic1->id),
     );
@@ -191,7 +191,7 @@ sub test_aggregate_rules {
     );
 
     # Combination
-    my $comb = AggregateCombination->new(
+    my $comb = Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => 'id'.($cm->id),
     );

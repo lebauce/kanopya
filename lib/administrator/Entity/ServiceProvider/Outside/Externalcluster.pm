@@ -24,10 +24,10 @@ use Kanopya::Exceptions;
 use Administrator;
 use General;
 
-use NodemetricCombination;
+use Combination::NodemetricCombination;
 use NodemetricCondition;
 use NodemetricRule;
-use AggregateCombination;
+use Combination::AggregateCombination;
 use AggregateCondition;
 use AggregateRule;
 use Clustermetric;
@@ -384,7 +384,7 @@ sub generateClustermetricAndCombination{
         aggregate_combination_service_provider_id   => $extcluster_id,
         aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
     };
-    my $aggregate_combination = AggregateCombination->new(%$acf_params);
+    my $aggregate_combination = Combination::AggregateCombination->new(%$acf_params);
     my $rep = {
         cm_id => $cm->getAttr(name => 'clustermetric_id'),
         comb_id => $aggregate_combination->getAttr(name => 'aggregate_combination_id'),
@@ -479,7 +479,7 @@ sub monitoringDefaultInit {
             aggregate_combination_service_provider_id   => $service_provider_id,
             aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
         };
-        AggregateCombination->new(%$acf_params);
+        Combination::AggregateCombination->new(%$acf_params);
     }
 }
 
@@ -520,7 +520,7 @@ sub ruleGeneration{
         aggregate_combination_formula             => 'id'.($std_ids->{cm_id}).'/ id'.($mean_ids->{cm_id}),
     };
 
-    my $coef_comb = AggregateCombination->new(%$combination_params);
+    my $coef_comb = Combination::AggregateCombination->new(%$combination_params);
 
    my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
@@ -701,7 +701,7 @@ sub generateCoefficientOfVariationRules {
         aggregate_combination_formula             => 'id'.($id_std).'/ id'.($id_mean),
     };
 
-    my $aggregate_combination = AggregateCombination->new(%$combination_params);
+    my $aggregate_combination = Combination::AggregateCombination->new(%$combination_params);
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
@@ -734,7 +734,7 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
         aggregate_combination_formula             => 'id'.($id_std),
     };
 
-    my $aggregate_combination = AggregateCombination->new(%$combination_params);
+    my $aggregate_combination = Combination::AggregateCombination->new(%$combination_params);
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
@@ -770,7 +770,7 @@ sub generateNodeMetricRules{
         nodemetric_combination_service_provider_id => $extcluster_id,
     };
 
-    my $comb = NodemetricCombination->new(%$combination_param);
+    my $comb = Combination::NodemetricCombination->new(%$combination_param);
 
     my $creation_conf = {
         'Memory/PercentMemoryUsed' => {

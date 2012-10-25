@@ -21,7 +21,7 @@ use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
 use Indicator;
 use CollectorIndicator;
-require 'AggregateCombination.pm';
+require 'Combination/AggregateCombination.pm';
 
 use base 'BaseDB';
 
@@ -242,7 +242,7 @@ sub getUnit {
 sub getDependencies {
     my $self = shift;
 
-    my @aggregate_combinations_from_same_service = AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
+    my @aggregate_combinations_from_same_service = Combination::AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
     my $id = $self->getId;
 
     my %dependencies;
@@ -264,7 +264,7 @@ sub getDependencies {
 sub delete {
     my $self = shift;
 
-    my @aggregate_combinations_from_same_service = AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
+    my @aggregate_combinations_from_same_service = Combination::AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
     my $id = $self->getId;
 
     LOOP:

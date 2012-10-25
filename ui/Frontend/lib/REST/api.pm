@@ -28,7 +28,7 @@ my %resources = (
     "alert"                    => "Alert",
     "aggregator"               => "Aggregator",
     "atftpd0"                  => "Entity::Component::Atftpd0",
-    "aggregatecombination"     => "AggregateCombination",
+    "aggregatecombination"     => "Combination::AggregateCombination",
     "aggregatecondition"       => "AggregateCondition",
     "aggregaterule"            => "AggregateRule",
     "apache2"                  => "Entity::Component::Apache2",
@@ -91,7 +91,7 @@ my %resources = (
     "nfscontaineraccessclient" => "Entity::NfsContainerAccessClient",
     "nfscontaineraccess"       => "Entity::ContainerAccess::NfsContainerAccess",
     "nfsd3"                    => "Entity::Component::Nfsd3",
-    "nodemetriccombination"    => "NodemetricCombination",
+    "nodemetriccombination"    => "Combination::NodemetricCombination",
     "nodemetriccondition"      => "NodemetricCondition",
     "nodemetricrule"           => "NodemetricRule",
     "node"                     => "Externalnode::Node",
@@ -461,7 +461,7 @@ sub setupREST {
                                        Entity->get(
                                            id => $dbix->get_column(($dbix->result_source->primary_columns)[0])
                                        ) :
-                                       $dbix; 
+                                       $dbix;
 
                             my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
                             return to_json(db_to_json($obj, \@expand));
@@ -477,7 +477,7 @@ sub setupREST {
                     $parent = $parent->parent;
                 }
             }
- 
+
             return to_json($obj->toJSON);
         };
 

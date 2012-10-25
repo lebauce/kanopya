@@ -60,7 +60,7 @@ use Parse::BooleanLogic;
 use AggregateRule;
 use NodemetricRule;
 use NodemetricCondition;
-use NodemetricCombination;
+use Combination::NodemetricCombination;
 use WorkflowDef;
 use WorkflowNoderule;
 use Entity::Workflow;
@@ -357,7 +357,7 @@ sub _contructRetrieverOutput {
             # Get the related combination id (in order to parse its formula)
             my $combination_id = $condition->getAttr(name => 'nodemetric_condition_combination_id');
 
-            my $combination = NodemetricCombination->get('id' => $combination_id);
+            my $combination = Combination::NodemetricCombination->get('id' => $combination_id);
             # get the indicator ids used in combination formula
             my @indicator_ids = $combination->getDependantIndicatorIds();
 

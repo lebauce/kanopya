@@ -11,48 +11,35 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package NodemetricCombination;
+package Combination::NodemetricCombination;
 
 use strict;
 use warnings;
-use base 'BaseDB';
 require 'Indicator.pm';
 use CollectorIndicator;
+use base 'Combination';
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    nodemetric_combination_id => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 0
-    },
-    nodemetric_combination_label => {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
-    },
-    nodemetric_combination_service_provider_id => {
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 1
-    },
-    nodemetric_combination_formula => {
-        pattern         => '^((id\d+)|[ .+*()-/]|\d)+$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 1,
-        description     => "Construct a formula by indicator's names with all mathematical operators."
-                            . "It's possible to use parenthesis with spaces between each element of the formula."
-    },
     formula_label => {
         is_virtual      => 1,
     }
+    nodemetric_combination_label     =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
+    nodemetric_combination_service_provider_id =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
+    nodemetric_combination_formula =>  {pattern       => '^((id\d+)|[ .+*()-/]|\d)+$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 1,
+                                 description    => "Construct a formula by indicator's names with all mathematical operators. It's possible to use parenthesis with spaces between each element of the formula."},
 };
 
 sub getAttrDef { return ATTR_DEF; }

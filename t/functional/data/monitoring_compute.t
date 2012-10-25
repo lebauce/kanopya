@@ -26,8 +26,8 @@ lives_ok {
     use Entity::ServiceProvider::Outside::Externalcluster;
     use Entity::Connector::MockMonitor;
     use Clustermetric;
-    use AggregateCombination;
-    use NodemetricCombination;
+    use Combination::AggregateCombination;
+    use Combination::NodemetricCombination;
 } 'All uses';
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -199,17 +199,17 @@ sub testAggregateCombination {
     );
 
     # Combination
-    my $acomb_ident = AggregateCombination->new(
+    my $acomb_ident = Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => 'id'.($cm1->id),
     );
 
-    my $acomb_warn = AggregateCombination->new(
+    my $acomb_warn = Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => '10 / id'.($cm1->id),
     );
 
-    my $acomb1 = AggregateCombination->new(
+    my $acomb1 = Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
     );
@@ -260,12 +260,12 @@ sub testAggregateCombination {
     $aggregator->update();
     is($acomb1->computeLastValue(), 10+10*3, 'Combination correctly computed (with one node not responding)');
 
-    my $acomb2 = AggregateCombination->new(
+    my $acomb2 = Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => '(3.5+id'.($cm1->id).')*(id'.($cm1->id).'/10.1-12.876)',
     );
 
-    my $acomb3 = AggregateCombination->new(
+    my $acomb3 = Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => '100000000000000000000000000 * id'.($cm1->id),
     );
@@ -293,12 +293,12 @@ sub testNodemetricCombination {
     diag('Nodemetric combination computing');
 
     # Combinations
-    my $ncomb_ident = NodemetricCombination->new(
+    my $ncomb_ident = Combination::NodemetricCombination->new(
         nodemetric_combination_service_provider_id => $service_provider->id,
         nodemetric_combination_formula             => 'id'.($indic1->id),
     );
 
-    my $ncomb2 = NodemetricCombination->new(
+    my $ncomb2 = Combination::NodemetricCombination->new(
         nodemetric_combination_service_provider_id => $service_provider->id,
         nodemetric_combination_formula             => '(id'.($indic1->id).' + 5) * id'.($indic2->id),
     );
@@ -454,7 +454,7 @@ sub testStatisticFunctions {
     my @acs = ();
     for my $cm (@cms) {
         push @acs,
-            AggregateCombination->new(
+            Combination::AggregateCombination->new(
                 aggregate_combination_service_provider_id   =>  $service_provider->id,
                 aggregate_combination_formula               => 'id'.($cm->id),
             );
