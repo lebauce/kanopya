@@ -598,14 +598,23 @@ sub register {
 
         my $register_method = $register_methods{$register_item->{type}};
 
-        my $registered_item = $self->$register_method(
-                                  name   => $register_item->{name}, 
-                                  parent => $args{parent},
-                              );
-
+        my $registered_item;
+        eval {
+            $registered_item = $self->$register_method(
+                                   name   => $register_item->{name},
+                                   parent => $args{parent},
+                               );
+        };
+        if ($@) {
+            $errmsg = 'Could not register '. $register_item->{name} .' in Kanopya: '. $@;
+            $log->info($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+        
         push @registered_items, $registered_item;
 
-        if (scalar(@{ $register_item->{children} }) != 0) {
+        if (defined ($register_item->{children}) &&
+            scalar(@{ $register_item->{children} }) != 0) {
 
             $self->register(register_items => $register_item->{children}, 
                             parent         => $registered_item);
@@ -1009,7 +1018,7 @@ sub registerCluster {
 
     eval {
         $existing_service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
-                                         cluster_name => $cluster_name,
+                                         cluster_name => $cluster_renamed,
                                      });
     };
     if (defined $existing_service_provider) {
@@ -1023,11 +1032,11 @@ sub registerCluster {
 
         eval {
             my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
-            my $cluster_basehostname = 'vsphere_service_'. lc $cluster_view->name. '_' .time();
+            my $cluster_basehostname = 'vsphere_service_'. lc $cluster_renamed. '_' .time();
 
             $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
                                     active                 => 1,
-                                    cluster_name           => $cluster_name,
+                                    cluster_name           => $cluster_renamed,
                                     cluster_state          => 'up:'. time(),
                                     cluster_min_node       => 1,
                                     cluster_max_node       => scalar(@hypervisors),

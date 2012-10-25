@@ -73,7 +73,16 @@ function vmwareBrowser (event) {
 
     //TODO Get ID directly from Kanopya (VirtualMachineManager)
     //Get the vSphere Component ID
-    var vsphere_component_id = 100;
+    var vsphere_component_id;
+    $.ajax( {
+        url : '/api/vsphere5',
+        success : function (data) {
+                      vsphere_component_id = data[0].pk;
+                  },
+        contentType : 'application/json',
+        async : false
+    } );
+
     var url_base = '/api/vsphere5/' + vsphere_component_id;
 
     //TODO Use Type and Name values of node.parentElement
