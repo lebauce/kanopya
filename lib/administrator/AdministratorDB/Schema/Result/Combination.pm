@@ -115,6 +115,15 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+
+__PACKAGE__->might_have(
+  "constant_combination",
+  "AdministratorDB::Schema::Result::ConstantCombination",
+  { "foreign.constant_combination_id" => "self.combination_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
 =head2 nodemetric_conditions
 
 Type: has_many
@@ -131,8 +140,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 16:26:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tNVjYwpkENEhYBpUU/xtXw
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 17:49:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Oxismn+HoeMgIRTSbdzwYw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

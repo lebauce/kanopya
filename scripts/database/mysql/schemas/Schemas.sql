@@ -1243,6 +1243,22 @@ CREATE TABLE `combination` (
    FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
+
+
+--
+-- Table structure for table `constant_combination`
+--
+CREATE TABLE `constant_combination` (
+  `constant_combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
+  `service_provider_id` int(8) unsigned NOT NULL,
+  `value` char(255) NOT NULL,
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`constant_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+
+
 --
 -- Table structure for table `aggregate_combination`
 --

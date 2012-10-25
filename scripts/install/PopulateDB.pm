@@ -147,6 +147,7 @@ my @classes = (
     'Entity::Component::Vsphere5',
     'Combination',
     'Combination::NodemetricCombination',
+    'Combination::ConstantCombination',
     'Combination::AggregateCombination'
 );
 
