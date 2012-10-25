@@ -9,7 +9,7 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/VSphere.t.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'/vagrant/StartVsphereHost.t.log', layout=>'%F %L %p %m%n'});
 
 use_ok ('Administrator');
 use_ok ('Executor');
