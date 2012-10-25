@@ -1317,7 +1317,7 @@ sub generateOverLoadNodemetricRules {
         my $comb  = NodemetricCombination->new(%$combination_param);
 
         my $condition_param = {
-            nodemetric_condition_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
+            left_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
             nodemetric_condition_comparator          => $value->{comparator},
             nodemetric_condition_threshold           => $value->{threshold},
             nodemetric_condition_service_provider_id => $service_provider_id,

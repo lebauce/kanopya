@@ -801,7 +801,7 @@ sub generateNodeMetricRules{
 
     if (defined $creation_conf->{$indicator_oid}){
         my $condition_param = {
-            nodemetric_condition_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
+            left_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
             nodemetric_condition_comparator     => $creation_conf->{$indicator_oid}->{comparator},
             nodemetric_condition_threshold      => $creation_conf->{$indicator_oid}->{threshold},
             nodemetric_condition_service_provider_id => $extcluster_id,

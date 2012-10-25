@@ -33,7 +33,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    nodemetric_condition_combination_id     =>  {pattern       => '^.*$',
+    left_combination_id     =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -107,11 +107,11 @@ sub toString {
         return $self->getAttr(name => 'nodemetric_condition_label');
     }
     else{
-        my $combination_id = $self->getAttr(name => 'nodemetric_condition_combination_id');
+        my $combination_id = $self->getAttr(name => 'left_combination_id');
         my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
         my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
 
-        return Combination::NodemetricCombination->get('id'=>$combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
+        return Combination->get('id'=>$combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
     }
 };
 
@@ -121,11 +121,11 @@ sub evalOnOneNode{
 
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
 
-    my $combination_id = $self->getAttr(name => 'nodemetric_condition_combination_id');
+    my $combination_id = $self->getAttr(name => 'left_combination_id');
     my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
     my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
 
-    my $combination    = Combination::NodemetricCombination->get('id' => $combination_id);
+    my $combination    = Combination->get('id' => $combination_id);
     my $value          = $combination->computeValueFromMonitoredValues(
                                            monitored_values_for_one_node => $monitored_values_for_one_node
                                        );
