@@ -134,11 +134,6 @@ sub execute {
     $log->debug("Generate ntpdate Conf");
     $self->_generateNtpdateConf(mount_point => $mountpoint);
 
-    $log->info("Operate Boot Configuration");
-    $self->_generateBootConf(mount_point => $mountpoint,
-                             filesystem => $self->{context}->{container}->container_filesystem,
-                             options    => $mount_options);
-
     my $puppet_definitions = "";
     
     $log->info("Operate components configuration");
@@ -155,6 +150,11 @@ sub execute {
             cluster => $self->{context}->{cluster},
         );
     }
+
+    $log->info("Operate Boot Configuration");
+    $self->_generateBootConf(mount_point => $mountpoint,
+                             filesystem => $self->{context}->{container}->container_filesystem,
+                             options    => $mount_options);
 
     # check if this cluster must be managed by puppet and kanopya puppetmaster
     my $puppetagent = eval {
