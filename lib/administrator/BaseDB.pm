@@ -73,7 +73,7 @@ sub methods {
             description => 'update an object',
             perm_holder => 'mastergroup',
         },
-        update => {
+        get => {
             description => 'get an object',
             perm_holder => 'mastergroup',
         },
