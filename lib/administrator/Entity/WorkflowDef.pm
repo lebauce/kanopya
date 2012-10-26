@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package WorkflowDef;
-use base 'BaseDB';
+package Entity::WorkflowDef;
+use base 'Entity';
 
 use strict;
 use warnings;
@@ -44,22 +44,14 @@ use constant ATTR_DEF => {
 
 sub methods {
   return {
-    'setParamPreset'    => {
-      'description' => 'setParamPreset',
-      'perm_holder' => 'entity'
+    updateParamPreset => {
+        description => 'updateParamPreset',
+        perm_holder => 'entity'
     },
-    'updateParamPreset'    => {
-      'description' => 'updateParamPreset',
-      'perm_holder' => 'entity'
+    getParamPreset => {
+        description => 'getParamPreset',
+        perm_holder => 'entity'
     },
-    'getParamPreset'    => {
-      'description' => 'getParamPreset',
-      'perm_holder' => 'entity'
-    },
-    'addStep'           => {
-      'description' => 'addStep',
-      'perm_holder' => 'entity'
-    }
   }
 }
 

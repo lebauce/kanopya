@@ -32,7 +32,7 @@ use Data::Dumper;
 
 use Entity::AggregateRule;
 use Entity::NodemetricRule;
-use WorkflowDef;
+use Entity::WorkflowDef;
 use WorkflowDefManager;
 use ParamPreset;
 use Scope;
@@ -108,13 +108,13 @@ sub createWorkflow {
             $workflow_def_params{specific}  = $params->{specific};
         }
 
-        $workflow = WorkflowDef->new(
+        $workflow = Entity::WorkflowDef->new(
                         workflow_def_name   => $workflow_def_name,
                         workflow_def_origin => $args{workflow_def_origin},
                         params              => \%workflow_def_params,
                     );
     } else {
-        $workflow = WorkflowDef->new(
+        $workflow = Entity::WorkflowDef->new(
                         workflow_def_name   => $workflow_def_name,
                         workflow_def_origin => $args{workflow_def_origin}
                     );
@@ -145,7 +145,7 @@ sub deassociateWorkflow {
 
     General::checkParams(args => \%args, required => [ 'rule_id', 'workflow_def_id' ]);
 
-    my $workflow_def    = WorkflowDef->find(hash => {workflow_def_id => $args{workflow_def_id}});
+    my $workflow_def    = Entity::WorkflowDef->find(hash => {workflow_def_id => $args{workflow_def_id}});
     my $workflow_params = $workflow_def->getParamPreset();
 
     # Unlink workflow to rule
@@ -380,7 +380,7 @@ sub getWorkflowDef {
 
     General::checkParams(args => \%args, required => [ 'workflow_def_id' ]);
 
-    my $workflow_def = WorkflowDef->find (
+    my $workflow_def = Entity::WorkflowDef->find (
                             hash => {workflow_def_id => $args{workflow_def_id}}
                        );
 

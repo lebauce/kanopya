@@ -47,9 +47,13 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'getPolicyParams' => {
-            'description' => 'Return the params required for policies definition.',
-            'perm_holder' => 'entity',
+        getPolicyParams => {
+            description => 'Return the params required for policies definition.',
+            perm_holder => 'entity',
+        },
+        getManagerParamsDef => {
+            description => 'getParamsDef',
+            perm_holder => 'entity'
         }
     }
 };
@@ -78,6 +82,14 @@ sub new {
     my $connector_type_id = $connector_type->id;
     
     return $class->SUPER::new(%args, connector_type_id => $connector_type_id );
+}
+
+=head2 getManagerParamsDef
+
+=cut
+
+sub getManagerParamsDef {
+    return {};
 }
 
 =head2 getGenericMasterGroupName

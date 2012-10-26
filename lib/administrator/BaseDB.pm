@@ -1862,6 +1862,9 @@ sub methodCall {
     General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
 
     # Basically, we allows 'get' only on classes not managed by permissions
+    #
+    # TODO: For non entity objects, delegate the permissions check on a related entity.
+    #       E.g. Permissions on Node should be delegate to ServiceProvider or Host.
     my $method = $args{method};
     if ($args{method} eq 'get' or $self->isa('Entity')) {
         return $self->$method(%{$args{params}});

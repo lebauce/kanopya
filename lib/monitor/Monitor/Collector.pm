@@ -370,7 +370,7 @@ sub update {
         #############################
         my %hosts_values = ();
         my %threads = ();
-        my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
+        my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
         foreach my $cluster (@clusters) {
             $log->info("# Update nodes data of cluster " . $cluster->getAttr( name => "cluster_name"));
 

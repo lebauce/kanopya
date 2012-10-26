@@ -142,7 +142,7 @@ sub retrieveHostsByCluster {
     my %hosts_by_cluster;
 
     my $adm = $self->{_admin};
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
     foreach my $cluster (@clusters) {
         my @components = $cluster->getComponents(category => 'all');
         my @components_name = map { $_->component_type->component_name } @components;
@@ -165,7 +165,7 @@ sub retrieveHostsByCluster {
 sub getClustersName {
     my $self = shift;
 
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
     my @clustersName = map { $_->getAttr( name => "cluster_name" ) } @clusters;
     
     return @clustersName;    

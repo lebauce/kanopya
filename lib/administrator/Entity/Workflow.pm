@@ -21,7 +21,7 @@ use base 'Entity';
 use strict;
 use warnings;
 
-use WorkflowDef;
+use Entity::WorkflowDef;
 use ParamPreset;
 use Kanopya::Exceptions;
 use Entity::Operation;
@@ -71,7 +71,7 @@ sub run {
 
     General::checkParams(args => \%args, required => [ 'name' ], optional => { 'rule' => undef });
 
-    my $def = WorkflowDef->find(hash => { workflow_def_name => $args{name} });
+    my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => $args{name} });
     my $workflow = Entity::Workflow->new(workflow_name => $args{name}, related_id => $args{related_id});
     delete $args{name};
     delete $args{related_id};

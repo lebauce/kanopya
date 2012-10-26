@@ -30,7 +30,6 @@ use Scope;
 use Externalnode;
 use Operationtype;
 use Entity::Workflow;
-use WorkflowDef;
 use WorkflowDefManager;
 use Entity::ServiceProvider::Outside::Externalcluster;
 

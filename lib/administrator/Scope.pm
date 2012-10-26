@@ -11,26 +11,33 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package Scope;
+use base 'BaseDB';
 
 use strict;
 use warnings;
-use base 'BaseDB';
+
 
 use constant ATTR_DEF => {
-    scope_name              =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
+    scope_name => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
 sub getIdFromName{
-    my ($class,%args) = @_;
+    my ($class, %args) = @_;
+
     General::checkParams(args => \%args, required => [ 'scope_name' ]);
+
     my $scope_name = $args{scope_name};
-    my $scope    = Scope->find(hash => {scope_name => $scope_name});
+    my $scope      = Scope->find(hash => {scope_name => $scope_name});
+
     return $scope->getAttr(name => 'scope_id');
 }
 1;

@@ -1063,7 +1063,7 @@ sub update {
     my $self = shift;
     my %args = @_;
 
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => { cluster_state => {-like => 'up:%'} });
     
     
     for my $cluster (@clusters) {        

@@ -21,9 +21,6 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
-# circular reference here
-use Entity::ServiceProvider;
-
 use VerifiedNoderule;
 
 use Data::Dumper;
@@ -56,23 +53,6 @@ use constant ATTR_DEF => {
 
 
 sub getAttrDef { return ATTR_DEF; }
-
-sub methods {
-    return {
-        'getMonitoringData'   => {
-            'description'   => 'getMonitoringData',
-            'perm_holder'   => 'entity'
-        },
-        'enable'   => {
-            'description'   => 'Enable node',
-            'perm_holder'   => 'entity'
-        },
-        'disable'   => {
-            'description'   => 'Disable node',
-            'perm_holder'   => 'entity'
-        },
-    };
-}
 
 =head2 new
 

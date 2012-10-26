@@ -118,7 +118,7 @@ sub getConf {
         $opennebula = $cluster->getComponent(name => "Opennebula", version => "3");
     };
     if ($@) {
-        # Tyr to find the first clutsre with opennebula3 installed
+        # Try to find the first cluster with opennebula3 installed
         my @services = Entity::ServiceProvider->search(hash => {});
         for my $serviceprovider (@services) {
             eval {

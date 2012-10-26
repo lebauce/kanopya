@@ -32,16 +32,14 @@ blablabla
 package Entity::ServiceProvider;
 use base "Entity";
 
-use Kanopya::Exceptions;
 use General;
+use Administrator;
+use Kanopya::Exceptions;
 use Entity::Component;
 use Entity::Connector;
 use Entity::Interface;
-use Administrator;
+
 use ServiceProviderManager;
-use Entity::Component::Fileimagemanager0;
-use Entity::Connector::NetappVolumeManager;
-use Entity::Connector::NetappLunManager;
 
 use List::Util qw[min max];
 use Log::Log4perl "get_logger";
@@ -74,23 +72,98 @@ sub methods {
             description => 'getServiceProviders',
             perm_holder => 'mastergroup',
         },
-        'addManager'    => {
-            'description'   => 'addManager',
-            'perm_holder'   => 'entity'
+        addManager => {
+            description => 'addManager',
+            perm_holder => 'entity'
         },
-        'getManagerParameters'  => {
-            'description'   => 'getManagerParameters',
-            'perm_holder'   => 'entity'
+        addManagerParameters => {
+            description => 'add paramaters to a manager',
+            perm_holder => 'entity',
         },
-        'getManagers'   => {
-            'description'   => 'get all managers associated with a service provider',
-            'perm_holder'   => 'entity'
-        }
+        getManagerParameters => {
+            description => 'getManagerParameters',
+            perm_holder => 'entity',
+        },
+        getManagers => {
+            description => 'get all managers associated with a service provider',
+            perm_holder => 'entity',
+        },
+        getNodeMonitoringData => {
+            description => 'getMonitoringData',
+            perm_holder => 'entity'
+        },
+        enableNode => {
+            description => 'Enable node',
+            perm_holder => 'entity'
+        },
+        disableNode => {
+            description => 'Disable node',
+            perm_holder => 'entity'
+        },
     };
 }
 
-sub getNodesMetrics {
+
+=pod
+
+=begin classdoc
+
+Get the monitoring data for a node.
+
+@return node monitoring data
+
+=end classdoc
+
+=cut
+
+sub getNodeMonitoringData {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node_id', 'indicator_ids' ]);
+
+    my $node_id = delete $args{node_id};
+    return ExternalNode->get(id => $node_id)->getMonitoringData(%args);
 }
+
+
+=pod
+
+=begin classdoc
+
+Enable a node.
+
+=end classdoc
+
+=cut
+
+sub enableNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node_id' ]);
+
+    return ExternalNode->get(id => $args{node_id})->enable();
+}
+
+
+=pod
+
+=begin classdoc
+
+Disable a node.
+
+=end classdoc
+
+=cut
+
+sub disableNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node_id' ]);
+
+    return ExternalNode->get(id => $args{node_id})->disable();
+}
+
+sub getNodesMetrics {}
 
 sub getState {
     throw Kanopya::Exception::NotImplemented();
@@ -217,24 +290,6 @@ sub findManager {
         }
     }
 
-    # Workaround to get the Fileimagemanager0 in the disk manager list of an external equipment.
-    # We really need to fix this.
-#    if (defined $args{service_provider_id} and $args{service_provider_id} != 1) {
-#        if ($args{category} eq 'Storage') {
-#            eval {
-#                $fileimagemanager = Entity::Component::Fileimagemanager0->find(hash => { service_provider_id => 1 });
-#                push @managers, {
-#                     "category"            => 'Storage',
-#                     "name"                => 'Fileimagemanager',
-#                     "id"                  => $fileimagemanager->getAttr(name => "component_id"),
-#                     "pk"                  => $fileimagemanager->getAttr(name => "component_id"),
-#                     "service_provider_id" => $fileimagemanager->getAttr(name => "service_provider_id"),
-#                     "host_type"           => $fileimagemanager->can("getHostType") ? $fileimagemanager->getHostType() : "",
-#                };
-#            };
-#        }
-#    }
-
     return wantarray ? @managers : \@managers;
 }
 
@@ -277,7 +332,7 @@ sub addManager {
     General::checkParams(args => \%args, required => [ 'manager_id', "manager_type" ]);
 
     my $manager = ServiceProviderManager->new(
-                      service_provider_id => $self->entity_id,
+                      service_provider_id => $self->id,
                       manager_type        => $args{manager_type},
                       manager_id          => $args{manager_id}
                   );
@@ -307,6 +362,36 @@ sub addManagerParameter {
 
     $cluster_manager->addParams(params => { $args{name} => $args{value} });
 }
+
+
+=pod
+
+=begin classdoc
+
+Set parameters of a manager defined by its type.
+
+@param manager_type the of the manager on which we set the params
+@param params the parameters hash to set 
+
+=end classdoc
+
+=cut
+
+sub addManagerParameters {
+    my $self = shift;
+
+    General::checkParams(args     => \%args,
+                         required => [ "manager_type", "params" ],
+                         optional => { "override" => 0 });
+
+    my $manager = ServiceProviderManager->find(hash => {
+                      manager_type        => $args{manager_type},
+                      service_provider_id => $self->id
+                  });
+
+    $manager->addParams(params => $args{params}, override => $args{override});
+}
+
 
 =head2 getManagerParameters
 

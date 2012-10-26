@@ -16,7 +16,6 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package NotificationSubscription;
-
 use base 'BaseDB';
 
 use strict;

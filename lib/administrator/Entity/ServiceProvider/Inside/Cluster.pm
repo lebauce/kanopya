@@ -236,56 +236,6 @@ sub methods {
     };
 }
 
-=head2 getClusters
-
-=cut
-
-sub getClusters {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    return $class->search(%args);
-}
-
-sub getCluster {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    my @clusters = $class->search(%args);
-    return pop @clusters;
-}
-
-sub checkConfigurationPattern {
-    my $self = shift;
-    my $class = ref($self) || $self;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'attrs' ]);
-
-    # Firstly, check the cluster attrs
-    $class->checkAttrs(attrs => $args{attrs});
-
-    # Then check the configuration if required
-    if (defined $args{composite}) {
-
-        # For now, only check the manaher paramters only
-        for my $manager_def (values %{ $args{composite}->{managers} }) {
-            if (defined $manager_def->{manager_id}) {
-                my $manager = Entity->get(id => $manager_def->{manager_id});
-
-                $manager->checkManagerParams(manager_type   => $manager_def->{manager_type},
-                                             manager_params => $manager_def->{manager_params});
-            }
-        }
-
-        # TODO: Check cross managers dependencies. For example, the list of
-        #       disk managers depend on the host manager.
-    }
-}
 
 =head2 create
 
@@ -399,6 +349,34 @@ sub create {
     );
 }
 
+sub checkConfigurationPattern {
+    my $self = shift;
+    my $class = ref($self) || $self;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'attrs' ]);
+
+    # Firstly, check the cluster attrs
+    $class->checkAttrs(attrs => $args{attrs});
+
+    # Then check the configuration if required
+    if (defined $args{composite}) {
+
+        # For now, only check the manaher paramters only
+        for my $manager_def (values %{ $args{composite}->{managers} }) {
+            if (defined $manager_def->{manager_id}) {
+                my $manager = Entity->get(id => $manager_def->{manager_id});
+
+                $manager->checkManagerParams(manager_type   => $manager_def->{manager_type},
+                                             manager_params => $manager_def->{manager_params});
+            }
+        }
+
+        # TODO: Check cross managers dependencies. For example, the list of
+        #       disk managers depend on the host manager.
+    }
+}
+
 sub applyPolicies {
     my $self = shift;
     my %args = @_;
@@ -482,15 +460,14 @@ sub configureManagers {
         for my $manager (values %{$args{managers}}) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.
-            my $cluster_manager;
             eval {
-                $cluster_manager = ServiceProviderManager->find(hash => { manager_type        => $manager->{manager_type},
-                                                                          service_provider_id => $self->getId });
+                ServiceProviderManager->find(hash => { manager_type        => $manager->{manager_type},
+                                                       service_provider_id => $self->getId });
             };
             if ($@) {
                 next if not $manager->{manager_id};
-                $cluster_manager = $self->addManager(manager_id     => $manager->{manager_id},
-                                                     manager_type   => $manager->{manager_type});
+                $self->addManager(manager_id   => $manager->{manager_id},
+                                  manager_type => $manager->{manager_type});
 
                 if ($manager->{manager_type} eq 'collector_manager') {
                     $self->initCollectorManager(collector_manager => Entity->get(id => $manager->{manager_id}));
@@ -498,7 +475,9 @@ sub configureManagers {
             }
 
             if ($manager->{manager_params}) {
-                $cluster_manager->addParams(params => $manager->{manager_params}, override => 1);
+                $self->addManagerParameters(manager_type => $manager->{manager_type},
+                                            params       => $manager->{manager_params},
+                                            override     => 1);
             }
         }
     }
@@ -700,77 +679,6 @@ sub configureOrchestration {
     }
 }
 
-=head2 _cloneOrchestrationCompositeData
-
-    desc :
-        clone all <elems> from service provider <from> and add it to $self
-        do the same with <composites>
-        A composite has a formula build with elems id,
-        this formula is translated during cloning according to cloned elems ids
-
-=cut
-
-sub _cloneOrchestrationCompositeData {
-    my $self    = shift;
-    my %args    = @_;
-
-    my $elem_name   = $args{elem_name};
-    my $elem_class  = BaseDB::normalizeName($elem_name);
-    my $comp_name   = $args{composite_name};
-    my $comp_class  = BaseDB::normalizeName($comp_name);
-
-    my %id_mapper;
-    my $relationship;
-
-    $relationship = $elem_name . 's';
-    my @elems = $args{from}->$relationship;
-    for my $elem (@elems) {
-        my %attrs = $elem->getAttrs();
-        my $elem_id = delete $attrs{ $elem_name . '_id'};
-        $attrs{ $elem_name . '_service_provider_id' } = $self->getId();
-        my $clone_elem = $elem_class->new( %attrs );
-        $id_mapper{ $elem_id } = $clone_elem->getId();
-    }
-
-    $relationship = $comp_name . 's';
-    my @composites = $args{from}->$relationship;
-    for my $comp (@composites) {
-        my %attrs = $comp->getAttrs();
-        delete $attrs{ $comp_name . '_id'};
-        $attrs{ $comp_name . '_service_provider_id' } = $self->getId();
-        $attrs{ $comp_name . '_formula' } = $self->_translateFormula(
-            formula => $attrs{ $comp_name . '_formula' },
-            id_map  => \%id_mapper,
-        );
-        $comp_class->new( %attrs );
-    }
-}
-
-=head2 _translateFormula
-
-    desc : replaces id of a formula (used for metrics and rules) using an id translation map
-
-=cut
-
-sub _translateFormula {
-    my $self    = shift;
-    my %args    = @_;
-
-    my $formula = $args{formula};
-    my $id_map  = $args{id_map};
-
-    # Split id from formula
-    my @array = split(/(id\d+)/, $formula);
-    # replace each id by its translation id
-    for my $element (@array) {
-        if( $element =~ m/id(\d+)/)
-        {
-            $element = 'id' . $id_map->{$1};
-        }
-    }
-    return join('',@array);
-}
-
 =head2 remove
 
 =cut
@@ -806,8 +714,6 @@ sub forceStop {
     );
 }
 
-sub extension { return "clusterdetails"; }
-
 sub activate {
     my $self = shift;
 
@@ -837,11 +743,6 @@ sub deactivate {
         },
     );
 }
-
-
-
-
-
 
 =head2 toString
 
@@ -1217,6 +1118,78 @@ sub getNodeState {
     my $node_state = $node->getAttr(name => 'node_state');
 
     return $node_state;
+}
+
+
+=head2 _cloneOrchestrationCompositeData
+
+    desc :
+        clone all <elems> from service provider <from> and add it to $self
+        do the same with <composites>
+        A composite has a formula build with elems id,
+        this formula is translated during cloning according to cloned elems ids
+
+=cut
+
+sub _cloneOrchestrationCompositeData {
+    my $self    = shift;
+    my %args    = @_;
+
+    my $elem_name   = $args{elem_name};
+    my $elem_class  = BaseDB::normalizeName($elem_name);
+    my $comp_name   = $args{composite_name};
+    my $comp_class  = BaseDB::normalizeName($comp_name);
+
+    my %id_mapper;
+    my $relationship;
+
+    $relationship = $elem_name . 's';
+    my @elems = $args{from}->$relationship;
+    for my $elem (@elems) {
+        my %attrs = $elem->getAttrs();
+        my $elem_id = delete $attrs{ $elem_name . '_id'};
+        $attrs{ $elem_name . '_service_provider_id' } = $self->getId();
+        my $clone_elem = $elem_class->new( %attrs );
+        $id_mapper{ $elem_id } = $clone_elem->getId();
+    }
+
+    $relationship = $comp_name . 's';
+    my @composites = $args{from}->$relationship;
+    for my $comp (@composites) {
+        my %attrs = $comp->getAttrs();
+        delete $attrs{ $comp_name . '_id'};
+        $attrs{ $comp_name . '_service_provider_id' } = $self->getId();
+        $attrs{ $comp_name . '_formula' } = $self->_translateFormula(
+            formula => $attrs{ $comp_name . '_formula' },
+            id_map  => \%id_mapper,
+        );
+        $comp_class->new( %attrs );
+    }
+}
+
+=head2 _translateFormula
+
+    desc : replaces id of a formula (used for metrics and rules) using an id translation map
+
+=cut
+
+sub _translateFormula {
+    my $self    = shift;
+    my %args    = @_;
+
+    my $formula = $args{formula};
+    my $id_map  = $args{id_map};
+
+    # Split id from formula
+    my @array = split(/(id\d+)/, $formula);
+    # replace each id by its translation id
+    for my $element (@array) {
+        if( $element =~ m/id(\d+)/)
+        {
+            $element = 'id' . $id_map->{$1};
+        }
+    }
+    return join('',@array);
 }
 
 =head2 getNodesMetrics

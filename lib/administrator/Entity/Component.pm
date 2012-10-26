@@ -83,12 +83,16 @@ sub methods {
             perm_holder => 'entity',
         },
         getConf   => {
-            description   => 'get configuration',
-            perm_holder   => 'entity'
+            description => 'get configuration',
+            perm_holder => 'entity'
         },
         setConf   => {
-            description   => 'set configuration',
-            perm_holder   => 'entity'
+            description => 'set configuration',
+            perm_holder => 'entity'
+        },
+        getManagerParamsDef => {
+            description => 'getParamsDef',
+            perm_holder => 'entity'
         }
     }
 };
@@ -192,6 +196,14 @@ sub getPolicyParams {
     General::checkParams(args => \%args, required => [ 'policy_type' ]);
 
     return [];
+}
+
+=head2 getManagerParamsDef
+
+=cut
+
+sub getManagerParamsDef {
+    return {};
 }
 
 =head2 getTemplateDirectory

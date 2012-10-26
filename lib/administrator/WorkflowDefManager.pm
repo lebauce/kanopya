@@ -16,20 +16,24 @@
 # Created 10 June 2012
 
 package WorkflowDefManager;
+use base 'BaseDB';
 
 use strict;
 use warnings;
-use base 'BaseDB';
 
 use constant ATTR_DEF => {
-    manager_id                               =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    workflow_def_id                          =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
+    manager_id =>  {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    workflow_def_id  => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
