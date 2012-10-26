@@ -73,9 +73,6 @@ sub methods {
             description => 'get an object',
             perm_holder => 'mastergroup',
         },
-        methodCall => {
-            description => 'Call an object method',
-        },
     };
 }
 
