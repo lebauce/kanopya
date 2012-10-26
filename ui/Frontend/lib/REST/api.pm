@@ -7,6 +7,7 @@ use POSIX qw(ceil);
 prefix undef;
 
 use General;
+use BaseDB;
 use Entity;
 use Entity::Operation;
 use Entity::Workflow;
@@ -438,11 +439,17 @@ sub setupREST {
                         # TODO: prefetch filter so that we can just bless it
                         # $obj = bless { _dbix => $parent->$filter }, "Entity";
 
-                        if ($parent->result_source->relationship_info($filter)->{attrs}->{accessor} eq "multi") {
-                            my @rs = $parent->$filter->search_rs( { } );
+                        my $relinfo = $parent->result_source->relationship_info($filter);
 
-                            my $json = format_results(class     => $parent->$filter->search_rs(),
-                                                      dataType  => params->{dataType},
+                        if ($relinfo->{attrs}->{accessor} eq "multi") {
+                            my @conds = keys %{$relinfo->{cond}};
+                            my $fk = BaseDB::getForeignKeyFromCond(cond => $conds[0]);
+                            my $class = BaseDB::classFromDbix($parent->result_source->related_source($filter));
+
+                            $hash->{$fk} = $parent->id;
+
+                            my $json = format_results(class    => $class,
+                                                      dataType => params->{dataType},
                                                       %$hash);
 
                             return to_json($json);
