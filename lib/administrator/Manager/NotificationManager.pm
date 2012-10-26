@@ -29,8 +29,6 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-sub methods {}
-
 
 =head2 checkNotificationManagerParams
 

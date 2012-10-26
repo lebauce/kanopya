@@ -50,10 +50,12 @@ sub methods {
         getPolicyParams => {
             description => 'Return the params required for policies definition.',
             perm_holder => 'entity',
+            purpose     => 'internal',
         },
         getManagerParamsDef => {
             description => 'getParamsDef',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
+            purpose     => 'internal',
         }
     }
 };

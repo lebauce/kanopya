@@ -62,6 +62,7 @@ sub methods {
         getFlattenedHash => {
             description => 'Return a single level hash with all attributes and values of the policy',
             perm_holder => 'entity',
+            purpose     => 'internal',
         },
     };
 }

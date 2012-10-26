@@ -42,18 +42,11 @@ use constant BOOT_POLICIES => {
 
 sub methods {
     return {
-        'getHostType'   => {
-            'description'   => 'Return the type of managed hosts.',
-            'perm_holder'   => 'entity'
+        getHostType => {
+            description => 'Return the type of managed hosts.',
+            perm_holder => 'entity',
+            purpose     => 'internal',
         },
-        'scaleHost'     => {
-            'description'   => "scale host's cpu / memory",
-            'perm_holder'   => 'entity'
-        },
-        'migrate'       => {
-            'description'   => "migrate a host",
-            'perm_holder'  => "entity"
-        }
     };
 }
 
@@ -236,22 +229,6 @@ sub getHostType {
 =cut
 
 sub getRemoteSessionURL {
-    throw Kanopya::Exception::NotImplemented();
-}
-
-=head2 scaleHost
-
-=cut
-
-sub scaleHost {
-    throw Kanopya::Exception::NotImplemented();
-}
-
-=head2 migrate
-
-=cut
-
-sub migrate {
     throw Kanopya::Exception::NotImplemented();
 }
 

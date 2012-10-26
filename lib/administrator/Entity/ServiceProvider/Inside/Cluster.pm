@@ -173,65 +173,40 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        create => {
-            description => 'create a new cluster',
-            perm_holder => 'mastergroup',
-        },
-        get => {
-            description => 'view this cluster',
-            perm_holder => 'entity',
-        },
-        update => {
-            description => 'save changes applied on this cluster',
-            perm_holder => 'entity',
-        },
-        remove => {
-            description => 'delete this cluster',
-            perm_holder => 'entity',
-        },
         addNode => {
             description => 'add a node to this cluster',
             perm_holder => 'entity',
+            purpose     => 'action',
         },
         removeNode => {
             description => 'remove a node from this cluster',
             perm_holder => 'entity',
+            purpose     => 'action',
         },
         activate => {
             description => 'activate this cluster',
             perm_holder => 'entity',
+            purpose     => 'action',
         },
         deactivate => {
             description => 'deactivate this cluster',
             perm_holder => 'entity',
+            purpose     => 'action',
         },
         start => {
             description => 'start this cluster',
             perm_holder => 'entity',
+            purpose     => 'action',
         },
         stop => {
             description => 'stop this cluster',
             perm_holder => 'entity',
+            purpose     => 'action',
         },
         forceStop => {
             description => 'force stop this cluster',
             perm_holder => 'entity',
-        },
-        setperm => {
-            description => 'set permissions on this cluster',
-            perm_holder => 'entity',
-        },
-        addComponent => {
-            description => 'add a component to this cluster',
-            perm_holder => 'entity',
-        },
-        removeComponent => {
-            description => 'remove a component from this cluster',
-            perm_holder => 'entity',
-        },
-        configureComponents => {
-            description => 'configure components of this cluster',
-            perm_holder => 'entity',
+            purpose     => 'action',
         },
     };
 }

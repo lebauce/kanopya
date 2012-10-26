@@ -62,29 +62,15 @@ sub getAttrDef{ return ATTR_DEF; }
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new system image', 
-                        'perm_holder' => 'mastergroup',
+        activate => {
+            description => 'activate this system image', 
+            perm_holder => 'entity',
+            purpose     => 'action',
         },
-        'get'        => {'description' => 'view this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'update'    => {'description' => 'save changes applied on this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'remove'    => {'description' => 'delete this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'activate'=> {'description' => 'activate this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'deactivate'=> {'description' => 'deactivate this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'setperm'    => {'description' => 'set permissions on this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'installcomponent' => {'description' => 'install components on this system image', 
-                        'perm_holder' => 'entity',
+        deactivate => {
+            description => 'deactivate this system image', 
+            perm_holder => 'entity',
+            purpose     => 'action',
         },
     };
 }

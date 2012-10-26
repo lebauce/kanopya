@@ -40,7 +40,8 @@ sub methods {
     return {
         subscribe => {
             description => 'subscribe to notification about this entity.',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
+            purpose     => 'action',
         }
     };
 }

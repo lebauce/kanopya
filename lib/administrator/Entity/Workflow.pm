@@ -54,14 +54,16 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        getCurrentOperation => {
-            description => 'getCurrentOperation',
-            perm_holder => 'entity'
-        },
         cancel => {
             description => 'Cancel workflow',
-            perm_holder => 'entity'
-        }
+            perm_holder => 'entity',
+            purpose     => 'action',
+        },
+        getCurrentOperation => {
+            description => 'getCurrentOperation',
+            perm_holder => 'entity',
+            purpose     => 'internal',
+        },
     };
 }
 

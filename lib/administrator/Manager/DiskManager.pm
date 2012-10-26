@@ -30,6 +30,21 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
+sub methods {
+    return {
+        getDiskType => {
+            description => 'Return the type of managed disks.',
+            perm_holder => 'entity',
+            purpose     => 'internal',
+        },
+        getExportManagers => {
+            description => 'Return the availables export managers for this disk manager.',
+            perm_holder => 'entity',
+            purpose     => 'internal',
+        },
+    }
+}
+
 =head2 checkDiskManagerParams
 
 =cut

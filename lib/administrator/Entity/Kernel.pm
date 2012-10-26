@@ -35,17 +35,6 @@ use constant ATTR_DEF => {
 
 };
 
-sub methods {    
-    return {
-        'get'        => {'description' => 'view this kernel', 
-                        'perm_holder' => 'entity',
-        },
-        'setperm'    => {'description' => 'set permissions on this kernel', 
-                        'perm_holder' => 'entity',
-        },
-    };
-}
-
 =head2 getKernels
 
 =cut

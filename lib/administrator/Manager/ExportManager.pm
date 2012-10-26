@@ -30,6 +30,20 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
+sub methods {
+    return {
+        getExportType => {
+            description => 'Return the type of managed exports.',
+            perm_holder => 'entity',
+            purpose     => 'internal',
+        },
+    }
+}
+
+sub getExportType {
+    throw Kanopya::Exception::NotImplemented();
+}
+
 =head2 checkExportManagerParams
 
 =cut

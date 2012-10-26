@@ -27,6 +27,32 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 
+sub methods {
+    return {
+        scaleHost => {
+            description => 'scale host\'s cpu / memory',
+            perm_holder => 'entity',
+            purpose     => 'action'
+        },
+        migrate => {
+            description => 'migrate a host',
+            perm_holder => 'entity',
+            purpose     => 'action'
+        },
+        optimiaas  => {
+            description => 'optimize IaaS (packing)',
+            perm_holder => 'entity',
+            purpose     => 'action',
+        },
+        getHypervisors  => {
+            description => 'get hypervisors',
+            perm_holder => 'entity',
+            purpose     => 'internal',
+        },
+    };
+}
+
+
 sub createVirtualHost {
     my ($self,%args) = @_;
 
@@ -81,6 +107,14 @@ sub scaleHost {
 
     Entity::Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
                           params => $wf_params);
+}
+
+=head2 migrate
+
+=cut
+
+sub migrate {
+    throw Kanopya::Exception::NotImplemented();
 }
 
 =head2 getHostType

@@ -46,11 +46,13 @@ sub methods {
   return {
     updateParamPreset => {
         description => 'updateParamPreset',
-        perm_holder => 'entity'
+        perm_holder => 'entity',
+        purpose     => 'internal',
     },
     getParamPreset => {
         description => 'getParamPreset',
-        perm_holder => 'entity'
+        perm_holder => 'entity',
+        purpose     => 'internal',
     },
   }
 }

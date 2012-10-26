@@ -39,33 +39,6 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-=head2 Host Attributes
-
-hostmodel_id : Int : Identifier of host model.
-processormodel_id : Int : Identifier of host processor model
-kernel_id : Int : kernel identifier which will be used by host if non specified by cluster
-host_serial_number : String : This is the serial number attributed to host
-
-host_desc :  String : This is a free field to enter a description of host. It is generally used to
-specify owner, team, ...
-
-active : Int : This is an internal parameter used to activate or deactivate resources on Kanopya System
-host_hostname : Hostname is also internally managed. Host hostname will be generated from the mac address
-It is generated when a host is added into a cluster
-host_initiatorname : This attributes is generated when a host is added in a cluster and allow to connect
-to internal storage to get the systemimage
-host_state : String : This parameter is internally managed, it allows to follow migration step.
-It could be :
-- WaitingStart
-- Starting
-- ReadyStart
-- Up
-
-- WaitingStop
-- ReadyStop
-- Stopping
-- Down
-=cut
 
 use constant ATTR_DEF => {
     host_manager_id => {
@@ -171,70 +144,46 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        create => {
-            description => 'create a new host',
-            perm_holder => 'mastergroup',
-        },
-        get => {
-            description => 'view this host',
-            perm_holder => 'entity',
-        },
-        update => {
-            description => 'save changes applied on this host',
-            perm_holder => 'entity',
-        },
-        remove => {
-            description => 'delete this host',
-            perm_holder => 'entity',
-        },
         activate => {
             description => 'activate this host',
             perm_holder => 'entity',
+            purpose     => 'action',
         },
         deactivate => {
             description => 'deactivate this host',
             perm_holder => 'entity',
+            purpose     => 'action',
         },
-        addHarddisk => {
-            description => 'add a hard disk to this host',
+        resubmit => {
+            description => 'resubmit the corresponding node',
             perm_holder => 'entity',
-        },
-        removeHarddisk => {
-            description => 'remove a hard disk from this host',
-            perm_holder => 'entity',
+            purpose     => 'action',
         },
         removeIface => {
             description => 'remove an interface from this host',
             perm_holder => 'entity',
+            purpose     => 'action',
         },
         addIface => {
             description => 'add one or more interface to  this host',
             perm_holder => 'entity',
+            purpose     => 'action',
         },
         getAdminIp => {
             description => 'get ip address for administration interface',
             perm_holder => 'entity',
-        },
-        getIfaces => {
-            description => 'get network interfaces',
-            perm_holder => 'entity',
-        },
-        setperm => {
-            description => 'set permissions on this host',
-            perm_holder => 'entity',
+            purpose     => 'internal'
         },
         getRemoteSessionURL => {
             description => 'get the url for remote session',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
+            purpose     => 'internal'
         },
         getHostType => {
             description => 'get the host type from host manager',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
+            purpose     => 'internal'
         },
-        resubmit => {
-            description => 'resubmit the corresponding node',
-            perm_holder => 'entity'
-       }
     };
 }
 

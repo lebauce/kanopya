@@ -117,11 +117,13 @@ sub methods {
     return {
         validate => {
             description => 'Validate the operation execution.',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
+            purpose     => 'action',
         },
         deny => {
             description => 'Deny the operation execution.',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
+            purpose     => 'action',
         }
     };
 }

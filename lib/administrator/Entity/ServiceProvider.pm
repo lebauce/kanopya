@@ -60,45 +60,65 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
+        addComponent => {
+            description => 'add a component to this cluster',
+            perm_holder => 'entity',
+            purpose     => 'action',
+        },
+        removeComponent => {
+            description => 'remove a component from this cluster',
+            perm_holder => 'entity',
+            purpose     => 'action',
+        },
+        addManager => {
+            description => 'addManager',
+            perm_holder => 'entity',
+            purpose     => 'action',
+        },
+        getNodeMonitoringData => {
+            description => 'get monitoring data of a node',
+            perm_holder => 'entity',
+            purpose     => 'action',
+        },
+        enableNode => {
+            description => 'Enable node',
+            perm_holder => 'entity',
+            purpose     => 'action',
+        },
+        disableNode => {
+            description => 'Disable node',
+            perm_holder => 'entity',
+            purpose     => 'action',
+        },
         findManager => {
             description => 'findManager',
-            perm_holder => 'mastergroup'
+            perm_holder => 'mastergroup',
+            purpose     => 'internal',
         },
         getManager => {
             description => 'getManager',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
+            purpose     => 'internal',
         },
         getServiceProviders => {
             description => 'getServiceProviders',
             perm_holder => 'mastergroup',
-        },
-        addManager => {
-            description => 'addManager',
-            perm_holder => 'entity'
+            purpose     => 'internal',
         },
         addManagerParameters => {
             description => 'add paramaters to a manager',
             perm_holder => 'entity',
+            purpose     => 'internal',
         },
         getManagerParameters => {
             description => 'getManagerParameters',
             perm_holder => 'entity',
+            purpose     => 'internal',
         },
         getManagers => {
             description => 'get all managers associated with a service provider',
             perm_holder => 'entity',
-        },
-        getNodeMonitoringData => {
-            description => 'getMonitoringData',
-            perm_holder => 'entity'
-        },
-        enableNode => {
-            description => 'Enable node',
-            perm_holder => 'entity'
-        },
-        disableNode => {
-            description => 'Disable node',
-            perm_holder => 'entity'
+            purpose     => 'internal',
         },
     };
 }
@@ -203,12 +223,14 @@ sub getManager {
 =cut
 
 sub getManagers {
-    my $self            = shift;
+    my $self = shift;
 
-    my @clustermanagers = ServiceProviderManager->search(hash => { service_provider_id => $self->getId });
     my @managers        = ();
+    my @clustermanagers = ServiceProviderManager->search(hash => { service_provider_id => $self->id });
+
     for my $clustermanager (@clustermanagers) {
-        push @managers, Entity->get(id => $clustermanager->getAttr(name => 'manager_id'));
+        # Could not follow the 'manager' relation cause connecto/component problem
+        push @managers, Entity->get(id => $clustermanager->manager_id);
     }
     return wantarray ? @managers : \@managers;
 }

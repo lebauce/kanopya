@@ -28,6 +28,20 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
+sub methods {
+    return {
+        getDirectoryTree  => {
+            description => 'getDirectoryTree',
+            perm_holder => 'entity',
+            purpose     => 'internal',
+        },
+        getManagerParamsDef => {
+            description => 'getParamsDef',
+            perm_holder => 'entity',
+            purpose     => 'internal',
+        }
+    };
+}
 
 =head2 checkManagerParams
 
@@ -59,6 +73,14 @@ sub checkManagerParams {
     elsif ($args{manager_type} eq 'notification_manager') {
         return $self->checkNotificationManagerParams(%{ $args{manager_params} });
     }
+}
+
+=head2 getManagerParamsDef
+
+=cut
+
+sub getManagerParamsDef {
+    return {};
 }
 
 1;

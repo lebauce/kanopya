@@ -39,27 +39,6 @@ use constant ATTR_DEF => {
     processormodel_virtsupport     => { pattern => '(0|1)', is_mandatory => 1, is_extended => 0},        
 };
 
-
-sub methods {
-    return {
-        'create'    => {'description' => 'create a new processor model', 
-                        'perm_holder' => 'mastergroup',
-        },
-        'get'        => {'description' => 'view this processor model', 
-                        'perm_holder' => 'entity',
-        },
-        'update'    => {'description' => 'save changes applied on this processor model', 
-                        'perm_holder' => 'entity',
-        },
-        'remove'    => {'description' => 'delete this processor model', 
-                        'perm_holder' => 'entity',
-        },
-        'setperm'    => {'description' => 'set permissions on this processor model', 
-                        'perm_holder' => 'entity',
-        },
-    }; 
-}
-
 sub getProcessormodels {
     my $class = shift;
     my %args = @_;

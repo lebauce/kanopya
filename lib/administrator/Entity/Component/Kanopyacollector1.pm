@@ -16,41 +16,6 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 20 april 2012
 
-=head1 NAME
-
-<Entity::Component::Kanopya-collector> <Kanopya collector component concret class>
-
-=head1 VERSION
-
-This documentation refers to <Entity::Component::Kanopya-collector> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Entity::Component::Kanopya-collector>;
-
-my $component_instance_id = 2; # component instance id
-
-Entity::Component::Kanopya-collector->get(id=>$component_instance_id);
-
-# Cluster id
-
-my $cluster_id = 3;
-
-# Component id are fixed, please refer to component id table
-
-my $component_id =2
-
-Entity::Component::Kanopya-collector->new(component_id=>$component_id, cluster_id=>$cluster_id);
-
-=head1 DESCRIPTION
-
-Entity::Component::Kanopya-collector is class allowing to instantiate an Snmpd component
-This Entity is empty but present methods to set configuration.
-
-=head1 METHODS
-
-=cut
-
 package Entity::Component::Kanopyacollector1;
 use base "Entity::Component";
 use base "Manager::CollectorManager";
@@ -85,13 +50,6 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-sub methods {
-    return {
-        'getIndicators' => { 'description' => 'create a new cluster',
-                             'perm_holder' => 'entity',}
-    },
-}
 
 =head2 retrieveData
 

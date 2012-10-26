@@ -62,52 +62,12 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'upload'    => {'description' => 'upload a new master image', 
-                        'perm_holder' => 'mastergroup',
-        },
-        'get'        => {'description' => 'view this master image', 
-                        'perm_holder' => 'entity',
-        },
-        'remove'    => {'description' => 'delete this master image', 
-                        'perm_holder' => 'entity',
-        },
-        'setperm'    => {'description' => 'set permissions on this master image', 
-                        'perm_holder' => 'entity',
-        },
-        'getProvidedComponents' => {
-            'description'   => 'return provided components',
-            'perm_holder'   => 'entity'
+        getProvidedComponents => {
+            description => 'return provided components',
+            perm_holder => 'entity',
+            purpose     => 'internal',
         }
     };
-}
-
-=head2 getMasterimages
-
-    Class: public
-    desc: retrieve several Entity::Masterimage instances
-    args:
-        hash : hashref : where criteria
-    return: @ : array of Entity::Masterimage instances
-    
-=cut
-
-sub getMasterimages {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    return $class->search(%args);
-}
-
-sub getMasterimage {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    my @masterimages = $class->search(%args);
-    return pop @masterimages;
 }
 
 =head2 remove

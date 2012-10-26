@@ -32,9 +32,10 @@ use Data::Dumper;
 
 sub methods {
     return {
-        'getDirectoryTree'  => {
-            'description'   => 'getDirectoryTree',
-            'perm_holder'   => 'entity'
+        getDirectoryTree  => {
+            description => 'getDirectoryTree',
+            perm_holder => 'entity',
+            purpose     => 'internal',
         }
     };
 }

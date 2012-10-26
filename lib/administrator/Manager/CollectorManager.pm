@@ -31,6 +31,15 @@ use Entity::Indicator;
 
 my $log = get_logger("");
 
+sub methods {
+    return {
+        getIndicators => {
+            description => 'create a new cluster',
+            perm_holder => 'entity',
+            purpose     => 'internal',
+        }
+    },
+}
 
 sub createCollectorIndicators {
     my ($self,%args) = @_;
@@ -85,10 +94,6 @@ sub getIndicator {
     my $collector_indicator = CollectorIndicator->get(id => $args{id});
     return $collector_indicator->indicator;
 }
-
-=head2 checkManagerParams
-
-=cut
 
 sub checkCollectorManagerParams {
 }

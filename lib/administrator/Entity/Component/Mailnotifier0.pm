@@ -72,6 +72,4 @@ sub getBaseConfiguration {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {}
-
 1;

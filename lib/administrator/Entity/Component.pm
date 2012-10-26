@@ -78,22 +78,21 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        getPolicyParams => {
-            description => 'get the parameters required for policies definition.',
-            perm_holder => 'entity',
-        },
         getConf   => {
             description => 'get configuration',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
+            purpose     => 'action',
         },
         setConf   => {
             description => 'set configuration',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
+            purpose     => 'action',
         },
-        getManagerParamsDef => {
-            description => 'getParamsDef',
-            perm_holder => 'entity'
-        }
+        getPolicyParams => {
+            description => 'get the parameters required for policies definition.',
+            perm_holder => 'entity',
+            purpose     => 'internal',
+        },
     }
 };
 
@@ -196,14 +195,6 @@ sub getPolicyParams {
     General::checkParams(args => \%args, required => [ 'policy_type' ]);
 
     return [];
-}
-
-=head2 getManagerParamsDef
-
-=cut
-
-sub getManagerParamsDef {
-    return {};
 }
 
 =head2 getTemplateDirectory

@@ -157,20 +157,6 @@ sub getBaseConfiguration {
     };
 }
 
-sub methods {
-    return {
-        getHypervisors  => {
-            description => 'get hypervisors',
-            perm_holder => 'entity'
-        },
-        optimiaas  => {
-            description => 'optimize IaaS (packing)',
-            perm_holder => 'entity'
-        },
-    };
-}
-
-
 sub getOvercommitmentFactors {
     my ($self) = @_;
     return {

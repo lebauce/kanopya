@@ -118,64 +118,21 @@ use constant ATTR_DEF => {
     }
 };
 
+sub getAttrDef{ return ATTR_DEF; }
+
 sub methods {
     return {
-        create => {
-            description => 'create a new user',
-            perm_holder => 'mastergroup',
-        },
-        get => {
-            description => 'view this user',
-            perm_holder => 'entity',
-        },
-        update => {
-            description => 'save changes applied on this user',
-            perm_holder => 'entity',
-        },
-        remove => {
-            description => 'delete this user',
-            perm_holder => 'entity',
-        },
-        setperm => {
-            description => 'set permissions on this user',
-            perm_holder => 'entity',
-        },
         getProfiles => {
             description => 'get user profiles',
             perm_holder => 'entity',
+            purpose     => 'internal',
         },
         setProfiles => {
             description => 'set user profiles',
             perm_holder => 'entity',
-        },
-        getExtensions => {
-            description => 'get extended user attributes',
-            perm_holder => 'entity',
-        },
-        setExtension => {
-            description => 'create or update extended user attribute',
-            perm_holder => 'entity',
+            purpose     => 'internal',
         },
     };
-}
-
-=head2 getUsers
-
-    Class: public
-    desc: retrieve several Entity::User instances
-    args:
-        hash : hashref : where criteria
-    return: @ : array of Entity::User instances
-    
-=cut
-
-sub getUsers {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    return $class->search(%args);
 }
 
 =head2 create 
@@ -312,31 +269,6 @@ sub getProfiles {
     return \@array;
 }
 
-sub getExtensions {
-    my ($self) = @_;
-    my $extensions = [];
-    my $rs = $self->{_dbix}->user_extensions;
-    while (my $row = $rs->next) {
-        my %hash = ( 
-            id    => $row->get_column('user_extension_id'),
-            key   => $row->get_column('user_extension_key'),
-            value => $row->get_column('user_extension_value'),
-        );
-        push @$extensions, \%hash;
-    }
-    return $extensions;
-}
-
-sub setExtension {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['key','value']);
-    my $rs = $self->{_dbix}->user_extensions->update_or_create(
-        { user_extension_key => $args{key},user_extension_value => $args{value} },
-        { key => 'user_id' }
-    );
-    
-}
-
 =head2 toString
 
     desc: return a string representation of the entity
@@ -347,10 +279,6 @@ sub toString {
     my $self = shift;
     my $string = $self->{_dbix}->get_column('user_firstname'). " ". $self->{_dbix}->get_column('user_lastname');
     return $string;
-}
-
-sub getAttrDef{
-    return ATTR_DEF;
 }
 
 1;
