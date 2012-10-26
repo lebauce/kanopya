@@ -31,7 +31,8 @@ use_ok ('Externalnode::Node');
 use_ok ('ComponentType');
 use_ok ('Entity::InterfaceRole');
 
-my $testing = 1;
+my $testing = 0;
+my $vsphere_url = '192.168.1.160';
 
 eval {
     Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -63,16 +64,17 @@ eval {
             cluster_basehostname   => 'one',
             cluster_nameserver1    => '208.67.222.222',
             cluster_nameserver2    => '127.0.0.1',
-            # cluster_boot_policy    => 'PXE Boot via ISCSI',
-            user_id                => $admin_user->getAttr(name => 'user_id'),
+            user_id                => $admin_user->id,
         );
       } 'Register VSphere cluster';
 
+    isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster');
 
     my $vsphereInstance;
     lives_ok {
         $vsphereInstance = $cluster->addComponentFromType(
-                               component_type_id => ComponentType->find(hash => {component_name => 'Vsphere'})->id,
+                               component_type_id => ComponentType->find(hash => {
+                                                        component_name => 'Vsphere'})->id,
                            );
     } 'register Vsphere component';
 
@@ -87,24 +89,27 @@ eval {
     isa_ok($vsphere, 'Entity::Component::Vsphere5');
 
     lives_ok {
-        $vsphere->setConf(conf => {
-            vsphere5_login    => 'Administrator@hedera.forest',
-            vsphere5_pwd => 'H3d3r4#234',
-            vsphere5_url      => '192.168.1.160',
-            repositories => { }
-        });
+        $vsphere->setConf(
+            conf => {
+                vsphere5_login    => 'Administrator@hedera.forest',
+                vsphere5_pwd      => 'H3d3r4#234',
+                vsphere5_url      => $vsphere_url,
+            }
+        );
     } 'configuring VSphere component';
 
     my $registerItems;
     lives_ok {
         my $datacenters = $vsphere->retrieveDatacenters();
-        $registerItems = $datacenters;
+        $registerItems  = $datacenters;
     } 'retrieve Datacenters';
 
     lives_ok {
-        foreach my $datacenter ( @$registerItems ) {
-            my $clustersAndHypervisors = $vsphere->retrieveClustersAndHypervisors(datacenter_name => $datacenter->{name});
-            $datacenter->{children} = $clustersAndHypervisors;
+        foreach my $datacenter (@$registerItems) {
+            my $clustersAndHypervisors = $vsphere->retrieveClustersAndHypervisors(
+                                             datacenter_name => $datacenter->{name}
+                                         );
+            $datacenter->{children}    = $clustersAndHypervisors;
         }
     } 'retrieve Cluster and Hypervisors';
 
@@ -123,12 +128,12 @@ eval {
     #} 'retrieve VMs on Hypervisors (hosted on Datacenter)';
 
     lives_ok {
-        foreach my $datacenter ( @$registerItems ) {
+        foreach my $datacenter (@$registerItems) {
             foreach my $datacenterChildren (@{ $datacenter->{children} }) {
                 if ($datacenterChildren->{type} eq 'cluster') {
                     my $clusterHypervisors = $vsphere->retrieveClusterHypervisors(
-                                                 datacenter_name    =>    $datacenter->{name},
-                                                 cluster_name       =>    $datacenterChildren->{name},
+                                                 datacenter_name => $datacenter->{name},
+                                                 cluster_name    => $datacenterChildren->{name},
                                              );
                     $datacenterChildren->{children} = $clusterHypervisors;
                 }
@@ -137,16 +142,15 @@ eval {
     } 'retrieve Cluster\'s Hypervisors';
 
     lives_ok {
-        foreach my $datacenter ( @$registerItems ) {
+        foreach my $datacenter (@$registerItems) {
             foreach my $datacenterChildren (@{ $datacenter->{children} }) {
                 if ($datacenterChildren->{type} eq 'cluster') {
                     foreach my $clusterHypervisor (@{ $datacenterChildren->{children} }) {
                         #Change type 'clusterHypervisor' to 'hypervisor'
                         $clusterHypervisor->{type} = 'hypervisor';
                         my $vms = $vsphere->retrieveHypervisorVms(
-                                      datacenter_name    =>    $datacenter->{name},
-                                      cluster_name       =>    $datacenterChildren->{name},
-                                      hypervisor_name    =>    $clusterHypervisor->{name},
+                                      datacenter_name => $datacenter->{name},
+                                      hypervisor_name => $clusterHypervisor->{name},
                                   );
                         $clusterHypervisor->{children} = $vms;
                     }
@@ -155,9 +159,9 @@ eval {
         }
     } 'retrieve VMs on Cluster\'s Hypervisors';
 
-    #lives_ok {
-        #$vsphere->register(register_items => $registerItems);
-    #} 'register items in Kanopya';
+    lives_ok {
+        $vsphere->register(register_items => $registerItems);
+    } 'register items in Kanopya';
 
     # TODO: retrieve items from Kanopya and compare them with register_items OR Compare number of registers items returned by register()
 
