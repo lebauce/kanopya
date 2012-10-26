@@ -65,7 +65,7 @@ var ModalForm = (function() {
                         var val = values[elem] || this.fields[elem].value;
                         if (elem in data.attributes) { // Whether just an input
                             this.newFormElement(elem, data.attributes[elem], val);
-                        } else if (this.fields[elem].skip == true) {
+                        } else if (this.fields[elem].skip == true || this.fields[elem].options) { // want to skip or select element with provided options
                             this.newFormElement(elem, {}, val);
                         } else { // Or retrieve all possibles values and create a select element
                             var datavalues = this.getForeignValues(data, elem);
