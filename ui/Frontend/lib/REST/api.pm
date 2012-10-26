@@ -140,7 +140,7 @@ my %resources = (
     "vlan"                     => "Entity::Network::Vlan",
     "vsphere5"                 => "Entity::Component::Vsphere5",
     "workflow"                 => "Entity::Workflow",
-    "workflowdef"              => "WorkflowDef",
+    "workflowdef"              => "Entity::WorkflowDef",
 );
 
 sub class_from_resource {

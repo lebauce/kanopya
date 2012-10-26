@@ -333,10 +333,11 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                             var url;
                             var post_data;
                             if (mode_config) {
-                                url         = '/api/serviceprovidermanager/' + instance_id + '/addParams';
+                                url         = '/api/serviceprovider/' + sp_id + '/addManagerParameters';
                                 post_data   = {
-                                        params      : data.manager_params,
-                                        override    : 1
+                                        manager_type : managertype,
+                                        params       : data.manager_params,
+                                        override     : 1
                                 };
                             } else {
                                 url         = '/api/serviceprovider/' + sp_id + '/addManager';
