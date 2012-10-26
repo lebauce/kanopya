@@ -57,10 +57,6 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        toString => {
-            description => 'toString',
-            perm_holder => 'entity',
-        },
         create => {
             description => 'create a new object',
             perm_holder => 'mastergroup',
