@@ -60,7 +60,7 @@ sub createCollectorIndicators {
 
 =head2 getIndicators
 
-    Desc: Retrieve a list of indicators available (currently use SCOM indic)
+    Desc: Retrieve a list of indicators available
 
 =cut
 

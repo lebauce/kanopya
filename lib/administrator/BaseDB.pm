@@ -49,10 +49,7 @@ my %class_type_cache;
 
 use constant ATTR_DEF => {
     label => {
-        pattern         => '.*',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_virtual      => 1,
+        is_virtual  => 1,
     }
 };
 
@@ -157,7 +154,7 @@ Subclass can redefined this method to return specific label
 sub label {
     my $self = shift;
 
-    my $label = $self->getLabelAttr(attrs => $hash);
+    my $label = $self->getLabelAttr();
     return $label ? $self->getAttr(name => $label) : $self->id;
 }
 
