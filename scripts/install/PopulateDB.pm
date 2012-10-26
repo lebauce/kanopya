@@ -7,7 +7,7 @@ use Kanopya::Config;
 use Administrator;
 use ComponentType;
 use Entity::Component;
-use WorkflowDef;
+use Entity::WorkflowDef;
 use Operationtype;
 use NetworkPoolip;
 use Entity::Policy;

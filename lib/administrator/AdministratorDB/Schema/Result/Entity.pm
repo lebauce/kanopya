@@ -734,7 +734,22 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 workflow
+=head2 workflow_def
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
+
+=cut
+
+__PACKAGE__->might_have(
+  "workflow_def",
+  "AdministratorDB::Schema::Result::WorkflowDef",
+  { "foreign.workflow_def_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 workflow_workflow
 
 Type: might_have
 
@@ -743,7 +758,7 @@ Related object: L<AdministratorDB::Schema::Result::Workflow>
 =cut
 
 __PACKAGE__->might_have(
-  "workflow",
+  "workflow_workflow",
   "AdministratorDB::Schema::Result::Workflow",
   { "foreign.workflow_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -774,9 +789,8 @@ Composing rels: L</ingroups> -> gp
 
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
-
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-31 16:06:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Uu7Ea0d89hBwHa+QBrRclA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-26 13:48:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9QRDLpnI9NuowO9p0CqK3A
 
 __PACKAGE__->has_many(
   "collector_indicators",
@@ -785,6 +799,12 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+__PACKAGE__->might_have(
+  "workflow",
+  "AdministratorDB::Schema::Result::Workflow",
+  { "foreign.workflow_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

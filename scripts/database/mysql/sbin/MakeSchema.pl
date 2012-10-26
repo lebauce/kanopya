@@ -91,7 +91,7 @@ if ($table eq 'all') {  # Update all existing schema and create schema for new t
         print "You may lose custom content. Please check manually.\n";
         print "\t[generated] $tmp_dir/$schema_name.pm\n\t[existing] $target_dir/$schema_name.pm\n[press enter to display diff]";
         my $in = <STDIN>;
-        exec("diff $tmp_dir/$schema_name.pm $target_dir/$schema_name.pm");
+        exec("diff -u $target_dir/$schema_name.pm $tmp_dir/$schema_name.pm");
     }
     print "Move schema $schema_name.pm in $target_dir...\n";
     `mv $tmp_dir/$schema_name.pm $target_dir/`;
