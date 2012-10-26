@@ -104,10 +104,12 @@ sub new {
                 }
                 $policy_args->{$arg} = $args{$pattern . $arg};
             }
-            $policy_args->{policy_type} = $policy_type;
+            if (scalar (keys %$policy_args) != 0) {
+                $policy_args->{policy_type} = $policy_type;
 
-            my $policy = Entity::Policy->new(%$policy_args);
-            $args{$policy_type . '_policy_id'} = $policy->getAttr(name => 'policy_id');
+                my $policy = Entity::Policy->new(%$policy_args);
+                $args{$policy_type . '_policy_id'} = $policy->getAttr(name => 'policy_id');
+            }
         }
         $attrs->{$policy_type . '_policy_id'} = $args{$policy_type . '_policy_id'};
     }

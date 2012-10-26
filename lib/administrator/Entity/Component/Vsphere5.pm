@@ -32,6 +32,8 @@ use Kanopya::Exceptions;
 use Vsphere5Repository;
 use Vsphere5Datacenter;
 use Entity::User;
+use Entity::Policy;
+use Entity::ServiceTemplate;
 use Entity::Operation;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
@@ -620,6 +622,7 @@ sub register {
                             parent         => $registered_item);
         }
     }
+
     return \@registered_items;
 }
 
@@ -757,6 +760,42 @@ sub registerVm {
                                     cluster_boot_policy    => '',
                                     user_id                => $admin_user->user_id,
                                 );
+                        
+            #Check if the vsphere hosting policy and the vsphere vm policy already exist
+            #If not create them 
+            my $hp;
+            my $st;
+
+            eval {
+                $hp = Entity::Policy->find(hash => {
+                          policy_name => 'vsphere'});
+            };
+            if (not defined $hp) {
+                $hp = Entity::Policy->new(
+                         policy_type => 'hosting_policy', 
+                         policy_name => 'vsphere'
+                      );
+            }
+
+            eval {
+                $st = Entity::ServiceTemplate->find(hash => {
+                          hosting_policy_id => $hp->id,
+                          service_name      => 'vsphere_vm_service'});
+            };
+            if (defined $st) {
+                $service_provider->setAttr(name  => 'service_template_id', 
+                                           value => $st->id);
+                $service_provider->save();
+            }
+            else {
+                $st = Entity::ServiceTemplate->new(
+                          hosting_policy_id => $hp->id,
+                          service_name      => 'vsphere_vm_service'
+                      );
+                $service_provider->setAttr(name  => 'service_template_id', 
+                                           value => $st->id);
+                $service_provider->save();
+            }
         };
         if ($@) {
             print $@;
@@ -922,6 +961,42 @@ sub registerHypervisor {
                                     cluster_boot_policy    => '',
                                     user_id                => $admin_user->user_id,
                                 );
+
+            #Check if the vsphere hosting policy and the vsphere hypervisor policy already exist
+            #If not create them 
+            my $hp;
+            my $st;
+
+            eval {
+                $hp = Entity::Policy->find(hash => {
+                          policy_name => 'vsphere'});
+            };
+            if (not defined $hp) {
+                $hp = Entity::Policy->new(
+                         policy_type => 'hosting_policy', 
+                         policy_name => 'vsphere'
+                      );
+            }
+
+            eval {
+                $st = Entity::ServiceTemplate->find(hash => {
+                          hosting_policy_id => $hp->id,
+                          service_name      => 'vsphere_hypervisor_service'});
+            };
+            if (defined $st) {
+                $service_provider->setAttr(name  => 'service_template_id', 
+                                           value => $st->id);
+                $service_provider->save();
+            }
+            else {
+                $st = Entity::ServiceTemplate->new(
+                          hosting_policy_id => $hp->id,
+                          service_name      => 'vsphere_hypervisor_service'
+                      );
+                $service_provider->setAttr(name  => 'service_template_id', 
+                                           value => $st->id);
+                $service_provider->save();
+            }
         };
         if ($@) {
             $errmsg = 'Could not create new service provider to register vsphere hypervisor: '. $@;
@@ -1050,6 +1125,42 @@ sub registerCluster {
                                     cluster_boot_policy    => '',
                                     user_id                => $admin_user->user_id,
                                 );
+    
+            #Check if the vsphere hosting policy and the vsphere vm policy already exist
+            #If not create them 
+            my $hp;
+            my $st;
+
+            eval {
+                $hp = Entity::Policy->find(hash => {
+                          policy_name => 'vsphere'});
+            };
+            if (not defined $hp) {
+                $hp = Entity::Policy->new(
+                         policy_type => 'hosting_policy', 
+                         policy_name => 'vsphere'
+                      );
+            }
+
+            eval {
+                $st = Entity::ServiceTemplate->find(hash => {
+                          hosting_policy_id => $hp->id,
+                          service_name      => 'vsphere_hypervisor_service'});
+            };
+            if (defined $st) {
+                $service_provider->setAttr(name  => 'service_template_id', 
+                                           value => $st->id);
+                $service_provider->save();
+            }
+            else {
+                $st = Entity::ServiceTemplate->new(
+                          hosting_policy_id => $hp->id,
+                          service_name      => 'vsphere_hypervisor_service'
+                      );
+                $service_provider->setAttr(name  => 'service_template_id', 
+                                           value => $st->id);
+                $service_provider->save();
+            }
         };
         if ($@) {
             $errmsg = 'Could not create new service provider to register vsphere cluster: '. $@;
