@@ -499,7 +499,7 @@ function appendWorkflowActionsButtons(elem, cid, rule_id, wfdef_id, serviceprovi
 
 function workflowslist(cid, eid) {
     $.ajax({
-        url     : '/api/serviceprovider/' + eid + '/getWorkflows',
+        url     : '/api/workflow?related_id=' + eid,
         type    : 'POST',
         success : function(data) {
             for (var i in data) if (data.hasOwnProperty(i)) {

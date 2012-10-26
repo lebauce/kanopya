@@ -60,8 +60,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef{ return ATTR_DEF; }
 
-sub primarykey { return 'systemimage_id'; }
-
 sub methods {
     return {
         'create'    => {'description' => 'create a new system image', 

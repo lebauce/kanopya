@@ -38,18 +38,12 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        getWorkflows => {
-            description => 'get the current workflows about this entity.',
-            perm_holder => 'entity'
-        },
         subscribe => {
             description => 'subscribe to notification about this entity.',
             perm_holder => 'entity'
         }
     };
 }
-
-sub primarykey { return 'entity_id'; }
 
 =head2 getMasterGroupName
 
@@ -369,21 +363,6 @@ sub setComment {
     }
 }
 
-sub getWorkflows {
-    my ($self, %args) = @_;
-    my $hash = {};
-    if(defined $args{state})  {
-        $hash->{state} = $args{state};
-    }
-    
-    $hash->{entity_id} = $self->id;
-    my @workflows = Entity::Workflow->search(hash => $hash);
-
-    # TODO: join tables workflow and workflow_parameter to get
-    #       paramters of running workflow only.
-
-    return wantarray ? @workflows : \@workflows;
-}
 
 sub lock {
     my $self = shift;
