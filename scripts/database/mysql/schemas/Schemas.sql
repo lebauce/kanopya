@@ -1227,6 +1227,8 @@ CREATE TABLE `clustermetric` (
   `clustermetric_window_time` int(8) unsigned NOT NULL,
   PRIMARY KEY (`clustermetric_id`),
   KEY (`clustermetric_service_provider_id`),
+  KEY (`clustermetric_indicator_id`),
+  FOREIGN KEY (`clustermetric_indicator_id`) REFERENCES `collector_indicator` (`collector_indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`clustermetric_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

@@ -47,6 +47,7 @@ __PACKAGE__->table("clustermetric");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 clustermetric_statistics_function_name
@@ -81,7 +82,12 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "clustermetric_indicator_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "clustermetric_statistics_function_name",
   { data_type => "char", is_nullable => 0, size => 32 },
   "clustermetric_window_time",
@@ -117,6 +123,20 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 clustermetric_indicator
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "clustermetric_indicator",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { collector_indicator_id => "clustermetric_indicator_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 # Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 17:07:21
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ylmwbVS/go9USL3167QL9Q
