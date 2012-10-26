@@ -161,6 +161,7 @@ my @classes = (
     'Entity::AggregateRule',
     'Entity::NodemetricCondition',
     'Entity::NodemetricRule',
+    'Entity::WorkflowDef'
 );
 
 sub registerClassTypes {
