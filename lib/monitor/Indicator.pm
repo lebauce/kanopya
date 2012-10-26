@@ -25,38 +25,61 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    indicator_id               =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    indicator_name             =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    indicator_oid             =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    indicator_min              =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    indicator_max              =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    indicator_color            =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    indicatorset_id            =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    indicator_unit         =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
+    indicator_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    # The user friendly name of indicator (display)
+    indicator_label => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    # the data source name of the indicator (used by collector)
+    indicator_name => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    indicator_oid  => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    indicator_min => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    indicator_max => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    indicator_color => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1},
+    indicatorset_id => {
+        pattern          => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    indicator_unit => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -77,7 +100,7 @@ sub methods {
 sub toString {
     my $self = shift;
 
-    return $self->indicatorset->indicatorset_name . '/' . $self->indicator_name;
+    return $self->indicator_label;
 }
 
 sub getDependencies {

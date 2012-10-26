@@ -83,6 +83,8 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
+  "indicator_label",
+  { data_type => "char", is_nullable => 0, size => 64 },
   "indicator_name",
   { data_type => "char", is_nullable => 0, size => 64 },
   "indicator_oid",
