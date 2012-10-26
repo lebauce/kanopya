@@ -47,6 +47,7 @@ use strict;
 use warnings;
 use General;
 use Kanopya::Exceptions;
+use Indicatorset;
 use JSON -support_by_pp;
 
 use Log::Log4perl "get_logger";

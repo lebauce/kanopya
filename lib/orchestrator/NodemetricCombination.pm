@@ -24,23 +24,35 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    nodemetric_combination_id      =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    nodemetric_combination_label     =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_combination_service_provider_id =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_combination_formula =>  {pattern       => '^((id\d+)|[ .+*()-/]|\d)+$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1,
-                                 description    => "Construct a formula by indicator's names with all mathematical operators. It's possible to use parenthesis with spaces between each element of the formula."},
+    nodemetric_combination_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    nodemetric_combination_label => {
+        pattern       => '^.*$',
+        is_mandatory   => 0,
+        is_extended    => 0,
+        is_editable    => 1
+    },
+    nodemetric_combination_service_provider_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    nodemetric_combination_formula => {
+        pattern         => '^((id\d+)|[ .+*()-/]|\d)+$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+        description     => "Construct a formula by indicator's names with all mathematical operators."
+                            . "It's possible to use parenthesis with spaces between each element of the formula."
+    },
+    formula_label => {
+        is_virtual      => 1,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -74,6 +86,10 @@ sub methods {
     }
 }
 
+sub formula_label {
+    my $self = shift;
+    return $self->toString();
+}
 
 sub new {
     my $class = shift;
