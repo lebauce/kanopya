@@ -47,7 +47,14 @@ my $log = get_logger("basedb");
 my $errmsg;
 my %class_type_cache;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    label => {
+        pattern         => '.*',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_virtual      => 1,
+    }
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -133,6 +140,26 @@ sub new {
     return $self;
 }
 
+=pod
+
+=begin classdoc
+
+Default label management
+Label is the value of the attr returned by getLabelAttr() or the object id
+Subclass can redefined this method to return specific label
+
+@return the label string for this object
+
+=end classdoc
+
+=cut
+
+sub label {
+    my $self = shift;
+
+    my $label = $self->getLabelAttr(attrs => $hash);
+    return $label ? $self->getAttr(name => $label) : $self->id;
+}
 
 =pod
 
@@ -1236,16 +1263,10 @@ sub toJSON {
     }
     else {
         $hash->{pk} = $self->id;
-
-        if (! defined ($hash->{label})) {
-            my $label = $self->getLabelAttr(attrs => $hash);
-            $hash->{label} = $label ? $self->getAttr(name => $label) : $self->id;
-        }
     }
 
     return $hash;
 }
-
 
 =pod
 
