@@ -243,7 +243,7 @@ sub methods {
 =cut
 sub label {
     my $self = shift;
-    return $self->externalcluster_name;
+    return $self->cluster_name;
 }
 
 =head2 getClusters
