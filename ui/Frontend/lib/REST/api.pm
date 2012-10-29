@@ -37,6 +37,7 @@ my %resources = (
     "classtype"                => "ClassType",
     "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
     "clustermetric"            => "Clustermetric",
+    "collectorindicator"       => "CollectorIndicator",
     "component"                => "Entity::Component",
     "componenttype"            => "ComponentType",
     "connector"                => "Entity::Connector",
