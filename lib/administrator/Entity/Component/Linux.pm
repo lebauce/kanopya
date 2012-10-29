@@ -75,6 +75,10 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getPriority {
+    return 10;
+}
+
 sub getConf {
     my $self = shift;
     my $conf = {};
