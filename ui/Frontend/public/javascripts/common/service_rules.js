@@ -391,11 +391,6 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         grid_id: serviceNodemetricRulesGridId,
         grid_class: 'service_resources_nodemetric_rules',
         afterInsertRow: function(grid, rowid, rowdata) {
-            // Formula
-            var id  = $(grid).getCell(rowid, 'pk');
-            var url = '/api/nodemetricrule/' + id + '/toString';
-            setCellWithCallMethod(url, grid, rowid, 'nodemetric_rule_formula');
-
             // Workflow name
             if (rowdata.workflow_def_id) {
                 setCellWithRelatedValue(
@@ -408,7 +403,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
             { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60,},
-            { name: 'nodemetric_rule_formula', index: 'nodemetric_rule_formula', width: 120 },
+            { name: 'formula_label', index: 'formula_label', width: 120 },
             { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 120 },
             { name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
         ],
@@ -497,16 +492,11 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
              {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
              {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,},
              {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90, formatter : lastevalStateFormatter, hidden:mode_policy},
-             {name:'aggregate_rule_formula',index:'aggregate_rule_formula', width:90,},
+             {name:'formula_label',index:'formula_label', width:90,},
              {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
              {name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
            ],
         afterInsertRow: function(grid, rowid, rowdata) {
-            // Formula
-            var id  = $(grid).getCell(rowid, 'pk');
-            var url = '/api/aggregaterule/' + id + '/toString';
-            setCellWithCallMethod(url, grid, rowid, 'aggregate_rule_formula');
-
             // Workflow name
             if (rowdata.workflow_def_id) {
                 setCellWithRelatedValue(

@@ -78,7 +78,7 @@ eval{
         externalnode_state    => 'up',
     );
 
-    @indicators = ScomIndicator->search (hash => {service_provider_id => $service_provider->id});
+    @indicators = CollectorIndicator->search (hash => {collector_manager_id => $mock_monitor->id});
     my $agg_rule_ids  = service_rule_objects_creation(indicators => \@indicators);
     my $node_rule_ids = node_rule_objects_creation(indicators => \@indicators);
 

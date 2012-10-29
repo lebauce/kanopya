@@ -133,7 +133,6 @@ sub evalOnOneNode{
     my $value          = $combination->computeValueFromMonitoredValues(
                                            monitored_values_for_one_node => $monitored_values_for_one_node
                                        );
-
     if(not defined $value ){
         return undef;
     } else {

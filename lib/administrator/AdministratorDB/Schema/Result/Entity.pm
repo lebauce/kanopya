@@ -615,9 +615,25 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-10-22 09:48:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1+XLgzLhLlZ9vFSganCDXg
+=head2 collector_indicators
 
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
+
+=cut
+
+__PACKAGE__->has_many(
+  "collector_indicators",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.collector_manager_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-09-07 12:17:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:y7Xm+06tqUu4pODIsAGpOA
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 1;

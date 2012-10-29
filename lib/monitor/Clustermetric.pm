@@ -20,6 +20,7 @@ use Data::Dumper;
 use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
 use Indicator;
+use CollectorIndicator;
 require 'AggregateCombination.pm';
 
 use base 'BaseDB';
@@ -29,26 +30,39 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    clustermetric_service_provider_id          =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    clustermetric_label     =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    clustermetric_indicator_id             =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    clustermetric_statistics_function_name =>  {pattern       => '^(mean|variance|std|max|min|kurtosis|skewness|dataOut|sum|count)$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    clustermetric_window_time              =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
+    clustermetric_service_provider_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    clustermetric_label => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    clustermetric_indicator_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    clustermetric_statistics_function_name => {
+        pattern         => '^(mean|variance|std|max|min|kurtosis|skewness|dataOut|sum|count)$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    clustermetric_window_time => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    indicator_label => {
+        is_virtual      => 1,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -68,6 +82,17 @@ sub methods {
         'perm_holder' => 'entity',
     },
   }
+}
+
+sub indicator_label {
+    my $self = shift;
+
+    return $self->getIndicator()->indicator_label;
+}
+
+sub getIndicator {
+    my $self = shift;
+    return CollectorIndicator->get(id => $self->clustermetric_indicator_id)->indicator;
 }
 
 sub compute{
@@ -195,11 +220,7 @@ sub toString {
         return $self->getAttr(name => 'clustermetric_label');
     }
     else{
-
-        my $service_provider = $self->clustermetric_service_provider;
-        my $collector = $service_provider->getManager(manager_type => "collector_manager");
-        my $indicator = $collector->getIndicator(id => $self->clustermetric_indicator_id);
-
+        my $indicator = $self->getIndicator();
         return $self->clustermetric_statistics_function_name .
                '(' . $indicator->toString() . ')';
     }
@@ -214,10 +235,7 @@ sub getUnit {
         return '-';
     }
 
-    my $service_provider = $self->clustermetric_service_provider;
-    my $collector = $service_provider->getManager(manager_type => "collector_manager");
-    my $indicator_unit = $collector->getIndicator(id => $self->clustermetric_indicator_id)->getAttr(name => 'indicator_unit') || '?';
-
+    my $indicator_unit = $self->getIndicator()->indicator_unit || '?';
     return $indicator_unit;
 }
 

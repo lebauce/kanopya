@@ -119,7 +119,6 @@ my %resources = (
     "quota"                    => "Quota",
     "sco"                      => "Entity::Connector::Sco",
     "scom"                     => "Entity::Connector::Scom",
-    "scomindicator"            => "ScomIndicator",
     "scope"                    => "Scope",
     "scopeparameter"           => "ScopeParameter",
     "snmpd5"                   => "Entity::Component::Snmpd5",

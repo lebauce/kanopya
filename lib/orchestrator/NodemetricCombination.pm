@@ -16,30 +16,43 @@ package NodemetricCombination;
 use strict;
 use warnings;
 use base 'BaseDB';
-use Indicator;
+require 'Indicator.pm';
+use CollectorIndicator;
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    nodemetric_combination_id      =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    nodemetric_combination_label     =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_combination_service_provider_id =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_combination_formula =>  {pattern       => '^((id\d+)|[ .+*()-/]|\d)+$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1,
-                                 description    => "Construct a formula by indicator's names with all mathematical operators. It's possible to use parenthesis with spaces between each element of the formula."},
+    nodemetric_combination_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    nodemetric_combination_label => {
+        pattern       => '^.*$',
+        is_mandatory   => 0,
+        is_extended    => 0,
+        is_editable    => 1
+    },
+    nodemetric_combination_service_provider_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    nodemetric_combination_formula => {
+        pattern         => '^((id\d+)|[ .+*()-/]|\d)+$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+        description     => "Construct a formula by indicator's names with all mathematical operators."
+                            . "It's possible to use parenthesis with spaces between each element of the formula."
+    },
+    formula_label => {
+        is_virtual      => 1,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -73,6 +86,11 @@ sub methods {
     }
 }
 
+# Virtual attribute getter
+sub formula_label {
+    my $self = shift;
+    return $self->toString();
+}
 
 sub new {
     my $class = shift;
@@ -114,9 +132,6 @@ sub toString {
     }
     else{
         my $formula             = $self->getAttr(name => 'nodemetric_combination_formula');
-        my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
-        my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
-        my $collector           = $service_provider->getManager(manager_type => "collector_manager");
 
         #Split nodemetric_rule id from $formula
         my @array = split(/(id\d+)/,$formula);
@@ -125,7 +140,7 @@ sub toString {
             if( $element =~ m/id\d+/)
             {
                 #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-                $element = $collector->getIndicator(id => substr($element,2))->toString();
+                $element = CollectorIndicator->get(id => substr($element,2))->indicator->toString();
             }
         }
         return join('',@array);
@@ -133,7 +148,7 @@ sub toString {
 }
 
 # C/P of homonym method of AggregateCombination
-sub getDependantIndicatorIds{
+sub getDependantCollectorIndicatorIds{
     my $self = shift;
     my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
 
@@ -152,6 +167,26 @@ sub getDependantIndicatorIds{
      return @indicator_ids;
 }
 
+sub getDependantIndicatorIds{
+    my $self = shift;
+    my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
+
+    my @indicator_ids;
+
+    #Split nodemetric_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            my $collector_indicator_id = substr($element,2);
+            push @indicator_ids, CollectorIndicator->get(id => $collector_indicator_id)->indicator_id;
+        }
+     }
+     return @indicator_ids;
+}
+
 =head2 computeValueFromMonitoredValues
 
     desc: Compute Node Combination Value with the formula from given Indicator values
@@ -163,10 +198,6 @@ sub computeValueFromMonitoredValues {
     my %args = @_;
 
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
-    my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
-
-    my $service_provider = Entity::ServiceProvider->get(id => $service_provider_id);
-    my $collector = $service_provider->getManager(manager_type => "collector_manager");
 
     my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
 
@@ -179,8 +210,7 @@ sub computeValueFromMonitoredValues {
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
             my $indicator_id  = substr($element,2);
-            my $indicator_oid = $collector->getIndicator(id => $indicator_id)->indicator_oid;
-
+            my $indicator_oid = CollectorIndicator->get(id => $indicator_id)->indicator->indicator_oid;
             # Replace $element by its value
             $element          = $monitored_values_for_one_node->{$indicator_oid};
 
@@ -236,12 +266,9 @@ sub checkFormula {
 =cut
 
 sub getUnit {
-    my ($self, %args) = @_;
+    my $self = shift;
 
     my $formula             = $self->getAttr(name => 'nodemetric_combination_formula');
-    my $service_provider_id = $self->getAttr(name => 'nodemetric_combination_service_provider_id');
-    my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
-    my $collector           = $service_provider->getManager(manager_type => "collector_manager");
 
     #Split nodemtric_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
@@ -251,7 +278,7 @@ sub getUnit {
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            $element = $collector->getIndicator(id => substr($element,2))->getAttr(name => 'indicator_unit') || '?';
+            $element = CollectorIndicator->get(id => substr($element,2))->indicator->indicator_unit || '?';
             if (not defined $ref_element) {
                 $ref_element = $element;
             } else {

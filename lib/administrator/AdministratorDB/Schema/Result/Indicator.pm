@@ -83,6 +83,8 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
+  "indicator_label",
+  { data_type => "char", is_nullable => 0, size => 64 },
   "indicator_name",
   { data_type => "char", is_nullable => 0, size => 64 },
   "indicator_oid",
@@ -137,6 +139,23 @@ __PACKAGE__->belongs_to(
     on_update     => "CASCADE",
   },
 );
+
+
+=head2 collector_indicators
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
+
+=cut
+
+__PACKAGE__->has_many(
+  "collector_indicators",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.indicator_id" => "self.indicator_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 
 
 # Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 17:07:22
