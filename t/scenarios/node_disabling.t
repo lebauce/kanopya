@@ -18,12 +18,12 @@ lives_ok {
     use Aggregator;
     use Entity::ServiceProvider::Outside::Externalcluster;
     use Entity::Connector::MockMonitor;
-    use NodemetricCombination;
+    use Combination::NodemetricCombination;
     use NodemetricCondition;
     use NodemetricRule;
     use VerifiedNoderule;
     use Clustermetric;
-    use AggregateCombination;
+    use Combination::AggregateCombination;
 } 'All uses';
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -172,7 +172,7 @@ sub service_rule_objects_creation {
             clustermetric_window_time => '1200',
         );
 
-        $acomb1 = AggregateCombination->new(
+        $acomb1 = Combination::AggregateCombination->new(
             aggregate_combination_service_provider_id =>  $service_provider->id,
             aggregate_combination_formula => 'id'.($cm1->id),
         );
@@ -187,14 +187,14 @@ sub node_rule_objects_creation {
         );
 
         # Create nodemetric rule objects
-        my $ncomb1 = NodemetricCombination->new(
+        my $ncomb1 = Combination::NodemetricCombination->new(
             nodemetric_combination_service_provider_id => $service_provider->id,
             nodemetric_combination_formula             => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
         );
 
         my $nc1 = NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $service_provider->id,
-            nodemetric_condition_combination_id => $ncomb1->id,
+            left_combination_id => $ncomb1->id,
             nodemetric_condition_comparator => '>',
             nodemetric_condition_threshold => '0',
         );

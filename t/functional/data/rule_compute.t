@@ -31,7 +31,7 @@ Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 my $adm = Administrator->new;
 $adm->beginTransaction;
 
-my ($indic1);
+my ($indic1,$indic2);
 my ($ac_f, $ac_t);
 my ($nc_f, $nc_t);
 my ($node,$node2);
@@ -86,15 +86,218 @@ eval{
         }
     );
 
+    $indic2 = ScomIndicator->find (
+        hash => {
+            service_provider_id => $service_provider->id,
+            indicator_oid => 'Memory/Pool Paged Bytes'
+        }
+    );
+
+    test_two_combinations_on_nodemetric_condition();
+    test_aggregate_combination_on_nodemetric_condition();
+    test_nometric_condition_threshold();
     test_nodemetric_rules();
     test_aggregate_rules();
 
     $adm->rollbackTransaction;
+    #$adm->commitTransaction();
 };
 if($@) {
     $adm->rollbackTransaction;
     my $error = $@;
     print $error."\n";
+}
+
+sub test_nometric_condition_threshold {
+    # Clustermetric
+    my $cm = Clustermetric->new(
+        clustermetric_service_provider_id => $service_provider->id,
+        clustermetric_indicator_id => ($indic1->id),
+        clustermetric_statistics_function_name => 'sum',
+        clustermetric_window_time => '1200',
+    );
+
+    # Combination
+    my $comb = Combination::AggregateCombination->new(
+        aggregate_combination_service_provider_id   =>  $service_provider->id,
+        aggregate_combination_formula               => 'id'.($cm->id),
+    );
+
+    my $nc_th_right = NodemetricCondition->new(
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        left_combination_id => $comb->id,
+        nodemetric_condition_comparator => '>',
+        nodemetric_condition_threshold => '-1.2',
+    );
+
+    my $nc_th_left = NodemetricCondition->new(
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        nodemetric_condition_threshold => '-1.4',
+        nodemetric_condition_comparator => '<',
+        right_combination_id => $comb->id,
+    );
+
+    my $cc;
+    lives_ok {
+        $cc = Combination::ConstantCombination->get(id => $nc_th_right->right_combination_id),
+    } 'Verify ConstantCombiantion creation';
+
+    is($cc->value,-1.2,'Check theshold value');
+
+    lives_ok {
+        $cc = Combination::ConstantCombination->get(id => $nc_th_left->left_combination_id),
+    } 'Verify ConstantCombiantion creation';
+
+    is($cc->value,-1.4,'Check theshold value');
+    my $r1 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_th_left->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r2 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_th_left->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    $aggregator->update();
+    $orchestrator->manage_aggregates();
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r1->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check nodemetric combination threshold on the right';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r2->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check nodemetric combination threshold on the left';
+}
+
+sub test_two_combinations_on_nodemetric_condition {
+
+    # Create nodemetric rule objects
+    my $ncomb_left = Combination::NodemetricCombination->new(
+        nodemetric_combination_service_provider_id => $service_provider->id,
+        nodemetric_combination_formula => 'id'.($indic1->id),
+    );
+
+    # Create nodemetric rule objects
+    my $ncomb_right = Combination::NodemetricCombination->new(
+        nodemetric_combination_service_provider_id => $service_provider->id,
+        nodemetric_combination_formula => 'id'.($indic2->id),
+    );
+
+    my $nc1 = NodemetricCondition->new(
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        left_combination_id => $ncomb_left->id,
+        right_combination_id => $ncomb_right->id,
+        nodemetric_condition_comparator => '>',
+    );
+
+    my $nc2 = NodemetricCondition->new(
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        left_combination_id => $ncomb_left->id,
+        right_combination_id => $ncomb_right->id,
+        nodemetric_condition_comparator => '<',
+    );
+
+    my $r1 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc1->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    my $r2 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc2->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    $service_provider->addManagerParameter(
+        manager_type    => 'collector_manager',
+        name            => 'mockmonit_config',
+        value           =>  "{
+                                  'default':{ 'const':50 },
+                                  'indics' : {
+                                 'Memory/PercentMemoryUsed' : { 'const':51 },
+                                 'Memory/Pool Paged Bytes' : { 'const':50 }
+                                  }
+                             }",
+    );
+
+    $aggregator->update();
+    $orchestrator->manage_aggregates();
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r1->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check 2 combinations on a nodemetric condition case verified';
+
+    dies_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r2->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check 2 combinations on a nodemetric condition case not verified';
+}
+sub test_aggregate_combination_on_nodemetric_condition {
+    # Clustermetric
+    my $cm = Clustermetric->new(
+        clustermetric_service_provider_id => $service_provider->id,
+        clustermetric_indicator_id => ($indic1->id),
+        clustermetric_statistics_function_name => 'sum',
+        clustermetric_window_time => '1200',
+    );
+
+    # Combination
+    my $comb = Combination::AggregateCombination->new(
+        aggregate_combination_service_provider_id   =>  $service_provider->id,
+        aggregate_combination_formula               => 'id'.($cm->id),
+    );
+
+    $nc_t = NodemetricCondition->new(
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        left_combination_id => $comb->id,
+        nodemetric_condition_comparator => '>',
+        nodemetric_condition_threshold => '0',
+    );
+
+    my $r1 = NodemetricRule->new(
+        nodemetric_rule_service_provider_id => $service_provider->id,
+        nodemetric_rule_formula => 'id'.$nc_t->id,
+        nodemetric_rule_state => 'enabled'
+    );
+
+    $aggregator->update();
+    $orchestrator->manage_aggregates();
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_nodemetric_rule_id => $r1->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check aggregate combination on aggregate condition node 1';
+
+    lives_ok {
+        VerifiedNoderule->find(hash => {
+            verified_noderule_externalnode_id    => $node2->id,
+            verified_noderule_nodemetric_rule_id => $r1->id,
+            verified_noderule_state              => 'verified',
+        })
+    } 'Check aggregate combination on aggregate condition node 1';
 }
 
 sub test_nodemetric_rules {
@@ -107,14 +310,14 @@ sub test_nodemetric_rules {
 
     $nc_f = NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
-        nodemetric_condition_combination_id => $ncomb->id,
+        left_combination_id => $ncomb->id,
         nodemetric_condition_comparator => '<',
         nodemetric_condition_threshold => '0',
     );
 
     $nc_t = NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
-        nodemetric_condition_combination_id => $ncomb->id,
+        left_combination_id => $ncomb->id,
         nodemetric_condition_comparator => '>',
         nodemetric_condition_threshold => '0',
     );
@@ -570,3 +773,4 @@ sub test_big_formulas {
     is($rule1->eval, 1, 'Check (!! (1 || 0)) && (1 && 1) rule');
     is($rule2->eval, 1, 'Check ((0 || 0) || (0 || 1)) && ! ( (! (0 || 1)) || ! (1 && 1)) rule');
 }
+
