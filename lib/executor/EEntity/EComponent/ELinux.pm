@@ -88,10 +88,11 @@ sub generateConfiguration {
     push @$generated_files, $self->_generateFstab(%args);
     push @$generated_files, $self->_generateResolvconf(%args);
     push @$generated_files, $self->_generateUdevPersistentNetRules(%args);
-    
-    # TODO recupérer le kanopya domainname
-    # depuis la conf ? le cluster kanopya ?
-    push @$generated_files, $self->_generateHosts(%args, kanopya_domainname => 'kanopya.localdomain');
+    push @$generated_files, $self->_generateHosts(
+                                kanopya_domainname => $self->{_executor}->cluster_domainname,
+                                %args
+                            );
+
     return $generated_files;
 }
 
@@ -111,30 +112,15 @@ sub preconfigureSystemimage {
             dest => $args{mount_point}.$file->{dest}
         );
     }
-     
-    # adjust some requirements on the image
-    my $data = $self->_getEntity()->getConf();
-    my $automountnfs = 0;
-    for my $mountdef (@{$data->{linux0s_mount}}) {
-        my $mountpoint = $mountdef->{linux0_mount_point};
-        $econtext->execute(command => "mkdir -p $args{mount_point}/$mountpoint");
-        
-        if ($mountdef->{linux0_mount_filesystem} eq 'nfs') {
-            $automountnfs = 1;
-        }
-    }
-    
-    if ($automountnfs) {
-        my $grep_result = $econtext->execute(
-                              command => "grep \"ASYNCMOUNTNFS=no\" $args{mount_point}/etc/default/rcS"
-                          );
 
-        if (not $grep_result->{stdout}) {
-            $econtext->execute(
-                command => "echo \"ASYNCMOUNTNFS=no\" >> $args{mount_point}/etc/default/rcS"
-            );
-        }
-    }
+    $self->_generateUserAccount(econtext => $econtext, %args);
+    $self->_generateNtpdateConf(econtext => $econtext, %args);
+    $self->_generateNetConf(econtext => $econtext, %args);
+
+    # Set up fastboot
+    $econtext->execute(
+        command => "touch $args{mount_point}/fastboot"
+    );
 }
 
 # individual file generation
@@ -268,7 +254,7 @@ sub _generateUdevPersistentNetRules {
         };
         push @interfaces, $tmp;
     }
-       
+
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
         host          => $args{host},
@@ -277,8 +263,177 @@ sub _generateUdevPersistentNetRules {
         template_file => 'udev_70-persistent-net.rules.tt',
         data          => { interfaces => \@interfaces }
     );
-    
+
     return { src  => $file, dest => '/etc/udev/rules.d/70-persistent-net.rules' };
+}
+
+sub _generateUserAccount {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
+
+    my $econtext = $args{econtext};
+    my $user = $args{cluster}->user;
+    my $login = $user->user_login;
+    my $password = $user->user_password;
+
+    # create user account and add sudoers entry if necessary
+    my $cmd = "cat " . $args{mount_point} . "/etc/passwd | cut -d: -f1 | grep ^$login\$";
+    my $result = $econtext->execute(command => $cmd);
+    if ($result->{stdout}) {
+        $log->info("User account $login already exists");
+        Message->send(from => 'Executor', level => 'info',
+                      content => "User account $login already exists");
+    } else {
+        # create the user account
+        my $cmd = "chroot " . $args{mount_point} . " useradd -m -p '$password' $login";
+        my $result = $econtext->execute(command => $cmd);
+
+        # add a sudoers file
+        $cmd = "umask 227 && echo '$login ALL=(ALL) ALL' > " . $args{mount_point} . "/etc/sudoers.d/$login";
+        $result = $econtext->execute(command => $cmd);
+
+        # add ssh pub key
+        my $sshkey = $user->getAttr(name => 'user_sshkey');
+        if(defined $sshkey) {
+            # create ssh directory and authorized_keys file
+            my $dir = $args{mount_point} . "/home/$login/.ssh";
+
+            $cmd = "mkdir $dir";
+            $result = $econtext->execute(command => $cmd);
+
+            $cmd = "umask 177 && echo '$sshkey' > $dir/authorized_keys";
+            $result = $econtext->execute(command => $cmd);
+
+            $cmd = "chroot $args{mount_point} chown -R $login.$login /home/$login/.ssh ";
+            $result = $econtext->execute(command => $cmd);
+        }
+    }
+}
+
+sub _generateNtpdateConf {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
+
+    my $econtext = $args{econtext};
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/default/ntpdate',
+        template_dir  => '/templates/components/linux',
+        template_file => 'ntpdate.tt',
+        data          => { ntpservers => $self->{_executor}->getMasterNodeIp() }
+    );
+
+    $econtext->send(
+        src  => $file,
+        dest => "$args{mount_point}/etc/default/ntpdate"
+    );
+
+    # send ntpdate init script
+    $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/init.d/ntpdate',
+        template_dir  => '/templates/components/linux',
+        template_file => 'ntpdate',
+        data          => { }
+    );
+
+    $econtext->send(
+        src  => $file,
+        dest => "$args{mount_point}/etc/init.d/ntpdate"
+    );
+
+    $econtext->execute(command => "chmod +x $args{mount_point}/etc/init.d/ntpdate");
+
+    $self->service(services    => [ "ntpdate" ],
+                   state       => "on",
+                   mount_point => $args{mount_point});
+}
+
+sub _generateNetConf {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster', 'mount_point', 'econtext' ]);
+
+    # search for an potential 'loadbalanced' component
+    my $cluster_components = $args{cluster}->getComponents(category => "all");
+    my $is_masternode = $args{cluster}->getCurrentNodesCount == 0;
+    my $is_loadbalanced = 0;
+    foreach my $component (@{ $cluster_components }) {
+        my $clusterization_type = $component->getClusterizationType();
+        if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
+            $is_loadbalanced = 1;
+            last;
+        }
+    }
+
+    # Pop an IP adress for all host iface,
+    my @net_ifaces;
+    INTERFACES:
+    foreach my $interface (@{$args{cluster}->getNetworkInterfaces}) {
+        my $iface;
+        eval {
+            $iface = $interface->getAssociatedIface(host => $args{host});
+        };
+        if ($@) {
+            $log->debug("Skipping configuration for interface " . $interface->getRole->interface_role_name);
+            next INTERFACES;
+        }
+
+        # Only add non pxe iface to /etc/network/interfaces
+        if (not $iface->getAttr(name => 'iface_pxe')) {
+            my ($gateway, $netmask, $ip, $method);
+
+            if ($iface->hasIp) {
+                my $pool = $iface->getPoolip;
+                $netmask = $pool->poolip_netmask;
+                $ip = $iface->getIPAddr;
+                $gateway = $interface->hasDefaultGateway() ? $pool->poolip_gateway : undef;
+                $method = "static";
+                if ($is_loadbalanced and not $is_masternode) {
+                    $gateway = $args{cluster}->getMasterNodeIp
+                }
+            }
+            else {
+                $method = "manual";
+            }
+
+            push @net_ifaces, { method  => $method,
+                                name    => $iface->iface_name,
+                                address => $ip,
+                                netmask => $netmask,
+                                gateway => $gateway,
+                                role    => $interface->getRole->interface_role_name };
+
+            $log->info("Iface " .$iface->iface_name . " configured via static file");
+        }
+    }
+
+    $self->_writeNetConf(interfaces => \@net_ifaces, %args);
+}
+
+sub service {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'services', 'mount_point' ]);
+
+    my @services = @{$args{services}};
+    $log->info("Skipping configuration of @services");
+}
+
+sub _writeNetConf {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'cluster' ]);
+
+    $log->info("Skipping configuration of network for cluster " . $args{cluster}->cluster_name);
 }
 
 1;
