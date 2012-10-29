@@ -45,6 +45,7 @@ use Entity::Billinglimit;
 use Entity::Component::Kanopyaworkflow0;
 use Entity::Component::Kanopyacollector1;
 use BillingManager;
+use ComponentType;
 
 use Hash::Merge;
 use DateTime;
@@ -863,30 +864,13 @@ sub getComponents {
 
     General::checkParams(args => \%args, required => [ 'category' ]);
 
-    my $components_rs = $self->{_dbix}->parent->search_related("components", undef, {
-                            '+columns' => {
-                                "component_name"     => "component_type.component_name",
-						        "component_version"  => "component_type.component_version",
-						        "component_category" => "component_type.component_category",
-                            },
-	                        join => [ "component_type" ] }
-	                    );
+    my $hash = { 'service_provider_id' => $self->id };
 
-    my @components;
-    while (my $component_row = $components_rs->next) {
-        my $comp_id           = $component_row->get_column('component_id');
-        my $comptype_category = $component_row->get_column('component_category');
-        my $comptype_name     = $component_row->get_column('component_name');
-        my $comptype_version  = $component_row->get_column('component_version');
+    if (defined ($args{category}) and $args{category} ne "all") {
+        $hash->{'component_type.component_category'} = $args{category};
+    };
 
-        if ($args{category} eq "all" or $args{category} eq $comptype_category){
-            my $class= "Entity::Component::" . $comptype_name . $comptype_version;
-            my $loc = General::getLocFromClass(entityclass=>$class);
-            eval { require $loc; };
-            
-            push @components, $class->get(id => $comp_id);
-        }
-    }
+    my @components = Entity::Component->search(hash => $hash);
     return wantarray ? @components : \@components;
 }
 
@@ -902,78 +886,26 @@ sub getComponents {
 
 =cut
 
-sub getComponent{
+sub getComponent {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['name','version']);
+    General::checkParams(args => \%args);
 
-    my $hash = {
-        'component_type.component_name'    => $args{name},
-        'component_type.component_version' => $args{version}
-    };
+    my $hash = { 'service_provider_id' => $self->id };
 
-    my $component_row;
-    eval {
-        my $components_rs = $self->{_dbix}->parent->search_related(
-                                "components", $hash,
-                                { "+columns" =>
-                                    { "component_name"     => "component_type.component_name",
-                                      "component_version"  => "component_type.component_version",
-                                      "component_category" => "component_type.component_category" },
-                                  join => [ "component_type" ] }
-                            );
-
-        $component_row = $components_rs->next;
-    };
-    if (not defined $component_row or $@) {
-        throw Kanopya::Exception::Internal(
-                  error => "Component with name <$args{name}>, version <$args{version}> " .
-                           "not installed on this cluster:\n$@"
-              );
+    if (defined ($args{name})) {
+        $hash->{'component_type.component_name'} = $args{name};
     }
 
-    my $comp_category = $component_row->get_column('component_category');
-    my $comp_id       = $component_row->id;
-    my $comp_name     = $component_row->get_column('component_name');
-    my $comp_version  = $component_row->get_column('component_version');
-
-    my $class= "Entity::Component::" . $comp_name . $comp_version;
-    my $loc = General::getLocFromClass(entityclass => $class);
-
-    eval { require $loc; };
-    if ($@) {
-        throw Kanopya::Exception::Internal::UnknownClass(error => "Could not find $loc :\n$@");
+    if (defined ($args{category})) {
+        $hash->{'component_type.component_category'} = $args{category};
     }
-    return "$class"->get(id => $comp_id);
-}
 
-sub getComponentByInstanceId{
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['component_instance_id']);
-
-    my $hash = {'component_instance_id' => $args{component_instance_id}};
-    my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
-                                            { '+columns' => {"component_name" => "component.component_name",
-                                                            "component_version" => "component.component_version",
-                                                            "component_category" => "component.component_category"},
-                                                    join => ["component"]});
-
-    my $comp_instance_row = $comp_instance_rs->next;
-    if (not defined $comp_instance_row) {
-        throw Kanopya::Exception::Internal(error => "Component with component_instance_id '$args{component_instance_id}' not found on this cluster");
+    if (defined ($args{version})) {
+        $hash->{'component_type.component_version'} = $args{version};
     }
-    $log->debug("Comp name is " . $comp_instance_row->get_column('component_name'));
-    $log->debug("Component instance found with " . ref($comp_instance_row));
-    my $comp_category = $comp_instance_row->get_column('component_category');
-    my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
-    my $comp_name = $comp_instance_row->get_column('component_name');
-    my $comp_version = $comp_instance_row->get_column('component_version');
-    my $class= "Entity::Component::" . $comp_name . $comp_version;
-    my $loc = General::getLocFromClass(entityclass=>$class);
-    eval { require $loc; };
-    return "$class"->get(id =>$comp_instance_id);
+
+    return Entity::Component->find(hash => $hash);
 }
 
 sub getMasterNode {
