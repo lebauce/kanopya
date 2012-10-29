@@ -66,13 +66,22 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    if ( defined $args{nodemetric_condition_threshold}  ) {
+    if ((! defined $args{right_combination_id}) && defined $args{nodemetric_condition_threshold}  ) {
         my $comb =  Combination::ConstantCombination->new (
             service_provider_id => $args{nodemetric_condition_service_provider_id},
             value => $args{nodemetric_condition_threshold}
         );
         delete $args{nodemetric_condition_threshold};
         $args{right_combination_id} = $comb->id;
+    }
+
+    if ((! defined $args{left_combination_id}) && defined $args{nodemetric_condition_threshold}  ) {
+        my $comb =  Combination::ConstantCombination->new (
+            service_provider_id => $args{nodemetric_condition_service_provider_id},
+            value => $args{nodemetric_condition_threshold}
+        );
+        delete $args{nodemetric_condition_threshold};
+        $args{left_combination_id} = $comb->id;
     }
 
 
