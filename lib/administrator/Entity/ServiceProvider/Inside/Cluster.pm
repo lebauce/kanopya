@@ -1041,6 +1041,23 @@ sub getQoSConstraints {
     return { max_latency => 22, max_abort_rate => 0.3 } ;
 }
 
+sub isLoadBalanced {
+    my $self = shift;
+
+    # search for an potential 'loadbalanced' component
+    my $cluster_components = $self->getComponents(category => "all");
+    my $is_loadbalanced = 0;
+    foreach my $component (@{ $cluster_components }) {
+        my $clusterization_type = $component->getClusterizationType();
+        if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
+            $is_loadbalanced = 1;
+            last;
+        }
+    }
+
+    return $is_loadbalanced;
+}
+
 =head2 addNode
 
 =cut
