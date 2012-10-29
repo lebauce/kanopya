@@ -60,7 +60,9 @@ use Entity::Component::Physicalhoster0;
 use Entity::Component::Fileimagemanager0;
 use Entity::Component::Kanopyacollector1;
 use Entity::Component::Kanopyaworkflow0;
-use Entity::Component::Linux;
+use Entity::Component::Linux::Debian;
+use Entity::Component::Linux::Redhat;
+use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
 
 my @classes = (
@@ -144,7 +146,10 @@ my @classes = (
     'Entity::Workflow',
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
     'Entity::Host::VirtualMachine::Vsphere5Vm',
-    'Entity::Component::Vsphere5'
+    'Entity::Component::Vsphere5',
+    'Entity::Component::Linux::Debian',
+    'Entity::Component::Linux::Suse',
+    'Entity::Component::Linux::Redhat',
 );
 
 sub registerClassTypes {
@@ -856,7 +861,7 @@ sub registerKanopyaMaster {
             name => "Kanopyaworkflow"
         },
         {
-            name => "Linux"
+            name => "Debian"
         },
         {
             name => "Mailnotifier",
