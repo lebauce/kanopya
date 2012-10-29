@@ -125,7 +125,9 @@ sub new {
 sub manage_aggregates {
     my $self = shift;
 
-    $log->info("## UPDATE ALL $self->{_time_step} SECONDS##");
+    if (defined $self->{_time_step}) {
+        $log->info("## UPDATE ALL $self->{_time_step} SECONDS##");
+    }
 
     my @service_providers = Entity::ServiceProvider->search(hash => {});
 
