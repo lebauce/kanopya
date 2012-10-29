@@ -163,8 +163,15 @@ eval {
         $vsphere->register(register_items => $registerItems);
     } 'register items in Kanopya';
 
-    # TODO: retrieve items from Kanopya and compare them with register_items OR Compare number of registers items returned by register()
+    # TODO: retrieve vsphere entity names and check if there is matching service providers in kanopya
 
+    lives_ok {
+        $vsphere->register(register_items => $registerItems);
+    } 'register again items in Kanopya';
+
+    # TODO: check if there is no more service providers in kanopya (to ensure that the 2nd test
+    # did not register any already registered item)
+    
     if ($testing == 1) {
         $adm->rollbackTransaction;
     }

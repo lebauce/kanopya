@@ -89,10 +89,6 @@ sub methods {
             'description'   =>  'Retrieve a list of Hypervisors that are registered in a Cluster',
             'perm_holder'   =>  'entity',
         },
-        'retrieveClusterVms'             =>  {
-            'description'   =>  'Retrieve a list of vms registered in a Cluster\'s hypervisor',
-            'perm_holder'   =>  'entity',
-        },
         'retrieveHypervisorVms'          =>  {
             'description'   =>  'Retrieve a list of vms registered under a vsphere hypervisor',
             'perm_holder'   =>  'entity',
@@ -318,57 +314,6 @@ sub retrieveClusterHypervisors {
     }
 
     return \@hypervisors_infos;
-}
-
-=head2 retrieveClusterVms
-
-    Desc: Retrieve all the VM from a vsphere cluster hypervisor
-    Args: $cluster_name, $datacenter_name, $hypervisor_name
-    Return: \@vms_infos
-
-=cut
-
-sub retrieveClusterVms {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => ['cluster_name',
-                                                      'datacenter_name',
-                                                      'hypervisor_name']);
-
-    #retrieve views
-    my $datacenter_view = $self->findEntityView(
-                              view_type   => 'Datacenter',
-                              hash_filter => { name => $args{datacenter_name}},
-                          );
-
-    my $cluster_view    = $self->findEntityView(
-                              view_type    => 'ClusterComputeResource',
-                              hash_filter  => { name => $args{cluster_name}},
-                              begin_entity => $datacenter_view,
-                          );
-
-    my $hypervisor_view = $self->findEntityView(
-                              view_type    => 'HostSystem',
-                              hash_filter  => { name => $args{hypervisor_name}},
-                              begin_entity => $cluster_view,
-                          );
-
-    #get the vm
-    my $vms_mor = $hypervisor_view->vm;
-
-    my @vms_infos;
-
-    foreach my $vm_mor (@$vms_mor) {
-        my $vm = $self->getView(mo_ref => $vm_mor);
-        my $vm_infos = {
-            name => $vm->name,
-            type => 'vm',
-        };
-
-        push @vms_infos, $vm_infos;
-    }
-
-    return \@vms_infos;
 }
 
 =head2 retrieveHypervisorVms
