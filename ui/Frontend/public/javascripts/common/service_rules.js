@@ -274,15 +274,15 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
         $.get('/api/serviceprovider').success( function(serviceproviders) {
             var count   = serviceproviders.length;
             var treated = 0;
-            var items = [];
             $.each(serviceproviders, function(i,sp) {
-                $.get('/api/serviceprovider/' + sp.pk + '/' + obj_info.relation).success( function(items) {
-                    $.each(items, function(i,item) {
+                $.get('/api/serviceprovider/' + sp.pk + '/' + obj_info.relation).success( function(related) {
+                    var items = [];
+                    $.each(related, function(i,item) {
                         items.push({
                             data : item[obj_info.label_attr],
                             attr : {
-                                item_id : item.pk,
-                                item_desc : item[obj_info.desc_attr]
+                                item_id     : item.pk,
+                                item_desc   : item[obj_info.desc_attr]
                             }
                         });
                     });
