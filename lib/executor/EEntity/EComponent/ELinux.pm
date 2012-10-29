@@ -11,16 +11,22 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package EEntity::EComponent::ELinux0;
+package EEntity::EComponent::ELinux;
 use base 'EEntity::EComponent';
 
 use strict;
 use warnings;
 use Log::Log4perl 'get_logger';
 use Data::Dumper;
+use Message;
+use EEntity;
 
 my $log = get_logger("");
 my $errmsg;
+
+sub getPriority {
+    return 20;
+}
 
 # generate configuration files on node
 sub addNode {
@@ -30,9 +36,42 @@ sub addNode {
                          required => ['cluster','host','mount_point']);
 
     $log->debug("Configuration files generation");
-    my $files = $self->generateConfiguration(%args); 
+    my $files = $self->generateConfiguration(%args);
+
     $log->debug("System image preconfiguration");
     $self->preconfigureSystemimage(%args, files => $files);
+}
+
+sub postStartNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'cluster', 'host' ]);
+
+    my $hosts = $args{cluster}->getHosts();
+    my @ehosts = map { EEntity->new(entity => $_) } values %$hosts;
+    for my $ehost (@ehosts) {
+        $self->generateConfiguration(
+            cluster => $args{cluster},
+            host    => $ehost
+        );
+    }
+}
+
+sub postStopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'cluster', 'host' ]);
+
+    my $hosts = $args{cluster}->getHosts();
+    my @ehosts = map { EEntity->new(entity => $_) } values %$hosts;
+    for my $ehost (@ehosts) {
+        $self->generateConfiguration(
+            cluster => $args{cluster},
+            host    => $ehost
+        );
+    }    
 }
 
 # generate all component files for a host
@@ -125,8 +164,8 @@ sub _generateFstab {
     
     my $data = $self->_getEntity()->getConf();
 
-    foreach my $row (@{$data->{linux0s_mount}}) {
-        delete $row->{linux0_id};
+    foreach my $row (@{$data->{linuxs_mount}}) {
+        delete $row->{linux_id};
     }
 
     my $file = $self->generateNodeFile(

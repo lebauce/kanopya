@@ -288,18 +288,18 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 linux0
+=head2 linux
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Linux0>
+Related object: L<AdministratorDB::Schema::Result::Linux>
 
 =cut
 
 __PACKAGE__->might_have(
-  "linux0",
-  "AdministratorDB::Schema::Result::Linux0",
-  { "foreign.linux0_id" => "self.component_id" },
+  "linux",
+  "AdministratorDB::Schema::Result::Linux",
+  { "foreign.linux_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

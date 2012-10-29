@@ -79,7 +79,7 @@ sub create {
     $self->save();
 
     # automatically add System|Monitoragent|Logger components
-    foreach my $compclass (qw/Entity::Component::Linux0
+    foreach my $compclass (qw/Entity::Component::Linux
                               Entity::Component::Syslogng3
                               Entity::Component::Snmpd5
                               Entity::Component::Puppetagent2/) {

@@ -1,4 +1,4 @@
-# linux0.pm - linux0 component
+# linux.pm - linux component
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -18,19 +18,19 @@
 
 =head1 NAME
 
-<Entity::Component::linux0> <linux0 component concret class>
+<Entity::Component::linux> <linux component concret class>
 
 =head1 VERSION
 
-This documentation refers to <Entity::Component::linux0> version 1.0.0.
+This documentation refers to <Entity::Component::linux> version 1.0.0.
 
 =head1 SYNOPSIS
 
-use <Entity::Component::linux0>;
+use <Entity::Component::linux>;
 
 my $component_instance_id = 2; # component instance id
 
-Entity::Component::linux0->get(id=>$component_instance_id);
+Entity::Component::linux->get(id=>$component_instance_id);
 
 # Cluster id
 
@@ -40,18 +40,18 @@ my $cluster_id = 3;
 
 my $component_id =2 
 
-Entity::Component::linux0->new(component_id=>$component_id, cluster_id=>$cluster_id);
+Entity::Component::linux->new(component_id=>$component_id, cluster_id=>$cluster_id);
 
 =head1 DESCRIPTION
 
-Entity::Component::linux0 is class allowing to instantiate a linux0 component
+Entity::Component::linux is class allowing to instantiate a linux component
 This Entity is empty but present methods to set configuration.
 
 =head1 METHODS
 
 =cut
 
-package Entity::Component::Linux0;
+package Entity::Component::Linux;
 use base "Entity::Component";
 
 use strict;
@@ -65,7 +65,7 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    linux0s_mount => {
+    linuxs_mount => {
         label => 'Filesystems mounts',
         type => 'relation',
         relation => 'single_multi',
@@ -79,21 +79,21 @@ sub getConf {
     my $self = shift;
     my $conf = {};
 
-    my $conf_rs = $self->{_dbix}->linux0s_mount;
+    my $conf_rs = $self->{_dbix}->linuxs_mount;
     my @mountdefs = ();
     while (my $conf_row = $conf_rs->next) {
         push @mountdefs, {
-            linux0_mount_id         => $conf_row->get_column('linux0_mount_id'),
-            linux0_mount_device     => $conf_row->get_column('linux0_mount_device'),
-            linux0_mount_point      => $conf_row->get_column('linux0_mount_point'),
-            linux0_mount_filesystem => $conf_row->get_column('linux0_mount_filesystem'),
-            linux0_mount_options    => $conf_row->get_column('linux0_mount_options'),
-            linux0_mount_dumpfreq   => $conf_row->get_column('linux0_mount_dumpfreq'),
-            linux0_mount_passnum    => $conf_row->get_column('linux0_mount_passnum'),
+            linux_mount_id         => $conf_row->get_column('linux_mount_id'),
+            linux_mount_device     => $conf_row->get_column('linux_mount_device'),
+            linux_mount_point      => $conf_row->get_column('linux_mount_point'),
+            linux_mount_filesystem => $conf_row->get_column('linux_mount_filesystem'),
+            linux_mount_options    => $conf_row->get_column('linux_mount_options'),
+            linux_mount_dumpfreq   => $conf_row->get_column('linux_mount_dumpfreq'),
+            linux_mount_passnum    => $conf_row->get_column('linux_mount_passnum'),
         };
     }
 
-    $conf->{linux0s_mount} = \@mountdefs;
+    $conf->{linuxs_mount} = \@mountdefs;
     return $conf;
 }
 
@@ -104,16 +104,16 @@ sub setConf {
     General::checkParams(args => \%args, required => ['conf']);
 
     my $conf = $args{conf};
-    my $mountdefs_conf = $conf->{linux0s_mount};
+    my $mountdefs_conf = $conf->{linuxs_mount};
     
     # for each mount definition , we search it in db for update or deletion
-    my $mountdefs_rs = $self->{_dbix}->linux0s_mount;
+    my $mountdefs_rs = $self->{_dbix}->linuxs_mount;
     while(my $mountdef_row = $mountdefs_rs->next) {
         my $found = 0;
         my $mountdef_data;
         my $id = $mountdef_row->id;
         foreach my $mountdef_conf (@$mountdefs_conf) {
-             if($mountdef_conf->{linux0_mount_id} == $id) {
+             if($mountdef_conf->{linux_mount_id} == $id) {
                  $found = 1;
                  $mountdef_data = $mountdef_conf;
                  last;
@@ -127,8 +127,8 @@ sub setConf {
     }
     
     foreach    my $mtdef (@$mountdefs_conf) {
-        if (not exists $mtdef->{linux0_mount_id}) {
-                $self->{_dbix}->linux0s_mount->create($mtdef);
+        if (not exists $mtdef->{linux_mount_id}) {
+                $self->{_dbix}->linuxs_mount->create($mtdef);
         }
     }
 }
@@ -138,52 +138,52 @@ sub insertDefaultConfiguration {
     my $self = shift;
     
     my @default_conf = (
-        { linux0_mount_device => 'proc',
-          linux0_mount_point => '/proc',
-          linux0_mount_filesystem => 'proc',
-          linux0_mount_options => 'nodev,noexec,nosuid',
-          linux0_mount_dumpfreq => '0',
-          linux0_mount_passnum => '0'
+        { linux_mount_device => 'proc',
+          linux_mount_point => '/proc',
+          linux_mount_filesystem => 'proc',
+          linux_mount_options => 'nodev,noexec,nosuid',
+          linux_mount_dumpfreq => '0',
+          linux_mount_passnum => '0'
         },
-        { linux0_mount_device => 'sysfs',
-          linux0_mount_point => '/sys',
-          linux0_mount_filesystem => 'sysfs',
-          linux0_mount_options => 'defaults',
-          linux0_mount_dumpfreq => '0',
-          linux0_mount_passnum => '0'
+        { linux_mount_device => 'sysfs',
+          linux_mount_point => '/sys',
+          linux_mount_filesystem => 'sysfs',
+          linux_mount_options => 'defaults',
+          linux_mount_dumpfreq => '0',
+          linux_mount_passnum => '0'
         },
-        { linux0_mount_device => 'tmpfs',
-          linux0_mount_point => '/tmp',
-          linux0_mount_filesystem => 'tmpfs',
-          linux0_mount_options => 'defaults',
-          linux0_mount_dumpfreq => '0',
-          linux0_mount_passnum => '0'
+        { linux_mount_device => 'tmpfs',
+          linux_mount_point => '/tmp',
+          linux_mount_filesystem => 'tmpfs',
+          linux_mount_options => 'defaults',
+          linux_mount_dumpfreq => '0',
+          linux_mount_passnum => '0'
         },
-        { linux0_mount_device => 'tmpfs',
-          linux0_mount_point => '/var/tmp',
-          linux0_mount_filesystem => 'tmpfs',
-          linux0_mount_options => 'defaults',
-          linux0_mount_dumpfreq => '0',
-          linux0_mount_passnum => '0'
+        { linux_mount_device => 'tmpfs',
+          linux_mount_point => '/var/tmp',
+          linux_mount_filesystem => 'tmpfs',
+          linux_mount_options => 'defaults',
+          linux_mount_dumpfreq => '0',
+          linux_mount_passnum => '0'
         },
-        { linux0_mount_device => 'tmpfs',
-          linux0_mount_point => '/var/run',
-          linux0_mount_filesystem => 'tmpfs',
-          linux0_mount_options => 'defaults',
-          linux0_mount_dumpfreq => '0',
-          linux0_mount_passnum => '0'
+        { linux_mount_device => 'tmpfs',
+          linux_mount_point => '/var/run',
+          linux_mount_filesystem => 'tmpfs',
+          linux_mount_options => 'defaults',
+          linux_mount_dumpfreq => '0',
+          linux_mount_passnum => '0'
         },
-        { linux0_mount_device => 'tmpfs',
-          linux0_mount_point => '/var/lock',
-          linux0_mount_filesystem => 'tmpfs',
-          linux0_mount_options => 'defaults',
-          linux0_mount_dumpfreq => '0',
-          linux0_mount_passnum => '0'
+        { linux_mount_device => 'tmpfs',
+          linux_mount_point => '/var/lock',
+          linux_mount_filesystem => 'tmpfs',
+          linux_mount_options => 'defaults',
+          linux_mount_dumpfreq => '0',
+          linux_mount_passnum => '0'
         },
     );
 
     foreach my $row (@default_conf) {
-        $self->{_dbix}->linux0s_mount->create( $row );
+        $self->{_dbix}->linuxs_mount->create( $row );
     }
 }
 
@@ -197,17 +197,17 @@ sub getPuppetDefinition {
     my $str = "class {'linux': sourcepath => \"$path\",}\n";  
     
     # /etc/fstab et mounts
-    foreach my $mount (@{$conf->{linux0s_mount}}) {
-        $str .= "file {'$mount->{linux0_mount_point}': ensure => directory }\n";
-        $str .= "mount {'$mount->{linux0_mount_point}':\n";
-        $str .= "\tdevice => '$mount->{linux0_mount_device}',\n";
+    foreach my $mount (@{$conf->{linuxs_mount}}) {
+        $str .= "file {'$mount->{linux_mount_point}': ensure => directory }\n";
+        $str .= "mount {'$mount->{linux_mount_point}':\n";
+        $str .= "\tdevice => '$mount->{linux_mount_device}',\n";
         $str .= "\tensure => mounted,\n";
-        $str .= "\tfstype => '$mount->{linux0_mount_filesystem}',\n";
-        $str .= "\tname   => '$mount->{linux0_mount_point}',\n";
-        $str .= "\toptions => '$mount->{linux0_mount_options}',\n";
-        $str .= "\tdump   => '$mount->{linux0_mount_dumpfreq}',\n";
-        $str .= "\tpass   => '$mount->{linux0_mount_passnum}',\n";
-        $str .= "\trequire => File['$mount->{linux0_mount_point}']\n";
+        $str .= "\tfstype => '$mount->{linux_mount_filesystem}',\n";
+        $str .= "\tname   => '$mount->{linux_mount_point}',\n";
+        $str .= "\toptions => '$mount->{linux_mount_options}',\n";
+        $str .= "\tdump   => '$mount->{linux_mount_dumpfreq}',\n";
+        $str .= "\tpass   => '$mount->{linux_mount_passnum}',\n";
+        $str .= "\trequire => File['$mount->{linux_mount_point}']\n";
         $str .= "}\n";
     }
     

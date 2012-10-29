@@ -60,7 +60,7 @@ use Entity::Component::Physicalhoster0;
 use Entity::Component::Fileimagemanager0;
 use Entity::Component::Kanopyacollector1;
 use Entity::Component::Kanopyaworkflow0;
-use Entity::Component::Linux0;
+use Entity::Component::Linux;
 use Entity::Component::Mailnotifier0;
 
 my @classes = (
@@ -89,7 +89,7 @@ my @classes = (
     'Entity::Component::Iptables1',
     'Entity::Component::Keepalived1',
     'Entity::Component::Memcached1',
-    'Entity::Component::Linux0',
+    'Entity::Component::Linux',
     'Entity::Component::Mysql5',
     'Entity::Component::Openiscsi2',
     'Entity::Component::Openldap1',
