@@ -409,6 +409,9 @@ sub getAttrDefs {
         pop @classes;
     }
 
+    # Add BaseDB virtual attrs def
+    $attributedefs->{'BaseDB'} = BaseDB::getAttrDef();
+
     if ($args{group_by} eq 'module') {
         return $attributedefs;
     }
@@ -420,6 +423,7 @@ sub getAttrDefs {
     foreach my $module (keys %$attributedefs) {
         $result = $merge->merge($result, $attributedefs->{$module});
     }
+
     return $result;
 }
 
@@ -644,7 +648,7 @@ sub getAttr {
     General::checkParams(args => \%args, required => ['name']);
 
     my $dbix = $self->{_dbix};
-    my $attr = $class->getAttrDef()->{$args{name}};
+    my $attr = $class->getAttrDef()->{$args{name}} || BaseDB::getAttrDef()->{$args{name}};
     my $value = undef;
     my $found = 1;
 
