@@ -116,6 +116,12 @@ sub setConf {
     }
 }
 
+sub getPuppetMaster {
+    my $config = Kanopya::Config::get('executor');
+    my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
+    return $kanopya_cluster->getComponent(name => "Puppetmaster");
+}
+
 sub getHostsEntries {
     my ($self) = @_;
     my $entry = {};
