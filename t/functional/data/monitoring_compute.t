@@ -75,17 +75,17 @@ eval{
     );
 
     # Get indicators
-    $indic1 = ScomIndicator->find (
+    $indic1 = CollectorIndicator->find (
         hash => {
-            service_provider_id => $service_provider->id,
-            indicator_oid => 'Memory/PercentMemoryUsed'
+            collector_manager_id        => $mock_monitor->id,
+            'indicator.indicator_oid'   => 'Memory/PercentMemoryUsed',
         }
     );
 
-    $indic2 = ScomIndicator->find (
+    $indic2 = CollectorIndicator->find (
         hash => {
-            service_provider_id => $service_provider->id,
-            indicator_oid => 'Memory/Pool Paged Bytes'
+            collector_manager_id        => $mock_monitor->id,
+            'indicator.indicator_oid'   => 'Memory/Pool Paged Bytes'
         }
     );
 
@@ -127,13 +127,6 @@ sub testClusterMetric {
     my $aggregator          = $args{aggregator};
 
     diag('Cluster metric computing (last value)');
-
-    my $indic1 = ScomIndicator->find (
-        hash => {
-            service_provider_id => $service_provider->id,
-            indicator_oid => 'Memory/PercentMemoryUsed'
-        }
-    );
 
     my $cm = Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,

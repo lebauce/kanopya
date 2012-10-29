@@ -17,7 +17,7 @@ lives_ok {
     use Administrator;
     use Entity::ServiceProvider::Outside::Externalcluster;
     use Entity::Connector::MockMonitor;
-    use ScomIndicator;
+    use CollectorIndicator;
     use Externalnode;
     use NodemetricCombination;
     use NodemetricCondition;
@@ -90,17 +90,17 @@ eval{
         externalnode_state    => 'up',
     );
 
-    $indicator_deleted = ScomIndicator->find (
+    $indicator_deleted = CollectorIndicator->find (
                             hash => {
-                                service_provider_id => $service_provider->id,
-                                indicator_oid => 'Memory/PercentMemoryUsed'
+                                collector_manager_id        => $mock_monitor->id,
+                                'indicator.indicator_oid'   => 'Memory/PercentMemoryUsed'
                             }
                         );
 
-    $indicator_other = ScomIndicator->find (
+    $indicator_other = CollectorIndicator->find (
                             hash => {
-                                service_provider_id => $service_provider->id,
-                                indicator_oid => 'Memory/Pool Paged Bytes'
+                                collector_manager_id        => $mock_monitor->id,
+                                'indicator.indicator_oid'   => 'Memory/Pool Paged Bytes'
                             }
                         );
 

@@ -79,10 +79,10 @@ eval{
     );
 
     # Get indicators
-    $indic1 = ScomIndicator->find (
+    $indic1 = CollectorIndicator->find (
         hash => {
-            service_provider_id => $service_provider->id,
-            indicator_oid => 'Memory/PercentMemoryUsed'
+            collector_manager_id        => $mock_monitor->id,
+            'indicator.indicator_oid'   => 'Memory/PercentMemoryUsed'
         }
     );
 

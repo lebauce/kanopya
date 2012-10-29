@@ -224,7 +224,6 @@ sub evalOnOneNode{
     eval $arrayString;
 
     return ($res)?1:0;
-    #return $res;
 };
 
 sub isVerifiedForANode{
