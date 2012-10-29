@@ -141,18 +141,23 @@ sub evalOnOneNode{
 
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
 
-    my $combination_id = $self->getAttr(name => 'left_combination_id');
     my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
-    my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
 
-    my $combination    = Combination->get('id' => $combination_id);
-    my $value          = $combination->computeValueFromMonitoredValues(
-                                           monitored_values_for_one_node => $monitored_values_for_one_node
-                                       );
-    if(not defined $value ){
+    my $left_combination  = $self->left_combination;
+    my $right_combination = $self->right_combination;
+
+    my $left_value = $left_combination->computeValueFromMonitoredValues(
+                         monitored_values_for_one_node => $monitored_values_for_one_node
+                     );
+
+    my $right_value = $right_combination->computeValueFromMonitoredValues(
+                          monitored_values_for_one_node => $monitored_values_for_one_node
+                      );
+
+    if((not defined $left_value) || (not defined $right_value)){
         return undef;
     } else {
-        my $evalString = $value.$comparator.$threshold;
+        my $evalString = $left_value.$comparator.$right_value;
 
         $log->info("NM Condition formula: $evalString");
 
@@ -206,9 +211,7 @@ sub delete {
 
 sub getDependantIndicatorIds {
     my $self = shift;
-    my $combination = $self->left_combination;
-    return $combination->getDependantIndicatorIds();
+    return ($self->left_combination->getDependantIndicatorIds(), $self->right_combination->getDependantIndicatorIds());
 }
-
 
 1;
