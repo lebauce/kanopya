@@ -89,6 +89,16 @@ sub toString() {
     return 'External Cluster ' . $self->getAttr( name => 'externalcluster_name');
 }
 
+=head2
+
+    BaseDB label virtual attribute getter
+
+=cut
+sub label {
+    my $self = shift;
+    return $self->externalcluster_name;
+}
+
 =head2 new
 
 =cut

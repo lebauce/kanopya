@@ -236,6 +236,16 @@ sub methods {
     };
 }
 
+=head2
+
+    BaseDB label virtual attribute getter
+
+=cut
+sub label {
+    my $self = shift;
+    return $self->externalcluster_name;
+}
+
 =head2 getClusters
 
 =cut
