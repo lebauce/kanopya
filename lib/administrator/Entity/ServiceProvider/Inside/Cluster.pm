@@ -59,7 +59,7 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     cluster_name => {
-        pattern      => '^[\w\d]+$',
+        pattern      => '^[\w\d\.]+$',
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 0

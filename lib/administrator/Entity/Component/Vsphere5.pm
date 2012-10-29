@@ -732,11 +732,11 @@ sub registerVm {
 
     eval {
         $service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
-                                         cluster_name => $service_provider_name,});
+                                         cluster_name => $service_provider_renamed,});
     };
     if (defined $service_provider) {
         $errmsg  = 'vSphere component will not create new service provider for the vm ';
-        $errmsg .= $service_provider_name. ' because this name already exist in kanopya';
+        $errmsg .= $service_provider_renamed. ' because this name already exist in kanopya';
         $log->info($errmsg);
         return $service_provider;
     }
@@ -746,7 +746,7 @@ sub registerVm {
 
             $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
                                     active                 => 1,
-                                    cluster_name           => $service_provider_name,
+                                    cluster_name           => $service_provider_renamed,
                                     cluster_state          => 'up:'. time(),
                                     cluster_min_node       => 1,
                                     cluster_max_node       => 1,
@@ -862,7 +862,7 @@ sub registerVm {
                      active             => 1,
                      host_ram           => $vm_view->summary->config->memorySizeMB,
                      host_core          => $vm_view->summary->config->numCpu,
-                     host_hostname      => $vm_view->name,
+                     host_hostname      => $service_provider_renamed,
                      host_state         => $host_state,
                      hypervisor_id      => $hosting_hypervisor_id,
                  );
@@ -906,7 +906,7 @@ sub registerHypervisor {
     my $datacenter                  = $args{parent};
     my $service_provider_name       = $args{name};
     #We substitute terms in (new string) to match cluster_name pattern
-    (my $service_provider_renamed   = $service_provider_name) =~ s/[^\w\d+]/_/g;
+    (my $service_provider_renamed   = $service_provider_name) =~ s/[^\w\d\.+]/_/g;
     my $datacenter_name             = $datacenter->vsphere5_datacenter_name;
 
     #Get the datacenter view
@@ -932,12 +932,12 @@ sub registerHypervisor {
 
     eval {
         $service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
-                                         cluster_name => $service_provider_name,}
+                                         cluster_name => $service_provider_renamed,}
                                      );
     };
     if (defined $service_provider) {
         $errmsg  = 'vSphere component will not create new service provider for hypervisor ';
-        $errmsg .= $service_provider_name. ' because this name already exist in kanopya';
+        $errmsg .= $service_provider_renamed. ' because this name already exist in kanopya';
         $log->info($errmsg);
         return $service_provider;
     }
@@ -948,7 +948,7 @@ sub registerHypervisor {
 
             $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
                                     active                 => 1,
-                                    cluster_name           => $service_provider_name,
+                                    cluster_name           => $service_provider_renamed,
                                     cluster_state          => 'up:'. time(),
                                     cluster_min_node       => 1,
                                     cluster_max_node       => 1,
@@ -1034,7 +1034,7 @@ sub registerHypervisor {
                      active             => 1,
                      host_ram           => $hypervisor_view->hardware->memorySize,
                      host_core          => $hypervisor_view->summary->hardware->numCpuCores,
-                     host_hostname      => $hypervisor_view->name,
+                     host_hostname      => $service_provider_renamed,
                      host_state         => $host_state,
                  );
 
