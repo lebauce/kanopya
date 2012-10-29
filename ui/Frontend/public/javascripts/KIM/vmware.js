@@ -118,10 +118,8 @@ function vmwareBrowser (event) {
                                     else if ( current_node.attr('treeType') == 'cluster' ) {
                                        url = url_base + '/retrieveClusterHypervisors';
                                     }
-                                    else if ( current_node.attr('treeType') == 'clusterHypervisor' ) {
-                                       url = url_base + '/retrieveClusterVms';
-                                    }
-                                    else if ( current_node.attr('treeType') == 'hypervisor' ) {
+                                    else if ( current_node.attr('treeType') == 'hypervisor' ||
+                                              current_node.attr('treeType') == 'clusterHypervisor' ) {
                                        url = url_base + '/retrieveHypervisorVms';
                                     }
                                 }
@@ -154,19 +152,11 @@ function vmwareBrowser (event) {
                             //We save datacenter name for Hypervisor
                             grandParentNodeTreeName = current_node.attr('parent_name');
                         }
-                        else if ( current_node.attr('treeType') == 'clusterHypervisor' ) {
+                        else if ( current_node.attr('treeType') == 'clusterHypervisor' ||
+                                  current_node.attr('treeType') == 'hypervisor' ) {
                             //Retrieve Virtual Machines on an Hypervisor hosted on a Cluster
                             data_sent = {
                                'datacenter_name'    :    current_node.attr('grand_parent_name'),
-                               'cluster_name'       :    current_node.attr('parent_name'),
-                               'hypervisor_name'    :    current_node.attr('name'),
-                            };
-                            grandParentNodeTreeName = null;
-                        }
-                        else if ( current_node.attr('treeType') == 'hypervisor' ) {
-                            //Retrieve Virtual Machines on an Hypervisor hosted on a Datacenter
-                            data_sent = {
-                               'datacenter_name'    :    current_node.attr('parent_name'),
                                'hypervisor_name'    :    current_node.attr('name'),
                             };
                             grandParentNodeTreeName = null;

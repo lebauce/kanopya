@@ -113,19 +113,19 @@ eval {
         }
     } 'retrieve Cluster and Hypervisors';
 
-    #lives_ok {
-        #foreach my $datacenter ( @$registerItems ) {
-            #foreach my $datacenterChildren (@{ $datacenter->{children} }) {
-                #if ($datacenterChildren->{type} eq 'hypervisor') {
-                    #my $vms = $vsphere->retrieveHypervisorVms(
-                                  #datacenter_name    =>    $datacenter->{name},
-                                  #hypervisor_name    =>    $datacenterChildren->{name},
-                              #);
-                    #$datacenterChildren->{children} = $vms;
-                #}
-            #}
-        #}
-    #} 'retrieve VMs on Hypervisors (hosted on Datacenter)';
+    lives_ok {
+        foreach my $datacenter (@$registerItems) {
+            foreach my $datacenterChildren (@{ $datacenter->{children} }) {
+                if ($datacenterChildren->{type} eq 'hypervisor') {
+                    my $vms = $vsphere->retrieveHypervisorVms(
+                                  datacenter_name => $datacenter->{name},
+                                  hypervisor_name => $datacenterChildren->{name},
+                              );
+                    $datacenterChildren->{children} = $vms;
+                }
+            }
+        }
+    } 'retrieve VMs on Hypervisors (hosted on Datacenter)';
 
     lives_ok {
         foreach my $datacenter (@$registerItems) {

@@ -121,7 +121,7 @@ sub checkHostManagerParams {
 =head2 connect
 
     Desc: Connect to a vCenter instance
-    Args: $login, $pwd
+    Args: $login, $pwd, $url
  
 =cut
 
@@ -171,20 +171,22 @@ sub negociateConnection {
     #try to grab a dummy entity to check if a session is opened
     my $view;
     eval {
-        $view = Vim::find_entity_view(view_type      => 'Folder',
-                                      filter         => {name => 'rootFolder'});
+        $view = Vim::find_entity_view(view_type => 'Folder',
+                                      filter    => {name => 'rootFolder'});
     };
     if ($@ =~ /no global session is defined/) {
         $log->info('opening a new session to vSphere');
-        print "opening a new session to vSphere\n";
 
         $self->connect(
             user_name => $self->vsphere5_login,
             password  => $self->vsphere5_pwd,
-            url       => 'https://'.$self->vsphere5_url);
+            url       => 'https://'.$self->vsphere5_url,
+        );
+        return;
     }
     else {
         $log->info('A session toward vSphere is already opened');
+        return;
     }
 }
 
@@ -223,7 +225,7 @@ sub retrieveDatacenters {
 
 =head2 retrieveClustersAndHypervisors
 
-    Desc: Retrieve list of Clusters and Hypervisors (that are not in a cluster) 
+    Desc: Retrieve list of Clusters and Hypervisors (that are not in a cluster)
           hosted in a given Datacenter
     Args: $datacenter_name
     Return: \@clusters_and_hypervisors_infos
@@ -287,7 +289,7 @@ sub retrieveClusterHypervisors {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['cluster_name', 'datacenter_name']);
-    
+
     #retrieve datacenter and cluster views
     my $datacenter_view = $self->findEntityView(
                               view_type   => 'Datacenter',
@@ -372,7 +374,7 @@ sub retrieveClusterVms {
 =head2 retrieveHypervisorVms
 
     Desc: Retrieve all the VM from a vsphere hypervisor
-    Args: $datacenter_name, $hypervisor_name 
+    Args: $datacenter_name, $hypervisor_name
     Return: \@vms_infos
 
 =cut
@@ -419,7 +421,7 @@ sub retrieveHypervisorVms {
 =head2 getView
 
     Desc: get a vsphere managed object view
-    Args: $mor (managed object reference)
+    Args: $mo_ref (managed object reference)
     Return: $view
 
 =cut
@@ -448,9 +450,9 @@ sub getView {
 
     Desc: find a view of a specified managed object type
     Args: $view_type (HostSystem,VirtualMachine,Datacenter,Folder,ResourcePool,
-                        ClusterComputeResource or ComputeResource),
-          %hash_filter, @array_property, $begin_entity view
-    Return: the managed entity view
+                      ClusterComputeResource or ComputeResource),
+          \%hash_filter, \@array_property, $begin_entity view
+    Return: a managed entity view
 
 =cut
 
@@ -483,15 +485,15 @@ sub findEntityView {
     my $view;
     eval {
         if (defined $begin_entity) {
-            $view = Vim::find_entity_view(view_type      => $view_type,
-                                          filter         => $hash_filter,
-                                          properties     => $array_property,
-                                          begin_entity   => $begin_entity,);
+            $view = Vim::find_entity_view(view_type    => $view_type,
+                                          filter       => $hash_filter,
+                                          properties   => $array_property,
+                                          begin_entity => $begin_entity,);
         }
         else {
-            $view = Vim::find_entity_view(view_type      => $view_type,
-                                          filter         => $hash_filter,
-                                          properties     => $array_property,);
+            $view = Vim::find_entity_view(view_type  => $view_type,
+                                          filter     => $hash_filter,
+                                          properties => $array_property,);
         }
     };
     if ($@) {
@@ -507,9 +509,9 @@ sub findEntityView {
 
     Desc: find views of a specified managed object type
     Args: $view_type (HostSystem,VirtualMachine,Datacenter,Folder,ResourcePool,
-                        ClusterComputeResource or ComputeResource),
+                      ClusterComputeResource or ComputeResource),
           %hash_filter, @array_property, $begin_entity view
-    Return: the managed entity views
+    Return: a list of managed entity views
 
 =cut
 
@@ -531,9 +533,9 @@ sub findEntityViews {
     my $view_type    = $args{view_type};
     my $begin_entity = $args{begin_entity};
 
-    my @array_property = undef;
+    my $array_property = undef;
     if ($args{array_property}) {
-        @array_property = @{$args{array_property}};
+        $array_property = $args{array_property};
     }
 
     my $views;
@@ -542,7 +544,7 @@ sub findEntityViews {
             $views = Vim::find_entity_views(
                          view_type    => $view_type,
                          filter       => $hash_filter,
-                         properties   => \@array_property,
+                         properties   => $array_property,
                          begin_entity => $begin_entity,
                      );
         }
@@ -550,7 +552,7 @@ sub findEntityViews {
             $views = Vim::find_entity_views(
                          view_type  => $view_type,
                          filter     => $hash_filter,
-                         properties => \@array_property,
+                         properties => $array_property,
                      );
         }
     };
@@ -582,7 +584,8 @@ sub register {
 
     General::checkParams(args => \%args, required => ['register_items'],
                                          optional => {
-                                             parent => undef});
+                                             parent => undef,
+                                         });
     $self->negociateConnection();
 
     my @register_items = @{ $args{register_items} };
@@ -612,13 +615,13 @@ sub register {
             $log->info($errmsg);
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
-        
+
         push @registered_items, $registered_item;
 
         if (defined ($register_item->{children}) &&
             scalar(@{ $register_item->{children} }) != 0) {
 
-            $self->register(register_items => $register_item->{children}, 
+            $self->register(register_items => $register_item->{children},
                             parent         => $registered_item);
         }
     }
@@ -630,7 +633,7 @@ sub register {
 
     Desc: register a new vsphere datacenter into Kanopya
           return the corresponding datacenter if it already exist
-    Args: $datacenter_name
+    Args: $name
     Return: $datacenter or $existing_datacenter
  
 =cut 
@@ -651,6 +654,7 @@ sub registerDatacenter {
     if (defined $existing_datacenter) {
         $errmsg  = 'The datacenter '. $args{name} .' already exist in kanopya ';
         $errmsg .= 'with ID '. $existing_datacenter->id;
+        $errmsg .= ' and is already associated with this component (id '. $self->id .')';
         $log->info($errmsg);
         return $existing_datacenter;
     }
@@ -673,11 +677,11 @@ sub registerDatacenter {
 
 =head2 registerVm
 
-    Desc: register a new virtual machine to match a vsphere vm 
+    Desc: register a new virtual machine to match a vsphere vm
     Args: $name, $parent (a service provider)
     Return: $service_provider
  
-=cut 
+=cut
 
 sub registerVm {
     my ($self, %args) = @_;
@@ -689,22 +693,20 @@ sub registerVm {
     #We substitute terms in (new string) to match cluster_name pattern
     (my $service_provider_renamed   = $service_provider_name) =~ s/[^\w\d+]/_/g;
 
-    #Get the datacenter used by the hosting hypervisor(s) 
+    #Get the datacenter used by the hosting hypervisor(s)
     my @hypervisors_nodes;
-    eval { 
+    eval {
         @hypervisors_nodes = Externalnode::Node->search(hash => {
                                  inside_id => $parent_service_provider->id});
     };
     if ($@) {
         $errmsg  = 'Could not find any node in the parent service provider: '. $@;
-        $errmsg .= 'Was the parent service provider correctly registered?';
+        $errmsg .= 'Has the parent service provider been correctly registered?';
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
     #use the first hypervisor in the list
-    my $datacenter_id   = $hypervisors_nodes[0]->host->vsphere5_datacenter_id;
-    my $datacenter      = Vsphere5Datacenter->find(hash => {
-                              vsphere5_datacenter_id => $datacenter_id});
+    my $datacenter      = $hypervisors_nodes[0]->host->vsphere5_datacenter;
     my $datacenter_name = $datacenter->vsphere5_datacenter_name;
 
     #Get the datacenter view
@@ -712,7 +714,8 @@ sub registerVm {
                               view_type   => 'Datacenter',
                               hash_filter => {
                                   name => $datacenter_name
-                          });
+                              }
+                          );
 
     #get the VM view from vSphere
     my $vm_view = $self->findEntityView(
@@ -725,22 +728,19 @@ sub registerVm {
 
     #Check if a service provider called $service_provider_name already exist and
     #Create a new one to hold the vsphere vm if none exists
-    my $existing_service_provider;
+    my $service_provider;
 
     eval {
-        $existing_service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
-                                         cluster_name => $service_provider_name,
-                                     });
+        $service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
+                                         cluster_name => $service_provider_name,});
     };
-    if (defined $existing_service_provider) {
-        $errmsg  = 'vSphere component will not create new service provider for hypervisor ';
+    if (defined $service_provider) {
+        $errmsg  = 'vSphere component will not create new service provider for the vm ';
         $errmsg .= $service_provider_name. ' because this name already exist in kanopya';
         $log->info($errmsg);
-        return $existing_service_provider;
+        return $service_provider;
     }
     else {
-        my $service_provider;
-
         eval {
             my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
 
@@ -760,7 +760,7 @@ sub registerVm {
                                     cluster_boot_policy    => '',
                                     user_id                => $admin_user->user_id,
                                 );
-                        
+
             #Check if the vsphere hosting policy and the vsphere vm policy already exist
             #If not create them 
             my $hp;
@@ -768,22 +768,24 @@ sub registerVm {
 
             eval {
                 $hp = Entity::Policy->find(hash => {
-                          policy_name => 'vsphere'});
+                          policy_name => 'vsphere'}
+                      );
             };
             if (not defined $hp) {
                 $hp = Entity::Policy->new(
-                         policy_type => 'hosting_policy', 
-                         policy_name => 'vsphere'
+                         policy_type => 'hosting_policy',
+                         policy_name => 'vsphere',
                       );
             }
 
             eval {
                 $st = Entity::ServiceTemplate->find(hash => {
                           hosting_policy_id => $hp->id,
-                          service_name      => 'vsphere_vm_service'});
+                          service_name      => 'vsphere_vm_service',}
+                      );
             };
             if (defined $st) {
-                $service_provider->setAttr(name  => 'service_template_id', 
+                $service_provider->setAttr(name  => 'service_template_id',
                                            value => $st->id);
                 $service_provider->save();
             }
@@ -792,7 +794,7 @@ sub registerVm {
                           hosting_policy_id => $hp->id,
                           service_name      => 'vsphere_vm_service'
                       );
-                $service_provider->setAttr(name  => 'service_template_id', 
+                $service_provider->setAttr(name  => 'service_template_id',
                                            value => $st->id);
                 $service_provider->save();
             }
@@ -883,11 +885,11 @@ sub registerVm {
 
 =head2 registerHypervisor
 
-    Desc: register a new host to match a vsphere hypervisor 
-    Args: $hypervisor_name, $parent (datacenter)
+    Desc: register a new host to match a vsphere hypervisor
+    Args: $name, $parent (datacenter)
     Return: $service_provider
  
-=cut 
+=cut
 
 sub registerHypervisor {
     my ($self, %args) = @_;
@@ -898,7 +900,7 @@ sub registerHypervisor {
     if (!(ref $args{parent} eq 'Vsphere5Datacenter')) {
         my $msg = 'Can\'t register a hypervisor with this method without a datacenter parent';
         $log->info($msg);
-        return $args{parent}; 
+        return $args{parent};
     }
 
     my $datacenter                  = $args{parent};
@@ -912,7 +914,8 @@ sub registerHypervisor {
                               view_type   => 'Datacenter',
                               hash_filter => {
                                   name => $datacenter_name
-                          });
+                              }
+                          );
 
     #Get hypervisor's view
     my $hypervisor_view = $self->findEntityView(
@@ -925,22 +928,20 @@ sub registerHypervisor {
 
     #Check if a service provider called $service_provider_name already exist and
     #Create a new one to hold the vsphere cluster hypervisors if none exists
-    my $existing_service_provider;
+    my $service_provider;
 
     eval {
-        $existing_service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
-                                         cluster_name => $service_provider_name,
-                                     });
+        $service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
+                                         cluster_name => $service_provider_name,}
+                                     );
     };
-    if (defined $existing_service_provider) {
+    if (defined $service_provider) {
         $errmsg  = 'vSphere component will not create new service provider for hypervisor ';
         $errmsg .= $service_provider_name. ' because this name already exist in kanopya';
         $log->info($errmsg);
-        return $existing_service_provider;
+        return $service_provider;
     }
     else {
-        my $service_provider;
-
         eval {
             my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
             my $cluster_basehostname = 'vsphere_service_'. $hypervisor_view->summary->host->value;
@@ -969,11 +970,12 @@ sub registerHypervisor {
 
             eval {
                 $hp = Entity::Policy->find(hash => {
-                          policy_name => 'vsphere'});
+                          policy_name => 'vsphere'}
+                      );
             };
             if (not defined $hp) {
                 $hp = Entity::Policy->new(
-                         policy_type => 'hosting_policy', 
+                         policy_type => 'hosting_policy',
                          policy_name => 'vsphere'
                       );
             }
@@ -981,10 +983,11 @@ sub registerHypervisor {
             eval {
                 $st = Entity::ServiceTemplate->find(hash => {
                           hosting_policy_id => $hp->id,
-                          service_name      => 'vsphere_hypervisor_service'});
+                          service_name      => 'vsphere_hypervisor_service',}
+                      );
             };
             if (defined $st) {
-                $service_provider->setAttr(name  => 'service_template_id', 
+                $service_provider->setAttr(name  => 'service_template_id',
                                            value => $st->id);
                 $service_provider->save();
             }
@@ -993,7 +996,7 @@ sub registerHypervisor {
                           hosting_policy_id => $hp->id,
                           service_name      => 'vsphere_hypervisor_service'
                       );
-                $service_provider->setAttr(name  => 'service_template_id', 
+                $service_provider->setAttr(name  => 'service_template_id',
                                            value => $st->id);
                 $service_provider->save();
             }
@@ -1054,17 +1057,23 @@ sub registerHypervisor {
 =head2 registerCluster
 
     Desc: register a new service provider with the content of a vsphere Cluster
-    Args: $datacenter_name
+    Args: $name, $parent
     Return: $service_provider
  
-=cut 
+=cut
 
 sub registerCluster {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['parent','name']);
 
-    #We consider that the only valable parent for a cluster is a Datacenter
+    #If parent is not a datacenter, exit, returning the parent
+    if (!(ref $args{parent} eq 'Vsphere5Datacenter')) {
+        my $msg = 'Can\'t register a cluster with this method without a datacenter parent';
+        $log->info($msg);
+        return $args{parent};
+    }
+
     my $datacenter          = $args{parent};
     my $datacenter_name     = $datacenter->vsphere5_datacenter_name;
     my $cluster_name        = $args{name};
@@ -1076,7 +1085,8 @@ sub registerCluster {
                                view_type   => 'Datacenter',
                                hash_filter => {
                                    name => $datacenter_name,
-                               });
+                               }
+                           );
     my $cluster_view     = $self->findEntityView(
                                view_type    => 'ClusterComputeResource',
                                hash_filter  => {
@@ -1089,22 +1099,20 @@ sub registerCluster {
 
     #Check if a service provider called $cluster_name already exist and
     #Create a new one to hold the vsphere cluster hypervisors if none exists
-    my $existing_service_provider;
+    my $service_provider;
 
     eval {
-        $existing_service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
+        $service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
                                          cluster_name => $cluster_renamed,
                                      });
     };
-    if (defined $existing_service_provider) {
+    if (defined $service_provider) {
         $errmsg  = 'vSphere component will not create new service provider for cluster ';
         $errmsg .= $cluster_name. ' because one with the same name already exist in kanopya';
         $log->info($errmsg);
-        return $existing_service_provider;
+        return $service_provider;
     }
     else {
-        my $service_provider;
-
         eval {
             my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
             my $cluster_basehostname = 'vsphere_service_'. lc $cluster_renamed. '_' .time();
@@ -1133,12 +1141,13 @@ sub registerCluster {
 
             eval {
                 $hp = Entity::Policy->find(hash => {
-                          policy_name => 'vsphere'});
+                          policy_name => 'vsphere'}
+                      );
             };
             if (not defined $hp) {
                 $hp = Entity::Policy->new(
-                         policy_type => 'hosting_policy', 
-                         policy_name => 'vsphere'
+                         policy_type => 'hosting_policy',
+                         policy_name => 'vsphere',
                       );
             }
 
@@ -1148,16 +1157,16 @@ sub registerCluster {
                           service_name      => 'vsphere_hypervisor_service'});
             };
             if (defined $st) {
-                $service_provider->setAttr(name  => 'service_template_id', 
+                $service_provider->setAttr(name  => 'service_template_id',
                                            value => $st->id);
                 $service_provider->save();
             }
             else {
                 $st = Entity::ServiceTemplate->new(
                           hosting_policy_id => $hp->id,
-                          service_name      => 'vsphere_hypervisor_service'
+                          service_name      => 'vsphere_hypervisor_service',
                       );
-                $service_provider->setAttr(name  => 'service_template_id', 
+                $service_provider->setAttr(name  => 'service_template_id',
                                            value => $st->id);
                 $service_provider->save();
             }
@@ -1218,7 +1227,7 @@ sub registerCluster {
         }
 
     return $service_provider;
-    }        
+    }
 }
 
 ###########################
@@ -1304,7 +1313,7 @@ sub addRepository {
     General::checkParams(args => \%args, required => ['repository_name', 'container_access_id']);
 
     my $repository = Vsphere5Repository->new(vsphere5_id         => $self->id,
-                                             repository_name     => $args{repository_name}, 
+                                             repository_name     => $args{repository_name},
                                              container_access_id => $args{container_access_id},
                      );
 
@@ -1325,17 +1334,19 @@ sub getDatacenters {
 
     if (defined $args{datacenter_name}) {
         $datacenters  = Vsphere5Datacenter->find(
-                            hash => { 
+                            hash => {
                                 vsphere5_id              => $self->id,
                                 vsphere5_datacenter_name => $args{datacenter_name},
-                            });
+                            }
+                        );
     }
     else {
         $datacenters  = Vsphere5Datacenter->search(
-                               hash => { vsphere5_id => $self->id });
+                               hash => { vsphere5_id => $self->id }
+                        );
     }
 
-    return $datacenters; 
+    return $datacenters;
 }
 
 =head2 getRepository
@@ -1368,9 +1379,9 @@ sub getRepository {
 
 =head2 addVM
 
-    Desc: register a new vsphere VM into kanopya 
+    Desc: register a new vsphere VM into kanopya
     Args: $host, $hypervisor, $guest_id
-    Return: an instance of vsphere5_vm 
+    Return: an instance of vsphere5_vm
 
 =cut
 
@@ -1438,9 +1449,9 @@ sub addHypervisor {
     my $hypervisor_type = 'Entity::Host::Hypervisor::Vsphere5Hypervisor';
 
     return $hypervisor_type->promote(
-               promoted                => $args{host},
-               vsphere5_id             => $self->id,
-               vsphere5_datacenter_id  => $args{datacenter_id}
+               promoted               => $args{host},
+               vsphere5_id            => $self->id,
+               vsphere5_datacenter_id => $args{datacenter_id}
            );
 }
 
