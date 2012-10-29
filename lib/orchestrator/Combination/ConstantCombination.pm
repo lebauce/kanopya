@@ -52,4 +52,9 @@ sub computeLastValue {
     return $self->value;
 }
 
+sub getDependantIndicatorIds {
+    my $self = shift;
+    return ();
+}
+
 1;
