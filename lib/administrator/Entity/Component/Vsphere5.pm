@@ -15,6 +15,26 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+Vsphere component version 5.
+-> Manage connection to a vsphere instance (also works with single hypervisors instances)
+-> Set and get component configuration
+-> Retrieve vsphere entities (datacenters, clusters, hypervisors, vms)
+-> Register vsphere entities into Kanopya (same than retrieve plus datastores/repositories)
+-> Power on vms
+-> promote virtual machines classes to Vsphere5Vm and hypervisors to Vsphere5Hypervisor
+
+@since
+@instance hash
+@self $self
+
+=end classdoc
+
+=cut
+
 package Entity::Component::Vsphere5;
 use base "Entity::Component";
 use base "Manager::HostManager::VirtualMachineManager";
@@ -67,11 +87,15 @@ sub getAttrDef { return ATTR_DEF; }
 # API methods #
 ###############
 
-=head2 methods
+=pod 
 
-    Desc: List methods accessible from API and permission need to access to them
-    Args: null
-    Return: List of methods with description and permissions
+=begin classdoc
+
+Declare the list of methods accessible from the API and their permissions
+
+@return the list of methods with their descriptions and permissions
+
+=end classdoc
 
 =cut
 
@@ -100,7 +124,13 @@ sub methods {
     };
 }
 
-=head2 checkHostManagerParams
+=pod
+
+=begin classdoc
+
+Not implemented
+
+=end classdoc
 
 =cut
 
@@ -114,11 +144,18 @@ sub checkHostManagerParams {
 # connection methods #
 ######################
 
-=head2 connect
+=pod
 
-    Desc: Connect to a vCenter instance
-    Args: $login, $pwd, $url
- 
+=begin classdoc
+
+Try to open a connection to a vCenter or ESXi instance
+
+@param login the user name that will be used for the connection
+@param pwd the user's password
+@param url the url of the vCenter or ESXi instance
+
+=end classdoc
+
 =cut
 
 sub connect {
@@ -134,11 +171,16 @@ sub connect {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    return;
 }
 
-=head2 disconnect
+=pod
 
-    Desc: End the vSphere session
+=begin classdoc
+
+End a session to a vCenter or ESXi instance
+
+=end classdoc
 
 =cut
 
@@ -151,12 +193,17 @@ sub disconnect {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-        print "a session to vSphere has been closed\n";
+    $log->info('A connection to vSphere has been closed');
+    return;
 }
 
-=head2 negociateConnection
+=pod
 
-    Desc: Check if a connection is established and create one if not
+=begin classdoc
+
+Check if a connection is established and if not create one using the component configuration
+
+=end classdoc
 
 =cut
 
@@ -190,11 +237,15 @@ sub negociateConnection {
 # Retrieve methods #
 ####################
 
-=head2 retrieveDatacenters
+=pod
 
-    Desc: Retrieve list of all Datacenters
-    Args: null
-    Return: \@datacenter_infos
+=begin classdoc
+
+Retrieve a list of all datacenters
+
+@return: \@datacenter_infos
+
+=end classdoc
 
 =cut
 
@@ -219,12 +270,18 @@ sub retrieveDatacenters {
     return \@datacenters_infos;
 }
 
-=head2 retrieveClustersAndHypervisors
+=pod
 
-    Desc: Retrieve list of Clusters and Hypervisors (that are not in a cluster)
-          hosted in a given Datacenter
-    Args: $datacenter_name
-    Return: \@clusters_and_hypervisors_infos
+=begin classdoc
+
+Retrieve a list of Clusters and Hypervisors (that are not in a cluster)
+hosted in a given Datacenter
+
+@param datacenter_name the datacenter name
+
+@return \@clusters_and_hypervisors_infos
+
+=end classdoc
 
 =cut
 
@@ -273,11 +330,18 @@ sub retrieveClustersAndHypervisors {
     return \@clusters_hypervisors_infos;
 }
 
-=head2 retrieveClusterHypervisors
+=pod
 
-    Desc: Retrieve a cluster's hypervisors
-    Args: $cluster_name, $datacenter_name
-    Return: \@hypervisors_infos
+=begin classdoc
+
+Retrieve a cluster's hypervisors
+
+@param cluster_name the name of the target cluster
+@param datacenter_name the name of the cluster's datacenter
+
+@return \@hypervisors_infos
+
+=end classdoc
 
 =cut
 
@@ -316,11 +380,18 @@ sub retrieveClusterHypervisors {
     return \@hypervisors_infos;
 }
 
-=head2 retrieveHypervisorVms
+=pod 
 
-    Desc: Retrieve all the VM from a vsphere hypervisor
-    Args: $datacenter_name, $hypervisor_name
-    Return: \@vms_infos
+=begin classdoc
+
+Retrieve all the VM from a vsphere hypervisor
+
+@param datacenter_name the name of the hypervisor's datacenter
+@param hypervisor_name the name of the target hypervisor
+ 
+@return \@vms_infos
+
+=end classdoc
 
 =cut
 
@@ -363,11 +434,17 @@ sub retrieveHypervisorVms {
 # vsphere objects methods #
 ###########################
 
-=head2 getView
+=pod 
 
-    Desc: get a vsphere managed object view
-    Args: $mo_ref (managed object reference)
-    Return: $view
+=begin classdoc
+
+Get a vsphere managed object view
+
+@param mo_ref the managed object reference
+
+@return $view
+
+=end classdoc 
 
 =cut
 
@@ -390,14 +467,29 @@ sub getView {
     return $view;
 }
 
+=pod
 
-=head2 findEntityView
+=begin classdoc
 
-    Desc: find a view of a specified managed object type
-    Args: $view_type (HostSystem,VirtualMachine,Datacenter,Folder,ResourcePool,
-                      ClusterComputeResource or ComputeResource),
-          \%hash_filter, \@array_property, $begin_entity view
-    Return: a managed entity view
+Find a view of a specified managed object type
+
+@param view_type the type of the requested view. Can be one of the following:
+    - HostSystem
+    - VirtualMachine
+    - Datacenter
+    - Folder
+    - ResourcePool
+    - ClusterComputeResource
+    - ComputeResource
+@param hash_filter a hash containing the filter to be applied to the request
+
+@optional array_property an array containing properties filter to be applied to the request
+@optional begin_entity_view the inventory point where the function must start the research.
+          Used to delimit the search to a specific sub-folder in the vsphere arborescence
+
+@return view a managed entity view
+
+=end classdoc
 
 =cut
 
@@ -450,13 +542,29 @@ sub findEntityView {
     return $view;
 }
 
-=head2 findEntityViews
+=pod
 
-    Desc: find views of a specified managed object type
-    Args: $view_type (HostSystem,VirtualMachine,Datacenter,Folder,ResourcePool,
-                      ClusterComputeResource or ComputeResource),
-          %hash_filter, @array_property, $begin_entity view
-    Return: a list of managed entity views
+=begin classdoc
+
+Find some views of a specified managed object type
+
+@param view_type the type of the requested views. Can be one of the following:
+    - HostSystem
+    - VirtualMachine
+    - Datacenter
+    - Folder
+    - ResourcePool
+    - ClusterComputeResource
+    - ComputeResource
+@param hash_filter a hash containing the filter to be applied to the request
+
+@optional array_property an array containing properties filter to be applied to the request
+@optional begin_entity_view the inventory point where the function must start the research.
+          Used to delimit the search to a specific sub-folder in the vsphere arborescence
+
+@return views a list of managed entity views
+
+=end classdoc
 
 =cut
 
@@ -517,11 +625,22 @@ sub findEntityViews {
 #TODO: manage the possibility that the entities, for example clusters can be into vsphere
 #folders
 
+=pod
+
+=begin classdoc
+
 =head2 register
 
-    Desc: register vSphere items into kanopya service providers
-    Args: $register_items, objects to be registered into Kanopya
-          $parent, the optional parent of this object
+Register vSphere items into kanopya service providers
+
+@param register_items a list of objects to the registered into Kanopya
+
+@optional parent the parent object of the current item to be registered
+
+@return registered_items a list of the registered items. Can be service providers or datacenters
+
+=end classdoc
+
 =cut
 
 sub register {
@@ -574,13 +693,19 @@ sub register {
     return \@registered_items;
 }
 
-=head2 registerDatacenter
+=pod
 
-    Desc: register a new vsphere datacenter into Kanopya
-          return the corresponding datacenter if it already exist
-    Args: $name
-    Return: $datacenter or $existing_datacenter
- 
+=begin classdoc
+
+Register a new vsphere datacenter into Kanopya.
+Check if the datacenter is already registered and linked to this component
+
+@param name the name of the datacenter to be registered
+
+@return datacenter the registered datacenter or an already existing one
+
+=end classdoc
+
 =cut 
 
 sub registerDatacenter {
@@ -589,22 +714,22 @@ sub registerDatacenter {
     General::checkParams(args => \%args, required => ['name']);
 
     #First we check if the datacenter already exist in Kanopya
-    my $existing_datacenter;
+    my $datacenter;
     eval {
-        $existing_datacenter = Vsphere5Datacenter->find(hash => {
-                                   vsphere5_datacenter_name => $args{name},
-                                   vsphere5_id              => $self->id,
-                               });
+        $datacenter = Vsphere5Datacenter->find(hash => {
+                          vsphere5_datacenter_name => $args{name},
+                          vsphere5_id              => $self->id,
+                      });
     };
-    if (defined $existing_datacenter) {
+    if (defined $datacenter) {
         $errmsg  = 'The datacenter '. $args{name} .' already exist in kanopya ';
         $errmsg .= 'with ID '. $existing_datacenter->id;
         $errmsg .= ' and is already associated with this component (id '. $self->id .')';
         $log->info($errmsg);
-        return $existing_datacenter;
+
+        return $datacenter;
     }
     else {
-        my $datacenter;
         eval {
             $datacenter = Vsphere5Datacenter->new(
                               vsphere5_datacenter_name => $args{name},
@@ -620,12 +745,23 @@ sub registerDatacenter {
     }
 }
 
+=pod
+
+=begin classdoc
+
 =head2 registerVm
 
-    Desc: register a new virtual machine to match a vsphere vm
-    Args: $name, $parent (a service provider)
-    Return: $service_provider
- 
+Register a new virtual machine to match a vsphere vm
+Check if a matching service provider already exist in Kanopya and, if so, return it
+instead of creating a new one
+
+@param name the name of the virtual machine to be registered
+@param parent the parent service provider
+
+@return service_provider
+
+=end classdoc
+
 =cut
 
 sub registerVm {
@@ -683,6 +819,7 @@ sub registerVm {
         $errmsg  = 'vSphere component will not create new service provider for the vm ';
         $errmsg .= $service_provider_renamed. ' because this name already exist in kanopya';
         $log->info($errmsg);
+
         return $service_provider;
     }
     else {
@@ -828,12 +965,21 @@ sub registerVm {
     }
 }
 
-=head2 registerHypervisor
+=pod
 
-    Desc: register a new host to match a vsphere hypervisor
-    Args: $name, $parent (datacenter)
-    Return: $service_provider
- 
+=begin classdoc
+
+Register a new host to match a vsphere hypervisor
+Check if a matching service provider already exist in Kanopya and, if so, return it
+instead of creating a new one
+    
+@param name the name of the hypervisor to be registered
+@param parent the parent of the hypervisor (must be a Vsphere5Datacenter object)
+
+@return service_provider
+
+=end classdoc
+
 =cut
 
 sub registerHypervisor {
@@ -999,11 +1145,20 @@ sub registerHypervisor {
     }
 }
 
-=head2 registerCluster
+=pod
 
-    Desc: register a new service provider with the content of a vsphere Cluster
-    Args: $name, $parent
-    Return: $service_provider
+=begin classdoc
+
+Register the hypervisors of a vsphere Cluster
+Check if a matching service provider already exist in Kanopya and, if so, return it
+instead of creating a new one
+
+@param name the name of the cluster to be registered
+@param parent the parent of the cluster (must be a Vsphere5Datacenter object)
+
+@return service_provider
+
+=end classdoc
  
 =cut
 
@@ -1180,10 +1335,15 @@ sub registerCluster {
 ## getters and setters   ##
 ###########################
 
-=head 2 setConf
+=pod
 
-    Desc: Define the component configuration
-    Args: \%conf
+=begin classdoc
+
+Set the component configuration
+
+@param conf a hash containing the component configuration
+
+=end classdoc
 
 =cut
 
@@ -1205,11 +1365,15 @@ sub setConf {
     $self->SUPER::setConf(conf => $conf);
 }
 
+=pod
 
-=head 2 getConf
+=begin classdoc
 
-    Desc: Give the component configuration
-    Return: \%conf
+Get the component configuration
+
+@return \%conf
+
+=end classdoc
 
 =cut
 
@@ -1227,10 +1391,15 @@ sub getConf {
     return \%conf;
 }
 
-=head2 getHypervisors
+=pod
 
-    Desc: Return the list of hypervisors managed by the component
-    Return: \@hypervisors
+=begin classdoc
+
+Return the list of hypervisors managed by the component
+
+@return \@hypervisors
+
+=end classdoc
 
 =cut
 
@@ -1243,12 +1412,18 @@ sub getHypervisors {
     return wantarray ? @hypervisors : \@hypervisors;
 }
 
+=pod
 
-=head2 addRepository
+=begin classdoc
 
-    Desc: Create a new repository for vSphere usage
-    Args: $repository_name, $container_access 
-    Return: newly created repository object
+Register a new repository in kanopya for vSphere usage
+
+@param repository_name the name of the datastore
+@param container_access the Kanopya container access object associated to the datastore
+
+@return $repository
+
+=end classdoc
 
 =cut
 
@@ -1265,10 +1440,17 @@ sub addRepository {
     return $repository;
 }
 
-=head2 getDatacenters
+=pod
 
-    Desc: get all the datacenters attached to this vsphere component
-    Return: $datacenters
+=begin classdoc
+
+Get one or all the datacenters attached to this vsphere component
+
+@optional datacenter_name the name of a specific datacenter to be retrieved
+
+@return $datacenters
+
+=end classdoc
 
 =cut
 
@@ -1294,11 +1476,17 @@ sub getDatacenters {
     return $datacenters;
 }
 
-=head2 getRepository
+=pod
 
-    Desc: get a repository corresponding to a container access
-    Args: $container_access,
-    Return: $repository object
+=begin classdoc
+
+Get a repository corresponding to a container access
+
+@param container_access_id the container access id associated to the repository to be retrieved
+ 
+@return $repository
+
+=end classdoc
 
 =cut
 
@@ -1322,11 +1510,18 @@ sub getRepository {
 ## vm's manipulation ##
 #######################
 
-=head2 addVM
+=pod
 
-    Desc: register a new vsphere VM into kanopya
-    Args: $host, $hypervisor, $guest_id
-    Return: an instance of vsphere5_vm
+=begin classdoc
+
+Promote a virtual machine object to a Vsphere5Vm one
+
+@param host the virtual machine host object to be promoted
+@param guest_id the vmware guest id of the vm
+
+@return vsphere5vm the promoted virtual machine
+
+=end classdoc
 
 =cut
 
@@ -1344,9 +1539,13 @@ sub addVM {
     return $vsphere5vm;
 }
 
-=head2 powerOnVm
+=pod
 
-    Desc: start a VM registerd on vSphere
+=begin classdoc
+
+Start a vSphere VM registered in Kanopya
+
+=end classdoc
 
 =cut
 
@@ -1378,11 +1577,18 @@ sub powerOnVm {
 ## hypervisors' manipulation ##
 ###############################
 
-=head2 addHypervisor
+=pod
 
-    Desc: promote an Host::Hypervior into a Kanopya vsphere hypervisor
-    Args: $host,$datacenter_id
-    Return: a new instance of vsphere5_hypervisor
+=begin classdoc
+
+Promote an Hypervisor class into a Vsphere5Hypervisor one
+
+@param host the hypervisor class to be promoted
+@param datacenter_id the id of the hypervisor's datacenter
+
+@return vsphere5Hypervisor the promoted hypervisor
+
+=end classdoc
 
 =cut
 
@@ -1393,11 +1599,13 @@ sub addHypervisor {
 
     my $hypervisor_type = 'Entity::Host::Hypervisor::Vsphere5Hypervisor';
 
-    return $hypervisor_type->promote(
-               promoted               => $args{host},
-               vsphere5_id            => $self->id,
-               vsphere5_datacenter_id => $args{datacenter_id}
-           );
+    my $vsphere5Hypervisor = $hypervisor_type->promote(
+                                 promoted               => $args{host},
+                                 vsphere5_id            => $self->id,
+                                 vsphere5_datacenter_id => $args{datacenter_id}
+                             );
+
+    return $vsphere5Hypervisor;
 }
 
 1;
