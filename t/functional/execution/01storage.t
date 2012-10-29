@@ -195,7 +195,8 @@ eval {
         my @fileimagemanager_exports = @exports;
         for $export (@fileimagemanager_exports) {
             my $disk = testDiskManager(component   => $fileimagemanager,
-                                       create_args => { container_access_id => $export->id },
+                                       create_args => { container_access_id => $export->id,
+                                                        noformat            => 1 },
                                        size        => $export->container->container_size / scalar(@{ $export->container->getAccesses }));
             push @disks, $disk;
         }
