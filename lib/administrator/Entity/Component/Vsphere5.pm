@@ -860,14 +860,14 @@ sub registerVm {
                      host_serial_number => '',
                      host_desc          => $datacenter_name. ' vm',
                      active             => 1,
-                     host_ram           => $vm_view->summary->config->memorySizeMB,
+                     host_ram           => $vm_view->summary->config->memorySizeMB * 1024 * 1024,
                      host_core          => $vm_view->summary->config->numCpu,
                      host_hostname      => $service_provider_renamed,
                      host_state         => $host_state,
                      hypervisor_id      => $hosting_hypervisor_id,
                  );
 
-        #promote new hypervisor class to a vsphere5Vm one
+        #promote new virtual machine class to a vsphere5Vm one
         $self->addVM(host => $vm, guest_id => $vm_view->summary->config->guestId);
 
         my $node = Externalnode::Node->new(
