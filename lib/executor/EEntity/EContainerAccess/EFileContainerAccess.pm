@@ -60,27 +60,12 @@ sub connect {
     $eunderlying_access->mount(mountpoint => $mountpoint,
                                econtext   => $args{econtext});
 
-    # Get a free loop device
-    $command = "losetup -f";
-    $result = $args{econtext}->execute(command => $command);
-    if ($result->{exitcode} != 0) {
-        throw Kanopya::Exception::Execution(error => $result->{stderr});
-    }
-    chomp($result->{stdout});
-    my $loop = $result->{stdout};
-
     my $file = $mountpoint . '/' . $self->getContainer->getAttr(
                                        name => 'container_device'
                                    );
 
-    $command = "losetup $loop $file";
-    $result = $args{econtext}->execute(command => $command);
-    if ($result->{exitcode} != 0) {
-        throw Kanopya::Exception::Execution(error => $result->{stderr});
-    }
-
     $self->setAttr(name  => 'device_connected',
-                   value => $loop);
+                   value => $file);
     $self->save();
     
     if (exists $args{erollback} and defined $args{erollback}){
@@ -89,7 +74,8 @@ sub connect {
             parameters => [ $self, "econtext", $args{econtext} ]
         );
     }
-    return $loop;
+
+    return $file;
 }
 
 sub disconnect {
@@ -98,23 +84,6 @@ sub disconnect {
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    my $device = $self->getAttr(name => 'device_connected');
-
-    my $counter = 30;
-    while($counter != 0) {
-        $command = "losetup -d $device";
-        $result  = $args{econtext}->execute(command => $command);
-        if($result->{exitcode} == 0) {
-            last;
-        }
-        $counter--;
-        sleep(1);
-    }
-
-    if ($result->{exitcode} != 0) {
-        throw Kanopya::Exception::Execution(error => $result->{stderr});
-    }
 
     my $underlying_access_id = $self->getContainer->getAttr(
                                    name => 'container_access_id'
@@ -143,6 +112,42 @@ sub buildMountpoint {
     my $file_mountpoint = $self->_getEntity->getContainer->getMountPoint;
 
     return $file_mountpoint . "_on_" . $underlying;
+}
+
+sub mount {
+    my ($self,%args) = @_;
+
+    my ($command, $result);
+
+    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+
+    # Connecting to the container access.
+    my $device = $self->tryConnect(econtext  => $args{econtext},
+                                   erollback => $args{erollback});
+
+    $command = "mkdir -p $args{mountpoint}";
+    $args{econtext}->execute(command => $command);
+
+    $log->debug("Mounting <$device> on <$args{mountpoint}>.");
+
+    $command = "guestmount -a " . $device . " -i " . $args{mountpoint};
+    $result  = $args{econtext}->execute(command => $command);
+
+    if ($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(
+                  error => "Unable to mount $device on $args{mountpoint}: " .
+                           $result->{stderr}
+              );
+    }
+
+    $log->debug("File <$device> mounted on <$args{mountpoint}>.");
+    
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('umount'),
+            parameters => [ $self, "mountpoint", $args{mountpoint}, "econtext", $args{econtext} ]
+        );
+    }
 }
 
 sub getPreferredBlockSize {

@@ -86,11 +86,12 @@ sub copy {
     my $dest_device = $dest_access->tryConnect(econtext  => $args{econtext},
                                                erollback => $args{erollback});
 
-    # If devices exists, copy contents with 'dd'
+    # If devices exists, clone and resize the source disk using virt-resize
     if (defined $source_device and defined $dest_device) {
-        my $blocksize = $dest_access->getPreferredBlockSize;
+        my $source_size = $source_access->getContainer->getAttr(name => 'container_size');
+        my $dest_size   = $dest_access->getContainer->getAttr(name => 'container_size');
 
-        $command = "dd conv=notrunc if=$source_device of=$dest_device bs=$blocksize";
+        $command = "virt-resize --expand /dev/sda1 " . $source_device . " " . $dest_device;
         $result  = $args{econtext}->execute(command => $command);
 
         if ($result->{stderr} and ($result->{exitcode} != 0)) {
@@ -101,34 +102,6 @@ sub copy {
 
         $command = "sync";
         $args{econtext}->execute(command => $command);
-
-        my $source_size = $source_access->getContainer->getAttr(name => 'container_size');
-        my $dest_size   = $dest_access->getContainer->getAttr(name => 'container_size');
-
-        # Check if the destination container is higher thant the source one,
-        # resize it to maximum.
-        if ($dest_access->getPartitionCount(econtext => $args{econtext}) == 1 and $dest_size > $source_size) {
-            my $part_start = $dest_access->getPartitionStart(econtext => $args{econtext});
-            if ($part_start and $part_start > 0) {
-                $command = "parted -s $dest_device rm 1";
-                $result  = $args{econtext}->execute(command => $command);
-
-                $command = "parted -s -- $dest_device mkpart primary " . $part_start . "B -1s";
-                $result  = $args{econtext}->execute(command => $command);
-            }
-
-            my $part_device = $dest_access->tryConnectPartition(econtext  => $args{econtext},
-                                                                erollback => $args{erollback});
-
-            # Finally resize2fs the partition
-            $command = "e2fsck -y -f $part_device";
-            $args{econtext}->execute(command => $command);
-            $command = "resize2fs -F $part_device";
-            $args{econtext}->execute(command => $command);
-
-            $dest_access->tryDisconnectPartition(econtext  => $args{econtext},
-                                                 erollback => $args{erollback});
-        }
 
         # Disconnect the containers.
         $log->debug('Try to disconnect from the source container...');
