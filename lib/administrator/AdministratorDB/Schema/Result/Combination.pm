@@ -100,6 +100,21 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 constant_combination
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::ConstantCombination>
+
+=cut
+
+__PACKAGE__->might_have(
+  "constant_combination",
+  "AdministratorDB::Schema::Result::ConstantCombination",
+  { "foreign.constant_combination_id" => "self.combination_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nodemetric_combination
 
 Type: might_have
@@ -115,14 +130,20 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nodemetric_condition_right_combinations
 
-__PACKAGE__->might_have(
-  "constant_combination",
-  "AdministratorDB::Schema::Result::ConstantCombination",
-  { "foreign.constant_combination_id" => "self.combination_id" },
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NodemetricCondition>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nodemetric_condition_right_combinations",
+  "AdministratorDB::Schema::Result::NodemetricCondition",
+  { "foreign.right_combination_id" => "self.combination_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
-
 
 =head2 nodemetric_conditions
 
@@ -140,8 +161,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 17:49:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Oxismn+HoeMgIRTSbdzwYw
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-29 10:02:32
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:S/6goV2ThG2qDYnON5N+pg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

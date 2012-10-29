@@ -118,23 +118,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 nodemetric_conditions
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::NodemetricCondition>
-
-=cut
-
-__PACKAGE__->has_many(
-  "nodemetric_conditions",
-  "AdministratorDB::Schema::Result::NodemetricCondition",
-  {
-    "foreign.nodemetric_condition_combination_id" => "self.nodemetric_combination_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 
 # Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 13:06:18
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oveDaxKBT6qh+bzlPTiTkA

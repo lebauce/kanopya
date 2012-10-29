@@ -54,6 +54,7 @@ __PACKAGE__->table("nodemetric_condition");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 nodemetric_condition_comparator
@@ -61,11 +62,6 @@ __PACKAGE__->table("nodemetric_condition");
   data_type: 'char'
   is_nullable: 0
   size: 32
-
-=head2 nodemetric_condition_threshold
-
-  data_type: 'double precision'
-  is_nullable: 0
 
 =cut
 
@@ -94,11 +90,14 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "right_combination_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "nodemetric_condition_comparator",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "nodemetric_condition_threshold",
-  { data_type => "double precision", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -147,9 +146,24 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 right_combination
 
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 15:13:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:h4RisXW8gKZBhvw8PlB2iQ
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Combination>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "right_combination",
+  "AdministratorDB::Schema::Result::Combination",
+  { combination_id => "right_combination_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-29 10:02:32
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NvzdlB+iR0wOOKvQU6KVVA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
