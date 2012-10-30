@@ -43,14 +43,15 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "name", "size", "filesystem", "container_access_id" ]);
+                         required => [ "name", "size", "filesystem", "container_access_id" ],
+                         optional => { image_type => "raw" });
 
     my $container_access = Entity::ContainerAccess->get(id => $args{container_access_id});
 
     $self->fileCreate(container_access => $container_access,
                       file_name        => $args{name},
                       file_size        => $args{size},
-                      file_type        => $self->image_type);
+                      file_type        => $args{image_type});
 
     my $entity = Entity::Container::FileContainer->new(
                      disk_manager_id      => $self->id,
@@ -59,11 +60,11 @@ sub createDisk {
                      container_size       => $args{size},
                      container_filesystem => $args{filesystem},
                      container_freespace  => 0,
-                     container_device     => $args{name} . '.'. $self->image_type,
+                     container_device     => $args{name} . '.'. $args{image_type},
                 );
     my $container = EFactory::newEEntity(data => $entity);
 
-    if (not defined $args{"noformat"}) {
+    if (not $args{"noformat"}) {
         # Create a temporary export and connect to the access to get a device
         my $access = $self->createExport(container => $container);
         my $device = $access->tryConnect(econtext  => $self->getEContext,
@@ -144,7 +145,7 @@ sub createExport {
                  );
     my $container_access = EFactory::newEEntity(data => $entity);
 
-    $log->info("Added NFS Export of device <$export_name>");
+    $log->info("Added Export for file <$export_name>");
 
     if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
@@ -195,74 +196,37 @@ sub fileCreate {
                               econtext   => $self->getEContext);
 
     my $file_image_path = "$mountpoint/$args{file_name}.$args{file_type}";
+    my ($command, $result);
 
     $log->debug("Container access mounted, trying to create $file_image_path, size $args{file_size}.");
 
-    if ($args{file_type} eq 'img') {
+    eval {
+        $command = 'qemu-img create -f ' . $args{file_type} . ' ' .
+                   $file_image_path . ' ' . $args{file_size};
 
-        my ($command, $result);
-        eval {
+        $result  = $self->getEContext->execute(command => $command);
 
-            $command = "dd if=/dev/zero of=$file_image_path bs=1 count=1 seek=$args{file_size}";
-            $result  = $self->getEContext->execute(command => $command);
-
-            if ($result->{stderr} and ($result->{exitcode} != 0)) {
-                throw Kanopya::Exception::Execution(error => $result->{stderr});
-            }
-
-            $command = "sync";
-            $self->getEContext->execute(command => $command);
-        
-            $command = "chmod 777 $file_image_path";
-            $self->getEContext->execute(command => $command);
-        };
-        if ($@) {
-            $econtainer_access->umount(mountpoint => $mountpoint,
-                                       econtext   => $self->getEContext);
-
-            throw Kanopya::Exception::Execution(
-                error => "Unable to create file <$file_image_path> with size <$args{file_size}>: $@"
-            );
+        if ($result->{stderr} and ($result->{exitcode} != 0)) {
+            throw Kanopya::Exception::Execution(error => $result->{stderr});
         }
 
+        $command = "sync";
+        $self->getEContext->execute(command => $command);
+
+        $command = "chmod 777 $file_image_path";
+        $self->getEContext->execute(command => $command);
+    };
+    if ($@) {
         $econtainer_access->umount(mountpoint => $mountpoint,
                                    econtext   => $self->getEContext);
+
+        throw Kanopya::Exception::Execution(
+            error => "Unable to create file <$file_image_path> with size <$args{file_size}>: $@"
+        );
     }
-    elsif ($args{file_type} eq 'vmdk') {
-        my $file_image_path = "$mountpoint/$args{file_name}.vmdk";
 
-        $log->debug("Container access mounted, trying to create $file_image_path, size $args{file_size}.");
-
-        my ($command, $result);
-        eval {
-
-            $command = 'qemu-img create -f vmdk '. $file_image_path .' '. $args{file_size};
-
-            $result  = $self->getEContext->execute(command => $command);
-
-            if ($result->{stderr} and ($result->{exitcode} != 0)) {
-                throw Kanopya::Exception::Execution(error => $result->{stderr});
-            }
-
-            $command = "sync";
-            $self->getEContext->execute(command => $command);
-
-            $command = "chmod 777 $file_image_path";
-            $self->getEContext->execute(command => $command);
-        };
-        if ($@) {
-            $econtainer_access->umount(mountpoint => $mountpoint,
-                                       econtext   => $self->getEContext);
-
-            throw Kanopya::Exception::Execution(
-                error => "Unable to create file <$file_image_path> with size <$args{file_size}>: $@"
-            );
-
-        }
-
-        $econtainer_access->umount(mountpoint => $mountpoint,
-                                   econtext   => $self->getEContext);
-    }
+    $econtainer_access->umount(mountpoint => $mountpoint,
+                               econtext   => $self->getEContext);
 }
 
 =head2 fileRemove
