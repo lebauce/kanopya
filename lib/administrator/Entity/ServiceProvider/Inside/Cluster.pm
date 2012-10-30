@@ -639,7 +639,7 @@ sub configureOrchestration {
         my %attrs = $nmc->getAttrs();
         delete $attrs{nodemetric_combination_id};
         $attrs{nodemetric_combination_service_provider_id} = $self->getId();
-        NodemetricCombination->new( %attrs );
+        Combination::NodemetricCombination->new( %attrs );
     }
 
     # Cluster metrics and combinations
@@ -1314,7 +1314,7 @@ sub generateOverLoadNodemetricRules {
             nodemetric_combination_service_provider_id => $service_provider_id,
         };
 
-        my $comb  = NodemetricCombination->new(%$combination_param);
+        my $comb  = Combination::NodemetricCombination->new(%$combination_param);
 
         my $condition_param = {
             left_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
@@ -1355,7 +1355,7 @@ sub generateDefaultMonitoringConfiguration {
             nodemetric_combination_formula => 'id' . $indicator->getId,
             nodemetric_combination_service_provider_id => $service_provider_id,
         };
-        NodemetricCombination->new(%$combination_param);
+        Combination::NodemetricCombination->new(%$combination_param);
     }
 
     #definition of the functions

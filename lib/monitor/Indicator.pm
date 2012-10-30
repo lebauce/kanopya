@@ -18,7 +18,7 @@ use warnings;
 use base 'BaseDB';
 use Data::Dumper;
 require 'Clustermetric.pm';
-require 'NodemetricCombination.pm';
+require 'Combination/NodemetricCombination.pm';
 
 # logger
 use Log::Log4perl "get_logger";
@@ -181,7 +181,7 @@ sub delete {
         # Service related hierarchy
         $log->info("Entering nodemetric loop");
 
-        my @all_the_nodemetric_combinations = NodemetricCombination->search(hash => {});
+        my @all_the_nodemetric_combinations = Combination::NodemetricCombination->search(hash => {});
         NODEMETRIC_COMBINATION:
         while (@all_the_nodemetric_combinations) {
             my $nm_combi  = pop @all_the_nodemetric_combinations;
