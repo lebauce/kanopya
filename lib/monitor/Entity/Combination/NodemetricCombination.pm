@@ -333,8 +333,13 @@ sub getUnit {
 =begin classdoc
 
 Method used to clone the combination and link the clone to the specified service provider
+Both linked service providers must have the same collector manager
 
 @param dest_service_provider_id id of the service provider where to clone the rule
+
+@throw Kanopya::Exception::Internal::NotFound if dest service provider does not have a collector manager
+@throw Kanopya::Exception::Internal::Inconsistency if both services haven't the same collector manager
+
 
 =end classdoc
 
@@ -344,22 +349,26 @@ sub clone {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['dest_service_provider_id']);
-    my $attrs_cloner = sub {
-        my %args = @_;
-        my $attrs = $args{attrs};
-        $attrs->{nodemetric_combination_formula}  = $self->_cloneFormula(
-            dest_sp_id              => $attrs->{nodemetric_combination_service_provider_id},
-            formula                 => $attrs->{nodemetric_combination_formula},
-            formula_object_class    => 'ScomIndicator' # WARNING kio only TODO refacto indicator and use indicator abstraction
+
+    # Check that both services use the same collector manager
+    my $src_collector_manager = ServiceProviderManager->find( hash => {
+        manager_type        => 'collector_manager',
+        service_provider_id => $self->nodemetric_combination_service_provider->id
+    });
+    my $dest_collector_manager = ServiceProviderManager->find( hash => {
+        manager_type        => 'collector_manager',
+        service_provider_id => $args{'dest_service_provider_id'}
+    });
+    if ($src_collector_manager->id != $dest_collector_manager->id) {
+        throw Kanopya::Exception::Internal::Inconsistency(
+            error => "Source and dest service provider have not the same collector manager"
         );
-        return %$attrs;
-    };
+    }
 
     $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
         relationship        => 'nodemetric_combination_service_provider',
         label_attr_name     => 'nodemetric_combination_label',
-        attrs_clone_handler => $attrs_cloner
     );
 }
 

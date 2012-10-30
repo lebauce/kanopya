@@ -81,6 +81,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Internal',
         description => 'Unknown resource',
     },
+    Kanopya::Exception::Internal::Inconsistency => {
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Not consistent',
+    },
     Kanopya::Exception::Execution => {
         isa         => 'Kanopya::Exception',
         description => 'Command execution failed',
