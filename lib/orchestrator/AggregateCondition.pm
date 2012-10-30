@@ -37,15 +37,15 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    aggregate_combination_id     =>  {pattern       => '^.*$',
+    left_combination_id     =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
+    right_combination_id     =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
     comparator =>  {pattern       => '^(>|<|>=|<=|==)$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    threshold =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -81,6 +81,25 @@ sub methods {
 sub new {
     my $class = shift;
     my %args = @_;
+
+    if ((! defined $args{right_combination_id}) && defined $args{threshold}  ) {
+        my $comb =  Combination::ConstantCombination->new (
+            service_provider_id => $args{aggregate_condition_service_provider_id},
+            value => $args{threshold}
+        );
+        delete $args{threshold};
+        $args{right_combination_id} = $comb->id;
+    }
+
+    if ((! defined $args{left_combination_id}) && defined $args{threshold}  ) {
+        my $comb =  Combination::ConstantCombination->new (
+            service_provider_id => $args{aggregate_condition_service_provider_id},
+            value => $args{threshold}
+        );
+        delete $args{threshold};
+        $args{left_combination_id} = $comb->id;
+    }
+
     my $self = $class->SUPER::new(%args);
 
     if(!defined $args{aggregate_condition_label} || $args{aggregate_condition_label} eq ''){
@@ -123,25 +142,19 @@ sub toString {
         return $self->getAttr(name => 'aggregate_condition_label');
     }
     else{
-        my $aggregate_combination_id   = $self->getAttr(name => 'aggregate_combination_id');
-        my $comparator                 = $self->getAttr(name => 'comparator');
-        my $threshold                  = $self->getAttr(name => 'threshold');
-
-        return Combination::AggregateCombination->get('id'=>$aggregate_combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
+        return $self->left_combination->toString(depth => $depth - 1).$self->comparator.$self->right_combination->toString(depth => $depth - 1);
     }
 }
 
 sub eval{
     my $self = shift;
 
-    my $aggregate_combination_id    = $self->getAttr(name => 'aggregate_combination_id');
-    my $comparator      = $self->getAttr(name => 'comparator');
-    my $threshold       = $self->getAttr(name => 'threshold');
+    my $comparator  = $self->getAttr(name => 'comparator');
+    my $left_value  = $self->left_combination->computeLastValue();
+    my $right_value = $self->right_combination->computeLastValue();
 
-    my $agg_combination = Combination::AggregateCombination->get('id' => $aggregate_combination_id);
-    my $value = $agg_combination->computeLastValue();
-    if(defined $value){
-        my $evalString = $value.$comparator.$threshold;
+    if(defined $left_value && defined $right_value){
+        my $evalString = $left_value.$comparator.$right_value;
         $log->info("CM Combination formula: $evalString");
 
         if(eval $evalString){
@@ -156,16 +169,11 @@ sub eval{
             return 0;
         }
     }else{
-        $log->warn("No data received from DB for $aggregate_combination_id");
+        $log->warn('No data received from DB for '.($self->left_combination)." or ".($self->right_combination));
         $self->setAttr(name => 'last_eval', value => undef);
         $self->save();
         return undef;
     }
-}
-
-sub getCombination{
-    my ($self) = @_;
-    return Combination::AggregateCombination->get('id' => $self->getAttr(name => 'aggregate_combination_id'));
 }
 
 sub getDependencies {
