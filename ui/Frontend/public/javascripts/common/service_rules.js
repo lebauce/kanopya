@@ -261,7 +261,7 @@ function createNodemetricCondition(container_id, elem_id) {
  * @param container_id id of the dom elment to add the import button
  * @param sp_id        id of the service provider where to import selected objects
  * @param obj_info     hash of type info of objects to import :
- *      type        : object type (api)
+ *      type        : object type (format as table name). Used also to compute object api route (by removing '_')
  *      name        : object user friendly name
  *      relation    : relationship name from service provider to object type
  *      label_attr  : name of the object label attr
@@ -321,7 +321,7 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
                     var msg     = $('<span>', {
                         html : 'Select '
                                 + obj_info.name
-                                + 's to import from existing services.<br>Both services must have the same collector manager'
+                                + 's to import from existing services.<br>Both services must have the same collector manager.'
                     });
                     browser.append(msg).append($('<hr>'));
                     var tree_cont   = $('<div>', {style : 'height:300px;overflow:auto'}).appendTo(browser);
@@ -350,12 +350,15 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
                         var checked_items = tree_cont.jstree('get_checked',null,true)
                         var treated_count = 0;
                         checked_items.each( function() {
-                            var item_id = $(this).attr('item_id');
+                            var item_id     = $(this).attr('item_id');
+                            var obj_route   = obj_info.type.replace(/_/g,'');
+                            var data        = {service_provider_id : sp_id};
+                            data[obj_info.type + '_id'] = item_id;
                             if (item_id) {
                                 $.ajax({
                                     type    : 'POST',
-                                    url     : '/api/' + obj_info.type + '/' + item_id + '/clone',
-                                    data    : {dest_service_provider_id : sp_id},
+                                    url     : '/api/' + obj_route,
+                                    data    : data,
                                     success : function () { treated_count++ },
                                     error   : function (error) {alert(error.responseText)}
                                 });
@@ -663,7 +666,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 relation    : 'nodemetric_rules',
                 label_attr  : 'nodemetric_rule_label',
                 desc_attr   : 'nodemetric_rule_description',
-                type        : 'nodemetricrule'
+                type        : 'nodemetric_rule'
             },
             [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]
     );
@@ -772,7 +775,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 relation    : 'aggregate_rules',
                 label_attr  : 'aggregate_rule_label',
                 desc_attr   : 'aggregate_rule_description',
-                type        : 'aggregaterule'
+                type        : 'aggregate_rule'
             },
             [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]
     );

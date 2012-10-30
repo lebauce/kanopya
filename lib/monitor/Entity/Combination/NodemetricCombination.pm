@@ -353,7 +353,7 @@ sub clone {
     # Check that both services use the same collector manager
     my $src_collector_manager = ServiceProviderManager->find( hash => {
         manager_type        => 'collector_manager',
-        service_provider_id => $self->nodemetric_combination_service_provider->id
+        service_provider_id => $self->nodemetric_combination_service_provider_id
     });
     my $dest_collector_manager = ServiceProviderManager->find( hash => {
         manager_type        => 'collector_manager',

@@ -101,10 +101,6 @@ sub methods {
     'isVerifiedForANode'    => {
       'description' => 'isverifiedForANode',
       'perm_holder' => 'entity'
-    },
-    'clone'    => {
-      'description' => 'clone this object and link to a service provider',
-      'perm_holder' => 'entity'
     }
   }
 }
@@ -118,6 +114,14 @@ sub formula_label {
 sub new {
     my $class = shift;
     my %args = @_;
+
+    # Clone case
+    if ($args{nodemetric_rule_id}) {
+        return NodemetricRule->get( id => $args{nodemetric_rule_id})->clone(
+            dest_service_provider_id => $args{service_provider_id}
+        );
+    }
+
     my $self = $class->SUPER::new(%args);
     if(!defined $args{nodemetric_rule_label} || $args{nodemetric_rule_label} eq ''){
         $self->setAttr(name=>'nodemetric_rule_label', value => $self->toString());
