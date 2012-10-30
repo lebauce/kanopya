@@ -355,10 +355,11 @@ sub getAttrDefs {
     my $attributedefs = {};
     my @classes = split(/::/, (split("=", "$class"))[0]);
 
+    my $currentclass;
     while(@classes) {
-        my $attr_def = {};
-        my $currentclass = join('::', @classes);
+        $currentclass = join('::', @classes);
 
+        my $attr_def = {};
         if ($currentclass ne "BaseDB") {
             requireClass($currentclass);
             eval {
@@ -409,14 +410,14 @@ sub getAttrDefs {
         pop @classes;
     }
 
-    # Add BaseDB virtual attrs def
-    $attributedefs->{'BaseDB'} = BaseDB::getAttrDef();
+    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
+    # Add the BaseDB attrs to the upper class attrs
+    $attributedefs->{$currentclass} = $merge->merge($attributedefs->{$currentclass}, BaseDB::getAttrDef());
 
     if ($args{group_by} eq 'module') {
         return $attributedefs;
     }
-
-    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
     # Finally merge all module attrs into one level hash
     my $result = {};
@@ -542,6 +543,7 @@ sub checkAttrs {
             $result = $result->{_classToTable($classname)};
         }
     }
+
     return $result;
 }
 
