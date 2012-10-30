@@ -504,6 +504,42 @@ sub getDependantIndicatorIds {
 
 =begin classdoc
 
+Method used to clone the combination and link the clone to the specified service provider
+
+@param dest_service_provider_id id of the service provider where to clone the rule
+
+=end classdoc
+
+=cut
+
+sub clone {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_service_provider_id']);
+
+    my $attrs_cloner = sub {
+        my %args = @_;
+        my $attrs = $args{attrs};
+        $attrs->{aggregate_combination_formula}  = $self->_cloneFormula(
+            dest_sp_id              => $attrs->{aggregate_combination_service_provider_id},
+            formula                 => $attrs->{aggregate_combination_formula},
+            formula_object_class    => 'Clustermetric'
+        );
+        return %$attrs;
+    };
+
+    $self->_importToRelated(
+        dest_obj_id         => $args{'dest_service_provider_id'},
+        relationship        => 'aggregate_combination_service_provider',
+        label_attr_name     => 'aggregate_combination_label',
+        attrs_clone_handler => $attrs_cloner
+    );
+}
+
+=pod
+
+=begin classdoc
+
 Method from NodemetricCombination call from mother class. Return the same value than >computeLastValue()
 
 @return computeLastValue() method

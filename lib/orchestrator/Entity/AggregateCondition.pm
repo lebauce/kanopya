@@ -253,4 +253,38 @@ sub update {
     $right_combi->deleteIfConstant();
     return $rep;
 }
+
+=begin classdoc
+
+Method used to clone the condition and link the clone to the specified service provider
+
+@param dest_service_provider_id id of the service provider where to clone the rule
+
+=end classdoc
+
+=cut
+
+sub clone {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_service_provider_id']);
+
+    my $attrs_cloner = sub {
+        my %args = @_;
+        my $attrs = $args{attrs};
+        $attrs->{ 'aggregate_combination_id' } = $self->aggregate_combination->clone(
+            dest_service_provider_id => $attrs->{aggregate_condition_service_provider_id}
+        )->id;
+        $attrs->{last_eval} = undef;
+        return %$attrs;
+    };
+
+    $self->_importToRelated(
+        dest_obj_id         => $args{'dest_service_provider_id'},
+        relationship        => 'aggregate_condition_service_provider',
+        label_attr_name     => 'aggregate_condition_label',
+        attrs_clone_handler => $attrs_cloner
+    );
+}
+
 1;

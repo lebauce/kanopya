@@ -259,6 +259,50 @@ sub getDependencies {
     return \%dependencies;
 }
 
+=pod
+
+=begin classdoc
+
+Method used to clone the cluster metric and link the clone to the specified service provider
+Both linked service providers must have the same collector manager
+
+@param dest_service_provider_id id of the service provider where to clone the rule
+
+@throw Kanopya::Exception::Internal::NotFound if dest service provider does not have a collector manager
+@throw Kanopya::Exception::Internal::Inconsistency if both services haven't the same collector manager
+
+
+=end classdoc
+
+=cut
+
+sub clone {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_service_provider_id']);
+
+    # Check that both services use the same collector manager
+    my $src_collector_manager = ServiceProviderManager->find( hash => {
+        manager_type        => 'collector_manager',
+        service_provider_id => $self->clustermetric_service_provider_id
+    });
+    my $dest_collector_manager = ServiceProviderManager->find( hash => {
+        manager_type        => 'collector_manager',
+        service_provider_id => $args{'dest_service_provider_id'}
+    });
+    if ($src_collector_manager->manager_id != $dest_collector_manager->manager_id) {
+        throw Kanopya::Exception::Internal::Inconsistency(
+            error => "Source and dest service provider have not the same collector manager"
+        );
+    }
+
+    $self->_importToRelated(
+        dest_obj_id         => $args{'dest_service_provider_id'},
+        relationship        => 'clustermetric_service_provider',
+        label_attr_name     => 'clustermetric_label',
+    );
+}
+
 sub delete {
     my $self = shift;
 

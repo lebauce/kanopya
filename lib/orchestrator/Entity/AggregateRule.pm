@@ -124,6 +124,13 @@ sub new {
     my $class = shift;
     my %args = @_;
 
+    # Clone case
+    if ($args{aggregate_rule_id}) {
+        return AggregateRule->get( id => $args{aggregate_rule_id})->clone(
+            dest_service_provider_id => $args{service_provider_id}
+        );
+    }
+
     my $formula = (\%args)->{aggregate_rule_formula};
 
     _verify($formula);
@@ -331,5 +338,42 @@ sub setAttr {
     }
     $class->SUPER::setAttr(%args);
 };
+
+=pod
+
+=begin classdoc
+
+Method used to clone the rule and link the clone to the specified service provider
+
+@param dest_service_provider_id id of the service provider where to clone the rule
+
+=end classdoc
+
+=cut
+
+sub clone {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_service_provider_id']);
+
+    my $attrs_cloner = sub {
+        my %args = @_;
+        my $attrs = $args{attrs};
+        $attrs->{aggregate_rule_formula}  = $self->_cloneFormula(
+            dest_sp_id              => $attrs->{aggregate_rule_service_provider_id},
+            formula                 => $attrs->{aggregate_rule_formula},
+            formula_object_class    => 'AggregateCondition'
+        );
+        $attrs->{aggregate_rule_last_eval} = undef;
+        return %$attrs;
+    };
+
+    $self->_importToRelated(
+        dest_obj_id         => $args{'dest_service_provider_id'},
+        relationship        => 'aggregate_rule_service_provider',
+        label_attr_name     => 'aggregate_rule_label',
+        attrs_clone_handler => $attrs_cloner
+    );
+}
 
 1;
