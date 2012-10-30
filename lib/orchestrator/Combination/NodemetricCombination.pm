@@ -26,7 +26,7 @@ my $log = get_logger("");
 use constant ATTR_DEF => {
     formula_label => {
         is_virtual      => 1,
-    }
+    },
     nodemetric_combination_label     =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
