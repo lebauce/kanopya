@@ -891,6 +891,7 @@ sub registerVm {
         #1) if the parent is a single hypervisor, get it's id directly
         #2) if the parent is a cluster, loop into the hypervisor's list, retrieve it's view from
         #Vsphere, and check if it is hosting the vm
+
         my $hosting_hypervisor_id;
         if (scalar (@hypervisors_nodes) == 1) {
             $hosting_hypervisor_id = $hypervisors_nodes[0]->host->id;
@@ -905,8 +906,8 @@ sub registerVm {
                                           },
                                           begin_entity => $datacenter_view,
                                       );
-                my @vms = $hypervisor_view->vm;
-                foreach my $vm (@vms) {
+                my $vms = $hypervisor_view->vm;
+                foreach my $vm (@$vms) {
                     my $view = $self->getView(mo_ref => $vm);
                     if ($view->name eq $vm_view->name) {
                         $hosting_hypervisor_id = $hypervisor_node->host->id;
