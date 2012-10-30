@@ -71,7 +71,7 @@ eval{
         );
     } 'Add mock monitor to service provider';
 
-    my @indicators = CollectorIndicator->search (hash => {hash => {collector_manager_id => $mock_monitor->id}});
+    my @indicators = CollectorIndicator->search (hash => {collector_manager_id => $mock_monitor->id});
 
     my $agg_rule_ids  = service_rule_objects_creation(indicators => \@indicators);
     my $node_rule_ids = node_rule_objects_creation(indicators => \@indicators);
