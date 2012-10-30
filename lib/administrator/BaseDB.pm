@@ -409,7 +409,10 @@ sub getAttrDefs {
             $attributedefs->{$modulename} = $attr_def;
         }
 
-        $modulename = _parentClass($modulename);
+        if (scalar(@hierachy) > 1) {
+            $modulename = _parentClass($modulename);
+        }
+
         pop @hierachy;
     }
 
