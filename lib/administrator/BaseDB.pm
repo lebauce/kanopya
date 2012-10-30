@@ -362,6 +362,7 @@ sub getAttrDefs {
 
         if ($modulename ne "BaseDB") {
             requireClass($modulename);
+
             eval {
                 $attr_def = $modulename->getAttrDef();
             };
