@@ -255,6 +255,7 @@ function createNodemetricCondition(container_id, elem_id) {
 /*
  * Allow clone and import of objects in a service provider (sp_id)
  * Display all object of specified type (sorted by service provider)
+ * Only display service providers with the same collector manager than dest service provider
  * Allow user to select objects and import them
  *
  * @param container_id id of the dom elment to add the import button
@@ -268,39 +269,60 @@ function createNodemetricCondition(container_id, elem_id) {
  * @param grid_ids     list of id of grid to refresh after import
  */
 function importItemButton(container_id, sp_id, obj_info, grid_ids) {
+    var collector_manager_id;
+
     function loadItemTree() {
         // Build items tree
         var items_tree = [];
-        $.get('/api/serviceprovider').success( function(serviceproviders) {
-            var count   = serviceproviders.length;
-            var treated = 0;
-            $.each(serviceproviders, function(i,sp) {
-                $.get('/api/serviceprovider/' + sp.pk + '/' + obj_info.relation).success( function(related) {
-                    var items = [];
-                    $.each(related, function(i,item) {
-                        items.push({
-                            data : item[obj_info.label_attr],
-                            attr : {
-                                item_id     : item.pk,
-                                item_desc   : item[obj_info.desc_attr]
-                            }
-                        });
-                    });
-                    // Add only service with items
-                    if (items.length > 0) {
-                        items_tree.push( {
-                            data        : sp.label,
-                            children    : items
-                        } );
-                    }
-                    treated++;
-                });
-            });
+        var sp_treated = 0;
 
+        function addServiceProviderItems(i,sp) {
+            // Do not list destination service provider
+            if (sp.pk != sp_id) {
+                // List only service providers with the same collector manager than dest service provider
+                $.get('/api/serviceprovider/' + sp.pk + '/service_provider_managers?manager_type=collector_manager')
+                .success(function(manager) {
+                    if (manager.length > 0 && manager[0].manager_id === collector_manager_id) {
+                        // Get related items and add them to the tree
+                        $.get('/api/serviceprovider/' + sp.pk + '/' + obj_info.relation).success( function(related) {
+                            var items = [];
+                            $.each(related, function(i,item) {
+                                items.push({
+                                    data : item[obj_info.label_attr],
+                                    attr : {
+                                        item_id     : item.pk,
+                                        item_desc   : item[obj_info.desc_attr]
+                                    }
+                                });
+                            });
+                            // Add only service with items
+                            if (items.length > 0) {
+                                items_tree.push( {
+                                    data        : sp.label,
+                                    children    : items
+                                } );
+                            }
+                            sp_treated++;
+                        });
+                    } else { sp_treated++ }
+                });
+            } else { sp_treated++ }
+        }
+
+        $.get('/api/serviceprovider').success( function(serviceproviders) {
+            var sp_count   = serviceproviders.length;
+
+            $.each(serviceproviders, addServiceProviderItems);
+
+           // Wait end of tree building and then display tree
             function displayTree() {
-                if (count == treated) {
+                if (sp_count == sp_treated) {
                     var browser = $('<div>');
-                    var msg     = $('<span>', {html : 'Select ' + obj_info.name + 's to import from existing services'});
+                    var msg     = $('<span>', {
+                        html : 'Select '
+                                + obj_info.name
+                                + 's to import from existing services.<br>Both services must have the same collector manager'
+                    });
                     browser.append(msg).append($('<hr>'));
                     var tree_cont   = $('<div>', {style : 'height:300px;overflow:auto'}).appendTo(browser);
                     var item_detail = $('<div>').appendTo(browser);
@@ -377,11 +399,20 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
         });
     }
 
-    // Create and bind import button
-    $("<button>", {html : 'Import ' + obj_info.name + 's'})
-    .button({ icons : { primary : 'ui-icon-plusthick' } })
-    .appendTo('#' + container_id)
-    .click( loadItemTree );
+    // Retrieve collector manager id (used to check available service providers for import)
+    // Add import button only if there is a linked collector manager
+    $.get('/api/serviceprovider/' + sp_id + '/service_provider_managers?manager_type=collector_manager')
+    .success(function(manager) {
+        if (manager.length > 0) {
+            collector_manager_id = manager[0].manager_id;
+
+            // Create and bind import button
+            $("<button>", {html : 'Import ' + obj_info.name + 's'})
+            .button({ icons : { primary : 'ui-icon-plusthick' } })
+            .appendTo('#' + container_id)
+            .click( loadItemTree );
+        }
+    });
 }
 
 function createNodemetricRule(container_id, elem_id) {
