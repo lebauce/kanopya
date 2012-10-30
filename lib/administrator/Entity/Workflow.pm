@@ -59,11 +59,6 @@ sub methods {
             perm_holder => 'entity',
             purpose     => 'action',
         },
-        getCurrentOperation => {
-            description => 'getCurrentOperation',
-            perm_holder => 'entity',
-            purpose     => 'internal',
-        },
     };
 }
 
@@ -121,22 +116,18 @@ sub enqueue {
 
 sub getCurrentOperation {
     my ($self, %args) = @_;
-
     my $adm = Administrator->new();
-
-    my $workflow_id = $self->getAttr(name => 'workflow_id');
-    my $current = $adm->{db}->resultset('Operation')->search(
-                      { workflow_id => $workflow_id, -not => { state => 'succeeded' } },
-                      { order_by    => { -asc => 'execution_rank' }}
-                  )->first();
 
     my $op;
     eval {
-        $op = Entity::Operation->get(id => $current->get_column("operation_id"));
+        $op = Entity::Operation->find(
+                  hash     => { workflow_id => $self->id, -not => { state => 'succeeded' } },
+                  order_by => 'execution_rank ASC',
+              );
     };
     if ($@) {
         throw Kanopya::Exception::Internal::NotFound(
-                  error => "Not more operations within workflow <$workflow_id>"
+                  error => "Not more operations within workflow <" . $self->id .  ">"
               );
     }
     return $op;

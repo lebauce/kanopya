@@ -30,11 +30,6 @@ my $errmsg;
 
 sub methods {
     return {
-        getDirectoryTree  => {
-            description => 'getDirectoryTree',
-            perm_holder => 'entity',
-            purpose     => 'internal',
-        },
         getManagerParamsDef => {
             description => 'getParamsDef',
             perm_holder => 'entity',
