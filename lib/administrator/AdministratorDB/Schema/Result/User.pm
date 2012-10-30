@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::User;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::User
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::User
+=head1 TABLE: C<user>
 
 =cut
 
@@ -132,7 +136,31 @@ __PACKAGE__->add_columns(
   "user_sshkey",
   { data_type => "text", is_nullable => 1 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</user_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("user_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<user_login>
+
+=over 4
+
+=item * L</user_login>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("user_login", ["user_login"]);
 
 =head1 RELATIONS
@@ -257,9 +285,19 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 profiles
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-03 14:14:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:n0YubF0cRkyeFaoOH+MW8w
+Type: many_to_many
+
+Composing rels: L</user_profiles> -> profile
+
+=cut
+
+__PACKAGE__->many_to_many("profiles", "user_profiles", "profile");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-26 13:48:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YbTdI3j8irDPts5so452+Q
 
 __PACKAGE__->belongs_to(
   "parent",

@@ -410,15 +410,17 @@ sub setupREST {
             my %query = params('query');
             my $hash = \%query;
 
+            my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
             for my $filter (@filters) {
                 my $parent = $obj->{_dbix};
 
                 RELATION:
                 while (1) {
-                    if ($parent->result_source->has_relationship($filter)) {
+                    if ($parent->can($filter)) {
                         # TODO: prefetch filter so that we can just bless it
                         # $obj = bless { _dbix => $parent->$filter }, "Entity";
 
+<<<<<<< HEAD
                         my $relinfo = $parent->result_source->relationship_info($filter);
 
                         if ($relinfo->{attrs}->{accessor} eq "multi") {
@@ -445,9 +447,44 @@ sub setupREST {
 
                             my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
                             return to_json(db_to_json($obj, \@expand));
+=======
+                        # The relation is mutli or single
+                        if ($parent->has_relationship($filter)) {
+                            my $relinfo = $parent->result_source->relationship_info($filter);
+
+                            if ($relinfo->{attrs}->{accessor} eq "multi") {
+                                my @conds = keys %{$relinfo->{cond}};
+                                my $fk = BaseDB::getForeignKeyFromCond(cond => $conds[0]);
+                                my $class = BaseDB::classFromDbix($parent->result_source->related_source($filter));
+
+                                $hash->{$fk} = $parent->id;
+
+                                my $json = format_results(class    => $class,
+                                                          dataType => params->{dataType},
+                                                          %$hash);
+
+                                return to_json($json);
+                            }
+                            elsif (defined $parent->$filter) {
+                                my $dbix = $parent->$filter;
+
+                                $obj = $dbix->has_relationship("class_type") ?
+                                           Entity->get(
+                                               id => $dbix->get_column(($dbix->result_source->primary_columns)[0])
+                                           ) :
+                                           $dbix;
+
+                                return to_json(db_to_json($obj, \@expand));
+                            }
+                            else {
+                                return "null";
+                            }
+>>>>>>> 4aba245... [api] Handle many to many relations.
                         }
+                        # The relation is many to many
                         else {
-                            return "null";
+                            my @jsonlist = map { db_to_json($_, \@expand) } $parent->$filter;
+                            return to_json(\@jsonlist);
                         }
 
                         last RELATION;

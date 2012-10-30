@@ -693,10 +693,12 @@ sub getAttr {
     # Recursively search in the dbix objets, following
     # the 'parent' relation
     while ($found) {
+        # The attr is a column
         if ($dbix->has_column($args{name})) {
             $value = $dbix->get_column($args{name});
             last;
         }
+        # The attr is a relation
         elsif ($dbix->has_relationship($args{name})) {
             my $name = $args{name};
             my $relinfo = $dbix->relationship_info($args{name});
@@ -710,6 +712,12 @@ sub getAttr {
             }
             last;
         }
+        # The attr is a many to many relation
+        elsif ($dbix->can($args{name})) {
+            my $name = $args{name};
+            return map { fromDBIx(row => $_) } $dbix->$name;
+        }
+        # The attr is a virtual attr
         elsif ($self->can($args{name}) and defined $attr and $attr->{is_virtual}) {
             my $method = $args{name};
             $value = $self->$method();
