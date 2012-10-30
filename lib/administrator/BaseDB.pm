@@ -1817,7 +1817,6 @@ sub methodCall {
 Method used during cloning and import process of object linked to another object (belongs_to relationship)
 Clone this object and link the clone to the specified related object
 Only clone if object doesn't alredy exist in destination object (based on label_attr_name arg)
-Subclass can redefine _cloneAttrs() to handle specific attrs cloning
 
 @param dest_object_id id of the related object where to import cloned object
 @param relationship name of the belongs_to relationship linking to owner object
@@ -1849,14 +1848,14 @@ sub _importToRelated {
     };
     return $obj if $obj;
 
-    # Set the service provider id to the dest service provider id
+    # Set the linked entity id to the dest entity id
     $attrs{$args{relationship} . '_id'} = $dest_obj_id;
 
     # Specific attrs cloning handler callback
     if ($args{attrs_clone_handler}) {
         %attrs = $args{attrs_clone_handler}(attrs => \%attrs);
     }
-    # Remove the src service provider id
+    # Remove the origin entity id
     delete $attrs{$self->getPrimaryKey()};
 
     # Create the object
