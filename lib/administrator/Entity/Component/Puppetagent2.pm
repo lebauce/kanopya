@@ -116,11 +116,14 @@ sub getHostsEntries {
 }
 
 sub getBaseConfiguration {
-	return {
+    my $config = Kanopya::Config::get('executor');
+    my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
+
+    return {
         puppetagent2_options    => '',
         puppetagent2_mode       => 'kanopya',
-        puppetagent2_masterip   => '',
-        puppetagent2_masterfqdn => '' 
+        puppetagent2_masterip   => $kanopya_cluster->getMasterNodeIp(),
+        puppetagent2_masterfqdn => $kanopya_cluster->getMasterNodeFQDN() 
     };
 }
 
