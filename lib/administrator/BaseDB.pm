@@ -1165,7 +1165,7 @@ sub toJSON {
     my $class = ref ($self) || $self;
 
     General::checkParams(args     => \%args,
-                         optional => { 'no_relations' => 0, 'model' => undef });
+                         optional => { 'no_relations' => 0, 'model' => undef, 'raw' => 0 });
 
     my $pk;
     my $hash = {};
@@ -1176,6 +1176,8 @@ sub toJSON {
     $attributes = $class->getAttrDefs(group_by => 'module');
     foreach my $class (keys %$attributes) {
         foreach my $attr (keys %{$attributes->{$class}}) {
+            next if ($args{raw} && $attributes->{$class}->{$attr}->{is_virtual});
+
             if (defined $args{model}) {
                 # Only add primary key attrs from the lower class in the hierarchy
                 if (not ($attributes->{$class}->{$attr}->{is_primary} and $class ne $conreteclass)) {
