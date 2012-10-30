@@ -723,7 +723,7 @@ sub registerDatacenter {
     };
     if (defined $datacenter) {
         $errmsg  = 'The datacenter '. $args{name} .' already exist in kanopya ';
-        $errmsg .= 'with ID '. $existing_datacenter->id;
+        $errmsg .= 'with ID '. $datacenter->id;
         $errmsg .= ' and is already associated with this component (id '. $self->id .')';
         $log->info($errmsg);
 
@@ -997,7 +997,7 @@ sub registerHypervisor {
     my $datacenter                  = $args{parent};
     my $service_provider_name       = $args{name};
     #We substitute terms in (new string) to match cluster_name pattern
-    (my $service_provider_renamed   = $service_provider_name) =~ s/[^\w\d\.+]/_/g;
+    (my $service_provider_renamed   = $service_provider_name) =~ s/[^\w\d+]/_/g;
     my $datacenter_name             = $datacenter->vsphere5_datacenter_name;
 
     #Get the datacenter view
