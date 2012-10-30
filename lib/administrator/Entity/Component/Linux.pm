@@ -58,8 +58,8 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use LinuxMount;
 use Log::Log4perl 'get_logger';
-use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -83,18 +83,9 @@ sub getConf {
     my $self = shift;
     my $conf = {};
 
-    my $conf_rs = $self->{_dbix}->linuxs_mount;
-    my @mountdefs = ();
-    while (my $conf_row = $conf_rs->next) {
-        push @mountdefs, {
-            linux_mount_id         => $conf_row->get_column('linux_mount_id'),
-            linux_mount_device     => $conf_row->get_column('linux_mount_device'),
-            linux_mount_point      => $conf_row->get_column('linux_mount_point'),
-            linux_mount_filesystem => $conf_row->get_column('linux_mount_filesystem'),
-            linux_mount_options    => $conf_row->get_column('linux_mount_options'),
-            linux_mount_dumpfreq   => $conf_row->get_column('linux_mount_dumpfreq'),
-            linux_mount_passnum    => $conf_row->get_column('linux_mount_passnum'),
-        };
+    my @mountdefs;
+    for my $mount ($self->linuxs_mount) {
+        push @mountdefs, $mount->toJSON(raw => 1);
     }
 
     $conf->{linuxs_mount} = \@mountdefs;
@@ -111,11 +102,10 @@ sub setConf {
     my $mountdefs_conf = $conf->{linuxs_mount};
     
     # for each mount definition , we search it in db for update or deletion
-    my $mountdefs_rs = $self->{_dbix}->linuxs_mount;
-    while(my $mountdef_row = $mountdefs_rs->next) {
+    for my $mount ($self->linuxs_mount) {
         my $found = 0;
         my $mountdef_data;
-        my $id = $mountdef_row->id;
+        my $id = $mount->id;
         foreach my $mountdef_conf (@$mountdefs_conf) {
              if($mountdef_conf->{linux_mount_id} == $id) {
                  $found = 1;
@@ -123,16 +113,16 @@ sub setConf {
                  last;
              }
         }
-        if($found) {
-             $mountdef_row->update($mountdef_data);
-         } else {
-             $mountdef_row->delete();
-         }     
+        if ($found) {
+            $mount->update(%$mountdef_data);
+        } else {
+            $mount->delete();
+        }
     }
     
-    foreach    my $mtdef (@$mountdefs_conf) {
+    foreach my $mtdef (@$mountdefs_conf) {
         if (not exists $mtdef->{linux_mount_id}) {
-                $self->{_dbix}->linuxs_mount->create($mtdef);
+            LinuxMount->new(linux_id => $self->id, %$mtdef);
         }
     }
 }

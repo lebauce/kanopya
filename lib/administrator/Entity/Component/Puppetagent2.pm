@@ -79,19 +79,8 @@ use constant ATTR_DEF => {
         is_editable   => 1,
     },
 };
-sub getAttrDef { return ATTR_DEF; }
 
-sub getConf {
-    my ($self) = @_;
-    my %conf = ();
-    my $confindb = $self->{_dbix};
-    if($confindb) {
-        %conf = $confindb->get_columns();
-    } else {
-        %conf = %{getBaseConfiguration()};
-    }
-    return \%conf; 
-}
+sub getAttrDef { return ATTR_DEF; }
 
 sub setConf {
     my $self = shift;
@@ -106,14 +95,8 @@ sub setConf {
         $conf->{puppetagent2_masterip} = $kanopya_cluster->getMasterNodeIp();
         $conf->{puppetagent2_masterfqdn} = $kanopya_cluster->getMasterNodeFQDN();
     }
-    
-    if (not $conf->{puppetagent2_id}) {
-        # new configuration -> creat
-        $self->{_dbix}->create($conf);
-    } else {
-        # old configuration -> update
-        $self->{_dbix}->update($conf);
-    }
+
+    $self->SUPER::setConf(conf => $conf);
 }
 
 sub getPuppetMaster {
@@ -124,14 +107,12 @@ sub getPuppetMaster {
 
 sub getHostsEntries {
     my ($self) = @_;
-    my $entry = {};
-    my $fqdn = $self->{_dbix}->get_column('puppetagent2_masterfqdn');
+    my $fqdn = $self->puppetagent2_masterfqdn;
     my @tmp = split(/\./, $fqdn);
-    $entry->{ip} = $self->{_dbix}->get_column('puppetagent2_masterip');
-    $entry->{hostname} = shift @tmp;
-    $entry->{domainname} = join('.', @tmp);
     
-    return [ $entry ];
+    return [ { ip         => $self->puppetagent2_masterip,
+               hostname   => shift @tmp,
+               domainname => join('.', @tmp) } ];
 }
 
 sub getBaseConfiguration {
