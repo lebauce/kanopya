@@ -513,7 +513,7 @@ function workflowslist(cid, eid) {
                 colNames                : [ 'Id', 'Name', 'State', 'Current Operation' ],
                 afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
                     $.ajax({
-                        url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
+                        url     : '/api/operation?workflow_id=' + rowdata.pk + '&state=<>,succeeded&order_by=execution_rank%20ASC',
                         type    : 'POST',
                         success : function(data) {
                             rowelem.currentOperation    = data.type;
@@ -542,7 +542,7 @@ function runningworkflowslist(cid, eid) {
         colNames             : [ 'Id', 'Name', 'Current Operation', 'Step' ],
         afterInsertRow       : function(grid, rowid, rowdata, rowelem) {
             $.ajax({
-                url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
+                url     : '/api/operation?workflow_id=' + rowdata.pk + '&state=<>,succeeded&order_by=execution_rank%20ASC',
                 type    : 'POST',
                 success : function(data) {
                     rowelem.currentOperation    = data.type;
@@ -589,7 +589,7 @@ function workflowsoverview(cid, eid) {
         afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
             if (rowdata.state != 'done') {
                 $.ajax({
-                    url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
+                    url     : '/api/operation?workflow_id=' + rowdata.pk + '&state=<>,succeeded&order_by=execution_rank%20ASC',
                     type    : 'POST',
                     success : function(data) {
                         $(grid).setCell(rowid, 'currentOperation', data.type);
