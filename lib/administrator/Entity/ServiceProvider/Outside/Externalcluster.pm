@@ -387,7 +387,7 @@ sub generateClustermetricAndCombination{
     my $aggregate_combination = Combination::AggregateCombination->new(%$acf_params);
     my $rep = {
         cm_id => $cm->getAttr(name => 'clustermetric_id'),
-        comb_id => $aggregate_combination->getAttr(name => 'aggregate_combination_id'),
+        comb_id => $aggregate_combination->id,
     };
     return $rep;
 }
@@ -524,7 +524,7 @@ sub ruleGeneration{
 
    my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $coef_comb->getAttr(name=>'aggregate_combination_id'),
+        left_combination_id                => $coef_comb->id,
         comparator                              => '>',
         threshold                               => 0.2,
         state                                   => 'enabled',
@@ -535,7 +535,7 @@ sub ruleGeneration{
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $std_ids->{comb_id},
+        left_combination_id                => $std_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 10,
         state                                   => 'enabled',
@@ -546,7 +546,7 @@ sub ruleGeneration{
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $out_ids->{comb_id},
+        left_combination_id                     => $out_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 0,
         state                                   => 'enabled',
@@ -575,7 +575,7 @@ sub ruleGeneration{
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_ids->{comb_id},
+        left_combination_id                     => $mean_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 80,
         state                                   => 'enabled',
@@ -594,7 +594,7 @@ sub ruleGeneration{
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_ids->{comb_id},
+        left_combination_id                     => $mean_ids->{comb_id},
         comparator                              => '<',
         threshold                               => 10,
         state                                   => 'enabled',
@@ -613,14 +613,14 @@ sub generateAOutOfRangeRule {
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $ndoor_comb_id,
+        left_combination_id                     => $ndoor_comb_id,
         comparator                              => '>',
         threshold                               => 0,
         state                                   => 'enabled',
     };
 
     my $aggregate_condition = AggregateCondition->new(%$condition_params);
-    my $label = 'Isolated data - '.$aggregate_condition->getCombination()->toString();
+    my $label = 'Isolated data - '.$aggregate_condition->left_combination->toString();
 
     my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
@@ -639,7 +639,7 @@ sub generateOverRules {
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_percent_comb_id,
+        left_combination_id                     => $mean_percent_comb_id,
         state                                   => 'enabled',
     };
 
@@ -654,7 +654,7 @@ sub generateOverRules {
         aggregate_rule_state                => 'enabled',
     };
 
-    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' overloaded';
+    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->left_combination->toString().' overloaded';
     $params_rule->{aggregate_rule_description} = 'You may add a node';
 
     AggregateRule->new(%$params_rule);
@@ -668,7 +668,7 @@ sub generateUnderRules {
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_percent_comb_id,
+        left_combination_id                     => $mean_percent_comb_id,
         state                                   => 'enabled',
     };
 
@@ -683,7 +683,7 @@ sub generateUnderRules {
         aggregate_rule_state                => 'enabled',
     };
 
-    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' underloaded';
+    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->left_combination->toString().' underloaded';
     $params_rule->{aggregate_rule_description} = 'You may add a node';
 
     AggregateRule->new(%$params_rule);
@@ -705,7 +705,7 @@ sub generateCoefficientOfVariationRules {
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+        left_combination_id                     => $aggregate_combination->id,
         comparator                              => '>',
         threshold                               => 0.2,
         state                                   => 'enabled',
@@ -738,7 +738,7 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+        left_combination_id                => $aggregate_combination->id,
         comparator                              => '>',
         threshold                               => 0.15,
         state                                   => 'enabled',
