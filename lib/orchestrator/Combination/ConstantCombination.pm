@@ -57,4 +57,8 @@ sub getDependantIndicatorIds {
     return ();
 }
 
+sub deleteIfConstant {
+    my $self = shift;
+    return $self->delete();
+}
 1;

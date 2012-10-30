@@ -37,4 +37,19 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub delete {
+    my $self = shift;
+    my @conditions = (
+        $self->aggregate_condition_left_combinations,
+        $self->aggregate_condition_right_combinations,
+        $self->nodemetric_condition_left_combinations,
+        $self->nodemetric_condition_right_combinations,
+    );
+
+    while (@conditions) {
+        (pop @conditions)->delete();
+    }
+    return $self->SUPER::delete();
+};
+sub deleteIfConstant {};
 1;
