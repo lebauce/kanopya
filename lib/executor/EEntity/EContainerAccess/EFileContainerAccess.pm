@@ -114,42 +114,6 @@ sub buildMountpoint {
     return $file_mountpoint . "_on_" . $underlying;
 }
 
-sub mount {
-    my ($self,%args) = @_;
-
-    my ($command, $result);
-
-    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
-
-    # Connecting to the container access.
-    my $device = $self->tryConnect(econtext  => $args{econtext},
-                                   erollback => $args{erollback});
-
-    $command = "mkdir -p $args{mountpoint}";
-    $args{econtext}->execute(command => $command);
-
-    $log->debug("Mounting <$device> on <$args{mountpoint}>.");
-
-    $command = "guestmount -a " . $device . " -i " . $args{mountpoint};
-    $result  = $args{econtext}->execute(command => $command);
-
-    if ($result->{exitcode} != 0) {
-        throw Kanopya::Exception::Execution(
-                  error => "Unable to mount $device on $args{mountpoint}: " .
-                           $result->{stderr}
-              );
-    }
-
-    $log->debug("File <$device> mounted on <$args{mountpoint}>.");
-    
-    if (exists $args{erollback} and defined $args{erollback}){
-        $args{erollback}->add(
-            function   => $self->can('umount'),
-            parameters => [ $self, "mountpoint", $args{mountpoint}, "econtext", $args{econtext} ]
-        );
-    }
-}
-
 sub getPreferredBlockSize {
     my $self = shift;
     my %args = @_;

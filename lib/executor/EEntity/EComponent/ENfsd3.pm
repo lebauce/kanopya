@@ -40,7 +40,7 @@ sub createExport {
     General::checkParams(args     => \%args,
                          required => [ 'container', 'export_name' ],
                          optional => { 'client_name'    => '*',
-                                       'client_options' => 'rw,sync,no_root_squash' });
+                                       'client_options' => 'rw,sync,no_root_squash,fsid=0' });
 
     # Check if the given container is provided by the same
     # storage provider than the nfsd storage provider.

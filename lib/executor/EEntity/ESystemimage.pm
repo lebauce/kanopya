@@ -105,7 +105,6 @@ sub create {
                         size       => $args{systemimage_size},
                         filesystem => $args{src_container}->getAttr(name => 'container_filesystem'),
                         erollback  => $args{erollback},
-                        noformat   => 1,
                         %args
                     );
 

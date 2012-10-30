@@ -64,7 +64,7 @@ sub createDisk {
                 );
     my $container = EFactory::newEEntity(data => $entity);
 
-    if (not defined $args{"noformat"}) {
+    if (not $args{"noformat"}) {
         # Create a temporary export and connect to the access to get a device
         my $access = $self->createExport(container => $container);
         my $device = $access->tryConnect(econtext  => $self->getEContext,
