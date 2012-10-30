@@ -658,18 +658,20 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     } );
     
     createNodemetricRule('node_accordion_container', elem_id);
-    importItemButton(
-            'node_accordion_container',
-            elem_id,
-            {
-                name        : 'node rule',
-                relation    : 'nodemetric_rules',
-                label_attr  : 'nodemetric_rule_label',
-                desc_attr   : 'nodemetric_rule_description',
-                type        : 'nodemetric_rule'
-            },
-            [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]
-    );
+    if (!mode_policy) {
+        importItemButton(
+                'node_accordion_container',
+                elem_id,
+                {
+                    name        : 'node rule',
+                    relation    : 'nodemetric_rules',
+                    label_attr  : 'nodemetric_rule_label',
+                    desc_attr   : 'nodemetric_rule_description',
+                    type        : 'nodemetric_rule'
+                },
+                [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]
+        );
+    }
 
     // Here's the second part of the accordion :
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
@@ -767,18 +769,20 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         },
     } );
     createServiceRule('service_accordion_container', elem_id);
-    importItemButton(
-            'service_accordion_container',
-            elem_id,
-            {
-                name        : 'service rule',
-                relation    : 'aggregate_rules',
-                label_attr  : 'aggregate_rule_label',
-                desc_attr   : 'aggregate_rule_description',
-                type        : 'aggregate_rule'
-            },
-            [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]
-    );
+    if (!mode_policy) {
+        importItemButton(
+                'service_accordion_container',
+                elem_id,
+                {
+                    name        : 'service rule',
+                    relation    : 'aggregate_rules',
+                    label_attr  : 'aggregate_rule_label',
+                    desc_attr   : 'aggregate_rule_description',
+                    type        : 'aggregate_rule'
+                },
+                [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]
+        );
+    }
 
     $('#accordionrule').accordion({
         autoHeight  : false,
