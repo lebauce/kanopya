@@ -359,7 +359,7 @@ sub clone {
         manager_type        => 'collector_manager',
         service_provider_id => $args{'dest_service_provider_id'}
     });
-    if ($src_collector_manager->id != $dest_collector_manager->id) {
+    if ($src_collector_manager->manager_id != $dest_collector_manager->manager_id) {
         throw Kanopya::Exception::Internal::Inconsistency(
             error => "Source and dest service provider have not the same collector manager"
         );
