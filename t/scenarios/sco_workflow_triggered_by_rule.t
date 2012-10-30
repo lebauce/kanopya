@@ -406,7 +406,7 @@ sub service_rule_objects_creation {
 
         my $ac1 = AggregateCondition->new(
             aggregate_condition_service_provider_id => $service_provider->id,
-            aggregate_combination_id => $acomb1->id,
+            left_combination_id => $acomb1->id,
             comparator => '>',
             threshold => '0',
             state => 'enabled'
@@ -414,7 +414,7 @@ sub service_rule_objects_creation {
 
         my $ac2 = AggregateCondition->new(
             aggregate_condition_service_provider_id => $service_provider->id,
-            aggregate_combination_id => $acomb2->id,
+            left_combination_id => $acomb2->id,
             comparator => '<',
             threshold => '0',
             state => 'enabled'

@@ -9,7 +9,7 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/capacity_management.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/delete_rule.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
 
@@ -127,11 +127,11 @@ eval{
     dies_ok { NodemetricCondition->get(id => $ncd1->id);} 'Check NodemetricCondition deletion comb right';
     dies_ok { NodemetricCondition->get(id => $ncd2->id);} 'Check NodemetricCondition deletion comb left';
     lives_ok {$ncd1->left_combination_id; $ncd1->right_combination_id;} 'Check left and right combination existance';
-    dies_ok { Combination->get(id => $ncd1->left_combination_id);} 'Check left combination deletion';
-    dies_ok { Combination->get(id => $ncd1)->right_combination_id;} 'Check right combination deletion';
+    dies_ok { Combination->get(id => $ncd1->left_combination_id);} 'Check left combination deletion a';
+    dies_ok { Combination->get(id => $ncd1->right_combination_id);} 'Check right combination deletion a';
     lives_ok {$ncd2->left_combination_id; $ncd2->right_combination_id;}'Check left and right combination existance';
-    dies_ok { Combination->get(id => $ncd2->left_combination_id);}'Check left combination deletion';
-    dies_ok { Combination->get(id => $ncd2)->right_combination_id;} 'Check right combination deletion';
+    dies_ok { Combination->get(id => $ncd2->left_combination_id);}'Check left combination deletion b';
+    dies_ok { Combination->get(id => $ncd2->right_combination_id);} 'Check right combination deletion b';
     dies_ok { NodemetricRule->get(id => $nrule1d->id);} 'Check NodemetricRule deletion 1/3';
     dies_ok { NodemetricRule->get(id => $nrule2d->id);} 'Check NodemetricRule deletion 2/3';
     dies_ok { NodemetricRule->get(id => $nrule3d->id);} 'Check NodemetricRule deletion 3/3';
@@ -196,7 +196,7 @@ sub service_rule_objects_creation {
 
         $acd1 = AggregateCondition->new(
             aggregate_condition_service_provider_id => $service_provider->id,
-            aggregate_combination_id => $acombd1->id,
+            left_combination_id => $acombd1->id,
             comparator => '>',
             threshold => '0',
             state => 'enabled'
@@ -204,7 +204,7 @@ sub service_rule_objects_creation {
 
         $acd2 = AggregateCondition->new(
             aggregate_condition_service_provider_id => $service_provider->id,
-            aggregate_combination_id => $acombd2->id,
+            left_combination_id => $acombd2->id,
             comparator => '<',
             threshold => '0',
             state => 'enabled'
@@ -212,7 +212,7 @@ sub service_rule_objects_creation {
 
         $ac3 = AggregateCondition->new(
             aggregate_condition_service_provider_id => $service_provider->id,
-            aggregate_combination_id => $acomb3->id,
+            left_combination_id => $acomb3->id,
             comparator => '<',
             threshold => '0',
             state => 'enabled'
