@@ -6,7 +6,7 @@ atftpd0
 dhcpd3
 snmpd5
 nfsd3
-linux0
+linux
 syslogng3
 mysql5
 iptables1
@@ -26,3 +26,6 @@ sco
 kanopyaworkflow0
 mailnotifier0
 vsphere5
+debian
+redhat
+suse

@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::Result::Linux0;
+package AdministratorDB::Schema::Result::Linux;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -11,15 +11,15 @@ use base 'DBIx::Class::Core';
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::Linux0
+AdministratorDB::Schema::Result::Linux
 
 =cut
 
-__PACKAGE__->table("linux0");
+__PACKAGE__->table("linux");
 
 =head1 ACCESSORS
 
-=head2 linux0_id
+=head2 linux_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -29,7 +29,7 @@ __PACKAGE__->table("linux0");
 =cut
 
 __PACKAGE__->add_columns(
-  "linux0_id",
+  "linux_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -37,11 +37,11 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
-__PACKAGE__->set_primary_key("linux0_id");
+__PACKAGE__->set_primary_key("linux_id");
 
 =head1 RELATIONS
 
-=head2 linux0
+=head2 linux
 
 Type: belongs_to
 
@@ -50,24 +50,39 @@ Related object: L<AdministratorDB::Schema::Result::Component>
 =cut
 
 __PACKAGE__->belongs_to(
-  "linux0",
+  "linux",
   "AdministratorDB::Schema::Result::Component",
-  { component_id => "linux0_id" },
+  { component_id => "linux_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 linux0s_mount
+=head2 debian
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Debian>
+
+=cut
+
+__PACKAGE__->might_have(
+  "debian",
+  "AdministratorDB::Schema::Result::Debian",
+  { "foreign.debian_id" => "self.linux_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 linuxs_mount
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Linux0Mount>
+Related object: L<AdministratorDB::Schema::Result::LinuxMount>
 
 =cut
 
 __PACKAGE__->has_many(
-  "linux0s_mount",
-  "AdministratorDB::Schema::Result::Linux0Mount",
-  { "foreign.linux0_id" => "self.linux0_id" },
+  "linuxs_mount",
+  "AdministratorDB::Schema::Result::LinuxMount",
+  { "foreign.linux_id" => "self.linux_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -80,7 +95,7 @@ __PACKAGE__->has_many(
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
-        { "foreign.component_id" => "self.linux0_id" },
+        { "foreign.component_id" => "self.linux_id" },
         { cascade_copy => 0, cascade_delete => 1 });
 
 1;

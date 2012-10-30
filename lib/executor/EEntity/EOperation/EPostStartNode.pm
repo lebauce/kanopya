@@ -119,65 +119,18 @@ sub prerequisites {
 }
 
 sub prepare {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+
     $self->SUPER::prepare();
-
-    my $exec_cluster = Entity::ServiceProvider->get(id => $self->{config}->{cluster}->{executor});
-    $self->{params}->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
-
-    # retrieve kanopya puppet master
-    my $puppetmaster = $exec_cluster->getComponent(name => 'Puppetmaster', version => 2);
-    $self->{context}->{component_puppetmaster} = EFactory::newEEntity(data => $puppetmaster);
-
-    # retrieve linux component if exists
-    my $linux = eval {
-        $self->{context}->{cluster}->getComponent(name    => 'Linux',
-                                                  version => 0
-        );
-    };
-    if($linux) {
-        $self->{context}->{linux} = EFactory::newEEntity(data => $linux);
-    }
-
-    # retrieve puppet component if exists
-    my $puppetagent = eval {
-        $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
-                                                  version => 2
-        );
-    };
-    if($puppetagent) {
-        $self->{context}->{puppetagent} = EFactory::newEEntity(data => $puppetagent);
-    }
-
-
-
 }
 
 sub execute {
     my ($self, %args) = @_;
+
     $self->SUPER::execute();
 
     if (not $self->{context}->{cluster}->getMasterNodeId()) {
         $self->{context}->{host}->becomeMasterNode();
-    }
-
-    # regenerate linux component files
-    my $hosts = $self->{context}->{cluster}->getHosts();
-    my @ehosts = map { EFactory::newEEntity(data => $_) } values %$hosts;
-    if ($self->{context}->{linux}) {
-        for my $ehost (@ehosts) {
-            $self->{context}->{linux}->generateConfiguration(
-                cluster => $self->{context}->{cluster},
-                host    => $ehost
-            );
-        }
-    }
-
-    if(defined $self->{context}->{puppetagent}) {
-        for my $ehost (@ehosts) {
-            $self->{context}->{puppetagent}->applyManifest(host => $ehost);
-        }
     }
 
     my @components = $self->{context}->{cluster}->getComponents(category => "all");
@@ -188,13 +141,6 @@ sub execute {
             cluster   => $self->{context}->{cluster},
             erollback => $self->{erollback}
         );
-    }
-
-    if (defined $self->{context}->{puppetagent}) {
-        $self->{context}->{component_puppetmaster}->updateSite;
-        for my $ehost (@ehosts) {
-            $self->{context}->{puppetagent}->applyManifest(host => $ehost);
-        }
     }
 
     $self->{context}->{host}->postStart();
@@ -236,8 +182,6 @@ sub finish {
         }
     }
 
-    delete $self->{context}->{puppetagent};
-    delete $self->{context}->{linux};
     # /!\ WARNING: DO NOT DELETE $self->{context}->{host} ! needed in worflow addNode + VM migration
 }
 

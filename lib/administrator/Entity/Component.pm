@@ -26,7 +26,9 @@ use Kanopya::Exceptions;
 use Data::Dumper;
 use Administrator;
 use General;
+use ComponentType;
 use Log::Log4perl "get_logger";
+
 my $log = get_logger("");
 my $errmsg;
 
@@ -93,7 +95,7 @@ sub new {
     my %args = @_;
 
     # avoid abstract Entity::Component instanciation
-    if ($class !~ /Entity::Component::(.+)(\d+)/) {
+    if ($class !~ /Entity::Component.*::(\D+)(\d*)/) {
         $errmsg = "Entity::Component->new : Entity::Component must not " .
                   "be instanciated without a concret component class";
         $log->error($errmsg);
@@ -111,14 +113,14 @@ sub new {
     }
 
     # we set the corresponding component_type
-    my $admin = Administrator->new();
-    my $component_type_id = $admin->{db}->resultset('ComponentType')->search( {
-                                component_name    => $component_name,
-		                        component_version => $component_version
-                            })->single->id;
+    my $hash = { component_name => $component_name };
+    if (defined ($component_version) && $component_version) {
+        $hash->{component_version} = $component_version;
+    }
 
-    $config->{component_type_id} = $component_type_id;
-    my $self = $class->SUPER::new(%$config);
+    my $self = $class->SUPER::new(component_type_id => ComponentType->find(hash => $hash)->id,
+                                  %$config);
+
     bless $self, $class;
     return $self;
 }
@@ -293,7 +295,12 @@ sub supportHotConfiguration {
     return 0;
 }
 
+sub getPriority {
+    return 50;
+}
+
 sub readyNodeAddition { return 1; }
+
 sub readyNodeRemoving { return 1; }
 
 # Method to override to insert in db component default configuration

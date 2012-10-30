@@ -60,6 +60,8 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "component_category",
   { data_type => "char", is_nullable => 0, size => 32 },
+  "component_class",
+  { data_type => "char", is_nullable => 0, size => 128 },
 );
 __PACKAGE__->set_primary_key("component_type_id");
 

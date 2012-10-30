@@ -60,7 +60,9 @@ use Entity::Component::Physicalhoster0;
 use Entity::Component::Fileimagemanager0;
 use Entity::Component::Kanopyacollector1;
 use Entity::Component::Kanopyaworkflow0;
-use Entity::Component::Linux0;
+use Entity::Component::Linux::Debian;
+use Entity::Component::Linux::Redhat;
+use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
 
 my @classes = (
@@ -89,7 +91,7 @@ my @classes = (
     'Entity::Component::Iptables1',
     'Entity::Component::Keepalived1',
     'Entity::Component::Memcached1',
-    'Entity::Component::Linux0',
+    'Entity::Component::Linux',
     'Entity::Component::Mysql5',
     'Entity::Component::Openiscsi2',
     'Entity::Component::Openldap1',
@@ -144,7 +146,10 @@ my @classes = (
     'Entity::Workflow',
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
     'Entity::Host::VirtualMachine::Vsphere5Vm',
-    'Entity::Component::Vsphere5'
+    'Entity::Component::Vsphere5',
+    'Entity::Component::Linux::Debian',
+    'Entity::Component::Linux::Suse',
+    'Entity::Component::Linux::Redhat',
 );
 
 sub registerClassTypes {
@@ -485,31 +490,34 @@ sub registerComponents {
     my %args = @_;
 
     my $components = [
-        [ 'Lvm', '2', 'Storage' ],
-        [ 'Apache', '2', 'Webserver', '/templates/components/apache2' ],  
-        [ 'Iscsitarget', '1', 'Export', '/templates/components/ietd' ],
-        [ 'Openiscsi', '2', 'Exportclient' ],
-        [ 'Dhcpd', '3', 'Dhcpserver', '/templates/components/dhcpd' ],
-        [ 'Atftpd', '0', 'Tftpserver' ], 
-        [ 'Snmpd', '5', 'Monitoragent', '/templates/components/snmpd' ],
-        [ 'Nfsd', '3', 'Export', '/templates/components/nfsd3' ],
-        [ 'Linux', '0', 'System', '/templates/components/linux' ],
-        [ 'Mysql', '5', 'DBMS' ],
-        [ 'Syslogng', '3', 'Logger' ],  
-        [ 'Iptables', '1', 'Firewall' ],
-        [ 'Openldap', '1', 'Annuary' ],
-        [ 'Opennebula', '3', 'Cloudmanager' ],
-        [ 'Physicalhoster', '0', 'Cloudmanager' ],
-        [ 'Fileimagemanager', '0', 'Storage' ],
-        [ 'Puppetagent', '2', 'Configurationagent' ],   
-        [ 'Puppetmaster', '2', 'Configurationserver' ], 
-        [ 'Kanopyacollector', '1', 'Collectormanager' ],
-        [ 'Keepalived', '1', 'LoadBalancer' ],
-        [ 'Kanopyaworkflow', '0', 'Workflowmanager' ], 
-        [ 'Mailnotifier', '0', 'Notificationmanager' ],
-        [ 'Memcached', '1', 'Cache' ],
-        [ 'Php', '5', 'Lib' ],
-        [ 'Vsphere', '5', 'Cloudmanager' ],
+        [ 'Lvm', '2', 'Storage', undef, 'Entity::Component::Lvm2' ],
+        [ 'Apache', '2', 'Webserver', '/templates/components/apache2', 'Entity::Component::Apache2' ],  
+        [ 'Iscsitarget', '1', 'Export', '/templates/components/ietd', 'Entity::Component::Iscsitarget1' ],
+        [ 'Openiscsi', '2', 'Exportclient', undef, 'Entity::Component::Openiscsi2' ],
+        [ 'Dhcpd', '3', 'Dhcpserver', '/templates/components/dhcpd', 'Entity::Component::Dhcpd3' ],
+        [ 'Atftpd', '0', 'Tftpserver', undef, 'Entity::Component::Atftpd0' ], 
+        [ 'Snmpd', '5', 'Monitoragent', '/templates/components/snmpd', 'Entity::Component::Snmpd5' ],
+        [ 'Nfsd', '3', 'Export', '/templates/components/nfsd3', 'Entity::Component::Nfsd3' ],
+        [ 'Linux', '0', 'System', '/templates/components/linux', 'Entity::Component::Linux' ],
+        [ 'Mysql', '5', 'DBMS', undef, 'Entity::Component::Mysql5' ],
+        [ 'Syslogng', '3', 'Logger', undef, 'Entity::Component::Syslogng3' ],  
+        [ 'Iptables', '1', 'Firewall', undef, 'Entity::Component::Iptables1' ],
+        [ 'Openldap', '1', 'Annuary', undef, 'Entity::Component::Openldap1' ],
+        [ 'Opennebula', '3', 'Cloudmanager', undef, 'Entity::Component::Opennebula3' ],
+        [ 'Physicalhoster', '0', 'Cloudmanager', undef, 'Entity::Component::Physicalhoster0' ],
+        [ 'Fileimagemanager', '0', 'Storage', undef, 'Entity::Component::Fileimagemanager0' ],
+        [ 'Puppetagent', '2', 'Configurationagent', undef, 'Entity::Component::Puppetagent2' ],   
+        [ 'Puppetmaster', '2', 'Configurationserver', undef, 'Entity::Component::Puppetmaster2' ], 
+        [ 'Kanopyacollector', '1', 'Collectormanager', undef, 'Entity::Component::Kanopyacollector1' ],
+        [ 'Keepalived', '1', 'LoadBalancer', undef, 'Entity::Component::Keepalived1' ],
+        [ 'Kanopyaworkflow', '0', 'Workflowmanager', undef, 'Entity::Component::Kanopyaworkflow0' ],
+        [ 'Mailnotifier', '0', 'Notificationmanager', undef, 'Entity::Component::Mailnotifier0' ],
+        [ 'Memcached', '1', 'Cache', undef, 'Entity::Component::Memcached1' ],
+        [ 'Php', '5', 'Lib', undef, 'Entity::Component::Php5' ],
+        [ 'Vsphere', '5', 'Cloudmanager', undef, 'Entity::Component::Vsphere5' ],
+        [ 'Debian', '6', 'System', '/templates/components/debian', 'Entity::Component::Linux::Debian' ],
+        [ 'Redhat', '6', 'System', '/templates/components/redhat', 'Entity::Component::Linux::Redhat' ],
+        [ 'Suse', '11', 'System', '/templates/components/suse', 'Entity::Component::Linux::Suse' ],
     ];
 
     for my $component_type (@{$components}) {
@@ -517,6 +525,7 @@ sub registerComponents {
             component_name     => $component_type->[0],
             component_version  => $component_type->[1],
             component_category => $component_type->[2],
+            component_class    => $component_type->[4]
         );
         if (defined $component_type->[3]) {
             my $template_name = lc $component_type->[0];
@@ -786,23 +795,23 @@ sub registerKanopyaMaster {
 
     my $components = [
         {
-            name => 'Lvm2'
+            name => 'Lvm'
         },
         {
-            name => 'Iscsitarget1'
+            name => 'Iscsitarget'
         },
         {
-            name => 'Fileimagemanager0'
+            name => 'Fileimagemanager'
         },
         {
-            name => "Dhcpd3",
+            name => "Dhcpd",
             conf => {
                 dhcpd3_domain_name =>  "hedera-technology.com",
                 dhcpd3_servername  => "node001"
             }
         },
         {
-            name => "Atftpd0",
+            name => "Atftpd",
             conf => {
                 atftpd0_options    => '--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5',
                 atftpd0_use_inetd  => 'FALSE',
@@ -811,14 +820,14 @@ sub registerKanopyaMaster {
             }
         },
         {
-            name => "Snmpd5",
+            name => "Snmpd",
             conf => {
                 monitor_server_ip => $args{poolip_addr},
                 snmpd_options     => '-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid'
             }
         },
         {
-            name => "Nfsd3",
+            name => "Nfsd",
             conf => {
                 nfsd3_need_gssd => 'no',
                 nfsd3_rpcnfsdcount => 8,
@@ -827,36 +836,36 @@ sub registerKanopyaMaster {
             }
         },
         {
-            name => "Syslogng3",
+            name => "Syslogng",
         },
         {
-            name => "Puppetmaster2",
+            name => "Puppetmaster",
             conf => {
                 puppetmaster2_options => ""
             }
         },
         {
-            name => "Openiscsi2"
+            name => "Openiscsi"
         },
         {
-            name => "Physicalhoster0",
+            name => "Physicalhoster",
             manager => "host_manager"
         },
         {
-            name => "Kanopyacollector1",
+            name => "Kanopyacollector",
             conf => {
                 kanopyacollector1_collect_frequency => 3600,
                 kanopyacollector1_storage_time      => 86400
             }
         },
         {
-            name => "Kanopyaworkflow0"
+            name => "Kanopyaworkflow"
         },
         {
-            name => "Linux0"
+            name => "Debian"
         },
         {
-            name => "Mailnotifier0",
+            name => "Mailnotifier",
             manager => "notification_manager",
             conf => {
                 smtp_server => "localhost"
@@ -866,13 +875,11 @@ sub registerKanopyaMaster {
 
     my $installed = { };
     for my $component (@{$components}) {
-        my $class = "Entity::Component::" . $component->{name};
-        my $version = chop($component->{name});
         my $name = $component->{name};
-        my $component_type = ComponentType->search(hash => {
-                                 component_name    => $name,
-                                 component_version => $version
+        my $component_type = ComponentType->find(hash => {
+                                 component_name    => $name
                              } );
+        my $class = $component_type->component_class;
         my $component_template;
         eval {
             $component_template = ComponentTemplate->find(hash => { component_template_name => lc $name })->id;

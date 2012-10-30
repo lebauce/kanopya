@@ -29,7 +29,6 @@ use Entity::Host;
 use Entity::Kernel;
 use Template;
 use General;
-use Message;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -85,10 +84,6 @@ sub prepare {
     my $dhcpd = $self->{context}->{bootserver}->getComponent(name => "Dhcpd", version => 3);
     $self->{context}->{dhcpd_component} = EFactory::newEEntity(data => $dhcpd);
 
-    # Instanciate puppetmaster
-    my $puppetmaster = $self->{context}->{bootserver}->getComponent(name => 'Puppetmaster', version => 2);
-    $self->{context}->{component_puppetmaster} = EFactory::newEEntity(data => $puppetmaster);
-
     # Get container of the system image, get the container access of the container
     my $container = $self->{context}->{host}->getNodeSystemimage->getDevice;
     $self->{context}->{container} = EFactory::newEEntity(data => $container);
@@ -106,7 +101,6 @@ sub prepare {
     $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->getAttr(name => 'cluster_domainname');
 
     $self->{cluster_components} = $self->{context}->{cluster}->getComponents(category => "all");
-
 }
 
 sub execute {
@@ -125,30 +119,51 @@ sub execute {
                                                 econtext   => $self->getEContext,
                                                 erollback  => $self->{erollback});
 
-    $log->info("Operate user account creation");
-    $self->_generateUserAccount(mount_point => $mountpoint);
+    my $is_loadbalanced = $self->{context}->{cluster}->isLoadBalanced;
+    my $is_masternode = $self->{context}->{cluster}->getCurrentNodesCount == 0;
 
-    $log->info("Operate Network Configuration");
-    $self->_generateNetConf(mount_point => $mountpoint);
+    $log->info("Generate network configuration");
+    INTERFACES:
+    foreach my $interface (@{$self->{context}->{cluster}->getNetworkInterfaces}) {
 
-    $log->debug("Generate ntpdate Conf");
-    $self->_generateNtpdateConf(mount_point => $mountpoint);
+        # public network on loadbalanced cluster must be configured only
+        # on the master node
+        my $interface_role_name = $interface->getRole->getAttr(name => 'interface_role_name');
+        if(( $interface_role_name eq 'public') and $is_loadbalanced
+            and not $is_masternode) {
+            next INTERFACES;
+        }
 
-    my $puppet_definitions = "";
-    
+        my $iface = $interface->getAssociatedIface(host => $self->{context}->{host});
+
+        # Assign ip from the associated interface poolip
+        $iface->assignIp();
+
+        # Apply VLAN's
+        for my $network ($interface->getNetworks) {
+            if ($network->isa("Entity::Network::Vlan")) {
+                $log->info("Apply VLAN on " . $iface->getAttr(name => 'iface_name'));
+                my $ehost_manager = EFactory::newEEntity(data => $self->{context}->{host}->getHostManager);
+                $ehost_manager->applyVLAN(
+                    iface => $iface,
+                    vlan  => $network
+                );
+            }
+        }
+    }
+
     $log->info("Operate components configuration");
-    foreach my $component (@{ $self->{cluster_components} }) {
+    sub comparePriorities {
+        return $a->getPriority <=> $b->getPriority;
+    }
+    my @components = sort comparePriorities @{ $self->{cluster_components} };
+    foreach my $component (@components) {
         my $ecomponent = EFactory::newEEntity(data => $component);
-        $ecomponent->addNode(host        => $self->{context}->{host},
-                             mount_point => $mountpoint,
-                             cluster     => $self->{context}->{cluster},
-                             erollback   => $self->{erollback});
-
-        # retrieve puppet definition to create manifest
-        $puppet_definitions .= $ecomponent->getPuppetDefinition(
-            host    => $self->{context}->{host},
-            cluster => $self->{context}->{cluster},
-        );
+        $ecomponent->addNode(host               => $self->{context}->{host},
+                             mount_point        => $mountpoint,
+                             cluster            => $self->{context}->{cluster},
+                             container_access   => $self->{context}->{container_access},
+                             erollback          => $self->{erollback});
     }
 
     $log->info("Operate Boot Configuration");
@@ -156,32 +171,27 @@ sub execute {
                              filesystem => $self->{context}->{container}->container_filesystem,
                              options    => $mount_options);
 
-    # check if this cluster must be managed by puppet and kanopya puppetmaster
-    my $puppetagent = eval {
-        $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
-                                                  version => 2
-        );
-    };
-    if($puppetagent) {
-        my $conf = $puppetagent->getConf();
-        if($conf->{puppetagent2_mode} eq 'kanopya') {
-
-            # create, sign and push a puppet certificate on the image
-            $log->info('Puppent agent component configured with kanopya puppet master');
-            my $fqdn = $self->{context}->{host}->getAttr(name => 'host_hostname');
-            $fqdn .= '.' . $self->{params}->{kanopya_domainname};
-            $self->{context}->{component_puppetmaster}->createHostCertificate(
-                mount_point => $mountpoint,
-                host_fqdn   => $fqdn
-            );
-
-            $self->{context}->{component_puppetmaster}->createHostManifest(
-                host_fqdn          => $fqdn,
-                puppet_definitions => $puppet_definitions
-            );
-
-        }
+    # Update kanopya etc hosts
+    my @data = ();
+    for my $host (Entity::Host->getHosts(hash => {})) {
+        my $hostname = $host->host_hostname;
+        next if (not $hostname or $hostname eq '');
+        push @data, {
+            ip         => $host->getAdminIp,
+            hostname   => $hostname,
+            domainname => $self->{params}->{kanopya_domainname},
+        };
     }
+
+    my $template = Template->new( {
+        INCLUDE_PATH => '/templates/components/linux',
+        INTERPOLATE  => 0,
+        POST_CHOMP   => 0,
+        EVAL_PERL    => 1,
+        RELATIVE     => 1,
+    } );
+
+    $template->process('hosts.tt', { hosts => \@data }, '/etc/hosts');
 
     # Umount system image container
     $self->{context}->{container_access}->umount(mountpoint => $mountpoint,
@@ -226,173 +236,10 @@ sub finish {
     # No need to lock the bootserver
     delete $self->{context}->{bootserver};
     delete $self->{context}->{dhcpd_component};
-    delete $self->{context}->{component_puppetmaster};
     delete $self->{context}->{container};
     delete $self->{context}->{container_access};
     delete $self->{context}->{export_manager};
     delete $self->{context}->{systemimage};
-}
-
-sub _generateUserAccount {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'mount_point' ]);
-    my $user = $self->{context}->{cluster}->user;
-    my $login = $user->getAttr(name => 'user_login');
-    my $password = $user->getAttr(name => 'user_password');
-    
-    # create user account and add sudoers entry if necessary
-    my $cmd = "cat ".$args{mount_point}."/etc/passwd | cut -d: -f1 | grep ^$login\$";
-    my $result = $self->getEContext->execute(command => $cmd);
-    if($result->{stdout}) {
-        $log->info("User account $login already exists");
-        Message->send(from => 'Executor', level => 'info', 
-                      content => "User account $login already exists");
-    } else {
-        # create the user account
-        my $cmd = "chroot ".$args{mount_point}." useradd -m -p '$password' $login";
-        my $result = $self->getEContext->execute(command => $cmd);
-        # add a sudoers file
-        $cmd = "umask 227 && echo '$login ALL=(ALL) ALL' > ".$args{mount_point}."/etc/sudoers.d/$login";
-        $result = $self->getEContext->execute(command => $cmd);
-        # add ssh pub key
-        my $sshkey = $user->getAttr(name => 'user_sshkey');
-        if(defined $sshkey) {
-            my $dir = $args{mount_point}."/home/$login/.ssh";
-            # retrieve uid,gid
-            #$cmd = "grep $login ".$args{mount_point}."/etc/passwd | cut -d: -f3,4";
-            #$result = $self->getEContext->execute(command => $cmd);
-            #my ($uid, $gid) = split(':', $result->{stdout});
-            # create ssh directory and authorized_keys file
-            $cmd = "mkdir $dir";
-            $result = $self->getEContext->execute(command => $cmd);
-            $cmd = "umask 177 && echo '$sshkey' > $dir/authorized_keys";
-            $result = $self->getEContext->execute(command => $cmd);
-            $cmd = "chroot $args{mount_point} chown -R $login.$login /home/$login/.ssh ";
-            $result = $self->getEContext->execute(command => $cmd);
-        }
-    }
-}
-
-sub _generateNetConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'mount_point' ]);
-
-    # search for an potential 'loadbalanced' component
-    my $is_loadbalanced = 0;
-    foreach my $component (@{ $self->{cluster_components} }) {
-        my $clusterization_type = $component->getClusterizationType();
-        if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
-            $is_loadbalanced = 1;
-            last;
-        }
-    }
-
-    my $is_masternode;
-    if($self->{context}->{cluster}->getCurrentNodesCount > 1) { 
-        $is_masternode = 0;
-    } else {
-        $is_masternode = 1;
-    }
-
-    # Pop an IP adress for all host iface,
-    my @net_ifaces;
-    INTERFACES:
-    foreach my $interface (@{$self->{context}->{cluster}->getNetworkInterfaces}) {
-        
-        # public network on loadbalanced cluster must be configured only
-        # on the master node
-        my $interface_role_name = $interface->getRole->getAttr(name => 'interface_role_name');
-        if(( $interface_role_name eq 'public') and $is_loadbalanced
-            and not $is_masternode) {
-            next INTERFACES;
-        }
-        
-        my $iface = $interface->getAssociatedIface(host => $self->{context}->{host});
-
-        # Assign ip from the associated interface poolip
-        $iface->assignIp();
-
-        # Only add non pxe iface to /etc/network/interfaces
-        if (not $iface->getAttr(name => 'iface_pxe')) {
-            my ($gateway, $netmask, $ip, $method);
-
-            if ($iface->hasIp) {
-                my $pool = $iface->getPoolip;
-                $netmask = $pool->poolip_netmask;
-                $ip = $iface->getIPAddr;
-                $gateway = $interface->hasDefaultGateway() ? $pool->poolip_gateway : undef;
-                $method = "static";
-                if ($is_loadbalanced and not $is_masternode) {
-                    $gateway = $self->{context}->{cluster}->getMasterNodeIp
-                }
-            }
-            else {
-                $method = "manual";
-            }
-
-            push @net_ifaces, { method  => $method,
-                                name    => $iface->iface_name,
-                                address => $ip,
-                                netmask => $netmask,
-                                gateway => $gateway,
-                                role    => $interface_role_name };
-
-            $log->info("Iface " .$iface->iface_name . " configured via static file");
-        }
-
-        # Apply VLAN's
-        for my $network ($interface->getNetworks) {
-            if ($network->isa("Entity::Network::Vlan")) {
-                $log->info("Apply VLAN on " . $iface->getAttr(name => 'iface_name'));
-                my $ehost_manager = EFactory::newEEntity(data => $self->{context}->{host}->getHostManager);
-                $ehost_manager->applyVLAN(
-                    iface => $iface,
-                    vlan  => $network
-                );
-            }
-        }
-    }
-
-    my $file = $self->{context}->{cluster}->generateNodeFile(
-        cluster       => $self->{context}->{cluster},
-        host          => $self->{context}->{host},
-        file          => '/etc/network/interfaces',
-        template_dir  => '/templates/internal',
-        template_file => 'network_interfaces.tt',
-        data          => { interfaces => \@net_ifaces }
-    );
-
-    $self->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/network'
-    );
-
-    # Disable network deconfiguration during halt
-    unlink "$args{mount_point}/etc/rc0.d/S35networking";
-
-    # Update kanopya etc hosts
-    my @data = ();
-    for my $host (Entity::Host->getHosts(hash => {})) {
-        my $hostname = $host->getAttr(name => 'host_hostname');
-        next if (not $hostname or $hostname eq '');
-        push @data, {
-            ip         => $host->getAdminIp,
-            hostname   => $hostname,
-            domainname => $self->{params}->{kanopya_domainname},
-        };
-    }
-
-    my $template = Template->new( {
-        INCLUDE_PATH => '/templates/components/linux',
-        INTERPOLATE  => 0,
-        POST_CHOMP   => 0,
-        EVAL_PERL    => 1,
-        RELATIVE     => 1,
-    } );
-
-    $template->process('hosts.tt', { hosts => \@data }, '/etc/hosts');
 }
 
 sub _generateBootConf {
@@ -412,21 +259,7 @@ sub _generateBootConf {
 
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{context}->{container_access}->getAttr(name => 'container_access_export');
-
-            $self->getEContext->execute(
-                command => "touch $args{mount_point}/etc/iscsi.initramfs"
-            );
-
-            $log->debug("Generate Initiator Conf");
-
-            my $initiatorname = $self->{context}->{host}->host_initiatorname;
             my $lun_number = $self->{context}->{container_access}->getLunId(host => $self->{context}->{host});
-
-            $self->getEContext->execute(
-                command => "echo \"InitiatorName=$initiatorname\" > " .
-                           "$args{mount_point}/etc/initiatorname.iscsi"
-            );
-
             my $rand = new String::Random;
             my $tmpfile = $rand->randpattern("cccccccc");
 
@@ -436,7 +269,7 @@ sub _generateBootConf {
 
             my $vars = {
                 filesystem    => $self->{context}->{container}->getAttr(name => 'container_filesystem'),
-                initiatorname => $initiatorname,
+                initiatorname => $self->{context}->{host}->host_initiatorname,
                 target        => $targetname,
                 ip            => $self->{context}->{container_access}->getAttr(name => 'container_access_ip'),
                 port          => $self->{context}->{container_access}->getAttr(name => 'container_access_port'),
@@ -446,16 +279,15 @@ sub _generateBootConf {
                 additional_devices => "",
             };
 
-            foreach my $component (@{ $self->{cluster_components} }) {
-                if ($component->isa("Entity::Component::Openiscsi2")){
-                    $vars->{mounts_iscsi} = $component->getExports();
-
+            eval {
+                my $openiscsi = $self->{context}->{cluster}->getComponent(name => "Openiscsi2");
+                $vars->{mounts_iscsi} = $openiscsi->getExports();
                     my $tmp = $vars->{mounts_iscsi};
                     foreach my $j (@$tmp){
                         $vars->{additional_devices} .= " ". $j->{name};
                     }
-                }
-            }
+                
+            };
 
             $template->process($input, $vars, "/tmp/$tmpfile")
                 or throw Kanopya::Exception::Internal(
@@ -468,22 +300,7 @@ sub _generateBootConf {
             $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
             unlink "/tmp/$tmpfile";
         }
-
-        my $grep_result = $self->getEContext->execute(
-                              command => "grep \"NETDOWN=no\" $args{mount_point}/etc/default/halt"
-                          );
-
-        if (not $grep_result->{stdout}) {
-            $self->getEContext->execute(
-                command => "echo \"NETDOWN=no\" >> $args{mount_point}/etc/default/halt"
-            );
-        }
     }
-
-    # Set up fastboot
-    $self->getEContext->execute(
-        command => "touch $args{mount_point}/fastboot"
-    );
 }
 
 sub _generatePXEConf {
@@ -631,114 +448,6 @@ sub _generatePXEConf {
     # Update Host internal ip
     $log->debug("Get subnet <$subnet> and have host ip <$pxeiface->getIPAddr>");
     my %subnet_hash = $self->{context}->{dhcpd_component}->getSubNet(dhcpd3_subnet_id => $subnet);
-}
-
-sub _generateKanopyaHalt {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "etc_path", "targetname" ]);
-
-    my $rand = new String::Random;
-    my $template = Template->new($config);
-    my $tmpfile = $rand->randpattern("cccccccc");
-    my $tmpfile2 = $rand->randpattern("cccccccc");
-    my $input = "KanopyaHalt.tt";
-    my $omitted_file = "Kanopya_omitted_iscsid";
-
-    #TODO: mettre en parametre le port du iscsi du nas!!
-    my $vars = {
-        target   => $args{targetname},
-        nas_ip   => $self->{context}->{container_access}->getAttr(name => 'container_access_ip'),
-        nas_port => $self->{context}->{container_access}->getAttr(name => 'container_access_port'),
-    };
-
-    my @components = $self->{context}->{cluster}->getComponents(category => "all");
-    foreach my $component (@components) {
-        # TODO: Check if it is an ExportClient and call generic method
-        if ($component->isa("Entity::Component::Openiscsi2")) {
-            $vars->{data_exports} = $component->getExports();
-        }
-    }
-
-    $log->debug("Generate Kanopya Halt with :" . Dumper($vars));
-    $template->process($input, $vars, "/tmp/" . $tmpfile) or die $template->error(), "\n";
-
-    $self->getEContext->send(src  => "/tmp/$tmpfile",
-                             dest => "$args{etc_path}/init.d/Kanopya_halt");
-    unlink "/tmp/$tmpfile";
-
-    $self->getEContext->execute(
-        command => "chmod 755 $args{etc_path}/init.d/Kanopya_halt"
-    );
-    #$self->getEContext->execute(
-    #    command => "ln -sf ../init.d/Kanopya_halt $args{etc_path}/rc0.d/S89Kanopya_halt"
-    #);
-
-    $log->debug("Generate omitted file <$omitted_file>");
-    $self->getEContext->execute(
-        command => "cp /templates/internal/$omitted_file /tmp/"
-    );
-    $self->getEContext->send(
-        src  => "/tmp/$omitted_file",
-        dest => "$args{etc_path}/init.d/Kanopya_omitted_iscsid"
-    );
-    unlink "/tmp/$omitted_file";
-
-    $self->getEContext->execute(
-        command => "chmod 755 $args{etc_path}/init.d/Kanopya_omitted_iscsid"
-    );
-    #$self->getEContext->execute(
-    #    command => "ln -sf ../init.d/Kanopya_omitted_iscsid " .
-    #               "$args{etc_path}/rc0.d/S19Kanopya_omitted_iscsid"
-    #);
-}
-
-sub _generateNtpdateConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'mount_point' ]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-    my $template = Template->new($config);
-    my $input = "ntpdate.tt";
-    my $data = {
-        ntpservers => $self->{context}->{bootserver}->getMasterNodeIp(),
-    };
-
-    $template->process($input, $data, "/tmp/$tmpfile")
-        or throw Kanopya::Exception::Internal::IncorrectParam(
-                     error => "Error while generating ntpdate configuration ". $template->error() . "\n"
-                 );
-
-    $self->getEContext->send(
-        src  => "/tmp/$tmpfile",
-        dest => "$args{mount_point}/etc/default/ntpdate"
-    );
-
-    unlink "/tmp/$tmpfile";
-
-    # send ntpdate init script
-    $tmpfile = $rand->randpattern("cccccccc");
-    $input = "ntpdate";
-    $data = {};
-
-    $template->process($input, $data, "/tmp/$tmpfile")
-        or throw Kanopya::Exception::Internal::IncorrectParam(
-                     error => "Error while generating ntpdate init script ". $template->error() . "\n"
-                 );
-
-    $self->getEContext->send(
-        src  => "/tmp/$tmpfile",
-        dest => "$args{mount_point}/etc/init.d/ntpdate"
-    );
-
-    $self->getEContext->execute(command => "chmod +x $args{mount_point}/etc/init.d/ntpdate");
-    $self->getEContext->execute(command => "chroot $args{mount_point} /sbin/insserv -d ntpdate");
 }
 
 1;

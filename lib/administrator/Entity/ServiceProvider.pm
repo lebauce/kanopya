@@ -480,35 +480,25 @@ sub addComponent {
 sub addComponentFromType {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['component_type_id']);
+    General::checkParams(args => \%args, required => [ 'component_type_id' ]);
 
-    my $type_id = $args{component_type_id};
-    my $adm = Administrator->new();
-    my $row = $adm->{db}->resultset('ComponentType')->find($type_id);
-    my $comp_name = $row->get_column('component_name');
-    my $comp_version = $row->get_column('component_version');
-    my $comp_class = 'Entity::Component::'.$comp_name.$comp_version;
+    my $comp_type = ComponentType->get(id => $args{component_type_id});
+
+    my $comp_class = 'Entity::Component::' . $comp_type->component_name . $comp_type->component_version;
     my $location = General::getLocFromClass(entityclass => $comp_class);
-    eval {require $location };
+    eval {
+        require $location
+    };
+    if ($@) {
+        $comp_class = 'Entity::Component::' . $comp_type->component_name;
+        $location = General::getLocFromClass(entityclass => $comp_class);
+        eval {
+            require $location
+        };
+    }
+
     my $component = $comp_class->new();
-
     return $self->addComponent(component => $component);
-}
-
-=head2 removeComponent
-
-    Desc: remove a component instance and all its configuration
-          from this cluster
-
-=cut
-
-sub removeComponent {
-    my ($self,%args) = @_;
-    
-    General::checkParams(args => \%args, required => ['component_instance_id']);
-    
-    my $component_instance = Entity::Component->get(id => $args{component_instance_id});
-    $component_instance->delete;
 }
 
 1;
