@@ -118,23 +118,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 aggregate_conditions
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::AggregateCondition>
-
-=cut
-
-__PACKAGE__->has_many(
-  "aggregate_conditions",
-  "AdministratorDB::Schema::Result::AggregateCondition",
-  {
-    "foreign.aggregate_combination_id" => "self.aggregate_combination_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 
 # Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 13:06:18
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TsvolKen/V1ZyZ6P79zgbg

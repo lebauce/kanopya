@@ -1321,17 +1321,19 @@ CREATE TABLE `aggregate_condition` (
   `aggregate_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `aggregate_condition_label` char(255),
   `aggregate_condition_service_provider_id` int(8) unsigned NOT NULL,
-  `aggregate_combination_id` int(8) unsigned NOT NULL,
+  `left_combination_id` int(8) unsigned NOT NULL,
+  `right_combination_id` int(8) unsigned NOT NULL,
   `comparator` char(32) NOT NULL,
-  `threshold` double NOT NULL,
   `state` char(32) NOT NULL,
   `time_limit` char(32),
   `last_eval` BOOLEAN DEFAULT NULL,
   KEY (`aggregate_condition_service_provider_id`),
   FOREIGN KEY (`aggregate_condition_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   PRIMARY KEY (`aggregate_condition_id`),
-  KEY (`aggregate_combination_id`),
-  FOREIGN KEY (`aggregate_combination_id`) REFERENCES `aggregate_combination` (`aggregate_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY (`left_combination_id`),
+  FOREIGN KEY (`left_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`right_combination_id`),
+  FOREIGN KEY (`right_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1348,6 +1350,7 @@ CREATE TABLE `nodemetric_condition` (
   `nodemetric_condition_comparator` char(32) NOT NULL,
   PRIMARY KEY (`nodemetric_condition_id`),
   KEY (`left_combination_id`),
+  KEY (`right_combination_id`),
   FOREIGN KEY (`left_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`right_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`nodemetric_condition_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION

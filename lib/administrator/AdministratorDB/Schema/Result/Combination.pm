@@ -85,6 +85,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 aggregate_condition_left_combinations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::AggregateCondition>
+
+=cut
+
+__PACKAGE__->has_many(
+  "aggregate_condition_left_combinations",
+  "AdministratorDB::Schema::Result::AggregateCondition",
+  { "foreign.left_combination_id" => "self.combination_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 aggregate_condition_right_combinations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::AggregateCondition>
+
+=cut
+
+__PACKAGE__->has_many(
+  "aggregate_condition_right_combinations",
+  "AdministratorDB::Schema::Result::AggregateCondition",
+  { "foreign.right_combination_id" => "self.combination_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 class_type
 
 Type: belongs_to
@@ -154,15 +184,15 @@ Related object: L<AdministratorDB::Schema::Result::NodemetricCondition>
 =cut
 
 __PACKAGE__->has_many(
-  "nodemetric_conditions",
+  "nodemetric_condition_left_combinations",
   "AdministratorDB::Schema::Result::NodemetricCondition",
   { "foreign.left_combination_id" => "self.combination_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-29 10:02:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:S/6goV2ThG2qDYnON5N+pg
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-29 15:45:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4TP+/K9pvNXvI0ABndNotQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
