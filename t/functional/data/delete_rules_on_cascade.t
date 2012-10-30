@@ -111,7 +111,7 @@ eval{
 
 
     lives_ok {
-       Indicator->find(hash => {indicator_oid => $indicator_deleted->indicator_oid})->delete()
+       Indicator->find(hash => {indicator_oid => $indicator_deleted->indicator->indicator_oid})->delete()
     } 'Indicator Memory/PercentMemoryUsed deletion';
 
     dies_ok { Clustermetric->get(id => $cmd->id); } 'Check clustermetric deletion';
