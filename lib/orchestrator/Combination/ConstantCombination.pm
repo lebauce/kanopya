@@ -61,4 +61,9 @@ sub deleteIfConstant {
     my $self = shift;
     return $self->delete();
 }
+
+sub toString {
+    my $self = shift;
+    return $self->value;
+};
 1;

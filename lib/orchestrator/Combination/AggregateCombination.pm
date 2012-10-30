@@ -143,10 +143,10 @@ sub toString {
     }
 
     if ($depth == 0) {
-        return $self->getAttr(name => 'aggregate_combination_label');
+        return $self->aggregate_combination_label;
     }
     else {
-        my $formula = $self->getAttr(name => 'aggregate_combination_formula');
+        my $formula = $self->aggregate_combination_formula;
 
         # Split aggregate_rule id from $formula
         my @array = split(/(id\d+)/, $formula);
@@ -186,19 +186,17 @@ sub computeLastValue{
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
             $element = Clustermetric->get('id'=>substr($element,2))->getLastValueFromDB();
             if(not defined $element){
                 return undef;
             }
         }
-     }
+    }
 
     my $res = undef;
     my $arrayString = '$res = '."@array";
-
 
     #Evaluate the logic formula
 

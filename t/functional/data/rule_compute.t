@@ -257,6 +257,11 @@ sub test_nodemetric_condition {
             verified_noderule_state              => 'verified',
         })
     } 'Check mixed nodemetric rule node 2 (b)';
+
+    is ($nc_agg_th_right->toString(),'mean(RAM used)>-1.2','Check to String (a)');
+    is ($nc_agg_th_left->toString(),'-1.4<mean(RAM used)','Check to String (b)');
+    is ($nc_mix_1->toString(),'RAM used<mean(RAM used)','Check to String (c)');
+    is ($nc_mix_2->toString(),'mean(RAM used)<RAM used','Check to String (d)');
 }
 
 sub test_two_combinations_on_nodemetric_condition {
@@ -535,6 +540,10 @@ sub test_aggregate_combination {
     is ($ac_right->eval,1, 'Check condition combi right');
     is ($ac_both->eval,1, 'Check condition combi both');
 
+
+    is ($ac_left->toString(),'sum(RAM used)<12.34','Check to string (a)');
+    is ($ac_right->toString(),'-43.21<sum(RAM used)','Check to string (b)');
+    is ($ac_both->toString(),'sum(RAM used)<2*sum(RAM used)','Check to string (c)');
     # Condition are not verified when not linked to a rule
 }
 

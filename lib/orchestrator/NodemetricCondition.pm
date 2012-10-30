@@ -124,14 +124,10 @@ sub toString {
         $depth = -1;
     }
     if($depth == 0) {
-        return $self->getAttr(name => 'nodemetric_condition_label');
+        return $self->nodemetric_condition_label;
     }
     else{
-        my $combination_id = $self->getAttr(name => 'left_combination_id');
-        my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
-        my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
-
-        return Combination->get('id'=>$combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
+        return $self->left_combination->toString(depth => $depth - 1).$self->nodemetric_condition_comparator.$self->right_combination->toString(depth => $depth - 1);
     }
 };
 

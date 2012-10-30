@@ -115,10 +115,10 @@ sub toString {
         $depth = -1;
     }
     if($depth == 0) {
-        return $self->getAttr(name => 'nodemetric_combination_label');
+        return $self->nodemetric_combination_label;
     }
     else{
-        my $formula             = $self->getAttr(name => 'nodemetric_combination_formula');
+        my $formula             = $self->nodemetric_combination_formula;
 
         #Split nodemetric_rule id from $formula
         my @array = split(/(id\d+)/,$formula);
