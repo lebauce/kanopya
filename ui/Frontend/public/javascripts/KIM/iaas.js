@@ -115,11 +115,11 @@ function displayAdminIps() {
     for (var i in dataIds) if (dataIds.hasOwnProperty(i)) {
         var rowData = $(grid).jqGrid('getRowData', dataIds[i]);
         $.ajax({
-            url     : '/api/host/' + rowData.entity_id + '/getAdminIp',
-            type    : 'POST',
+            url     : '/api/host/' + rowData.entity_id,
+            type    : 'GET',
             success : function(grid, rowid) {
                 return function(data) {
-                    $(grid).jqGrid('setCell', rowid, 'adminip', data);
+                    $(grid).jqGrid('setCell', rowid, 'adminip', data.admin_ip);
                 };
             }(grid, dataIds[i])
         });

@@ -201,10 +201,10 @@ function loadServicesResources (container_id, elem_id) {
             });
             // admin ip 
             $.ajax({
-                url     : '/api/host/' + host_id + '/getAdminIp',
-                type    : 'POST',
-                success : function(data) {
-                    $(grid).setCell(rowid, 'admin_ip', data);
+                url     : '/api/host/' + host_id,
+                type    : 'GET',
+                success : function(host) {
+                    $(grid).setCell(rowid, 'admin_ip', host.admin_ip);
                 }
             });
         
