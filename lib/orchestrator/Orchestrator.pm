@@ -65,6 +65,7 @@ use WorkflowDef;
 use WorkflowNoderule;
 use Entity::Workflow;
 use Message;
+use Alert;
 
 use Log::Log4perl "get_logger";
 
@@ -178,7 +179,7 @@ sub nodemetricManagement {
 
     # Merge all needed indicators to consctruc only one SCOM request
 
-    my $service_provider_id = $service_provider->getId();
+    my $service_provider_id = $service_provider->id;
 
     $log->info('Cluster NM management'.$service_provider_id);
 
@@ -191,12 +192,13 @@ sub nodemetricManagement {
 
     my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules, service_provider_id => $service_provider_id);
 
-
     # Call the retriever to get SCOM data
-
     $log->info('Requested indicators'.(Dumper keys %{$host_indicator_for_retriever->{indicators}}));
 
-    my $monitored_values = $service_provider->getNodesMetrics(indicators => $host_indicator_for_retriever->{indicators}, time_span => $host_indicator_for_retriever->{time_span});
+    my $monitored_values = $service_provider->getNodesMetrics(
+                               indicators => $host_indicator_for_retriever->{indicators},
+                               time_span  => $host_indicator_for_retriever->{time_span}
+                           );
 
     $log->info('Received values'.(Dumper $monitored_values));
 
@@ -207,6 +209,7 @@ sub nodemetricManagement {
         'service_provider'  => $service_provider,
     );
 }
+
 
 sub _evalAllRules {
    my ($self,%args) = @_;
@@ -235,6 +238,43 @@ sub _evalAllRules {
    return $rep;
 }
 
+sub throwAlertOnUndefMonitoredValues{
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [
+        'host_name',
+        'monitored_values_for_one_node',
+        'service_provider_id',
+    ]);
+
+    while (my ($oid,$value) = each %{$args{monitored_values_for_one_node}}) {
+
+        my $indicator = Indicator->find (hash => {indicator_oid => $oid});
+
+        my $msg = "Indicator " . $indicator->indicator_name . ' (' . $oid . ')' .
+                  ' was not retrieved by collector for node '.$args{host_name};
+
+        my $alert = eval { Alert->find( hash => {
+                                            alert_message => $msg,
+                                            entity_id => $args{service_provider_id} }
+                                      )
+                    };
+
+        if (! defined $value) {
+            if ( (! defined $alert) || ($alert->alert_active == 0) ) {
+                Alert->new (
+                    entity_id       => $args{service_provider_id},
+                    alert_message   => $msg,
+                    alert_signature => $msg.' '.time(),
+                );
+            }
+        }
+        elsif (defined $alert && $alert->alert_active == 1) {
+            $alert->mark_resolved;
+        }
+    }
+}
+
 sub _evalRule {
     my ($self,%args) = @_;
 
@@ -243,8 +283,8 @@ sub _evalRule {
     my $service_provider = $args{service_provider};
 
     my $service_provider_id = $service_provider->id;
-
-    my $rule_id          = $rule->getAttr(name => 'nodemetric_rule_id');
+    my $rule_id             = $rule->nodemetric_rule_id;
+    my $workflow_def_id     = $rule->workflow_def_id;
 
     my $workflow_manager;
 
@@ -252,28 +292,32 @@ sub _evalRule {
         $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
     };
     if($@){
-        $log->info('No workflow manager in service provider <'.($service_provider->getId()).'>')
+        $log->info('No workflow manager in service provider <'.($service_provider_id).'>')
     }
 
-    my $workflow_def_id  = $rule->getAttr(name => 'workflow_def_id');
     my $rep = 0;
-    #Eval the rule for each node
 
+    #Eval the rule for each node
     NODE:
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
 
-        $log->info('Eval rule id <'.($rule->getAttr(name => 'nodemetric_rule_id')).'> on node hostname <'.$host_name.'>');
+        $self->throwAlertOnUndefMonitoredValues(
+            host_name                     => $host_name,
+            monitored_values_for_one_node => $monitored_values_for_one_node,
+            service_provider_id           => $service_provider_id,
+        );
+
+        $log->info('Eval rule id <'.($rule_id).'> on node hostname <'.$host_name.'>');
         my $nodeEval = $rule->evalOnOneNode(
             monitored_values_for_one_node => $monitored_values_for_one_node
         );
 
         my $externalnode_id = Externalnode->find(hash => {
             externalnode_hostname => $host_name,
-            service_provider_id   => $service_provider->getId(),
+            service_provider_id   => $service_provider->id,
         })->getId();
 
         # Manage Workflow
-
         my $workflowState = WorkflowNoderule->workflowState(
             externalnode_id    => $externalnode_id,
             nodemetric_rule_id => $rule_id,
@@ -307,7 +351,7 @@ sub _evalRule {
                         WorkflowNoderule->new(
                             externalnode_id    => $externalnode_id,
                             nodemetric_rule_id => $rule_id,
-                            workflow_id        => $workflow->getId(),
+                            workflow_id        => $workflow->id,
                         );
                     }
                     elsif ($workflowState->{state} eq 'delayed') {
@@ -326,7 +370,7 @@ sub _evalRule {
             }
         }
         else { #value undef
-            $log->info('RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF');
+            $log->info('Rule '.$rule->getAttr(name => 'nodemetric_rule_id').' on host '.$host_name.' is undef');
             $rule->setVerifiedRule(
                 externalnode_id     => $externalnode_id,
                 state               => 'undef',
