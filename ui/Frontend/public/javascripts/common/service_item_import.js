@@ -22,6 +22,8 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
         var items_tree = [];
         var sp_treated = 0;
 
+        $('body').css('cursor', 'wait');
+
         function addServiceProviderItems(i,sp) {
             // Do not list destination service provider
             if (sp.pk != sp_id) {
@@ -92,7 +94,10 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
                         item_detail.html('');
                     });
 
+                    $('body').css('cursor', 'default');
+
                     function importChecked() {
+                        $('body').css('cursor', 'wait');
                         var checked_items = tree_cont.jstree('get_checked',null,true)
                         var treated_count = 0;
                         checked_items.each( function() {
@@ -114,6 +119,7 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
                         });
                         function endImport() {
                             if (treated_count == checked_items.length) {
+                                $('body').css('cursor', 'default');
                                 $.each(grid_ids, function(i,grid_id) {
                                     $('#'+grid_id).trigger('reloadGrid');
                                 });

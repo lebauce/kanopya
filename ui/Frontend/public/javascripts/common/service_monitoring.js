@@ -1,5 +1,6 @@
 require('common/grid.js');
 require('common/service_common.js');
+require('common/service_item_import.js');
 
 var statistics_function_name = ['mean','variance','std','max','min','kurtosis','skewness','dataOut','sum'];
 
@@ -296,6 +297,20 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         }
     } );
     createNodemetricCombination('node_monitoring_accordion_container', elem_id, (external !== '') ? true : false);
+    if (!mode_policy) {
+        importItemButton(
+                'node_monitoring_accordion_container',
+                elem_id,
+                {
+                    name        : 'combination',
+                    relation    : 'nodemetric_combinations',
+                    label_attr  : 'nodemetric_combination_label',
+                    desc_attr   : 'formula_label',
+                    type        : 'nodemetric_combination'
+                },
+                [nodemetriccombi_grid_id]
+        );
+    }
 
 
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
@@ -350,7 +365,21 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         },
     } );
     createServiceConbination('service_monitoring_accordion_container', elem_id);
-    
+    if (!mode_policy) {
+        importItemButton(
+                'service_monitoring_accordion_container',
+                elem_id,
+                {
+                    name        : 'combination',
+                    relation    : 'aggregate_combinations',
+                    label_attr  : 'aggregate_combination_label',
+                    desc_attr   : 'formula_label',
+                    type        : 'aggregate_combination'
+                },
+                [clustermetric_grid_id, aggregatecombi_grid_id]
+        );
+    }
+
     $('#accordion_monitoring_rule').accordion({
         autoHeight  : false,
         active      : false,
