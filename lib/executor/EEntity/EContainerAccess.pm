@@ -227,8 +227,12 @@ sub umount {
 
     $log->debug("Unmonting (<$args{mountpoint}>)");
 
-    $command = "sync";
+    $command = "sync; echo 3 > /proc/sys/vm/drop_caches";
     $args{econtext}->execute(command => $command);
+
+    # For some reason (a bug in libguestfs ?), some data are not 
+    # written to disk when unmounting, so we wait a bit...
+    sleep 5;
 
     my $counter = 5;
     while($counter != 0) {
