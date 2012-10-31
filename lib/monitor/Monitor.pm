@@ -145,7 +145,7 @@ sub retrieveHostsByCluster {
     my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
     foreach my $cluster (@clusters) {
         my @components = $cluster->getComponents(category => 'all');
-        my @components_name = map { $_->getComponentAttr()->{component_name} } @components;
+        my @components_name = map { $_->component_type->component_name } @components;
 
         my %mb_info;
         foreach my $mb ( values %{ $cluster->getHosts( ) } ) {

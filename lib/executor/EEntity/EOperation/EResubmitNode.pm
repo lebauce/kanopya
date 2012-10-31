@@ -197,7 +197,7 @@ sub postrequisites {
     my @components = $self->{context}->{vm_cluster}->getComponents(category => "all");
 
     foreach my $component (@components) {
-        my $component_name = $component->getComponentAttr()->{component_name};
+        my $component_name = $component->component_type->component_name;
         $log->debug("Browse component: " . $component_name);
 
         my $ecomponent = EFactory::newEEntity(data => $component);

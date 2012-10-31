@@ -109,21 +109,6 @@ sub getConnectorTypes {
     return \@connector_types;
 }
 
-sub getConnectorType {
-    my $self = shift;
-    
-    my $admin = Administrator->new();
-    my $connector_type = $admin->{db}->resultset('ConnectorType')->search(
-        { connector_type_id  => $self->getAttr( name => 'connector_type_id') }
-    )->single;
-
-    return {
-        connector_name => $connector_type->connector_name,
-        connector_category => $connector_type->connector_category,
-    };
-
-}
-
 =head2 getHostingPolicyParams
 
 =cut

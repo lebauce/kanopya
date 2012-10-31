@@ -379,7 +379,7 @@ sub update {
 
             # Get components of this cluster
             my @components = $cluster->getComponents(category => 'all');
-            my %components_by_name = map { $_->getComponentAttr()->{component_name} => $_ } @components;
+            my %components_by_name = map { $_->component_type->component_name => $_ } @components;
 
             # Collect data for nodes in the cluster
             foreach my $mb ( values %{ $cluster->getHosts( ) } ) {

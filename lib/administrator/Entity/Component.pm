@@ -211,34 +211,6 @@ sub getTemplateDirectory {
     }
 }
 
-=head2 getComponenAttr
-
-B<Class>   : Public
-B<Desc>    : This method return component information like name, version, ...
-B<args>    : None
-B<Return>  : Hash ref :
-    B<component_name> : Component name
-    B<component_version> : Component version
-    B<component_id> : Component id. Could be use to instanciate a new cluster.
-            Ref Component table id
-    B<component_category> : Component category. Its a specific category classification be
-B<Comment>  : Return information about component, not about $self (which is a component instance)
-B<throws>  : None
-
-=cut
-
-sub getComponentAttr {
-    my $self = shift;
-    my $componentAttr = {};
-
-    $componentAttr->{component_name}     = $self->{_dbix}->parent->component_type->get_column('component_name');
-    $componentAttr->{component_type_id}  = $self->{_dbix}->parent->component_type->get_column('component_type_id');
-    $componentAttr->{component_version}  = $self->{_dbix}->parent->component_type->get_column('component_version');
-    $componentAttr->{component_category} = $self->{_dbix}->parent->component_type->get_column('component_category');
-
-    return $componentAttr;
-}
-
 =head2 getServiceProvider
 
     Desc: Returns the service provider the component is on
