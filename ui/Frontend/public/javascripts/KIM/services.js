@@ -328,16 +328,8 @@ function nodedetailsaction(cid, eid) {
     $.ajax({
         url     : '/api/node/' + eid + '?expand=host',
         success : function(data) {
-            var remoteUrl   = null;
+            var remoteUrl   = data.host.remote_session_url;
             var isVirtual   = false;
-            $.ajax({
-                url         : '/api/host/' + data.host.pk + '/getRemoteSessionURL',
-                type        : 'POST',
-                async       : false,
-                success     : function(ret) {
-                    remoteUrl   = ret;
-                }
-            });
             $.ajax({    
                 url     : '/api/host/' + data.host.pk + '/getHostType',
                 type    : 'POST',
