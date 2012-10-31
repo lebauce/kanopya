@@ -29,26 +29,31 @@ var MasterImage = (function(_super) {
     }
 
     MasterImage.prototype.detailsFunc   = function() {
-        this.callRestFunction('getProvidedComponents', function(data) {
-            $('<div>', { id : 'masterimage_dialog' }).dialog({
-                title       : this.conf.masterimage_name,
-                resizable   : false,
-                modal       : true,
-                width       : 450,
-                close       : function() { $(this).remove(); }
-            });
-            create_grid({
-                content_container_id    : 'masterimage_dialog',
-                grid_id                 : 'provided_components_list',
-                data                    : data,
-                colNames                : [ 'Category', 'Name', 'Version' ],
-                colModel                : [
-                    { name : 'component_category', index : 'component_category' },
-                    { name : 'component_name', index : 'component_name' },
-                    { name : 'component_version', index : 'component_version', width : '50' }
-                ],
-                action_delete           : 'no'
-            });
+        var _this = this;
+        $.ajax({
+            url     : '/api/masterimage/' + this.id  + '/component_types',
+            type    : 'GET',
+            success : function(data) {
+                $('<div>', { id : 'masterimage_dialog' }).dialog({
+                    title       : _this.conf.masterimage_name,
+                    resizable   : false,
+                    modal       : true,
+                    width       : 450,
+                    close       : function() { $(this).remove(); }
+                });
+                create_grid({
+                    content_container_id    : 'masterimage_dialog',
+                    grid_id                 : 'provided_components_list',
+                    data                    : data,
+                    colNames                : [ 'Category', 'Name', 'Version' ],
+                    colModel                : [
+                        { name : 'component_category', index : 'component_category' },
+                        { name : 'component_name', index : 'component_name' },
+                        { name : 'component_version', index : 'component_version', width : '50' }
+                    ],
+                    action_delete           : 'no'
+                });
+            }
         });
     };
 
