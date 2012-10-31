@@ -30,10 +30,24 @@ __PACKAGE__->table("combination");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 service_provider_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
   "combination_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
+  "service_provider_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -99,6 +113,21 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Result::AggregateCondition",
   { "foreign.right_combination_id" => "self.combination_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 combination

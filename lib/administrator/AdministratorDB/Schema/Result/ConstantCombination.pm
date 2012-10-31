@@ -29,13 +29,6 @@ __PACKAGE__->table("constant_combination");
   extra: {unsigned => 1}
   is_nullable: 0
 
-=head2 service_provider_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 value
 
   data_type: 'char'
@@ -47,13 +40,6 @@ __PACKAGE__->table("constant_combination");
 __PACKAGE__->add_columns(
   "constant_combination_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "service_provider_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
   "value",
   { data_type => "char", is_nullable => 0, size => 255 },
 );
@@ -69,24 +55,6 @@ __PACKAGE__->add_columns(
 =cut
 
 __PACKAGE__->set_primary_key("constant_combination_id");
-
-=head1 RELATIONS
-
-=head2 service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::ServiceProvider",
-  { service_provider_id => "service_provider_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
 
 # Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 17:32:42
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tA6bz5caQRG3gqNUQPFw3w

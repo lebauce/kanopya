@@ -137,7 +137,7 @@ sub getDependencies {
         NODEMETRIC_COMBINATION:
         for my $nm_combi (@all_the_nodemetric_combinations) {
             #TODO general getName() to be compaptible with KIM
-            my $service_provider_name = $nm_combi->nodemetric_combination_service_provider->externalcluster_name;
+            my $service_provider_name = $nm_combi->service_provider->externalcluster_name;
             my @collector_indicator_ids = $nm_combi->getDependantCollectorIndicatorIds();
             for my $nm_indicator_id (@collector_indicator_ids) {
                 if ($collector_indicator_id == $nm_indicator_id) {

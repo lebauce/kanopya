@@ -22,16 +22,24 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    combination_id      =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
+    combination_id      =>  {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    service_provider_id =>  {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
     class_type_id => {
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        type            => 'relation',
+        relation        => 'single',
+        pattern         => '^\d*$',
+        is_mandatory    => 0,
+        is_extended     => 0
     },
 };
 

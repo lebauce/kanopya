@@ -1242,7 +1242,10 @@ CREATE TABLE `clustermetric` (
 
 CREATE TABLE `combination` (
   `combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
-  FOREIGN KEY (`combination_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  `service_provider_id` int(8) unsigned NOT NULL,
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`combination_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1252,10 +1255,7 @@ CREATE TABLE `combination` (
 --
 CREATE TABLE `constant_combination` (
   `constant_combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
-  `service_provider_id` int(8) unsigned NOT NULL,
   `value` char(255) NOT NULL,
-  KEY (`service_provider_id`),
-  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`constant_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
@@ -1267,10 +1267,7 @@ CREATE TABLE `constant_combination` (
 CREATE TABLE `aggregate_combination` (
   `aggregate_combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `aggregate_combination_label` char(255),
-  `aggregate_combination_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_combination_formula` char(255) NOT NULL,
-  KEY (`aggregate_combination_service_provider_id`),
-  FOREIGN KEY (`aggregate_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`aggregate_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
@@ -1282,10 +1279,7 @@ CREATE TABLE `aggregate_combination` (
 CREATE TABLE `nodemetric_combination` (
   `nodemetric_combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `nodemetric_combination_label` char(255),
-  `nodemetric_combination_service_provider_id`  int(8) unsigned NOT NULL,
   `nodemetric_combination_formula` char(255) NOT NULL,
-  KEY (`nodemetric_combination_service_provider_id`),
-  FOREIGN KEY (`nodemetric_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`nodemetric_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 

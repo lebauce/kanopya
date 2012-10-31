@@ -121,14 +121,14 @@ sub test_nodemetric_condition {
 
     #  Nodemetric combination
     my $ncomb = Entity::Combination::NodemetricCombination->new(
-        nodemetric_combination_service_provider_id => $service_provider->id,
-        nodemetric_combination_formula => 'id'.($indic1->id),
+        service_provider_id             => $service_provider->id,
+        nodemetric_combination_formula  => 'id'.($indic1->id),
     );
 
     # Aggregate Combination
     my $comb = Entity::Combination::AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => 'id'.($cm->id),
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm->id),
     );
 
     my $nc_agg_th_right = NodemetricCondition->new(
@@ -267,14 +267,14 @@ sub test_two_combinations_on_nodemetric_condition {
 
     # Create nodemetric rule objects
     my $ncomb_left = Entity::Combination::NodemetricCombination->new(
-        nodemetric_combination_service_provider_id => $service_provider->id,
-        nodemetric_combination_formula => 'id'.($indic1->id),
+        service_provider_id             => $service_provider->id,
+        nodemetric_combination_formula  => 'id'.($indic1->id),
     );
 
     # Create nodemetric rule objects
     my $ncomb_right = Entity::Combination::NodemetricCombination->new(
-        nodemetric_combination_service_provider_id => $service_provider->id,
-        nodemetric_combination_formula => 'id'.($indic2->id),
+        service_provider_id             => $service_provider->id,
+        nodemetric_combination_formula  => 'id'.($indic2->id),
     );
 
     my $nc1 = NodemetricCondition->new(
@@ -347,8 +347,8 @@ sub test_aggregate_combination_on_nodemetric_condition {
 
     # Combination
     my $comb = Entity::Combination::AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => 'id'.($cm->id),
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm->id),
     );
 
     $nc_t = NodemetricCondition->new(
@@ -389,8 +389,8 @@ sub test_nodemetric_rules {
 
     # Create nodemetric rule objects
     my $ncomb = Entity::Combination::NodemetricCombination->new(
-        nodemetric_combination_service_provider_id => $service_provider->id,
-        nodemetric_combination_formula => 'id'.($indic1->id),
+        service_provider_id             => $service_provider->id,
+        nodemetric_combination_formula  => 'id'.($indic1->id),
     );
 
     $nc_f = NodemetricCondition->new(
@@ -479,14 +479,14 @@ sub test_aggregate_combination {
 
     # Combination
     my $comb = Entity::Combination::AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => 'id'.($cm->id),
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm->id),
     );
 
     # Combination
     my $comb2 = Entity::Combination::AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => '2*id'.($cm->id),
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => '2*id'.($cm->id),
     );
 
     # Condition
@@ -559,8 +559,8 @@ sub test_aggregate_rules {
 
     # Combination
     my $comb = Entity::Combination::AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => 'id'.($cm->id),
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm->id),
     );
 
     # Condition

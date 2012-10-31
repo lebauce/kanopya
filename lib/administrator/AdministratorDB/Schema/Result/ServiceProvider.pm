@@ -49,19 +49,19 @@ __PACKAGE__->set_primary_key("service_provider_id");
 
 =head1 RELATIONS
 
-=head2 aggregate_combinations
+=head2 combinations
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::AggregateCombination>
+Related object: L<AdministratorDB::Schema::Result::Combination>
 
 =cut
 
 __PACKAGE__->has_many(
-  "aggregate_combinations",
-  "AdministratorDB::Schema::Result::AggregateCombination",
+  "combinations",
+  "AdministratorDB::Schema::Result::Combination",
   {
-    "foreign.aggregate_combination_service_provider_id" => "self.service_provider_id",
+    "foreign.service_provider_id" => "self.service_provider_id",
   },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -179,22 +179,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 nodemetric_combinations
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::NodemetricCombination>
-
-=cut
-
-__PACKAGE__->has_many(
-  "nodemetric_combinations",
-  "AdministratorDB::Schema::Result::NodemetricCombination",
-  {
-    "foreign.nodemetric_combination_service_provider_id" => "self.service_provider_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
 
 =head2 nodemetric_conditions
 

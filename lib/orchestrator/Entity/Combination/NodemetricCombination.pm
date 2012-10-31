@@ -31,10 +31,6 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    nodemetric_combination_service_provider_id =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
     nodemetric_combination_formula =>  {pattern       => '^((id\d+)|[ .+*()-/]|\d)+$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
@@ -90,7 +86,7 @@ sub new {
     }
 
     # Ask the collector manager to collect the related indicator
-    my $service_provider = $self->nodemetric_combination_service_provider;
+    my $service_provider = $self->service_provider;
     my $collector = $service_provider->getManager(manager_type => "collector_manager");
     my $indicator_id = (split('id', $self->nodemetric_combination_formula))[1];
     $collector->collectIndicator(indicator_id        => $indicator_id,

@@ -381,8 +381,8 @@ sub generateClustermetricAndCombination{
     my $cm = Entity::Clustermetric->new(%$cm_params);
 
     my $acf_params = {
-        aggregate_combination_service_provider_id   => $extcluster_id,
-        aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
     };
     my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
     my $rep = {
@@ -476,8 +476,8 @@ sub monitoringDefaultInit {
         my $cm = Entity::Clustermetric->new(%$cm_params);
 
         my $acf_params = {
-            aggregate_combination_service_provider_id   => $service_provider_id,
-            aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+            service_provider_id             => $service_provider_id,
+            aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
         };
         Entity::Combination::AggregateCombination->new(%$acf_params);
     }
@@ -516,8 +516,8 @@ sub ruleGeneration{
     );
 
     my $combination_params = {
-        aggregate_combination_service_provider_id => $extcluster_id,
-        aggregate_combination_formula             => 'id'.($std_ids->{cm_id}).'/ id'.($mean_ids->{cm_id}),
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($std_ids->{cm_id}).'/ id'.($mean_ids->{cm_id}),
     };
 
     my $coef_comb = Entity::Combination::AggregateCombination->new(%$combination_params);
@@ -697,8 +697,8 @@ sub generateCoefficientOfVariationRules {
     my $extcluster_id  = $args{extcluster_id};
 
     my $combination_params = {
-        aggregate_combination_service_provider_id => $extcluster_id,
-        aggregate_combination_formula             => 'id'.($id_std).'/ id'.($id_mean),
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($id_std).'/ id'.($id_mean),
     };
 
     my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$combination_params);
@@ -730,8 +730,8 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
     my $extcluster_id  = $args{extcluster_id};
 
     my $combination_params = {
-        aggregate_combination_service_provider_id => $extcluster_id,
-        aggregate_combination_formula             => 'id'.($id_std),
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($id_std),
     };
 
     my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$combination_params);
@@ -766,8 +766,8 @@ sub generateNodeMetricRules{
 
     #CREATE A COMBINATION FOR EACH INDICATOR
     my $combination_param = {
-        nodemetric_combination_formula => 'id'.$indicator_id,
-        nodemetric_combination_service_provider_id => $extcluster_id,
+        nodemetric_combination_formula  => 'id'.$indicator_id,
+        service_provider_id             => $extcluster_id,
     };
 
     my $comb = Entity::Combination::NodemetricCombination->new(%$combination_param);

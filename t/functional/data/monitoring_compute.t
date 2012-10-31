@@ -201,18 +201,18 @@ sub testAggregateCombination {
 
     # Combination
     my $acomb_ident = Entity::Combination::AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => 'id'.($cm1->id),
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm1->id),
     );
 
     my $acomb_warn = Entity::Combination::AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => '10 / id'.($cm1->id),
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => '10 / id'.($cm1->id),
     );
 
     my $acomb1 = Entity::Combination::AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
     );
 
     my $mock_conf = "{'default':{ 'const':50 }, 'indics' : { 'Memory/Pool Paged Bytes' : { 'const':null }}}";
@@ -262,13 +262,13 @@ sub testAggregateCombination {
     is($acomb1->computeLastValue(), 10+10*3, 'Combination correctly computed (with one node not responding)');
 
     my $acomb2 = Entity::Combination::AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => '(3.5+id'.($cm1->id).')*(id'.($cm1->id).'/10.1-12.876)',
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => '(3.5+id'.($cm1->id).')*(id'.($cm1->id).'/10.1-12.876)',
     );
 
     my $acomb3 = Entity::Combination::AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => '100000000000000000000000000 * id'.($cm1->id),
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => '100000000000000000000000000 * id'.($cm1->id),
     );
 
     $service_provider->addManagerParameter(
@@ -295,13 +295,13 @@ sub testNodemetricCombination {
 
     # Combinations
     my $ncomb_ident = Entity::Combination::NodemetricCombination->new(
-        nodemetric_combination_service_provider_id => $service_provider->id,
-        nodemetric_combination_formula             => 'id'.($indic1->id),
+        service_provider_id             => $service_provider->id,
+        nodemetric_combination_formula  => 'id'.($indic1->id),
     );
 
     my $ncomb2 = Entity::Combination::NodemetricCombination->new(
-        nodemetric_combination_service_provider_id => $service_provider->id,
-        nodemetric_combination_formula             => '(id'.($indic1->id).' + 5) * id'.($indic2->id),
+        service_provider_id             => $service_provider->id,
+        nodemetric_combination_formula  => '(id'.($indic1->id).' + 5) * id'.($indic2->id),
     );
 
     is(
@@ -456,8 +456,8 @@ sub testStatisticFunctions {
     for my $cm (@cms) {
         push @acs,
             Entity::Combination::AggregateCombination->new(
-                aggregate_combination_service_provider_id   =>  $service_provider->id,
-                aggregate_combination_formula               => 'id'.($cm->id),
+                service_provider_id             =>  $service_provider->id,
+                aggregate_combination_formula   => 'id'.($cm->id),
             );
     }
 

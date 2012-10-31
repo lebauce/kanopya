@@ -174,8 +174,8 @@ sub service_rule_objects_creation {
         );
 
         $acomb1 = Entity::Combination::AggregateCombination->new(
-            aggregate_combination_service_provider_id =>  $service_provider->id,
-            aggregate_combination_formula => 'id'.($cm1->id),
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => 'id'.($cm1->id),
         );
 
     } 'Create aggregate rules objects';
@@ -189,8 +189,8 @@ sub node_rule_objects_creation {
 
         # Create nodemetric rule objects
         my $ncomb1 = Entity::Combination::NodemetricCombination->new(
-            nodemetric_combination_service_provider_id => $service_provider->id,
-            nodemetric_combination_formula             => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
+            service_provider_id             => $service_provider->id,
+            nodemetric_combination_formula  => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
         );
 
         my $nc1 = NodemetricCondition->new(

@@ -609,9 +609,9 @@ sub configureBillingLimits {
             );
 
             Entity::Combination::AggregateCombination->new(
-                aggregate_combination_label               => "Billing" . $name,
-                aggregate_combination_service_provider_id => $self->getId,
-                aggregate_combination_formula             => 'id' . $cm->getId
+                aggregate_combination_label     => "Billing" . $name,
+                service_provider_id             => $self->getId,
+                aggregate_combination_formula   => 'id' . $cm->getId
             );
         }
     }
@@ -637,7 +637,8 @@ sub configureOrchestration {
     for my $nmc (@nodemetriccombinations) {
         my %attrs = $nmc->getAttrs();
         delete $attrs{nodemetric_combination_id};
-        $attrs{nodemetric_combination_service_provider_id} = $self->getId();
+
+        $attrs{service_provider_id} = $self->getId();
         Entity::Combination::NodemetricCombination->new( %attrs );
     }
 
@@ -1308,8 +1309,8 @@ sub generateOverLoadNodemetricRules {
 
     while (  my ($key, $value) = each(%$creation_conf) ) {
         my $combination_param = {
-            nodemetric_combination_formula             => $value->{formula},
-            nodemetric_combination_service_provider_id => $service_provider_id,
+            nodemetric_combination_formula  => $value->{formula},
+            service_provider_id             => $service_provider_id,
         };
 
         my $comb  = Entity::Combination::NodemetricCombination->new(%$combination_param);
@@ -1350,8 +1351,8 @@ sub generateDefaultMonitoringConfiguration {
     # We create a nodemetric combination for each indicator
     foreach my $indicator (@$indicators) {
         my $combination_param = {
-            nodemetric_combination_formula => 'id' . $indicator->getId,
-            nodemetric_combination_service_provider_id => $service_provider_id,
+            nodemetric_combination_formula  => 'id' . $indicator->getId,
+            service_provider_id             => $service_provider_id,
         };
         Entity::Combination::NodemetricCombination->new(%$combination_param);
     }
@@ -1371,8 +1372,8 @@ sub generateDefaultMonitoringConfiguration {
             my $cm = Entity::Clustermetric->new(%$cm_params);
 
             my $acf_params = {
-                aggregate_combination_service_provider_id   => $service_provider_id,
-                aggregate_combination_formula               => 'id' . $cm->getId
+                service_provider_id             => $service_provider_id,
+                aggregate_combination_formula   => 'id' . $cm->getId
             };
             my $clustermetric_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
         }

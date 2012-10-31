@@ -36,13 +36,6 @@ __PACKAGE__->table("aggregate_combination");
   is_nullable: 1
   size: 255
 
-=head2 aggregate_combination_service_provider_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 aggregate_combination_formula
 
   data_type: 'char'
@@ -61,13 +54,6 @@ __PACKAGE__->add_columns(
   },
   "aggregate_combination_label",
   { data_type => "char", is_nullable => 1, size => 255 },
-  "aggregate_combination_service_provider_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
   "aggregate_combination_formula",
   { data_type => "char", is_nullable => 0, size => 255 },
 );
@@ -98,23 +84,6 @@ __PACKAGE__->belongs_to(
   "aggregate_combination",
   "AdministratorDB::Schema::Result::Combination",
   { combination_id => "aggregate_combination_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 aggregate_combination_service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "aggregate_combination_service_provider",
-  "AdministratorDB::Schema::Result::ServiceProvider",
-  {
-    service_provider_id => "aggregate_combination_service_provider_id",
-  },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 

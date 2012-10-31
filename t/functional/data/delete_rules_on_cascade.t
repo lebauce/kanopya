@@ -180,18 +180,18 @@ sub service_rule_objects_creation {
         );
 
         $acombd1 = Entity::Combination::AggregateCombination->new(
-            aggregate_combination_service_provider_id =>  $service_provider->id,
-            aggregate_combination_formula => 'id'.($cmd->id).' + id'.($cm2->id),
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => 'id'.($cmd->id).' + id'.($cm2->id),
         );
 
         $acombd2 = Entity::Combination::AggregateCombination->new(
-            aggregate_combination_service_provider_id =>  $service_provider->id,
-            aggregate_combination_formula => 'id'.($cm3->id).' - id'.($cmd->id),
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => 'id'.($cm3->id).' - id'.($cmd->id),
         );
 
         $acomb3 = Entity::Combination::AggregateCombination->new(
-            aggregate_combination_service_provider_id =>  $service_provider->id,
-            aggregate_combination_formula => 'id'.($cm2->id).' + id'.($cm3->id),
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => 'id'.($cm2->id).' + id'.($cm3->id),
         );
 
         $acd1 = Entity::AggregateCondition->new(
@@ -254,18 +254,18 @@ sub node_rule_objects_creation {
 
         # Create nodemetric rule objects
         $ncombd1 = Entity::Combination::NodemetricCombination->new(
-            nodemetric_combination_service_provider_id => $service_provider->id,
-            nodemetric_combination_formula             => 'id'.($indicator_deleted->id).' + id'.($indicator_other->id),
+            service_provider_id             => $service_provider->id,
+            nodemetric_combination_formula  => 'id'.($indicator_deleted->id).' + id'.($indicator_other->id),
         );
 
         $ncombd2 = Entity::Combination::NodemetricCombination->new(
-            nodemetric_combination_service_provider_id => $service_provider->id,
-            nodemetric_combination_formula             => 'id'.($indicator_other->id).' + id'.($indicator_deleted->id),
+            service_provider_id             => $service_provider->id,
+            nodemetric_combination_formula  => 'id'.($indicator_other->id).' + id'.($indicator_deleted->id),
         );
 
         $ncomb3 = Entity::Combination::NodemetricCombination->new(
-            nodemetric_combination_service_provider_id => $service_provider->id,
-            nodemetric_combination_formula             => 'id'.($indicator_other->id).' + id'.($indicator_other->id),
+            service_provider_id             => $service_provider->id,
+            nodemetric_combination_formula  => 'id'.($indicator_other->id).' + id'.($indicator_other->id),
         );
 
         $ncd1 = NodemetricCondition->new(

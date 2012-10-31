@@ -244,7 +244,7 @@ sub getDependencies {
 
     my @aggregate_combinations_from_same_service = Entity::Combination::AggregateCombination->search(
                                                        hash => {
-                                                           aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id
+                                                           service_provider_id => $self->clustermetric_service_provider_id
                                                        }
                                                    );
 
@@ -271,9 +271,10 @@ sub delete {
 
     my @aggregate_combinations_from_same_service = Entity::Combination::AggregateCombination->search(
                                                        hash => {
-                                                           aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id
+                                                           service_provider_id => $self->clustermetric_service_provider_id
                                                        }
                                                    );
+
     my $id = $self->getId;
 
     LOOP:
