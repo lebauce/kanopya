@@ -490,42 +490,58 @@ sub registerComponents {
     my %args = @_;
 
     my $components = [
-        [ 'Lvm', '2', 'Storage', undef, 'Entity::Component::Lvm2' ],
-        [ 'Apache', '2', 'Webserver', '/templates/components/apache2', 'Entity::Component::Apache2' ],  
-        [ 'Iscsitarget', '1', 'Export', '/templates/components/ietd', 'Entity::Component::Iscsitarget1' ],
-        [ 'Openiscsi', '2', 'Exportclient', undef, 'Entity::Component::Openiscsi2' ],
-        [ 'Dhcpd', '3', 'Dhcpserver', '/templates/components/dhcpd', 'Entity::Component::Dhcpd3' ],
-        [ 'Atftpd', '0', 'Tftpserver', undef, 'Entity::Component::Atftpd0' ], 
-        [ 'Snmpd', '5', 'Monitoragent', '/templates/components/snmpd', 'Entity::Component::Snmpd5' ],
-        [ 'Nfsd', '3', 'Export', '/templates/components/nfsd3', 'Entity::Component::Nfsd3' ],
-        [ 'Linux', '0', 'System', '/templates/components/linux', 'Entity::Component::Linux' ],
-        [ 'Mysql', '5', 'DBMS', undef, 'Entity::Component::Mysql5' ],
-        [ 'Syslogng', '3', 'Logger', undef, 'Entity::Component::Syslogng3' ],  
-        [ 'Iptables', '1', 'Firewall', undef, 'Entity::Component::Iptables1' ],
-        [ 'Openldap', '1', 'Annuary', undef, 'Entity::Component::Openldap1' ],
-        [ 'Opennebula', '3', 'Cloudmanager', undef, 'Entity::Component::Opennebula3' ],
-        [ 'Physicalhoster', '0', 'Cloudmanager', undef, 'Entity::Component::Physicalhoster0' ],
-        [ 'Fileimagemanager', '0', 'Storage', undef, 'Entity::Component::Fileimagemanager0' ],
-        [ 'Puppetagent', '2', 'Configurationagent', undef, 'Entity::Component::Puppetagent2' ],   
-        [ 'Puppetmaster', '2', 'Configurationserver', undef, 'Entity::Component::Puppetmaster2' ], 
-        [ 'Kanopyacollector', '1', 'Collectormanager', undef, 'Entity::Component::Kanopyacollector1' ],
-        [ 'Keepalived', '1', 'LoadBalancer', undef, 'Entity::Component::Keepalived1' ],
-        [ 'Kanopyaworkflow', '0', 'Workflowmanager', undef, 'Entity::Component::Kanopyaworkflow0' ],
-        [ 'Mailnotifier', '0', 'Notificationmanager', undef, 'Entity::Component::Mailnotifier0' ],
-        [ 'Memcached', '1', 'Cache', undef, 'Entity::Component::Memcached1' ],
-        [ 'Php', '5', 'Lib', undef, 'Entity::Component::Php5' ],
-        [ 'Vsphere', '5', 'Cloudmanager', undef, 'Entity::Component::Vsphere5' ],
-        [ 'Debian', '6', 'System', '/templates/components/debian', 'Entity::Component::Linux::Debian' ],
-        [ 'Redhat', '6', 'System', '/templates/components/redhat', 'Entity::Component::Linux::Redhat' ],
-        [ 'Suse', '11', 'System', '/templates/components/suse', 'Entity::Component::Linux::Suse' ],
+        [ 'Lvm', '2', 'Storage', undef ],
+        [ 'Apache', '2', 'Webserver', '/templates/components/apache2' ],
+        [ 'Iscsitarget', '1', 'Export', '/templates/components/ietd' ],
+        [ 'Openiscsi', '2', 'Exportclient', undef ],
+        [ 'Dhcpd', '3', 'Dhcpserver', '/templates/components/dhcpd' ],
+        [ 'Atftpd', '0', 'Tftpserver', undef ],
+        [ 'Snmpd', '5', 'Monitoragent', '/templates/components/snmpd' ],
+        [ 'Nfsd', '3', 'Export', '/templates/components/nfsd3' ],
+        [ 'Linux', '0', 'System', '/templates/components/linux' ],
+        [ 'Mysql', '5', 'DBMS', undef ],
+        [ 'Syslogng', '3', 'Logger', undef ],
+        [ 'Iptables', '1', 'Firewall', undef ],
+        [ 'Openldap', '1', 'Annuary', undef ],
+        [ 'Opennebula', '3', 'Cloudmanager', undef ],
+        [ 'Physicalhoster', '0', 'Cloudmanager', undef ],
+        [ 'Fileimagemanager', '0', 'Storage', undef ],
+        [ 'Puppetagent', '2', 'Configurationagent', undef ],
+        [ 'Puppetmaster', '2', 'Configurationserver', undef ],
+        [ 'Kanopyacollector', '1', 'Collectormanager', undef ],
+        [ 'Keepalived', '1', 'LoadBalancer', undef ],
+        [ 'Kanopyaworkflow', '0', 'Workflowmanager', undef ],
+        [ 'Mailnotifier', '0', 'Notificationmanager', undef ],
+        [ 'Memcached', '1', 'Cache', undef ],
+        [ 'Php', '5', 'Lib', undef ],
+        [ 'Vsphere', '5', 'Cloudmanager', undef ],
+        [ 'Debian', '6', 'System', '/templates/components/debian' ],
+        [ 'Redhat', '6', 'System', '/templates/components/redhat' ],
+        [ 'Suse', '11', 'System', '/templates/components/suse' ],
     ];
 
     for my $component_type (@{$components}) {
+        my $class_type;
+        eval {
+            $class_type = ClassType->find(hash => {
+                              class_type => {
+                                  like => "Entity::Component::%" . $component_type->[0]
+                              }
+                          });
+        };
+        if ($@) {
+            $class_type = ClassType->find(hash => {
+                              class_type => {
+                                  like => "Entity::Component::%" . $component_type->[0] . $component_type->[1]
+                              }
+                          });
+        }
+
         my $type = ComponentType->new(
             component_name     => $component_type->[0],
             component_version  => $component_type->[1],
             component_category => $component_type->[2],
-            component_class    => $component_type->[4]
+            component_class_id => $class_type->id
         );
         if (defined $component_type->[3]) {
             my $template_name = lc $component_type->[0];
@@ -879,7 +895,7 @@ sub registerKanopyaMaster {
         my $component_type = ComponentType->find(hash => {
                                  component_name    => $name
                              } );
-        my $class = $component_type->component_class;
+        my $class = $component_type->component_class->class_type;
         my $component_template;
         eval {
             $component_template = ComponentTemplate->find(hash => { component_template_name => lc $name })->id;

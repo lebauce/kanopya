@@ -484,18 +484,9 @@ sub addComponentFromType {
 
     my $comp_type = ComponentType->get(id => $args{component_type_id});
 
-    my $comp_class = 'Entity::Component::' . $comp_type->component_name . $comp_type->component_version;
+    my $comp_class = $comp_type->component_class->class_type;
     my $location = General::getLocFromClass(entityclass => $comp_class);
-    eval {
-        require $location
-    };
-    if ($@) {
-        $comp_class = 'Entity::Component::' . $comp_type->component_name;
-        $location = General::getLocFromClass(entityclass => $comp_class);
-        eval {
-            require $location
-        };
-    }
+    require $location;
 
     my $component = $comp_class->new();
     return $self->addComponent(component => $component);
