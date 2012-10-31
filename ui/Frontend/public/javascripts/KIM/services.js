@@ -251,13 +251,11 @@ function runScaleWorkflow(type, eid, spid) {
                     amount = getRawValue(amount, 'scale_amount_unit');
                     $.ajax({
                         async       : false,
-                        url         : '/api/serviceprovider/' + spid + '/getManager',
-                        contentType : 'application/json',
-                        type        : 'POST',
-                        data        : JSON.stringify({ manager_type : 'host_manager' }),
+                        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?manager_type=host_manager',
+                        type        : 'GET',
                         success     : function(hmgr) {
                             $.ajax({
-                                url         : '/api/entity/' + hmgr.pk + '/scaleHost',
+                                url         : '/api/entity/' + hmgr.manager_id + '/scaleHost',
                                 type        : 'POST',
                                 contentType : 'application/json', 
                                 data        : JSON.stringify({  
@@ -282,13 +280,11 @@ function migrate(spid, eid) {
     var sel     = $('<select>').appendTo(cont);
     $.ajax({
         async       : false,
-        url         : '/api/serviceprovider/' + spid + '/getManager',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ manager_type : 'host_manager' }),
+        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?manager_type=host_manager',
+        type        : 'GET',
         success     : function(hmgr) {
             $.ajax({
-                url     : '/api/opennebula3/' + hmgr.pk + '/getHypervisors',
+                url     : '/api/opennebula3/' + hmgr.manager_id + '/getHypervisors',
                 type    : 'POST',
                 success : function(data) {
                     for (var i in data) if (data.hasOwnProperty(i)) {
@@ -303,7 +299,7 @@ function migrate(spid, eid) {
                                 var hyp = $(sel).val();
                                 if (hyp != null && hyp != "") {
                                     $.ajax({
-                                        url         : '/api/opennebula3/' + hmgr.pk + '/migrate',
+                                        url         : '/api/opennebula3/' + hmgr.manager_id + '/migrate',
                                         type        : 'POST',
                                         contentType : 'application/json',
                                         data        : JSON.stringify({

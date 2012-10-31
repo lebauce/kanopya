@@ -409,14 +409,12 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
     }
 
     $.ajax({
-        url         : '/api/serviceprovider/' + serviceprovider_id + '/getManager',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ 'manager_type' : 'workflow_manager' }),
+        url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?manager_type=workflow_manager',
+        type        : 'GET',
         success     : function(data) {
             manager = data;
             $.ajax({
-                    url         : '/api/entity/' + manager.pk + '/getWorkflowDefs',
+                    url         : '/api/entity/' + manager.manager_id + '/getWorkflowDefs',
                     type        : 'POST',
                     contentType : 'application/json',
                     data        : JSON.stringify({ 'no_associate' : 1 }),
@@ -465,17 +463,15 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
 
 function workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
     $.ajax({
-        url         : '/api/serviceprovider/' + serviceprovider_id + '/getManager',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ 'manager_type' : 'workflow_manager' }),
+        url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?manager_type=workflow_manager',
+        type        : 'GET',
         success     : function(manager) {
             var params = {
                     workflow_def_id : wfdef_id,
                     rule_id         : rule_id
             };
             $.ajax({
-                url         : '/api/entity/' + manager.pk + '/deassociateWorkflow',
+                url         : '/api/entity/' + manager.manager_id + '/deassociateWorkflow',
                 type        : 'POST',
                 contentType : 'application/json',
                 data        : JSON.stringify(params),

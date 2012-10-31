@@ -29,19 +29,26 @@ function isThereAConnector(elem_id, connector_category) {
 }
 
 function isThereAManager(elem_id, category) {
-    var is  = null;
+    var manager = undefined;
 
     $.ajax({
-        url         : '/api/serviceprovider/' + elem_id + '/getManager',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ 'manager_type' : category }),
+        url         : '/api/serviceprovider/' + elem_id + '/service_provider_managers?manager_type=' + category,
+        type        : 'GET',
         async       : false,
         success     : function(data) {
-            is  = data;
+            if (data[0]) {
+                $.ajax({
+                    url         : '/api/entity/' + data[0].manager_id,
+                    type        : 'GET',
+                    async       : false,
+                    success     : function(component) {
+                        manager = component;
+                    }
+               });
+            }
         }
     });
-    return is;
+    return manager;
 }
 
 function deleteManager(pk, container_id, elem_id) {
