@@ -140,6 +140,13 @@ sub new {
     my $class = shift;
     my %args = @_;
 
+    # Clone case
+    if ($args{aggregate_combination_id}) {
+        return AggregateCombination->get( id => $args{aggregate_combination_id})->clone(
+            dest_service_provider_id => $args{service_provider_id}
+        );
+    }
+
     my $formula = (\%args)->{aggregate_combination_formula};
 
     _verify($formula);

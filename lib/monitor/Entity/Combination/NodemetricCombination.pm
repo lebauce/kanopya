@@ -131,6 +131,14 @@ Launch indicator collection in order to create RRD.
 sub new {
     my $class = shift;
     my %args = @_;
+
+    # Clone case
+    if ($args{nodemetric_combination_id}) {
+        return NodemetricCombination->get( id => $args{nodemetric_combination_id})->clone(
+            dest_service_provider_id => $args{service_provider_id}
+        );
+    }
+
     my $self = $class->SUPER::new(%args);
 
     if(!defined $args{nodemetric_combination_label} || $args{nodemetric_combination_label} eq ''){
@@ -330,8 +338,8 @@ sub getUnit {
 
 =begin classdoc
 
-Method used to clone the combination and link the clone to the specified service provider
-Both linked service providers must have the same collector manager
+Method used to clone the combination and link the clone to the specified service provider.
+Both linked service providers must have the same collector manager.
 
 throw Kanopya::Exception::Internal::NotFound if dest service provider does not have a collector manager
 throw Kanopya::Exception::Internal::Inconsistency if both services haven't the same collector manager
