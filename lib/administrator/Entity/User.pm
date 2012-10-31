@@ -125,7 +125,6 @@ sub methods {
         setProfiles => {
             description => 'set user profiles',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
     };
 }

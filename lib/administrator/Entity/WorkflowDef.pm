@@ -50,7 +50,6 @@ sub methods {
     updateParamPreset => {
         description => 'updateParamPreset',
         perm_holder => 'entity',
-        purpose     => 'internal',
     },
   }
 }

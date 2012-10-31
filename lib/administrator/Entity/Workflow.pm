@@ -57,7 +57,6 @@ sub methods {
         cancel => {
             description => 'Cancel workflow',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
     };
 }

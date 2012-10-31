@@ -65,12 +65,10 @@ sub methods {
         activate => {
             description => 'activate this system image', 
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         deactivate => {
             description => 'deactivate this system image', 
             perm_holder => 'entity',
-            purpose     => 'action',
         },
     };
 }
