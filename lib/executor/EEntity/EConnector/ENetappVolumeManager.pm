@@ -196,12 +196,12 @@ sub addExportClient {
                     "nosuid" => "true",
                     "read-write" => {
                         "exports-hostname-info" => [ {
-                            "name" => $host->getAdminIp
+                            "name" => $host->adminIp
                         } ]
                     },
                     "root" => {
                         "exports-hostname-info" => [ {
-                            "name" => $host->getAdminIp
+                            "name" => $host->adminIp
                         } ]
                     }
                 } ]

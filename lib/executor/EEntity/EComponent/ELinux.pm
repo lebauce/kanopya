@@ -182,7 +182,7 @@ sub _generateHosts {
         my $tmp = { 
             hostname   => $node->getAttr(name => 'host_hostname'),
             domainname => $args{kanopya_domainname},
-            ip         => $node->getAdminIp 
+            ip         => $node->adminIp 
         };
 
         push @hosts_entries, $tmp;

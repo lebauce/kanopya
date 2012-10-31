@@ -130,7 +130,7 @@ sub postStartNode {
     );
 
     # if the host is the opennebula master, we register datastores
-    if($args{cluster}->getMasterNodeIp() eq $args{host}->getAdminIp()) {
+    if($args{cluster}->getMasterNodeIp() eq $args{host}->adminIp()) {
         my $conf = $self->getConf();
         my $comp = $self->_getEntity();
         my $linux = $args{cluster}->getComponent(category => "System");
@@ -416,7 +416,7 @@ sub isUp {
         required => [ 'cluster', 'host' ]
     );
 
-    my $hostip = $args{host}->getAdminIp;
+    my $hostip = $args{host}->adminIp;
     my $masternodeip = $args{cluster}->getMasterNodeIp();
 
     if((defined $masternodeip) && ($masternodeip eq $hostip)) {

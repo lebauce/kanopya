@@ -145,7 +145,7 @@ sub validation {
             };
             if ($@) {
                 $log->warn("Unable to get the master kanopya public ip, use the admin ip.");
-                $ip = $kanopya->getMasterNode->getAdminIp;
+                $ip = $kanopya->getMasterNode->adminIp;
             }
 
             my $input;

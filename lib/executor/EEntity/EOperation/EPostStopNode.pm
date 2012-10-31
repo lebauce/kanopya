@@ -86,7 +86,7 @@ sub prerequisites {
         $args{host}->setState(state => 'broken');
     }
 
-    my $node_ip = $self->{context}->{host}->getAdminIp;
+    my $node_ip = $self->{context}->{host}->adminIp;
     if (not $node_ip) {
         throw Kanopya::Exception::Internal(error => "Host <$host_id> has no admin ip.");
     }

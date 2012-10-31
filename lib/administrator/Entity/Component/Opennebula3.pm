@@ -512,7 +512,7 @@ sub getRemoteSessionURL {
 
     General::checkParams(args => \%args, required => ['host']);
 
-    return "vnc://" . $args{host}->hypervisor->getAdminIp() . ":" . $args{host}->vnc_port;
+    return "vnc://" . $args{host}->hypervisor->adminIp() . ":" . $args{host}->vnc_port;
 }
 
 =head1 DIAGNOSTICS

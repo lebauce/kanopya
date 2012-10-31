@@ -822,7 +822,7 @@ sub getMasterNodeIp {
 
     $master = $self->getMasterNode();
     if (defined ($master)) {
-        return $master->getAdminIp;
+        return $master->adminIp;
     }
 
     return;

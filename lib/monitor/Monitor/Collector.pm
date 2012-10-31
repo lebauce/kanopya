@@ -58,7 +58,7 @@ sub updateHostData {
     my $start_time = time();
     my $host = $args{host};
     my $host_name = $host->host_hostname;
-    my $host_ip = $host->getAdminIp;
+    my $host_ip = $host->adminIp;
     my $host_state = $host->host_state;
     my $host_reachable = 1;
     my %all_values = ();

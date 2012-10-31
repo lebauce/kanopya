@@ -146,7 +146,7 @@ sub isUp {
         }
     }
 
-    my $ip = $args{host}->getAdminIp;
+    my $ip = $args{host}->adminIp;
     my $econtext = $self->getExecutorEContext;
 
     # Test Services

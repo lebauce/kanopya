@@ -32,7 +32,7 @@ sub addNode {
 
     # generation of /etc/default/snmpd 
     my $data = {};
-    $data->{node_ip_address} = $args{host}->getAdminIp;
+    $data->{node_ip_address} = $args{host}->adminIp;
     $data->{options} = $conf->{snmpd_options};       
     
     my $file = $self->generateNodeFile(

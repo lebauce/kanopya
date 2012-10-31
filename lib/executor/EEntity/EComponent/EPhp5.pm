@@ -37,7 +37,7 @@ sub addNode {
     # This handler needs specific configuration (depending on master node)
     if ( $data->{session_handler} eq "memcache" ) {
         # current node is the master node
-        my $masternodeip = $args{cluster}->getMasterNodeIp() || $args{host}->getAdminIp;
+        my $masternodeip = $args{cluster}->getMasterNodeIp() || $args{host}->adminIp;
 
         # default port of memcached TODO: retrieve memcached port using component
         my $port = '11211';

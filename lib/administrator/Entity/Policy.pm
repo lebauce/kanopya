@@ -59,6 +59,7 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
+        # TODO: Remove this method from the api once the policy ui has been reviewed
         getFlattenedHash => {
             description => 'Return a single level hash with all attributes and values of the policy',
             perm_holder => 'entity',

@@ -107,7 +107,7 @@ sub new {
 
     my $host = $args{host};
     $self->{_host} = $host;
-    $self->{_ip} = $host->getAdminIp;
+    $self->{_ip} = $host->adminIp;
 
     $timeref = time() if (not defined $timeref);
     $self->{_timeref} = $timeref;

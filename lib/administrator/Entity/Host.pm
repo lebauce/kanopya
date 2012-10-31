@@ -138,6 +138,9 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1,
     },
+    admin_ip => {
+        is_virtual   => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -147,17 +150,14 @@ sub methods {
         activate => {
             description => 'activate this host',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         deactivate => {
             description => 'deactivate this host',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         resubmit => {
             description => 'resubmit the corresponding node',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         removeIface => {
             description => 'remove an interface from this host',
@@ -168,11 +168,6 @@ sub methods {
             description => 'add one or more interface to  this host',
             perm_holder => 'entity',
             purpose     => 'action',
-        },
-        getAdminIp => {
-            description => 'get ip address for administration interface',
-            perm_holder => 'entity',
-            purpose     => 'internal'
         },
         getRemoteSessionURL => {
             description => 'get the url for remote session',
@@ -612,7 +607,7 @@ sub getAdminIface {
     return $ifaces[0];
 }
 
-sub getAdminIp {
+sub adminIp {
     my $self = shift;
     my %args = @_;
 

@@ -192,7 +192,7 @@ sub generateHostsConf {
         my $tmp = {
             hostname   => $node->getAttr(name => 'host_hostname'),
             domainname => $args{kanopya_domainname},
-            ip         => $node->getAdminIp
+            ip         => $node->adminIp
         };
 
         push @hosts_entries, $tmp;
@@ -257,7 +257,7 @@ sub updateHostsFile {
             my $tmp = {
                 hostname   => $node->getAttr(name => 'host_hostname'),
                 domainname => $args{kanopya_domainname},
-                ip         => $node->getAdminIp
+                ip         => $node->adminIp
             };
             if($cluster->getAttr(name => 'cluster_id') eq $cluster_id) {
                 push @cluster_nodes, $tmp;
