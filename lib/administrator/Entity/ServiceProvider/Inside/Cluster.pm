@@ -862,7 +862,8 @@ sub getComponents {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'category' ]);
+    General::checkParams(args => \%args, required => [ 'category' ],
+                                         optional => { order_by => undef } );
 
     my $hash = { 'service_provider_id' => $self->id };
 
@@ -871,6 +872,12 @@ sub getComponents {
     };
 
     my @components = Entity::Component->search(hash => $hash);
+
+    if (defined ($args{order_by})) {
+        my $criteria = $args{order_by};
+        @components = sort { $a->$criteria <=> $b->$criteria } @components;
+    }
+
     return wantarray ? @components : \@components;
 }
 

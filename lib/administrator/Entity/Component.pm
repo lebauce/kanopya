@@ -69,6 +69,9 @@ use constant ATTR_DEF => {
         is_extended    => 0,
         is_editable    => 0
     },
+    priority => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -267,7 +270,7 @@ sub supportHotConfiguration {
     return 0;
 }
 
-sub getPriority {
+sub priority {
     return 50;
 }
 

@@ -75,7 +75,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getPriority {
+sub priority {
     return 10;
 }
 

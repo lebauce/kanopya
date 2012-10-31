@@ -100,7 +100,8 @@ sub prepare {
 
     $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->getAttr(name => 'cluster_domainname');
 
-    $self->{cluster_components} = $self->{context}->{cluster}->getComponents(category => "all");
+    $self->{cluster_components} = $self->{context}->{cluster}->getComponents(category => "all",
+                                                                             order_by => "priority");
 }
 
 sub execute {
@@ -153,11 +154,7 @@ sub execute {
     }
 
     $log->info("Operate components configuration");
-    sub comparePriorities {
-        return $a->getPriority <=> $b->getPriority;
-    }
-    my @components = sort comparePriorities @{ $self->{cluster_components} };
-    foreach my $component (@components) {
+    foreach my $component (@{ $self->{cluster_components} }) {
         my $ecomponent = EFactory::newEEntity(data => $component);
         $ecomponent->addNode(host               => $self->{context}->{host},
                              mount_point        => $mountpoint,

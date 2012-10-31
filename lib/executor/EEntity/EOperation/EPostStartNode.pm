@@ -133,7 +133,8 @@ sub execute {
         $self->{context}->{host}->becomeMasterNode();
     }
 
-    my @components = $self->{context}->{cluster}->getComponents(category => "all");
+    my @components = $self->{context}->{cluster}->getComponents(category => "all",
+                                                                order_by => "priority");
     $log->info('Processing cluster components configuration for this node');
     foreach my $component (@components) {
         EFactory::newEEntity(data => $component)->postStartNode(
