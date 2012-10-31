@@ -168,6 +168,11 @@ sub execute {
                              filesystem => $self->{context}->{container}->container_filesystem,
                              options    => $mount_options);
 
+    # Authorize the Kanopya master to connect to the node using SSH
+    my $rsapubkey_cmd = "mkdir -p $mountpoint/root/.ssh ; " .
+                        "cat /root/.ssh/kanopya_rsa.pub > $mountpoint/root/.ssh/authorized_keys";
+    $self->getExecutorEContext->execute(command => $rsapubkey_cmd);
+
     # Update kanopya etc hosts
     my @data = ();
     for my $host (Entity::Host->getHosts(hash => {})) {
