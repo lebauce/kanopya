@@ -32,7 +32,7 @@ use_ok ('ComponentType');
 use_ok ('Entity::InterfaceRole');
 
 my $testing = 0;
-my $vsphere_url = '192.168.1.160';
+my $vsphere_url = '192.168.2.160';
 
 eval {
     Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -160,18 +160,70 @@ eval {
     } 'retrieve VMs on Cluster\'s Hypervisors';
 
     lives_ok {
-        $vsphere->register(register_items => $registerItems);
+        my $registered_items = $vsphere->register(register_items => $registerItems);
     } 'register items in Kanopya';
 
-    # TODO: retrieve vsphere entity names and check if there is matching service providers in kanopya
+    my $total_items_nbr = 0;
+    my $ko_items_nbr = 0;
+    lives_ok {
+        foreach my $datacenter_vsphere (@$registerItems) {
+            $total_items_nbr++;
+            my $datacenter_kanopya;
+            eval {
+                $datacenter_kanopya = $vsphere->getDatacenters(datacenter_name => $datacenter_vsphere->{name});
+            };
+            if ($@ || not defined $datacenter_kanopya) {
+                $ko_items_nbr++;
+            }
+
+            foreach my $clusterOrHypervisor_vsphere (@{ $datacenter_vsphere->{children} }) {
+                $total_items_nbr++;
+                eval {
+                    (my $clusterOrHypervisor_vsphere_renamed = $clusterOrHypervisor_vsphere->{name}) =~ s/[^\w\d+]/_/g;
+                    my $clusterOrHypervisor_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
+                                                       hash => {cluster_name => $clusterOrHypervisor_vsphere_renamed},
+                                                   );
+                };
+                if ($@) {
+                    $ko_items_nbr++;
+                }
+
+                if ($clusterOrHypervisor_vsphere->{type} eq 'cluster') {
+                    foreach my $hypervisorCluster_vsphere (@{ $clusterOrHypervisor_vsphere->{children} }) {
+                        foreach my $vm_vsphere (@{ $hypervisorCluster_vsphere->{children} }) {
+                            $total_items_nbr++;
+                            eval {
+                                (my $vm_vsphere_renamed = $vm_vsphere->{name}) =~ s/[^\w\d+]/_/g;
+                                my $vm_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
+                                                  hash => {cluster_name => $vm_vsphere_renamed},
+                                              );
+                            };
+                            if ($@) {
+                                $ko_items_nbr++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } 'search vSphere matches in Kanopya';
+
+    is($ko_items_nbr, 0,'Test number of registered items : '.($total_items_nbr - $ko_items_nbr).'/'.$total_items_nbr.' items registered');
 
     lives_ok {
-        $vsphere->register(register_items => $registerItems);
+        my $registered_items = $vsphere->register(register_items => $registerItems);
     } 'register again items in Kanopya';
 
-    # TODO: check if there is no more service providers in kanopya (to ensure that the 2nd test
-    # did not register any already registered item)
-    
+    my $kanopya_items_nbr = 0;    
+    lives_ok {
+        my $unwanted_items_nbr = 2;#Unwanted items (cluster Kanopya and cluster on which component is installed)
+        $kanopya_items_nbr     =   scalar(Vsphere5Datacenter->search(hash => {}));
+        $kanopya_items_nbr    +=   scalar(Entity::ServiceProvider::Inside::Cluster->search(hash => {}));
+        $kanopya_items_nbr    -=   $unwanted_items_nbr;
+    } 'get Kanopya items number';
+
+    is($kanopya_items_nbr, $total_items_nbr - $ko_items_nbr, 'Test if no more item is registered');
+
     if ($testing == 1) {
         $adm->rollbackTransaction;
     }
