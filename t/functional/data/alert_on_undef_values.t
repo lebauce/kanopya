@@ -140,8 +140,7 @@ eval{
 
     test_alerts_aggregator();
     test_alerts_orchestrator();
-    # $adm->rollbackTransaction;
-    $adm->commitTransaction;
+    $adm->rollbackTransaction;
 };
 if($@) {
     $adm->rollbackTransaction;
