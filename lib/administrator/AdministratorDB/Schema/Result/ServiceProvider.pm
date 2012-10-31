@@ -248,12 +248,8 @@ __PACKAGE__->belongs_to(
 
 Type: has_many
 
-<<<<<<< HEAD
-Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
-=======
 # Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-01 13:39:57
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sTr9fruYiAtq0Te7ID7Idg
->>>>>>> origin/billing
 
 =cut
 
