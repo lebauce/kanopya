@@ -26,6 +26,7 @@ use TimeData::RRDTimeData;
 use Clustermetric;
 use Kanopya::Config;
 use Message;
+use Alert;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -128,7 +129,7 @@ sub update() {
             };
 
             if (not $@){
-                $log->info('*** Aggregator collecting for service provider '. $service_provider_id.' ***');
+                $log->info('Aggregator collecting for service provider '. $service_provider_id);
 
                 # Construct input of the collector retriever
                 my $host_indicator_for_retriever = $self->_contructRetrieverOutput(
@@ -143,6 +144,7 @@ sub update() {
 
                 # Verify answers received from SCOM to detect metrics anomalies
                 my $checker = $self->_checkNodesMetrics(
+                                  service_provider_id => $service_provider->id,
                                   asked_indicators => $host_indicator_for_retriever->{indicators},
                                   received => $monitored_values
                               );
@@ -171,16 +173,37 @@ sub _checkNodesMetrics{
     General::checkParams(args => \%args, required => [
         'asked_indicators',
         'received',
+        'service_provider_id',
     ]);
 
     my $asked_indicators = $args{asked_indicators};
     my $received         = $args{received};
+    my $service_provider_id = $args{service_provider_id};
 
     foreach my $indicator (values %$asked_indicators) {
         while ( my ($node_name, $metrics) = each(%$received) ) {
+            my $msg = "Indicator " . $indicator->indicator_name . '(' . $indicator->indicator_oid . ')' .
+                        " was not retrieved by collector for node $node_name";
+
+            my $alert =  eval { Alert->find( hash => {
+                                          alert_message => $msg,
+                                          entity_id => $service_provider_id })
+            };
+
+
             if (! defined $metrics->{$indicator->indicator_oid}) {
-                $log->debug("Indicator " . $indicator->indicator_name . '(' . $indicator->indicator_oid . ')' .
-                            " was not retrieved by collector for node $node_name");
+                $log->debug($msg);
+
+                if ((! defined $alert) || ($alert->alert_active == 0) ) {
+                    Alert->new (
+                        entity_id       => $service_provider_id,
+                        alert_message   => $msg,
+                        alert_signature => $msg.' '.time()
+                    );
+                }
+            }
+            elsif (defined $alert && $alert->alert_active == 1) {
+                $alert->mark_resolved;
             }
         }
     }
@@ -276,7 +299,7 @@ sub run {
         $log->info( "Manage duration : $update_duration seconds" );
 
         my $conf      = getAggregatorConf();
-        my $time_step = $conf->{time_step}; 
+        my $time_step = $conf->{time_step};
 
         if ($update_duration > $time_step) {
             $log->warn("aggregator duration > aggregator time step (conf)");
@@ -295,7 +318,7 @@ sub run {
 =head2 updateAggregatorConf
 
     Class : Public
-    Desc : update values in the aggregator.conf file 
+    Desc : update values in the aggregator.conf file
     Args: $collect_frequency and/or $storage_duration
 
 =cut
