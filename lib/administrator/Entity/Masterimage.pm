@@ -60,16 +60,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        getProvidedComponents => {
-            description => 'return provided components',
-            perm_holder => 'entity',
-            purpose     => 'internal',
-        }
-    };
-}
-
 =head2 remove
 
 =cut
@@ -100,38 +90,6 @@ sub toString {
     my $self = shift;
     my $string = $self->{_dbix}->get_column('masterimage_name');
     return $string;
-}
-
-=head getProvidedComponents
-
-get components already installed on this master image
-return array ref containing hash ref 
-
-=cut
-
-sub getProvidedComponents {
-    my $self = shift;
-    if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Masterimages->getProvidedComponents must be called on an already save instance";
-        $log->error($errmsg);
-        throw Kanopya::Exception(error => $errmsg);
-    }
-    my $components = [];
-    my $search = $self->{_dbix}->components_provided->search(undef, 
-        { '+columns' => {'component_name' => 'component_type.component_name', 
-                         'component_version' => 'component_type.component_version', 
-                         'component_category' => 'component_type.component_category' },
-            join => ['component_type'] } 
-    );
-    while (my $row = $search->next) {
-        my $tmp = {};
-        $tmp->{component_type_id} = $row->get_column('component_type_id');
-        $tmp->{component_name} = $row->get_column('component_name');
-        $tmp->{component_version} = $row->get_column('component_version');
-        $tmp->{component_category} = $row->get_column('component_category');
-        push @$components, $tmp;
-    }
-    return $components;
 }
 
 =head setProvidedComponent

@@ -68,21 +68,16 @@ sub createFromMasterimage {
                                container_device     => $args{masterimage}->masterimage_file,
                            ));
 
-    $self->create(
-        src_container => $master_container,
-        disk_manager  => $args{disk_manager},
-        erollback     => $args{erollback},
-        %{$args{manager_params}}
-    );
+    $self->create(src_container => $master_container,
+                  disk_manager  => $args{disk_manager},
+                  erollback     => $args{erollback},
+                  %{$args{manager_params}});
 
     # Remove the temporary container
     $master_container->remove();
 
-    my $components = $args{masterimage}->getProvidedComponents();
-    foreach my $comp (@$components) {
-            $self->_getEntity->installedComponentLinkCreation(
-                component_type_id => $comp->{component_type_id}
-            );
+    foreach my $comp ($args{masterimage}->component_types) {
+        $self->_getEntity->installedComponentLinkCreation(component_type_id => $comp->id);
     }
 }
 
