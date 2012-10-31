@@ -718,9 +718,19 @@ sub getAttr {
             return map { fromDBIx(row => $_) } $dbix->$name;
         }
         # The attr is a virtual attr
-        elsif ($self->can($args{name}) and defined $attr and $attr->{is_virtual}) {
+        elsif (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) and
+               defined $attr and $attr->{is_virtual}) {
+
             my $method = $args{name};
-            $value = $self->$method();
+            # Firstly try to call method with camel-case style
+            eval {
+                $method = normalizeMethod($method);
+                $value = $self->$method();
+            };
+            if ($@) {
+                # If failled with camel-cased, try the original attr name as method
+                $value = $self->$method();
+            }
             last;
         }
         elsif ($dbix->can('parent')) {
@@ -1781,6 +1791,29 @@ the characters that follows.
 
 sub normalizeName {
     my $name = shift;
+    $name = normalizeMethod($name);
+
+    return ucfirst($name);
+};
+
+
+=pod
+
+=begin classdoc
+
+Normalize the specified name by removing underscores and upper casing
+the characters that follows, excepted the first character.
+
+@param $name any name
+
+@return the normalized name
+
+=end classdoc
+
+=cut
+
+sub normalizeMethod {
+    my $name = shift;
     my $i = 0;
     while ($i < length($name)) {
         if (substr($name, $i, 1) eq "_") {
@@ -1789,7 +1822,7 @@ sub normalizeName {
         $i += 1;
     }
 
-    return ucfirst($name);
+    return $name;
 };
 
 
