@@ -122,15 +122,10 @@ sub getAttrDef{ return ATTR_DEF; }
 
 sub methods {
     return {
-        getProfiles => {
-            description => 'get user profiles',
-            perm_holder => 'entity',
-            purpose     => 'internal',
-        },
         setProfiles => {
             description => 'set user profiles',
             perm_holder => 'entity',
-            purpose     => 'internal',
+            purpose     => 'action',
         },
     };
 }
@@ -257,16 +252,6 @@ sub setProfiles {
             throw Kanopya::Exception::Internal::IncorrectParam(error => "Unknown profile $profile_name");
         }
     }
-}
-
-sub getProfiles {
-    my ($self) = @_;
-    my $result = $self->{_dbix}->user_profiles; 
-    my @array = ();
-    while(my $row = $result->next) {
-        push @array, $row->profile->get_column('profile_name');
-    }
-    return \@array;
 }
 
 =head2 toString

@@ -636,7 +636,7 @@ sub configureOrchestration {
         if ($wf_id) {
             # Get original workflow def and params (from policy)
             my $wf_def      = $rule->workflow_def;
-            my $wf_params   = $wf_def->getParamPreset();
+            my $wf_params   = $wf_def->paramPresets;
             my $wf_name     = $wf_def->workflow_def_name;
 
             # Replacing in workflow name the id of original rule (from policy) with id of this rule

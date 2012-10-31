@@ -40,17 +40,15 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    param_presets => {
+        is_virtual   => 1,
+    },
 };
 
 sub methods {
   return {
     updateParamPreset => {
         description => 'updateParamPreset',
-        perm_holder => 'entity',
-        purpose     => 'internal',
-    },
-    getParamPreset => {
-        description => 'getParamPreset',
         perm_holder => 'entity',
         purpose     => 'internal',
     },
@@ -119,7 +117,7 @@ sub updateParamPreset{
     }
 }
 
-sub getParamPreset{
+sub paramPresets {
     my ($self,%args) = @_;
 
     my $param_preset_id = $self->getAttr(name => 'param_preset_id');

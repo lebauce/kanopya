@@ -146,7 +146,7 @@ sub deassociateWorkflow {
     General::checkParams(args => \%args, required => [ 'rule_id', 'workflow_def_id' ]);
 
     my $workflow_def    = Entity::WorkflowDef->find(hash => {workflow_def_id => $args{workflow_def_id}});
-    my $workflow_params = $workflow_def->getParamPreset();
+    my $workflow_params = $workflow_def->paramPresets;
 
     # Unlink workflow to rule
     $self->_linkWorkflowToRule(
@@ -356,7 +356,7 @@ sub getWorkflowDefs {
         my $workflow_def = $manager_workflow_def->workflow_def;
         my $ok = 1;
         if ($args{no_associate}) {
-            my $all_params   = $workflow_def->getParamPreset();
+            my $all_params = $workflow_def->paramPresets;
             if ($all_params->{internal}{association}) {
                 $ok = 0;
             }
@@ -547,7 +547,7 @@ sub _getAllParams {
 
     #get the param preset id from the workflow def
     my $workflow_def = $self->getWorkflowDef(workflow_def_id=>$workflow_def_id);
-    my $all_params   = $workflow_def->getParamPreset();
+    my $all_params   = $workflow_def->paramPresets;
 
     return $all_params;
 }

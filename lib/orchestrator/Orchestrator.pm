@@ -504,7 +504,7 @@ sub clustermetricManagement{
                     elsif ( $aggregate_rule->aggregate_rule_state eq 'triggered' ) {
                         my $wf_def_id = $aggregate_rule->getAttr(name => 'workflow_def_id');
                         my $wf_def    = Entity::WorkflowDef->get(id => $wf_def_id);
-                        my $wf_params = $wf_def->getParamPreset();
+                        my $wf_params = $wf_def->paramPresets;
                         my $delay = $wf_params->{specific}->{delay};
                         $log->info('wf_params = '.(Dumper $wf_params));
 
