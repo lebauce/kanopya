@@ -35,10 +35,6 @@ use Kanopya::Exceptions;
 my $log = get_logger("executor");
 my $errmsg;
 
-#########################
-# configuration methods #
-#########################
-
 =head2 addRepository
 
     Desc: Register a new repository for an host in Vsphere
@@ -75,10 +71,6 @@ sub addRepository {
 
     my $dsmv = $self->getView(mo_ref=>$view->configManager->datastoreSystem);
 }
-
-#########################
-# manipulation methods ##
-#########################
 
 =head2 startHost
 
@@ -306,10 +298,6 @@ sub scaleMemory {
     #with corresponding server-side object values
     $host->update_view_data;
 }
-
-#########################
-# VMware utils methods ##
-#########################
 
 sub create_conf_spec {
     my $controller;

@@ -73,8 +73,8 @@ sub execute{
     my $self = shift;
     $self->SUPER::execute();
 
-    my $scalein_value    = $self->{params}->{scalein_value};
-    my $scalein_type     = $self->{params}->{scalein_type};
+    my $scalein_value = $self->{params}->{scalein_value};
+    my $scalein_type  = $self->{params}->{scalein_type};
 
     delete $self->{params}->{scalein_value};
     delete $self->{params}->{scalein_type};

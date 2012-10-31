@@ -21,6 +21,7 @@ use base "Manager::HostManager";
 
 use Entity::Host::VirtualMachine;
 use Entity::Iface;
+use Entity::Workflow;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
@@ -78,8 +79,8 @@ sub scaleHost {
         }
     };
 
-    Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
-                  params => $wf_params);
+    Entity::Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
+                          params => $wf_params);
 }
 
 =head2 getHostType

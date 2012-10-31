@@ -922,8 +922,8 @@ Return remaning size (RAM and CPU) of a hypervisor
 =cut
 
 sub _getHvSizeRemaining {
-   my ($self,%args) = @_;
-    my $hv_id          = $args{hv_id};
+    my ($self,%args) = @_;
+    my $hv_id        = $args{hv_id};
 
     my $size = $self->_getHvSizeOccupied(hv_id => $hv_id);
 

@@ -22,11 +22,16 @@ use warnings;
 
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("executor");
+my $log = get_logger("");
+my $errmsg;
 
-=head2 checkUp
+=pod
 
-    Desc: return the state of the VM
+=begin classdoc
+
+Return the state of the VM
+
+=end classdoc
 
 =cut
 
@@ -39,6 +44,73 @@ sub checkUp {
 
     return 1;
     #return $self->SUPER::checkUp();
+}
+
+=pod
+
+=begin classdoc
+
+Get the vsphere manager for this vm
+
+=end classdoc
+
+=cut
+
+sub getVsphereManager {
+    my ($self,%args) = @_;
+
+    my $vsphere = Entity->get(id => $self->vsphere5_id);
+
+    return $vsphere;
+}
+
+=pod
+
+=begin classdoc
+
+Retrieve the memory currently used by a vsphere5 vm, in Bytes
+
+=end classdoc
+
+=cut
+
+sub getRamUsedByVm {
+    my ($self,%args) = @_;
+
+    my $e_hypervisor = EFactory::newEEntity(data => $self->hypervisor);
+
+    my $vsphere = $self->getVsphereManager();
+
+    #get the vm datacenter
+    my $datacenter = $self->hypervisor->vsphere5_datacenter;
+
+    #get vsphere datacenter's view
+    my $dc_view = $vsphere->findEntityView(
+                      view_type   => 'Datacenter',
+                      hash_filter => {
+                          name => $datacenter->vsphere5_datacenter_name,
+                      }
+                  );
+$DB::single = 1;
+    #get vsphere virtual machine's view
+    my $vm_view   = $vsphere->findEntityView(
+                        view_type    => 'VirtualMachine',
+                        hash_filter  => {
+                            name => $self->node->externalnode_hostname,
+                        },
+                        begin_entity => $dc_view,
+                    );
+    
+    if (defined $vm_view->summary->quickStats->hostMemoryUsage &&
+        $vm_view->summary->quickStats->hostMemoryUsage != 0) {
+        return {
+            total => $vm_view->summary->quickStats->hostMemoryUsage * 1024 * 1024,
+        }
+    }
+    else {
+        $errmsg = 'Vm\'s used memory not available for vm '. $self->host_hostname;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    } 
 }
 
 1;

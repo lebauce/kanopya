@@ -83,10 +83,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-###############
-# API methods #
-###############
-
 =pod 
 
 =begin classdoc
@@ -139,10 +135,6 @@ sub checkHostManagerParams {
 
     General::checkParams(args => \%args, required => ['ram', 'cpu']);
 }
-
-######################
-# connection methods #
-######################
 
 =pod
 
@@ -212,10 +204,9 @@ sub negociateConnection {
 
     $log->info('Checking if a session to vSphere is already opened');
     #try to grab a dummy entity to check if a session is opened
-    my $view;
+    my $sc;
     eval {
-        $view = Vim::find_entity_view(view_type => 'Folder',
-                                      filter    => {name => 'rootFolder'});
+        $sc = Vim::get_service_content;
     };
     if ($@ =~ /no global session is defined/) {
         $log->info('opening a new session to vSphere');
@@ -232,10 +223,6 @@ sub negociateConnection {
         return;
     }
 }
-
-####################
-# Retrieve methods #
-####################
 
 =pod
 
@@ -430,10 +417,6 @@ sub retrieveHypervisorVms {
     return \@vms_infos;
 }
 
-###########################
-# vsphere objects methods #
-###########################
-
 =pod 
 
 =begin classdoc
@@ -618,10 +601,6 @@ sub findEntityViews {
     return $views;
 }
 
-##########################
-## registration methods ##
-##########################
-
 #TODO: manage the possibility that the entities, for example clusters can be into vsphere
 #folders
 
@@ -769,10 +748,10 @@ sub registerVm {
 
     General::checkParams(args => \%args, required => ['parent', 'name']);
 
-    my $parent_service_provider     = $args{parent};
-    my $service_provider_name       = $args{name};
+    my $parent_service_provider   = $args{parent};
+    my $service_provider_name     = $args{name};
     #We substitute terms in (new string) to match cluster_name pattern
-    (my $service_provider_renamed   = $service_provider_name) =~ s/[^\w\d+]/_/g;
+    my $service_provider_renamed = $self->formatName(name => $service_provider_name);
 
     #Get the datacenter used by the hosting hypervisor(s)
     my @hypervisors_nodes;
@@ -880,9 +859,12 @@ sub registerVm {
                                            value => $st->id);
                 $service_provider->save();
             }
+            
+            #Now set this manager as host manager for the new service provider
+            $service_provider->addManager(manager_type => 'host_manager',
+                                          manager_id   => $self->id);
         };
         if ($@) {
-            print $@;
             $errmsg = 'Could not create new service provider to register vsphere vm: '. $@;
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
@@ -995,11 +977,11 @@ sub registerHypervisor {
         return $args{parent};
     }
 
-    my $datacenter                  = $args{parent};
-    my $service_provider_name       = $args{name};
+    my $datacenter               = $args{parent};
+    my $service_provider_name    = $args{name};
     #We substitute terms in (new string) to match cluster_name pattern
-    (my $service_provider_renamed   = $service_provider_name) =~ s/[^\w\d+]/_/g;
-    my $datacenter_name             = $datacenter->vsphere5_datacenter_name;
+    my $service_provider_renamed = $self->formatName(name => $service_provider_name);
+    my $datacenter_name          = $datacenter->vsphere5_datacenter_name;
 
     #Get the datacenter view
     my $datacenter_view = $self->findEntityView(
@@ -1092,6 +1074,10 @@ sub registerHypervisor {
                                            value => $st->id);
                 $service_provider->save();
             }
+
+            #Now set this manager as host manager for the new service provider
+            $service_provider->addManager(manager_type => 'host_manager',
+                                          manager_id   => $self->id);
         };
         if ($@) {
             $errmsg = 'Could not create new service provider to register vsphere hypervisor: '. $@;
@@ -1175,11 +1161,11 @@ sub registerCluster {
         return $args{parent};
     }
 
-    my $datacenter          = $args{parent};
-    my $datacenter_name     = $datacenter->vsphere5_datacenter_name;
-    my $cluster_name        = $args{name};
+    my $datacenter      = $args{parent};
+    my $datacenter_name = $datacenter->vsphere5_datacenter_name;
+    my $cluster_name    = $args{name};
     #We substitute terms in (new string) to match cluster_name pattern
-    (my $cluster_renamed    = $cluster_name) =~ s/[^\w\d+]/_/g;
+    my $cluster_renamed = $self->formatName(name => $cluster_name);
 
     #get Datacenter and Cluster views from vsphere
     my $datacenter_view  = $self->findEntityView(
@@ -1271,6 +1257,10 @@ sub registerCluster {
                                            value => $st->id);
                 $service_provider->save();
             }
+
+            #Now set this manager as host manager for the new service provider
+            $service_provider->addManager(manager_type => 'host_manager',
+                                          manager_id   => $self->id);
         };
         if ($@) {
             $errmsg = 'Could not create new service provider to register vsphere cluster: '. $@;
@@ -1330,11 +1320,6 @@ sub registerCluster {
     return $service_provider;
     }
 }
-
-###########################
-## configuration methods ##
-## getters and setters   ##
-###########################
 
 =pod
 
@@ -1507,10 +1492,6 @@ sub getRepository {
     return $repository;
 }
 
-#######################
-## vm's manipulation ##
-#######################
-
 =pod
 
 =begin classdoc
@@ -1574,10 +1555,6 @@ sub powerOnVm {
     }
 }
 
-###############################
-## hypervisors' manipulation ##
-###############################
-
 =pod
 
 =begin classdoc
@@ -1609,4 +1586,23 @@ sub addHypervisor {
     return $vsphere5Hypervisor;
 }
 
+=pod
+
+=begin classdoc
+
+Format a name that will be used for cluster and nodes creation
+
+=end classdoc
+
+=cut
+
+sub formatName {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['name']);
+
+    my $name = $args{name} =~ s/[^\w\d+]/_/g;
+
+    return $name;
+}
 1;

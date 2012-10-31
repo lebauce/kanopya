@@ -277,9 +277,9 @@ sub addManager {
     General::checkParams(args => \%args, required => [ 'manager_id', "manager_type" ]);
 
     my $manager = ServiceProviderManager->new(
-                      service_provider_id   => $self->getAttr(name => 'entity_id'),
-                      manager_type => $args{manager_type},
-                      manager_id   => $args{manager_id}
+                      service_provider_id => $self->entity_id,
+                      manager_type        => $args{manager_type},
+                      manager_id          => $args{manager_id}
                   );
 
     if ($args{manager_params}) {
@@ -396,59 +396,66 @@ sub getLimit {
 
     General::checkParams(args => \%args, required => [ "type" ]);
 
-    # Firtly get billing limit
-    #
-    # TODO: Use only one request
-    my @limits = Entity::Billinglimit->search(hash => {
-                     service_provider_id => $self->getId,
-                     soft                => 0,
-                     type                => $args{type},
-                 });
-
-    my $billing_limit_value;
-    my $now = time() * 1000;
-    for my $limit (@limits) {
-        if (($limit->start < $now) && ($limit->ending > $now)){ 
-            $billing_limit_value = $billing_limit_value ? min($billing_limit_value, $limit->value) : $limit->value;
-            $log->debug('Limit value'.($limit->value));
+    #If there is a billing limit, use it, otherwise return undef
+    eval {
+        # Firtly get billing limit
+        #
+        # TODO: Use only one request
+        my @limits = Entity::Billinglimit->search(hash => {
+                         service_provider_id => $self->getId,
+                         soft                => 0,
+                         type                => $args{type},
+                     });
+    };
+    if (scalar (@limits) != 0) {
+        my $billing_limit_value;
+        my $now = time() * 1000;
+        for my $limit (@limits) {
+            if (($limit->start < $now) && ($limit->ending > $now)){ 
+                $billing_limit_value = $billing_limit_value ? min($billing_limit_value, $limit->value) : $limit->value;
+                $log->debug('Limit value'.($limit->value));
+            }
         }
-    }
 
-    # Get Limit from host_manager
-    my $host_params = $self->getManagerParameters(manager_type => 'host_manager');
+        # Get Limit from host_manager
+        my $host_params = $self->getManagerParameters(manager_type => 'host_manager');
 
-    my $host_limit_value;
+        my $host_limit_value;
 
-    if ($args{type} eq 'ram') {
-        if(defined $host_params->{max_ram}) {
-            $host_limit_value = General::convertToBytes(
-                               value => $host_params->{max_ram},
-                               units => $host_params->{ram_unit}
-                            );
+        if ($args{type} eq 'ram') {
+            if(defined $host_params->{max_ram}) {
+                $host_limit_value = General::convertToBytes(
+                                   value => $host_params->{max_ram},
+                                   units => $host_params->{ram_unit}
+                                );
+            }
+            else {
+                $log->info('host limit ram undef');
+            }
+        }
+        elsif ($args{type} eq 'cpu') {
+            $host_limit_value = $host_params->{max_core};
+        }
+
+        $log->debug('sp <'.($self->getId).'> Type <'.($args{type}).'> Billing limit <'.($billing_limit_value).'> host limit <'.($host_limit_value).'>');
+
+        my $value;
+        if (defined $billing_limit_value){
+            if ( defined $host_limit_value ) {
+                $value = min( $billing_limit_value, $host_limit_value  );
+            }
+            else {
+                $value = $billing_limit_value;
+            }
         }
         else {
-            $log->info('host limit ram undef');
+            $value = $host_limit_value;
         }
-    }
-    elsif ($args{type} eq 'cpu') {
-        $host_limit_value = $host_params->{max_core};
-    }
-
-    $log->debug('sp <'.($self->getId).'> Type <'.($args{type}).'> Billing limit <'.($billing_limit_value).'> host limit <'.($host_limit_value).'>');
-
-    my $value;
-    if (defined $billing_limit_value){
-        if ( defined $host_limit_value ) {
-            $value = min( $billing_limit_value, $host_limit_value  );
-        }
-        else {
-            $value = $billing_limit_value;
-        }
+        return $value;
     }
     else {
-        $value = $host_limit_value;
-    }
-    return $value;
+        return;
+    } 
 }
 
 =head2 addComponent

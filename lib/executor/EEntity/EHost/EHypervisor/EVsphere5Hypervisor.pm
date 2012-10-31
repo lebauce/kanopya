@@ -28,26 +28,37 @@ use Hash::Merge qw(merge);
 my $log = get_logger("executor");
 my $errmsg;
 
-=head2 getVsphereManager
+=pod
 
-    Desc: instanciate the evsphere component managing this hypervisor
-    Return: $vsphere
+=begin classdoc
+
+Instanciate the vsphere component managing this hypervisor
+
+@return vsphere
+
+=end classdoc
 
 =cut
 
 sub getVsphereManager {
     my ($self,%args) = @_;
 
-    my $vsphere_entity = Entity->get(id => $self->vsphere5_id);
-    my $vsphere        = EFactory::newEEntity(data => $vsphere_entity);
+    my $vsphere = Entity->get(id => $self->vsphere5_id);
 
     return $vsphere;
 }
 
+=pod
+
+=begin classdoc
+
 =head2 getAvailableMemory
 
-    Desc: Give the hypervisor's available memory amount.
-    Return: $memory_available
+Query the hypervisor's available memory amount.
+
+@return memory_available
+
+=end classdoc
 
 =cut
 
@@ -56,40 +67,63 @@ sub getAvailableMemory {
 
     #first we open a connection toward vsphere
     my $vsphere = $self->getVsphereManager();
-    $vsphere->negociateConnection();
 
+    #get the hypervisor's datacenter
+    my $datacenter = $self->vsphere5_datacenter;
+
+    #get vsphere datacenter's view
+    my $dc_view = $vsphere->findEntityView(
+                      view_type   => 'Datacenter',
+                      hash_filter => {
+                          name => $datacenter->vsphere5_datacenter_name,
+                      }
+                  );
+
+    #get vsphere hypervisor's view
     my $view_args       = {name => $self->host_hostname};
     my $hypervisor_view = $vsphere->findEntityView(
-                              view_type   => 'HostSystem',
-                              hash_filter => $view_args,
+                              view_type    => 'HostSystem',
+                              hash_filter  => $view_args,
+                              begin_entity => $dc_view,
                           );
 
     if( defined($hypervisor_view->summary->hardware->memorySize) &&
         defined($hypervisor_view->summary->quickStats->overallMemoryUsage)) {
 
         #we convert the memory used from MB to Bytes
-        my $memory_used      = 1024 
-                               * 1024 
+        my $memory_used      = 1024
+                               * 1024
                                * $hypervisor_view->summary->quickStats->overallMemoryUsage;
 
         my $memory_available = $hypervisor_view->summary->hardware->memorySize
                                - $memory_used;
 
-        return $memory_available;
+        return {
+            'mem_effectively_available'   => $memory_available,
+            'mem_theoretically_available' => $memory_available,
+        }
     }
     else {
         $errmsg  = 'Hypervisor\'s memory available undefined for hypervisor '. $self->host_hostname;
-        $errmsg .= 'is host connected?'; 
+        $errmsg .= 'is host connected?';
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
 
-=head2 getVmResources
+=pod
 
-    Desc: Return virtual machine resources. If no resssource type(s)
-          is specified in parameters, return all known resources.
-    Args: $vm, \@resources[ram,cpu]
-    Return: \%vms_ressources
+=begin classdoc
+
+Return virtual machine resources. If no resssource type(s) is(are) specified in parameters,
+return all known resources.
+
+@param vm the target vm
+@param resources an array containing the desired resources
+
+@return \%vms_ressources
+
+=end classdoc
+
 =cut
 
 sub getVmResources {
