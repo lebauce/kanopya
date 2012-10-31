@@ -138,7 +138,7 @@ sub getConf {
     my $self = shift;
     my $conf = {};
 
-    return $self->toJSON;
+    return $self->toJSON(raw => 1);
 }
 
 =head2 setConf

@@ -1267,7 +1267,9 @@ sub toJSON {
         };
     }
     else {
-        $hash->{pk} = $self->id;
+        if (!$args{raw}) {
+            $hash->{pk} = $self->id;
+        }
     }
 
     return $hash;
