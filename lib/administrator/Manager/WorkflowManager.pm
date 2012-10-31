@@ -234,6 +234,38 @@ sub associateWorkflow {
     return $workflow;
 }
 
+=head2 cloneWorkflow
+    Desc: create a new instance of WorkflowDef from an existing instance
+
+    Args: workflow_def_id id of the workflow def to clone
+          rule_id id of the rule linked to the cloned instance
+
+=cut
+
+sub cloneWorkflow {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow_def_id', 'rule_id' ]);
+    my $rule_id = $args{rule_id};
+
+    # Get original workflow def and params
+    my $wf_def      = WorkflowDef->get( id => $args{workflow_def_id});
+    my $wf_params   = $wf_def->getParamPreset();
+    my $wf_name     = $wf_def->workflow_def_name;
+
+    # Replacing in workflow name the id of original rule with id of this rule
+    # TODO change associated workflow naming convention (currently: <ruleid>_<origin_wf_def_name>) UGLY!
+    $wf_name =~ s/^[0-9]*/$rule_id/;
+
+    # Associate to the rule a copy of the workflow
+    $self->associateWorkflow(
+        'new_workflow_name'         => $wf_name,
+        'origin_workflow_def_id'    => $wf_def->workflow_def_origin,
+        'specific_params'           => $wf_params->{specific} || {},
+        'rule_id'                   => $rule_id,
+    );
+}
+
 =head2 _linkWorkflowToRule
     Desc: link or unlink a workflow to a rule
 

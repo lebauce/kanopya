@@ -395,6 +395,7 @@ sub clone {
 
     General::checkParams(args => \%args, required => ['dest_service_provider_id']);
 
+    # Specific attrs management
     my $attrs_cloner = sub {
         my %args = @_;
         my $attrs = $args{attrs};
@@ -403,15 +404,41 @@ sub clone {
             formula                 => $attrs->{nodemetric_rule_formula},
             formula_object_class    => 'NodemetricCondition'
         );
+        $attrs->{workflow_def_id}   = undef;
         return %$attrs;
     };
 
-    $self->_importToRelated(
+    # Generic clone
+    my $clone = $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
         relationship        => 'nodemetric_rule_service_provider',
         label_attr_name     => 'nodemetric_rule_label',
         attrs_clone_handler => $attrs_cloner
     );
+
+    # Manage associated workflow
+    # Clone only if both services use the same workflow manager
+    if ($self->workflow_def_id) {
+        eval {
+            my $src_workflow_manager = ServiceProviderManager->find( hash => {
+                 manager_type        => 'workflow_manager',
+                 service_provider_id => $self->nodemetric_rule_service_provider_id
+            });
+            my $dest_workflow_manager = ServiceProviderManager->find( hash => {
+                manager_type        => 'workflow_manager',
+                service_provider_id => $args{'dest_service_provider_id'}
+            });
+            if ($src_workflow_manager->manager_id == $dest_workflow_manager->manager_id) {
+                my $manager = Entity->get(id => $src_workflow_manager->manager_id );
+                $manager->cloneWorkflow(
+                    workflow_def_id => $self->workflow_def_id,
+                    rule_id         => $clone->id
+                );
+            }
+        };
+    }
+
+    return $clone;
 }
 
 1;
