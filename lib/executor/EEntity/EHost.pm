@@ -105,7 +105,7 @@ sub checkUp {
 
     if ($pingable) {
         eval {
-            $self->getEContext;
+            $self->getEContext->execute(command => "uptime");
         };
         if ($@) {
             $log->info("Ehost->checkUp for host <" . $self->getAdminIp .
