@@ -650,7 +650,7 @@ sub getAttr {
     General::checkParams(args => \%args, required => ['name']);
 
     my $dbix = $self->{_dbix};
-    my $attr = $class->getAttrDef()->{$args{name}} || BaseDB::getAttrDef()->{$args{name}};
+    my $attr = $class->getAttrDefs()->{$args{name}};
     my $value = undef;
     my $found = 1;
 
