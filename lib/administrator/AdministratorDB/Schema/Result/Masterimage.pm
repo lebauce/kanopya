@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::Masterimage;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Masterimage
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Masterimage
+=head1 TABLE: C<masterimage>
 
 =cut
 
@@ -52,7 +56,7 @@ __PACKAGE__->table("masterimage");
 
 =head2 masterimage_size
 
-  data_type: 'integer'
+  data_type: 'bigint'
   extra: {unsigned => 1}
   is_nullable: 0
 
@@ -75,8 +79,19 @@ __PACKAGE__->add_columns(
   "masterimage_os",
   { data_type => "char", is_nullable => 1, size => 64 },
   "masterimage_size",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</masterimage_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("masterimage_id");
 
 =head1 RELATIONS
@@ -136,16 +151,25 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 component_types
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-28 16:32:30
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xVN5wsSJk4mBdG50/e0C1w
+Type: many_to_many
+
+Composing rels: L</components_provided> -> component_type
+
+=cut
+
+__PACKAGE__->many_to_many("component_types", "components_provided", "component_type");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-26 13:48:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:237aR/4rOWvXRgfvPauBbw
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-        { "foreign.entity_id" => "self.masterimage_id" },
-        { cascade_copy => 0, cascade_delete => 1 }
+  { entity_id => "masterimage_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
