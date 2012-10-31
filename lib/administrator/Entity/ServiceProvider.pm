@@ -63,62 +63,46 @@ sub methods {
         addComponent => {
             description => 'add a component to this cluster',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         removeComponent => {
             description => 'remove a component from this cluster',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         addManager => {
             description => 'addManager',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         getNodeMonitoringData => {
             description => 'get monitoring data of a node',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         enableNode => {
             description => 'Enable node',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         disableNode => {
             description => 'Disable node',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
+        # TODO: Remove this method from the api once the policy ui has been reviewed
         findManager => {
             description => 'findManager',
             perm_holder => 'mastergroup',
-            purpose     => 'internal',
         },
-        getManager => {
-            description => 'getManager',
-            perm_holder => 'entity',
-            purpose     => 'internal',
-        },
+        # TODO: Remove this method from the api once the policy ui has been reviewed
         getServiceProviders => {
             description => 'getServiceProviders',
             perm_holder => 'mastergroup',
-            purpose     => 'internal',
         },
+        # TODO: Remove this method from the api once the merge of component/connector
         addManagerParameters => {
             description => 'add paramaters to a manager',
             perm_holder => 'entity',
-            purpose     => 'internal',
         },
+        # TODO: Remove this method from the api once the merge of component/connector
         getManagerParameters => {
             description => 'getManagerParameters',
             perm_holder => 'entity',
-            purpose     => 'internal',
-        },
-        getManagers => {
-            description => 'get all managers associated with a service provider',
-            perm_holder => 'entity',
-            purpose     => 'internal',
         },
     };
 }
@@ -213,26 +197,6 @@ sub getManager {
                                                   );
 
     return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
-}
-
-=head2 getManagers
-
-    Desc: get all managers associated with a service provider
-    Return: a list of manager objects
-
-=cut
-
-sub getManagers {
-    my $self = shift;
-
-    my @managers        = ();
-    my @clustermanagers = ServiceProviderManager->search(hash => { service_provider_id => $self->id });
-
-    for my $clustermanager (@clustermanagers) {
-        # Could not follow the 'manager' relation cause connecto/component problem
-        push @managers, Entity->get(id => $clustermanager->manager_id);
-    }
-    return wantarray ? @managers : \@managers;
 }
 
 sub getNodes {
