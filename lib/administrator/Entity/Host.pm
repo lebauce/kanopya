@@ -141,6 +141,9 @@ use constant ATTR_DEF => {
     admin_ip => {
         is_virtual   => 1,
     },
+    remote_session_url => {
+        is_virtual   => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -162,22 +165,15 @@ sub methods {
         removeIface => {
             description => 'remove an interface from this host',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         addIface => {
             description => 'add one or more interface to  this host',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
-        getRemoteSessionURL => {
-            description => 'get the url for remote session',
-            perm_holder => 'entity',
-            purpose     => 'internal'
-        },
+        # TODO: Remove this method from the api once the policy ui has been reviewed
         getHostType => {
             description => 'get the host type from host manager',
             perm_holder => 'entity',
-            purpose     => 'internal'
         },
     };
 }
@@ -786,7 +782,7 @@ sub getModel {
     return $self->hostmodel;
 }
 
-sub getRemoteSessionURL {
+sub remoteSessionUrl {
     my $self = shift;
 
    return $self->getHostManager->getRemoteSessionURL(host => $self);
