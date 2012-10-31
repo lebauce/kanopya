@@ -44,16 +44,24 @@ function loadServicesDetails(cid, eid, is_iaas) {
     var managerstable   = $('<table>').appendTo(div);
 
     $.ajax({
-        url     : '/api/serviceprovider/' + eid + '/getManagers',
-        type    : 'POST',
+        url     : '/api/serviceprovider/' + eid + '/service_provider_managers',
+        type    : 'GET',
         success : function(data) {
             for (var i in data) if (data.hasOwnProperty(i)) {
-                var tr  = $('<tr>').appendTo(managerstable);
+                var tr = $('<tr>').appendTo(managerstable);
+
+                var component;
+                $.ajax({
+                    url     : '/api/entity/' + data[i].manager_id,
+                    success : function(entity) {
+                        component = entity;
+                    }
+                });
 
                 // Ugly test to handle both managers type component/connector
-                if (data[i].component_type_id) {
+                if (component.component_type_id) {
                     $.ajax({
-                        url     : '/api/componenttype/' + data[i].component_type_id,
+                        url     : '/api/componenttype/' + component.component_type_id,
                         success : function(line) {
                             return (function(component_type) {
                                 $(line).append($('<th>', { text : component_type.component_category + ' : ' }))
@@ -63,7 +71,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                     });
                 } else {
                     $.ajax({
-                        url     : '/api/connectortype/' + data[i].connector_type_id,
+                        url     : '/api/connectortype/' + component.connector_type_id,
                         success : function(line) {
                             return (function(connector_type) {
                                 $(line).append($('<th>', { text : connector_type.connector_category + ' : ' }))
