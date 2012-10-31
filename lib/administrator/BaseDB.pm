@@ -724,8 +724,8 @@ sub getAttr {
             my $method = $args{name};
             # Firstly try to call method with camel-case style
             eval {
-                $method = normalizeMethod($method);
-                $value = $self->$method();
+                my $camelcased_method = normalizeMethod($method);
+                $value = $self->$camelcased_method();
             };
             if ($@) {
                 # If failled with camel-cased, try the original attr name as method
