@@ -13,6 +13,20 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package Entity::CollectorIndicator;
 
+=pod
+
+=begin classdoc
+
+Link indicators with collector managers.
+Represents base monitoring object manipulated by services.
+A service can only use indicators linked with its collector manager.
+
+@see <package>Entity::Indicator</package>
+
+=end classdoc
+
+=cut
+
 use strict;
 use warnings;
 use base 'Entity';

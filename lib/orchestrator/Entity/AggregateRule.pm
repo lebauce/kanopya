@@ -11,6 +11,19 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+
+=begin classdoc
+
+Logical formula of aggregate conditions
+
+@see <package>Entity::AggregateCondition</package>
+
+=end classdoc
+
+=cut
+
 package Entity::AggregateRule;
 
 use strict;

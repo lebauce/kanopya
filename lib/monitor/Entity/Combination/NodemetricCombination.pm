@@ -16,11 +16,9 @@
 
 =begin classdoc
 
-Nodemetric Combination. Represented by a mathematic combination formula if indicator ids.
+Mathematical formula of collector indicators
 
-@since    2012-Feb-01
-@instance hash
-@self     $self
+@see <package>Entity::CollectorIndicator</package>
 
 =end classdoc
 

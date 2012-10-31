@@ -11,6 +11,20 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+
+=begin classdoc
+
+Condition on aggregate combination (left operand) and agreggate combination or threshold (right operand)
+
+@see <package>Entity::Combination::AggregateCombination</package>
+@see <package>Entity::Combination::ConstantCombination</package>
+
+=end classdoc
+
+=cut
+
 package Entity::AggregateCondition;
 
 use strict;
@@ -253,6 +267,8 @@ sub update {
     $right_combi->deleteIfConstant();
     return $rep;
 }
+
+=pod
 
 =begin classdoc
 

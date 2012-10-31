@@ -11,6 +11,19 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+
+=begin classdoc
+
+Condition on combination value
+
+@see <package>Entity::Combination</package>
+
+=end classdoc
+
+=cut
+
 package Entity::NodemetricCondition;
 
 use strict;
@@ -252,6 +265,8 @@ sub update {
     $right_combi->deleteIfConstant();
     return $rep;
 }
+
+=pod
 
 =begin classdoc
 

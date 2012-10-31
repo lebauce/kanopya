@@ -16,11 +16,9 @@
 
 =begin classdoc
 
-Aggregate Combination. Represented by a mathematic combination formula if clustermetric ids.
+Mathematical formula of cluster metrics.
 
-@since    2012-Feb-01
-@instance hash
-@self     $self
+@see <package>Entity::Clustermetric</package>
 
 =end classdoc
 

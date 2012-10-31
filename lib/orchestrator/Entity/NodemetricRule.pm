@@ -11,6 +11,19 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+
+=begin classdoc
+
+Logical formula of node metric conditions
+
+@see <package>Entity::NodemetricCondition</package>
+
+=end classdoc
+
+=cut
+
 package Entity::NodemetricRule;
 
 use strict;
