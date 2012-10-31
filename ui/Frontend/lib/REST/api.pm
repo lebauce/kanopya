@@ -453,17 +453,8 @@ sub setupREST {
                             my $relinfo = $parent->result_source->relationship_info($filter);
 
                             if ($relinfo->{attrs}->{accessor} eq "multi") {
-                                my @conds = keys %{$relinfo->{cond}};
-                                my $fk = BaseDB::getForeignKeyFromCond(cond => $conds[0]);
-                                my $class = BaseDB::classFromDbix($parent->result_source->related_source($filter));
-
-                                $hash->{$fk} = $parent->id;
-
-                                my $json = format_results(class    => $class,
-                                                          dataType => params->{dataType},
-                                                          %$hash);
-
-                                return to_json($json);
+                                my @jsonlist = map { db_to_json($_, \@expand) } $parent->$filter;
+                                return to_json(\@jsonlist);
                             }
                             elsif (defined $parent->$filter) {
                                 my $dbix = $parent->$filter;
@@ -548,19 +539,14 @@ sub setupREST {
             content_type 'application/json';
             require (General::getLocFromClass(entityclass => $class));
 
-            my $objs = [];
             my $class = class_from_resource(resource => $resource);
             my %query = params('query');
-            my %params = (
-                hash => \%query,
-            );
-
-            my $json = format_results(class     => $class,
-                                      dataType  => params->{dataType},
-                                      %query);
 
             my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-            return to_json($json);
+
+            delete $query{expand};
+            my @jsonlist = map { db_to_json($_, \@expand) } $class->search(hash => \%query);
+            return to_json(\@jsonlist);
         }
     }
 }
