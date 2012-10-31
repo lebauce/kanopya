@@ -124,7 +124,7 @@ function loadServicesResources (container_id, elem_id) {
             $(this).find('.ui-button-text').html(action_enable ? 'Disable' : 'Enable')
             $(grid).find('tr#' + rowid).css('background', action_enable ? '' : 'lightgrey');
             $.ajax({
-                type        : 'POST'
+                type        : 'POST',
                 url         : '/api/serviceprovider/' + elem_id + '/' + action + 'Node',
                 contentType : 'application/json',
                 data        : JSON.stringify( {

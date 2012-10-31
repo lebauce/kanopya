@@ -97,15 +97,6 @@ var details_def = {
              
         ],
      },
-     'users_list' : { tabs: 
-        [ { label  : 'Overview',
-               id  : 'user_detail_overview',
-               onLoad : users.load_details },
-            { label  : 'Profiles',
-               id     : 'user_detail_profiles',
-               onLoad : users.load_profiles },
-        ],
-     },
     'service_template_list'    : { onSelectRow : load_service_template_details },
 };
 
