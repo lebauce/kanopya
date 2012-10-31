@@ -38,6 +38,7 @@ my %resources = (
     "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
     "clustermetric"            => "Clustermetric",
     "collectorindicator"       => "CollectorIndicator",
+    "combination"              => "Combination",
     "component"                => "Entity::Component",
     "componenttype"            => "ComponentType",
     "connector"                => "Entity::Connector",
