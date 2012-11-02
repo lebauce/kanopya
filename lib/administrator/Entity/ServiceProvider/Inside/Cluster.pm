@@ -46,6 +46,7 @@ use Entity::Component::Kanopyaworkflow0;
 use Entity::Component::Kanopyacollector1;
 use BillingManager;
 use ComponentType;
+use Manager::HostManager;
 
 use Hash::Merge;
 use DateTime;
@@ -519,6 +520,12 @@ sub configureManagers {
                           );
 
         $self->addManager(manager_id => $export_manager->getId, manager_type => "export_manager");
+    }
+
+    if ($self->cluster_boot_policy eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
+        $self->addComponentFromType(
+            component_type_id => ComponentType->find(hash => { component_name => "Openiscsi" })->id
+        );
     }
 
     # Get export manager parameter related to si shared value.
