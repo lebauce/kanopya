@@ -41,12 +41,9 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 data[i].type    = 'hypervisor';
                 data[i].vmcount = 0;
                 $.ajax({
-                    async       : false,
-                    url         : '/api/host/' + data[i].id + '/virtual_machines',
-                    type        : 'POST',
-                    contentType : 'application/json',
-                    data        : JSON.stringify({ }),
-                    success     : function(hyp) {
+                    async   : false,
+                    url     : '/api/host/' + data[i].id + '/virtual_machines',
+                    success : function(hyp) {
                         return (function(vms) {
                             hyp.totalRamUsed    = 0;
                             hyp.totalCoreUsed   = 0;
