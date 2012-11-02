@@ -278,7 +278,7 @@ sub getConf {
             aggregate_state     => $netapp_aggr->state,
             aggregate_totalsize => General::bytesToHuman(value => $netapp_aggr->size_total, precision => 5),
             aggregate_sizeused  => General::bytesToHuman(value => $netapp_aggr->size_used, precision => 5),
-            entity_comment      => $aggr->getComment,
+            entity_comment      => $aggr->comment,
         };
 
         my @contained_volumes = $netapp_aggr->child_get("volumes")->children_get;
@@ -296,7 +296,7 @@ sub getConf {
                 container_filesystem    => $volume->container_filesystem,
                 container_freespace     => General::bytesToHuman(value => $volume->container_freespace, precision => 5),
                 disk_manager_id         => $volume->disk_manager_id,
-                entity_comment          => $volume->getComment,
+                entity_comment          => $volume->comment,
             };
         }
 

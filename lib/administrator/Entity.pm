@@ -32,6 +32,9 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    comment => {
+        is_virtual   => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -333,7 +336,7 @@ sub getEntities {
     return  @objs;
 }
 
-sub getComment {
+sub comment {
     my $self = shift;
 
     my $comment_id = $self->getAttr(name => 'entity_comment_id');
@@ -415,18 +418,6 @@ sub unlock {
     }
     else {
         $lock->delete();
-    }
-}
-
-sub getAttr {
-    my $self = shift;
-    my %args = @_;
-
-    if ($args{name} eq "comment") {
-        return $self->getComment();
-    }
-    else {
-        return $self->SUPER::getAttr(%args);
     }
 }
 
