@@ -177,7 +177,8 @@ sub insertDefaultConfiguration {
     );
 
     foreach my $row (@default_conf) {
-        $self->{_dbix}->linuxes_mount->create( $row );
+        LinuxMount->new(linux_id => $self->id,
+                        %$row);
     }
 }
 
