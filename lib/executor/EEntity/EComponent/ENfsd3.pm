@@ -103,7 +103,7 @@ sub createExport {
     my $mounttable = $cluster->getComponent(category => "System");
 
     my $oldconf = $mounttable->getConf();
-    my @mountentries = @{$oldconf->{linuxs_mount}};
+    my @mountentries = @{$oldconf->{linuxes_mount}};
     push @mountentries, {
         linux_mount_dumpfreq   => 0,
         linux_mount_filesystem => 'nfs',
@@ -113,7 +113,7 @@ sub createExport {
         linux_mount_passnum    => 0,
     };
 
-    $mounttable->setConf(conf => { linuxs_mount => \@mountentries });
+    $mounttable->setConf(conf => { linuxes_mount => \@mountentries });
 
     my $emounttable = EFactory::newEEntity(data => $mounttable);
     $emounttable->_generateFstab(cluster => $cluster, host => $cluster->getMasterNode);

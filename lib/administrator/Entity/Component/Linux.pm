@@ -65,7 +65,7 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    linuxs_mount => {
+    linuxes_mount => {
         label => 'Filesystems mounts',
         type => 'relation',
         relation => 'single_multi',
@@ -84,11 +84,11 @@ sub getConf {
     my $conf = {};
 
     my @mountdefs;
-    for my $mount ($self->linuxs_mount) {
+    for my $mount ($self->linuxes_mount) {
         push @mountdefs, $mount->toJSON(raw => 1);
     }
 
-    $conf->{linuxs_mount} = \@mountdefs;
+    $conf->{linuxes_mount} = \@mountdefs;
     return $conf;
 }
 
@@ -99,10 +99,10 @@ sub setConf {
     General::checkParams(args => \%args, required => ['conf']);
 
     my $conf = $args{conf};
-    my $mountdefs_conf = $conf->{linuxs_mount};
+    my $mountdefs_conf = $conf->{linuxes_mount};
     
     # for each mount definition , we search it in db for update or deletion
-    for my $mount ($self->linuxs_mount) {
+    for my $mount ($self->linuxes_mount) {
         my $found = 0;
         my $mountdef_data;
         my $id = $mount->id;
@@ -177,7 +177,7 @@ sub insertDefaultConfiguration {
     );
 
     foreach my $row (@default_conf) {
-        $self->{_dbix}->linuxs_mount->create( $row );
+        $self->{_dbix}->linuxes_mount->create( $row );
     }
 }
 
@@ -191,7 +191,7 @@ sub getPuppetDefinition {
     my $str = "class {'linux': sourcepath => \"$path\",}\n";  
     
     # /etc/fstab et mounts
-    foreach my $mount (@{$conf->{linuxs_mount}}) {
+    foreach my $mount (@{$conf->{linuxes_mount}}) {
         $str .= "file {'$mount->{linux_mount_point}': ensure => directory }\n";
         $str .= "mount {'$mount->{linux_mount_point}':\n";
         $str .= "\tdevice => '$mount->{linux_mount_device}',\n";

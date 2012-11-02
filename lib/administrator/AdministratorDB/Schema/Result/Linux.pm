@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::Linux;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Linux
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Linux
+=head1 TABLE: C<linux>
 
 =cut
 
@@ -37,24 +41,20 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
-__PACKAGE__->set_primary_key("linux_id");
 
-=head1 RELATIONS
+=head1 PRIMARY KEY
 
-=head2 linux
+=over 4
 
-Type: belongs_to
+=item * L</linux_id>
 
-Related object: L<AdministratorDB::Schema::Result::Component>
+=back
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "linux",
-  "AdministratorDB::Schema::Result::Component",
-  { component_id => "linux_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
+__PACKAGE__->set_primary_key("linux_id");
+
+=head1 RELATIONS
 
 =head2 debian
 
@@ -71,7 +71,22 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 linuxs_mount
+=head2 linux
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "linux",
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "linux_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 linuxes_mount
 
 Type: has_many
 
@@ -80,18 +95,45 @@ Related object: L<AdministratorDB::Schema::Result::LinuxMount>
 =cut
 
 __PACKAGE__->has_many(
-  "linuxs_mount",
+  "linuxes_mount",
   "AdministratorDB::Schema::Result::LinuxMount",
   { "foreign.linux_id" => "self.linux_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 redhat
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-05-28 11:11:50
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dwDENA8EGYqxIHNtAEGJkw
+Type: might_have
 
+Related object: L<AdministratorDB::Schema::Result::Redhat>
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+=cut
+
+__PACKAGE__->might_have(
+  "redhat",
+  "AdministratorDB::Schema::Result::Redhat",
+  { "foreign.redhat_id" => "self.linux_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 suse
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Suse>
+
+=cut
+
+__PACKAGE__->might_have(
+  "suse",
+  "AdministratorDB::Schema::Result::Suse",
+  { "foreign.suse_id" => "self.linux_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-29 20:28:20
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mUcTjatZR2YXyPF0hSK+PA
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",

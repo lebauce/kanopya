@@ -150,7 +150,7 @@ sub _generateFstab {
     
     my $data = $self->_getEntity()->getConf();
 
-    foreach my $row (@{$data->{linuxs_mount}}) {
+    foreach my $row (@{$data->{linuxes_mount}}) {
         delete $row->{linux_id};
     }
 

@@ -47,7 +47,7 @@ sub addNode {
     # adjust some requirements on the image
     my $data = $self->_getEntity()->getConf();
     my $automountnfs = 0;
-    for my $mountdef (@{$data->{linuxs_mount}}) {
+    for my $mountdef (@{$data->{linuxes_mount}}) {
         my $mountpoint = $mountdef->{linux_mount_point};
         $econtext->execute(command => "mkdir -p $args{mount_point}/$mountpoint");
         

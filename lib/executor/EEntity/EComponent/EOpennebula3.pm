@@ -135,7 +135,7 @@ sub postStartNode {
         my $comp = $self->_getEntity();
         my $linux = $args{cluster}->getComponent(category => "System");
         my $oldconf = $linux->getConf();
-        my @mountentries = @{$oldconf->{linuxs_mount}};
+        my @mountentries = @{$oldconf->{linuxes_mount}};
 
         for my $repo (@{$conf->{opennebula3_repositories}}) {
             if(not defined $repo->{datastore_id}) {
@@ -171,7 +171,7 @@ sub postStartNode {
                 };
             }
         }
-        $linux->setConf(conf => { linuxs_mount => \@mountentries});
+        $linux->setConf(conf => { linuxes_mount => \@mountentries});
     }
 
     # hypervisor declaration
