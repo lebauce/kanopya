@@ -42,7 +42,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 data[i].vmcount = 0;
                 $.ajax({
                     async       : false,
-                    url         : '/api/entity/' + data[i].id + '/getVms',
+                    url         : '/api/host/' + data[i].id + '/virtual_machines',
                     type        : 'POST',
                     contentType : 'application/json',
                     data        : JSON.stringify({ }),
