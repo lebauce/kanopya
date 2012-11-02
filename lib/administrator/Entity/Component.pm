@@ -81,17 +81,15 @@ sub methods {
         getConf   => {
             description => 'get configuration',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         setConf   => {
             description => 'set configuration',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
         getPolicyParams => {
             description => 'get the parameters required for policies definition.',
             perm_holder => 'entity',
-            purpose     => 'internal',
         },
     }
 };

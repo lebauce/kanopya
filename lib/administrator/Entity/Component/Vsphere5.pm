@@ -1390,7 +1390,7 @@ Return the list of hypervisors managed by the component
 
 =cut
 
-sub getHypervisors {
+sub hypervisors {
     my $self = shift;
 
     my @hypervisors = Entity::Host::Hypervisor::Vsphere5Hypervisor->search(

@@ -60,22 +60,18 @@ sub methods {
         create => {
             description => 'create a new object',
             perm_holder => 'mastergroup',
-            purpose     => 'action',
         },
         remove => {
             description => 'remove an object',
             perm_holder => 'mastergroup',
-            purpose     => 'action',
         },
         update => {
             description => 'update an object',
             perm_holder => 'mastergroup',
-            purpose     => 'action',
         },
         get => {
             description => 'get an object',
             perm_holder => 'mastergroup',
-            purpose     => 'action',
         },
     };
 }

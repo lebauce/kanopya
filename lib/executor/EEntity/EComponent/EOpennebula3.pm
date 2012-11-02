@@ -1397,7 +1397,7 @@ sub onevm_resubmit {
 sub getMaxRamFreeHV{
     my ($self, %args) = @_;
     print "hoho\n";
-    my @hypervisors = $self->getHypervisors();
+    my @hypervisors = $self->hypervisors();
 
     my $max_hv  = shift @hypervisors;
     my $max_freeram = EFactory::newEEntity(data => $max_hv)->getAvailableMemory->{mem_effectively_available};

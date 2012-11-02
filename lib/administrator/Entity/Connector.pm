@@ -47,16 +47,11 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
         getPolicyParams => {
             description => 'Return the params required for policies definition.',
             perm_holder => 'entity',
-            purpose     => 'internal',
         },
-        getManagerParamsDef => {
-            description => 'getParamsDef',
-            perm_holder => 'entity',
-            purpose     => 'internal',
-        }
     }
 };
 
@@ -84,14 +79,6 @@ sub new {
     my $connector_type_id = $connector_type->id;
     
     return $class->SUPER::new(%args, connector_type_id => $connector_type_id );
-}
-
-=head2 getManagerParamsDef
-
-=cut
-
-sub getManagerParamsDef {
-    return {};
 }
 
 =head2 getGenericMasterGroupName

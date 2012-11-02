@@ -32,10 +32,10 @@ my $errmsg;
 
 sub methods {
     return {
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
         getExportType => {
             description => 'Return the type of managed exports.',
             perm_holder => 'entity',
-            purpose     => 'internal',
         },
     }
 }

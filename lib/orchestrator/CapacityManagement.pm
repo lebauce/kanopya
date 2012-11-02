@@ -105,7 +105,7 @@ sub new {
         $log->info('Overcommitment memory factor <'.($overcommitment_factors->{overcommitment_memory_factor}).'>');
 
         # Add extra information to hypervisors
-        my $hypervisors = $self->{_cloud_manager}->getHypervisors();
+        my $hypervisors = $self->{_cloud_manager}->hypervisors();
         for my $hypervisor (@$hypervisors) {
             my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
             my $hypervisor_available_memory = $ehypervisor->getAvailableMemory;
@@ -171,7 +171,7 @@ sub _constructInfra{
     # OPTION : hv_capacities
 
     # Get the list of all hypervisors
-    my @hypervisors_r = $self->{_cloud_manager}->getHypervisors();
+    my @hypervisors_r = $self->{_cloud_manager}->hypervisors();
     my $master_hv;
 
     my ($hvs, $vms);

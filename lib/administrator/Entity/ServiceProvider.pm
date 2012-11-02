@@ -84,22 +84,22 @@ sub methods {
             description => 'Disable node',
             perm_holder => 'entity',
         },
-        # TODO: Remove this method from the api once the policy ui has been reviewed
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
         findManager => {
             description => 'findManager',
             perm_holder => 'mastergroup',
         },
-        # TODO: Remove this method from the api once the policy ui has been reviewed
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
         getServiceProviders => {
             description => 'getServiceProviders',
             perm_holder => 'mastergroup',
         },
-        # TODO: Remove this method from the api once the merge of component/connector
+        # TODO(methods): Remove this method from the api once the merge of component/connector
         addManagerParameters => {
             description => 'add paramaters to a manager',
             perm_holder => 'entity',
         },
-        # TODO: Remove this method from the api once the merge of component/connector
+        # TODO(methods): Remove this method from the api once the merge of component/connector
         getManagerParameters => {
             description => 'getManagerParameters',
             perm_holder => 'entity',

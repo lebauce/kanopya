@@ -32,22 +32,19 @@ sub methods {
         scaleHost => {
             description => 'scale host\'s cpu / memory',
             perm_holder => 'entity',
-            purpose     => 'action'
         },
         migrate => {
             description => 'migrate a host',
             perm_holder => 'entity',
-            purpose     => 'action'
         },
         optimiaas  => {
             description => 'optimize IaaS (packing)',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
-        getHypervisors  => {
-            description => 'get hypervisors',
+        # TODO(methods): Remove this method from the api once the merge of component/connector
+        hypervisors => {
+            description => 'get the hypervisors manzaged by the cloud component',
             perm_holder => 'entity',
-            purpose     => 'internal',
         },
     };
 }
@@ -114,6 +111,23 @@ sub scaleHost {
 =cut
 
 sub migrate {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
+=pod
+
+=begin classdoc
+
+Abstract method to get the list of hypervisors managed by this host manager.
+
+@return the hypervisor list
+
+=end classdoc
+
+=cut
+
+sub hypervisors {
     throw Kanopya::Exception::NotImplemented();
 }
 

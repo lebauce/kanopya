@@ -34,12 +34,10 @@ sub methods {
         associatePoolip => {
             description => 'update network_poolip by adding network_id, poolipid',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
         dissociatePoolip => {
             description => 'dissociate a pool ip from a network',
             perm_holder => 'entity',
-            purpose     => 'action',
         },
     };
 }

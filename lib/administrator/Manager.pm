@@ -30,10 +30,10 @@ my $errmsg;
 
 sub methods {
     return {
+        # TODO(methods): Remove this method from the api once we can use virtual attrs on managers
         getManagerParamsDef => {
             description => 'getParamsDef',
             perm_holder => 'entity',
-            purpose     => 'internal',
         }
     };
 }

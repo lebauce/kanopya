@@ -42,10 +42,10 @@ use constant BOOT_POLICIES => {
 
 sub methods {
     return {
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
         getHostType => {
             description => 'Return the type of managed hosts.',
             perm_holder => 'entity',
-            purpose     => 'internal',
         },
     };
 }

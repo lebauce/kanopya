@@ -36,7 +36,6 @@ sub methods {
         getIndicators => {
             description => 'create a new cluster',
             perm_holder => 'entity',
-            purpose     => 'internal',
         }
     },
 }

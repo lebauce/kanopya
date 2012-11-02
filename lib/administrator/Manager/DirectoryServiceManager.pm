@@ -35,7 +35,6 @@ sub methods {
         getDirectoryTree  => {
             description => 'getDirectoryTree',
             perm_holder => 'entity',
-            purpose     => 'internal',
         }
     };
 }

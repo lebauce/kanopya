@@ -170,11 +170,6 @@ sub methods {
             description => 'add one or more interface to  this host',
             perm_holder => 'entity',
         },
-        # TODO: Remove this method from the api once the policy ui has been reviewed
-        getHostType => {
-            description => 'get the host type from host manager',
-            perm_holder => 'entity',
-        },
     };
 }
 
@@ -786,18 +781,6 @@ sub remoteSessionUrl {
     my $self = shift;
 
    return $self->getHostManager->getRemoteSessionURL(host => $self);
-}
-
-=head2
-
-    desc: return the host type from hostmanager
-
-=cut
-
-sub getHostType {
-    my $self    = shift;
-
-    return $self->getHostManager->getHostType;
 }
 
 =head2

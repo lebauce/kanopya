@@ -92,7 +92,7 @@ sub prepare {
     $self->{context}->{host}->updateCPU(cpu_number => $host_manager_params->{core});
 
     #TODO Factorize the following code which appears in prerequisites of EAddNode too
-    my $hvs   = $self->{context}->{cloudmanager_comp}->getHypervisors();
+    my $hvs   = $self->{context}->{cloudmanager_comp}->hypervisors();
     my @hv_in_ids;
     for my $hv (@$hvs) {
         my ($state,$time_stamp) = $hv->getNodeState();
