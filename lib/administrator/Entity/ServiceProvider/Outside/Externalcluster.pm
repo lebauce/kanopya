@@ -60,21 +60,6 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new cluster',
-                        'perm_holder' => 'mastergroup',
-        },
-        'get'        => {'description' => 'view this cluster',
-                        'perm_holder' => 'entity',
-        },
-        'update'    => {'description' => 'save changes applied on this cluster',
-                        'perm_holder' => 'entity',
-        },
-        'remove'    => {'description' => 'delete this cluster',
-                        'perm_holder' => 'entity',
-        },
-        'setperm'    => {'description' => 'set permissions on this cluster',
-                        'perm_holder' => 'entity',
-        },
         'updateNodes'=> {
             'description'   => 'update nodes',
             'entity'        => 'perm_holder'
