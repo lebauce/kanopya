@@ -78,18 +78,11 @@ sub create {
     $log->debug("trying to update the new cluster previouly created");
     $self->save();
 
-    # automatically add System|Monitoragent|Logger components
-    foreach my $compclass (qw/Entity::Component::Linux
-                              Entity::Component::Syslogng3
-                              Entity::Component::Snmpd5
-                              Entity::Component::Puppetagent2/) {
-        my $location = General::getLocFromClass(entityclass => $compclass);
-        eval { require $location; };
-        $log->debug("trying to add $compclass to cluster");
-        my $comp = $compclass->new();
-        $comp->insertDefaultConfiguration();
-        $self->addComponent(component => $comp);
-        $log->info("$compclass automatically added");
+    # Add all the components provided by the master image
+    foreach my $component ($self->masterimage->components_provided) {
+        $args{components}->{$component->component_type->component_name} = {
+            component_type => $component->component_type_id
+        };
     }
 
     # Use the method for policy applying to configure manager, components, and interfaces.
