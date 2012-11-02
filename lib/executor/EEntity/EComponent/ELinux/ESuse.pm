@@ -34,7 +34,7 @@ sub _writeNetConf {
         my $file = $self->generateNodeFile(
             cluster       => $args{cluster},
             host          => $args{host},
-            file          => '/etc/sysconfig/network/ifcfg-' . $interface->interface_name,
+            file          => '/etc/sysconfig/network/ifcfg-' . $interface->{name},
             template_dir  => '/templates/components/suse',
             template_file => 'ifcfg.tt',
             data          => { interface => $interface }
@@ -42,7 +42,7 @@ sub _writeNetConf {
 
         $args{econtext}->send(
             src  => $file,
-            dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $interface->interface_name
+            dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $interface->{name}
         );
     }
 }
