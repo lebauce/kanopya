@@ -33,18 +33,6 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        getVms => {
-            description => 'get all vms from an hypervisor',
-            perm_holder => 'entity'
-        }
-    };
-}
-
-=head2 getVms
-
-=cut
 
 sub getVms {
     my $self = shift;

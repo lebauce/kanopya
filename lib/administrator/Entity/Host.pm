@@ -139,9 +139,11 @@ use constant ATTR_DEF => {
         is_editable  => 1,
     },
     admin_ip => {
+        label        => 'Administration ip',
         is_virtual   => 1,
     },
     remote_session_url => {
+        label        => 'Remote session url',
         is_virtual   => 1,
     },
 };
