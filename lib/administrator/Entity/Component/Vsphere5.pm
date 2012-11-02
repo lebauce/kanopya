@@ -208,7 +208,8 @@ sub negociateConnection {
     eval {
         $sc = Vim::get_service_content;
     };
-    if ($@ =~ /no global session is defined/) {
+    if ($@ =~ /no global session is defined/ ||
+        $@ =~ /session object is uninitialized or not logged in/) {
         $log->info('opening a new session to vSphere');
 
         $self->connect(
