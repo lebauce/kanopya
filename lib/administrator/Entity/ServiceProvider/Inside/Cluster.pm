@@ -421,6 +421,7 @@ sub applyPolicies {
             for my $component (values %$value) {
                 # TODO: Check if the component is already installed
                 my $instance = $self->addComponentFromType(component_type_id => $component->{component_type});
+                $instance->insertDefaultConfiguration();
                 if (defined $component->{component_configuration}) {
                     $instance->setConf(conf => $component->{component_configuration});
                 }
