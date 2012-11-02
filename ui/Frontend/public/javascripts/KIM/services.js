@@ -284,7 +284,7 @@ function migrate(spid, eid) {
         type        : 'GET',
         success     : function(hmgr) {
             $.ajax({
-                url     : '/api/opennebula3/' + hmgr.manager_id + '/getHypervisors',
+                url     : '/api/opennebula3/' + hmgr.manager_id + '/hypervisors',
                 type    : 'POST',
                 success : function(data) {
                     for (var i in data) if (data.hasOwnProperty(i)) {
@@ -331,7 +331,7 @@ function nodedetailsaction(cid, eid) {
             var remoteUrl   = data.host.remote_session_url;
             var isVirtual   = false;
             $.ajax({    
-                url     : '/api/host/' + data.host.pk + '/getHostType',
+                url     : '/api/entity/' + data.host.host_manager_id + '/getHostType',
                 type    : 'POST',
                 async   : false,
                 success : function(ret) {
