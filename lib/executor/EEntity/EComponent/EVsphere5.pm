@@ -35,11 +35,18 @@ use Kanopya::Exceptions;
 my $log = get_logger("executor");
 my $errmsg;
 
-=head2 addRepository
+=pod
 
-    Desc: Register a new repository for an host in Vsphere
-    Args: $repository_name, $container_access 
-    Return: newly created $repository object
+=begin classdoc
+
+Register a new datastore for an host in vSphere
+
+@param repository_name the name of the datastore
+@param container_access the Kanopya container access
+
+@return repository
+
+=end classdoc
 
 =cut
 
@@ -266,11 +273,18 @@ sub scaleCpu {
     $host->update_view_data;
 }
 
-=head2 scaleMemory
+=pod
 
-    Desc: Scale In memory for virtual machine
-    Args: $host (the VM's view), $memory (the new amount of memory to be set)
-    
+=begin classdoc
+
+Scale In memory for a vsphere vm. Throws an exception if the given host is not a Vsphere5vm
+Get the vm's hypervisor, get it's datacenter, then retrieve views
+
+@param host the vm
+@param memory the new amount of desired memory
+
+=end classdoc
+
 =cut
 
 sub scaleMemory {
@@ -281,22 +295,50 @@ sub scaleMemory {
     my $host   = $args{host};
     my $memory = $args{memory};
 
-    #Now we do the VM Scale In through ReconfigVM() method
-    my $vm_new_config_spec = VirtualMachineConfigSpec->new(
-                                 memoryMB => $memory  / 1024 / 1024,
-                             );
-    eval {
-        $host->ReconfigVM(
-            spec => $vm_new_config_spec,
-        );
-    };
-    if ($@) {
-        $errmsg = 'Error scaling in Memory on virtual machine '.$host->name.': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    #determine the nature of the host and act accordingly
+    if (ref $host eq 'EEntity::EHost::EVirtualMachine::EVsphere5Vm') {
+        my $hypervisor = $host->hypervisor;
+        my $dc_name    = $hypervisor->vsphere5_datacenter->vsphere5_datacenter_name;
+
+        #get datacenter's view
+        my $dc_view = $self->findEntityView(
+                          view_type   => 'Datacenter',
+                          hash_filter => {
+                              name => $dc_name,
+                          },
+                      );
+
+        #get the vm's view
+        my $vm_view = $self->findEntityView(
+                          view_type    => 'VirtualMachine',
+                          hash_filter  => {
+                              name => $host->node->externalnode_hostname,
+                          },
+                          begin_entity => $dc_view,
+                      );
+
+        #Now we do the VM Scale In through ReconfigVM() method
+        my $vm_new_config_spec = VirtualMachineConfigSpec->new(
+                                     memoryMB => $memory  / 1024 / 1024,
+                                 );
+
+        eval {
+            $vm_view->ReconfigVM(
+                spec => $vm_new_config_spec,
+            );
+        };
+        if ($@) {
+            $errmsg = 'Error scaling in Memory on virtual machine '.$host->host_hostname.': '.$@;
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+        #We Refresh the values of view
+        #with corresponding server-side object values
+        $vm_view->update_view_data;
     }
-    #We Refresh the values of view
-    #with corresponding server-side object values
-    $host->update_view_data;
+    else {
+        $errmsg = 'The host type: ' . ref $host . ' is not handled by this manager';
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    } 
 }
 
 sub create_conf_spec {

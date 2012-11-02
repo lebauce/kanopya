@@ -91,7 +91,7 @@ sub getRamUsedByVm {
                           name => $datacenter->vsphere5_datacenter_name,
                       }
                   );
-$DB::single = 1;
+
     #get vsphere virtual machine's view
     my $vm_view   = $vsphere->findEntityView(
                         view_type    => 'VirtualMachine',
