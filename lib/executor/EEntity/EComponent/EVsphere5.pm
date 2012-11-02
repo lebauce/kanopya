@@ -240,11 +240,18 @@ sub createVm {
 
 }
 
-=head2 scaleCpu
+=pod
 
-    Desc: Scale In CPU for virtual machine
-    Args: $host (the VM's view), $cpu_number (the new number of CPUs to be set)
-    
+=begin classdoc
+
+Scale In CPU for a vsphere vm. Throws an exception if the given host is not a Vsphere5vm
+Get the vm's hypervisor, get it's datacenter, then retrieve views
+
+@param host the vm
+@param cpu_number the new amount of desired cpu
+
+=end classdoc
+
 =cut
 
 sub scaleCpu {
