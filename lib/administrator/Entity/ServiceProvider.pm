@@ -484,6 +484,13 @@ sub addComponentFromType {
 
     my $comp_type = ComponentType->get(id => $args{component_type_id});
 
+    # If the component is already installed, just return it
+    my @components = Entity::Component->search(hash => { service_provider_id => $self->id,
+                                                         component_type_id   => $args{component_type_id} });
+    if (scalar @components) {
+        return $components[0];
+    }
+
     my $comp_class = $comp_type->component_class->class_type;
     my $location = General::getLocFromClass(entityclass => $comp_class);
     require $location;
