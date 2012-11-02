@@ -104,8 +104,9 @@ sub prepare {
 
 sub execute {
     my $self = shift;
-    $self->{context}->{cloudmanager_comp}->scale_memory(host   => $self->{context}->{host},
-                                                        memory => $self->{params}->{memory});
+
+    $self->{context}->{cloudmanager_comp}->scaleMemory(host   => $self->{context}->{host},
+                                                       memory => $self->{params}->{memory});
 
     $log->info("Host <" .  $self->{context}->{host}->getAttr(name => 'entity_id') .
                "> scale in to <$self->{params}->{memory}> ram.");

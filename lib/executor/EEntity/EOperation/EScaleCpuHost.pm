@@ -92,7 +92,7 @@ sub prepare {
 
 sub execute{
     my $self = shift;
-    $self->{context}->{cloudmanager_comp}->scale_cpu(host       => $self->{context}->{host},
+    $self->{context}->{cloudmanager_comp}->scaleCpu(host       => $self->{context}->{host},
                                                      cpu_number => $self->{params}->{cpu_number});
 
     $log->info("Host <" .  $self->{context}->{host}->getAttr(name => 'entity_id') .

@@ -284,7 +284,7 @@ sub getVMState {
 }
 
 # execute memory scale in
-sub scale_memory {
+sub scaleMemory {
     my $self = shift;
     my %args = @_;
 
@@ -364,7 +364,7 @@ sub restoreHost {
 }
 
 #execute cpu scale in
-sub scale_cpu {
+sub scaleCpu {
     my $self = shift;
     my %args = @_;
 
