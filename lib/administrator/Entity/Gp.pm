@@ -75,22 +75,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-=head2 getGroups
-
-    Class: public
-    desc: retrieve several Entity::Gp instances
-    args:
-        hash : hashref : where criteria
-    return: @ : array of Entity::Gp instances
-
-=cut
-
-sub getGroups {
-    my ($class, %args) = @_;
-    General::checkParams(args => \%args, required => ['hash']);
-    return $class->search(%args);
-}
-
 =head2 getSize
 
     Class : public
@@ -102,49 +86,6 @@ sub getGroups {
 sub getSize {
     my ($self) = @_;
     return $self->{_dbix}->ingroups->count();
-}
-
-=head2 getGroupsFromEntity
-
-    Class: public
-    desc: retrieve Entity::Gp instances that contains the Entity argument
-    args:
-        entity : Entity::* : an Entity instance
-    return: @ : array of Entity::Gp instances
-
-=cut
-
-sub getGroupsFromEntity {
-    my ($class, %args) = @_;
-    my @groups = ();
-    General::checkParams(args => \%args, required => ['entity']);
-
-    if(not $args{entity}->{_dbix}->in_storage ) { return @groups; }
-
-    my $adm = Administrator->new();
-       my $mastergroup = $args{entity}->getMasterGroupName();
-    my $gp_rs = $adm->{db}->resultset('Gp')->search(
-		{
-        -or => [
-            'ingroups.entity_id' => $args{entity}->{_dbix}->id,
-            'gp_name' => $mastergroup ]
-        },
-        { join => [qw/ingroups/] }
-    );
-    while(my $row = $gp_rs->next) {
-        eval {
-            my $group = $class->get(id => $row->get_column('gp_id'));
-            push(@groups, $group);
-        };
-        if($@) {
-            my $exception = $@;
-            if(Kanopya::Exception::Permission::Denied->caught()) {
-                next;
-            }
-            else { $exception->rethrow(); }
-        }
-    }
-       return @groups;
 }
 
 =head2 appendEntity
@@ -186,98 +127,6 @@ sub removeEntity {
 
     my $entity_id = $args{entity}->{_dbix}->id;
     $self->{_dbix}->ingroups->find({entity_id => $entity_id})->delete();
-}
-
-=head2 getEntities
-
-    Desc : get all entities contained in the group
-
-    return : @: array of entities
-
-=cut
-
-sub getEntities {
-    my ($self) = @_;
-    my $adm = Administrator->new();
-    my $type = $self->{_dbix}->get_column('gp_type');
-    my $entity_class = 'Entity::'.$type;
-    require 'Entity/'.$type.'.pm';
-
-    my $entities_rs = $self->{_dbix}->ingroups;
-    my $ids = [];
-    my $idfield = lc($type)."_id";
-
-    while(my $row = $entities_rs->next) {
-        my $concret = $adm->{db}->resultset($type)->find($row->get_column('entity_id'));
-        push @$ids, $concret->id;
-    }
-
-    my @objs = ();
-    foreach my $id (@$ids) {
-        my $e = eval { $entity_class->get(id => $id) };
-        if($@) {
-            my $exception = $@;
-            if(Kanopya::Exception::Permission::Denied->caught()) {
-                next;
-            }
-            else { $exception->rethrow(); }
-        }
-        push @objs, $e;
-    }
-
-    return @objs;
-}
-
-=head2 getExcludedEntities
-
-    Desc : get all entities of the same type not contained in the group
-
-    return : array of entities
-
-=cut
-
-sub getExcludedEntities {
-    my ($self) = @_;
-    my $adm = Administrator->new();
-    my $type = $self->{_dbix}->get_column('gp_type');
-    my $entity_class = 'Entity::'.$type;
-    require 'Entity/'.$type.'.pm';
-
-    my $entities_rs = $self->{_dbix}->ingroups;
-    my $ids = [];
-    my $idfield = lc($type)."_id";
-    my $systemfield = lc($type)."_system";
-
-    # retrieve groups elements ids
-    while(my $row = $entities_rs->next) {
-        my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->id})->first;
-        push @$ids, $concret->get_column("$idfield");
-    }
-
-    # get (if granted) elements not already in the group
-    my @objs = ();
-    my $where_clause = { "$idfield" => { -not_in => $ids }};
-    # don't include system element
-    if($adm->{db}->resultset($type)->result_source->has_column("$systemfield")) {
-        $where_clause->{"$systemfield"} = 0;
-    }
-
-    #$log->debug(Dumper $where_clause);
-
-    $entities_rs = $adm->{db}->resultset($type)->search($where_clause);
-    while(my $row = $entities_rs->next) {
-        my $entity = eval { $entity_class->get(id => $row->get_column("$idfield")); };
-        if($@) {
-            my $exception = $@;
-            if(Kanopya::Exception::Permission::Denied->caught()) {
-                next;
-            }
-            else { $exception->rethrow(); }
-        }
-        else { push @objs, $entity; }
-    }
-
-    return @objs;
 }
 
 =head2 toString

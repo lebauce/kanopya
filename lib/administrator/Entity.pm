@@ -305,37 +305,6 @@ sub activate {
     }
 }
 
-sub getEntities {
-    my $class = shift;
-    my %args = @_;
-    my @objs = ();
-    my ($rs, $entity_class);
-
-    General::checkParams(args => \%args, required => ['type', 'hash']);
-
-    my $adm = Administrator->new();
-
-    $rs = $adm->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
-
-    my $id_name = lc($args{type}) . "_id";
-    $entity_class = "Entity::$args{type}";
-
-    while ( my $row = $rs->next ) {
-        my $id = $row->get_column($id_name);
-        my $obj = eval { $entity_class->get(id => $id); };
-        if($@) {
-            my $exception = $@;
-            if (Kanopya::Exception::Permission::Denied->caught()) {
-                $log->info("no right to access to object <$args{type}> with  <$id>");
-                next;
-            }
-            else { $exception->rethrow(); }
-        }
-        else { push @objs, $obj; }
-    }
-    return  @objs;
-}
-
 sub comment {
     my $self = shift;
 
