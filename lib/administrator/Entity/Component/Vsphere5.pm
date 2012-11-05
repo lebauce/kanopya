@@ -926,8 +926,8 @@ sub registerVm {
                      host_serial_number => '',
                      host_desc          => $datacenter_name. ' vm',
                      active             => 1,
-                     host_ram           => $vm_view->summary->config->memorySizeMB * 1024 * 1024,
-                     host_core          => $vm_view->summary->config->numCpu,
+                     host_ram           => $vm_view->config->hardware->memoryMB * 1024 * 1024,
+                     host_core          => $vm_view->config->hardware->numCPU,
                      host_hostname      => $service_provider_renamed,
                      host_state         => $host_state,
                      hypervisor_id      => $hosting_hypervisor_id,
@@ -1112,7 +1112,7 @@ sub registerHypervisor {
                      host_desc          => $datacenter_name. ' hypervisor',
                      active             => 1,
                      host_ram           => $hypervisor_view->hardware->memorySize,
-                     host_core          => $hypervisor_view->summary->hardware->numCpuCores,
+                     host_core          => $hypervisor_view->hardware->cpuInfo->numCpuCores,
                      host_hostname      => $service_provider_renamed,
                      host_state         => $host_state,
                  );
@@ -1300,7 +1300,7 @@ sub registerCluster {
                          host_desc          => $cluster_name.' hypervisor',
                          active             => 1,
                          host_ram           => $hypervisor_view->hardware->memorySize,
-                         host_core          => $hypervisor_view->summary->hardware->numCpuCores,
+                         host_core          => $hypervisor_view->hardware->cpuInfo->numCpuCores,
                          host_hostname      => $hypervisor_view->name,
                          host_state         => $host_state,
                     );

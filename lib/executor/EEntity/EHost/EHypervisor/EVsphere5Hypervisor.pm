@@ -67,7 +67,7 @@ sub getAvailableMemory {
                               begin_entity => $dc_view,
                           );
 
-    if( defined($hypervisor_view->summary->hardware->memorySize) &&
+    if( defined($hypervisor_view->hardware->memorySize) &&
         defined($hypervisor_view->summary->quickStats->overallMemoryUsage)) {
 
         #we convert the memory used from MB to Bytes
@@ -75,7 +75,7 @@ sub getAvailableMemory {
                                * 1024
                                * $hypervisor_view->summary->quickStats->overallMemoryUsage;
 
-        my $memory_available = $hypervisor_view->summary->hardware->memorySize
+        my $memory_available = $hypervisor_view->hardware->memorySize
                                - $memory_used;
 
         return {
@@ -156,7 +156,7 @@ sub getVmResources {
             }
         }
         if (defined $resources{cpu}) {
-            $vm_resources->{$vm->id}->{'cpu'} = $vm_view->summary->config->numCpu;
+            $vm_resources->{$vm->id}->{'cpu'} = $vm_view->config->hardware->numCPU;
         }
 
         $vms_resources = merge ($vms_resources,$vm_resources);

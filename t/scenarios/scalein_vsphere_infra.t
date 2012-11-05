@@ -9,7 +9,7 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'/vagrant/RegisterVsphereInfra.t.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'/vagrant/ScaleVsphereInfra.t.log', layout=>'%F %L %p %m%n'});
 
 use_ok ('Administrator');
 use_ok ('Executor');
@@ -33,6 +33,9 @@ use_ok ('Entity::InterfaceRole');
 
 my $testing = 0;
 my $vsphere_url = '192.168.2.160';
+my $vm_name = 'random1';
+my $scale_memory_value = 2048 * 1024 * 1024;
+my $scale_cpu_value = 5;
 
 eval {
     Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -50,6 +53,7 @@ eval {
         $admin_user = Entity::User->find(hash => { user_login => 'admin' });
     } 'Retrieve the admin user';
 
+    diag('Register, Retrieve and Configure vSphere Component');
     my $cluster;
     lives_ok {
         $cluster = Entity::ServiceProvider::Inside::Cluster->new(
@@ -76,7 +80,7 @@ eval {
                                component_type_id => ComponentType->find(hash => {
                                                         component_name => 'Vsphere'})->id,
                            );
-    } 'register Vsphere component';
+    } 'Register Vsphere component';
 
     isa_ok($vsphereInstance, 'Entity::Component::Vsphere5');
 
@@ -84,7 +88,7 @@ eval {
     lives_ok {
         $vsphere = $cluster->getComponent(name    => "Vsphere",
                                           version => 5);
-    } 'retrieve Vsphere component';
+    } 'Retrieve Vsphere component';
 
     isa_ok($vsphere, 'Entity::Component::Vsphere5');
 
@@ -96,13 +100,14 @@ eval {
                 vsphere5_url      => $vsphere_url,
             }
         );
-    } 'configuring VSphere component';
+    } 'Configure VSphere component';
 
+    diag('Retrieve and Register vSphere infrastructure');
     my $registerItems;
     lives_ok {
         my $datacenters = $vsphere->retrieveDatacenters();
         $registerItems  = $datacenters;
-    } 'retrieve Datacenters';
+    } 'Retrieve Datacenters';
 
     lives_ok {
         foreach my $datacenter (@$registerItems) {
@@ -111,7 +116,7 @@ eval {
                                          );
             $datacenter->{children}    = $clustersAndHypervisors;
         }
-    } 'retrieve Cluster and Hypervisors';
+    } 'Retrieve Cluster and Hypervisors';
 
     lives_ok {
         foreach my $datacenter (@$registerItems) {
@@ -125,7 +130,7 @@ eval {
                 }
             }
         }
-    } 'retrieve VMs on Hypervisors (hosted on Datacenter)';
+    } 'Retrieve VMs on Hypervisors (hosted on Datacenter)';
 
     lives_ok {
         foreach my $datacenter (@$registerItems) {
@@ -139,7 +144,7 @@ eval {
                 }
             }
         }
-    } 'retrieve Cluster\'s Hypervisors';
+    } 'Retrieve Cluster\'s Hypervisors';
 
     lives_ok {
         foreach my $datacenter (@$registerItems) {
@@ -157,11 +162,11 @@ eval {
                 }
             }
         }
-    } 'retrieve VMs on Cluster\'s Hypervisors';
+    } 'Retrieve VMs on Cluster\'s Hypervisors';
 
     lives_ok {
         my $registered_items = $vsphere->register(register_items => $registerItems);
-    } 'register items in Kanopya';
+    } 'Register items in Kanopya';
 
     my $total_items_nbr = 0;
     my $ko_items_nbr    = 0;
@@ -206,30 +211,90 @@ eval {
                 }
             }
         }
-    } 'search vSphere matches in Kanopya';
+    } 'Search vSphere matches in Kanopya';
 
     is($ko_items_nbr, 0,'Test number of registered items : '.($total_items_nbr - $ko_items_nbr).'/'.$total_items_nbr.' items registered');
 
     lives_ok {
         my $registered_items = $vsphere->register(register_items => $registerItems);
-    } 'register again items in Kanopya';
+    } 'Register again items in Kanopya';
 
-    my $kanopya_items_nbr = 0;    
+    my $kanopya_items_nbr = 0;
     lives_ok {
         my $unwanted_items_nbr = 2;#Unwanted items (cluster Kanopya and cluster on which component is installed)
         $kanopya_items_nbr     =   scalar(Vsphere5Datacenter->search(hash => {}));
         $kanopya_items_nbr    +=   scalar(Entity::ServiceProvider::Inside::Cluster->search(hash => {}));
         $kanopya_items_nbr    -=   $unwanted_items_nbr;
-    } 'get Kanopya items number';
+    } 'Get Kanopya items number';
 
     is($kanopya_items_nbr, $total_items_nbr - $ko_items_nbr, 'Test if no more item is registered');
+
+    diag('Scale in Memory');
+    my $vm_host;
+    lives_ok {
+        my @vm_cluster_nodes = Entity::ServiceProvider::Inside::Cluster->find(hash => {'cluster_name' => $vm_name})->nodes;
+        $vm_host             = $vm_cluster_nodes[0]->host;#each cluster contains only 1 item
+    } 'Retrieve Virtual Machine host from Kanopya';
+
+    lives_ok {
+        my $workflow = $vm_host->scale(
+                           'scalein_value'    =>    $scale_memory_value,
+                           'scalein_type'     =>    'memory',
+                       );
+        execWorkflow($workflow, $executor);
+    } 'Scale memory for host retrieved';
+
+    lives_ok {
+        my @vm_cluster_nodes = Entity::ServiceProvider::Inside::Cluster->find(hash => {'cluster_name' => $vm_name})->nodes;
+        $vm_host             = $vm_cluster_nodes[0]->host;#each cluster contains only 1 item
+    } 'Retrieve again Virtual Machine host from Kanopya (refresh)';
+
+    is($vm_host->host_ram, $scale_memory_value, 'Test if scale memory went well');
+
+    diag('Scale in CPU');
+    lives_ok {
+        my $workflow = $vm_host->scale(
+                           'scalein_value'    =>    $scale_cpu_value,
+                           'scalein_type'     =>    'cpu',
+                       );
+        execWorkflow($workflow, $executor);
+    } 'Scale cpu for host retrieved';
+
+    lives_ok {
+        my @vm_cluster_nodes = Entity::ServiceProvider::Inside::Cluster->find(hash => {'cluster_name' => $vm_name})->nodes;
+        $vm_host             = $vm_cluster_nodes[0]->host;#each cluster contains only 1 item
+    } 'Retrieve again Virtual Machine host from Kanopya (refresh)';
+
+    is($vm_host->host_core, $scale_cpu_value, 'Test if scale CPU went well');
 
     if ($testing == 1) {
         $adm->rollbackTransaction;
     }
-};    
+};
 
 if($@) {
     my $error = $@; 
     print $error."\n";
+}
+
+sub execWorkflow {
+    my ($workflow, $executor) = @_;
+    my $test = 'Scale in went successfully';
+    WAITMEMORYSCALE:
+    while(1) {
+	    #$workflow = Entity::Workflow->id;
+	    my $state = $workflow->state;
+	    if($state eq 'running') {
+            $executor->oneRun;
+    	    next WAITMEMORYSCALE;
+	    }
+        elsif($state eq 'done') {
+		    pass($test);
+		    last WAITMEMORYSCALE;
+	    }
+        elsif($state eq 'cancelled') {
+		    fail($test);
+		    last WAITMEMORYSCALE;
+	    }
+    }
 }
