@@ -53,6 +53,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                 var component;
                 $.ajax({
                     url     : '/api/entity/' + data[i].manager_id,
+                    async   : false,
                     success : function(entity) {
                         component = entity;
                     }
