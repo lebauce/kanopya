@@ -79,9 +79,16 @@ sub addRepository {
     my $dsmv = $self->getView(mo_ref=>$view->configManager->datastoreSystem);
 }
 
-=head2 startHost
+=pod
 
-    Desc: Create and start a vm
+=begin classdoc
+
+Create and start a vphere vm
+
+@param hypervisor the hypervisor that will host the vm
+@param host the kanopya VirtualMachine object created to hold the vm
+
+=end classdoc
 
 =cut
 
@@ -160,10 +167,15 @@ sub startHost {
     $vm_view->PowerOnVM();
 }
 
+=pod
 
-=head2 createVm
+=begin classdoc
 
-    Desc: Create a new VM on a vSphere host 
+Create a new VM on a vSphere host
+
+@param host_conf the new vm configuration
+
+=end classdoc
 
 =cut
 
@@ -491,6 +503,16 @@ sub get_network {
     # default network will be used
     return (error => 2);
 }
+
+=pod
+
+=begin classdoc
+
+override DESTROY to disconnect any open session toward a vSphere instance
+
+=end classdoc
+
+=cut
 
 sub DESTROY {
     my $self = shift;

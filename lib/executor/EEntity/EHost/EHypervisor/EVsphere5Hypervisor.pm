@@ -60,15 +60,15 @@ sub getAvailableMemory {
                   );
 
     #get vsphere hypervisor's view
-    my $view_args       = {name => $self->host_hostname};
+    my $view_args       = {name => $self->node->externalnode_hostname};
     my $hypervisor_view = $vsphere->findEntityView(
                               view_type    => 'HostSystem',
                               hash_filter  => $view_args,
                               begin_entity => $dc_view,
                           );
 
-    if( defined($hypervisor_view->hardware->memorySize) &&
-        defined($hypervisor_view->summary->quickStats->overallMemoryUsage)) {
+    if(defined($hypervisor_view->hardware->memorySize) &&
+       defined($hypervisor_view->summary->quickStats->overallMemoryUsage)) {
 
         #we convert the memory used from MB to Bytes
         my $memory_used      = 1024

@@ -50,24 +50,6 @@ sub checkUp {
 
 =begin classdoc
 
-Get the vsphere manager for this vm
-
-=end classdoc
-
-=cut
-
-sub getVsphereManager {
-    my ($self,%args) = @_;
-
-    my $vsphere = Entity->get(id => $self->vsphere5_id);
-
-    return $vsphere;
-}
-
-=pod
-
-=begin classdoc
-
 Retrieve the memory currently used by a vsphere5 vm, in Bytes
 
 =end classdoc
@@ -79,7 +61,7 @@ sub getRamUsedByVm {
 
     my $e_hypervisor = EFactory::newEEntity(data => $self->hypervisor);
 
-    my $vsphere = $self->getVsphereManager();
+    my $vsphere = $self->vsphere5;
 
     #get the vm datacenter
     my $datacenter = $self->hypervisor->vsphere5_datacenter;
