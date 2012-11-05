@@ -11,6 +11,21 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+
+=begin classdoc
+
+General Combination class. Implement delete function of combinations and getDependencies.
+
+@since    2012-Oct-20
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package Entity::Combination;
 
 use strict;
@@ -45,6 +60,17 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+=pod
+
+=begin classdoc
+
+Delete the object and all the conditions which depend on it.
+
+=end classdoc
+
+=cut
+
 sub delete {
     my $self = shift;
     my @conditions = (
@@ -59,6 +85,19 @@ sub delete {
     }
     return $self->SUPER::delete();
 };
+
+
+=pod
+
+=begin classdoc
+
+Get the list of conditions which depends on the combinations and all the combinations dependencies.
+
+@return the list of conditions which depends on the combination and all the combinations dependencies.
+
+=end classdoc
+
+=cut
 
 sub getDependencies {
     my $self = shift;
@@ -76,6 +115,18 @@ sub getDependencies {
     }
     return \%dependencies;
 }
+
+
+=pod
+
+=begin classdoc
+
+Abstract class implemented in ConstantCombination. Used when deleting a condition which has created
+a ConstantCombination. Also used to avoid deep recursion.
+
+=end classdoc
+
+=cut
 
 sub deleteIfConstant {};
 1;
