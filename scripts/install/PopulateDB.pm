@@ -34,7 +34,7 @@ use ComponentType;
 use ComponentTemplate;
 use ConnectorType;
 use Indicatorset;
-use Indicator;
+use Entity::Indicator;
 use Entity::Poolip;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Network;
@@ -145,10 +145,15 @@ my @classes = (
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
     'Entity::Host::VirtualMachine::Vsphere5Vm',
     'Entity::Component::Vsphere5',
-    'Combination',
-    'Combination::NodemetricCombination',
-    'Combination::ConstantCombination',
-    'Combination::AggregateCombination'
+    'Entity::Indicator',
+    'Entity::CollectorIndicator',
+    'Entity::Clustermetric',
+    'Entity::Combination',
+    'Entity::Combination::NodemetricCombination',
+    'Entity::Combination::ConstantCombination',
+    'Entity::Combination::AggregateCombination',
+    'Entity::AggregateCondition',
+    'Entity::AggregateRule',
 );
 
 sub registerClassTypes {
