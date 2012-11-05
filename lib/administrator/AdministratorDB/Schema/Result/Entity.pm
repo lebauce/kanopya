@@ -84,6 +84,36 @@ __PACKAGE__->set_primary_key("entity_id");
 
 =head1 RELATIONS
 
+=head2 aggregate_condition
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::AggregateCondition>
+
+=cut
+
+__PACKAGE__->might_have(
+  "aggregate_condition",
+  "AdministratorDB::Schema::Result::AggregateCondition",
+  { "foreign.aggregate_condition_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 aggregate_rule
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::AggregateRule>
+
+=cut
+
+__PACKAGE__->might_have(
+  "aggregate_rule",
+  "AdministratorDB::Schema::Result::AggregateRule",
+  { "foreign.aggregate_rule_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 alerts
 
 Type: has_many
@@ -129,7 +159,37 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 collector_indicators
+=head2 clustermetric
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Clustermetric>
+
+=cut
+
+__PACKAGE__->might_have(
+  "clustermetric",
+  "AdministratorDB::Schema::Result::Clustermetric",
+  { "foreign.clustermetric_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 collector_indicator_collector_indicator
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
+
+=cut
+
+__PACKAGE__->might_have(
+  "collector_indicator",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.collector_indicator_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 collector_indicator_collector_managers
 
 Type: has_many
 
@@ -138,9 +198,24 @@ Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
 =cut
 
 __PACKAGE__->has_many(
-  "collector_indicators",
+  "collector_indicator_collector_managers",
   "AdministratorDB::Schema::Result::CollectorIndicator",
   { "foreign.collector_manager_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 combination
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Combination>
+
+=cut
+
+__PACKAGE__->might_have(
+  "combination",
+  "AdministratorDB::Schema::Result::Combination",
+  { "foreign.combination_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -341,6 +416,21 @@ __PACKAGE__->might_have(
   "iface",
   "AdministratorDB::Schema::Result::Iface",
   { "foreign.iface_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 indicator
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Indicator>
+
+=cut
+
+__PACKAGE__->might_have(
+  "indicator",
+  "AdministratorDB::Schema::Result::Indicator",
+  { "foreign.indicator_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -655,8 +745,15 @@ Composing rels: L</ingroups> -> gp
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-30 09:57:20
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:D9Uig4ENLJPSQVAdF52lag
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-31 16:06:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Uu7Ea0d89hBwHa+QBrRclA
+
+__PACKAGE__->has_many(
+  "collector_indicators",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.collector_manager_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
