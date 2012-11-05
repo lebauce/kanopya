@@ -58,8 +58,8 @@ use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
 use Entity::AggregateRule;
-use NodemetricRule;
-use NodemetricCondition;
+use Entity::NodemetricRule;
+use Entity::NodemetricCondition;
 use Entity::Combination::NodemetricCombination;
 use WorkflowDef;
 use WorkflowNoderule;
@@ -184,7 +184,7 @@ sub nodemetricManagement {
 
     $log->info('Cluster NM management'.$service_provider_id);
 
-    my @rules = NodemetricRule->search(
+    my @rules = Entity::NodemetricRule->search (
                     hash => {
                         nodemetric_rule_service_provider_id => $service_provider_id,
                         nodemetric_rule_state               => 'enabled',
@@ -354,8 +354,7 @@ sub _contructRetrieverOutput {
         #Check each conditions (i.e. each Combination
         for my $condition_id (@conditions) {
 
-            my $condition = NodemetricCondition->get('id' => $condition_id);
-
+            my $condition = Entity::NodemetricCondition->get ('id' => $condition_id);
 
             # Get the related combination id (in order to parse its formula)
 

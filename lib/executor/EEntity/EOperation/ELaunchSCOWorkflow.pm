@@ -38,10 +38,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use EFactory;
-
 use Template;
-use Entity::AggregateRule;
-use NodemetricRule;
 
 my $log = get_logger("");
 my $errmsg;

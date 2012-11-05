@@ -31,7 +31,7 @@ my $log = get_logger("");
 use Data::Dumper;
 
 use Entity::AggregateRule;
-use NodemetricRule;
+use Entity::NodemetricRule;
 use WorkflowDef;
 use WorkflowDefManager;
 use ParamPreset;
@@ -262,13 +262,13 @@ sub _linkWorkflowToRule {
     my $scope_name = $scope->getAttr(name => 'scope_name');
 
     if ($scope_name eq 'node') {
-        $rule = NodemetricRule->find(hash => {nodemetric_rule_id => $rule_id});
-        $rule->setAttr(name => 'workflow_def_id', value => $workflow_def_id);
+        $rule = Entity::NodemetricRule->find (hash => {nodemetric_rule_id => $rule_id});
+        $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
         $rule->save();
 
     } elsif ($scope_name eq 'service_provider') {
         $rule = Entity::AggregateRule->find(hash => {aggregate_rule_id => $rule_id});
-        $rule->setAttr(name => 'workflow_def_id', value => $workflow_def_id);
+        $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
         $rule->save();
     }
 }

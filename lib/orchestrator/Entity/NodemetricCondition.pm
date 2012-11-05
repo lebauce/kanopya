@@ -11,13 +11,13 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package NodemetricCondition;
+package Entity::NodemetricCondition;
 
 use strict;
 use warnings;
-use base 'BaseDB';
+use base 'Entity';
 use Entity::Combination;
-require 'NodemetricRule.pm';
+require 'Entity/NodemetricRule.pm';
 use Entity::Combination::ConstantCombination;
 use Data::Dumper;
 # logger
@@ -167,7 +167,7 @@ sub evalOnOneNode{
 
 sub getDependencies {
     my $self = shift;
-    my @rules_from_same_service = NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
+    my @rules_from_same_service = Entity::NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
 
     my %dependencies;
     my $id = $self->getId;
@@ -189,7 +189,7 @@ sub delete {
     my $self = shift;
     $log->info('Entering deletion system');
 
-    my @rules_from_same_service = NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
+    my @rules_from_same_service = Entity::NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
     my $id = $self->getId;
     RULE:
     while(@rules_from_same_service) {
@@ -202,7 +202,7 @@ sub delete {
             }
         }
     }
-    my $comb_left = $self->left_combination;
+    my $comb_left  = $self->left_combination;
     my $comb_right = $self->right_combination;
     $self->SUPER::delete();
     $comb_left->deleteIfConstant();

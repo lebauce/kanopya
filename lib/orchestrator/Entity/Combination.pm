@@ -15,7 +15,7 @@ package Entity::Combination;
 
 use strict;
 use warnings;
-use base 'BaseDB';
+use base 'Entity';
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";

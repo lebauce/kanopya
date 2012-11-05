@@ -11,14 +11,14 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package NodemetricRule;
+package Entity::NodemetricRule;
 
 use strict;
 use warnings;
-use base 'BaseDB';
+use base 'Entity';
 use Data::Dumper;
 use Externalnode;
-use NodemetricCondition;
+use Entity::NodemetricCondition;
 use Entity::ServiceProvider;
 use VerifiedNoderule;
 use List::MoreUtils qw {any} ;
@@ -168,7 +168,7 @@ sub toString{
         for my $element (@array) {
             if( $element =~ m/id(\d+)/)
             {
-                $element = NodemetricCondition->get('id'=>substr($element,2))->toString(depth => $depth - 1);
+                $element = Entity::NodemetricCondition->get('id'=>substr($element,2))->toString(depth => $depth - 1);
             }
          }
          return "@array";
@@ -206,7 +206,7 @@ sub evalOnOneNode{
     #replace each id by its evaluation
     for my $element (@array) {
         if( $element =~ m/id(\d+)/){
-            $element = NodemetricCondition->get('id'=>substr($element,2))
+            $element = Entity::NodemetricCondition->get('id'=>substr($element,2))
                                           ->evalOnOneNode(
                                             'monitored_values_for_one_node' => $monitored_values_for_one_node
                                           );
@@ -347,7 +347,7 @@ sub checkFormula {
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            if (!(NodemetricCondition->search(hash => {'nodemetric_condition_id'=>substr($element,2)}))){
+            if (! (Entity::NodemetricCondition->search(hash => {'nodemetric_condition_id'=>substr($element,2)}))){
                 return {
                     value     => '0',
                     attribute => substr($element,2),
@@ -384,7 +384,7 @@ sub setAllRulesUndefForANode{
     my $cluster_id     = $args{cluster_id};
     my $node_id        = $args{node_id};
 
-    my @nodemetric_rules = NodemetricRule->search(
+    my @nodemetric_rules = Entity::NodemetricRule->search(
                                hash => {
                                    nodemetric_rule_service_provider_id => $cluster_id,
                                    nodemetric_rule_state               => 'enabled',

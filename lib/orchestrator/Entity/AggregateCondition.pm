@@ -18,7 +18,7 @@ use warnings;
 use TimeData::RRDTimeData;
 use Entity::Combination::AggregateCombination;
 require 'Entity/AggregateRule.pm';
-use base 'BaseDB';
+use base 'Entity';
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";

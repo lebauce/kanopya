@@ -25,8 +25,8 @@ use Administrator;
 use General;
 
 use Entity::Combination::NodemetricCombination;
-use NodemetricCondition;
-use NodemetricRule;
+use Entity::NodemetricCondition;
+use Entity::NodemetricRule;
 use Entity::Combination::AggregateCombination;
 use Entity::AggregateCondition;
 use Entity::AggregateRule;
@@ -806,7 +806,7 @@ sub generateNodeMetricRules{
             nodemetric_condition_threshold      => $creation_conf->{$indicator_oid}->{threshold},
             nodemetric_condition_service_provider_id => $extcluster_id,
         };
-        my $condition = NodemetricCondition->new(%$condition_param);
+        my $condition = Entity::NodemetricCondition->new(%$condition_param);
         my $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
         my $prule = {
             nodemetric_rule_formula             => 'id'.$conditionid,
@@ -815,7 +815,7 @@ sub generateNodeMetricRules{
             nodemetric_rule_state               => 'enabled',
             nodemetric_rule_service_provider_id => $extcluster_id,
         };
-        NodemetricRule->new(%$prule);
+        Entity::NodemetricRule->new(%$prule);
     }
 }
 
