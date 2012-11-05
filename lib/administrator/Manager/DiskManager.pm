@@ -32,8 +32,14 @@ my $errmsg;
 
 sub methods {
     return {
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
         getDiskType => {
-            description => 'Return the type of managed disks.',
+            description => 'get the type of managed disks.',
+            perm_holder => 'entity',
+        },
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
+        getExportManagers => {
+            description => 'get thje available export manager for this disk manager.',
             perm_holder => 'entity',
         },
     }
