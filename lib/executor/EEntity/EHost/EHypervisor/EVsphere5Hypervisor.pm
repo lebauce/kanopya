@@ -32,26 +32,6 @@ my $errmsg;
 
 =begin classdoc
 
-Instanciate the vsphere component managing this hypervisor
-
-@return vsphere
-
-=end classdoc
-
-=cut
-
-sub getVsphereManager {
-    my ($self,%args) = @_;
-
-    my $vsphere = Entity->get(id => $self->vsphere5_id);
-
-    return $vsphere;
-}
-
-=pod
-
-=begin classdoc
-
 =head2 getAvailableMemory
 
 Query the hypervisor's available memory amount.
@@ -66,7 +46,7 @@ sub getAvailableMemory {
     my ($self,%args) = @_;
 
     #first we open a connection toward vsphere
-    my $vsphere = $self->getVsphereManager();
+    my $vsphere = $self->vsphere5;
 
     #get the hypervisor's datacenter
     my $datacenter = $self->vsphere5_datacenter;
@@ -134,7 +114,7 @@ sub getVmResources {
               optional => { vm => undef, resources => [ 'ram', 'cpu' ] }
     );
 
-    my $vsphere = $self->getVsphereManager();
+    my $vsphere = $self->vsphere5;
 
     my $view_args       = {name => $self->host_hostname};
     my $hypervisor_view = $vsphere->findEntityView(
@@ -166,18 +146,17 @@ sub getVmResources {
 
         my $vm_resources = {};
         if (defined $resources{ram}) {
-            if (defined $vm_view->summary->quickStats->hostMemoryUsage) {
+            if (defined $vm_view->config->hardware->memoryMB) {
                 #We convert the MB returned in Bytes
-                $vm_resources->{$vm}->{'ram'} =
-                    1024 * 1024 * $vm_view->summary->quickStats->hostMemoryUsage;
+                $vm_resources->{$vm->id}->{'ram'} =
+                    1024 * 1024 * $vm_view->config->hardware->memoryMB;
             } else {
-                $errmsg  = 'Used memory not available for vm '. $vm;
-                $errmsg .= 'is the vm running?';
+                $errmsg = 'Used memory not available for vm '. $vm;
                 $log->info($errmsg);
             }
         }
         if (defined $resources{cpu}) {
-            $vm_resources->{$vm}->{'cpu'} = $vm_view->summary->config->numCpu;
+            $vm_resources->{$vm->id}->{'cpu'} = $vm_view->summary->config->numCpu;
         }
 
         $vms_resources = merge ($vms_resources,$vm_resources);

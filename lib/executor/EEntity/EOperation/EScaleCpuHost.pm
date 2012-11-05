@@ -111,6 +111,7 @@ sub finish {
 
 sub postrequisites {
     my $self = shift;
+
     my $vm_cpu = $self->{context}->{host}->getTotalCpu;
 
     $self->{context}->{host}->updateCPU(cpu_number => $vm_cpu);
