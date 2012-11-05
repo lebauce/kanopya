@@ -19,8 +19,8 @@ lives_ok {
     use Entity::ServiceProvider::Outside::Externalcluster;
     use Entity::Connector::MockMonitor;
     use Entity::Combination::NodemetricCombination;
-    use NodemetricCondition;
-    use NodemetricRule;
+    use Entity::NodemetricCondition;
+    use Entity::NodemetricRule;
     use VerifiedNoderule;
     use Entity::Clustermetric;
     use Entity::Combination::AggregateCombination;
@@ -193,14 +193,14 @@ sub node_rule_objects_creation {
             nodemetric_combination_formula  => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
         );
 
-        my $nc1 = NodemetricCondition->new(
+        my $nc1 = Entity::NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $service_provider->id,
             left_combination_id => $ncomb1->id,
             nodemetric_condition_comparator => '>',
             nodemetric_condition_threshold => '0',
         );
 
-        $nrule1 = NodemetricRule->new(
+        $nrule1 = Entity::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $service_provider->id,
             nodemetric_rule_formula => 'id'.$nc1->id,
             nodemetric_rule_state => 'enabled'

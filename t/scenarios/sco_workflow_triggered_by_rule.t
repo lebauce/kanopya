@@ -27,8 +27,8 @@ lives_ok {
     use Entity::Operation;
     use Entity::Combination;
     use Entity::Combination::NodemetricCombination;
-    use NodemetricCondition;
-    use NodemetricRule;
+    use Entity::NodemetricCondition;
+    use Entity::NodemetricRule;
     use VerifiedNoderule;
     use WorkflowNoderule;
     use Entity::Clustermetric;
@@ -315,7 +315,7 @@ eval{
     } 'Check service workflow is done';
 
     # Modify node rule2 to avoid a new triggering
-    my $rule2 = NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
+    my $rule2 = Entity::NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
     $rule2->setAttr(name => 'nodemetric_rule_formula', value => '! ('.$rule2->nodemetric_rule_formula.')');
     $rule2->save();
 
@@ -460,27 +460,27 @@ sub node_rule_objects_creation {
             nodemetric_combination_formula  => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
         );
 
-        my $nc1 = NodemetricCondition->new(
+        my $nc1 = Entity::NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $service_provider->id,
             left_combination_id => $ncomb1->id,
             nodemetric_condition_comparator => '>',
             nodemetric_condition_threshold => '0',
         );
 
-        my $nc2 = NodemetricCondition->new(
+        my $nc2 = Entity::NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $service_provider->id,
             left_combination_id => $ncomb2->id,
             nodemetric_condition_comparator => '<',
             nodemetric_condition_threshold => '0',
         );
 
-        $rule1 = NodemetricRule->new(
+        $rule1 = Entity::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $service_provider->id,
             nodemetric_rule_formula => 'id'.$nc1->id.' && id'.$nc2->id,
             nodemetric_rule_state => 'enabled'
         );
 
-        $rule2 = NodemetricRule->new(
+        $rule2 = Entity::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $service_provider->id,
             nodemetric_rule_formula => 'id'.$nc1->id.' || id'.$nc2->id,
             nodemetric_rule_state => 'enabled'

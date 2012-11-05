@@ -21,8 +21,8 @@ lives_ok {
     use Entity::CollectorIndicator;
     use Externalnode;
     use Entity::Combination::NodemetricCombination;
-    use NodemetricCondition;
-    use NodemetricRule;
+    use Entity::NodemetricCondition;
+    use Entity::NodemetricRule;
     use VerifiedNoderule;
     use WorkflowNoderule;
     use Entity::Clustermetric;
@@ -124,17 +124,17 @@ eval{
     dies_ok { Entity::AggregateRule->get(id => $rule3d->id);} 'Check AggregateRule deletion 3/3';
     dies_ok { Entity::Combination->get(id => $ncombd1->id);} 'Check NodemetricCombination deletion 1/2';
     dies_ok { Entity::Combination->get(id => $ncombd2->id);} 'Check NodemetricCombination deletion 2/2';
-    dies_ok { NodemetricCondition->get(id => $ncd1->id);} 'Check NodemetricCondition deletion comb right';
-    dies_ok { NodemetricCondition->get(id => $ncd2->id);} 'Check NodemetricCondition deletion comb left';
+    dies_ok { Entity::NodemetricCondition->get(id => $ncd1->id);} 'Check NodemetricCondition deletion comb right';
+    dies_ok { Entity::NodemetricCondition->get(id => $ncd2->id);} 'Check NodemetricCondition deletion comb left';
     lives_ok {$ncd1->left_combination_id; $ncd1->right_combination_id;} 'Check left and right combination existance';
     dies_ok { Entity::Combination->get(id => $ncd1->left_combination_id);} 'Check left combination deletion a';
     dies_ok { Entity::Combination->get(id => $ncd1->right_combination_id);} 'Check right combination deletion a';
     lives_ok {$ncd2->left_combination_id; $ncd2->right_combination_id;}'Check left and right combination existance';
     dies_ok { Entity::Combination->get(id => $ncd2->left_combination_id);}'Check left combination deletion b';
     dies_ok { Entity::Combination->get(id => $ncd2->right_combination_id);} 'Check right combination deletion b';
-    dies_ok { NodemetricRule->get(id => $nrule1d->id);} 'Check NodemetricRule deletion 1/3';
-    dies_ok { NodemetricRule->get(id => $nrule2d->id);} 'Check NodemetricRule deletion 2/3';
-    dies_ok { NodemetricRule->get(id => $nrule3d->id);} 'Check NodemetricRule deletion 3/3';
+    dies_ok { Entity::NodemetricRule->get(id => $nrule1d->id);} 'Check NodemetricRule deletion 1/3';
+    dies_ok { Entity::NodemetricRule->get(id => $nrule2d->id);} 'Check NodemetricRule deletion 2/3';
+    dies_ok { Entity::NodemetricRule->get(id => $nrule3d->id);} 'Check NodemetricRule deletion 3/3';
 
     lives_ok {
         Entity::Clustermetric->get(id => $cm2->id);
@@ -143,9 +143,9 @@ eval{
         Entity::AggregateCondition->get(id => $ac3->id);
         Entity::AggregateRule->get(id => $rule4->id);
         Entity::Combination->get(id => $ncomb3->id);
-        Entity::Combination->get(id => NodemetricCondition->get(id => $nc3->id)->left_combination_id);
-        Entity::Combination->get(id => NodemetricCondition->get(id => $nc3->id)->right_combination_id);
-        NodemetricRule->get(id => $nrule4->id);
+        Entity::Combination->get(id => Entity::NodemetricCondition->get(id => $nc3->id)->left_combination_id);
+        Entity::Combination->get(id => Entity::NodemetricCondition->get(id => $nc3->id)->right_combination_id);
+        Entity::NodemetricRule->get(id => $nrule4->id);
     } 'Check not deleted objects';
 
     $adm->rollbackTransaction;
@@ -268,46 +268,46 @@ sub node_rule_objects_creation {
             nodemetric_combination_formula  => 'id'.($indicator_other->id).' + id'.($indicator_other->id),
         );
 
-        $ncd1 = NodemetricCondition->new(
+        $ncd1 = Entity::NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $service_provider->id,
             left_combination_id => $ncombd1->id,
             nodemetric_condition_comparator => '>',
             nodemetric_condition_threshold => '0',
         );
 
-        $ncd2 = NodemetricCondition->new(
+        $ncd2 = Entity::NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $service_provider->id,
             left_combination_id => $ncombd2->id,
             nodemetric_condition_comparator => '<',
             nodemetric_condition_threshold => '0',
         );
 
-        $nc3 = NodemetricCondition->new(
+        $nc3 = Entity::NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $service_provider->id,
             left_combination_id => $ncomb3->id,
             nodemetric_condition_comparator => '>',
             nodemetric_condition_threshold => '0',
         );
 
-        $nrule1d = NodemetricRule->new(
+        $nrule1d = Entity::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $service_provider->id,
             nodemetric_rule_formula => 'id'.$ncd1->id.' && id'.$ncd2->id,
             nodemetric_rule_state => 'enabled'
         );
 
-        $nrule2d = NodemetricRule->new(
+        $nrule2d = Entity::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $service_provider->id,
             nodemetric_rule_formula => 'id'.$ncd1->id.' || id'.$nc3->id,
             nodemetric_rule_state => 'enabled'
         );
 
-        $nrule3d = NodemetricRule->new(
+        $nrule3d = Entity::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $service_provider->id,
             nodemetric_rule_formula => 'id'.$nc3->id.' || id'.$ncd2->id,
             nodemetric_rule_state => 'enabled'
         );
 
-        $nrule4 = NodemetricRule->new(
+        $nrule4 = Entity::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $service_provider->id,
             nodemetric_rule_formula => 'id'.$nc3->id.' || id'.$nc3->id,
             nodemetric_rule_state => 'enabled'

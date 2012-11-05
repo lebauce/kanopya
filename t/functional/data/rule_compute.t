@@ -22,8 +22,8 @@ lives_ok {
     use Entity::Combination::AggregateCombination;
     use Entity::AggregateRule;
     use Entity::Combination::NodemetricCombination;
-    use NodemetricCondition;
-    use NodemetricRule;
+    use Entity::NodemetricCondition;
+    use Entity::NodemetricRule;
     use VerifiedNoderule;
 } 'All uses';
 
@@ -131,28 +131,28 @@ sub test_nodemetric_condition {
         aggregate_combination_formula   => 'id'.($cm->id),
     );
 
-    my $nc_agg_th_right = NodemetricCondition->new(
+    my $nc_agg_th_right = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
         left_combination_id             => $comb->id,
         nodemetric_condition_comparator => '>',
         nodemetric_condition_threshold  => '-1.2',
     );
 
-    my $nc_agg_th_left = NodemetricCondition->new(
+    my $nc_agg_th_left = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
         nodemetric_condition_threshold  => '-1.4',
         nodemetric_condition_comparator => '<',
         right_combination_id            => $comb->id,
     );
 
-    my $nc_mix_1 = NodemetricCondition->new(
+    my $nc_mix_1 = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
         left_combination_id             => $ncomb->id,
         nodemetric_condition_comparator => '<',
         right_combination_id            => $comb->id,
     );
 
-    my $nc_mix_2 = NodemetricCondition->new(
+    my $nc_mix_2 = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
         left_combination_id             => $comb->id,
         nodemetric_condition_comparator => '<',
@@ -183,25 +183,25 @@ sub test_nodemetric_condition {
     is($comb->computeValueFromMonitoredValues(),0.5*(1.234+2.345),'Check aggregate combination of nodemetric condition');
 
 
-    my $r1 = NodemetricRule->new(
+    my $r1 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_agg_th_left->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r2 = NodemetricRule->new(
+    my $r2 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_agg_th_left->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r3 = NodemetricRule->new(
+    my $r3 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_mix_1->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r4 = NodemetricRule->new(
+    my $r4 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_mix_2->id,
         nodemetric_rule_state => 'enabled'
@@ -277,27 +277,27 @@ sub test_two_combinations_on_nodemetric_condition {
         nodemetric_combination_formula  => 'id'.($indic2->id),
     );
 
-    my $nc1 = NodemetricCondition->new(
+    my $nc1 = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
         left_combination_id => $ncomb_left->id,
         right_combination_id => $ncomb_right->id,
         nodemetric_condition_comparator => '>',
     );
 
-    my $nc2 = NodemetricCondition->new(
+    my $nc2 = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
         left_combination_id => $ncomb_left->id,
         right_combination_id => $ncomb_right->id,
         nodemetric_condition_comparator => '<',
     );
 
-    my $r1 = NodemetricRule->new(
+    my $r1 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc1->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r2 = NodemetricRule->new(
+    my $r2 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc2->id,
         nodemetric_rule_state => 'enabled'
@@ -351,14 +351,14 @@ sub test_aggregate_combination_on_nodemetric_condition {
         aggregate_combination_formula   => 'id'.($cm->id),
     );
 
-    $nc_t = NodemetricCondition->new(
+    $nc_t = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
         left_combination_id => $comb->id,
         nodemetric_condition_comparator => '>',
         nodemetric_condition_threshold => '0',
     );
 
-    my $r1 = NodemetricRule->new(
+    my $r1 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
@@ -393,14 +393,14 @@ sub test_nodemetric_rules {
         nodemetric_combination_formula  => 'id'.($indic1->id),
     );
 
-    $nc_f = NodemetricCondition->new(
+    $nc_f = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
         left_combination_id => $ncomb->id,
         nodemetric_condition_comparator => '<',
         nodemetric_condition_threshold => '0',
     );
 
-    $nc_t = NodemetricCondition->new(
+    $nc_t = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
         left_combination_id => $ncomb->id,
         nodemetric_condition_comparator => '>',
@@ -416,13 +416,13 @@ sub test_nodemetric_rules {
     sleep(2);
     $aggregator->update();
 
-    my $nr_f = NodemetricRule->new(
+    my $nr_f = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $nr_t = NodemetricRule->new(
+    my $nr_t = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
@@ -602,25 +602,25 @@ sub test_aggregate_rules {
 
 sub test_and_n {
 
-    my $r1 = NodemetricRule->new(
+    my $r1 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_f->id.' && '.'id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r2 = NodemetricRule->new(
+    my $r2 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_f->id.' && '.'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r3 = NodemetricRule->new(
+    my $r3 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id.' && '.'id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r4 = NodemetricRule->new(
+    my $r4 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id.' && '.'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
@@ -694,25 +694,25 @@ sub test_and {
 }
 sub test_or_n {
 
-    my $r1 = NodemetricRule->new(
+    my $r1 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_f->id.' || '.'id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r2 = NodemetricRule->new(
+    my $r2 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_f->id.' || '.'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r3 = NodemetricRule->new(
+    my $r3 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id.' || '.'id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r4 = NodemetricRule->new(
+    my $r4 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id.' || '.'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
@@ -787,25 +787,25 @@ sub test_or {
 
 sub test_not_n {
 
-    my $r1 = NodemetricRule->new(
+    my $r1 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => '! id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r2 = NodemetricRule->new(
+    my $r2 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => '! id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r3 = NodemetricRule->new(
+    my $r3 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'not ! id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $r4 = NodemetricRule->new(
+    my $r4 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'not ! id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
@@ -903,7 +903,7 @@ sub test_not{
 
 sub test_big_formulas_n {
 
-    my $r1 = NodemetricRule->new(
+    my $r1 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => '(!('.'id'.$nc_t->id.' && (!'.'id'.$nc_f->id.') && '.'id'.$nc_t->id.')) || ! ('.'id'.$nc_t->id.' && '.'id'.$nc_f->id.')',
         nodemetric_rule_state => 'enabled'
