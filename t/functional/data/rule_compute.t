@@ -17,11 +17,11 @@ lives_ok {
     use Orchestrator;
     use Entity::ServiceProvider::Outside::Externalcluster;
     use Entity::Connector::MockMonitor;
-    use Clustermetric;
-    use AggregateCondition;
-    use Combination::AggregateCombination;
-    use AggregateRule;
-    use Combination::NodemetricCombination;
+    use Entity::Clustermetric;
+    use Entity::AggregateCondition;
+    use Entity::Combination::AggregateCombination;
+    use Entity::AggregateRule;
+    use Entity::Combination::NodemetricCombination;
     use NodemetricCondition;
     use NodemetricRule;
     use VerifiedNoderule;
@@ -80,14 +80,14 @@ eval{
     );
 
     # Get indicators
-    $indic1 = CollectorIndicator->find (
+    $indic1 = Entity::CollectorIndicator->find (
         hash => {
             collector_manager_id        => $mock_monitor->id,
             'indicator.indicator_oid'   => 'Memory/PercentMemoryUsed'
         }
     );
 
-    $indic2 = CollectorIndicator->find (
+    $indic2 = Entity::CollectorIndicator->find (
         hash => {
             collector_manager_id        => $mock_monitor->id,
             'indicator.indicator_oid'   => 'Memory/Pool Paged Bytes'
@@ -112,7 +112,7 @@ if($@) {
 
 sub test_nodemetric_condition {
     # Clustermetric
-    my $cm = Clustermetric->new(
+    my $cm = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
         clustermetric_indicator_id => ($indic1->id),
         clustermetric_statistics_function_name => 'mean',
@@ -120,13 +120,13 @@ sub test_nodemetric_condition {
     );
 
     #  Nodemetric combination
-    my $ncomb = Combination::NodemetricCombination->new(
+    my $ncomb = Entity::Combination::NodemetricCombination->new(
         nodemetric_combination_service_provider_id => $service_provider->id,
         nodemetric_combination_formula => 'id'.($indic1->id),
     );
 
     # Aggregate Combination
-    my $comb = Combination::AggregateCombination->new(
+    my $comb = Entity::Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => 'id'.($cm->id),
     );
@@ -161,12 +161,12 @@ sub test_nodemetric_condition {
 
     my $comb_th_left;
     lives_ok {
-        $comb_th_left = Combination::ConstantCombination->get(id => $nc_agg_th_right->right_combination_id),
+        $comb_th_left = Entity::Combination::ConstantCombination->get(id => $nc_agg_th_right->right_combination_id),
     } 'Verify ConstantCombiantion creation on the right';
 
     my $comb_th_right;
     lives_ok {
-        $comb_th_right = Combination::ConstantCombination->get(id => $nc_agg_th_left->left_combination_id),
+        $comb_th_right = Entity::Combination::ConstantCombination->get(id => $nc_agg_th_left->left_combination_id),
     } 'Verify ConstantCombiantion creation on the left';
 
     $service_provider->addManagerParameter(
@@ -266,13 +266,13 @@ sub test_nodemetric_condition {
 sub test_two_combinations_on_nodemetric_condition {
 
     # Create nodemetric rule objects
-    my $ncomb_left = Combination::NodemetricCombination->new(
+    my $ncomb_left = Entity::Combination::NodemetricCombination->new(
         nodemetric_combination_service_provider_id => $service_provider->id,
         nodemetric_combination_formula => 'id'.($indic1->id),
     );
 
     # Create nodemetric rule objects
-    my $ncomb_right = Combination::NodemetricCombination->new(
+    my $ncomb_right = Entity::Combination::NodemetricCombination->new(
         nodemetric_combination_service_provider_id => $service_provider->id,
         nodemetric_combination_formula => 'id'.($indic2->id),
     );
@@ -338,7 +338,7 @@ sub test_two_combinations_on_nodemetric_condition {
 
 sub test_aggregate_combination_on_nodemetric_condition {
     # Clustermetric
-    my $cm = Clustermetric->new(
+    my $cm = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
         clustermetric_indicator_id => ($indic1->id),
         clustermetric_statistics_function_name => 'sum',
@@ -346,7 +346,7 @@ sub test_aggregate_combination_on_nodemetric_condition {
     );
 
     # Combination
-    my $comb = Combination::AggregateCombination->new(
+    my $comb = Entity::Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => 'id'.($cm->id),
     );
@@ -388,7 +388,7 @@ sub test_aggregate_combination_on_nodemetric_condition {
 sub test_nodemetric_rules {
 
     # Create nodemetric rule objects
-    my $ncomb = Combination::NodemetricCombination->new(
+    my $ncomb = Entity::Combination::NodemetricCombination->new(
         nodemetric_combination_service_provider_id => $service_provider->id,
         nodemetric_combination_formula => 'id'.($indic1->id),
     );
@@ -470,7 +470,7 @@ sub test_nodemetric_rules {
 
 sub test_aggregate_combination {
     # Clustermetric
-    my $cm = Clustermetric->new(
+    my $cm = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
         clustermetric_indicator_id => ($indic1->id),
         clustermetric_statistics_function_name => 'sum',
@@ -478,19 +478,19 @@ sub test_aggregate_combination {
     );
 
     # Combination
-    my $comb = Combination::AggregateCombination->new(
+    my $comb = Entity::Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => 'id'.($cm->id),
     );
 
     # Combination
-    my $comb2 = Combination::AggregateCombination->new(
+    my $comb2 = Entity::Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => '2*id'.($cm->id),
     );
 
     # Condition
-    $ac_left = AggregateCondition->new(
+    $ac_left = Entity::AggregateCondition->new(
         aggregate_condition_service_provider_id => $service_provider->id,
         left_combination_id => $comb->id,
         comparator => '<',
@@ -498,7 +498,7 @@ sub test_aggregate_combination {
         state => 'enabled'
     );
 
-    $ac_right = AggregateCondition->new(
+    $ac_right = Entity::AggregateCondition->new(
         aggregate_condition_service_provider_id => $service_provider->id,
         threshold => '-43.21',
         comparator => '<',
@@ -506,7 +506,7 @@ sub test_aggregate_combination {
         state => 'enabled'
     );
 
-    $ac_both = AggregateCondition->new(
+    $ac_both = Entity::AggregateCondition->new(
         aggregate_condition_service_provider_id => $service_provider->id,
         left_combination_id  => $comb->id,
         comparator => '<',
@@ -523,8 +523,8 @@ sub test_aggregate_combination {
     my $cc1;
     my $cc2;
     lives_ok {
-        $cc1 = Combination->get(id => $ac_left->right_combination_id),
-        $cc2 = Combination->get(id => $ac_right->left_combination_id),
+        $cc1 = Entity::Combination->get(id => $ac_left->right_combination_id),
+        $cc2 = Entity::Combination->get(id => $ac_right->left_combination_id),
     } 'Verify ConstantCombiantion creation';
 
     sleep(2);
@@ -550,7 +550,7 @@ sub test_aggregate_rules {
     my %args = @_;
 
     # Clustermetric
-    my $cm = Clustermetric->new(
+    my $cm = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
         clustermetric_indicator_id => ($indic1->id),
         clustermetric_statistics_function_name => 'sum',
@@ -558,13 +558,13 @@ sub test_aggregate_rules {
     );
 
     # Combination
-    my $comb = Combination::AggregateCombination->new(
+    my $comb = Entity::Combination::AggregateCombination->new(
         aggregate_combination_service_provider_id   =>  $service_provider->id,
         aggregate_combination_formula               => 'id'.($cm->id),
     );
 
     # Condition
-    $ac_t = AggregateCondition->new(
+    $ac_t = Entity::AggregateCondition->new(
         aggregate_condition_service_provider_id => $service_provider->id,
         left_combination_id => $comb->id,
         comparator => '>',
@@ -572,7 +572,7 @@ sub test_aggregate_rules {
         state => 'enabled'
     );
 
-    $ac_f = AggregateCondition->new(
+    $ac_f = Entity::AggregateCondition->new(
         aggregate_condition_service_provider_id => $service_provider->id,
         right_combination_id => $comb->id,
         comparator => '>',
@@ -662,25 +662,25 @@ sub test_and_n {
 }
 
 sub test_and {
-    my $rule1 = AggregateRule->new(
+    my $rule1 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_t->id.' && id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule2 = AggregateRule->new(
+    my $rule2 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_t->id.' && id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule3 = AggregateRule->new(
+    my $rule3 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_f->id.' && id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule4 = AggregateRule->new(
+    my $rule4 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_f->id.' && id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
@@ -754,25 +754,25 @@ sub test_or_n {
 }
 
 sub test_or {
-    my $rule1 = AggregateRule->new(
+    my $rule1 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_t->id.' || id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule2 = AggregateRule->new(
+    my $rule2 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_t->id.' || id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule3 = AggregateRule->new(
+    my $rule3 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_f->id.' || id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule4 = AggregateRule->new(
+    my $rule4 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_f->id.' || id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
@@ -856,37 +856,37 @@ sub test_not_n {
 
 
 sub test_not{
-    my $rule1 = AggregateRule->new(
+    my $rule1 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule2 = AggregateRule->new(
+    my $rule2 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => '! id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule3 = AggregateRule->new(
+    my $rule3 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule4 = AggregateRule->new(
+    my $rule4 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => '! id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule5 = AggregateRule->new(
+    my $rule5 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'not ! id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule6 = AggregateRule->new(
+    my $rule6 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => '! not ! id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
@@ -922,13 +922,13 @@ sub test_big_formulas_n {
 }
 
 sub test_big_formulas {
-    my $rule1 = AggregateRule->new(
+    my $rule1 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => '(!! ('.'id'.$ac_t->id.' || '.'id'.$ac_f->id.')) && ('.'id'.$ac_t->id.' && '.'id'.$ac_t->id.')',
         aggregate_rule_state => 'enabled'
     );
 
-    my $rule2 = AggregateRule->new(
+    my $rule2 = Entity::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => '(('.'id'.$ac_f->id.' || '.'id'.$ac_f->id.') || ('.'id'.$ac_f->id.' || '.'id'.$ac_t->id.')) && ! ( (! ('.'id'.$ac_f->id.' || '.'id'.$ac_t->id.')) || ! ('.'id'.$ac_t->id.' && '.'id'.$ac_t->id.'))',
         aggregate_rule_state => 'enabled'

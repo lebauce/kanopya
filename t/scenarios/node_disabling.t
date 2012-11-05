@@ -18,12 +18,13 @@ lives_ok {
     use Aggregator;
     use Entity::ServiceProvider::Outside::Externalcluster;
     use Entity::Connector::MockMonitor;
-    use Combination::NodemetricCombination;
+    use Entity::Combination::NodemetricCombination;
     use NodemetricCondition;
     use NodemetricRule;
     use VerifiedNoderule;
-    use Clustermetric;
-    use Combination::AggregateCombination;
+    use Entity::Clustermetric;
+    use Entity::Combination::AggregateCombination;
+    use Entity::CollectorIndicator;
 } 'All uses';
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -78,7 +79,7 @@ eval{
         externalnode_state    => 'up',
     );
 
-    @indicators = CollectorIndicator->search (hash => {collector_manager_id => $mock_monitor->id});
+    @indicators = Entity::CollectorIndicator->search (hash => {collector_manager_id => $mock_monitor->id});
     my $agg_rule_ids  = service_rule_objects_creation(indicators => \@indicators);
     my $node_rule_ids = node_rule_objects_creation(indicators => \@indicators);
 
@@ -165,14 +166,14 @@ sub service_rule_objects_creation {
             hash => {externalcluster_name => 'Test Service Provider'}
         );
 
-        my $cm1 = Clustermetric->new(
+        my $cm1 = Entity::Clustermetric->new(
             clustermetric_service_provider_id => $service_provider->id,
             clustermetric_indicator_id => ((pop @indicators)->id),
             clustermetric_statistics_function_name => 'count',
             clustermetric_window_time => '1200',
         );
 
-        $acomb1 = Combination::AggregateCombination->new(
+        $acomb1 = Entity::Combination::AggregateCombination->new(
             aggregate_combination_service_provider_id =>  $service_provider->id,
             aggregate_combination_formula => 'id'.($cm1->id),
         );
@@ -187,7 +188,7 @@ sub node_rule_objects_creation {
         );
 
         # Create nodemetric rule objects
-        my $ncomb1 = Combination::NodemetricCombination->new(
+        my $ncomb1 = Entity::Combination::NodemetricCombination->new(
             nodemetric_combination_service_provider_id => $service_provider->id,
             nodemetric_combination_formula             => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
         );
