@@ -365,6 +365,7 @@ Set parameters of a manager defined by its type.
 
 sub addManagerParameters {
     my $self = shift;
+    my %args = @_;
 
     General::checkParams(args     => \%args,
                          required => [ "manager_type", "params" ],
