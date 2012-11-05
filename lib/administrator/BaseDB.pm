@@ -179,7 +179,8 @@ sub update {
     my $updated = 0;
     for my $attr (keys %$hash) {
         my $currentvalue = $self->getAttr(name => $attr);
-        if ("$hash->{$attr}" ne "$currentvalue") {
+        if ((defined $currentvalue and "$hash->{$attr}" ne "$currentvalue") or
+            (not defined $currentvalue and defined $hash->{$attr})) {
             $self->setAttr(name => $attr, value => $hash->{$attr});
 
             if (not $updated) { $updated = 1; }
