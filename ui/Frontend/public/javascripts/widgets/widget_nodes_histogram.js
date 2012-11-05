@@ -22,7 +22,7 @@ function fillNodeMetricList2 (widget, sp_id) {
         widgetUpdateTitle(widget, this.options[this.selectedIndex].value);
     });
 
-    $.get('/api/serviceprovider/' + sp_id + '/nodemetric_combinations', function (data) {
+    $.get('/api/nodemetriccombination?service_provider_id=' + sp_id, function (data) {
         $(data).each( function () {
             indic_list.append('<option id ="' + this.nodemetric_combination_id + '" value="' + this.nodemetric_combination_label 
             + '">' + this.nodemetric_combination_label + '</option>');

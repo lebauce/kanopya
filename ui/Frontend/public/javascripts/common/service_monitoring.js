@@ -271,7 +271,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     $("<p>", { html : "Nodemetric Combinations  : " }).appendTo('#service_monitoring_accordion_container');
     var nodemetriccombi_grid_id = 'service_resources_nodemetric_combination_' + elem_id;
     create_grid( {
-        url: '/api/serviceprovider/' + elem_id + '/nodemetric_combinations',
+        url: '/api/nodemetriccombination?service_provider_id=' + elem_id,
         content_container_id: 'node_monitoring_accordion_container',
         grid_id: nodemetriccombi_grid_id,
         colNames: [ 'id', 'name', 'indicators formula', 'indicators formula brut' ],
@@ -327,7 +327,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     $("<p>").appendTo('#service_monitoring_accordion_container');
     create_grid( {
         caption: 'Metric combinations',
-        url: '/api/serviceprovider/' + elem_id + '/aggregate_combinations',
+        url: '/api/aggregatecombination?service_provider_id=' + elem_id,
         content_container_id: 'service_monitoring_accordion_container',
         grid_id: aggregatecombi_grid_id,
         colNames: [ 'id', 'name', 'formula' ],

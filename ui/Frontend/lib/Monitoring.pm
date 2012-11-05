@@ -233,7 +233,7 @@ sub _computeNodemetricCombination {
     eval {
         my %indicators;
         foreach my $indicator_id (@indicator_ids) {
-            my $indicator = Indicator->get(id => $indicator_id);
+            my $indicator = Entity::Indicator->get(id => $indicator_id);
             $indicators{$indicator->indicator_oid} = $indicator;
         }
 
