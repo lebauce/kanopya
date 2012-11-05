@@ -724,6 +724,30 @@ sub toString {
     return $string.' (Cluster)';
 }
 
+
+=pod
+
+=begin classdoc
+
+Override the parent method to set permission on the component to
+the cluster customer.
+
+@return the added component
+
+=end classdoc
+
+=cut
+
+sub addComponent {
+    my ($self, %args) = @_;
+
+    my $component = $self->SUPER::addComponent(%args);
+    for my $method ('getConf', 'setConf') {
+        $component->addPerm(consumer => $self->user, method => $method);
+    }
+    return $component;
+}
+
 =head2 getComponents
 
     Desc : This function get components used in a cluster. This function allows to select
