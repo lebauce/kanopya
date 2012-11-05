@@ -127,9 +127,12 @@ sub new {
     # Ask the collector manager to collect the related indicator
     my $service_provider = $self->service_provider;
     my $collector = $service_provider->getManager(manager_type => "collector_manager");
-    my $indicator_id = (split('id', $self->nodemetric_combination_formula))[1];
-    $collector->collectIndicator(indicator_id        => $indicator_id,
-                                 service_provider_id => $service_provider->getId);
+
+    my %ids = map { $_ => undef } ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
+    for my $indicator_id (keys %ids) {
+        $collector->collectIndicator(indicator_id        => $indicator_id,
+                                     service_provider_id => $service_provider->id);
+    }
 
     return $self;
 }
