@@ -39,6 +39,7 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'serviceprovider',
+            display      : 'label',
             filters      : {
                 func : 'getServiceProviders',
                 args : { category: 'Cloudmanager' },
@@ -86,6 +87,7 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'serviceprovider',
+            display      : 'label',
             filters      : {
                 func : 'getServiceProviders',
                 args : { category: 'Storage' },
@@ -108,7 +110,7 @@ var policies = {
                 func : 'getPolicyParams',
                 args : { policy_type: 'storage' },
             },
-//            depends      : [ 'export_manager_id' ],
+            depends      : [ 'export_manager_id' ],
         },
         export_manager_id : {
             label        : "Export protocol",
@@ -116,15 +118,10 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'component',
-            parent       : 'storage_provider_id',
+            parent       : 'disk_manager_id',
             filters      : {
-                func : 'findManager',
-                args : { category: 'Export' },
+                func : 'getExportManagers',
             },
-//            parent       : 'disk_manager_id',
-//            filters      : {
-//                func : 'getExportManagers',
-//            },
             display_func : 'getExportType',
         },
     },

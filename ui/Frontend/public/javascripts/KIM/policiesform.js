@@ -555,21 +555,7 @@ var PolicyForm = (function() {
                     text = this.ajaxCall('POST', '/api/' +  this.fields[elementName].entity + '/' + key + '/' + this.fields[elementName].display_func);
 
                 } else {
-
-                    /*
-                     * Ugly hack for getting the name of the service provider,
-                     * whatever its type. Please do not (git) blame me...
-                     */
-                    if (this.fields[elementName].entity === 'serviceprovider') {
-                        for (var attr in datavalues[value]) {
-                            if (attr.indexOf("_name", attr.length - "_name".length) !== -1) {
-                                display = attr;
-                            }
-                        }
-                    } else {
-                        display = this.fields[elementName].display || 'pk';
-                    }
-                    text = datavalues[value][display];
+                    text = datavalues[value][this.fields[elementName].display || 'pk'];
                 }
             } else if (datavalues instanceof Array) {
                 key  = datavalues[value];
