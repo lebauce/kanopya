@@ -98,7 +98,7 @@ sub prerequisites {
         # Check if all host components are up.
         my @components = $self->{context}->{cluster}->getComponents(category => "all");
         foreach my $component (@components) {
-            my $component_name = $component->getComponentAttr()->{component_name};
+            my $component_name = $component->component_type->component_name;
             $log->debug("Browse component: " . $component_name);
     
             my $ecomponent = EFactory::newEEntity(data => $component);
@@ -138,33 +138,6 @@ sub prepare {
     # Instanciate dhcpd component
     $self->{context}->{component_dhcpd}
         = EFactory::newEEntity(data => $bootserver->getComponent(name => "Dhcpd", version => "3"));
-
-    my $exec_cluster = Entity::ServiceProvider->get(id => $self->{config}->{cluster}->{executor});
-    $self->{params}->{kanopya_domainname} = $exec_cluster->getAttr(name => 'cluster_domainname');
-    
-    # Instanciate puppetmaster
-    my $puppetmaster = $bootserver->getComponent(name => 'Puppetmaster', version => 2);
-    $self->{context}->{component_puppetmaster} = EFactory::newEEntity(data => $puppetmaster);
-
-    # retrieve linux component if exists
-    my $linux = eval { 
-        $self->{context}->{cluster}->getComponent(name => 'Linux', version => 0);
-    };
-    if($linux) {
-        $self->{context}->{linux} = EFactory::newEEntity(data => $linux);
-    } else {
-        $self->{context}->{linux} = undef;
-    }
-
-    # retrieve puppet component if exists
-    my $puppetagent = eval { 
-        $self->{context}->{cluster}->getComponent(name => 'Puppetagent', version => 2);
-    };
-    if($puppetagent) {
-        $self->{context}->{puppetagent} = EFactory::newEEntity(data => $puppetagent);
-    } else {
-        $self->{context}->{puppetagent} = undef;
-    }
 }
 
 sub execute {
@@ -251,23 +224,6 @@ sub execute {
     } else {
         $log->info("cluster image persistence is set, keeping $systemimage_name image");
     }
-
-    # regenerate linux component files
-    my $hosts = $self->{context}->{cluster}->getHosts();
-    my @ehosts = map { EFactory::newEEntity(data => $_) } values %$hosts;
-    for my $ehost (@ehosts) {
-        $self->{context}->{linux}->generateConfiguration(
-            cluster => $self->{context}->{cluster},
-            host    => $ehost
-        );
-    }
-    
-    if(defined $self->{context}->{puppetagent}) {
-        $self->{context}->{component_puppetmaster}->updateSite;
-        for my $ehost (@ehosts) {
-            $self->{context}->{puppetagent}->applyManifest(host => $ehost);
-        }
-     }
 }
 
 sub finish {

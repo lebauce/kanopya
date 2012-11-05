@@ -146,7 +146,7 @@ sub run {
                 my @components = $cluster->getComponents(category => "all");
                 foreach my $component (@components) {
                     my $ecomponent = EFactory::newEEntity(data => $component);
-                    my $component_name = $component->getComponentAttr->{component_name};
+                    my $component_name = $component->component_type->component_name;
 
                     $log->debug("Check component availability : " . $component_name);
 

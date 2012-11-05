@@ -365,7 +365,6 @@ sub _getDbixFromHash {
 sub _newDbix {
     my $self = shift;
     my %args  = @_;
-    #$args{params} = {} if !$args{params};
 
     General::checkParams(args => \%args, required => ['table', 'row']);
 

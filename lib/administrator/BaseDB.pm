@@ -47,7 +47,11 @@ my $log = get_logger("basedb");
 my $errmsg;
 my %class_type_cache;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    label => {
+        is_virtual  => 1,
+    }
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -133,6 +137,26 @@ sub new {
     return $self;
 }
 
+=pod
+
+=begin classdoc
+
+Default label management
+Label is the value of the attr returned by getLabelAttr() or the object id
+Subclass can redefined this method to return specific label
+
+@return the label string for this object
+
+=end classdoc
+
+=cut
+
+sub label {
+    my $self = shift;
+
+    my $label = $self->getLabelAttr();
+    return $label ? $self->getAttr(name => $label) : $self->id;
+}
 
 =pod
 
@@ -331,10 +355,11 @@ sub getAttrDefs {
     my $attributedefs = {};
     my @classes = split(/::/, (split("=", "$class"))[0]);
 
+    my $currentclass;
     while(@classes) {
-        my $attr_def = {};
-        my $currentclass = join('::', @classes);
+        $currentclass = join('::', @classes);
 
+        my $attr_def = {};
         if ($currentclass ne "BaseDB") {
             requireClass($currentclass);
             eval {
@@ -385,17 +410,21 @@ sub getAttrDefs {
         pop @classes;
     }
 
+    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
+    # Add the BaseDB attrs to the upper class attrs
+    $attributedefs->{$currentclass} = $merge->merge($attributedefs->{$currentclass}, BaseDB::getAttrDef());
+
     if ($args{group_by} eq 'module') {
         return $attributedefs;
     }
-
-    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
     # Finally merge all module attrs into one level hash
     my $result = {};
     foreach my $module (keys %$attributedefs) {
         $result = $merge->merge($result, $attributedefs->{$module});
     }
+
     return $result;
 }
 
@@ -514,6 +543,7 @@ sub checkAttrs {
             $result = $result->{_classToTable($classname)};
         }
     }
+
     return $result;
 }
 
@@ -620,7 +650,7 @@ sub getAttr {
     General::checkParams(args => \%args, required => ['name']);
 
     my $dbix = $self->{_dbix};
-    my $attr = $class->getAttrDef()->{$args{name}};
+    my $attr = $class->getAttrDefs()->{$args{name}};
     my $value = undef;
     my $found = 1;
 
@@ -1165,7 +1195,7 @@ sub toJSON {
     my $class = ref ($self) || $self;
 
     General::checkParams(args     => \%args,
-                         optional => { 'no_relations' => 0, 'model' => undef });
+                         optional => { 'no_relations' => 0, 'model' => undef, 'raw' => 0 });
 
     my $pk;
     my $hash = {};
@@ -1176,6 +1206,8 @@ sub toJSON {
     $attributes = $class->getAttrDefs(group_by => 'module');
     foreach my $class (keys %$attributes) {
         foreach my $attr (keys %{$attributes->{$class}}) {
+            next if ($args{raw} && $attributes->{$class}->{$attr}->{is_virtual});
+
             if (defined $args{model}) {
                 # Only add primary key attrs from the lower class in the hierarchy
                 if (not ($attributes->{$class}->{$attr}->{is_primary} and $class ne $conreteclass)) {
@@ -1235,17 +1267,13 @@ sub toJSON {
         };
     }
     else {
-        $hash->{pk} = $self->id;
-
-        if (! defined ($hash->{label})) {
-            my $label = $self->getLabelAttr(attrs => $hash);
-            $hash->{label} = $label ? $self->getAttr(name => $label) : $self->id;
+        if (!$args{raw}) {
+            $hash->{pk} = $self->id;
         }
     }
 
     return $hash;
 }
-
 
 =pod
 

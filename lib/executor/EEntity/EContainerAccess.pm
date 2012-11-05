@@ -86,11 +86,12 @@ sub copy {
     my $dest_device = $dest_access->tryConnect(econtext  => $args{econtext},
                                                erollback => $args{erollback});
 
-    # If devices exists, copy contents with 'dd'
+    # If devices exists, clone and resize the source disk using virt-resize
     if (defined $source_device and defined $dest_device) {
-        my $blocksize = $dest_access->getPreferredBlockSize;
+        my $source_size = $source_access->getContainer->getAttr(name => 'container_size');
+        my $dest_size   = $dest_access->getContainer->getAttr(name => 'container_size');
 
-        $command = "dd conv=notrunc if=$source_device of=$dest_device bs=$blocksize";
+        $command = "virt-resize --expand /dev/sda1 " . $source_device . " " . $dest_device;
         $result  = $args{econtext}->execute(command => $command);
 
         if ($result->{stderr} and ($result->{exitcode} != 0)) {
@@ -101,34 +102,6 @@ sub copy {
 
         $command = "sync";
         $args{econtext}->execute(command => $command);
-
-        my $source_size = $source_access->getContainer->getAttr(name => 'container_size');
-        my $dest_size   = $dest_access->getContainer->getAttr(name => 'container_size');
-
-        # Check if the destination container is higher thant the source one,
-        # resize it to maximum.
-        if ($dest_access->getPartitionCount(econtext => $args{econtext}) == 1 and $dest_size > $source_size) {
-            my $part_start = $dest_access->getPartitionStart(econtext => $args{econtext});
-            if ($part_start and $part_start > 0) {
-                $command = "parted -s $dest_device rm 1";
-                $result  = $args{econtext}->execute(command => $command);
-
-                $command = "parted -s -- $dest_device mkpart primary " . $part_start . "B -1s";
-                $result  = $args{econtext}->execute(command => $command);
-            }
-
-            my $part_device = $dest_access->tryConnectPartition(econtext  => $args{econtext},
-                                                                erollback => $args{erollback});
-
-            # Finally resize2fs the partition
-            $command = "e2fsck -y -f $part_device";
-            $args{econtext}->execute(command => $command);
-            $command = "resize2fs -F $part_device";
-            $args{econtext}->execute(command => $command);
-
-            $dest_access->tryDisconnectPartition(econtext  => $args{econtext},
-                                                 erollback => $args{erollback});
-        }
 
         # Disconnect the containers.
         $log->debug('Try to disconnect from the source container...');
@@ -177,7 +150,6 @@ sub copy {
     }
 }
 
-
 =pod
 
 =begin classdoc
@@ -202,25 +174,26 @@ sub mount {
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
     # Connecting to the container access.
-    my $device = $self->tryConnectPartition(econtext  => $args{econtext},
-                                            erollback => $args{erollback});
+    my $device = $self->tryConnect(econtext  => $args{econtext},  
+                                   erollback => $args{erollback});
 
     $command = "mkdir -p $args{mountpoint}";
     $args{econtext}->execute(command => $command);
 
     $log->debug("Mounting <$device> on <$args{mountpoint}>.");
 
-    $command = "mount $device $args{mountpoint}";
+    $command = "guestmount -a " . $device . " -m /dev/sda1 " . $args{mountpoint};
     $result  = $args{econtext}->execute(command => $command);
-    if($result->{stderr}){
+
+    if ($result->{exitcode} != 0) {
         throw Kanopya::Exception::Execution(
                   error => "Unable to mount $device on $args{mountpoint}: " .
                            $result->{stderr}
               );
     }
 
-    $log->debug("Device <$device> mounted on <$args{mountpoint}>.");
-    
+    $log->debug("File <$device> mounted on <$args{mountpoint}>.");
+
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
             function   => $self->can('umount'),
@@ -228,7 +201,6 @@ sub mount {
         );
     }
 }
-
 
 =pod
 
@@ -255,8 +227,12 @@ sub umount {
 
     $log->debug("Unmonting (<$args{mountpoint}>)");
 
-    $command = "sync";
+    $command = "sync; echo 3 > /proc/sys/vm/drop_caches";
     $args{econtext}->execute(command => $command);
+
+    # For some reason (a bug in libguestfs ?), some data are not 
+    # written to disk when unmounting, so we wait a bit...
+    sleep 5;
 
     my $counter = 5;
     while($counter != 0) {
@@ -277,8 +253,6 @@ sub umount {
     }
 
     # Disconnecting from container access.
-    $self->tryDisconnectPartition(econtext  => $args{econtext},
-                                  erollback => $args{erollback});
     $self->tryDisconnect(econtext  => $args{econtext},
                          erollback => $args{erollback});
 
@@ -332,193 +306,6 @@ sub disconnect {
     throw Kanopya::Exception::NotImplemented();
 }
 
-
-=pod
-
-=begin classdoc
-
-Get the offset of the first partition in the container using parted output.
-
-@param econtext the econtext object to execute commands
-
-@return the offset of the first partition.
-
-=end classdoc
-
-=cut
-
-sub getPartitionStart {
-    my ($self,%args) = @_;
-
-    my ($command, $result);
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    my $device = $self->getAttr(name => 'device_connected');
-    if (! $device) {
-        my $msg = "A container access must be connected before getting partition start.";
-        throw Kanopya::Exception::Execution(error => $msg);
-    }
-
-    $command = "parted -m -s $device u B print";
-    $result  = $args{econtext}->execute(command => $command);
-
-    if ($result->{exitcode} != 0 ) {
-        throw Kanopya::Exception::Execution(
-                  error => "Unable to open $device with parted: " .
-                           $result->{stdout}
-              );
-    }
-
-    # Parse the parted output to get partition start.
-    my $part_start = $result->{stdout};
-    $part_start =~ s/\n//g;
-    $part_start =~ s/.*1://g;
-    $part_start =~ s/B.*//g;
-    chomp($part_start);
-
-    return $part_start;
-}
-
-
-=pod
-
-=begin classdoc
-
-Get the number of partitions in the container using parted output.
-
-@param econtext the econtext object to execute commands
-
-@return the number of partitions
-
-=end classdoc
-
-=cut
-
-sub getPartitionCount {
-    my ($self,%args) = @_;
-
-    my ($command, $result);
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    my $device = $self->getAttr(name => 'device_connected');
-    if (! $device) {
-        my $msg = "A container access must be connected before getting partition count.";
-        throw Kanopya::Exception::Execution(error => $msg);
-    }
-
-    $command = "parted -m -s $device u B print";
-    $result  = $args{econtext}->execute(command => $command);
-
-    if ($result->{exitcode} != 0 ) {
-        throw Kanopya::Exception::Execution(
-                  error => "Unable to open $device with parted: " .
-                           $result->{stdout}
-              );
-    }
-
-    my @lines = split('\n', $result->{stdout});
-    return (scalar @lines) - 2;
-}
-
-
-=pod
-
-=begin classdoc
-
-Connect the first partition of a container as a device if exists.
-
-@param econtext the econtext object to execute commands
-
-@return the device
-
-=end classdoc
-
-=cut
-
-sub connectPartition {
-    my ($self,%args) = @_;
-
-    my ($command, $result);
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    my $device = $self->tryConnect(econtext  => $args{econtext},
-                                   erollback => $args{erollback});
-    my $part_start = $self->getPartitionStart(econtext  => $args{econtext},
-                                              erollback => $args{erollback});
-
-    if ($part_start and $part_start > 0) {
-        # Get a free loop device
-        $command = "losetup -f";
-        $result  = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
-        }
-        chomp($result->{stdout});
-        my $loop = $result->{stdout};
-
-        $command = "losetup $loop $device -o $part_start";
-        $result  = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
-        }
-
-        $self->setAttr(name  => 'partition_connected',
-                       value => $loop);
-        $self->save();
-
-        if (exists $args{erollback} and defined $args{erollback}){
-            $args{erollback}->add(
-                function   => $self->can('disconnectPartition'),
-                parameters => [ $self, "econtext", $args{econtext} ]
-            );
-        }
-        return $loop;
-    }
-    else {
-        return $device;
-    }
-}
-
-
-=pod
-
-=begin classdoc
-
-Disconnect the first partition of a container as a device if exists.
-
-@param econtext the econtext object to execute commands
-
-=end classdoc
-
-=cut
-
-sub disconnectPartition {
-    my ($self,%args) = @_;
-
-    my ($command, $result);
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    my $partition = $self->getAttr(name => 'partition_connected');
-
-    $command = "sync";
-    $args{econtext}->execute(command => $command);
-
-    $command = "losetup -d $partition";
-    $result = $args{econtext}->execute(command => $command);
-    if ($result->{exitcode} != 0) {
-        throw Kanopya::Exception::Execution(error => $result->{stderr});
-    }
-
-    $self->setAttr(name  => 'partition_connected',
-                   value => '');
-    $self->save();
-}
-
-
 =pod
 
 =begin classdoc
@@ -570,80 +357,6 @@ sub tryDisconnect {
         return;
     }
     $self->disconnect(%args);
-}
-
-
-=pod
-
-=begin classdoc
-
-Check if the partition is already connected, connect it instead.
-
-@param econtext the econtext object to execute commands
-
-@return the partition device
-
-=end classdoc
-
-=cut
-
-sub tryConnectPartition {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    my $partition = $self->getAttr(name => 'partition_connected');
-    if ($partition) {
-        $log->debug("Partition already connected <$partition>.");
-        return $partition;
-    }
-    return $self->connectPartition(%args);
-}
-
-
-=pod
-
-=begin classdoc
-
-Disconnect the first partition if connected, doing nothing instead.
-
-@param econtext the econtext object to execute commands
-
-=end classdoc
-
-=cut
-
-sub tryDisconnectPartition {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    my $partition = $self->getAttr(name => 'partition_connected');
-    if (! $partition) {
-        $log->debug('Partition seems to be not connected, doing nothing.');
-        return;
-    }
-    $self->disconnectPartition(%args);
-}
-
-
-=pod
-
-=begin classdoc
-
-Default method to get the block size to use for copy. Should be overriden
-in sub classe if required.
-
-@return the block size to use for copy
-
-=end classdoc
-
-=cut
-
-sub getPreferredBlockSize {
-    my ($self,%args) = @_;
-
-    return '1M';
 }
 
 1;

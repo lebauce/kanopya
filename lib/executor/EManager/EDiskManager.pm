@@ -41,12 +41,8 @@ sub mkfs {
     General::checkParams(args     => \%args,
                          required => [ "device", "fstype" ]);
     
-    my $command = "mkfs -t $args{fstype} ";
-    if($args{fsoptions}) {
-        $command .= "$args{fsoptions} ";
-    }
+    my $command = "virt-format -a $args{device} --filesystem=$args{fstype}";
 
-    $command .= " $args{device}";
     my $ret = $self->getEContext->execute(command => $command);
     if($ret->{exitcode} != 0) {
         my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";

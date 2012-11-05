@@ -126,42 +126,6 @@ sub create {
     return $self->id;
 }
 
-sub generateAuthorizedKeys {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "export_manager" ]);
-
-    # mount the root systemimage device
-    my $container = EFactory::newEEntity(data => $self->getDevice());
-
-    my $container_access = $args{export_manager}->createExport(
-                               container   => $container,
-                               export_name => $container->getAttr(name => 'container_name'),
-                               erollback   => $args{erollback}
-                           );
-
-    my $mount_point = $container->getMountPoint;
-    $container_access->mount(mountpoint => $mount_point,
-                             econtext   => $self->getExecutorEContext,
-                             erollback  => $args{erollback});
-
-    my $rsapubkey_cmd = "mkdir -p $mount_point/root/.ssh ; cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";
-    $self->getExecutorEContext->execute(command => $rsapubkey_cmd);
-
-    my $sync_cmd = "sync";
-    $self->getExecutorEContext->execute(command => $sync_cmd);
-
-    $container_access->umount(mountpoint => $mount_point,
-                              econtext   => $self->getExecutorEContext,
-                              erollback  => $args{erollback});
-
-    $args{export_manager}->removeExport(
-        container_access => $container_access,
-        erollback        => $args{erollback}
-    );
-}
-
 sub activate {
     my $self = shift;
 
@@ -171,10 +135,6 @@ sub activate {
                          required => [ "export_manager", "manager_params", "erollback" ]);
 
     my $container = EFactory::newEEntity(data => $self->getDevice());
-
-    # Provide root rsa pub key to provide ssh key authentication
-    $self->generateAuthorizedKeys(export_manager => $args{export_manager},
-                                  erollback      => $args{erollback});
 
     # Get container export information
     my $export_name = $self->getAttr(name => 'systemimage_name');

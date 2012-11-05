@@ -28,43 +28,66 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    nodemetric_rule_id        =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    nodemetric_rule_label     =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_rule_formula   =>  {pattern       => '^((id\d+)|and|or|not|[ ()!&|])+$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1,
-                                 description    => "Construct a formula by condition's names with logical operators (and, or, not). It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the available choice."},
-    nodemetric_rule_last_eval =>  {pattern       => '^(0|1)$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_rule_timestamp =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_rule_state     =>  {pattern       => '(enabled|disabled|disabled_temp)$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_rule_service_provider_id =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    workflow_def_id           =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_rule_description =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
+    nodemetric_rule_id =>  {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    nodemetric_rule_label =>  {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    nodemetric_rule_formula =>  {
+        pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+        description     => "Construct a formula by condition's names with logical operators (and, or, not)."
+                           . " It's possible to use parenthesis with spaces between each element of the formula"
+                           . ". Press a letter key to obtain the available choice."
+    },
+    nodemetric_rule_last_eval =>  {
+        pattern         => '^(0|1)$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    nodemetric_rule_timestamp =>  {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    nodemetric_rule_state =>  {
+        pattern         => '(enabled|disabled|disabled_temp)$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    nodemetric_rule_service_provider_id =>  {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    workflow_def_id =>  {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    nodemetric_rule_description => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    formula_label => {
+        is_virtual      => 1,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -80,6 +103,12 @@ sub methods {
       'perm_holder' => 'entity'
     }
   }
+}
+
+# Virtual attribute getter
+sub formula_label {
+    my $self = shift;
+    return $self->toString();
 }
 
 sub new {
@@ -166,7 +195,7 @@ sub getDependantConditionIds {
 sub evalOnOneNode{
     my $self = shift;
     my %args = @_;
-
+    
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
 
     my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
@@ -176,7 +205,6 @@ sub evalOnOneNode{
 
     #replace each id by its evaluation
     for my $element (@array) {
-
         if( $element =~ m/id(\d+)/){
             $element = NodemetricCondition->get('id'=>substr($element,2))
                                           ->evalOnOneNode(
@@ -194,6 +222,7 @@ sub evalOnOneNode{
     $log->info("NM rule evaluation: $arrayString");
     #Evaluate the logic formula
     eval $arrayString;
+
     return ($res)?1:0;
 };
 
@@ -237,8 +266,6 @@ sub isVerifiedForANode{
 sub deleteVerifiedRule  {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'externalnode_id' ]);
-
-    my $externalnode_id = $args{externalnode_id};
 
     my $verified_noderule;
     eval{
@@ -335,9 +362,8 @@ sub checkFormula {
 
 sub disable {
     my $self = shift;
-    my $verified_rule_dbix =
-        $self->{_dbix}
-        ->verified_noderules->delete_all;
+    
+    $self->{_dbix}->verified_noderules->delete_all;
 
     $self->setAttr(name => 'nodemetric_rule_state', value => 'disabled');
     $self->save();

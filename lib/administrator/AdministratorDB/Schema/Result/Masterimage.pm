@@ -96,6 +96,16 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 component_types
+
+Type: many_to_many
+
+Composing rels: L</components_provided> -> component_type
+
+=cut
+
+__PACKAGE__->many_to_many("component_types", "components_provided", "component_type");
+
 =head2 components_provided
 
 Type: has_many

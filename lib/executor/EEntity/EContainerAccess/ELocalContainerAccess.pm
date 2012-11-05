@@ -37,28 +37,9 @@ sub connect {
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
     my $file = $self->getContainer->container_device;
-    my $device;
-    if (-b $file) {
-        $device = $file;
-    }
-    else {
-        # Get a free loop device
-        $command = "losetup -f";
-        $result = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
-        }
-        chomp($result->{stdout});
-        $device = $result->{stdout};
 
-        $command = "losetup $device $file";
-        $result = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
-        }
-    }
-    $log->debug("Return file loop dev (<$device>).");
-    $self->setAttr(name  => 'device_connected', value => $device);
+    $log->debug("Return file loop dev (<$file>).");
+    $self->setAttr(name  => 'device_connected', value => $file);
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
@@ -67,7 +48,7 @@ sub connect {
         );
     }
 
-    return $device;
+    return $file;
 }
 
 =head2 disconnect
@@ -82,16 +63,6 @@ sub disconnect {
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
     my $file = $self->getContainer->container_device;
-
-    if (! -b $file) {
-        my $device = $self->device_connected;
-
-        $command = "losetup -d $device";
-        $result  = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
-        }
-    }
 
     $self->setAttr(name  => 'device_connected',
                    value => '');

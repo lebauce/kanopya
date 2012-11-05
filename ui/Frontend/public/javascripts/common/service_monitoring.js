@@ -3,129 +3,106 @@ require('common/service_common.js');
 
 var statistics_function_name = ['mean','variance','std','max','min','kurtosis','skewness','dataOut','sum'];
 
-// return a map {indic_name => indic_id}
-function getIndicators(sp_id, ext) {
-    // We are not supposed to directly access indicatorset and indicator
-    // TODO use associated CollectorManager to retrieve indicators info (one request)
-    //      or indicators toString() (one request/indicator)
-    var indicatorsets = {};
-    $.ajax({
-        async   : false,
-        url: '/api/indicatorset',
-        success: function(rows) {
-            $(rows).each(function(row) {
-                indicatorsets[rows[row].indicatorset_id] = rows[row];
-            });
-        }
-    });
-
+// return a map {indic_name => collector_indicator}
+function getIndicators(sp_id) {
+    // Retrieve all indicators associated to the collector manager of the service
     var indicators = {};
     $.ajax({
-        async   : false,
-        url: (ext) ? '/api/scomindicator?service_provider_id=' + sp_id : '/api/indicator',
-        success: function(rows) {
-            $(rows).each(function(row) {
-                if (ext) {
-                    indicators[rows[row].indicator_name]   = rows[row];
-                } else {
-                    var indicatorset_name = indicatorsets[rows[row].indicatorset_id].indicatorset_name;
-                    var indic_fullname =  indicatorset_name + '/' + rows[row].indicator_name;
-                    indicators[indic_fullname] = rows[row];
-
-                    // THis version use indicator toString but is slow (and indicators name are quoted)
-//                    $.ajax({
-//                        async       : false,
-//                        type        : 'POST',
-//                        data        : JSON.stringify({}),
-//                        contentType : 'application/json',
-//                        url         : '/api/indicator/' + rows[row].indicator_id + '/toString',
-//                        complete    : function(jqXHR, status) {
-//                            if (status === 'success') {
-//                                indicators[jqXHR.responseText] = rows[row].indicator_id;
-//                            }
-//                        }
-//                    });
-
-                }
-            });
+        // Get collector manager
+        url     : '/api/serviceprovider/'+sp_id+'/service_provider_managers?manager_type=collector_manager',
+        async   :false,
+        success : function(collector_manager) {
+            if (collector_manager.length > 0) {
+                $.ajax({
+                    // Get indicators of the collector manager
+                    url     : '/api/entity/' + collector_manager[0].manager_id + '?expand=collector_indicators,collector_indicators.indicator',
+                    async   : false,
+                    success : function(collector_manager_details) {
+                        $(collector_manager_details.collector_indicators).each(function(i,collector_indic) {
+                            var indicator = collector_indic.indicator;
+                            indicators[indicator.indicator_label] = collector_indic;
+                        });
+                    }
+                });
+            }
         }
     });
-
-    return indicators;
+   return indicators;
 };
 
 ////////////////////////MONITORING MODALS//////////////////////////////////
 function createServiceMetric(container_id, elem_id, ext, options) {
+    function addServiceMetricDialog() {
+        var indicators = getIndicators(elem_id);
+        var indic_options = {};
+        $.each(indicators, function (name, row) {
+            indic_options[name] = row.collector_indicator_id;
+        });
 
-    ext = ext || false;
-    
-    var indicators = getIndicators(elem_id, ext);
-    var indic_options = {};
-    $.each(indicators, function (name, row) {
-        indic_options[name] = row.indicator_id;
-    });
+        var service_fields  = {
+            clustermetric_label    : {
+                label   : 'Name',
+                type    : 'text',
+            },
+            clustermetric_statistics_function_name    : {
+                label   : 'Statistic function name',
+                type    : 'select',
+                options   : statistics_function_name,
+            },
+            clustermetric_indicator_id  :{
+                label   : 'Indicator',
+                type    : 'select',
+                options : indic_options,
+            },
+            clustermetric_window_time   :{
+                type    : 'hidden',
+                value   : '1200',
+            },
+            clustermetric_service_provider_id   :{
+                type    : 'hidden',
+                value   : elem_id,
+            },
+            createcombination  :{
+                label   : 'Create the associate combination',
+                type    : 'checkbox',
+                skip    : true,
+            },
+        };
+        var service_opts    = {
+            title       : 'Create a Service Metric',
+            name        : 'clustermetric',
+            fields      : service_fields,
+            error       : function(data) {
+                $("div#waiting_default_insert").dialog("destroy");
+            },
+            callback    : function(elem, form) {
+                    $("#service_resources_clustermetrics_"  + elem_id).trigger('reloadGrid');
+                    if ($(form).find('#input_createcombination').attr('checked')) {
+                        $.ajax({
+                            url     : '/api/aggregatecombination',
+                            type    : 'POST',
+                            data    : {
+                                aggregate_combination_label               : elem.clustermetric_label,
+                                aggregate_combination_service_provider_id : elem_id,
+                                aggregate_combination_formula             : 'id' + elem.pk,
+                            },
+                            success : function() {
+                                $("#service_resources_aggregate_combinations_" + elem_id).trigger('reloadGrid');
+                            }
+                        });
+                    }
+            },
+            beforeSubmit: (options && options.beforeSubmit) || $.noop,
+        };
 
-    var service_fields  = {
-        clustermetric_label    : {
-            label   : 'Name',
-            type    : 'text',
-        },
-        clustermetric_statistics_function_name    : {
-            label   : 'Statistic function name',
-            type    : 'select',
-            options   : statistics_function_name,
-        },
-        clustermetric_indicator_id  :{
-            label   : 'Indicator',
-            type    : 'select',
-            options : indic_options,
-        },
-        clustermetric_window_time   :{
-            type    : 'hidden',
-            value   : '1200',
-        },
-        clustermetric_service_provider_id   :{
-            type    : 'hidden',
-            value   : elem_id,  
-        },
-        createcombination  :{
-            label   : 'Create the associate combination',
-            type    : 'checkbox',
-            skip    : true,
-        },
-    };
-    var service_opts    = {
-        title       : 'Create a Service Metric',
-        name        : 'clustermetric',
-        fields      : service_fields,
-        error       : function(data) {
-            $("div#waiting_default_insert").dialog("destroy");
-        },
-        callback    : function(elem, form) {
-                $("#service_resources_clustermetrics_"  + elem_id).trigger('reloadGrid');
-                if ($(form).find('#input_createcombination').attr('checked')) {
-                    $.ajax({
-                        url     : '/api/aggregatecombination',
-                        type    : 'POST',
-                        data    : {
-                            aggregate_combination_label               : elem.clustermetric_label,
-                            aggregate_combination_service_provider_id : elem_id,
-                            aggregate_combination_formula             : 'id' + elem.pk,
-                        },
-                        success : function() {
-                            $("#service_resources_aggregate_combinations_" + elem_id).trigger('reloadGrid');
-                        }
-                    });
-                }
-        },
-        beforeSubmit: (options && options.beforeSubmit) || $.noop,
-    };
-
-    var button = $("<button>", {html : 'Add a service metric'});
-    button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
-    }).button({ icons : { primary : 'ui-icon-plusthick' } });
+    }
+    var button = $("<button>", {html : 'Add a service metric'});
+    button.bind(
+            'click',
+            addServiceMetricDialog
+    ).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
 
@@ -219,36 +196,11 @@ function createNodemetricCombination(container_id, elem_id, ext, options) {
         mod = new ModalForm(service_opts);
         mod.start();
         ////////////////////////////////////// Node Combination Forumla Construction ///////////////////////////////////////////
-            
-//        var component_id;
-//        var indicators;
-//        $.ajax({
-//            async : false,
-//            type : 'POST',
-//            url:'/api/serviceprovider/' + elem_id + '/getManager',
-//            data : {
-//                manager_type : 'collector_manager'
-//            },
-//            success : function(row) {
-//                component_id = row.component_id;
-//            }
-//        });
-//
-//        $.ajax({
-//            async : false,
-//            type : 'POST',
-//            url:'/api/component/' + component_id + '/getIndicators',
-//            data : {},
-//            success : function(row) {
-//                indicators = row;
-//                console.log(indicators);
-//            }
-//        });
 
         var availableTags = new Array();
         var indicators = getIndicators(elem_id, ext);
         for (var indic in indicators) {
-            availableTags.push({label : indic, value : indicators[indic].indicator_id});
+            availableTags.push({label : indic, value : indicators[indic].collector_indicator_id});
             //availableTags.push({indicators});
         }
 
@@ -265,10 +217,6 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     var container   = $("#" + container_id);
 
     var external        = ext || '';
-
-    // Quick fix to display indicator name without use collector_manager method
-    // TODO use collector_manager method (getIndicator + toString)
-    var indicator_type  = ext ? 'scom' : '';
 
     // Nodemetric bargraph details handler
     function nodeMetricDetailsBargraph(cid, nodeMetric_id) {
@@ -326,16 +274,11 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_combinations',
         content_container_id: 'node_monitoring_accordion_container',
         grid_id: nodemetriccombi_grid_id,
-        afterInsertRow: function(grid, rowid) {
-            var id  = $(grid).getCell(rowid, 'pk');
-            var url = '/api/nodemetriccombination/' + id + '/toString';
-            setCellWithCallMethod(url, grid, rowid, 'nodemetric_combination_formula_tostring');
-        },
         colNames: [ 'id', 'name', 'indicators formula', 'indicators formula brut' ],
         colModel: [ 
             { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
-            { name: 'nodemetric_combination_formula_tostring', index: 'nodemetric_combination_formula_tostring', width: 170 },
+            { name: 'formula_label', index: 'formula_label', width: 170 },
             { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', hidden: true },
         ],
         details: {
@@ -365,18 +308,12 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         url: '/api/serviceprovider/' + elem_id + '/clustermetrics',
         content_container_id: 'service_monitoring_accordion_container',
         grid_id: clustermetric_grid_id,
-        afterInsertRow: function(grid, rowid) {
-            var id  = $(grid).getCell(rowid, 'clustermetric_indicator_id');
-            var url = '/api/' + indicator_type + 'indicator/' + id + '/toString';
-            setCellWithCallMethod(url, grid, rowid, 'clustermetric_indicator_id');
-            
-        },
         colNames: [ 'id', 'name', 'function', 'indicator' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
             { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
             { name: 'clustermetric_statistics_function_name', index: 'clustermetric_statistics_function_name', width: 90 },
-            { name: 'clustermetric_indicator_id', index: 'clustermetric_indicator_id', width: 200 },
+            { name: 'indicator_label', index: 'indicator_label', width: 200 },
         ],
         action_delete: {
             callback : function (id) {
@@ -393,16 +330,11 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         url: '/api/serviceprovider/' + elem_id + '/aggregate_combinations',
         content_container_id: 'service_monitoring_accordion_container',
         grid_id: aggregatecombi_grid_id,
-        afterInsertRow: function(grid, rowid) {
-            var id  = $(grid).getCell(rowid, 'pk');
-            var url = '/api/aggregatecombination/' + id + '/toString';
-            setCellWithCallMethod(url, grid, rowid, 'aggregate_combination_formula');
-        },
         colNames: [ 'id', 'name', 'formula' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
-            { name: 'aggregate_combination_formula', index: 'aggregate_combination_formula', width: 200 },
+            { name: 'formula_label', index: 'formula_label', width: 200 },
         ],
         details: {
             tabs : [

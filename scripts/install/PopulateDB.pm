@@ -60,7 +60,9 @@ use Entity::Component::Physicalhoster0;
 use Entity::Component::Fileimagemanager0;
 use Entity::Component::Kanopyacollector1;
 use Entity::Component::Kanopyaworkflow0;
-use Entity::Component::Linux0;
+use Entity::Component::Linux::Debian;
+use Entity::Component::Linux::Redhat;
+use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
 
 my @classes = (
@@ -89,7 +91,7 @@ my @classes = (
     'Entity::Component::Iptables1',
     'Entity::Component::Keepalived1',
     'Entity::Component::Memcached1',
-    'Entity::Component::Linux0',
+    'Entity::Component::Linux',
     'Entity::Component::Mysql5',
     'Entity::Component::Openiscsi2',
     'Entity::Component::Openldap1',
@@ -144,7 +146,10 @@ my @classes = (
     'Entity::Workflow',
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
     'Entity::Host::VirtualMachine::Vsphere5Vm',
-    'Entity::Component::Vsphere5'
+    'Entity::Component::Vsphere5',
+    'Entity::Component::Linux::Debian',
+    'Entity::Component::Linux::Suse',
+    'Entity::Component::Linux::Redhat',
 );
 
 sub registerClassTypes {
@@ -485,38 +490,58 @@ sub registerComponents {
     my %args = @_;
 
     my $components = [
-        [ 'Lvm', '2', 'Storage' ],
-        [ 'Apache', '2', 'Webserver', '/templates/components/apache2' ],  
+        [ 'Lvm', '2', 'Storage', undef ],
+        [ 'Apache', '2', 'Webserver', '/templates/components/apache2' ],
         [ 'Iscsitarget', '1', 'Export', '/templates/components/ietd' ],
-        [ 'Openiscsi', '2', 'Exportclient' ],
+        [ 'Openiscsi', '2', 'Exportclient', undef ],
         [ 'Dhcpd', '3', 'Dhcpserver', '/templates/components/dhcpd' ],
-        [ 'Atftpd', '0', 'Tftpserver' ], 
+        [ 'Atftpd', '0', 'Tftpserver', undef ],
         [ 'Snmpd', '5', 'Monitoragent', '/templates/components/snmpd' ],
         [ 'Nfsd', '3', 'Export', '/templates/components/nfsd3' ],
         [ 'Linux', '0', 'System', '/templates/components/linux' ],
-        [ 'Mysql', '5', 'DBMS' ],
-        [ 'Syslogng', '3', 'Logger' ],  
-        [ 'Iptables', '1', 'Firewall' ],
-        [ 'Openldap', '1', 'Annuary' ],
-        [ 'Opennebula', '3', 'Cloudmanager' ],
-        [ 'Physicalhoster', '0', 'Cloudmanager' ],
-        [ 'Fileimagemanager', '0', 'Storage' ],
-        [ 'Puppetagent', '2', 'Configurationagent' ],   
-        [ 'Puppetmaster', '2', 'Configurationserver' ], 
-        [ 'Kanopyacollector', '1', 'Collectormanager' ],
-        [ 'Keepalived', '1', 'LoadBalancer' ],
-        [ 'Kanopyaworkflow', '0', 'Workflowmanager' ], 
-        [ 'Mailnotifier', '0', 'Notificationmanager' ],
-        [ 'Memcached', '1', 'Cache' ],
-        [ 'Php', '5', 'Lib' ],
-        [ 'Vsphere', '5', 'Cloudmanager' ],
+        [ 'Mysql', '5', 'DBMS', undef ],
+        [ 'Syslogng', '3', 'Logger', undef ],
+        [ 'Iptables', '1', 'Firewall', undef ],
+        [ 'Openldap', '1', 'Annuary', undef ],
+        [ 'Opennebula', '3', 'Cloudmanager', undef ],
+        [ 'Physicalhoster', '0', 'Cloudmanager', undef ],
+        [ 'Fileimagemanager', '0', 'Storage', undef ],
+        [ 'Puppetagent', '2', 'Configurationagent', undef ],
+        [ 'Puppetmaster', '2', 'Configurationserver', undef ],
+        [ 'Kanopyacollector', '1', 'Collectormanager', undef ],
+        [ 'Keepalived', '1', 'LoadBalancer', undef ],
+        [ 'Kanopyaworkflow', '0', 'Workflowmanager', undef ],
+        [ 'Mailnotifier', '0', 'Notificationmanager', undef ],
+        [ 'Memcached', '1', 'Cache', undef ],
+        [ 'Php', '5', 'Lib', undef ],
+        [ 'Vsphere', '5', 'Cloudmanager', undef ],
+        [ 'Debian', '6', 'System', '/templates/components/debian' ],
+        [ 'Redhat', '6', 'System', '/templates/components/redhat' ],
+        [ 'Suse', '11', 'System', '/templates/components/suse' ],
     ];
 
     for my $component_type (@{$components}) {
+        my $class_type;
+        eval {
+            $class_type = ClassType->find(hash => {
+                              class_type => {
+                                  like => "Entity::Component::%" . $component_type->[0]
+                              }
+                          });
+        };
+        if ($@) {
+            $class_type = ClassType->find(hash => {
+                              class_type => {
+                                  like => "Entity::Component::%" . $component_type->[0] . $component_type->[1]
+                              }
+                          });
+        }
+
         my $type = ComponentType->new(
             component_name     => $component_type->[0],
             component_version  => $component_type->[1],
             component_category => $component_type->[2],
+            component_class_id => $class_type->id
         );
         if (defined $component_type->[3]) {
             my $template_name = lc $component_type->[0];
@@ -579,10 +604,10 @@ sub registerIndicators {
                 indexoid  => undef
             },
             indicators => [
-                [ 'Total', '.1.3.6.1.4.1.2021.4.5.0', undef, undef, 'FFFF0066', 'KBytes', undef ],
-                [ 'Avail', '.1.3.6.1.4.1.2021.4.6.0', undef, undef, '00FF0066', 'KBytes', undef ],
-                [ 'Buffered', '.1.3.6.1.4.1.2021.4.14.0', undef, undef, '0000FF66', 'KBytes', undef ],
-                [ 'Cached', '.1.3.6.1.4.1.2021.4.15.0', undef, undef, 'FF000066', 'KBytes', undef ],  
+                [ 'mem/Total', 'Total', '.1.3.6.1.4.1.2021.4.5.0', undef, undef, 'FFFF0066', 'KBytes', undef ],
+                [ 'mem/Available', 'Avail', '.1.3.6.1.4.1.2021.4.6.0', undef, undef, '00FF0066', 'KBytes', undef ],
+                [ 'mem/Buffered', 'Buffered', '.1.3.6.1.4.1.2021.4.14.0', undef, undef, '0000FF66', 'KBytes', undef ],
+                [ 'mem/Cached', 'Cached', '.1.3.6.1.4.1.2021.4.15.0', undef, undef, 'FF000066', 'KBytes', undef ],
             ]
         },
         {
@@ -596,13 +621,13 @@ sub registerIndicators {
                 indexoid  => undef
             },
             indicators => [
-                [ 'User', '.1.3.6.1.4.1.2021.11.50.0', undef, undef, '0000FF66', '%', undef ],
-                [ 'Wait', '.1.3.6.1.4.1.2021.11.54.0', undef, undef, 'FF000066', '%', undef ],  
-                [ 'Nice', '.1.3.6.1.4.1.2021.11.51.0', undef, undef, 'FFFF0066', '%', undef ],  
-                [ 'Syst', '.1.3.6.1.4.1.2021.11.52.0', undef, undef, '00FFFF66', '%', undef ],  
-                [ 'Kernel', '.1.3.6.1.4.1.2021.11.55.0', undef, undef, 'FF00FF66', '%', undef ],
-                [ 'Interrupt', '.1.3.6.1.4.1.2021.11.56.0', undef, undef, '66666666', '%', undef ],
-                [ 'Idle', '.1.3.6.1.4.1.2021.11.53.0', undef, undef, '00FF0066', '%', undef ],
+                [ 'cpu/User', 'User', '.1.3.6.1.4.1.2021.11.50.0', undef, undef, '0000FF66', '%', undef ],
+                [ 'cpu/Wait', 'Wait', '.1.3.6.1.4.1.2021.11.54.0', undef, undef, 'FF000066', '%', undef ],
+                [ 'cpu/Nice', 'Nice', '.1.3.6.1.4.1.2021.11.51.0', undef, undef, 'FFFF0066', '%', undef ],
+                [ 'cpu/System', 'Syst', '.1.3.6.1.4.1.2021.11.52.0', undef, undef, '00FFFF66', '%', undef ],
+                [ 'cpu/Kernel', 'Kernel', '.1.3.6.1.4.1.2021.11.55.0', undef, undef, 'FF00FF66', '%', undef ],
+                [ 'cpu/Interrupt', 'Interrupt', '.1.3.6.1.4.1.2021.11.56.0', undef, undef, '66666666', '%', undef ],
+                [ 'cpu/Idle', 'Idle', '.1.3.6.1.4.1.2021.11.53.0', undef, undef, '00FF0066', '%', undef ],
             ]
         },
         {
@@ -613,7 +638,7 @@ sub registerIndicators {
                 component => 'Apache',
             },
             indicators => [
-                [ 'ReqPerSec','Total Accesses', 0, undef, '0000FF99', undef, undef ],
+                [ 'apache/Req/Sec', 'ReqPerSec','Total Accesses', 0, undef, '0000FF99', undef, undef ],
             ]
         },
         {
@@ -624,8 +649,8 @@ sub registerIndicators {
                 component => 'Apache',
             },
             indicators => [
-                [ 'IdleWorkers','IdleWorkers', undef, undef, '00FF0099', undef, undef ],
-                [ 'BusyWorkers','BusyWorkers', undef, undef, 'FF000099', undef, undef ],
+                [ 'apache/Idle Workers', 'IdleWorkers','IdleWorkers', undef, undef, '00FF0099', undef, undef ],
+                [ 'apache/Busy Workers', 'BusyWorkers','BusyWorkers', undef, undef, 'FF000099', undef, undef ],
             ]
         },
         {
@@ -635,16 +660,16 @@ sub registerIndicators {
                 type      => 'GAUGE',
             },
             indicators => [
-                [ 'RAM free', 'Memory/Available MBytes', undef, undef, 'FF000099', 'MBytes', undef ],
-                [ 'RAM pool paged', 'Memory/Pool Paged Bytes', undef, undef, 'FF000099', 'Bytes', undef ],
-                [ 'RAM used', 'Memory/PercentMemoryUsed', undef, undef, 'FF000099', '%', undef ],
-                [ 'CPU used', 'Processor/% Processor Time', undef, undef, 'FF000099', '%', undef ],
-                [ 'CPU Queue Length', 'System/Processor Queue Length', undef, undef, 'FF000099', 'process', undef ],
-                [ 'Disk idle time', 'LogicalDisk/% Idle Time', undef, undef, 'FF000099', '%', undef ],
-                [ 'Disk free space', 'LogicalDisk/% Free Space', undef, undef, 'FF000099', '%', undef ],
-                [ 'Network used', 'Network Adapter/PercentBandwidthUsedTotal', undef, undef, 'FF000099', '%', undef ],
-                [ 'Active Sessions', 'Terminal Services/Active Sessions', undef, undef, 'FF000099', 'sessions', undef ],
-                [ 'RAM I/O', 'Memory/Pages/sec', undef, undef, 'FF000099', 'pages/sec', undef ],
+                [ 'RAM free', 'RAM free', 'Memory/Available MBytes', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'RAM pool paged', 'RAM pool paged', 'Memory/Pool Paged Bytes', undef, undef, 'FF000099', 'Bytes', undef ],
+                [ 'RAM used', 'RAM used', 'Memory/PercentMemoryUsed', undef, undef, 'FF000099', '%', undef ],
+                [ 'CPU used', 'CPU used', 'Processor/% Processor Time', undef, undef, 'FF000099', '%', undef ],
+                [ 'CPU Queue Length', 'CPU Queue Length', 'System/Processor Queue Length', undef, undef, 'FF000099', 'process', undef ],
+                [ 'Disk idle time', 'Disk idle time', 'LogicalDisk/% Idle Time', undef, undef, 'FF000099', '%', undef ],
+                [ 'Disk free space', 'Disk free space', 'LogicalDisk/% Free Space', undef, undef, 'FF000099', '%', undef ],
+                [ 'Network used', 'Network used', 'Network Adapter/PercentBandwidthUsedTotal', undef, undef, 'FF000099', '%', undef ],
+                [ 'Active Sessions', 'Active Sessions', 'Terminal Services/Active Sessions', undef, undef, 'FF000099', 'sessions', undef ],
+                [ 'RAM I/O', 'RAM I/O', 'Memory/Pages/sec', undef, undef, 'FF000099', 'pages/sec', undef ],
             ]
         },
         {
@@ -654,8 +679,8 @@ sub registerIndicators {
                 type      => 'GAUGE',
             },
             indicators => [
-                [ 'Cores', 'Number of charged cores', undef, undef, 'FF000099', 'Cores', undef ],
-                [ 'Memory', 'Charged memory', undef, undef, 'FF000099', 'Bytes', undef ],
+                [ 'billing/Cores', 'Cores', 'Number of charged cores', undef, undef, 'FF000099', 'Cores', undef ],
+                [ 'billing/Memory', 'Memory', 'Charged memory', undef, undef, 'FF000099', 'Bytes', undef ],
             ]
         },
         {
@@ -667,8 +692,8 @@ sub registerIndicators {
                 indexoid  => 2
             },
             indicators => [
-                [ 'bytesRead', 3, undef, undef, 'FF000099', undef, undef ],
-                [ 'bytesWritten', 4, undef, undef, 'FF000099', undef, undef ],
+                [ 'disk/bytes read', 'bytesRead', 3, undef, undef, 'FF000099', undef, undef ],
+                [ 'disk/bytes written ', 'bytesWritten', 4, undef, undef, 'FF000099', undef, undef ],
             ]
         },
         {
@@ -680,10 +705,10 @@ sub registerIndicators {
                 indexoid  => 2
             },
             indicators => [
-                [ 'ifInOctets', 10, undef, undef, 'FF000099', 'Octets/sec', undef ],
-                [ 'ifOutOctets', 16, undef, undef, 'FF000099', 'Octets/sec', undef ],
-                [ 'ifOutErrors', 20, undef, undef, 'FF000099', 'Packets|TU/sec', undef ],
-                [ 'ifInErrors', 14, undef, undef, 'FF000099', 'Packets|TU/sec', undef ]
+                [ 'network interface/In Octets', 'ifInOctets', 10, undef, undef, 'FF000099', 'Octets/sec', undef ],
+                [ 'network interface/Out Octets', 'ifOutOctets', 16, undef, undef, 'FF000099', 'Octets/sec', undef ],
+                [ 'network interface/Out Errors', 'ifOutErrors', 20, undef, undef, 'FF000099', 'Packets|TU/sec', undef ],
+                [ 'network interface/In Errors', 'ifInErrors', 14, undef, undef, 'FF000099', 'Packets|TU/sec', undef ]
             ]
         },
         {
@@ -693,10 +718,10 @@ sub registerIndicators {
                 type     => 'GAUGE',
              },
             indicators => [
-                [ 'vm_cpu_total', 'summary.config.numCpu', undef, undef, 'FF000099', 'Cores', undef ],
-                [ 'vm_cpu_usage', 'summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
-                [ 'vm_mem_total', 'summary.config.memorySizeMB', undef, undef, 'FF000099', 'MBytes', undef ],
-                [ 'vm_mem_usage', 'summary.quickStats.hostMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'vsphere vm/total cpu', 'vm_cpu_total', 'summary.config.numCpu', undef, undef, 'FF000099', 'Cores', undef ],
+                [ 'vsphere vm/cpu usage', 'vm_cpu_usage', 'summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
+                [ 'vsphere vm/total mem', 'vm_mem_total', 'summary.config.memorySizeMB', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'vsphere vm/mem usage', 'vm_mem_usage', 'summary.quickStats.hostMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
             ]
         },
         {
@@ -706,10 +731,10 @@ sub registerIndicators {
                 type     => 'GAUGE',
              },
             indicators => [
-                [ 'hv_cpu_total', 'summary.hardware.numCpuCores', undef, undef, 'FF000099', 'Cores', undef ],
-                [ 'hv_cpu_usage', 'summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
-                [ 'hv_mem_total', 'summary.hardware.memorySize', undef, undef, 'FF000099', 'Bytes', undef ],
-                [ 'hv_mem_usage', 'summary.quickStats.overallMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
+                [ 'vsphere hv/total cpu', 'hv_cpu_total', 'summary.hardware.numCpuCores', undef, undef, 'FF000099', 'Cores', undef ],
+                [ 'vsphere hv/cpu usage', 'hv_cpu_usage', 'summary.quickStats.overallCpuUsage', undef, undef, 'FF000099', 'MHz', undef ],
+                [ 'vsphere hv/total mem', 'hv_mem_total', 'summary.hardware.memorySize', undef, undef, 'FF000099', 'Bytes', undef ],
+                [ 'vsphere hv/mem usage', 'hv_mem_usage', 'summary.quickStats.overallMemoryUsage', undef, undef, 'FF000099', 'MBytes', undef ],
             ]
         }
     ];
@@ -728,12 +753,13 @@ sub registerIndicators {
 
         for my $indicator (@{$set->{indicators}}) {
             Indicator->new(
-                indicator_name  => $indicator->[0],
-                indicator_oid   => $indicator->[1],
-                indicator_min   => $indicator->[2],
-                indicator_max   => $indicator->[3],
-                indicator_color => $indicator->[4],
-                indicator_unit  => $indicator->[5],
+                indicator_label => $indicator->[0],
+                indicator_name  => $indicator->[1],
+                indicator_oid   => $indicator->[2],
+                indicator_min   => $indicator->[3],
+                indicator_max   => $indicator->[4],
+                indicator_color => $indicator->[5],
+                indicator_unit  => $indicator->[6],
                 indicatorset_id => $indicatorset->id
             );
         }
@@ -785,23 +811,23 @@ sub registerKanopyaMaster {
 
     my $components = [
         {
-            name => 'Lvm2'
+            name => 'Lvm'
         },
         {
-            name => 'Iscsitarget1'
+            name => 'Iscsitarget'
         },
         {
-            name => 'Fileimagemanager0'
+            name => 'Fileimagemanager'
         },
         {
-            name => "Dhcpd3",
+            name => "Dhcpd",
             conf => {
                 dhcpd3_domain_name =>  "hedera-technology.com",
                 dhcpd3_servername  => "node001"
             }
         },
         {
-            name => "Atftpd0",
+            name => "Atftpd",
             conf => {
                 atftpd0_options    => '--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5',
                 atftpd0_use_inetd  => 'FALSE',
@@ -810,14 +836,14 @@ sub registerKanopyaMaster {
             }
         },
         {
-            name => "Snmpd5",
+            name => "Snmpd",
             conf => {
                 monitor_server_ip => $args{poolip_addr},
                 snmpd_options     => '-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid'
             }
         },
         {
-            name => "Nfsd3",
+            name => "Nfsd",
             conf => {
                 nfsd3_need_gssd => 'no',
                 nfsd3_rpcnfsdcount => 8,
@@ -826,36 +852,36 @@ sub registerKanopyaMaster {
             }
         },
         {
-            name => "Syslogng3",
+            name => "Syslogng",
         },
         {
-            name => "Puppetmaster2",
+            name => "Puppetmaster",
             conf => {
                 puppetmaster2_options => ""
             }
         },
         {
-            name => "Openiscsi2"
+            name => "Openiscsi"
         },
         {
-            name => "Physicalhoster0",
+            name => "Physicalhoster",
             manager => "host_manager"
         },
         {
-            name => "Kanopyacollector1",
+            name => "Kanopyacollector",
             conf => {
                 kanopyacollector1_collect_frequency => 3600,
                 kanopyacollector1_storage_time      => 86400
             }
         },
         {
-            name => "Kanopyaworkflow0"
+            name => "Kanopyaworkflow"
         },
         {
-            name => "Linux0"
+            name => "Debian"
         },
         {
-            name => "Mailnotifier0",
+            name => "Mailnotifier",
             manager => "notification_manager",
             conf => {
                 smtp_server => "localhost"
@@ -865,13 +891,11 @@ sub registerKanopyaMaster {
 
     my $installed = { };
     for my $component (@{$components}) {
-        my $class = "Entity::Component::" . $component->{name};
-        my $version = chop($component->{name});
         my $name = $component->{name};
-        my $component_type = ComponentType->search(hash => {
-                                 component_name    => $name,
-                                 component_version => $version
+        my $component_type = ComponentType->find(hash => {
+                                 component_name    => $name
                              } );
+        my $class = $component_type->component_class->class_type;
         my $component_template;
         eval {
             $component_template = ComponentTemplate->find(hash => { component_template_name => lc $name })->id;

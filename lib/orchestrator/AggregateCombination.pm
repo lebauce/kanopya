@@ -27,23 +27,36 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    aggregate_combination_id      =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    aggregate_combination_label     =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    aggregate_combination_service_provider_id => {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    aggregate_combination_formula =>  {pattern       => '^((id\d+)|[ .+*()-/]|\d)+$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1,
-                                 description    => "Construct a formula by service metric's names with all mathematical operators. It's possible to use parenthesis with spaces between each element of the formula. Press a letter key to obtain the available choice."},
+    aggregate_combination_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    aggregate_combination_label => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    aggregate_combination_service_provider_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 0
+    },
+    aggregate_combination_formula => {
+        pattern         => '^((id\d+)|[ .+*()-/]|\d)+$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+        description     =>  "Construct a formula by service metric's names with all mathematical operators."
+                            ." It's possible to use parenthesis with spaces between each element of the formula."
+                            ." Press a letter key to obtain the available choice."
+    },
+    formula_label => {
+        is_virtual      => 1,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -73,6 +86,11 @@ sub methods {
     }
 }
 
+# Virtual attribute getter
+sub formula_label {
+    my $self = shift;
+    return $self->toString();
+}
 
 sub new {
     my $class = shift;
@@ -321,9 +339,6 @@ sub getUnit {
     my ($self, %args) = @_;
 
     my $formula             = $self->getAttr(name => 'aggregate_combination_formula');
-    my $service_provider_id = $self->getAttr(name => 'aggregate_combination_service_provider_id');
-    my $service_provider    = Entity::ServiceProvider->get(id => $service_provider_id);
-    my $collector           = $service_provider->getManager(manager_type => "collector_manager");
 
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);

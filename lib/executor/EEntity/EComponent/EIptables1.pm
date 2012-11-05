@@ -47,7 +47,7 @@ sub configureNode {
 	           next COMPONENT;   
 	       }
         }
-	       my $component = $cluster->getComponentByInstanceId(component_instance_id => $component_instance->{iptables1_component_instance_id});
+	       my $component = Entity->get(id => $component_instance->{iptables1_component_instance_id});
 	       my $netconf = $component->getNetConf();
            while(my ($port, $protocols) = each %$netconf) {
                 PROTOCOL:         

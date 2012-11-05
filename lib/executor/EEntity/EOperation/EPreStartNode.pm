@@ -91,7 +91,8 @@ sub execute {
     $self->SUPER::execute();
 
     #TODO  component migrate (node, exec context?)
-    my @components = $self->{context}->{cluster}->getComponents(category => "all");
+    my @components = $self->{context}->{cluster}->getComponents(category => "all",
+                                                                order_by => "priority");
     $log->info('Inform cluster components about node addition');
     foreach my $component (@components) {
         EFactory::newEEntity(data => $component)->preStartNode(

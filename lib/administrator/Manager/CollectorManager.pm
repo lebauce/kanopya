@@ -26,35 +26,49 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use General;
+use CollectorIndicator;
 use Indicator;
 
 my $log = get_logger("");
 
-=head2 checkManagerParams
 
-=cut
+sub createCollectorIndicators {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['indicator_sets']);
 
-sub checkCollectorManagerParams {
-}
+    my @indicators = ();
 
-=head2
+    for my $indicator_set (@{$args{indicator_sets}}) {
+        @indicators = ( @indicators,
+                        Indicator->search (
+                            hash => {
+                                indicatorset_id => $indicator_set-> id,
+                            }
+                        )
+                      );
+    }
 
-    Desc: Call kanopya native monitoring API to retrieve indicators data 
-    return \%monitored_values;
 
-=cut
-
-sub retrieveData {
+    for my $indicator (@indicators) {
+        CollectorIndicator->new(
+            indicator_id => $indicator->id,
+            collector_manager_id =>  $self->id,
+        );
+    }
+    return;
 }
 
 =head2 getIndicators
 
-    Desc: call collector manager to retrieve indicators available for the service provider
-    return \@indicators;
-        
+    Desc: Retrieve a list of indicators available
+
 =cut
 
 sub getIndicators {
+    my $self = shift;
+    my @collector_indicators = $self->collector_indicators;
+    my @indicators = map {$_->indicator} @collector_indicators;
+    return \@indicators;
 }
 
 =head2 getIndicator
@@ -66,6 +80,27 @@ sub getIndicators {
 =cut
 
 sub getIndicator {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['id']);
+    my $collector_indicator = CollectorIndicator->get(id => $args{id});
+    return $collector_indicator->indicator;
+}
+
+=head2 checkManagerParams
+
+=cut
+
+sub checkCollectorManagerParams {
+}
+
+=head2
+
+    Desc: Call kanopya native monitoring API to retrieve indicators data
+    return \%monitored_values;
+
+=cut
+
+sub retrieveData {
 }
 
 =head2 collectIndicator
@@ -79,7 +114,7 @@ sub collectIndicator {
 
 =head2
 
-    Desc: Return an information string about the collector manager 
+    Desc: Return an information string about the collector manager
 
 =cut
 

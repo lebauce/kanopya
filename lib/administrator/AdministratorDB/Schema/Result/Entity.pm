@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::Entity;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::Entity
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::Entity
+=head1 TABLE: C<entity>
 
 =cut
 
@@ -65,6 +69,17 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</entity_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("entity_id");
 
 =head1 RELATIONS
@@ -96,6 +111,36 @@ __PACKAGE__->might_have(
   "billinglimit",
   "AdministratorDB::Schema::Result::Billinglimit",
   { "foreign.id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 class_type
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ClassType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "class_type",
+  "AdministratorDB::Schema::Result::ClassType",
+  { class_type_id => "class_type_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 collector_indicators
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
+
+=cut
+
+__PACKAGE__->has_many(
+  "collector_indicators",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.collector_manager_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -179,19 +224,19 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 class_type
+=head2 entity_lock_consumers
 
-Type: belongs_to
+Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::ClassType>
+Related object: L<AdministratorDB::Schema::Result::EntityLock>
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "class_type",
-  "AdministratorDB::Schema::Result::ClassType",
-  { class_type_id => "class_type_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+__PACKAGE__->has_many(
+  "entity_lock_consumers",
+  "AdministratorDB::Schema::Result::EntityLock",
+  { "foreign.consumer_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 entity_lock_entity
@@ -209,18 +254,18 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 entity_lock_consumers
+=head2 entityright_entityright_consumers
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::EntityLock>
+Related object: L<AdministratorDB::Schema::Result::Entityright>
 
 =cut
 
 __PACKAGE__->has_many(
-  "entity_lock_consumers",
-  "AdministratorDB::Schema::Result::EntityLock",
-  { "foreign.consumer_id" => "self.entity_id" },
+  "entityright_entityright_consumers",
+  "AdministratorDB::Schema::Result::Entityright",
+  { "foreign.entityright_consumer_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -236,21 +281,6 @@ __PACKAGE__->has_many(
   "entityright_entityrights_consumed",
   "AdministratorDB::Schema::Result::Entityright",
   { "foreign.entityright_consumed_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 entityright_entityright_consumers
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Entityright>
-
-=cut
-
-__PACKAGE__->has_many(
-  "entityright_entityright_consumers",
-  "AdministratorDB::Schema::Result::Entityright",
-  { "foreign.entityright_consumer_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -434,21 +464,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 notification_subscription_subscribers
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::NotificationSubscription>
-
-=cut
-
-__PACKAGE__->has_many(
-  "notification_subscription_subscribers",
-  "AdministratorDB::Schema::Result::NotificationSubscription",
-  { "foreign.subscriber_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 notification_subscription_entities
 
 Type: has_many
@@ -461,6 +476,21 @@ __PACKAGE__->has_many(
   "notification_subscription_entities",
   "AdministratorDB::Schema::Result::NotificationSubscription",
   { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 notification_subscription_subscribers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NotificationSubscription>
+
+=cut
+
+__PACKAGE__->has_many(
+  "notification_subscription_subscribers",
+  "AdministratorDB::Schema::Result::NotificationSubscription",
+  { "foreign.subscriber_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -614,10 +644,20 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 gps
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-10-22 09:48:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1+XLgzLhLlZ9vFSganCDXg
+Type: many_to_many
+
+Composing rels: L</ingroups> -> gp
+
+=cut
+
+__PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-30 09:57:20
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:D9Uig4ENLJPSQVAdF52lag
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

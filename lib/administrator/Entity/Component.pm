@@ -26,7 +26,9 @@ use Kanopya::Exceptions;
 use Data::Dumper;
 use Administrator;
 use General;
+use ComponentType;
 use Log::Log4perl "get_logger";
+
 my $log = get_logger("");
 my $errmsg;
 
@@ -67,6 +69,9 @@ use constant ATTR_DEF => {
         is_extended    => 0,
         is_editable    => 0
     },
+    priority => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -93,7 +98,7 @@ sub new {
     my %args = @_;
 
     # avoid abstract Entity::Component instanciation
-    if ($class !~ /Entity::Component::(.+)(\d+)/) {
+    if ($class !~ /Entity::Component.*::(\D+)(\d*)/) {
         $errmsg = "Entity::Component->new : Entity::Component must not " .
                   "be instanciated without a concret component class";
         $log->error($errmsg);
@@ -111,14 +116,14 @@ sub new {
     }
 
     # we set the corresponding component_type
-    my $admin = Administrator->new();
-    my $component_type_id = $admin->{db}->resultset('ComponentType')->search( {
-                                component_name    => $component_name,
-		                        component_version => $component_version
-                            })->single->id;
+    my $hash = { component_name => $component_name };
+    if (defined ($component_version) && $component_version) {
+        $hash->{component_version} = $component_version;
+    }
 
-    $config->{component_type_id} = $component_type_id;
-    my $self = $class->SUPER::new(%$config);
+    my $self = $class->SUPER::new(component_type_id => ComponentType->find(hash => $hash)->id,
+                                  %$config);
+
     bless $self, $class;
     return $self;
 }
@@ -133,7 +138,7 @@ sub getConf {
     my $self = shift;
     my $conf = {};
 
-    return $self->toJSON;
+    return $self->toJSON(raw => 1);
 }
 
 =head2 setConf
@@ -209,34 +214,6 @@ sub getTemplateDirectory {
     }
 }
 
-=head2 getComponenAttr
-
-B<Class>   : Public
-B<Desc>    : This method return component information like name, version, ...
-B<args>    : None
-B<Return>  : Hash ref :
-    B<component_name> : Component name
-    B<component_version> : Component version
-    B<component_id> : Component id. Could be use to instanciate a new cluster.
-            Ref Component table id
-    B<component_category> : Component category. Its a specific category classification be
-B<Comment>  : Return information about component, not about $self (which is a component instance)
-B<throws>  : None
-
-=cut
-
-sub getComponentAttr {
-    my $self = shift;
-    my $componentAttr = {};
-
-    $componentAttr->{component_name}     = $self->{_dbix}->parent->component_type->get_column('component_name');
-    $componentAttr->{component_type_id}  = $self->{_dbix}->parent->component_type->get_column('component_type_id');
-    $componentAttr->{component_version}  = $self->{_dbix}->parent->component_type->get_column('component_version');
-    $componentAttr->{component_category} = $self->{_dbix}->parent->component_type->get_column('component_category');
-
-    return $componentAttr;
-}
-
 =head2 getServiceProvider
 
     Desc: Returns the service provider the component is on
@@ -293,7 +270,12 @@ sub supportHotConfiguration {
     return 0;
 }
 
+sub priority {
+    return 50;
+}
+
 sub readyNodeAddition { return 1; }
+
 sub readyNodeRemoving { return 1; }
 
 # Method to override to insert in db component default configuration

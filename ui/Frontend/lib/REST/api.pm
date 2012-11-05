@@ -7,6 +7,7 @@ use POSIX qw(ceil);
 prefix undef;
 
 use General;
+use BaseDB;
 use Entity;
 use Entity::Operation;
 use Entity::Workflow;
@@ -36,6 +37,7 @@ my %resources = (
     "classtype"                => "ClassType",
     "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
     "clustermetric"            => "Clustermetric",
+    "collectorindicator"       => "CollectorIndicator",
     "component"                => "Entity::Component",
     "componenttype"            => "ComponentType",
     "connector"                => "Entity::Connector",
@@ -43,6 +45,7 @@ my %resources = (
     "container"                => "Entity::Container",
     "containeraccess"          => "Entity::ContainerAccess",
     "dashboard"                => "Dashboard",
+    "debian"                   => "Entity::Component::Debian",
     "entity"                   => "Entity",
     "entitycomment"            => "EntityComment",
     "externalcluster"          => "Entity::ServiceProvider::Outside::Externalcluster",
@@ -66,8 +69,8 @@ my %resources = (
     "kanopyacollector1"        => "Entity::Component::Kanopyacollector1",
     "keepalived1"              => "Entity::Component::Keepalived1",
     "kernel"                   => "Entity::Kernel",
-    "linux0"                   => "Entity::Component::Linux0",
-    "linux0mount"              => "Linux0Mount",
+    "linux"                    => "Entity::Component::Linux",
+    "linuxmount"               => "LinuxMount",
     "lvm2vg"                   => "Lvm2Vg",
     "lvm2"                     => "Entity::Component::Lvm2",
     "lvmcontainer"             => "Entity::Container::LvmContainer",
@@ -116,15 +119,16 @@ my %resources = (
     "puppetagent2"             => "Entity::Component::Puppetagent2",
     "puppetmaster2"            => "Entity::Component::Puppetmaster2",
     "quota"                    => "Quota",
+    "redhat"                   => "Entity::Component::Redhat",
     "sco"                      => "Entity::Connector::Sco",
     "scom"                     => "Entity::Connector::Scom",
-    "scomindicator"            => "ScomIndicator",
     "scope"                    => "Scope",
     "scopeparameter"           => "ScopeParameter",
     "snmpd5"                   => "Entity::Component::Snmpd5",
     "serviceprovider"          => "Entity::ServiceProvider",
     "serviceprovidermanager"   => "ServiceProviderManager",
     "servicetemplate"          => "Entity::ServiceTemplate",
+    "suse"                     => "Entity::Component::Suse",
     "syslogng3"                => "Entity::Component::Syslogng3",
     "systemimage"              => "Entity::Systemimage",
     "ucsmanager"               => "Entity::Connector::UcsManager",
@@ -438,11 +442,17 @@ sub setupREST {
                         # TODO: prefetch filter so that we can just bless it
                         # $obj = bless { _dbix => $parent->$filter }, "Entity";
 
-                        if ($parent->result_source->relationship_info($filter)->{attrs}->{accessor} eq "multi") {
-                            my @rs = $parent->$filter->search_rs( { } );
+                        my $relinfo = $parent->result_source->relationship_info($filter);
 
-                            my $json = format_results(class     => $parent->$filter->search_rs(),
-                                                      dataType  => params->{dataType},
+                        if ($relinfo->{attrs}->{accessor} eq "multi") {
+                            my @conds = keys %{$relinfo->{cond}};
+                            my $fk = BaseDB::getForeignKeyFromCond(cond => $conds[0]);
+                            my $class = BaseDB::classFromDbix($parent->result_source->related_source($filter));
+
+                            $hash->{$fk} = $parent->id;
+
+                            my $json = format_results(class    => $class,
+                                                      dataType => params->{dataType},
                                                       %$hash);
 
                             return to_json($json);

@@ -40,7 +40,7 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     image_type => {
-        pattern      => '^img|vmdk$',
+        pattern      => '^img|vmdk|qcow2$',
         is_mandatory => 0,
         is_extended  => 0
     },
@@ -99,7 +99,8 @@ sub getPolicyParams {
         for my $access (@{ $self->getConf->{container_accesses} }) {
             $accesses->{$access->{container_access_id}} = $access->{container_access_name};
         }
-        return [ { name   => 'container_access_id', label  => 'NFS export to use', values => $accesses } ];
+        return [ { name => 'container_access_id', label => 'NFS export to use', values => $accesses },
+                 { name => 'image_type', label => 'Disk image format', values => [ "raw", "qcow2", "VMDK" ] } ];
     }
     return [];
 }

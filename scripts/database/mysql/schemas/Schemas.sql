@@ -966,7 +966,10 @@ CREATE TABLE `component_type` (
   `component_name` char(32) NOT NULL,
   `component_version` char(32) NOT NULL,
   `component_category` char(32) NOT NULL,
-  PRIMARY KEY (`component_type_id`)
+  `component_class_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`component_type_id`),
+  KEY (`component_class_id`),
+  FOREIGN KEY (`component_class_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1171,6 +1174,7 @@ CREATE TABLE `indicatorset` (
 
 CREATE TABLE `indicator` (
   `indicator_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `indicator_label` char(64) NOT NULL,
   `indicator_name` char(64) NOT NULL,
   `indicator_oid` char(64) NOT NULL,
   `indicator_min` int(8) unsigned,
@@ -1184,6 +1188,19 @@ CREATE TABLE `indicator` (
   FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+CREATE TABLE `collector_indicator` (
+  `collector_indicator_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `indicator_id` int(8) unsigned NOT NULL,
+  `collector_manager_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`collector_indicator_id`),
+  KEY `indicator_id` (`indicator_id`),
+  KEY `collector_manager_id` (`collector_manager_id`),
+  FOREIGN KEY (`indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`collector_manager_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 
 --
@@ -1213,6 +1230,8 @@ CREATE TABLE `clustermetric` (
   `clustermetric_window_time` int(8) unsigned NOT NULL,
   PRIMARY KEY (`clustermetric_id`),
   KEY (`clustermetric_service_provider_id`),
+  KEY (`clustermetric_indicator_id`),
+  FOREIGN KEY (`clustermetric_indicator_id`) REFERENCES `collector_indicator` (`collector_indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`clustermetric_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

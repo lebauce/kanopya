@@ -133,9 +133,9 @@ sub postStartNode {
     if($args{cluster}->getMasterNodeIp() eq $args{host}->getAdminIp()) {
         my $conf = $self->getConf();
         my $comp = $self->_getEntity();
-        my $linux0 = $args{cluster}->getComponent(name => "Linux", version => "0");
-        my $oldconf = $linux0->getConf();
-        my @mountentries = @{$oldconf->{linux0s_mount}};
+        my $linux = $args{cluster}->getComponent(category => "System");
+        my $oldconf = $linux->getConf();
+        my @mountentries = @{$oldconf->{linuxes_mount}};
 
         for my $repo (@{$conf->{opennebula3_repositories}}) {
             if(not defined $repo->{datastore_id}) {
@@ -160,18 +160,18 @@ sub postStartNode {
                 $command .= " /var/lib/one/datastores/$dsid";
                 $self->getEContext->execute(command => $command);
 
-                # update linux0 mount table
+                # update linux mount table
                 push @mountentries, {
-                    linux0_mount_dumpfreq   => 0,
-                    linux0_mount_filesystem => 'nfs',
-                    linux0_mount_point      => "/var/lib/one/datastores/$dsid",
-                    linux0_mount_device     => $container_access->getAttr(name => 'container_access_export'),
-                    linux0_mount_options    => 'rw,sync,vers=3',
-                    linux0_mount_passnum    => 0,
+                    linux_mount_dumpfreq   => 0,
+                    linux_mount_filesystem => 'nfs',
+                    linux_mount_point      => "/var/lib/one/datastores/$dsid",
+                    linux_mount_device     => $container_access->getAttr(name => 'container_access_export'),
+                    linux_mount_options    => 'rw,sync,vers=3',
+                    linux_mount_passnum    => 0,
                 };
             }
         }
-        $linux0->setConf(conf => { linux0s_mount => \@mountentries});
+        $linux->setConf(conf => { linuxes_mount => \@mountentries});
     }
 
     # hypervisor declaration

@@ -63,6 +63,21 @@ __PACKAGE__->set_primary_key("class_type_id");
 
 =head1 RELATIONS
 
+=head2 component_types
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ComponentType>
+
+=cut
+
+__PACKAGE__->has_many(
+  "component_types",
+  "AdministratorDB::Schema::Result::ComponentType",
+  { "foreign.component_class_id" => "self.class_type_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 entities
 
 Type: has_many
@@ -78,8 +93,9 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 16:20:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Rq7T16gi53Qrg52j9W555w
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-31 01:59:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3zuTM2fmvsXOLJn7xz8Kpw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

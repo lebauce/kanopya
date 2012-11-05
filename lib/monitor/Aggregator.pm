@@ -26,6 +26,7 @@ use TimeData::RRDTimeData;
 use Clustermetric;
 use Kanopya::Config;
 use Message;
+use Alert;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -50,7 +51,6 @@ sub getMethods {
 # Constructor
 sub new {
     my $class = shift;
-    my %args = @_;
     my $self = {};
     bless $self, $class;
 
@@ -80,15 +80,11 @@ sub _contructRetrieverOutput {
 
     my $service_provider = Entity::ServiceProvider->get(id => $args{service_provider_id});
     my @clustermetrics = $service_provider->clustermetrics;
-    my $collector = $service_provider->getManager(manager_type => "collector_manager");
 
     for my $clustermetric (@clustermetrics) {
-        my $clustermetric_indicator = $collector->getIndicator(id => $clustermetric->clustermetric_indicator_id);
         my $clustermetric_time_span = $clustermetric->clustermetric_window_time;
-        my $indicator_oid           = $clustermetric_indicator->indicator_oid;
-
-        $indicators->{$indicator_oid} = $clustermetric_indicator;
-
+        my $indicator = $clustermetric->getIndicator();
+        $indicators->{$indicator->indicator_oid} = $indicator;
         if (! defined $time_span) {
             $time_span = $clustermetric_time_span;
         } else {
@@ -133,7 +129,7 @@ sub update() {
             };
 
             if (not $@){
-                $log->info('*** Aggregator collecting for service provider '. $service_provider_id.' ***');
+                $log->info('Aggregator collecting for service provider '. $service_provider_id);
 
                 # Construct input of the collector retriever
                 my $host_indicator_for_retriever = $self->_contructRetrieverOutput(
@@ -148,6 +144,7 @@ sub update() {
 
                 # Verify answers received from SCOM to detect metrics anomalies
                 my $checker = $self->_checkNodesMetrics(
+                                  service_provider_id => $service_provider->id,
                                   asked_indicators => $host_indicator_for_retriever->{indicators},
                                   received => $monitored_values
                               );
@@ -161,7 +158,8 @@ sub update() {
                 }
                 1;
             }
-        } or do {
+        };
+        if($@) {
             $log->error("An error occurred : " . $@);
             next CLUSTER;
         }
@@ -175,18 +173,37 @@ sub _checkNodesMetrics{
     General::checkParams(args => \%args, required => [
         'asked_indicators',
         'received',
+        'service_provider_id',
     ]);
 
     my $asked_indicators = $args{asked_indicators};
     my $received         = $args{received};
-
-    my $num_of_nodes     = scalar (keys %$received);
+    my $service_provider_id = $args{service_provider_id};
 
     foreach my $indicator (values %$asked_indicators) {
         while ( my ($node_name, $metrics) = each(%$received) ) {
+            my $msg = "Indicator " . $indicator->indicator_name . '(' . $indicator->indicator_oid . ')' .
+                        " was not retrieved by collector for node $node_name";
+
+            my $alert =  eval { Alert->find( hash => {
+                                          alert_message => $msg,
+                                          entity_id => $service_provider_id })
+            };
+
+
             if (! defined $metrics->{$indicator->indicator_oid}) {
-                $log->debug("Indicator " . $indicator->indicator_name . '(' . $indicator->indicator_oid . ')' .
-                            " was not retrieved by collector for node $node_name");
+                $log->debug($msg);
+
+                if ((! defined $alert) || ($alert->alert_active == 0) ) {
+                    Alert->new (
+                        entity_id       => $service_provider_id,
+                        alert_message   => $msg,
+                        alert_signature => $msg.' '.time()
+                    );
+                }
+            }
+            elsif (defined $alert && $alert->alert_active == 1) {
+                $alert->mark_resolved;
             }
         }
     }
@@ -215,22 +232,15 @@ sub _computeCombinationAndFeedTimeDB {
 
     my $service_provider = Entity::ServiceProvider->get('id' => $cluster_id);
     my @clustermetrics   = $service_provider->clustermetrics;
-    my $collector        = $service_provider->getManager(manager_type => "collector_manager");
-
-    my $clustermetric_indicator;
-    my $indicator_oid;
 
     # Loop on all the clustermetrics
     for my $clustermetric (@clustermetrics) {
-
+        my $indicator_oid = $clustermetric->getIndicator()->indicator_oid;
         # Array that will store all the values needed to compute $clustermetric val
         my @dataStored = ();
 
         # Loop on all the host_name of the $clustermetric
         for my $host_name (keys %$values) {
-            $clustermetric_indicator = $collector->getIndicator(id => $clustermetric->clustermetric_indicator_id);
-            $indicator_oid           = $clustermetric_indicator->indicator_oid;
-
             #if indicator value is undef, do not store it in the array
             if (defined $values->{$host_name}->{$indicator_oid}) {
                 push @dataStored, $values->{$host_name}->{$indicator_oid};
@@ -289,7 +299,7 @@ sub run {
         $log->info( "Manage duration : $update_duration seconds" );
 
         my $conf      = getAggregatorConf();
-        my $time_step = $conf->{time_step}; 
+        my $time_step = $conf->{time_step};
 
         if ($update_duration > $time_step) {
             $log->warn("aggregator duration > aggregator time step (conf)");
@@ -308,7 +318,7 @@ sub run {
 =head2 updateAggregatorConf
 
     Class : Public
-    Desc : update values in the aggregator.conf file 
+    Desc : update values in the aggregator.conf file
     Args: $collect_frequency and/or $storage_duration
 
 =cut
