@@ -175,21 +175,10 @@ sub toString{
     }
 };
 
-#C/P of homonym method in AggregateRulePackage
 sub getDependantConditionIds {
     my $self = shift;
-    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
-    my @array = split(/(id\d+)/,$formula);
-
-    my @conditionIds;
-
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            push @conditionIds, substr($element,2);
-        }
-    }
-    return @conditionIds;
+    my %ids = map { $_ => undef } ($self->nodemetric_rule_formula =~ m/id(\d+)/g);
+    return keys %ids
 }
 
 sub evalOnOneNode{

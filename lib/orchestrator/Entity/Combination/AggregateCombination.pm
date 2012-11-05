@@ -221,10 +221,9 @@ sub compute{
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             $element = $args{substr($element,2)};
-            if (!defined $element){
+            if (!defined $element) {
                 return undef;
             }
         }
@@ -243,21 +242,8 @@ sub compute{
 
 sub dependantClusterMetricIds() {
     my $self = shift;
-    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
-
-    my @clusterMetricsList;
-
-    #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            push @clusterMetricsList, substr($element,2);
-        }
-     }
-     return @clusterMetricsList;
+    my %ids = map { $_ => undef } ($self->aggregate_combination_formula =~ m/id(\d+)/g);
+    return keys %ids;
 }
 
 # Remove duplicate from an array, return array without doublons

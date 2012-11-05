@@ -319,25 +319,14 @@ sub updateState() {
 
 sub getDependantConditionIds {
     my $self = shift;
-    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
-    my @array = split(/(id\d+)/,$formula);
-
-    my @conditionIds;
-
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            push @conditionIds, substr($element,2);
-        }
-    }
-    return @conditionIds;
+    my %ids = map { $_ => undef } ($self->aggregate_rule_formula =~ m/id(\d+)/g);
+    return keys %ids;
 }
 
 
 sub isCombinationDependant{
     my $self         = shift;
     my $condition_id = shift;
-
     my @dep_cond_id = $self->getDependantConditionIds();
     my $rep = any {$_ eq $condition_id} @dep_cond_id;
     return $rep;
