@@ -59,5 +59,23 @@ sub delete {
     }
     return $self->SUPER::delete();
 };
+
+sub getDependencies {
+    my $self = shift;
+
+    my @conditions = (
+        $self->aggregate_condition_left_combinations,
+        $self->aggregate_condition_right_combinations,
+        $self->nodemetric_condition_left_combinations,
+        $self->nodemetric_condition_right_combinations,
+    );
+
+    my %dependencies;
+    for my $condition (@conditions) {
+        $dependencies{$condition->nodemetric_condition_label} = $condition->getDependencies;
+    }
+    return \%dependencies;
+}
+
 sub deleteIfConstant {};
 1;

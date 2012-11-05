@@ -279,15 +279,4 @@ sub getUnit {
     return join('',@array);
 }
 
-sub getDependencies {
-    my $self = shift;
-    my @conditions = $self->nodemetric_conditions;
-    my %dependencies;
-
-    for my $condition (@conditions) {
-        $dependencies{$condition->nodemetric_condition_label} = $condition->getDependencies;
-    }
-    return \%dependencies;
-}
-
 1;

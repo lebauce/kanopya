@@ -346,19 +346,6 @@ sub getUnit {
     return join('',@array);
 }
 
-sub getDependencies {
-    my $self = shift;
-    my @conditions = $self->aggregate_conditions;
-    my %dependencies;
-
-    for my $condition (@conditions) {
-        $dependencies{$condition->aggregate_condition_label} = $condition->getDependencies;
-    }
-    return \%dependencies;
-}
-
-
-
 sub getDependantIndicatorIds {
     return ();
 }
