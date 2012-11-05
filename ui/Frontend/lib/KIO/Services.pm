@@ -23,7 +23,7 @@ ajax '/services/:serviceid/nodes/update' => sub {
         my $created_nodes = $rep->{created_nodes};
              
         foreach my $node (@$created_nodes){
-            NodemetricRule::setAllRulesUndefForANode(
+            Entity::NodemetricRule::setAllRulesUndefForANode(
                 cluster_id     => param('serviceid'),
                 node_id        => $node->{id},
             );   
