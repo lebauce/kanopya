@@ -98,7 +98,7 @@ sub prepare {
         $self->{context}->{cluster} = EFactory::newEEntity(data => $cluster);
     };
     if($@) {
-        $errmsg = "EOperation::EAddCluster->prepare : Cluster instanciation failed because : " . $@;
+        $errmsg = "Cluster instanciation failed because : " . $@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -114,7 +114,7 @@ sub execute {
                                         orchestration   => $self->{params}->{orchestration},
                                         erollback       => $self->{erollback});
 
-    $log->info("Cluster <" . $self->{context}->{cluster}->getAttr(name => "cluster_name") . "> is now added");
+    $log->info("Cluster <" . $self->{context}->{cluster}->cluster_name . "> is now added");
 }
 
 sub finish {
