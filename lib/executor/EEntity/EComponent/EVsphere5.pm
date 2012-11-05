@@ -262,22 +262,49 @@ sub scaleCpu {
     my $host       = $args{host};
     my $cpu_number = $args{cpu_number};
 
-    #Now we do the VM Scale In through ReconfigVM() method
-    my $new_vm_config_spec = VirtualMachineConfigSpec->new(
-                                 numCPUs => $cpu_number,
-                             );
-    eval {
-            $host->ReconfigVM(
-                spec => $new_vm_config_spec,
-            );
-    };
-    if ($@) {
-        $errmsg = 'Error scaling in CPU on virtual machine '.$host->name.': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    #determine the nature of the host and reject non vsphere ones
+    if (ref $host eq 'EEntity::EHost::EVirtualMachine::EVsphere5Vm') {
+        my $hypervisor = $host->hypervisor;
+        my $dc_name    = $hypervisor->vsphere5_datacenter->vsphere5_datacenter_name;
+
+        #get datacenter's view
+        my $dc_view = $self->findEntityView(
+                          view_type   => 'Datacenter',
+                          hash_filter => {
+                              name => $dc_name,
+                          },
+                      );
+
+        #get the vm's view
+        my $vm_view = $self->findEntityView(
+                          view_type    => 'VirtualMachine',
+                          hash_filter  => {
+                              name => $host->node->externalnode_hostname,
+                          },
+                          begin_entity => $dc_view,
+                      );
+
+        #Now we do the VM Scale In through ReconfigVM() method
+        my $new_vm_config_spec = VirtualMachineConfigSpec->new(
+                                     numCPUs => $cpu_number,
+                                 );
+        eval {
+                $vm_view->ReconfigVM(
+                    spec => $new_vm_config_spec,
+                );
+        };
+        if ($@) {
+            $errmsg = 'Error scaling in CPU on virtual machine '.$host->host_hostname.': '.$@;
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+        #We Refresh the values of view
+        #with corresponding server-side object values
+        $vm_view->update_view_data;
     }
-    #We Refresh the values of view
-    #with corresponding server-side object values
-    $host->update_view_data;
+    else {
+        $errmsg = 'The host type: ' . ref $host . ' is not handled by this manager';
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    } 
 }
 
 =pod
@@ -302,7 +329,7 @@ sub scaleMemory {
     my $host   = $args{host};
     my $memory = $args{memory};
 
-    #determine the nature of the host and act accordingly
+    #determine the nature of the host and reject non vsphere ones
     if (ref $host eq 'EEntity::EHost::EVirtualMachine::EVsphere5Vm') {
         my $hypervisor = $host->hypervisor;
         my $dc_name    = $hypervisor->vsphere5_datacenter->vsphere5_datacenter_name;

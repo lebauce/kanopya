@@ -114,7 +114,7 @@ sub getAvailableMemory {
 
 =begin classdoc
 
-Return virtual machine resources. If no resssource type(s) is(are) specified in parameters,
+Return virtual machine resources. If no resource type(s) is(are) specified in parameters,
 return all known resources.
 
 @param vm the target vm
@@ -135,7 +135,6 @@ sub getVmResources {
     );
 
     my $vsphere = $self->getVsphereManager();
-    $vsphere->negociateConnection();
 
     my $view_args       = {name => $self->host_hostname};
     my $hypervisor_view = $vsphere->findEntityView(
@@ -161,7 +160,7 @@ sub getVmResources {
     foreach my $vm (@vms) {
         my $vm_view = $vsphere->findEntityView(
                           view_type    => 'VirtualMachine',
-                          hash_filter  => {name => $vm},
+                          hash_filter  => {name => $vm->node->externalnode_hostname},
                           begin_entity => $hypervisor_view,
                       );
 
