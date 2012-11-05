@@ -934,7 +934,7 @@ sub registerVm {
                  );
 
         #promote new virtual machine class to a vsphere5Vm one
-        $self->addVM(host => $vm, guest_id => $vm_view->summary->config->guestId);
+        $self->addVM(host => $vm, guest_id => $vm_view->config->guestId);
 
         my $node = Externalnode::Node->new(
                        inside_id             => $service_provider->id,
