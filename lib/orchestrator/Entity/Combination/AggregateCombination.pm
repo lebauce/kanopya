@@ -11,13 +11,13 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Combination::AggregateCombination;
+package Entity::Combination::AggregateCombination;
 
 use strict;
 use warnings;
 use Data::Dumper;
-use base 'Combination';
-use Clustermetric;
+use base 'Entity::Combination';
+use Entity::Clustermetric;
 use TimeData::RRDTimeData;
 use Kanopya::Exceptions;
 use List::Util qw {reduce};
@@ -116,7 +116,7 @@ sub _verify {
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            if (!(Clustermetric->search(hash => {'clustermetric_id'=>substr($element,2)}))){
+            if (!(Entity::Clustermetric->search(hash => {'clustermetric_id'=>substr($element,2)}))){
              my $errmsg = "Creating combination formula with an unknown clusterMetric id ($element) ";
              $log->error($errmsg);
              throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -155,7 +155,7 @@ sub toString {
             if( $element =~ m/id\d+/)
             {
                 # Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-                $element = Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1);
+                $element = Entity::Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1);
             }
         }
         return List::Util::reduce { $a . $b } @array;
@@ -171,7 +171,7 @@ sub computeValues{
     my @cm_ids = $self->dependantClusterMetricIds();
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
-        my $cm = Clustermetric->get('id' => $cm_id);
+        my $cm = Entity::Clustermetric->get('id' => $cm_id);
         $allTheCMValues{$cm_id} = $cm -> getValuesFromDB(%args);
     }
     return $self->computeFromArrays(%allTheCMValues);
@@ -188,7 +188,7 @@ sub computeLastValue{
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = Clustermetric->get('id'=>substr($element,2))->getLastValueFromDB();
+            $element = Entity::Clustermetric->get('id'=>substr($element,2))->getLastValueFromDB();
             if(not defined $element){
                 return undef;
             }
@@ -346,7 +346,7 @@ sub getUnit {
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            $element = Clustermetric->get('id'=>substr($element,2))->getUnit();
+            $element = Entity::Clustermetric->get('id'=>substr($element,2))->getUnit();
 
             if (not defined $ref_element) {
                 $ref_element = $element;

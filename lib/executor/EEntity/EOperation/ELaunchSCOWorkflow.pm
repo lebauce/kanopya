@@ -40,7 +40,7 @@ use Kanopya::Exceptions;
 use EFactory;
 
 use Template;
-use AggregateRule;
+use Entity::AggregateRule;
 use NodemetricRule;
 
 my $log = get_logger("");
@@ -61,27 +61,27 @@ sub prepare {
         'output_file',
         'template_content',
     ]);
-    
+
 }
 
 sub execute{
     my $self = shift;
     $self->SUPER::execute();
-   
+
     my $output_directory = $self->{params}->{output_directory};
     my $output_file      = $self->{params}->{output_file};
     my $template_content = $self->{params}->{template_content};
     my $wf_values        = $self->{params}->{workflow_values};
 
-    
-    
+
+
     my $template_conf = {
         INTERPOLATE  => 0,               # expand "$wf_values" in plain text
         POST_CHOMP   => 0,               # cleanup whitespace
         EVAL_PERL    => 1,               # evaluate Perl code blocks
         ABSOLUTE     => 1,
     };
-    
+
     my $tt = Template->new($template_conf) || die $Template::ERROR,"\n";
     my $output_path = $output_directory.'/'.$output_file;
     $tt->process(\$template_content, $wf_values, $output_path) or throw Kanopya::Exception::Internal(
@@ -125,7 +125,7 @@ This module is a part of Executor package so refers to Executor configuration
 
 =head1 DEPENDENCIES
 
-This module depends of 
+This module depends of
 
 =over
 

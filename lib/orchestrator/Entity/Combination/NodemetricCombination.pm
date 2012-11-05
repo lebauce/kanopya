@@ -11,13 +11,13 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Combination::NodemetricCombination;
+package Entity::Combination::NodemetricCombination;
 
 use strict;
 use warnings;
-require 'Indicator.pm';
-use CollectorIndicator;
-use base 'Combination';
+require 'Entity/Indicator.pm';
+use Entity::CollectorIndicator;
+use base 'Entity::Combination';
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
@@ -127,7 +127,7 @@ sub toString {
             if( $element =~ m/id\d+/)
             {
                 #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-                $element = CollectorIndicator->get(id => substr($element,2))->indicator->toString();
+                $element = Entity::CollectorIndicator->get(id => substr($element,2))->indicator->toString();
             }
         }
         return join('',@array);
@@ -168,7 +168,7 @@ sub getDependantIndicatorIds{
         if( $element =~ m/id\d+/)
         {
             my $collector_indicator_id = substr($element,2);
-            push @indicator_ids, CollectorIndicator->get(id => $collector_indicator_id)->indicator_id;
+            push @indicator_ids, Entity::CollectorIndicator->get(id => $collector_indicator_id)->indicator_id;
         }
      }
      return @indicator_ids;
@@ -197,7 +197,7 @@ sub computeValueFromMonitoredValues {
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
             my $indicator_id  = substr($element,2);
-            my $indicator_oid = CollectorIndicator->get(id => $indicator_id)->indicator->indicator_oid;
+            my $indicator_oid = Entity::CollectorIndicator->get(id => $indicator_id)->indicator->indicator_oid;
             # Replace $element by its value
             $element          = $monitored_values_for_one_node->{$indicator_oid};
 
@@ -265,7 +265,7 @@ sub getUnit {
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            $element = CollectorIndicator->get(id => substr($element,2))->indicator->indicator_unit || '?';
+            $element = Entity::CollectorIndicator->get(id => substr($element,2))->indicator->indicator_unit || '?';
             if (not defined $ref_element) {
                 $ref_element = $element;
             } else {

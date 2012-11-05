@@ -11,13 +11,13 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package AggregateRule;
+package Entity::AggregateRule;
 
 use strict;
 use warnings;
 use TimeData::RRDTimeData;
-use base 'BaseDB';
-use AggregateCondition;
+use base 'Entity';
+use Entity::AggregateCondition;
 use Data::Dumper;
 use Switch;
 use List::Util qw {reduce};
@@ -155,7 +155,7 @@ sub _verify {
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            if (!(AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
+            if (! (Entity::AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
              my $errmsg = "Creating rule formula with an unknown aggregate condition id ($element) ";
              $log->error($errmsg);
              throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -185,7 +185,7 @@ sub toString(){
 
             if( $element =~ m/id(\d+)/)
             {
-                $element = AggregateCondition->get('id'=>substr($element,2))->toString(depth => $depth - 1);
+                $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->toString (depth => $depth - 1);
             }
          }
          return "@array";
@@ -206,7 +206,7 @@ sub eval {
 
         if( $element =~ m/id(\d+)/)
         {
-            $element = AggregateCondition->get('id'=>substr($element,2))->eval();
+            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->eval();
             if( !defined $element) {
                 return undef;
             }
@@ -280,9 +280,9 @@ sub getRules() {
 
     my @rules;
     if (defined $service_provider_id) {
-        @rules = AggregateRule->search(hash => {'aggregate_rule_service_provider_id' => $service_provider_id});
+        @rules = Entity::AggregateRule->search (hash => {'aggregate_rule_service_provider_id' => $service_provider_id});
     } else {
-        @rules = AggregateRule->search(hash => {});
+        @rules = Entity::AggregateRule->search (hash => {});
     }
 
 
@@ -353,7 +353,7 @@ sub checkFormula {
 
     for my $element (@array) {
         if( $element =~ m/id\d+/){
-            if (!(AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
+            if (! (Entity::AggregateCondition->search (hash => {'aggregate_condition_id'=>substr($element,2)}))){
                 return {
                     value     => '0',
                     attribute => substr($element,2),

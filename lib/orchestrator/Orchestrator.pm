@@ -57,10 +57,10 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
-use AggregateRule;
+use Entity::AggregateRule;
 use NodemetricRule;
 use NodemetricCondition;
-use Combination::NodemetricCombination;
+use Entity::Combination::NodemetricCombination;
 use WorkflowDef;
 use WorkflowNoderule;
 use Entity::Workflow;
@@ -365,7 +365,7 @@ sub _contructRetrieverOutput {
             my @indicator_ids = $condition->getDependantIndicatorIds();
 
             for my $indicator_id (@indicator_ids) {
-                my $indicator = Indicator->get(id => $indicator_id);
+                my $indicator = Entity::Indicator->get(id => $indicator_id);
                 $indicators->{$indicator->indicator_oid} = $indicator;
             }
         }
@@ -384,20 +384,20 @@ sub clustermetricManagement{
     my $service_provider_id = $service_provider->getId();
 
     # Get rules relative to a cluster
-    my @rules_enabled   = AggregateRule->search(
+    my @rules_enabled   = Entity::AggregateRule->search(
                             hash => {
                                 aggregate_rule_service_provider_id => $service_provider_id,
                                 aggregate_rule_state               => 'enabled',
                             }
                         );
 
-    my @rules_triggered = AggregateRule->search(
+    my @rules_triggered = Entity::AggregateRule->search(
                               hash => {
                                   aggregate_rule_service_provider_id => $service_provider_id,
                                   aggregate_rule_state               => 'triggered'
                               }
                           );
-    my @rules_delayed   = AggregateRule->search(
+    my @rules_delayed   = Entity::AggregateRule->search(
                               hash => {
                                   aggregate_rule_service_provider_id => $service_provider_id,
                                   aggregate_rule_state               => 'delayed'

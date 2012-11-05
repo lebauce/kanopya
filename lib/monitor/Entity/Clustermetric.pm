@@ -11,7 +11,7 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Clustermetric;
+package Entity::Clustermetric;
 
 use strict;
 use warnings;
@@ -19,11 +19,11 @@ use General;
 use Data::Dumper;
 use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
-use Indicator;
-use CollectorIndicator;
-require 'Combination/AggregateCombination.pm';
+use Entity::Indicator;
+use Entity::CollectorIndicator;
+require 'Entity/Combination/AggregateCombination.pm';
 
-use base 'BaseDB';
+use base 'Entity';
 
 # logger
 use Log::Log4perl "get_logger";
@@ -92,7 +92,7 @@ sub indicator_label {
 
 sub getIndicator {
     my $self = shift;
-    return CollectorIndicator->get(id => $self->clustermetric_indicator_id)->indicator;
+    return Entity::CollectorIndicator->get(id => $self->clustermetric_indicator_id)->indicator;
 }
 
 sub compute{
@@ -147,7 +147,7 @@ sub getLastValueFromDB{
 
 sub regenTimeDataStores {
 
-    my @clustermetrics = Clustermetric->search(hash => { });
+    my @clustermetrics = Entity::Clustermetric->search(hash => { });
 
     foreach my $clustermetric (@clustermetrics) {
         #delete previous rrd
@@ -170,7 +170,7 @@ sub resizeTimeDataStores {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => ['storage_duration']);
 
-    my @clustermetrics = Clustermetric->search(hash => { });
+    my @clustermetrics = Entity::Clustermetric->search(hash => { });
     foreach my $clustermetric (@clustermetrics) {
         RRDTimeData::resizeTimeDataStore(storage_duration => $args{storage_duration}, clustermetric_id => $clustermetric->clustermetric_id);
     }
@@ -242,7 +242,12 @@ sub getUnit {
 sub getDependencies {
     my $self = shift;
 
-    my @aggregate_combinations_from_same_service = Combination::AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
+    my @aggregate_combinations_from_same_service = Entity::Combination::AggregateCombination->search(
+                                                       hash => {
+                                                           aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id
+                                                       }
+                                                   );
+
     my $id = $self->getId;
 
     my %dependencies;
@@ -264,7 +269,11 @@ sub getDependencies {
 sub delete {
     my $self = shift;
 
-    my @aggregate_combinations_from_same_service = Combination::AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
+    my @aggregate_combinations_from_same_service = Entity::Combination::AggregateCombination->search(
+                                                       hash => {
+                                                           aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id
+                                                       }
+                                                   );
     my $id = $self->getId;
 
     LOOP:

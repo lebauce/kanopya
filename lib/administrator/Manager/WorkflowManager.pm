@@ -30,7 +30,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 use Data::Dumper;
 
-use AggregateRule;
+use Entity::AggregateRule;
 use NodemetricRule;
 use WorkflowDef;
 use WorkflowDefManager;
@@ -267,7 +267,7 @@ sub _linkWorkflowToRule {
         $rule->save();
 
     } elsif ($scope_name eq 'service_provider') {
-        $rule = AggregateRule->find(hash => {aggregate_rule_id => $rule_id});
+        $rule = Entity::AggregateRule->find(hash => {aggregate_rule_id => $rule_id});
         $rule->setAttr(name => 'workflow_def_id', value => $workflow_def_id);
         $rule->save();
     }
@@ -325,7 +325,7 @@ sub runWorkflow {
 
     #run the workflow with the fully defined params
     return Entity::Workflow->run(
-               name       => $workflow_name, 
+               name       => $workflow_name,
                related_id => $service_provider_id,
                params     => $workflow_params,
                # TODO: Uncomment the following line once rules becomme entities.

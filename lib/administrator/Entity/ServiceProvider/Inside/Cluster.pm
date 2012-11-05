@@ -20,7 +20,6 @@ use base 'Entity::ServiceProvider::Inside';
 
 use strict;
 use warnings;
-
 use Kanopya::Exceptions;
 use Kanopya::Config;
 use Entity::Component;
@@ -30,16 +29,16 @@ use Entity::Systemimage;
 use Externalnode::Node;
 use Entity::Operation;
 use Entity::Workflow;
-use Combination::NodemetricCombination;
-use Clustermetric;
-use Combination::AggregateCombination;
+use Entity::Combination::NodemetricCombination;
+use Entity::Clustermetric;
+use Entity::Combination::AggregateCombination;
 use Entity::Policy;
 use Administrator;
 use General;
 use ServiceProviderManager;
 use Entity::ServiceTemplate;
 use VerifiedNoderule;
-use Indicator;
+use Entity::Indicator;
 use Indicatorset;
 use Entity::Billinglimit;
 use Entity::Component::Kanopyaworkflow0;
@@ -601,7 +600,7 @@ sub configureBillingLimits {
         foreach my $name (@indicators) {
             my $indicator = Indicator->find(hash => { indicator_name => $name });
 
-            my $cm = Clustermetric->new(
+            my $cm = Entity::Clustermetric->new(
                 clustermetric_label                    => "Billing" . $name,
                 clustermetric_service_provider_id      => $self->getId,
                 clustermetric_indicator_id             => $indicator->getId,
@@ -609,7 +608,7 @@ sub configureBillingLimits {
                 clustermetric_window_time              => '1200',
             );
 
-            Combination::AggregateCombination->new(
+            Entity::Combination::AggregateCombination->new(
                 aggregate_combination_label               => "Billing" . $name,
                 aggregate_combination_service_provider_id => $self->getId,
                 aggregate_combination_formula             => 'id' . $cm->getId
@@ -639,7 +638,7 @@ sub configureOrchestration {
         my %attrs = $nmc->getAttrs();
         delete $attrs{nodemetric_combination_id};
         $attrs{nodemetric_combination_service_provider_id} = $self->getId();
-        Combination::NodemetricCombination->new( %attrs );
+        Entity::Combination::NodemetricCombination->new( %attrs );
     }
 
     # Cluster metrics and combinations
@@ -883,7 +882,7 @@ sub getComponents {
             my $class= "Entity::Component::" . $comptype_name . $comptype_version;
             my $loc = General::getLocFromClass(entityclass=>$class);
             eval { require $loc; };
-            
+
             push @components, $class->get(id => $comp_id);
         }
     }
@@ -1115,7 +1114,6 @@ sub getQoSConstraints {
 
 sub addNode {
     my $self = shift;
-    my %args = @_;
 
     return Entity::Workflow->run(
         name       => 'AddNode',
@@ -1314,7 +1312,7 @@ sub generateOverLoadNodemetricRules {
             nodemetric_combination_service_provider_id => $service_provider_id,
         };
 
-        my $comb  = Combination::NodemetricCombination->new(%$combination_param);
+        my $comb  = Entity::Combination::NodemetricCombination->new(%$combination_param);
 
         my $condition_param = {
             left_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
@@ -1355,7 +1353,7 @@ sub generateDefaultMonitoringConfiguration {
             nodemetric_combination_formula => 'id' . $indicator->getId,
             nodemetric_combination_service_provider_id => $service_provider_id,
         };
-        Combination::NodemetricCombination->new(%$combination_param);
+        Entity::Combination::NodemetricCombination->new(%$combination_param);
     }
 
     #definition of the functions
@@ -1370,13 +1368,13 @@ sub generateDefaultMonitoringConfiguration {
                 clustermetric_statistics_function_name => $func,
                 clustermetric_window_time              => '1200',
             };
-            my $cm = Clustermetric->new(%$cm_params);
+            my $cm = Entity::Clustermetric->new(%$cm_params);
 
             my $acf_params = {
                 aggregate_combination_service_provider_id   => $service_provider_id,
                 aggregate_combination_formula               => 'id' . $cm->getId
             };
-            my $clustermetric_combination = Combination::AggregateCombination->new(%$acf_params);
+            my $clustermetric_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
         }
     }
 }

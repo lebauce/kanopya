@@ -11,13 +11,13 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package AggregateCondition;
+package Entity::AggregateCondition;
 
 use strict;
 use warnings;
 use TimeData::RRDTimeData;
-use Combination::AggregateCombination;
-require 'AggregateRule.pm';
+use Entity::Combination::AggregateCombination;
+require 'Entity/AggregateRule.pm';
 use base 'BaseDB';
 use Data::Dumper;
 # logger
@@ -83,7 +83,7 @@ sub new {
     my %args = @_;
 
     if ((! defined $args{right_combination_id}) && defined $args{threshold}  ) {
-        my $comb =  Combination::ConstantCombination->new (
+        my $comb = Entity::Combination::ConstantCombination->new (
             service_provider_id => $args{aggregate_condition_service_provider_id},
             value => $args{threshold}
         );
@@ -92,7 +92,7 @@ sub new {
     }
 
     if ((! defined $args{left_combination_id}) && defined $args{threshold}  ) {
-        my $comb =  Combination::ConstantCombination->new (
+        my $comb = Entity::Combination::ConstantCombination->new (
             service_provider_id => $args{aggregate_condition_service_provider_id},
             value => $args{threshold}
         );
@@ -178,7 +178,7 @@ sub eval{
 
 sub getDependencies {
     my $self = shift;
-    my @rules_from_same_service = AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
+    my @rules_from_same_service = Entity::AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
 
     my %dependencies;
     my $id = $self->getId;
@@ -195,7 +195,7 @@ sub getDependencies {
 
 sub delete {
     my $self = shift;
-    my @rules_from_same_service = AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
+    my @rules_from_same_service = Entity::AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
 
     my $id = $self->getId;
     LOOP:

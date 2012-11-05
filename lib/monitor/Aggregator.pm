@@ -21,9 +21,9 @@ use General;
 use Data::Dumper;
 use XML::Simple;
 use Entity::ServiceProvider;
-use Indicator;
+use Entity::Indicator;
 use TimeData::RRDTimeData;
-use Clustermetric;
+use Entity::Clustermetric;
 use Kanopya::Config;
 use Message;
 
@@ -276,7 +276,7 @@ sub run {
         $log->info( "Manage duration : $update_duration seconds" );
 
         my $conf      = getAggregatorConf();
-        my $time_step = $conf->{time_step}; 
+        my $time_step = $conf->{time_step};
 
         if ($update_duration > $time_step) {
             $log->warn("aggregator duration > aggregator time step (conf)");
@@ -295,7 +295,7 @@ sub run {
 =head2 updateAggregatorConf
 
     Class : Public
-    Desc : update values in the aggregator.conf file 
+    Desc : update values in the aggregator.conf file
     Args: $collect_frequency and/or $storage_duration
 
 =cut

@@ -24,7 +24,7 @@ use warnings;
 use General;
 use Kanopya::Exceptions;
 use SCOM::Query;
-use CollectorIndicator;
+use Entity::CollectorIndicator;
 use DateTime::Format::Strptime;
 use List::Util 'sum';
 
@@ -163,19 +163,19 @@ sub _format_data {
                 my @values;
                 while (my ($timestamp, $value) = each %$values) {
                     my $dt = $date_parser->parse_datetime( $timestamp )->set_time_zone( $time_zone );
-                    
+
                     # Change float format "1,0" to "1.0"
                     $value =~ s/,/./g;
-                    
+
                     # Keep values in time span
                     if ($end_dt->epoch - $dt->epoch <= $time_span) {
                         push @values, $value;
                     }
-                    
+
                     # Keep last value
                     if ((not defined $last_time) || ($last_time < $dt)) {($last_time, $last_value) = ($dt, $value)};
                 }
-                
+
                 my $consolidate_value;
                 if (0 != @values) {
                     # compute mean value
@@ -185,12 +185,12 @@ sub _format_data {
                     # TODO log!
                     #print "Info: take last counter value for $object_name/$counter_name\n";
                 }
-                
+
                 $res{$monit_object_path}{"$object_name/$counter_name"} = $consolidate_value;
             }
         }
     }
-    
+
     return \%res;
 }
 

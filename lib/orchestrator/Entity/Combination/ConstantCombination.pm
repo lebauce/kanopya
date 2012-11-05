@@ -11,12 +11,12 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Combination::ConstantCombination;
+package Entity::Combination::ConstantCombination;
 
 use strict;
 use warnings;
-use base 'Combination';
-use Indicator;
+use base 'Entity::Combination';
+use Entity::Indicator;
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";

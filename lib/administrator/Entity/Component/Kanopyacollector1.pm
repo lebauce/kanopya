@@ -60,7 +60,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Monitor::Retriever;
-use Indicator;
+use Entity::Indicator;
 use Indicatorset;
 use Collect;
 use Log::Log4perl "get_logger";

@@ -26,8 +26,8 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use General;
-use CollectorIndicator;
-use Indicator;
+use Entity::CollectorIndicator;
+use Entity::Indicator;
 
 my $log = get_logger("");
 
@@ -40,7 +40,7 @@ sub createCollectorIndicators {
 
     for my $indicator_set (@{$args{indicator_sets}}) {
         @indicators = ( @indicators,
-                        Indicator->search (
+                        Entity::Indicator->search (
                             hash => {
                                 indicatorset_id => $indicator_set-> id,
                             }
@@ -48,13 +48,13 @@ sub createCollectorIndicators {
                       );
     }
 
-
     for my $indicator (@indicators) {
-        CollectorIndicator->new(
+        Entity::CollectorIndicator->new(
             indicator_id => $indicator->id,
             collector_manager_id =>  $self->id,
         );
     }
+
     return;
 }
 

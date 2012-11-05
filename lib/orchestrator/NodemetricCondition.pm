@@ -16,9 +16,9 @@ package NodemetricCondition;
 use strict;
 use warnings;
 use base 'BaseDB';
-use Combination;
+use Entity::Combination;
 require 'NodemetricRule.pm';
-use Combination::ConstantCombination;
+use Entity::Combination::ConstantCombination;
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
@@ -67,7 +67,7 @@ sub new {
     my %args = @_;
 
     if ((! defined $args{right_combination_id}) && defined $args{nodemetric_condition_threshold}  ) {
-        my $comb =  Combination::ConstantCombination->new (
+        my $comb =  Entity::Combination::ConstantCombination->new (
             service_provider_id => $args{nodemetric_condition_service_provider_id},
             value => $args{nodemetric_condition_threshold}
         );
@@ -76,7 +76,7 @@ sub new {
     }
 
     if ((! defined $args{left_combination_id}) && defined $args{nodemetric_condition_threshold}  ) {
-        my $comb =  Combination::ConstantCombination->new (
+        my $comb =  Entity::Combination::ConstantCombination->new (
             service_provider_id => $args{nodemetric_condition_service_provider_id},
             value => $args{nodemetric_condition_threshold}
         );
