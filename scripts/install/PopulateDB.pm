@@ -736,7 +736,7 @@ sub registerIndicators {
         );
 
         for my $indicator (@{$set->{indicators}}) {
-            Indicator->new(
+            Entity::Indicator->new(
                 indicator_label => $indicator->[0],
                 indicator_name  => $indicator->[1],
                 indicator_oid   => $indicator->[2],
