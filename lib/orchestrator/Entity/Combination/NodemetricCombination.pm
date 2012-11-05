@@ -11,6 +11,21 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+
+=begin classdoc
+
+Nodemetric Combination. Represented by a mathematic combination formula if indicator ids.
+
+@since    2012-Feb-01
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package Entity::Combination::NodemetricCombination;
 
 use strict;
@@ -69,11 +84,35 @@ sub methods {
     }
 }
 
-# Virtual attribute getter
+=pod
+
+=begin classdoc
+
+Virtual attribute getter
+
+=end classdoc
+
+=cut
+
 sub formula_label {
     my $self = shift;
     return $self->toString();
 }
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class. Compute automatically the label if not specified in args.
+Launch indicator collection in order to create RRD.
+
+@return a class instance
+
+=end classdoc
+
+=cut
 
 sub new {
     my $class = shift;
@@ -95,9 +134,16 @@ sub new {
     return $self;
 }
 
-=head2 toString
 
-    desc: return a string representation of the entity
+=pod
+
+=begin classdoc
+
+Return a string representation of the entity
+
+@return a string representation of the entity
+
+=end classdoc
 
 =cut
 
@@ -130,25 +176,36 @@ sub toString {
     }
 }
 
-# C/P of homonym method of AggregateCombination
+=pod
+
+=begin classdoc
+
+Return an array of the CollectorIndicator ids of the formula
+
+@return an array of the CollectorIndicator ids of the formula
+
+=end classdoc
+
+=cut
+
 sub getDependantCollectorIndicatorIds{
     my $self = shift;
-    my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
-
-    my @indicator_ids;
-
-    #Split nodemetric_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            push @indicator_ids, substr($element,2);
-        }
-     }
-     return @indicator_ids;
+    my %ids = map { $_ => undef } ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
+    return keys %ids;
 }
+
+
+=pod
+
+=begin classdoc
+
+Return an array of the Indicator ids of the formula
+
+@return an array of the CollectorIndicator ids of the formula
+
+=end classdoc
+
+=cut
 
 sub getDependantIndicatorIds{
     my $self = shift;
@@ -170,9 +227,16 @@ sub getDependantIndicatorIds{
      return @indicator_ids;
 }
 
-=head2 computeValueFromMonitoredValues
 
-    desc: Compute Node Combination Value with the formula from given Indicator values
+=pod
+
+=begin classdoc
+
+Compute the combination value with the formula from given Indicator values
+
+@return the computed value
+
+=end classdoc
 
 =cut
 
@@ -213,48 +277,25 @@ sub computeValueFromMonitoredValues {
     return $res;
 }
 
-sub checkFormula {
-    my ($class, %args) = @_;
 
-    my $formula             = $args{formula};
-    my $service_provider_id = $args{service_provider_id};
+=pod
 
-    my $service_provider  = Entity::ServiceProvider->get(id => $service_provider_id);
-    my $collector_manager = $service_provider->getManager(manager_type => 'collector_manager');
-    my $indicators = $collector_manager->getIndicators();
+=begin classdoc
 
-    # Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/, $formula);
+Return the formula of the combination in which the indicator id is
+replaced by its Unit or by '?' when unit is not specified in database
 
-    my @unkownIds;
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        if ($element =~ m/id\d+/) {
-            # Check if element is a SCOM indicator
-            my $indicator_id = substr($element, 2);
-            if (not (grep {$_->getId eq $indicator_id} @$indicators)) {
-                push @unkownIds, $indicator_id;
-            }
-        }
-    }
+@return the formula of the combination
 
-    return @unkownIds;
-}
-
-=head2 getUnit
-
-    desc: Return the formula of the combination in which the indicator id is
-          replaced by its Unit or by '?' when unit is not specified in database
+=end classdoc
 
 =cut
 
 sub getUnit {
     my $self = shift;
 
-    my $formula             = $self->getAttr(name => 'nodemetric_combination_formula');
-
     #Split nodemtric_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
+    my @array = split(/(id\d+)/,$self->nodemetric_combination_formula);
     #replace each rule id by its evaluation
     my $ref_element;
     my $are_same_units = 0;
