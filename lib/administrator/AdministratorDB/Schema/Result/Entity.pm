@@ -554,6 +554,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nodemetric_condition
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NodemetricCondition>
+
+=cut
+
+__PACKAGE__->might_have(
+  "nodemetric_condition",
+  "AdministratorDB::Schema::Result::NodemetricCondition",
+  { "foreign.nodemetric_condition_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 nodemetric_rule
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NodemetricRule>
+
+=cut
+
+__PACKAGE__->might_have(
+  "nodemetric_rule",
+  "AdministratorDB::Schema::Result::NodemetricRule",
+  { "foreign.nodemetric_rule_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 notification_subscription_entities
 
 Type: has_many

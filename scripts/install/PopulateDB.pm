@@ -154,6 +154,8 @@ my @classes = (
     'Entity::Combination::AggregateCombination',
     'Entity::AggregateCondition',
     'Entity::AggregateRule',
+    'Entity::NodemetricCondition',
+    'Entity::NodemetricRule',
 );
 
 sub registerClassTypes {
