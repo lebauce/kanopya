@@ -35,7 +35,7 @@ function nodemetricconditionmodal(elem_id, editid) {
         nodemetric_condition_combination_id :{
             label       : 'Combination',
             display     : 'nodemetric_combination_id',
-            cond        : '?nodemetric_combination_service_provider_id=' + elem_id,
+            cond        : '?service_provider_id=' + elem_id,
             formatter   : combiUnits,
         },
         nodemetric_condition_comparator    : {
@@ -196,7 +196,7 @@ function serviceconditionmodal(elem_id, editid) {
         aggregate_combination_id :{
             label       : 'Combination',
             display     : 'aggregate_combination_id',
-            cond        : '?aggregate_combination_service_provider_id=' + elem_id,
+            cond        : '?service_provider_id=' + elem_id,
             formatter   : combiUnits,
         },
         comparator  : {
