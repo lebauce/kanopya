@@ -438,20 +438,23 @@ sub methodCall {
 
     my $methods = $self->getMethods();
 
-    # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
-    my ($granted, $perm_holder_id);
-    if ($methods->{$args{method}}->{perm_holder} eq 'mastergroup') {
-        $perm_holder_id = $self->getMasterGroup->id;
-    }
-    elsif ($class and $methods->{$args{method}}->{perm_holder} eq 'entity') {
-        $perm_holder_id = $self->id;
-    }
+    # Allows 'get' for instance
+    if ($args{method} ne 'get') {
+        # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
+        my ($granted, $perm_holder_id);
+        if ($methods->{$args{method}}->{perm_holder} eq 'mastergroup') {
+            $perm_holder_id = $self->getMasterGroup->id;
+        }
+        elsif ($class and $methods->{$args{method}}->{perm_holder} eq 'entity') {
+            $perm_holder_id = $self->id;
+        }
 
-    # Check the permissions for the logged user
-    $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder_id, method => $args{method});
-    if (not $granted) {
-        my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
-        throw Kanopya::Exception::Permission::Denied(error => $msg);
+        # Check the permissions for the logged user
+        $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder_id, method => $args{method});
+        if (not $granted) {
+            my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
+            throw Kanopya::Exception::Permission::Denied(error => $msg);
+        }
     }
 
     return $self->SUPER::methodCall(%args);
