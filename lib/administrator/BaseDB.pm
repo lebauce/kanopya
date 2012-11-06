@@ -342,7 +342,6 @@ sub getAttrDefs {
     my $modulename = $class;
     my @hierachy = $class->getClassHierarchy;
 
-    print Dumper(@hierachy);
     while(@hierachy) {
         my $attr_def = {};
 
