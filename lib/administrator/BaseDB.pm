@@ -1291,7 +1291,8 @@ sub toJSON {
     my $class = ref ($self) || $self;
 
     General::checkParams(args     => \%args,
-                         optional => { 'no_relations' => 0, 'model' => undef, 'raw' => 0 });
+                         optional => { 'no_relations' => 0, 'model' => undef, 'raw' => 0,
+                                       'virtuals' => undef, 'expand' => [] });
 
     my $pk;
     my $hash = {};
@@ -1312,10 +1313,47 @@ sub toJSON {
             }
             else {
                 if ((not $args{no_empty}) or (defined $self->getAttr(name => $attr))) {
-                    $hash->{$attr} = $self->getAttr(name => $attr);
+                    if (! (!$args{virtuals} && $attributes->{$class}->{$attr}->{is_virtual})) {
+                        $hash->{$attr} = $self->getAttr(name => $attr);
+                    }
                 }
             }
         }
+    }
+
+    if ($args{expand}) {
+        for my $expand (@{$args{expand}}) {
+            my $obj = $self;
+            my $dbix = $self->{_dbix};
+            my $is_relation = 0;
+
+            my @comps = split(/\./, $expand);
+            my $comp = shift @comps;
+            while ($comp && $dbix) {
+                if ($dbix->result_source->has_relationship($comp)) {
+                    $is_relation = $dbix->result_source->relationship_info($comp)->{attrs}->{accessor};
+                    last;
+                }
+                $dbix = $dbix->result_source->has_relationship('parent') ? $dbix->parent : undef;
+            }
+
+            my @rest = join('.', @comps);
+            if ($is_relation) {
+                $hash->{$comp} = [];
+                if ($is_relation eq 'single_multi' ||
+                    $is_relation eq 'multi') {
+                    for my $item ($obj->getAttr(name => $comp)) {
+                        push @{$hash->{$comp}}, $item->toJSON(expand => [ join('.', @comps) ]);
+                    }
+                }
+                elsif ($is_relation eq 'single') {
+                    my $obj = $self->getAttr(name => $comp);
+                    if ($obj) {
+                        $hash->{$comp} = $obj->toJSON(expand => [ join('.', @comps) ]);
+                    }
+                }
+            }
+       }
     }
 
     if ($args{model}) {
