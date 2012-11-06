@@ -146,7 +146,14 @@ function loadServicesResources (container_id, elem_id) {
         sortorder   : 'desc',
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             // Add generic resource data
-            addResourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, 'external');
+            function addExtra() {
+                if (!nodemetricrules) {
+                    setTimeout(addExtra, 10);
+                } else {
+                    addResourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, elem_id, 'external');
+                }
+            }
+            addExtra();
             // Manage enable/disable state and control
             manageNodeEnabling(grid, rowid, rowdata, rowelem);
         },

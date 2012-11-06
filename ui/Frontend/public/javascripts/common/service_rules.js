@@ -50,13 +50,14 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     }
 
     // Condition type
-    var type_select = $('<select>').appendTo(form)
+    var type_select = $('<select>', {id:'type_select'})
         .append($('<option>', {value:'cond_thresh', html:'Threshold condition'}))
         .append($('<option>', {value:'cond_combi',  html:'Combinations comparison'}))
         .change(function() {
             $('.cond_view').toggleClass('hidden');
         });
-    form.append('<br>');
+    form.append($('<label>', {'for':'type_select', html:'Type : '})).append(type_select);
+    form.append('<br>').append('<br>');
 
     // Left operand
     var left_operand_select = $('<select>', {name : 'left_combination_id'}).appendTo(form);

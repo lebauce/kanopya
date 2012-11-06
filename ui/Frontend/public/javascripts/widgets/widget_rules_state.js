@@ -43,7 +43,6 @@ function displayRulesGraph(widget, sp_id) {
                                                 ['undef',  service_rules['undef'].length]
                                                 ];
                     rulesStateGraph(srules_graph_div_id, [service_rules_series]);
-                    master_cont.hide();
                 }
             }
     );
@@ -76,6 +75,7 @@ function displayRulesGraph(widget, sp_id) {
                         $.get(
                                 '/api/serviceprovider/' + sp_id + '/nodemetric_rules',
                                 function(node_rules) {
+                                    master_cont.hide();
                                     if (total_nodes == 0) {
                                         master_cont.empty();
                                         master_cont.html('No nodes');
