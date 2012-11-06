@@ -648,17 +648,20 @@ sub fromDBIx {
                 # re-throw the original exception.
                 throw $err;
             }
+        } else {
+            my $basedb = bless { _dbix => $args{row} }, "BaseDB";
+            return $basedb;
         }
     }
 
     # TODO: We need to use prefetch to get the parent/childs attrs,
     #       and use the concrete class type. Use 'get' for instance.
 
-#    return bless {
-#        _dbix      => $args{row},
-#    }, $name;
+    return bless {
+        _dbix      => $args{row},
+    }, $modulename;
 
-    return $modulename->get(id => getRowPrimaryKey(row => $args{row}));
+    # return $modulename->get(id => getRowPrimaryKey(row => $args{row}));
 }
 
 
