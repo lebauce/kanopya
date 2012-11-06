@@ -57,18 +57,6 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        create => {
-            description => 'create a new object',
-            perm_holder => 'mastergroup',
-        },
-        remove => {
-            description => 'remove an object',
-            perm_holder => 'mastergroup',
-        },
-        update => {
-            description => 'update an object',
-            perm_holder => 'mastergroup',
-        },
         get => {
             description => 'get an object',
             perm_holder => 'mastergroup',
@@ -1995,6 +1983,27 @@ sub requireClass {
 
 =begin classdoc
 
+Return the delegatee entity on which the permissions must be checked.
+By default, permissions are checked on the entity itself.
+
+@return the delegatee entity.
+
+=end classdoc
+
+=cut
+
+
+sub getDelegatee {
+    my $self = shift;
+
+    return $self;
+}
+
+
+=pod
+
+=begin classdoc
+
 Method used by the api as entry point for methods calls.
 It is convenient for centralizing permmissions checking.
 
@@ -2006,27 +2015,36 @@ It is convenient for centralizing permmissions checking.
 =cut
 
 sub methodCall {
-    my $self = shift;
+    my $self  = shift;
     my $class = ref $self;
-    my %args = @_;
+    my %args  = @_;
 
     my $adm = Administrator->new();
 
     General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
 
-    # Basically, we allows 'get' only on classes not managed by permissions
-    #
-    # TODO: For non entity objects, delegate the permissions check on a related entity.
-    #       E.g. Permissions on Node should be delegate to ServiceProvider or Host.
-    my $method = $args{method};
-    if ($args{method} eq 'get' or $self->isa('Entity')) {
-        return $self->$method(%{$args{params}});
+    my $methods   = $self->getMethods();
+    my $delegatee = $self->getDelegatee();
+
+    # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
+    my ($granted, $perm_holder_id);
+    if ($methods->{$args{method}}->{perm_holder} eq 'mastergroup') {
+        $perm_holder_id = $delegatee->getMasterGroup->id;
+    }
+    elsif ($class and $methods->{$args{method}}->{perm_holder} eq 'entity') {
+        $perm_holder_id = $delegatee->id;
     }
 
-    my $msg = "Permission denied for <$method> on <$self>";
-    throw Kanopya::Exception::Permission::Denied(error => $msg);
-}
+    # Check the permissions for the logged user
+    $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder_id, method => $args{method});
+    if (not $granted) {
+        my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
+        throw Kanopya::Exception::Permission::Denied(error => $msg);
+    }
 
+    my $method = $args{method};
+    return $self->$method(%{$args{params}});
+}
 
 =pod
 

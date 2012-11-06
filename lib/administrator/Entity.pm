@@ -41,6 +41,18 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
+        create => {
+            description => 'create a new entity',
+            perm_holder => 'mastergroup',
+        },
+        remove => {
+            description => 'remove an entity',
+            perm_holder => 'mastergroup',
+        },
+        update => {
+            description => 'update an entity',
+            perm_holder => 'mastergroup',
+        },
         subscribe => {
             description => 'subscribe to notification about this entity.',
             perm_holder => 'entity',
@@ -418,46 +430,6 @@ sub toJSON {
         }
     }
     return $hash;
-}
-
-=head2
-
-    It is convenient to override this method in Entity,
-    for centralizing permmissions checking.
-
-=cut
-
-sub methodCall {
-    my $self  = shift;
-    my $class = ref $self;
-    my %args  = @_;
-
-    my $adm = Administrator->new();
-
-    General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
-
-    my $methods = $self->getMethods();
-
-    # Allows 'get' for instance
-    if ($args{method} ne 'get') {
-        # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
-        my ($granted, $perm_holder_id);
-        if ($methods->{$args{method}}->{perm_holder} eq 'mastergroup') {
-            $perm_holder_id = $self->getMasterGroup->id;
-        }
-        elsif ($class and $methods->{$args{method}}->{perm_holder} eq 'entity') {
-            $perm_holder_id = $self->id;
-        }
-
-        # Check the permissions for the logged user
-        $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder_id, method => $args{method});
-        if (not $granted) {
-            my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
-            throw Kanopya::Exception::Permission::Denied(error => $msg);
-        }
-    }
-
-    return $self->SUPER::methodCall(%args);
 }
 
 1;
