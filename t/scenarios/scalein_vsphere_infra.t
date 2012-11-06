@@ -35,7 +35,7 @@ my $testing = 0;
 my $vsphere_url = '192.168.2.160';
 my $vm_name = 'random1';
 my $scale_memory_value = 2048 * 1024 * 1024;
-my $scale_cpu_value = 5;
+my $scale_cpu_value = 2;
 
 eval {
     Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -173,11 +173,12 @@ eval {
     lives_ok {
         foreach my $datacenter_vsphere (@$registerItems) {
             $total_items_nbr++;
-            my $datacenter_kanopya;
             eval {
-                $datacenter_kanopya = $vsphere->getDatacenters(datacenter_name => $datacenter_vsphere->{name});
+                my $datacenter_kanopya = Vsphere5Datacenter->find(
+                                             hash => {vsphere5_datacenter_name => $datacenter_vsphere->{name}}
+                                         );
             };
-            if ($@ || not defined $datacenter_kanopya) {
+            if ($@) {
                 $ko_items_nbr++;
             }
 
@@ -186,22 +187,36 @@ eval {
                 eval {
                     (my $clusterOrHypervisor_vsphere_renamed = $clusterOrHypervisor_vsphere->{name}) =~ s/[^\w\d+]/_/g;
                     my $clusterOrHypervisor_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
-                                                       hash => {cluster_name => $clusterOrHypervisor_vsphere_renamed},
-                                                   );
+                                                          hash => {cluster_name => $clusterOrHypervisor_vsphere_renamed},
+                                                      );
                 };
                 if ($@) {
                     $ko_items_nbr++;
                 }
 
-                if ($clusterOrHypervisor_vsphere->{type} eq 'cluster') {
+                if ($clusterOrHypervisor_vsphere->{type} eq 'hypervisor') {
+                    foreach my $vm_hypervisor_vsphere (@{ $clusterOrHypervisor_vsphere->{children} }) {
+                        $total_items_nbr++;
+                        eval {
+                            (my $vm_hypervisor_vsphere_renamed = $vm_hypervisor_vsphere->{name}) =~ s/[^\w\d+]/_/g;
+                            my $vm_hypervisor_vsphere_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
+                                                                    hash => {cluster_name => $vm_hypervisor_vsphere_renamed},
+                                                                );
+                        };
+                        if ($@) {
+                            $ko_items_nbr++;
+                        }
+                    }
+                }
+                elsif ($clusterOrHypervisor_vsphere->{type} eq 'cluster') {
                     foreach my $hypervisorCluster_vsphere (@{ $clusterOrHypervisor_vsphere->{children} }) {
                         foreach my $vm_vsphere (@{ $hypervisorCluster_vsphere->{children} }) {
                             $total_items_nbr++;
                             eval {
                                 (my $vm_vsphere_renamed = $vm_vsphere->{name}) =~ s/[^\w\d+]/_/g;
                                 my $vm_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
-                                                  hash => {cluster_name => $vm_vsphere_renamed},
-                                              );
+                                                     hash => {cluster_name => $vm_vsphere_renamed},
+                                                 );
                             };
                             if ($@) {
                                 $ko_items_nbr++;
@@ -245,9 +260,8 @@ eval {
     } 'Scale memory for host retrieved';
 
     lives_ok {
-        my @vm_cluster_nodes = Entity::ServiceProvider::Inside::Cluster->find(hash => {'cluster_name' => $vm_name})->nodes;
-        $vm_host             = $vm_cluster_nodes[0]->host;#each cluster contains only 1 item
-    } 'Retrieve again Virtual Machine host from Kanopya (refresh)';
+        $vm_host = Entity::Host::VirtualMachine::Vsphere5Vm->get(id => $vm_host->id);
+    } 'Refresh Virtual Machine entity';
 
     is($vm_host->host_ram, $scale_memory_value, 'Test if scale memory went well');
 
@@ -261,9 +275,8 @@ eval {
     } 'Scale cpu for host retrieved';
 
     lives_ok {
-        my @vm_cluster_nodes = Entity::ServiceProvider::Inside::Cluster->find(hash => {'cluster_name' => $vm_name})->nodes;
-        $vm_host             = $vm_cluster_nodes[0]->host;#each cluster contains only 1 item
-    } 'Retrieve again Virtual Machine host from Kanopya (refresh)';
+        $vm_host = Entity::Host::VirtualMachine::Vsphere5Vm->get(id => $vm_host->id);
+    } 'Refresh Virtual Machine entity';
 
     is($vm_host->host_core, $scale_cpu_value, 'Test if scale CPU went well');
 
@@ -279,22 +292,23 @@ if($@) {
 
 sub execWorkflow {
     my ($workflow, $executor) = @_;
+    my $workflow_id = $workflow->id;
     my $test = 'Scale in went successfully';
-    WAITMEMORYSCALE:
+    WAITSCALE:
     while(1) {
-	    #$workflow = Entity::Workflow->id;
+        $workflow = Entity::Workflow->get(id => $workflow_id);
 	    my $state = $workflow->state;
 	    if($state eq 'running') {
             $executor->oneRun;
-    	    next WAITMEMORYSCALE;
+    	    next WAITSCALE;
 	    }
         elsif($state eq 'done') {
 		    pass($test);
-		    last WAITMEMORYSCALE;
+		    last WAITSCALE;
 	    }
-        elsif($state eq 'cancelled') {
+        elsif($state eq 'failed') {
 		    fail($test);
-		    last WAITMEMORYSCALE;
+		    last WAITSCALE;
 	    }
     }
 }

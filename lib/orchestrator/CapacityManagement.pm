@@ -130,7 +130,6 @@ sub new {
             $self->{_infra}->{vms}->{$vm_id}->{ram_effective} = $e_vm->getRamUsedByVm->{total};
         }
     }
-    $log->debug(Dumper $self->{_infra});
     return $self;
 }
 
@@ -766,9 +765,9 @@ sub _scaleMetric {
                     Message->send(
                         from    => 'Capacity Management',
                         level   => 'info',
-                        content => "Not enough palce to change $scale_metric OF $vm_id TO VALUE $new_value",
+                        content => "Not enough place to change $scale_metric OF $vm_id TO VALUE $new_value",
                     );
-                    $log->info("Not enough palce to change $scale_metric OF $vm_id TO VALUE $new_value");
+                    $log->info("Not enough place to change $scale_metric OF $vm_id TO VALUE $new_value");
 
                     $self->_scaleOnNewHV(
                          vm_id        => $vm_id,
