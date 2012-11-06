@@ -251,7 +251,7 @@ sub throwAlertOnUndefMonitoredValues{
 
     while (my ($oid,$value) = each %{$args{monitored_values_for_one_node}}) {
 
-        my $indicator = Indicator->find (hash => {indicator_oid => $oid});
+        my $indicator = Entity::Indicator->find (hash => {indicator_oid => $oid});
 
         my $msg = "Indicator " . $indicator->indicator_name . ' (' . $oid . ')' .
                   ' was not retrieved by collector for node '.$args{host_name};
