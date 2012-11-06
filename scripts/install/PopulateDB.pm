@@ -293,7 +293,7 @@ sub registerUsers {
         }
     }
 
-    my $admin_user = Entity::User->new(
+    my $admin_user = Entity::User->create(
                          user_system       => 1,
                          user_login        => "admin",
                          user_password     => $args{admin_password},
@@ -311,7 +311,7 @@ sub registerUsers {
         profile_id => $admin_profile->id
     );
 
-    my $executor_user = Entity::User->new(
+    my $executor_user = Entity::User->create(
         user_system       => 1,
         user_login        => "executor",
         user_password     => $args{admin_password},
