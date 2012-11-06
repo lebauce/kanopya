@@ -77,9 +77,7 @@ sub getAttr {
     if ($args{name} eq "unit") {
         return $self->getUnit();
     }
-    else {
-        return $self->SUPER::getAttr(%args);
-    }
+    return $self->SUPER::getAttr(%args);
 }
 
 sub methods {
@@ -159,12 +157,11 @@ sub _verify {
     my @array = split(/(id\d+)/,$formula);
 
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             if (!(Entity::Clustermetric->search(hash => {'clustermetric_id'=>substr($element,2)}))){
-             my $errmsg = "Creating combination formula with an unknown clusterMetric id ($element) ";
-             $log->error($errmsg);
-             throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+                my $errmsg = "Creating combination formula with an unknown clusterMetric id ($element) ";
+                $log->error($errmsg);
+                throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
             }
         }
     }
@@ -185,14 +182,8 @@ Return a string representation of the entity
 
 sub toString {
     my ($self, %args) = @_;
-    my $depth;
-    if(defined $args{depth}) {
-        $depth = $args{depth};
-    }
-    else {
-        $depth = -1;
-    }
 
+    my $depth = (defined $args{depth}) ? $args{depth} : -1;
     if ($depth == 0) {
         return $self->aggregate_combination_label;
     }
@@ -265,7 +256,7 @@ sub computeLastValue{
         if ($element =~ m/id\d+/) {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
             $element = Entity::Clustermetric->get('id'=>substr($element,2))->getLastValueFromDB();
-            if(not defined $element){
+            if (not defined $element) {
                 return undef;
             }
         }
@@ -307,13 +298,13 @@ sub compute{
 
     checkMissingParams(args => \%args, required => \@requiredArgs);
 
-    foreach my $cm_id (@requiredArgs){
-        if( ! defined $args{$cm_id}){
+    foreach my $cm_id (@requiredArgs) {
+        if (! defined $args{$cm_id}) {
             return undef;
         }
     }
 
-    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
+    my $formula = $self->aggregate_combination_formula;
 
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
@@ -450,11 +441,9 @@ replaced by its Unit or by '?' when unit is not specified in database
 sub getUnit {
     my ($self, %args) = @_;
 
-    my $formula             = $self->getAttr(name => 'aggregate_combination_formula');
-
-    #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-    #replace each rule id by its evaluation
+    # Split aggregate_rule id from formula
+    my @array = split(/(id\d+)/,$self->aggregate_combination_formula);
+    # Replace each rule id by its evaluation
     my $ref_element;
     my $are_same_units = 0;
     for my $element (@array) {
