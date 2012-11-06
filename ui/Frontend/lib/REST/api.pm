@@ -263,7 +263,7 @@ sub jsonify {
             elsif ($var->isa("Entity::Workflow")) {
                 return Entity::Workflow->get(id => $var->getId)->toJSON;
             } else {
-                return $var->toJSON;
+                return $var->toJSON();
             }
         }
     }

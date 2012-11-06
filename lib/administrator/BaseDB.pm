@@ -1254,7 +1254,7 @@ sub toJSON {
 
     General::checkParams(args     => \%args,
                          optional => { 'no_relations' => 0, 'model' => undef, 'raw' => 0,
-                                       'virtuals' => undef, 'expand' => [] });
+                                       'virtuals' => 1, 'expand' => [] });
 
     my $pk;
     my $hash = {};
