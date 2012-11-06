@@ -192,7 +192,7 @@ sub new {
     $collector->collectIndicator(indicator_id        => $self->clustermetric_indicator_id,
                                  service_provider_id => $service_provider->getId);
 
-    if(!defined $args{clustermetric_label} || $args{clustermetric_label} eq ''){
+    if (! defined $args{clustermetric_label} || $args{clustermetric_label} eq '') {
         $self->setAttr(name=>'clustermetric_label', value=>$self->toString());
         $self->save();
     }
@@ -208,26 +208,19 @@ sub new {
 
 sub toString {
     my ($self, %args) = @_;
-    my $depth;
-    if(defined $args{depth}) {
-        $depth = $args{depth};
-    }
-    else {
-        $depth = -1;
-    }
+
+    my $depth = (defined $args{depth}) ? $args{depth} : -1;
 
     if($depth == 0) {
         return $self->getAttr(name => 'clustermetric_label');
     }
-    else{
-        my $indicator = $self->getIndicator();
-        return $self->clustermetric_statistics_function_name .
-               '(' . $indicator->toString() . ')';
-    }
+
+    return $self->clustermetric_statistics_function_name .
+           '(' . $self->getIndicator()->toString() . ')';
 }
 
 sub getUnit {
-    my ($self, %args) = @_;
+    my $self = shift;
 
     my $stat_func = $self->clustermetric_statistics_function_name;
     my $keep_unit = grep { $_ eq $stat_func } qw(mean variance std max min sum);
