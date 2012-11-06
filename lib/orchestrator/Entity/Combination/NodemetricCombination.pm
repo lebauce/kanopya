@@ -152,31 +152,24 @@ Return a string representation of the entity
 
 sub toString {
     my ($self, %args) = @_;
-    my $depth;
-    if(defined $args{depth}) {
-        $depth = $args{depth};
-    }
-    else {
-        $depth = -1;
-    }
+    my $depth = (defined $args{depth}) ? $args{depth} : -1;
+
     if($depth == 0) {
         return $self->nodemetric_combination_label;
     }
-    else{
-        my $formula             = $self->nodemetric_combination_formula;
 
-        #Split nodemetric_rule id from $formula
-        my @array = split(/(id\d+)/,$formula);
-        #replace each rule id by its evaluation
-        for my $element (@array) {
-            if( $element =~ m/id\d+/)
-            {
-                #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-                $element = Entity::CollectorIndicator->get(id => substr($element,2))->indicator->toString();
-            }
+    #Split nodemetric_rule id from $formula
+    my @array = split(/(id\d+)/, $self->nodemetric_combination_formula);
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
+            $element = Entity::CollectorIndicator->get(id => substr($element,2))->indicator->toString();
         }
-        return join('',@array);
     }
+    return join('',@array);
+    
 }
 
 =pod
@@ -212,12 +205,11 @@ Return an array of the Indicator ids of the formula
 
 sub getDependantIndicatorIds{
     my $self = shift;
-    my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
 
     my @indicator_ids;
 
     #Split nodemetric_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
+    my @array = split(/(id\d+)/,$self->nodemetric_combination_formula);
 
     #replace each rule id by its evaluation
     for my $element (@array) {
@@ -244,15 +236,12 @@ Compute the combination value with the formula from given Indicator values
 =cut
 
 sub computeValueFromMonitoredValues {
-    my $self = shift;
-    my %args = @_;
-
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'monitored_values_for_one_node' ]);
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
 
-    my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
-
     #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
+    my @array = split(/(id\d+)/,$self->nodemetric_combination_formula);
 
     #replace each rule id by its evaluation
     for my $element (@array) {
