@@ -858,31 +858,17 @@ Retrieve one instance from an id
 sub get {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'id' ]);
+    General::checkParams(args => \%args, required => [ 'id' ],
+                                         optional => { 'prefetch' => [ ] });
 
-    my $adm = Administrator->new();
-    eval {
-        my $dbix = $adm->getRow(id => $args{id}, table => _rootTable($class));
-        $class   = $dbix->class_type->get_column('class_type');
-    };
-    if ($@) {
-        $log->debug("Unable to retreive concrete class name, using $class.");
-    }
+    my $self;
+    my $pk = $class->getPrimaryKey;
 
-    # Try to use the corresponding module
-    requireClass($class);
-
-    my $table = _buildClassNameFromString($class);
-    my $dbix = $adm->getRow(id => $args{id}, table => $table);
-    my $self = {
-        _dbix => $dbix,
-    };
-
-    bless $self, $class;
+    $self = $class->find(hash     => { "me.$pk" => $args{id} },
+                         prefetch => $args{prefetch});
 
     return $self;
 }
-
 
 =pod
 
