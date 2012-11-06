@@ -190,8 +190,8 @@ Composing rels: L</components_installed> -> systemimage
 __PACKAGE__->many_to_many("systemimages", "components_installed", "systemimage");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-31 01:59:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:f2f7E9vx/i4XsjsACl/Waw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-31 02:01:09
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cnL5Sr0WFGqZ02PVbyh6pg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

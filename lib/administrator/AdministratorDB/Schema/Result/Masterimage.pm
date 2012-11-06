@@ -162,8 +162,8 @@ Composing rels: L</components_provided> -> component_type
 __PACKAGE__->many_to_many("component_types", "components_provided", "component_type");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-26 13:48:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:237aR/4rOWvXRgfvPauBbw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-29 00:36:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4uxLbxC0DuB9yLSTYIHr4w
 
 __PACKAGE__->belongs_to(
   "parent",

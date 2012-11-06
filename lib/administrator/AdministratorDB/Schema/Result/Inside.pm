@@ -56,21 +56,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 components
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Component>
-
-=cut
-
-__PACKAGE__->has_many(
-  "components",
-  "AdministratorDB::Schema::Result::Component",
-  { "foreign.service_provider_id" => "self.inside_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 inside
 
 Type: belongs_to
