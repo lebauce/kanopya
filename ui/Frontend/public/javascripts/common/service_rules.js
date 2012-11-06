@@ -80,18 +80,30 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     ).appendTo(form);
 
     // Add options to combinations selects
+    // case nodemetric cond : left operand = node metric combi      #   right operand = node metric combi | service metric combi
+    // case aggregate cond  : left operand = service metric combi   #   right operand = service metric combi
     var loaded = 0;
-    $.get('/api/nodemetriccombination?service_provider_id=' + sp_id).success( function(node_combinations) {
-        $.each(node_combinations, function(i,combi) {
-            left_operand_select.append($('<option>', {value:combi.pk, html:combi.label}));
-            right_combi_select_group_node.append($('<option>', {value:combi.pk, html:combi.label}));
+    if (condition_type === 'nodemetriccondition') {
+        $.get('/api/nodemetriccombination?service_provider_id=' + sp_id).success( function(node_combinations) {
+            $.each(node_combinations, function(i,combi) {
+                left_operand_select.append($('<option>', {value:combi.pk, html:combi.label}));
+                right_combi_select_group_node.append($('<option>', {value:combi.pk, html:combi.label}));
+            });
+            loaded++;
         });
-        loaded++;
-    });
+    } else {loaded++}
     $.get('/api/aggregatecombination?service_provider_id=' + sp_id).success( function(service_combinations) {
-        $.each(service_combinations, function(i,combi) {
-            right_combi_select_group_service.append($('<option>', {value:combi.pk, html:combi.label}));
-        });
+        if (condition_type === 'aggregatecondition') {
+            right_combi_select.empty();
+            $.each(service_combinations, function(i,combi) {
+                right_combi_select.append($('<option>', {value:combi.pk, html:combi.label}));
+                left_operand_select.append($('<option>', {value:combi.pk, html:combi.label}));
+            });
+        } else {
+            $.each(service_combinations, function(i,combi) {
+                right_combi_select_group_service.append($('<option>', {value:combi.pk, html:combi.label}));
+            });
+        }
         loaded++;
     });
 
