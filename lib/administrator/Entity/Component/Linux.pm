@@ -58,7 +58,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use LinuxMount;
+use Entity::Component::Linux::LinuxMount;
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
@@ -122,7 +122,7 @@ sub setConf {
     
     foreach my $mtdef (@$mountdefs_conf) {
         if (not exists $mtdef->{linux_mount_id}) {
-            LinuxMount->new(linux_id => $self->id, %$mtdef);
+            Entity::Component::Linux::LinuxMount->new(linux_id => $self->id, %$mtdef);
         }
     }
 }
@@ -177,8 +177,8 @@ sub insertDefaultConfiguration {
     );
 
     foreach my $row (@default_conf) {
-        LinuxMount->new(linux_id => $self->id,
-                        %$row);
+        Entity::Component::Linux::LinuxMount->new(linux_id => $self->id,
+                                                  %$row);
     }
 }
 

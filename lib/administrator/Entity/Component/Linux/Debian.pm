@@ -23,4 +23,6 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
+sub getAttrDef { return { }; }
+
 1;
