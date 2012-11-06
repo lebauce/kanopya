@@ -1636,9 +1636,14 @@ Get the primary key column name
 =cut
 
 sub getPrimaryKey {
-    my $self = shift;
+    my $self  = shift;
+    my $class = ref($self) || $self;
 
-    return ($self->{_dbix}->result_source->primary_columns)[0];
+    if (ref ($self)) {
+        return ($self->{_dbix}->result_source->primary_columns)[0];
+    } else {
+        return ($class->getResultSource->primary_columns)[0];
+    }
 }
 
 
