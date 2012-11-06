@@ -19,9 +19,8 @@ lives_ok {
     use Orchestrator;
     use Entity::ServiceProvider::Outside::Externalcluster;
     use Entity::Connector::MockMonitor;
-    use Clustermetric;
-    use AggregateCombination;
-    use NodemetricCombination;
+    use Entity::Clustermetric;
+    use Entity::Combination::NodemetricCombination;
 } 'All uses';
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -72,28 +71,28 @@ eval{
     );
 
     # Get indicators
-    $indic1 = CollectorIndicator->find (
+    $indic1 = Entity::CollectorIndicator->find (
         hash => {
             collector_manager_id        => $mock_monitor->id,
             'indicator.indicator_oid'   => 'Memory/PercentMemoryUsed',
         }
     );
 
-    $indic2 = CollectorIndicator->find (
+    $indic2 = Entity::CollectorIndicator->find (
         hash => {
             collector_manager_id        => $mock_monitor->id,
             'indicator.indicator_oid'   => 'Memory/Pool Paged Bytes'
         }
     );
 
-    my $cm = Clustermetric->new(
+    my $cm = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
         clustermetric_indicator_id => ($indic1->id),
         clustermetric_statistics_function_name => 'mean',
         clustermetric_window_time => '1200',
     );
 
-    my $cm2 = Clustermetric->new(
+    my $cm2 = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
         clustermetric_indicator_id => ($indic2->id),
         clustermetric_statistics_function_name => 'sum',
@@ -101,38 +100,38 @@ eval{
     );
 
     # Create nodemetric rule objects
-    my $ncomb1 = NodemetricCombination->new(
-        nodemetric_combination_service_provider_id => $service_provider->id,
+    my $ncomb1 = Entity::Combination::NodemetricCombination->new(
+        service_provider_id => $service_provider->id,
         nodemetric_combination_formula => 'id'.($indic1->id),
     );
 
     # Create nodemetric rule objects
-    my $ncomb2 = NodemetricCombination->new(
-        nodemetric_combination_service_provider_id => $service_provider->id,
+    my $ncomb2 = Entity::Combination::NodemetricCombination->new(
+        service_provider_id => $service_provider->id,
         nodemetric_combination_formula => 'id'.($indic2->id),
     );
 
-    my $nc1 = NodemetricCondition->new(
+    my $nc1 = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
-        nodemetric_condition_combination_id => $ncomb1->id,
+        left_combination_id => $ncomb1->id,
         nodemetric_condition_comparator => '<',
         nodemetric_condition_threshold => '0',
     );
 
-    my $nc2 = NodemetricCondition->new(
+    my $nc2 = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
-        nodemetric_condition_combination_id => $ncomb2->id,
+        left_combination_id => $ncomb2->id,
         nodemetric_condition_comparator => '<',
         nodemetric_condition_threshold => '0',
     );
 
-    my $nr1 = NodemetricRule->new(
+    my $nr1 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc1->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    my $nr2 = NodemetricRule->new(
+    my $nr2 = Entity::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc2->id,
         nodemetric_rule_state => 'enabled'
