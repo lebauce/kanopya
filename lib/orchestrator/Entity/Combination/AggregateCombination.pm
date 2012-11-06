@@ -93,12 +93,26 @@ sub methods {
     }
 }
 
+=pod
+
+=begin classdoc
+
+Label virtual attribute getter
+
+=end classdoc
+
+=cut
+
+sub label {
+    my $self = shift;
+    return $self->aggregate_combination_label;
+}
 
 =pod
 
 =begin classdoc
 
-Virtual attribute getter
+Formula label virtual attribute getter
 
 =end classdoc
 

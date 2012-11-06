@@ -56,6 +56,10 @@
     position : fixed;
 }
 
+.cursor-wait {
+    cursor  : wait !important;
+}
+
 a.view_link {
     text-decoration: none;
 }

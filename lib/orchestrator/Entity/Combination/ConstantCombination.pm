@@ -42,6 +42,12 @@ sub getAttr {
     return $self->SUPER::getAttr(%args);
 }
 
+# Virtual attribute getter
+sub label {
+    my $self = shift;
+    return $self->value;
+}
+
 sub computeValueFromMonitoredValues {
     my $self = shift;
     return $self->value;

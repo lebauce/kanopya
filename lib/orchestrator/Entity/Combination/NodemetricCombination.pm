@@ -84,11 +84,27 @@ sub methods {
     }
 }
 
+
 =pod
 
 =begin classdoc
 
-Virtual attribute getter
+Label virtual attribute getter
+
+=end classdoc
+
+=cut
+
+sub label {
+    my $self = shift;
+    return $self->nodemetric_combination_label;
+}
+
+=pod
+
+=begin classdoc
+
+Formula label virtual attribute getter
 
 =end classdoc
 
