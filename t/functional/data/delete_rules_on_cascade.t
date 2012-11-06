@@ -199,7 +199,6 @@ sub service_rule_objects_creation {
             left_combination_id => $acombd1->id,
             comparator => '>',
             threshold => '0',
-            state => 'enabled'
         );
 
         $acd2 = Entity::AggregateCondition->new(
@@ -207,7 +206,6 @@ sub service_rule_objects_creation {
             left_combination_id => $acombd2->id,
             comparator => '<',
             threshold => '0',
-            state => 'enabled'
         );
 
         $ac3 = Entity::AggregateCondition->new(
@@ -215,7 +213,6 @@ sub service_rule_objects_creation {
             left_combination_id => $acomb3->id,
             comparator => '<',
             threshold => '0',
-            state => 'enabled'
         );
 
         $rule1d = Entity::AggregateRule->new(
