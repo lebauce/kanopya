@@ -920,9 +920,20 @@ sub getJoinQuery {
     my $relation;
 
     my @joins;
-    for my $comp (@comps) {
+    my $i = 0;
+    while ($i < scalar @comps) {
+        my $comp = $comps[$i];
+        my $many_to_many = $source->result_class->can("_m2m_metadata") &&
+                           defined ($source->result_class->_m2m_metadata->{$comp});
         my @segment = ();
-        while (! $source->has_relationship($comp)) {
+
+        if ($many_to_many) {
+            splice @comps, $i, 1, ($source->result_class->_m2m_metadata->{$comp}->{relation},
+                                   $source->result_class->_m2m_metadata->{$comp}->{foreign_relation});
+            next;
+        }
+
+        while (!$source->has_relationship($comp)) {
             if ($args{reverse}) {
                 $relation = $source->reverse_relationship_info("parent");
                 @segment = ((keys %$relation)[0], @segment);
@@ -947,6 +958,7 @@ sub getJoinQuery {
         }
 
         $source = $source->related_source($comp);
+        $i += 1;
     }
 
     # Get all the hierarchy of the relation
@@ -1292,10 +1304,21 @@ sub toJSON {
             my @comps = split(/\./, $expand);
             my $comp = shift @comps;
             while ($comp && $dbix) {
-                if ($dbix->result_source->has_relationship($comp)) {
-                    $is_relation = $dbix->result_source->relationship_info($comp)->{attrs}->{accessor};
+                my $source = $dbix->result_source;
+                my $many_to_many = $source->result_class->can("_m2m_metadata") &&
+                                   defined ($source->result_class->_m2m_metadata->{$comp});
+
+                if ($source->has_relationship($comp)) {
+                    $is_relation = $source->relationship_info($comp)->{attrs}->{accessor};
+                    last;
+                } elsif ($many_to_many) {
+                    $is_relation = "multi";
+                    @comps = ($source->result_class->_m2m_metadata->{$comp}->{relation},
+                              $source->result_class->_m2m_metadata->{$comp}->{foreign_relation},
+                              @comps);
                     last;
                 }
+
                 $dbix = $dbix->result_source->has_relationship('parent') ? $dbix->parent : undef;
             }
 
