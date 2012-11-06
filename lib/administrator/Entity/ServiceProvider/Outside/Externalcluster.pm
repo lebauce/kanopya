@@ -527,7 +527,6 @@ sub ruleGeneration{
         left_combination_id                => $coef_comb->id,
         comparator                              => '>',
         threshold                               => 0.2,
-        state                                   => 'enabled',
     };
 
    my $coef_cond = Entity::AggregateCondition->new(%$condition_params);
@@ -538,7 +537,6 @@ sub ruleGeneration{
         left_combination_id                => $std_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 10,
-        state                                   => 'enabled',
     };
 
    my $std_cond = Entity::AggregateCondition->new(%$condition_params);
@@ -549,7 +547,6 @@ sub ruleGeneration{
         left_combination_id                     => $out_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 0,
-        state                                   => 'enabled',
     };
 
    my $out_cond = Entity::AggregateCondition->new(%$condition_params);
@@ -578,7 +575,6 @@ sub ruleGeneration{
         left_combination_id                     => $mean_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 80,
-        state                                   => 'enabled',
     };
 
    my $mean_cond = Entity::AggregateCondition->new(%$condition_params);
@@ -597,7 +593,6 @@ sub ruleGeneration{
         left_combination_id                     => $mean_ids->{comb_id},
         comparator                              => '<',
         threshold                               => 10,
-        state                                   => 'enabled',
     };
 
    my $low_mean_cond = Entity::AggregateCondition->new(%$condition_params);
@@ -616,7 +611,6 @@ sub generateAOutOfRangeRule {
         left_combination_id                     => $ndoor_comb_id,
         comparator                              => '>',
         threshold                               => 0,
-        state                                   => 'enabled',
     };
 
     my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
@@ -640,7 +634,6 @@ sub generateOverRules {
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
         left_combination_id                     => $mean_percent_comb_id,
-        state                                   => 'enabled',
     };
 
    $condition_params->{comparator} = '>';
@@ -669,7 +662,6 @@ sub generateUnderRules {
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
         left_combination_id                     => $mean_percent_comb_id,
-        state                                   => 'enabled',
     };
 
    $condition_params->{comparator} = '<';
@@ -708,7 +700,6 @@ sub generateCoefficientOfVariationRules {
         left_combination_id                     => $aggregate_combination->id,
         comparator                              => '>',
         threshold                               => 0.2,
-        state                                   => 'enabled',
     };
 
    my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
@@ -741,7 +732,6 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
         left_combination_id                => $aggregate_combination->id,
         comparator                              => '>',
         threshold                               => 0.15,
-        state                                   => 'enabled',
     };
 
    my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);

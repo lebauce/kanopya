@@ -515,7 +515,6 @@ sub test_aggregate_combination {
         left_combination_id => $comb->id,
         comparator => '<',
         threshold => '12.34',
-        state => 'enabled'
     );
 
     $ac_right = Entity::AggregateCondition->new(
@@ -523,7 +522,6 @@ sub test_aggregate_combination {
         threshold => '-43.21',
         comparator => '<',
         right_combination_id => $comb->id,
-        state => 'enabled'
     );
 
     $ac_both = Entity::AggregateCondition->new(
@@ -531,7 +529,6 @@ sub test_aggregate_combination {
         left_combination_id  => $comb->id,
         comparator => '<',
         right_combination_id => $comb2->id,
-        state => 'enabled'
     );
 
     $service_provider->addManagerParameter(
@@ -589,7 +586,6 @@ sub test_aggregate_rules {
         left_combination_id => $comb->id,
         comparator => '>',
         threshold => '0',
-        state => 'enabled'
     );
 
     $ac_f = Entity::AggregateCondition->new(
@@ -597,7 +593,6 @@ sub test_aggregate_rules {
         right_combination_id => $comb->id,
         comparator => '>',
         threshold => '0',
-        state => 'enabled'
     );
 
     # No node responds
@@ -987,7 +982,6 @@ sub test_aggregate_condition_update {
         left_combination_id => $comb->id,
         comparator => '<',
         threshold => '12.34',
-        state => 'enabled'
     );
 
     $ac_right = Entity::AggregateCondition->new(
@@ -995,7 +989,6 @@ sub test_aggregate_condition_update {
         threshold => '-43.21',
         comparator => '<',
         right_combination_id => $comb->id,
-        state => 'enabled'
     );
 
     $ac_both = Entity::AggregateCondition->new(
@@ -1003,7 +996,6 @@ sub test_aggregate_condition_update {
         left_combination_id  => $comb->id,
         comparator => '<',
         right_combination_id => $comb2->id,
-        state => 'enabled'
     );
 
     my $old_constant_comb_id = $ac_left->right_combination_id;
@@ -1013,7 +1005,6 @@ sub test_aggregate_condition_update {
         left_combination_id => $comb2->id,
         comparator => '>',
         threshold => '12.35',
-        state => 'disabled'
     );
 
     $ac_left = Entity->get (id => $ac_left->id);
@@ -1022,7 +1013,6 @@ sub test_aggregate_condition_update {
         $ac_left->left_combination_id == $comb2->id
         && $ac_left->comparator eq '>'
         && $ac_left->right_combination->value eq '12.35'
-        && $ac_left->state eq 'disabled'
         , 'Check aggregate condition update (a)'
     );
     dies_ok {
@@ -1035,7 +1025,6 @@ sub test_aggregate_condition_update {
         threshold => '-43.2',
         comparator => '>',
         left_combination_id => $comb2->id,
-        state => 'enabled'
     );
     
     $ac_right = Entity->get (id => $ac_right->id);
@@ -1044,7 +1033,6 @@ sub test_aggregate_condition_update {
         $ac_right->left_combination_id == $comb2->id
         && $ac_right->comparator eq '>'
         && $ac_right->right_combination->value eq '-43.2'
-        && $ac_right->state eq 'enabled'
         , 'Check aggregate condition update (b)'
     );
     dies_ok {

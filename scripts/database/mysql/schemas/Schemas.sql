@@ -1324,7 +1324,6 @@ CREATE TABLE `aggregate_condition` (
   `left_combination_id` int(8) unsigned NOT NULL,
   `right_combination_id` int(8) unsigned NOT NULL,
   `comparator` char(32) NOT NULL,
-  `state` char(32) NOT NULL,
   `time_limit` char(32),
   `last_eval` BOOLEAN DEFAULT NULL,
   KEY (`aggregate_condition_service_provider_id`),

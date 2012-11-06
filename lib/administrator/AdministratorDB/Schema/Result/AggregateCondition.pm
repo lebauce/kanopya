@@ -63,12 +63,6 @@ __PACKAGE__->table("aggregate_condition");
   is_nullable: 0
   size: 32
 
-=head2 state
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 32
-
 =head2 time_limit
 
   data_type: 'char'
@@ -114,8 +108,6 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "comparator",
-  { data_type => "char", is_nullable => 0, size => 32 },
-  "state",
   { data_type => "char", is_nullable => 0, size => 32 },
   "time_limit",
   { data_type => "char", is_nullable => 1, size => 32 },
