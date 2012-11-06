@@ -177,35 +177,29 @@ sub toString(){
     if($depth == 0) {
         return $self->getAttr(name => 'aggregate_rule_label');
     }
-    else{
 
-       my $formula = $self->getAttr(name => 'aggregate_rule_formula');
-        my @array = split(/(id\d+)/,$formula);
-        for my $element (@array) {
 
-            if( $element =~ m/id(\d+)/)
-            {
-                $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->toString (depth => $depth - 1);
-            }
-         }
-         return "@array";
-    }     #return List::Util::reduce {$a.$b} @array;
+    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
+    my @array = split(/(id\d+)/,$formula);
+    for my $element (@array) {
+        if ($element =~ m/id(\d+)/) {
+            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->toString (depth => $depth - 1);
+        }
+    }
+    return "@array";
+
 }
 
 
 sub eval {
     my $self = shift;
 
-    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
-
     #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
+    my @array = split(/(id\d+)/,$self->aggregate_rule_formula);
 
     #replace each rule id by its evaluation
     for my $element (@array) {
-
-        if( $element =~ m/id(\d+)/)
-        {
+        if ($element =~ m/id(\d+)/) {
             $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->eval();
             if( !defined $element) {
                 return undef;
@@ -213,27 +207,24 @@ sub eval {
         }
      }
 
-
-
     my $res = -1;
     my $arrayString = '$res = '."(@array)";
 
     #Evaluate the logic formula
     eval $arrayString;
 
+    $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
+
     if (defined $res){
         my $store = ($res)?1:0;
         $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
-        $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
         $self->save();
         return $store;
-    } else {
-        $self->setAttr(name => 'aggregate_rule_last_eval',value=>undef);
-        $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
-        $self->save();
-        return undef;
     }
 
+    $self->setAttr(name => 'aggregate_rule_last_eval',value=>undef);
+    $self->save();
+    return undef;
 
 }
 
@@ -288,7 +279,7 @@ sub getRules() {
 
     switch ($state){
         case "all"{
-            return @rules; #All THE rules
+            return @rules; # All the rules
         }
         else {
             my @rep;
@@ -330,29 +321,6 @@ sub isCombinationDependant{
     my @dep_cond_id = $self->getDependantConditionIds();
     my $rep = any {$_ eq $condition_id} @dep_cond_id;
     return $rep;
-}
-
-sub checkFormula {
-    my $class = shift;
-    my %args = @_;
-
-    my $formula = (\%args)->{formula};
-
-    my @array = split(/(id\d+)/,$formula);;
-
-    for my $element (@array) {
-        if( $element =~ m/id\d+/){
-            if (! (Entity::AggregateCondition->search (hash => {'aggregate_condition_id'=>substr($element,2)}))){
-                return {
-                    value     => '0',
-                    attribute => substr($element,2),
-                };
-            }
-        }
-    }
-    return {
-        value     => '1',
-    };
 }
 
 sub setAttr {
