@@ -183,13 +183,13 @@ Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
 =cut
 
 __PACKAGE__->might_have(
-  "collector_indicator",
+  "collector_indicator_collector_indicator",
   "AdministratorDB::Schema::Result::CollectorIndicator",
   { "foreign.collector_indicator_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 collector_indicator_collector_managers
+=head2 collector_indicators
 
 Type: has_many
 
@@ -198,7 +198,7 @@ Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
 =cut
 
 __PACKAGE__->has_many(
-  "collector_indicator_collector_managers",
+  "collector_indicators",
   "AdministratorDB::Schema::Result::CollectorIndicator",
   { "foreign.collector_manager_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -789,15 +789,9 @@ Composing rels: L</ingroups> -> gp
 
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-26 13:48:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9QRDLpnI9NuowO9p0CqK3A
 
-__PACKAGE__->has_many(
-  "collector_indicators",
-  "AdministratorDB::Schema::Result::CollectorIndicator",
-  { "foreign.collector_manager_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-06 16:03:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DqoMkItJMaoXDsw2qrHvsQ
 
 __PACKAGE__->might_have(
   "workflow",
@@ -806,5 +800,11 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+__PACKAGE__->might_have(
+  "collector_indicator",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.collector_indicator_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 1;

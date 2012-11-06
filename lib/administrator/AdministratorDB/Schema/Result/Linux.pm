@@ -137,7 +137,8 @@ __PACKAGE__->might_have(
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
-        { "foreign.component_id" => "self.linux_id" },
-        { cascade_copy => 0, cascade_delete => 1 });
+  { component_id => "linux_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 1;

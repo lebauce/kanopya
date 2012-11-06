@@ -913,6 +913,7 @@ sub registerKanopyaMaster {
         eval {
             $component_template = ComponentTemplate->find(hash => { component_template_name => lc $name })->id;
         };
+
         my $comp = $class->new(
             service_provider_id   => $admin_cluster->id,
             component_template_id => $component_template,

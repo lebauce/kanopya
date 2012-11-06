@@ -342,6 +342,7 @@ sub getAttrDefs {
     my $modulename = $class;
     my @hierachy = $class->getClassHierarchy;
 
+    print Dumper(@hierachy);
     while(@hierachy) {
         my $attr_def = {};
 
@@ -612,34 +613,8 @@ sub fromDBIx {
     };
     if ($@) {
         my $err = $@;
-
-        # Ugly fix to be able to require inner classes of components.
-        # From the dbix row, we can retrieve the class name only, but inner classes
-        # of components, that simply directly inherit from BaseDB, are located in
-        # a sub directory of the component directory (lib/administrator/Entity/Component)
-        # in funtion of the name of the component that belongs to.
-        #
-        # So if a required failled on a location builder by classFromDbix, try to
-        # consider the module as a inner class of a component, by deducing the location
-        # from the class name. E.g. with the class name Opennebula3Hypervisor, we can 
-        # deduce the location: lib/administrator/Entity/Component/Opennebula3/.
-        if (not $modulename =~ m/Entity/ and $modulename =~ m/\d/) {
-            (my $component = $modulename) =~ s/\d.*//g;
-            (my $version   = $modulename) =~ s/[a-zA-Z]*//g;
-
-            $modulename = 'Entity::Component::' . $component . $version . '::' . $modulename;
-            eval {
-                requireClass($modulename);
-            };
-            if ($@) {
-                # The module seems not to be a inner class of a component
-                # re-throw the original exception.
-                throw $err;
-            }
-        } else {
-            my $basedb = bless { _dbix => $args{row} }, "BaseDB";
-            return $basedb;
-        }
+        my $basedb = bless { _dbix => $args{row} }, "BaseDB";
+        return $basedb;
     }
 
     # TODO: We need to use prefetch to get the parent/childs attrs,
@@ -1689,11 +1664,7 @@ sub getKeyFromCond {
 
 =begin classdoc
 
-Build an array of the full class hierachy. Module names follow the usual
-perl module hierachy, except some exceptions:
-
-- Components should come with their own classes that directly inherit from
-  BaseDB, but those classes are located in a sub directory of the Component directory.
+Build an array of the full class hierachy.
 
 @return the array containing all classes in the hierarchy.
 
@@ -1705,11 +1676,16 @@ sub getClassHierarchy {
     my $class = shift;
 
     my $classpath = (split("=", "$class"))[0];
-    my @hierarchy = split(/::/, $classpath);
+    my @supers = Class::ISA::super_path($classpath);
 
-    if (defined $hierarchy[-3] and $hierarchy[-3] eq 'Component') {
-        return _buildClassNameFromString($class);
+    my @hierarchy;
+    if ($supers[0] eq 'BaseDB') {
+        @hierarchy = _buildClassNameFromString($classpath);
     }
+    else {
+        @hierarchy = split(/::/, $classpath);
+    }
+
     return wantarray ? @hierarchy : \@hierarchy;
 }
 
