@@ -336,7 +336,8 @@ sub _getDbixFromHash {
     my $dbix;
     eval {
         $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
-                                                                { prefetch => $args{join},
+                                                                { prefetch => $args{prefetch},
+                                                                  join     => $args{join},
                                                                   rows     => $args{rows},
                                                                   page     => $args{page},
                                                                   order_by => $args{order_by} });

@@ -964,30 +964,62 @@ Build the JOIN query to get the attributes of a multi level depth relationship.
 =cut
 
 sub getJoinQuery {
-    my ($class, @comps) = @_;
+    my ($class, %args) = @_;
 
-    my $adm = Administrator->new();
-    my $source = $adm->{db}->source(_buildClassNameFromString($class));
+    my @comps = @{$args{comps}};
+    my $source = $class->getResultSource;
+    my $on = "";
+    my $relation;
 
     my @joins;
     for my $comp (@comps) {
         my @segment = ();
         while (! $source->has_relationship($comp)) {
-            @segment = ("parent", @segment);
+            if ($args{reverse}) {
+                $relation = $source->reverse_relationship_info("parent");
+                @segment = ((keys %$relation)[0], @segment);
+            }
+            else {
+                @segment = ("parent", @segment);
+            }
             last if ! $source->has_relationship("parent");
             $source = $source->related_source("parent");
         }
 
+        if ($args{reverse}) {
+            $relation = $source->reverse_relationship_info($comp);
+            my $name = (keys %$relation)[0];
+            @joins = ($name, @segment, @joins);
+            if (!$on) {
+                $on = $name . "." . ($relation->{$name}->{source}->primary_columns)[0];
+            }
+        }
+        else {
+            @joins = (@joins, @segment, $comp);
+        }
+
         $source = $source->related_source($comp);
-        @joins = (@joins, @segment, $comp);
     }
+
+    # Get all the hierarchy of the relation
+    my @indepth;
+    if ($args{indepth}) {
+        my $depth_source = $source;
+        while ($depth_source->has_relationship("parent")) {
+            @indepth = ("parent", @indepth);
+            $depth_source = $depth_source->related_source("parent");
+        }
+    }
+    @joins = (@joins, @indepth);
 
     my $joins;
     for my $comp (reverse @joins) {
         $joins = { $comp => $joins };
     }
 
-    return $joins;
+    return { source => $source,
+             join   => $joins,
+             on     => $on };
 }
 
 
@@ -1018,14 +1050,25 @@ sub search {
 
     General::checkParams(args     => \%args,
                          required => [ 'hash' ],
-                         optional => { 'page' => undef, 'rows' => undef,
-                                       'order_by' => undef, 'dataType' => undef });
+                         optional => { 'page' => undef, 'rows' => undef, 'join' => undef,
+                                       'order_by' => undef, 'dataType' => undef,
+                                       'prefetch' => [ ], 'raw_hash' => { } });
 
     my $table = _buildClassNameFromString($class);
     my $adm   = Administrator->new();
-    my $join  = $class->getJoin() || {};
+
+    my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
+    my $prefetch = $class->getJoin() || {};
+    $prefetch = $merge->merge($prefetch, $args{join});
+    my $source = $class->getResultSource;
+    for my $relation (@{$args{prefetch}}) {
+        my @comps = split(/\./, $relation);
+        $prefetch = $merge->merge($prefetch, $class->getJoinQuery(comps   => \@comps,
+                                                                  indepth => 1)->{join});
+    }
 
     for my $filter (keys %{$args{hash}}) {
+        next if substr($filter, 0, 3) eq "me.";
         my @comps = split('\.', $filter);
         my $value = $args{hash}->{$filter};
 
@@ -1035,15 +1078,15 @@ sub search {
 
             delete $args{hash}->{$filter};
 
-            my $merge = Hash::Merge->new('RETAINMENT_PRECEDENT');
-            $join = $merge->merge($join, $class->getJoinQuery(@comps));
-
+            $prefetch = $merge->merge($prefetch, $class->getJoinQuery(comps => \@comps)->{join});
             $args{hash}->{$comps[-1] . '.' . $attr} = $value;
         }
     }
 
+    $args{hash} = $merge->merge($args{hash}, $args{raw_hash});
+
     my $rs = $adm->_getDbixFromHash('table' => $table,      'hash'     => $args{hash},
-                                    'page'  => $args{page}, 'join'     => $join,
+                                    'page'  => $args{page}, 'prefetch' => $prefetch,
                                     'rows'  => $args{rows}, 'order_by' => $args{order_by});
 
     while (my $row = $rs->next) {
@@ -1059,14 +1102,16 @@ sub search {
             $class_type = getClassType(id => $parent->get_column("class_type_id"));
 
             if (length($class_type) > length($class)) {
-                $obj = Entity->get(id => $parent->get_column("entity_id"));
+                requireClass($class_type);
+                $obj = $class_type->get(id => $parent->get_column("entity_id"));
+            } else {
+                bless $obj, $class_type;
             }
         }
         else {
             $class_type = $class;
+            bless $obj, $class_type;
         }
-
-        bless $obj, $class_type;
 
         if($@) {
             my $exception = $@;
@@ -1081,10 +1126,10 @@ sub search {
         }
     }
 
-    my $total = (defined ($args{page}) or defined ($args{rows})) ?
-                    $rs->pager->total_entries : $rs->count;
-
     if (defined ($args{dataType}) and $args{dataType} eq "hash") {
+        my $total = (defined ($args{page}) or defined ($args{rows})) ?
+                        $rs->pager->total_entries : $rs->count;
+
         return {
             page    => $args{page} || 1,
             pages   => ceil($total / ($args{rows} || ($args{page} ? 10 : 1))),
@@ -1094,9 +1139,28 @@ sub search {
         }
     }
 
-    return @objs;
+    return wantarray ? @objs : \@objs;
 }
 
+sub searchRelated {
+    my ($self, %args) = @_;
+    my $class = ref ($self) || $self;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'filters' ],
+                         optional => { 'hash' => { } });
+
+    my $adm = Administrator->new();
+    my $source = $adm->{db}->source(_buildClassNameFromString($class));
+    my $join = $class->getJoinQuery(comps   => $args{filters},
+                                    reverse => 1);
+    my $searched_class = classFromDbix($join->{source});
+    requireClass($searched_class);
+
+    return $searched_class->search(%args, raw_hash => { $join->{on} => $args{id} },
+                                          hash     => $args{hash},
+                                          join     => $join->{join});
+}
 
 =pod
 
@@ -1855,6 +1919,23 @@ sub classFromDbix {
     return normalizeName($name);
 }
 
+=pod
+
+=begin classdoc
+
+Return the DBIx ResultSource for this class.
+
+=end classdoc
+
+=cut
+
+sub getResultSource {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+
+    my $adm = Administrator->new();
+    return $adm->{db}->source(_buildClassNameFromString($class));
+}
 
 =pod
 
