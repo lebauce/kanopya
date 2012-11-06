@@ -35,12 +35,16 @@ function nodemetricconditionmodal(sp_id, editid) {
         $(this).find('.hidden').remove();
         var inputs  = $(this).serialize();
         inputs      += '&'+fields.serviceprovider+'='+sp_id;
-        if (editid) {
-            $.ajax({type:'PUT',url:'/api/'+condition_type+'/'+editid, data:inputs})
-            .error( function(error) {alert(error.responseText)});
-        } else {
-            $.post('/api/'+condition_type, inputs).error( function(error) {alert(error.responseText)});
-        }
+        $.ajax({
+            type    : (editid ? 'PUT' : 'POST'),
+            url     : (editid ? '/api/'+condition_type+'/'+editid : '/api/'+condition_type),
+            data    : inputs,
+            error   : function(error) { alert(error.responseText) },
+            success : function() {
+                // Reload all visible grids
+                $('.ui-jqgrid-btable:visible').trigger('reloadGrid');
+            }
+        });
         return false;
     }
 
@@ -71,8 +75,9 @@ function nodemetricconditionmodal(sp_id, editid) {
 
     // Condition specific fields (depending on condition type)
     // 1 - type threshold
+    var right_threshold_input = $('<input>', {type : 'text', name:fields.threshold});
     $('<span>', {id : 'view_cond_thresh', 'class':'cond_view hidden'}).append(
-            $('<input>', {type : 'text', name:fields.threshold})
+            right_threshold_input
     ).appendTo(form);
     // 2 - type combination
     var right_combi_select               = $('<select>', {name:'right_combination_id'});
@@ -109,16 +114,16 @@ function nodemetricconditionmodal(sp_id, editid) {
             } else {
                 left_operand_select.find("option[value='" + elem_data.left_combination_id + "']").attr('selected','selected');
                 operator_select.find("option[value='" + elem_data[fields.operator] + "']").attr('selected','selected');
-                var right_combi_selected_option = right_combi_select.find("option[value='" + elem_data.right_combination_id + "']");
-                if (right_combi_selected_option.length) {
-                    // combination type 2 (on combination)
-                    type_select.find("option[value='cond_combi']").attr('selected','selected');
-                    right_combi_selected_option.attr('selected','selected');
-                    form.find('#view_cond_combi').removeClass('hidden');
-                } else {
+                if (elem_data[fields.threshold]) {
                     // combination type 1 (on threshold)
                     type_select.find("option[value='cond_thresh']").attr('selected','selected');
+                    right_threshold_input.val(elem_data[fields.threshold]);
                     form.find('#view_cond_thresh').removeClass('hidden');
+                } else {
+                    // combination type 2 (on combination)
+                    type_select.find("option[value='cond_combi']").attr('selected','selected');
+                    right_combi_select.find("option[value='" + elem_data.right_combination_id + "']").attr('selected','selected');
+                    form.find('#view_cond_combi').removeClass('hidden');
                 }
             }
 
@@ -140,7 +145,6 @@ function nodemetricconditionmodal(sp_id, editid) {
             });
         }
     }
-
     openDialogWhenLoaded();
 }
 

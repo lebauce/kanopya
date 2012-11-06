@@ -25,26 +25,38 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    nodemetric_condition_label     =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_condition_service_provider_id =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    left_combination_id     =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_condition_comparator =>  {pattern       => '^(>|<|>=|<=|==)$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    right_combination_id     =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
+    nodemetric_condition_label => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    nodemetric_condition_service_provider_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    left_combination_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1},
+    nodemetric_condition_comparator => {
+        pattern         => '^(>|<|>=|<=|==)$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    right_combination_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1
+    },
+    nodemetric_condition_threshold => {
+        is_virtual  => 1,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -60,6 +72,23 @@ sub methods {
             'perm_holder' => 'entity',
         },
     };
+}
+
+=head2
+
+Threshold virtual attr getter
+It's value is defined only if the right combination of this condition is a ConstantCombination
+Allow constanCombination management transparency (see new() and update() for handling setting this attr)
+
+=cut
+
+sub nodemetric_condition_threshold {
+    my $self = shift;
+    my $combi = $self->right_combination;
+    if (ref $combi eq 'Entity::Combination::ConstantCombination') {
+        return $combi->value;
+    }
+    return undef;
 }
 
 sub new {
