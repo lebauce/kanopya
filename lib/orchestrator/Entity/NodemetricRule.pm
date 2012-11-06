@@ -325,35 +325,10 @@ sub setVerifiedRule{
     });
 }
 
-sub checkFormula {
-    my $class = shift;
-    my %args = @_;
-
-    my $formula = (\%args)->{formula};
-
-    my @array = split(/(id\d+)/,$formula);;
-
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            if (! (Entity::NodemetricCondition->search(hash => {'nodemetric_condition_id'=>substr($element,2)}))){
-                return {
-                    value     => '0',
-                    attribute => substr($element,2),
-                };
-            }
-        }
-    }
-    return {
-        value     => '1',
-    };
-}
-
 sub disable {
     my $self = shift;
-    
-    $self->{_dbix}->verified_noderules->delete_all;
 
+    $self->{_dbix}->verified_noderules->delete_all;
     $self->setAttr(name => 'nodemetric_rule_state', value => 'disabled');
     $self->save();
 };
