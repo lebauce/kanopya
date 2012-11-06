@@ -26,6 +26,7 @@ use DateTime;
 use Kanopya::Exceptions;
 use General;
 use Profile;
+use UserProfile;
 use Entity::Gp;
 use Quota;
 
@@ -135,19 +136,18 @@ sub methods {
 
 sub create {
     my ($class, %args) = @_;
+
     my $self = $class->SUPER::new(%args);
-    my $cryptpasswd = General::cryptPassword(password => $self->{_dbix}->user_password);
+
+    my $cryptpasswd  = General::cryptPassword(password => $self->{_dbix}->user_password);
+    my $creationdate = DateTime->now->set_time_zone('local');
+
     $self->{_dbix}->user_password($cryptpasswd);
-    my $dt = DateTime->now->set_time_zone('local');
-    $self->{_dbix}->user_creationdate("$dt");
+    $self->{_dbix}->user_creationdate("$creationdate");
     $self->{_dbix}->user_lastaccess(undef);
     $self->save();
-    return $self;
-}
 
-sub new {
-    my $self = shift;
-    $self->create(@_);
+    return $self;
 }
 
 =head2 setAttr
@@ -158,7 +158,9 @@ sub new {
 
 sub setAttr {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => ['name']);
+
     my $value;
     if($args{name} eq 'user_password') {
         $args{value} = General::cryptPassword(password => $args{value});
@@ -231,25 +233,17 @@ sub releaseQuota {
 
 sub setProfiles {
     my ($self, %args) = @_; 
-    my $adm = Administrator->new;
+
     $self->{_dbix}->user_profiles->delete_all;
     foreach my $profile_name (@{$args{profile_names}}) {
+        my $profile;
         eval {
-            my $profile = Profile->find(hash => { profile_name => $profile_name } );
-
-            # Link the user to the profile
-            $self->{_dbix}->user_profiles->create({ profile_id => $profile->id });
-
-            # Automatically add the user in the groups associated to this profile
-            my $rs = $profile->{_dbix}->profile_gps;
-            while (my $row = $rs->next) {
-                my $gp = Entity::Gp->get(id => $row->gp->id);
-                $gp->appendEntity(entity => $self);
-            }
+            $profile = Profile->find(hash => { profile_name => $profile_name });
         };
         if ($@) {
             throw Kanopya::Exception::Internal::IncorrectParam(error => "Unknown profile $profile_name");
         }
+        UserProfile->create(user_id => $self->id, profile_id => $profile->id);
     }
 }
 

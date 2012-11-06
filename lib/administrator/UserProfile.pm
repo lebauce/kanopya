@@ -21,4 +21,28 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+=pod
+
+=begin classdoc
+
+Override the creation to automatically add the user in the group
+corresponding to the associated profile..
+
+=end classdoc
+
+=cut
+
+sub create {
+    my ($class, %args) = @_;
+
+    my $self = $class->SUPER::new(%args);
+
+    # Automatically add the user in the groups associated to this profile
+    for my $group ($self->profile->gps) {
+        $group->appendEntity(entity => $self->user);
+    }
+    return $self;
+}
+
 1;
