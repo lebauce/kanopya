@@ -53,9 +53,6 @@ use constant ATTR_DEF => {
         is_mandatory    => 1,
         is_extended     => 0,
         is_editable     => 1
-    },
-    nodemetric_condition_threshold => {
-        is_virtual  => 1,
     }
 };
 
@@ -72,23 +69,6 @@ sub methods {
             'perm_holder' => 'entity',
         },
     };
-}
-
-=head2
-
-Threshold virtual attr getter
-It's value is defined only if the right combination of this condition is a ConstantCombination
-Allow constanCombination management transparency (see new() and update() for handling setting this attr)
-
-=cut
-
-sub nodemetric_condition_threshold {
-    my $self = shift;
-    my $combi = $self->right_combination;
-    if (ref $combi eq 'Entity::Combination::ConstantCombination') {
-        return $combi->value;
-    }
-    return undef;
 }
 
 sub new {

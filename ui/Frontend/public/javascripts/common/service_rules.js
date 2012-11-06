@@ -7,22 +7,14 @@ var rulestates = ['enabled','disabled'];
 var comparators = ['<','>'];
 
 
-function nodemetricconditionmodal(sp_id, editid) {
-    var fields = {
-            'name'              : 'nodemetric_condition_label',
-            'operator'          : 'nodemetric_condition_comparator',
-            'threshold'         : 'nodemetric_condition_threshold',
-            'serviceprovider'   : 'nodemetric_condition_service_provider_id'
-    };
-    var condition_type = 'nodemetriccondition';
-
+function conditionDialog(sp_id, condition_type, fields, editid) {
     $('*').addClass('cursor-wait');
 
     // Get info of selected item (edit mode)
     var elem_data;
     if (editid) {
         $.ajax({
-           url      : '/api/' + condition_type + '/' + editid,
+           url      : '/api/' + condition_type + '/' + editid + '?expand=right_combination',
            async    : false,
            success  : function(cond) {
                elem_data = cond;
@@ -114,10 +106,10 @@ function nodemetricconditionmodal(sp_id, editid) {
             } else {
                 left_operand_select.find("option[value='" + elem_data.left_combination_id + "']").attr('selected','selected');
                 operator_select.find("option[value='" + elem_data[fields.operator] + "']").attr('selected','selected');
-                if (elem_data[fields.threshold]) {
+                if (elem_data.right_combination.value) {
                     // combination type 1 (on threshold)
                     type_select.find("option[value='cond_thresh']").attr('selected','selected');
-                    right_threshold_input.val(elem_data[fields.threshold]);
+                    right_threshold_input.val(elem_data.right_combination.value);
                     form.find('#view_cond_thresh').removeClass('hidden');
                 } else {
                     // combination type 2 (on combination)
@@ -239,10 +231,39 @@ function _nodemetricconditionmodal(elem_id, editid) {
     }
     (new ModalForm(service_opts)).start();
 }
+
+function showNodeConditionModal(sp_id, editid) {
+    conditionDialog(
+            sp_id,
+            'nodemetriccondition',
+            {
+                'name'              : 'nodemetric_condition_label',
+                'operator'          : 'nodemetric_condition_comparator',
+                'threshold'         : 'nodemetric_condition_threshold',
+                'serviceprovider'   : 'nodemetric_condition_service_provider_id'
+            },
+            editid
+    );
+}
+
+function showServiceConditionModal(sp_id, editid) {
+    conditionDialog(
+            sp_id,
+            'aggregatecondition',
+            {
+                'name'              : 'aggregate_condition_label',
+                'operator'          : 'comparator',
+                'threshold'         : 'threshold',
+                'serviceprovider'   : 'aggregate_condition_service_provider_id'
+            },
+            editid
+    );
+}
+
 function createNodemetricCondition(container_id, elem_id) {
     var button = $("<button>", {html : 'Add condition'});
     button.bind('click', function() {
-        nodemetricconditionmodal(elem_id);
+        showNodeConditionModal(elem_id);
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
@@ -408,7 +429,7 @@ function serviceconditionmodal(elem_id, editid) {
 function createServiceCondition(container_id, elem_id) {
     var button = $("<button>", {html : 'Add a Service Condition'});
     button.bind('click', function() {
-        serviceconditionmodal(elem_id);
+        showServiceConditionModal(elem_id);
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
@@ -516,7 +537,9 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 50,},
             { name: 'right_combination_id', index: 'right_combination_id', width: 100 },
         ],
-        details: { onSelectRow : function(eid) { nodemetricconditionmodal(elem_id, eid); } },
+        details: {
+            onSelectRow : function(eid) { showNodeConditionModal(elem_id, eid); }
+        },
         action_delete: {
             callback : function (id) {
                 confirmDeleteWithDependencies('/api/nodemetriccondition/', id, [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]);
@@ -605,16 +628,15 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                     grid, rowid, 'right_combination_id', 'label'
             );
         },
-        colNames: ['id','name', 'enabled', 'left operand', 'comparator', 'right operand'],
+        colNames: ['id','name', 'left operand', 'comparator', 'right operand'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_condition_label',index:'aggregate_condition_label', width:200,},
-             {name:'state',index:'state', width:60,},
              {name:'left_combination_id',index:'left_combination_id', width:100,},
              {name:'comparator',index:'comparator', width:50,},
              {name:'right_combination_id',index:'right_combination_id', width:100,},
            ],
-        details: { onSelectRow : function(eid) { serviceconditionmodal(elem_id, eid); } },
+        details: { onSelectRow : function(eid) { showServiceConditionModal(elem_id, eid); } },
         action_delete: {
             callback : function (id) {
                 confirmDeleteWithDependencies('/api/aggregatecondition/', id, [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]);
