@@ -282,6 +282,7 @@ sub delete {
             }
         }
     }
+    RRDTimeData::deleteTimeDataStore(name => $id);
     return $self->SUPER::delete();
 }
 

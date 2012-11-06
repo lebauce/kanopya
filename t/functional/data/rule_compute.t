@@ -103,6 +103,24 @@ eval{
     test_nodemetric_condition();
     test_nodemetric_rules();
 
+    my @cms = Entity::Clustermetric->search (hash => {});
+    
+    my @cm_ids = map {$_->id} @cms;
+    for my $cm_id (@cm_ids) {
+        lives_ok {
+            open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd');
+            close(FILE);
+        } 'Check rrd '.($cm_id).' is present';
+    }
+    while (@cms) { (pop @cms)->delete(); };
+
+    is (scalar Entity::Combination::AggregateCombination->search (hash => {}), 0, 'Check all aggregate combinations are deleted');
+    is (scalar Entity::AggregateRule->search (hash => {}), 0, 'Check all aggregate rules are deleted');
+
+    for my $cm_id (@cm_ids) {
+        ok (! defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd'), 'Check rrd '.($cm_id).' has been removed');
+        close(FILE);
+    }
     $adm->rollbackTransaction;
     #$adm->commitTransaction();
 };
