@@ -214,4 +214,33 @@ sub getDependantIndicatorIds {
     return ($self->left_combination->getDependantIndicatorIds(), $self->right_combination->getDependantIndicatorIds());
 }
 
+sub update {
+    my ($self, %args) = @_;
+
+    my $left_combi = $self->left_combination;
+    my $right_combi = $self->right_combination;
+
+    if ((! defined $args{right_combination_id}) && defined $args{nodemetric_condition_threshold}) {
+        my $comb =  Entity::Combination::ConstantCombination->new (
+            service_provider_id => $args{nodemetric_condition_service_provider_id},
+            value => $args{nodemetric_condition_threshold}
+        );
+        delete $args{nodemetric_condition_threshold};
+        $args{right_combination_id} = $comb->id;
+    }
+
+    if ((! defined $args{left_combination_id}) && defined $args{nodemetric_condition_threshold}) {
+        my $comb =  Entity::Combination::ConstantCombination->new (
+            service_provider_id => $args{nodemetric_condition_service_provider_id},
+            value => $args{nodemetric_condition_threshold}
+        );
+        delete $args{nodemetric_condition_threshold};
+        $args{left_combination_id} = $comb->id;
+    }
+
+    my $rep = $self->SUPER::update(%args);
+    $left_combi->deleteIfConstant();
+    $right_combi->deleteIfConstant();
+    return $rep;
+}
 1;

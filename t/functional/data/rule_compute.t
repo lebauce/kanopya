@@ -94,6 +94,8 @@ eval{
         }
     );
 
+    test_aggregate_condition_update();
+    test_nodemetric_condition_update();
     test_aggregate_combination();
     test_aggregate_rules();
     test_two_combinations_on_nodemetric_condition();
@@ -939,3 +941,181 @@ sub test_big_formulas {
     is($rule2->eval, 1, 'Check ((0 || 0) || (0 || 1)) && ! ( (! (0 || 1)) || ! (1 && 1)) rule');
 }
 
+sub test_aggregate_condition_update {
+
+    # Clustermetric
+    my $cm = Entity::Clustermetric->new(
+        clustermetric_service_provider_id => $service_provider->id,
+        clustermetric_indicator_id => ($indic1->id),
+        clustermetric_statistics_function_name => 'sum',
+        clustermetric_window_time => '1200',
+    );
+
+    # Combination
+    my $comb = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm->id),
+    );
+
+    # Combination
+    my $comb2 = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => '2*id'.($cm->id),
+    );
+
+    # Condition
+    $ac_left = Entity::AggregateCondition->new(
+        aggregate_condition_service_provider_id => $service_provider->id,
+        left_combination_id => $comb->id,
+        comparator => '<',
+        threshold => '12.34',
+        state => 'enabled'
+    );
+
+    $ac_right = Entity::AggregateCondition->new(
+        aggregate_condition_service_provider_id => $service_provider->id,
+        threshold => '-43.21',
+        comparator => '<',
+        right_combination_id => $comb->id,
+        state => 'enabled'
+    );
+
+    $ac_both = Entity::AggregateCondition->new(
+        aggregate_condition_service_provider_id => $service_provider->id,
+        left_combination_id  => $comb->id,
+        comparator => '<',
+        right_combination_id => $comb2->id,
+        state => 'enabled'
+    );
+
+    my $old_constant_comb_id = $ac_left->right_combination_id;
+
+    $ac_left->update(
+        aggregate_condition_service_provider_id => $service_provider->id,
+        left_combination_id => $comb2->id,
+        comparator => '>',
+        threshold => '12.35',
+        state => 'disabled'
+    );
+
+    $ac_left = Entity->get (id => $ac_left->id);
+
+    ok (
+        $ac_left->left_combination_id == $comb2->id
+        && $ac_left->comparator eq '>'
+        && $ac_left->right_combination->value eq '12.35'
+        && $ac_left->state eq 'disabled'
+        , 'Check aggregate condition update (a)'
+    );
+    dies_ok {
+        Entity->get(id => $old_constant_comb_id);
+    } 'Check old constant combination has been deleted';
+
+    $old_constant_comb_id = $ac_right->left_combination_id;
+    $ac_right->update(
+        aggregate_condition_service_provider_id => $service_provider->id,
+        threshold => '-43.2',
+        comparator => '>',
+        left_combination_id => $comb2->id,
+        state => 'enabled'
+    );
+    
+    $ac_right = Entity->get (id => $ac_right->id);
+
+    ok (
+        $ac_right->left_combination_id == $comb2->id
+        && $ac_right->comparator eq '>'
+        && $ac_right->right_combination->value eq '-43.2'
+        && $ac_right->state eq 'enabled'
+        , 'Check aggregate condition update (b)'
+    );
+    dies_ok {
+        Entity->get(id => $old_constant_comb_id);
+    } 'Check old constant combination has been deleted';
+}
+
+sub test_nodemetric_condition_update {
+
+    # Clustermetric
+    my $cm = Entity::Clustermetric->new(
+        clustermetric_service_provider_id => $service_provider->id,
+        clustermetric_indicator_id => ($indic1->id),
+        clustermetric_statistics_function_name => 'mean',
+        clustermetric_window_time => '1200',
+    );
+
+    #  Nodemetric combination
+    my $ncomb = Entity::Combination::NodemetricCombination->new(
+        service_provider_id             => $service_provider->id,
+        nodemetric_combination_formula  => 'id'.($indic1->id),
+    );
+
+    # Aggregate Combination
+    my $comb = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm->id),
+    );
+
+    my $nc_agg_th_right = Entity::NodemetricCondition->new(
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        left_combination_id             => $comb->id,
+        nodemetric_condition_comparator => '>',
+        nodemetric_condition_threshold  => '-1.2',
+    );
+
+    my $nc_agg_th_left = Entity::NodemetricCondition->new(
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        nodemetric_condition_threshold  => '-1.4',
+        nodemetric_condition_comparator => '<',
+        right_combination_id            => $comb->id,
+    );
+
+    my $nc_mix_1 = Entity::NodemetricCondition->new(
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        left_combination_id             => $ncomb->id,
+        nodemetric_condition_comparator => '<',
+        right_combination_id            => $comb->id,
+    );
+
+    my $old_constant_combination_id = $nc_agg_th_right->right_combination_id;
+
+    $nc_agg_th_right->update (
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        left_combination_id             => $ncomb->id,
+        nodemetric_condition_comparator => '>',
+        nodemetric_condition_threshold  => '2.4',
+    );
+
+    $nc_agg_th_right = Entity->get (id => $nc_agg_th_right->id);
+
+    ok (
+        $nc_agg_th_right->left_combination_id == $ncomb->id
+        && $nc_agg_th_right->nodemetric_condition_comparator eq '>'
+        && $nc_agg_th_right->right_combination->value eq '2.4'
+        , 'Check nodemetric condition update (a)'
+    );
+    dies_ok {
+        Entity->get(id => $old_constant_combination_id);
+    } 'Check old constant combination has been deleted';
+
+    $old_constant_combination_id = $nc_agg_th_left->left_combination_id;
+    
+    $nc_agg_th_left->update (
+        nodemetric_condition_service_provider_id => $service_provider->id,
+        nodemetric_condition_threshold  => '2.7',
+        nodemetric_condition_comparator => '>',
+        left_combination_id            => $comb->id,
+    );
+
+    $nc_agg_th_left = Entity->get (id => $nc_agg_th_left->id);
+
+    ok (
+        $nc_agg_th_left->left_combination_id == $comb->id
+        && $nc_agg_th_left->nodemetric_condition_comparator eq '>'
+        && $nc_agg_th_left->right_combination->value eq '2.7'
+        , 'Check nodemetric condition update (b)'
+    );
+    dies_ok {
+        Entity->get(id => $old_constant_combination_id);
+    } 'Check old constant combination has been deleted';
+}
