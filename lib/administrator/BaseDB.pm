@@ -1998,16 +1998,15 @@ sub methodCall {
 
     General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
 
-    my $methods   = $self->getMethods();
-    my $delegatee = $self->getDelegatee();
+    my $methods = $self->getMethods();
 
     # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
     my ($granted, $perm_holder_id);
     if ($methods->{$args{method}}->{perm_holder} eq 'mastergroup') {
-        $perm_holder_id = $delegatee->getMasterGroup->id;
+        $perm_holder_id = $self->getMasterGroup->id;
     }
     elsif ($class and $methods->{$args{method}}->{perm_holder} eq 'entity') {
-        $perm_holder_id = $delegatee->id;
+        $perm_holder_id = $self->id;
     }
 
     # Check the permissions for the logged user
