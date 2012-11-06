@@ -35,7 +35,7 @@ function fillServiceMetricCombinationList (widget, sp_id) {
         widgetUpdateTitle(widget, metric_name);
     });
 
-    $.get('/api/serviceprovider/' + sp_id + '/aggregate_combinations', function (data) {
+    $.get('/api/aggregatecombination?service_provider_id=' + sp_id, function (data) {
         $(data).each( function () {
             indic_list.append('<option id ="' + this.aggregate_combination_id + '" value="' + this.aggregate_combination_label + '">' + this.aggregate_combination_label + '</option>');
         });

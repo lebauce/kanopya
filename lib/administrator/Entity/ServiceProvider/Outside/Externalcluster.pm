@@ -24,14 +24,14 @@ use Kanopya::Exceptions;
 use Administrator;
 use General;
 
-use NodemetricCombination;
-use NodemetricCondition;
-use NodemetricRule;
-use AggregateCombination;
-use AggregateCondition;
-use AggregateRule;
-use Clustermetric;
-use CollectorIndicator;
+use Entity::Combination::NodemetricCombination;
+use Entity::NodemetricCondition;
+use Entity::NodemetricRule;
+use Entity::Combination::AggregateCombination;
+use Entity::AggregateCondition;
+use Entity::AggregateRule;
+use Entity::Clustermetric;
+use Entity::CollectorIndicator;
 use Externalnode;
 
 use Log::Log4perl "get_logger";
@@ -378,16 +378,16 @@ sub generateClustermetricAndCombination{
         clustermetric_statistics_function_name => $func,
         clustermetric_window_time              => '1200',
     };
-    my $cm = Clustermetric->new(%$cm_params);
+    my $cm = Entity::Clustermetric->new(%$cm_params);
 
     my $acf_params = {
-        aggregate_combination_service_provider_id   => $extcluster_id,
-        aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
     };
-    my $aggregate_combination = AggregateCombination->new(%$acf_params);
+    my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
     my $rep = {
         cm_id => $cm->getAttr(name => 'clustermetric_id'),
-        comb_id => $aggregate_combination->getAttr(name => 'aggregate_combination_id'),
+        comb_id => $aggregate_combination->id,
     };
     return $rep;
 }
@@ -462,7 +462,7 @@ sub monitoringDefaultInit {
             aggregate_rule_label                => 'Cluster load',
             aggregate_rule_description          => 'Mem, cpu and network usages are low, your cluster may be oversized',
         };
-        AggregateRule->new(%$params_rule);
+        Entity::AggregateRule->new(%$params_rule);
     }
 
     if(defined $active_session_indicator_id) {
@@ -473,13 +473,13 @@ sub monitoringDefaultInit {
             clustermetric_statistics_function_name => 'sum',
             clustermetric_window_time              => '1200',
         };
-        my $cm = Clustermetric->new(%$cm_params);
+        my $cm = Entity::Clustermetric->new(%$cm_params);
 
         my $acf_params = {
-            aggregate_combination_service_provider_id   => $service_provider_id,
-            aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+            service_provider_id             => $service_provider_id,
+            aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
         };
-        AggregateCombination->new(%$acf_params);
+        Entity::Combination::AggregateCombination->new(%$acf_params);
     }
 }
 
@@ -516,43 +516,43 @@ sub ruleGeneration{
     );
 
     my $combination_params = {
-        aggregate_combination_service_provider_id => $extcluster_id,
-        aggregate_combination_formula             => 'id'.($std_ids->{cm_id}).'/ id'.($mean_ids->{cm_id}),
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($std_ids->{cm_id}).'/ id'.($mean_ids->{cm_id}),
     };
 
-    my $coef_comb = AggregateCombination->new(%$combination_params);
+    my $coef_comb = Entity::Combination::AggregateCombination->new(%$combination_params);
 
    my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $coef_comb->getAttr(name=>'aggregate_combination_id'),
+        left_combination_id                => $coef_comb->id,
         comparator                              => '>',
         threshold                               => 0.2,
         state                                   => 'enabled',
     };
 
-   my $coef_cond = AggregateCondition->new(%$condition_params);
+   my $coef_cond = Entity::AggregateCondition->new(%$condition_params);
    my $coef_cond_id = $coef_cond->getAttr(name => 'aggregate_condition_id');
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $std_ids->{comb_id},
+        left_combination_id                => $std_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 10,
         state                                   => 'enabled',
     };
 
-   my $std_cond = AggregateCondition->new(%$condition_params);
+   my $std_cond = Entity::AggregateCondition->new(%$condition_params);
    my $std_cond_id = $std_cond->getAttr(name => 'aggregate_condition_id');
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $out_ids->{comb_id},
+        left_combination_id                     => $out_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 0,
         state                                   => 'enabled',
     };
 
-   my $out_cond = AggregateCondition->new(%$condition_params);
+   my $out_cond = Entity::AggregateCondition->new(%$condition_params);
    my $out_cond_id = $out_cond->getAttr(name => 'aggregate_condition_id');
 
    my $params_rule = {
@@ -562,7 +562,7 @@ sub ruleGeneration{
         aggregate_rule_label                => 'Cluster '.$label.' homogeneity',
         aggregate_rule_description          => $label.' is not well balanced across the cluster',
     };
-    AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 
    $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
@@ -571,17 +571,17 @@ sub ruleGeneration{
         aggregate_rule_label                => 'Cluster '.$label.' consistency',
         aggregate_rule_description          => 'The '.$label.' usage of some nodes of the cluster is far from the average behavior',
     };
-    AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_ids->{comb_id},
+        left_combination_id                     => $mean_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 80,
         state                                   => 'enabled',
     };
 
-   my $mean_cond = AggregateCondition->new(%$condition_params);
+   my $mean_cond = Entity::AggregateCondition->new(%$condition_params);
    my $mean_cond_id = $mean_cond->getAttr(name => 'aggregate_condition_id');
    $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
@@ -590,17 +590,17 @@ sub ruleGeneration{
         aggregate_rule_label                => 'Cluster '.$label.' overload',
         aggregate_rule_description          => 'Average '.$label.' is too high, your cluster may be undersized',
     };
-    AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_ids->{comb_id},
+        left_combination_id                     => $mean_ids->{comb_id},
         comparator                              => '<',
         threshold                               => 10,
         state                                   => 'enabled',
     };
 
-   my $low_mean_cond = AggregateCondition->new(%$condition_params);
+   my $low_mean_cond = Entity::AggregateCondition->new(%$condition_params);
 
    return $low_mean_cond->getAttr(name => 'aggregate_condition_id');
 }
@@ -613,14 +613,14 @@ sub generateAOutOfRangeRule {
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $ndoor_comb_id,
+        left_combination_id                     => $ndoor_comb_id,
         comparator                              => '>',
         threshold                               => 0,
         state                                   => 'enabled',
     };
 
-    my $aggregate_condition = AggregateCondition->new(%$condition_params);
-    my $label = 'Isolated data - '.$aggregate_condition->getCombination()->toString();
+    my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
+    my $label = 'Isolated data - '.$aggregate_condition->left_combination->toString();
 
     my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
@@ -629,7 +629,7 @@ sub generateAOutOfRangeRule {
         aggregate_rule_label                => $label,
         aggregate_rule_description          => 'Check the indicators of the nodes generating isolated datas',
     };
-    AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 };
 
 sub generateOverRules {
@@ -639,14 +639,14 @@ sub generateOverRules {
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_percent_comb_id,
+        left_combination_id                     => $mean_percent_comb_id,
         state                                   => 'enabled',
     };
 
    $condition_params->{comparator} = '>';
    $condition_params->{threshold}  = 70;
 
-   my $aggregate_condition = AggregateCondition->new(%$condition_params);
+   my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
 
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
@@ -654,10 +654,10 @@ sub generateOverRules {
         aggregate_rule_state                => 'enabled',
     };
 
-    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' overloaded';
+    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->left_combination->toString().' overloaded';
     $params_rule->{aggregate_rule_description} = 'You may add a node';
 
-    AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 };
 
 
@@ -668,14 +668,14 @@ sub generateUnderRules {
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_percent_comb_id,
+        left_combination_id                     => $mean_percent_comb_id,
         state                                   => 'enabled',
     };
 
    $condition_params->{comparator} = '<';
    $condition_params->{threshold}  = 10;
 
-   my $aggregate_condition = AggregateCondition->new(%$condition_params);
+   my $aggregate_condition = Enity::AggregateCondition->new(%$condition_params);
 
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
@@ -683,10 +683,10 @@ sub generateUnderRules {
         aggregate_rule_state                => 'enabled',
     };
 
-    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' underloaded';
+    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->left_combination->toString().' underloaded';
     $params_rule->{aggregate_rule_description} = 'You may add a node';
 
-    AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 };
 
 # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
@@ -697,21 +697,21 @@ sub generateCoefficientOfVariationRules {
     my $extcluster_id  = $args{extcluster_id};
 
     my $combination_params = {
-        aggregate_combination_service_provider_id => $extcluster_id,
-        aggregate_combination_formula             => 'id'.($id_std).'/ id'.($id_mean),
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($id_std).'/ id'.($id_mean),
     };
 
-    my $aggregate_combination = AggregateCombination->new(%$combination_params);
+    my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$combination_params);
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+        left_combination_id                     => $aggregate_combination->id,
         comparator                              => '>',
         threshold                               => 0.2,
         state                                   => 'enabled',
     };
 
-   my $aggregate_condition = AggregateCondition->new(%$condition_params);
+   my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
 
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
@@ -720,7 +720,7 @@ sub generateCoefficientOfVariationRules {
         aggregate_rule_label                => 'Heterogeneity detected with '.$aggregate_combination->toString(),
         aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
-    AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 };
 
 # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
@@ -730,21 +730,21 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
     my $extcluster_id  = $args{extcluster_id};
 
     my $combination_params = {
-        aggregate_combination_service_provider_id => $extcluster_id,
-        aggregate_combination_formula             => 'id'.($id_std),
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($id_std),
     };
 
-    my $aggregate_combination = AggregateCombination->new(%$combination_params);
+    my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$combination_params);
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+        left_combination_id                => $aggregate_combination->id,
         comparator                              => '>',
         threshold                               => 0.15,
         state                                   => 'enabled',
     };
 
-   my $aggregate_condition = AggregateCondition->new(%$condition_params);
+   my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
 
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
@@ -753,7 +753,7 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
         aggregate_rule_label                => 'Data homogeneity',
         aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
-    AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 };
 
 
@@ -766,11 +766,11 @@ sub generateNodeMetricRules{
 
     #CREATE A COMBINATION FOR EACH INDICATOR
     my $combination_param = {
-        nodemetric_combination_formula => 'id'.$indicator_id,
-        nodemetric_combination_service_provider_id => $extcluster_id,
+        nodemetric_combination_formula  => 'id'.$indicator_id,
+        service_provider_id             => $extcluster_id,
     };
 
-    my $comb = NodemetricCombination->new(%$combination_param);
+    my $comb = Entity::Combination::NodemetricCombination->new(%$combination_param);
 
     my $creation_conf = {
         'Memory/PercentMemoryUsed' => {
@@ -801,12 +801,12 @@ sub generateNodeMetricRules{
 
     if (defined $creation_conf->{$indicator_oid}){
         my $condition_param = {
-            nodemetric_condition_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
+            left_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
             nodemetric_condition_comparator     => $creation_conf->{$indicator_oid}->{comparator},
             nodemetric_condition_threshold      => $creation_conf->{$indicator_oid}->{threshold},
             nodemetric_condition_service_provider_id => $extcluster_id,
         };
-        my $condition = NodemetricCondition->new(%$condition_param);
+        my $condition = Entity::NodemetricCondition->new(%$condition_param);
         my $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
         my $prule = {
             nodemetric_rule_formula             => 'id'.$conditionid,
@@ -815,7 +815,7 @@ sub generateNodeMetricRules{
             nodemetric_rule_state               => 'enabled',
             nodemetric_rule_service_provider_id => $extcluster_id,
         };
-        NodemetricRule->new(%$prule);
+        Entity::NodemetricRule->new(%$prule);
     }
 }
 

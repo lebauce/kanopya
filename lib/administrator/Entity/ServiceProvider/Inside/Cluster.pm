@@ -20,7 +20,6 @@ use base 'Entity::ServiceProvider::Inside';
 
 use strict;
 use warnings;
-
 use Kanopya::Exceptions;
 use Kanopya::Config;
 use Entity::Component;
@@ -30,16 +29,16 @@ use Entity::Systemimage;
 use Externalnode::Node;
 use Entity::Operation;
 use Entity::Workflow;
-use NodemetricCombination;
-use Clustermetric;
-use AggregateCombination;
+use Entity::Combination::NodemetricCombination;
+use Entity::Clustermetric;
+use Entity::Combination::AggregateCombination;
 use Entity::Policy;
 use Administrator;
 use General;
 use ServiceProviderManager;
 use Entity::ServiceTemplate;
 use VerifiedNoderule;
-use Indicator;
+use Entity::Indicator;
 use Indicatorset;
 use Entity::Billinglimit;
 use Entity::Component::Kanopyaworkflow0;
@@ -610,7 +609,7 @@ sub configureBillingLimits {
         foreach my $name (@indicators) {
             my $indicator = Indicator->find(hash => { indicator_name => $name });
 
-            my $cm = Clustermetric->new(
+            my $cm = Entity::Clustermetric->new(
                 clustermetric_label                    => "Billing" . $name,
                 clustermetric_service_provider_id      => $self->getId,
                 clustermetric_indicator_id             => $indicator->getId,
@@ -618,10 +617,10 @@ sub configureBillingLimits {
                 clustermetric_window_time              => '1200',
             );
 
-            AggregateCombination->new(
-                aggregate_combination_label               => "Billing" . $name,
-                aggregate_combination_service_provider_id => $self->getId,
-                aggregate_combination_formula             => 'id' . $cm->getId
+            Entity::Combination::AggregateCombination->new(
+                aggregate_combination_label     => "Billing" . $name,
+                service_provider_id             => $self->getId,
+                aggregate_combination_formula   => 'id' . $cm->getId
             );
         }
     }
@@ -647,8 +646,9 @@ sub configureOrchestration {
     for my $nmc (@nodemetriccombinations) {
         my %attrs = $nmc->getAttrs();
         delete $attrs{nodemetric_combination_id};
-        $attrs{nodemetric_combination_service_provider_id} = $self->getId();
-        NodemetricCombination->new( %attrs );
+
+        $attrs{service_provider_id} = $self->getId();
+        Entity::Combination::NodemetricCombination->new( %attrs );
     }
 
     # Cluster metrics and combinations
@@ -1079,7 +1079,6 @@ sub isLoadBalanced {
 
 sub addNode {
     my $self = shift;
-    my %args = @_;
 
     return Entity::Workflow->run(
         name       => 'AddNode',
@@ -1274,20 +1273,20 @@ sub generateOverLoadNodemetricRules {
 
     while (  my ($key, $value) = each(%$creation_conf) ) {
         my $combination_param = {
-            nodemetric_combination_formula             => $value->{formula},
-            nodemetric_combination_service_provider_id => $service_provider_id,
+            nodemetric_combination_formula  => $value->{formula},
+            service_provider_id             => $service_provider_id,
         };
 
-        my $comb  = NodemetricCombination->new(%$combination_param);
+        my $comb  = Entity::Combination::NodemetricCombination->new(%$combination_param);
 
         my $condition_param = {
-            nodemetric_condition_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
+            left_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
             nodemetric_condition_comparator          => $value->{comparator},
             nodemetric_condition_threshold           => $value->{threshold},
             nodemetric_condition_service_provider_id => $service_provider_id,
         };
 
-        my $condition = NodemetricCondition->new(%$condition_param);
+        my $condition = Entity::NodemetricCondition->new(%$condition_param);
         my $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
         my $prule = {
             nodemetric_rule_formula             => 'id'.$conditionid,
@@ -1296,7 +1295,7 @@ sub generateOverLoadNodemetricRules {
             nodemetric_rule_state               => 'enabled',
             nodemetric_rule_service_provider_id => $service_provider_id,
         };
-        my $rule = NodemetricRule->new(%$prule);
+        Entity::NodemetricRule->new(%$prule);
     }
 }
 
@@ -1316,10 +1315,10 @@ sub generateDefaultMonitoringConfiguration {
     # We create a nodemetric combination for each indicator
     foreach my $indicator (@$indicators) {
         my $combination_param = {
-            nodemetric_combination_formula => 'id' . $indicator->getId,
-            nodemetric_combination_service_provider_id => $service_provider_id,
+            nodemetric_combination_formula  => 'id' . $indicator->getId,
+            service_provider_id             => $service_provider_id,
         };
-        NodemetricCombination->new(%$combination_param);
+        Entity::Combination::NodemetricCombination->new(%$combination_param);
     }
 
     #definition of the functions
@@ -1334,13 +1333,13 @@ sub generateDefaultMonitoringConfiguration {
                 clustermetric_statistics_function_name => $func,
                 clustermetric_window_time              => '1200',
             };
-            my $cm = Clustermetric->new(%$cm_params);
+            my $cm = Entity::Clustermetric->new(%$cm_params);
 
             my $acf_params = {
-                aggregate_combination_service_provider_id   => $service_provider_id,
-                aggregate_combination_formula               => 'id' . $cm->getId
+                service_provider_id             => $service_provider_id,
+                aggregate_combination_formula   => 'id' . $cm->getId
             };
-            my $clustermetric_combination = AggregateCombination->new(%$acf_params);
+            my $clustermetric_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
         }
     }
 }

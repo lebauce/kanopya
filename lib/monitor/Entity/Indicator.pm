@@ -11,14 +11,14 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Indicator;
+package Entity::Indicator;
 
 use strict;
 use warnings;
-use base 'BaseDB';
+use base 'Entity';
 use Data::Dumper;
-require 'Clustermetric.pm';
-require 'NodemetricCombination.pm';
+require 'Entity/Clustermetric.pm';
+require 'Entity/Combination/NodemetricCombination.pm';
 
 # logger
 use Log::Log4perl "get_logger";
@@ -108,7 +108,7 @@ sub getDependencies {
     my %dependencies;
 
     my @related_collector_indicators = $self->collector_indicators;
-    my @all_the_nodemetric_combinations = NodemetricCombination->search(hash => {});
+    my @all_the_nodemetric_combinations = Entity::Combination::NodemetricCombination->search(hash => {});
 
     # Service
     for my $collector_indicator (@related_collector_indicators) {
@@ -119,11 +119,11 @@ sub getDependencies {
 
         my $collector_indicator_id  = $collector_indicator->getId;
 
-        my @dependent_clustermetric = Clustermetric->search(
-                                                         hash => {
-                                                             clustermetric_indicator_id => $collector_indicator_id,
-                                                         }
-                                                     );
+        my @dependent_clustermetric = Entity::Clustermetric->search(
+                                          hash => {
+                                              clustermetric_indicator_id => $collector_indicator_id,
+                                          }
+                                      );
 
         for my $clustermetric (@dependent_clustermetric){
             #TODO general getName() to be compaptible with KIM
@@ -137,12 +137,12 @@ sub getDependencies {
         NODEMETRIC_COMBINATION:
         for my $nm_combi (@all_the_nodemetric_combinations) {
             #TODO general getName() to be compaptible with KIM
-            my $service_provider_name = $nm_combi->nodemetric_combination_service_provider->externalcluster_name;
+            my $service_provider_name = $nm_combi->service_provider->externalcluster_name;
             my @collector_indicator_ids = $nm_combi->getDependantCollectorIndicatorIds();
             for my $nm_indicator_id (@collector_indicator_ids) {
                 if ($collector_indicator_id == $nm_indicator_id) {
                     $dependencies{$service_provider_name}->{'node scope'}
-                                                 ->{$nm_combi->nodemetric_combination_label} = $nm_combi->getDependencies;
+                        ->{$nm_combi->nodemetric_combination_label} = $nm_combi->getDependencies;
                     next NODEMETRIC_COMBINATION;
                 }
             }
@@ -170,7 +170,7 @@ sub delete {
 
         $log->info("start processing $collector_indicator_id");
 
-        my @dependent_clustermetric = Clustermetric->search(hash => {
+        my @dependent_clustermetric = Entity::Clustermetric->search(hash => {
                                           clustermetric_indicator_id => $collector_indicator_id,
                                       });
 
@@ -181,7 +181,7 @@ sub delete {
         # Service related hierarchy
         $log->info("Entering nodemetric loop");
 
-        my @all_the_nodemetric_combinations = NodemetricCombination->search(hash => {});
+        my @all_the_nodemetric_combinations = Entity::Combination::NodemetricCombination->search(hash => {});
         NODEMETRIC_COMBINATION:
         while (@all_the_nodemetric_combinations) {
             my $nm_combi  = pop @all_the_nodemetric_combinations;

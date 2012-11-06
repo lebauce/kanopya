@@ -11,13 +11,13 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package AggregateRule;
+package Entity::AggregateRule;
 
 use strict;
 use warnings;
 use TimeData::RRDTimeData;
-use base 'BaseDB';
-use AggregateCondition;
+use base 'Entity';
+use Entity::AggregateCondition;
 use Data::Dumper;
 use Switch;
 use List::Util qw {reduce};
@@ -155,7 +155,7 @@ sub _verify {
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            if (!(AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
+            if (! (Entity::AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
              my $errmsg = "Creating rule formula with an unknown aggregate condition id ($element) ";
              $log->error($errmsg);
              throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -177,43 +177,35 @@ sub toString(){
     if($depth == 0) {
         return $self->getAttr(name => 'aggregate_rule_label');
     }
-    else{
 
-       my $formula = $self->getAttr(name => 'aggregate_rule_formula');
-        my @array = split(/(id\d+)/,$formula);
-        for my $element (@array) {
 
-            if( $element =~ m/id(\d+)/)
-            {
-                $element = AggregateCondition->get('id'=>substr($element,2))->toString(depth => $depth - 1);
-            }
-         }
-         return "@array";
-    }     #return List::Util::reduce {$a.$b} @array;
+    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
+    my @array = split(/(id\d+)/,$formula);
+    for my $element (@array) {
+        if ($element =~ m/id(\d+)/) {
+            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->toString (depth => $depth - 1);
+        }
+    }
+    return "@array";
+
 }
 
 
 sub eval {
     my $self = shift;
 
-    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
-
     #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
+    my @array = split(/(id\d+)/,$self->aggregate_rule_formula);
 
     #replace each rule id by its evaluation
     for my $element (@array) {
-
-        if( $element =~ m/id(\d+)/)
-        {
-            $element = AggregateCondition->get('id'=>substr($element,2))->eval();
+        if ($element =~ m/id(\d+)/) {
+            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->eval();
             if( !defined $element) {
                 return undef;
             }
         }
      }
-
-
 
     my $res = -1;
     my $arrayString = '$res = '."(@array)";
@@ -221,19 +213,18 @@ sub eval {
     #Evaluate the logic formula
     eval $arrayString;
 
+    $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
+
     if (defined $res){
         my $store = ($res)?1:0;
         $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
-        $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
         $self->save();
         return $store;
-    } else {
-        $self->setAttr(name => 'aggregate_rule_last_eval',value=>undef);
-        $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
-        $self->save();
-        return undef;
     }
 
+    $self->setAttr(name => 'aggregate_rule_last_eval',value=>undef);
+    $self->save();
+    return undef;
 
 }
 
@@ -280,15 +271,15 @@ sub getRules() {
 
     my @rules;
     if (defined $service_provider_id) {
-        @rules = AggregateRule->search(hash => {'aggregate_rule_service_provider_id' => $service_provider_id});
+        @rules = Entity::AggregateRule->search (hash => {'aggregate_rule_service_provider_id' => $service_provider_id});
     } else {
-        @rules = AggregateRule->search(hash => {});
+        @rules = Entity::AggregateRule->search (hash => {});
     }
 
 
     switch ($state){
         case "all"{
-            return @rules; #All THE rules
+            return @rules; # All the rules
         }
         else {
             my @rep;
@@ -319,51 +310,17 @@ sub updateState() {
 
 sub getDependantConditionIds {
     my $self = shift;
-    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
-    my @array = split(/(id\d+)/,$formula);
-
-    my @conditionIds;
-
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            push @conditionIds, substr($element,2);
-        }
-    }
-    return @conditionIds;
+    my %ids = map { $_ => undef } ($self->aggregate_rule_formula =~ m/id(\d+)/g);
+    return keys %ids;
 }
 
 
 sub isCombinationDependant{
     my $self         = shift;
     my $condition_id = shift;
-
     my @dep_cond_id = $self->getDependantConditionIds();
     my $rep = any {$_ eq $condition_id} @dep_cond_id;
     return $rep;
-}
-
-sub checkFormula {
-    my $class = shift;
-    my %args = @_;
-
-    my $formula = (\%args)->{formula};
-
-    my @array = split(/(id\d+)/,$formula);;
-
-    for my $element (@array) {
-        if( $element =~ m/id\d+/){
-            if (!(AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
-                return {
-                    value     => '0',
-                    attribute => substr($element,2),
-                };
-            }
-        }
-    }
-    return {
-        value     => '1',
-    };
 }
 
 sub setAttr {

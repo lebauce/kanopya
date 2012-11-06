@@ -11,24 +11,20 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package NodemetricCondition;
+package Entity::NodemetricCondition;
 
 use strict;
 use warnings;
-use base 'BaseDB';
-use NodemetricCombination;
-require 'NodemetricRule.pm';
-
+use base 'Entity';
+use Entity::Combination;
+require 'Entity/NodemetricRule.pm';
+use Entity::Combination::ConstantCombination;
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    nodemetric_condition_id               =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
     nodemetric_condition_label     =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
@@ -37,7 +33,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    nodemetric_condition_combination_id     =>  {pattern       => '^.*$',
+    left_combination_id     =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -45,7 +41,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    nodemetric_condition_threshold =>  {pattern       => '^.*$',
+    right_combination_id     =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -69,6 +65,26 @@ sub methods {
 sub new {
     my $class = shift;
     my %args = @_;
+
+    if ((! defined $args{right_combination_id}) && defined $args{nodemetric_condition_threshold}  ) {
+        my $comb =  Entity::Combination::ConstantCombination->new (
+            service_provider_id => $args{nodemetric_condition_service_provider_id},
+            value => $args{nodemetric_condition_threshold}
+        );
+        delete $args{nodemetric_condition_threshold};
+        $args{right_combination_id} = $comb->id;
+    }
+
+    if ((! defined $args{left_combination_id}) && defined $args{nodemetric_condition_threshold}  ) {
+        my $comb =  Entity::Combination::ConstantCombination->new (
+            service_provider_id => $args{nodemetric_condition_service_provider_id},
+            value => $args{nodemetric_condition_threshold}
+        );
+        delete $args{nodemetric_condition_threshold};
+        $args{left_combination_id} = $comb->id;
+    }
+
+
     my $self = $class->SUPER::new(%args);
 
     if(!defined $args{nodemetric_condition_label} || $args{nodemetric_condition_label} eq ''){
@@ -108,14 +124,10 @@ sub toString {
         $depth = -1;
     }
     if($depth == 0) {
-        return $self->getAttr(name => 'nodemetric_condition_label');
+        return $self->nodemetric_condition_label;
     }
     else{
-        my $combination_id = $self->getAttr(name => 'nodemetric_condition_combination_id');
-        my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
-        my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
-
-        return NodemetricCombination->get('id'=>$combination_id)->toString(depth => $depth - 1).$comparator.$threshold;
+        return $self->left_combination->toString(depth => $depth - 1).$self->nodemetric_condition_comparator.$self->right_combination->toString(depth => $depth - 1);
     }
 };
 
@@ -125,18 +137,23 @@ sub evalOnOneNode{
 
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
 
-    my $combination_id = $self->getAttr(name => 'nodemetric_condition_combination_id');
     my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
-    my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
 
-    my $combination    = NodemetricCombination->get('id' => $combination_id);
-    my $value          = $combination->computeValueFromMonitoredValues(
-                                           monitored_values_for_one_node => $monitored_values_for_one_node
-                                       );
-    if(not defined $value ){
+    my $left_combination  = $self->left_combination;
+    my $right_combination = $self->right_combination;
+
+    my $left_value = $left_combination->computeValueFromMonitoredValues(
+                         monitored_values_for_one_node => $monitored_values_for_one_node
+                     );
+
+    my $right_value = $right_combination->computeValueFromMonitoredValues(
+                          monitored_values_for_one_node => $monitored_values_for_one_node
+                      );
+
+    if((not defined $left_value) || (not defined $right_value)){
         return undef;
     } else {
-        my $evalString = $value.$comparator.$threshold;
+        my $evalString = $left_value.$comparator.$right_value;
 
         $log->info("NM Condition formula: $evalString");
 
@@ -150,7 +167,7 @@ sub evalOnOneNode{
 
 sub getDependencies {
     my $self = shift;
-    my @rules_from_same_service = NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
+    my @rules_from_same_service = Entity::NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
 
     my %dependencies;
     my $id = $self->getId;
@@ -172,7 +189,7 @@ sub delete {
     my $self = shift;
     $log->info('Entering deletion system');
 
-    my @rules_from_same_service = NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
+    my @rules_from_same_service = Entity::NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
     my $id = $self->getId;
     RULE:
     while(@rules_from_same_service) {
@@ -185,6 +202,16 @@ sub delete {
             }
         }
     }
-    return $self->SUPER::delete();
+    my $comb_left  = $self->left_combination;
+    my $comb_right = $self->right_combination;
+    $self->SUPER::delete();
+    $comb_left->deleteIfConstant();
+    $comb_right->deleteIfConstant();
 }
+
+sub getDependantIndicatorIds {
+    my $self = shift;
+    return ($self->left_combination->getDependantIndicatorIds(), $self->right_combination->getDependantIndicatorIds());
+}
+
 1;

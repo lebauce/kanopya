@@ -19,22 +19,22 @@ lives_ok {
     use Executor;
     use Orchestrator;
     use Aggregator;
-
+    use Entity::CollectorIndicator;
     use Entity::ServiceProvider::Outside::Externalcluster;
     use Entity::Connector::MockMonitor;
     use Entity::Connector::Sco;
     use Entity::Workflow;
     use Entity::Operation;
-
-    use NodemetricCombination;
-    use NodemetricCondition;
-    use NodemetricRule;
+    use Entity::Combination;
+    use Entity::Combination::NodemetricCombination;
+    use Entity::NodemetricCondition;
+    use Entity::NodemetricRule;
     use VerifiedNoderule;
     use WorkflowNoderule;
-
-    use Clustermetric;
-    use AggregateCondition;
-    use AggregateCombination;
+    use Entity::Clustermetric;
+    use Entity::AggregateCondition;
+    use Entity::Combination::AggregateCombination;
+    use Entity::AggregateRule;
 } 'All uses';
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -71,7 +71,7 @@ eval{
         );
     } 'Add mock monitor to service provider';
 
-    my @indicators = CollectorIndicator->search (hash => {hash => {collector_manager_id => $mock_monitor->id}});
+    my @indicators = Entity::CollectorIndicator->search (hash => {collector_manager_id => $mock_monitor->id});
 
     my $agg_rule_ids  = service_rule_objects_creation(indicators => \@indicators);
     my $node_rule_ids = node_rule_objects_creation(indicators => \@indicators);
@@ -315,12 +315,12 @@ eval{
     } 'Check service workflow is done';
 
     # Modify node rule2 to avoid a new triggering
-    my $rule2 = NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
+    my $rule2 = Entity::NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
     $rule2->setAttr(name => 'nodemetric_rule_formula', value => '! ('.$rule2->nodemetric_rule_formula.')');
     $rule2->save();
 
     # Modify service rule2 to avoid a new triggering
-    my $arule2 = AggregateRule->get(id => $agg_rule_ids->{agg_rule2_id});
+    my $arule2 = Entity::AggregateRule->get(id => $agg_rule_ids->{agg_rule2_id});
     $arule2->setAttr(name => 'aggregate_rule_formula', value => 'not ('.$arule2->aggregate_rule_formula.')');
     $arule2->save();
 
@@ -336,7 +336,7 @@ eval{
     } 'Check node rule 2 is not verified after formula has changed';
 
     lives_ok {
-        AggregateRule->find(hash => {
+        Entity::AggregateRule->find(hash => {
             aggregate_rule_id => $agg_rule_ids->{agg_rule2_id},
             aggregate_rule_last_eval => 0,
         });
@@ -380,53 +380,53 @@ sub service_rule_objects_creation {
             hash => {externalcluster_name => 'Test Service Provider'}
         );
 
-        my $cm1 = Clustermetric->new(
+        my $cm1 = Entity::Clustermetric->new(
             clustermetric_service_provider_id => $service_provider->id,
             clustermetric_indicator_id => ((pop @indicators)->id),
             clustermetric_statistics_function_name => 'mean',
             clustermetric_window_time => '1200',
         );
 
-        my $cm2 = Clustermetric->new(
+        my $cm2 = Entity::Clustermetric->new(
             clustermetric_service_provider_id => $service_provider->id,
             clustermetric_indicator_id => ((pop @indicators)->id),
             clustermetric_statistics_function_name => 'std',
             clustermetric_window_time => '1200',
         );
 
-        my $acomb1 = AggregateCombination->new(
-            aggregate_combination_service_provider_id =>  $service_provider->id,
-            aggregate_combination_formula => 'id'.($cm1->id).' + id'.($cm2->id),
+        my $acomb1 = Entity::Combination::AggregateCombination->new(
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => 'id'.($cm1->id).' + id'.($cm2->id),
         );
 
-        my $acomb2 = AggregateCombination->new(
-            aggregate_combination_service_provider_id =>  $service_provider->id,
-            aggregate_combination_formula => 'id'.($cm1->id).' + id'.($cm1->id),
+        my $acomb2 = Entity::Combination::AggregateCombination->new(
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => 'id'.($cm1->id).' + id'.($cm1->id),
         );
 
-        my $ac1 = AggregateCondition->new(
+        my $ac1 = Entity::AggregateCondition->new(
             aggregate_condition_service_provider_id => $service_provider->id,
-            aggregate_combination_id => $acomb1->id,
+            left_combination_id => $acomb1->id,
             comparator => '>',
             threshold => '0',
             state => 'enabled'
         );
 
-        my $ac2 = AggregateCondition->new(
+        my $ac2 = Entity::AggregateCondition->new(
             aggregate_condition_service_provider_id => $service_provider->id,
-            aggregate_combination_id => $acomb2->id,
+            left_combination_id => $acomb2->id,
             comparator => '<',
             threshold => '0',
             state => 'enabled'
         );
 
-        $rule1 = AggregateRule->new(
+        $rule1 = Entity::AggregateRule->new(
             aggregate_rule_service_provider_id => $service_provider->id,
             aggregate_rule_formula => 'id'.$ac1->id.' && id'.$ac2->id,
             aggregate_rule_state => 'enabled'
         );
 
-        $rule2 = AggregateRule->new(
+        $rule2 = Entity::AggregateRule->new(
             aggregate_rule_service_provider_id => $service_provider->id,
             aggregate_rule_formula => 'id'.$ac1->id.' || id'.$ac2->id,
             aggregate_rule_state => 'enabled'
@@ -450,37 +450,37 @@ sub node_rule_objects_creation {
         );
 
         # Create nodemetric rule objects
-        my $ncomb1 = NodemetricCombination->new(
-            nodemetric_combination_service_provider_id => $service_provider->id,
-            nodemetric_combination_formula             => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
+        my $ncomb1 = Entity::Combination::NodemetricCombination->new(
+            service_provider_id             => $service_provider->id,
+            nodemetric_combination_formula  => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
         );
 
-        my $ncomb2 = NodemetricCombination->new(
-            nodemetric_combination_service_provider_id => $service_provider->id,
-            nodemetric_combination_formula             => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
+        my $ncomb2 = Entity::Combination::NodemetricCombination->new(
+            service_provider_id             => $service_provider->id,
+            nodemetric_combination_formula  => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
         );
 
-        my $nc1 = NodemetricCondition->new(
+        my $nc1 = Entity::NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $service_provider->id,
-            nodemetric_condition_combination_id => $ncomb1->id,
+            left_combination_id => $ncomb1->id,
             nodemetric_condition_comparator => '>',
             nodemetric_condition_threshold => '0',
         );
 
-        my $nc2 = NodemetricCondition->new(
+        my $nc2 = Entity::NodemetricCondition->new(
             nodemetric_condition_service_provider_id => $service_provider->id,
-            nodemetric_condition_combination_id => $ncomb2->id,
+            left_combination_id => $ncomb2->id,
             nodemetric_condition_comparator => '<',
             nodemetric_condition_threshold => '0',
         );
 
-        $rule1 = NodemetricRule->new(
+        $rule1 = Entity::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $service_provider->id,
             nodemetric_rule_formula => 'id'.$nc1->id.' && id'.$nc2->id,
             nodemetric_rule_state => 'enabled'
         );
 
-        $rule2 = NodemetricRule->new(
+        $rule2 = Entity::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $service_provider->id,
             nodemetric_rule_formula => 'id'.$nc1->id.' || id'.$nc2->id,
             nodemetric_rule_state => 'enabled'
@@ -499,14 +499,14 @@ sub check_rule_verification {
     my %args = @_;
 
     lives_ok {
-        AggregateRule->find(hash => {
+        Entity::AggregateRule->find(hash => {
             aggregate_rule_id => $args{agg_rule1_id},
             aggregate_rule_last_eval => 0,
         });
     } 'Service rule 1 is not verified';
 
     lives_ok {
-        AggregateRule->find(hash => {
+        Entity::AggregateRule->find(hash => {
             aggregate_rule_id => $args{agg_rule2_id},
             aggregate_rule_last_eval => 1,
         });

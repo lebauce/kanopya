@@ -30,8 +30,8 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 use Data::Dumper;
 
-use AggregateRule;
-use NodemetricRule;
+use Entity::AggregateRule;
+use Entity::NodemetricRule;
 use WorkflowDef;
 use WorkflowDefManager;
 use ParamPreset;
@@ -262,13 +262,13 @@ sub _linkWorkflowToRule {
     my $scope_name = $scope->getAttr(name => 'scope_name');
 
     if ($scope_name eq 'node') {
-        $rule = NodemetricRule->find(hash => {nodemetric_rule_id => $rule_id});
-        $rule->setAttr(name => 'workflow_def_id', value => $workflow_def_id);
+        $rule = Entity::NodemetricRule->find (hash => {nodemetric_rule_id => $rule_id});
+        $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
         $rule->save();
 
     } elsif ($scope_name eq 'service_provider') {
-        $rule = AggregateRule->find(hash => {aggregate_rule_id => $rule_id});
-        $rule->setAttr(name => 'workflow_def_id', value => $workflow_def_id);
+        $rule = Entity::AggregateRule->find(hash => {aggregate_rule_id => $rule_id});
+        $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
         $rule->save();
     }
 }
@@ -325,7 +325,7 @@ sub runWorkflow {
 
     #run the workflow with the fully defined params
     return Entity::Workflow->run(
-               name       => $workflow_name, 
+               name       => $workflow_name,
                related_id => $service_provider_id,
                params     => $workflow_params,
                # TODO: Uncomment the following line once rules becomme entities.

@@ -11,7 +11,7 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Clustermetric;
+package Entity::Clustermetric;
 
 use strict;
 use warnings;
@@ -19,11 +19,11 @@ use General;
 use Data::Dumper;
 use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
-use Indicator;
-use CollectorIndicator;
-require 'AggregateCombination.pm';
+use Entity::Indicator;
+use Entity::CollectorIndicator;
+require 'Entity/Combination/AggregateCombination.pm';
 
-use base 'BaseDB';
+use base 'Entity';
 
 # logger
 use Log::Log4perl "get_logger";
@@ -92,7 +92,7 @@ sub indicator_label {
 
 sub getIndicator {
     my $self = shift;
-    return CollectorIndicator->get(id => $self->clustermetric_indicator_id)->indicator;
+    return Entity::CollectorIndicator->get(id => $self->clustermetric_indicator_id)->indicator;
 }
 
 sub compute{
@@ -147,7 +147,7 @@ sub getLastValueFromDB{
 
 sub regenTimeDataStores {
 
-    my @clustermetrics = Clustermetric->search(hash => { });
+    my @clustermetrics = Entity::Clustermetric->search(hash => { });
 
     foreach my $clustermetric (@clustermetrics) {
         #delete previous rrd
@@ -170,7 +170,7 @@ sub resizeTimeDataStores {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => ['storage_duration']);
 
-    my @clustermetrics = Clustermetric->search(hash => { });
+    my @clustermetrics = Entity::Clustermetric->search(hash => { });
     foreach my $clustermetric (@clustermetrics) {
         RRDTimeData::resizeTimeDataStore(storage_duration => $args{storage_duration}, clustermetric_id => $clustermetric->clustermetric_id);
     }
@@ -192,7 +192,7 @@ sub new {
     $collector->collectIndicator(indicator_id        => $self->clustermetric_indicator_id,
                                  service_provider_id => $service_provider->getId);
 
-    if(!defined $args{clustermetric_label} || $args{clustermetric_label} eq ''){
+    if (! defined $args{clustermetric_label} || $args{clustermetric_label} eq '') {
         $self->setAttr(name=>'clustermetric_label', value=>$self->toString());
         $self->save();
     }
@@ -208,26 +208,19 @@ sub new {
 
 sub toString {
     my ($self, %args) = @_;
-    my $depth;
-    if(defined $args{depth}) {
-        $depth = $args{depth};
-    }
-    else {
-        $depth = -1;
-    }
+
+    my $depth = (defined $args{depth}) ? $args{depth} : -1;
 
     if($depth == 0) {
         return $self->getAttr(name => 'clustermetric_label');
     }
-    else{
-        my $indicator = $self->getIndicator();
-        return $self->clustermetric_statistics_function_name .
-               '(' . $indicator->toString() . ')';
-    }
+
+    return $self->clustermetric_statistics_function_name .
+           '(' . $self->getIndicator()->toString() . ')';
 }
 
 sub getUnit {
-    my ($self, %args) = @_;
+    my $self = shift;
 
     my $stat_func = $self->clustermetric_statistics_function_name;
     my $keep_unit = grep { $_ eq $stat_func } qw(mean variance std max min sum);
@@ -242,7 +235,12 @@ sub getUnit {
 sub getDependencies {
     my $self = shift;
 
-    my @aggregate_combinations_from_same_service = AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
+    my @aggregate_combinations_from_same_service = Entity::Combination::AggregateCombination->search(
+                                                       hash => {
+                                                           service_provider_id => $self->clustermetric_service_provider_id
+                                                       }
+                                                   );
+
     my $id = $self->getId;
 
     my %dependencies;
@@ -264,7 +262,12 @@ sub getDependencies {
 sub delete {
     my $self = shift;
 
-    my @aggregate_combinations_from_same_service = AggregateCombination->search(hash => {aggregate_combination_service_provider_id => $self->clustermetric_service_provider_id});
+    my @aggregate_combinations_from_same_service = Entity::Combination::AggregateCombination->search(
+                                                       hash => {
+                                                           service_provider_id => $self->clustermetric_service_provider_id
+                                                       }
+                                                   );
+
     my $id = $self->getId;
 
     LOOP:

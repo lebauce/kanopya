@@ -57,10 +57,10 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
-use AggregateRule;
-use NodemetricRule;
-use NodemetricCondition;
-use NodemetricCombination;
+use Entity::AggregateRule;
+use Entity::NodemetricRule;
+use Entity::NodemetricCondition;
+use Entity::Combination::NodemetricCombination;
 use WorkflowDef;
 use WorkflowNoderule;
 use Entity::Workflow;
@@ -126,7 +126,9 @@ sub new {
 sub manage_aggregates {
     my $self = shift;
 
-    $log->info("## UPDATE ALL $self->{_time_step} SECONDS##");
+    if (defined $self->{_time_step}) {
+        $log->info("## UPDATE ALL $self->{_time_step} SECONDS##");
+    }
 
     my @service_providers = Entity::ServiceProvider->search(hash => {});
 
@@ -183,7 +185,7 @@ sub nodemetricManagement {
 
     $log->info('Cluster NM management'.$service_provider_id);
 
-    my @rules = NodemetricRule->search(
+    my @rules = Entity::NodemetricRule->search (
                     hash => {
                         nodemetric_rule_service_provider_id => $service_provider_id,
                         nodemetric_rule_state               => 'enabled',
@@ -396,17 +398,17 @@ sub _contructRetrieverOutput {
         #Check each conditions (i.e. each Combination
         for my $condition_id (@conditions) {
 
-            my $condition = NodemetricCondition->get('id' => $condition_id);
+            my $condition = Entity::NodemetricCondition->get ('id' => $condition_id);
 
             # Get the related combination id (in order to parse its formula)
-            my $combination_id = $condition->getAttr(name => 'nodemetric_condition_combination_id');
 
-            my $combination = NodemetricCombination->get('id' => $combination_id);
             # get the indicator ids used in combination formula
-            my @indicator_ids = $combination->getDependantIndicatorIds();
+            # my @indicator_ids = $combination->getDependantIndicatorIds();
+
+            my @indicator_ids = $condition->getDependantIndicatorIds();
 
             for my $indicator_id (@indicator_ids) {
-                my $indicator = Indicator->get(id => $indicator_id);
+                my $indicator = Entity::Indicator->get(id => $indicator_id);
                 $indicators->{$indicator->indicator_oid} = $indicator;
             }
         }
@@ -425,20 +427,20 @@ sub clustermetricManagement{
     my $service_provider_id = $service_provider->getId();
 
     # Get rules relative to a cluster
-    my @rules_enabled   = AggregateRule->search(
+    my @rules_enabled   = Entity::AggregateRule->search(
                             hash => {
                                 aggregate_rule_service_provider_id => $service_provider_id,
                                 aggregate_rule_state               => 'enabled',
                             }
                         );
 
-    my @rules_triggered = AggregateRule->search(
+    my @rules_triggered = Entity::AggregateRule->search(
                               hash => {
                                   aggregate_rule_service_provider_id => $service_provider_id,
                                   aggregate_rule_state               => 'triggered'
                               }
                           );
-    my @rules_delayed   = AggregateRule->search(
+    my @rules_delayed   = Entity::AggregateRule->search(
                               hash => {
                                   aggregate_rule_service_provider_id => $service_provider_id,
                                   aggregate_rule_state               => 'delayed'

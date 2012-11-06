@@ -11,13 +11,28 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package AggregateCombination;
+
+=pod
+
+=begin classdoc
+
+Aggregate Combination. Represented by a mathematic combination formula if clustermetric ids.
+
+@since    2012-Feb-01
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
+package Entity::Combination::AggregateCombination;
 
 use strict;
 use warnings;
 use Data::Dumper;
-use base 'BaseDB';
-use Clustermetric;
+use base 'Entity::Combination';
+use Entity::Clustermetric;
 use TimeData::RRDTimeData;
 use Kanopya::Exceptions;
 use List::Util qw {reduce};
@@ -38,12 +53,6 @@ use constant ATTR_DEF => {
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1
-    },
-    aggregate_combination_service_provider_id => {
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 0
     },
     aggregate_combination_formula => {
         pattern         => '^((id\d+)|[ .+*()-/]|\d)+$',
@@ -68,9 +77,7 @@ sub getAttr {
     if ($args{name} eq "unit") {
         return $self->getUnit();
     }
-    else {
-        return $self->SUPER::getAttr(%args);
-    }
+    return $self->SUPER::getAttr(%args);
 }
 
 sub methods {
@@ -86,11 +93,50 @@ sub methods {
     }
 }
 
-# Virtual attribute getter
+=pod
+
+=begin classdoc
+
+Label virtual attribute getter
+
+=end classdoc
+
+=cut
+
+sub label {
+    my $self = shift;
+    return $self->aggregate_combination_label;
+}
+
+=pod
+
+=begin classdoc
+
+Formula label virtual attribute getter
+
+=end classdoc
+
+=cut
+
 sub formula_label {
     my $self = shift;
     return $self->toString();
 }
+
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class. Compute automatically the label if not specified in args.
+
+@return a class instance
+
+=end classdoc
+
+=cut
 
 sub new {
     my $class = shift;
@@ -100,12 +146,23 @@ sub new {
 
     _verify($formula);
     my $self = $class->SUPER::new(%args);
-    if(!defined $args{aggregate_combination_label} || $args{aggregate_combination_label} eq ''){
-        $self->setAttr(name=>'aggregate_combination_label', value => $self->toString());
-        $self->save();
+    if (! defined $args{aggregate_combination_label} || $args{aggregate_combination_label} eq '') {
+        $self->setAttr (name=>'aggregate_combination_label', value => $self->toString());
+        $self->save ();
     }
     return $self;
 }
+
+
+=pod
+
+=begin classdoc
+
+Verify that each ids of the given formula refers to a Clustermetric
+
+=end classdoc
+
+=cut
 
 sub _verify {
 
@@ -114,53 +171,66 @@ sub _verify {
     my @array = split(/(id\d+)/,$formula);
 
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            if (!(Clustermetric->search(hash => {'clustermetric_id'=>substr($element,2)}))){
-             my $errmsg = "Creating combination formula with an unknown clusterMetric id ($element) ";
-             $log->error($errmsg);
-             throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        if ($element =~ m/id\d+/) {
+            if (!(Entity::Clustermetric->search(hash => {'clustermetric_id'=>substr($element,2)}))){
+                my $errmsg = "Creating combination formula with an unknown clusterMetric id ($element) ";
+                $log->error($errmsg);
+                throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
             }
         }
     }
 }
 
 
-=head2 toString
+=pod
 
-    desc: return a string representation of the entity
+=begin classdoc
+
+Return a string representation of the entity
+
+@return a string representation of the entity
+
+=end classdoc
 
 =cut
 
 sub toString {
     my ($self, %args) = @_;
-    my $depth;
-    if(defined $args{depth}) {
-        $depth = $args{depth};
-    }
-    else {
-        $depth = -1;
-    }
 
+    my $depth = (defined $args{depth}) ? $args{depth} : -1;
     if ($depth == 0) {
-        return $self->getAttr(name => 'aggregate_combination_label');
+        return $self->aggregate_combination_label;
     }
-    else {
-        my $formula = $self->getAttr(name => 'aggregate_combination_formula');
 
-        # Split aggregate_rule id from $formula
-        my @array = split(/(id\d+)/, $formula);
-        # replace each rule id by its evaluation
-        for my $element (@array) {
-            if( $element =~ m/id\d+/)
-            {
-                # Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-                $element = Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1);
-            }
+    my $formula = $self->aggregate_combination_formula;
+
+    # Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/, $formula);
+    # replace each rule id by its evaluation
+    for my $element (@array) {
+        if ($element =~ m/id\d+/) {
+            # Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
+            $element = Entity::Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1);
         }
-        return List::Util::reduce { $a . $b } @array;
     }
+    return List::Util::reduce { $a . $b } @array;
 }
+
+=pod
+
+=begin classdoc
+
+Compute the combination value between two dates. Use getValuesFromDB() method of Clustermetric.
+May be deprecated.
+
+@param start_time the begining date
+@param stop_time the ending date
+
+@return the computed value
+
+=end classdoc
+
+=cut
 
 sub computeValues{
     my $self = shift;
@@ -171,34 +241,43 @@ sub computeValues{
     my @cm_ids = $self->dependantClusterMetricIds();
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
-        my $cm = Clustermetric->get('id' => $cm_id);
+        my $cm = Entity::Clustermetric->get('id' => $cm_id);
         $allTheCMValues{$cm_id} = $cm -> getValuesFromDB(%args);
     }
     return $self->computeFromArrays(%allTheCMValues);
 }
 
+=pod
+
+=begin classdoc
+
+Compute the combination value using the last Clustermetric values. Use getLastValueFromDB() method of Clustermetric.
+
+@return the computed value or undef if one Clustermetric is undef
+
+=end classdoc
+
+=cut
+
 sub computeLastValue{
     my $self = shift;
-
-    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
+    my $formula = $self->aggregate_combination_formula;
 
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = Clustermetric->get('id'=>substr($element,2))->getLastValueFromDB();
-            if(not defined $element){
+            $element = Entity::Clustermetric->get('id'=>substr($element,2))->getLastValueFromDB();
+            if (not defined $element) {
                 return undef;
             }
         }
-     }
+    }
 
     my $res = undef;
     my $arrayString = '$res = '."@array";
-
 
     #Evaluate the logic formula
 
@@ -208,6 +287,22 @@ sub computeLastValue{
     $log->info("$arrayString");
     return $res;
 }
+
+
+=pod
+
+=begin classdoc
+
+Compute the combination value using a hash value for each Clustermetric.
+May be deprecated.
+
+@param a value for each clustermetric of the formula.
+
+@return the computed value
+
+=end classdoc
+
+=cut
 
 sub compute{
     my $self = shift;
@@ -217,22 +312,21 @@ sub compute{
 
     checkMissingParams(args => \%args, required => \@requiredArgs);
 
-    foreach my $cm_id (@requiredArgs){
-        if( ! defined $args{$cm_id}){
+    foreach my $cm_id (@requiredArgs) {
+        if (! defined $args{$cm_id}) {
             return undef;
         }
     }
 
-    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
+    my $formula = $self->aggregate_combination_formula;
 
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             $element = $args{substr($element,2)};
-            if (!defined $element){
+            if (!defined $element) {
                 return undef;
             }
         }
@@ -249,29 +343,57 @@ sub compute{
     return $res;
 }
 
+
+=pod
+
+=begin classdoc
+
+Return the ids of Clustermetrics of the formulas with no doublon.
+
+@return array of ids of Clustermetrics of the formulas with no doublon.
+
+=end classdoc
+
+=cut
+
 sub dependantClusterMetricIds() {
     my $self = shift;
-    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
-
-    my @clusterMetricsList;
-
-    #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            push @clusterMetricsList, substr($element,2);
-        }
-     }
-     return @clusterMetricsList;
+    my %ids = map { $_ => undef } ($self->aggregate_combination_formula =~ m/id(\d+)/g);
+    return keys %ids;
 }
 
-# Remove duplicate from an array, return array without doublons
+
+=pod
+
+=begin classdoc
+
+Remove duplicate from an array.
+
+@return array wi no doublons.
+
+=end classdoc
+
+=cut
+
 sub uniq {
     return keys %{{ map { $_ => 1 } @_ }};
 }
+
+
+=pod
+
+=begin classdoc
+
+Compute the combination value using a hash of timestamped values for each Clustermetric.
+May be deprecated.
+
+@param a value for each clustermetric of the formula.
+
+@return the timestamped computed values
+
+=end classdoc
+
+=cut
 
 sub computeFromArrays{
     my $self = shift;
@@ -281,7 +403,7 @@ sub computeFromArrays{
 
     General::checkParams args => \%args, required => \@requiredArgs;
 
-    #Merge all the timestamps keys in one arrays
+    # Merge all the timestamps keys in one arrays
 
     my @timestamps;
     foreach my $cm_id (@requiredArgs){
@@ -319,36 +441,29 @@ sub checkMissingParams {
     }
 }
 
-sub useClusterMetric {
-    my $self = shift;
-    my $clustermetric_id = shift;
+=pod
 
-    my @dep_cm = $self->dependantClusterMetricIds();
-    my $rep = any {$_ eq $clustermetric_id} @dep_cm;
-    return $rep;
-}
+=begin classdoc
 
-=head2 getUnit
+Return the formula of the combination in which the indicator id is
+replaced by its Unit or by '?' when unit is not specified in database
 
-    desc: Return the formula of the combination in which the indicator id is
-          replaced by its Unit or by '?' when unit is not specified in database
+=end classdoc
 
 =cut
 
 sub getUnit {
     my ($self, %args) = @_;
 
-    my $formula             = $self->getAttr(name => 'aggregate_combination_formula');
-
-    #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-    #replace each rule id by its evaluation
+    # Split aggregate_rule id from formula
+    my @array = split(/(id\d+)/,$self->aggregate_combination_formula);
+    # Replace each rule id by its evaluation
     my $ref_element;
     my $are_same_units = 0;
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            $element = Clustermetric->get('id'=>substr($element,2))->getUnit();
+            $element = Entity::Clustermetric->get('id'=>substr($element,2))->getUnit();
 
             if (not defined $ref_element) {
                 $ref_element = $element;
@@ -368,24 +483,37 @@ sub getUnit {
     return join('',@array);
 }
 
-sub getDependencies {
-    my $self = shift;
-    my @conditions = $self->aggregate_conditions;
-    my %dependencies;
+=pod
 
-    for my $condition (@conditions) {
-        $dependencies{$condition->aggregate_condition_label} = $condition->getDependencies;
-    }
-    return \%dependencies;
+=begin classdoc
+
+Return the dependant indicator ids. Since AggregateCombination formula does not contains indicator,
+this method return void.
+
+@return void array
+
+=end classdoc
+
+=cut
+
+sub getDependantIndicatorIds {
+    return ();
 }
 
-sub delete {
-    my $self = shift;
-    my @conditions = $self->aggregate_conditions;
+=pod
 
-    while (@conditions) {
-        (pop @conditions)->delete();
-    }
-    return $self->SUPER::delete();
+=begin classdoc
+
+Method from NodemetricCombination call from mother class. Return the same value than >computeLastValue()
+
+@return computeLastValue() method
+
+=end classdoc
+
+=cut
+
+sub computeValueFromMonitoredValues {
+    my $self = shift;
+    return $self->computeLastValue()
 }
 1;

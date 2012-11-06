@@ -6,8 +6,145 @@ require('common/service_common.js');
 var rulestates = ['enabled','disabled'];
 var comparators = ['<','>'];
 
-    ////////////////////////NODES AND METRICS MODALS//////////////////////////////////
-function nodemetricconditionmodal(elem_id, editid) {
+
+function nodemetricconditionmodal(sp_id, editid) {
+    var fields = {
+            'name'              : 'nodemetric_condition_label',
+            'operator'          : 'nodemetric_condition_comparator',
+            'threshold'         : 'nodemetric_condition_threshold',
+            'serviceprovider'   : 'nodemetric_condition_service_provider_id'
+    };
+    var condition_type = 'nodemetriccondition';
+
+    $('*').addClass('cursor-wait');
+
+    // Get info of selected item (edit mode)
+    var elem_data;
+    if (editid) {
+        $.ajax({
+           url      : '/api/' + condition_type + '/' + editid,
+           async    : false,
+           success  : function(cond) {
+               elem_data = cond;
+           }
+        });
+    }
+
+    function submitForm() {
+        // remove hidden element from form (unused fields depending on condition type)
+        $(this).find('.hidden').remove();
+        var inputs  = $(this).serialize();
+        inputs      += '&'+fields.serviceprovider+'='+sp_id;
+        if (editid) {
+            $.ajax({type:'PUT',url:'/api/'+condition_type+'/'+editid, data:inputs})
+            .error( function(error) {alert(error.responseText)});
+        } else {
+            $.post('/api/'+condition_type, inputs).error( function(error) {alert(error.responseText)});
+        }
+        return false;
+    }
+
+    var dial = $('<div>');
+    var form = $('<form>').appendTo(dial).submit(submitForm);
+
+    // Name input
+    if (!editid) {
+        form.append($('<label>', {'for':'name_input', html:'Name : '}))
+            .append($('<input>', {type:'text', name:fields.name, id:'name_input'})).append('<br>');
+    }
+
+    // Condition type
+    var type_select = $('<select>').appendTo(form)
+        .append($('<option>', {value:'cond_thresh', html:'Threshold condition'}))
+        .append($('<option>', {value:'cond_combi',  html:'Combinations comparison'}))
+        .change(function() {
+            $('.cond_view').toggleClass('hidden');
+        });
+    form.append('<br>');
+
+    // Left operand
+    var left_operand_select = $('<select>', {name : 'left_combination_id'}).appendTo(form);
+
+    // Operator
+    var operator_select = $('<select>', {name:fields.operator}).appendTo(form);
+    $.each(['>', '<', '==', '>=', '<='], function(i,v) { operator_select.append($('<option>', {value:v, html:v})) });
+
+    // Condition specific fields (depending on condition type)
+    // 1 - type threshold
+    $('<span>', {id : 'view_cond_thresh', 'class':'cond_view hidden'}).append(
+            $('<input>', {type : 'text', name:fields.threshold})
+    ).appendTo(form);
+    // 2 - type combination
+    var right_combi_select               = $('<select>', {name:'right_combination_id'});
+    var right_combi_select_group_node    = $('<optgroup>', {label : 'Node combinations'});
+    var right_combi_select_group_service = $('<optgroup>', {label : 'Service combinations'});
+    $('<span>', {id:'view_cond_combi', 'class':'cond_view hidden'}).append(
+            right_combi_select.append(right_combi_select_group_node).append(right_combi_select_group_service)
+    ).appendTo(form);
+
+    // Add options to combinations selects
+    var loaded = 0;
+    $.get('/api/nodemetriccombination?service_provider_id=' + sp_id).success( function(node_combinations) {
+        $.each(node_combinations, function(i,combi) {
+            left_operand_select.append($('<option>', {value:combi.pk, html:combi.label}));
+            right_combi_select_group_node.append($('<option>', {value:combi.pk, html:combi.label}));
+        });
+        loaded++;
+    });
+    $.get('/api/aggregatecombination?service_provider_id=' + sp_id).success( function(service_combinations) {
+        $.each(service_combinations, function(i,combi) {
+            right_combi_select_group_service.append($('<option>', {value:combi.pk, html:combi.label}));
+        });
+        loaded++;
+    });
+
+    function openDialogWhenLoaded() {
+        if (loaded < 2) {
+            setTimeout(openDialogWhenLoaded, 10);
+        } else {
+            // Select default type or elem options if edit mode
+            if (!editid) {
+                type_select.find("option[value='cond_thresh']").attr('selected','selected');
+                form.find('#view_cond_thresh').removeClass('hidden');
+            } else {
+                left_operand_select.find("option[value='" + elem_data.left_combination_id + "']").attr('selected','selected');
+                operator_select.find("option[value='" + elem_data[fields.operator] + "']").attr('selected','selected');
+                var right_combi_selected_option = right_combi_select.find("option[value='" + elem_data.right_combination_id + "']");
+                if (right_combi_selected_option.length) {
+                    // combination type 2 (on combination)
+                    type_select.find("option[value='cond_combi']").attr('selected','selected');
+                    right_combi_selected_option.attr('selected','selected');
+                    form.find('#view_cond_combi').removeClass('hidden');
+                } else {
+                    // combination type 1 (on threshold)
+                    type_select.find("option[value='cond_thresh']").attr('selected','selected');
+                    form.find('#view_cond_thresh').removeClass('hidden');
+                }
+            }
+
+            // Open dialog when everything is loaded
+            $('*').removeClass('cursor-wait');
+            dial.dialog({
+                title       : editid ? elem_data[fields.name] : 'Create condition',
+                width       : '700px',
+                modal       : true,
+                resizable   : false,
+                close       : function() { $(this).remove() },
+                buttons     : {
+                    'Cancel' : function() { $(this).dialog("close"); },
+                    'Ok'     : function() {
+                        form.submit();
+                        $(this).dialog("close");
+                    }
+                }
+            });
+        }
+    }
+
+    openDialogWhenLoaded();
+}
+
+function _nodemetricconditionmodal(elem_id, editid) {
     var combinationsWithUnits = {};
 
     function combiUnits(combinationId) {
@@ -35,7 +172,7 @@ function nodemetricconditionmodal(elem_id, editid) {
         nodemetric_condition_combination_id :{
             label       : 'Combination',
             display     : 'nodemetric_combination_id',
-            cond        : '?nodemetric_combination_service_provider_id=' + elem_id,
+            cond        : '?service_provider_id=' + elem_id,
             formatter   : combiUnits,
         },
         nodemetric_condition_comparator    : {
@@ -196,7 +333,7 @@ function serviceconditionmodal(elem_id, editid) {
         aggregate_combination_id :{
             label       : 'Combination',
             display     : 'aggregate_combination_id',
-            cond        : '?aggregate_combination_service_provider_id=' + elem_id,
+            cond        : '?service_provider_id=' + elem_id,
             formatter   : combiUnits,
         },
         comparator  : {
@@ -358,20 +495,22 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         content_container_id: 'node_accordion_container',
         grid_id: serviceNodemetricConditionsGridId,
         afterInsertRow: function(grid, rowid, rowdata) {
-            $.ajax({
-                url     : '/api/nodemetriccombination/' + rowdata.nodemetric_condition_combination_id,
-                success : function(data) {
-                    $(grid).setCell(rowid, 'nodemetric_condition_combination_id', data.nodemetric_combination_label);
-                }
-            });
+            setCellWithRelatedValue(
+                    '/api/combination/' +  rowdata.left_combination_id,
+                    grid, rowid, 'left_combination_id', 'label'
+            );
+            setCellWithRelatedValue(
+                    '/api/combination/' +  rowdata.right_combination_id,
+                    grid, rowid, 'right_combination_id', 'label'
+            );
         },
-        colNames: [ 'id', 'name', 'combination', 'comparator', 'threshold' ],
+        colNames: [ 'id', 'name', 'left operand', 'comparator', 'right operand' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
-            { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 120 },
-            { name: 'nodemetric_condition_combination_id', index: 'nodemetric_condition_combination_id', width: 60 },
-            { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 60,},
-            { name: 'nodemetric_condition_threshold', index: 'nodemetric_condition_threshold', width: 190 },
+            { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 200 },
+            { name: 'left_combination_id', index: 'left_combination_id', width: 100 },
+            { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 50,},
+            { name: 'right_combination_id', index: 'right_combination_id', width: 100 },
         ],
         details: { onSelectRow : function(eid) { nodemetricconditionmodal(elem_id, eid); } },
         action_delete: {
@@ -453,21 +592,23 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         content_container_id: 'service_accordion_container',
         grid_id: serviceAggregateConditionsGridId,
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
-            $.ajax({
-                url     : '/api/aggregatecombination/' + rowdata.aggregate_combination_id,
-                success : function(data) {
-                    $(grid).setCell(rowid, 'aggregate_combination_id', data.aggregate_combination_label);
-                }
-            });
+            setCellWithRelatedValue(
+                    '/api/combination/' +  rowdata.left_combination_id,
+                    grid, rowid, 'left_combination_id', 'label'
+            );
+            setCellWithRelatedValue(
+                    '/api/combination/' +  rowdata.right_combination_id,
+                    grid, rowid, 'right_combination_id', 'label'
+            );
         },
-        colNames: ['id','name', 'enabled', 'combination', 'comparator', 'threshold'],
+        colNames: ['id','name', 'enabled', 'left operand', 'comparator', 'right operand'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'aggregate_condition_label',index:'aggregate_condition_label', width:120,},
+             {name:'aggregate_condition_label',index:'aggregate_condition_label', width:200,},
              {name:'state',index:'state', width:60,},
-             {name:'aggregate_combination_id',index:'aggregate_combination_id', width:60,},
-             {name:'comparator',index:'comparator', width:160,},
-             {name:'threshold',index:'threshold', width:60,},
+             {name:'left_combination_id',index:'left_combination_id', width:100,},
+             {name:'comparator',index:'comparator', width:50,},
+             {name:'right_combination_id',index:'right_combination_id', width:100,},
            ],
         details: { onSelectRow : function(eid) { serviceconditionmodal(elem_id, eid); } },
         action_delete: {

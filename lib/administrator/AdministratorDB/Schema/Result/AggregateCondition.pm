@@ -27,7 +27,7 @@ __PACKAGE__->table("aggregate_condition");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 aggregate_condition_label
@@ -43,7 +43,14 @@ __PACKAGE__->table("aggregate_condition");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 aggregate_combination_id
+=head2 left_combination_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
+=head2 right_combination_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -55,11 +62,6 @@ __PACKAGE__->table("aggregate_condition");
   data_type: 'char'
   is_nullable: 0
   size: 32
-
-=head2 threshold
-
-  data_type: 'double precision'
-  is_nullable: 0
 
 =head2 state
 
@@ -85,7 +87,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "aggregate_condition_label",
@@ -97,7 +99,14 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "aggregate_combination_id",
+  "left_combination_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
+  "right_combination_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -106,8 +115,6 @@ __PACKAGE__->add_columns(
   },
   "comparator",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "threshold",
-  { data_type => "double precision", is_nullable => 0 },
   "state",
   { data_type => "char", is_nullable => 0, size => 32 },
   "time_limit",
@@ -130,18 +137,18 @@ __PACKAGE__->set_primary_key("aggregate_condition_id");
 
 =head1 RELATIONS
 
-=head2 aggregate_combination
+=head2 aggregate_condition
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::AggregateCombination>
+Related object: L<AdministratorDB::Schema::Result::Entity>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "aggregate_combination",
-  "AdministratorDB::Schema::Result::AggregateCombination",
-  { aggregate_combination_id => "aggregate_combination_id" },
+  "aggregate_condition",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "aggregate_condition_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -162,9 +169,46 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 left_combination
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 16:11:00
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NIGLIz6oY/x5k4YVtpBesQ
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Combination>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "left_combination",
+  "AdministratorDB::Schema::Result::Combination",
+  { combination_id => "left_combination_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 right_combination
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Combination>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "right_combination",
+  "AdministratorDB::Schema::Result::Combination",
+  { combination_id => "right_combination_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-31 16:06:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+bAOoyzxl26S8wnuEoTkRg
+
+ __PACKAGE__->belongs_to(
+   "parent",
+     "AdministratorDB::Schema::Result::Entity",
+         { "foreign.entity_id" => "self.aggregate_condition_id" },
+             { cascade_copy => 0, cascade_delete => 1 }
+ );
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

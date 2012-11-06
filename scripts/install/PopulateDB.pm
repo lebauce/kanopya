@@ -34,7 +34,7 @@ use ComponentType;
 use ComponentTemplate;
 use ConnectorType;
 use Indicatorset;
-use Indicator;
+use Entity::Indicator;
 use Entity::Poolip;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Network;
@@ -150,6 +150,17 @@ my @classes = (
     'Entity::Component::Linux::Debian',
     'Entity::Component::Linux::Suse',
     'Entity::Component::Linux::Redhat',
+    'Entity::Indicator',
+    'Entity::CollectorIndicator',
+    'Entity::Clustermetric',
+    'Entity::Combination',
+    'Entity::Combination::NodemetricCombination',
+    'Entity::Combination::ConstantCombination',
+    'Entity::Combination::AggregateCombination',
+    'Entity::AggregateCondition',
+    'Entity::AggregateRule',
+    'Entity::NodemetricCondition',
+    'Entity::NodemetricRule',
 );
 
 sub registerClassTypes {
@@ -752,7 +763,7 @@ sub registerIndicators {
         );
 
         for my $indicator (@{$set->{indicators}}) {
-            Indicator->new(
+            Entity::Indicator->new(
                 indicator_label => $indicator->[0],
                 indicator_name  => $indicator->[1],
                 indicator_oid   => $indicator->[2],

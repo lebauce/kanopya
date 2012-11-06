@@ -208,8 +208,8 @@ function getCombiId(sp_id, combi_name) {
         url     : '/api/aggregatecombination',
         async   : false,
         data    : {
-            aggregate_combination_service_provider_id   : sp_id,
-            aggregate_combination_label                 : combi_name
+            service_provider_id         : sp_id,
+            aggregate_combination_label : combi_name
         },
         success : function (data) {
             if (data.length > 0) {

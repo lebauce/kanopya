@@ -28,16 +28,17 @@ my %resources = (
     "alert"                    => "Alert",
     "aggregator"               => "Aggregator",
     "atftpd0"                  => "Entity::Component::Atftpd0",
-    "aggregatecombination"     => "AggregateCombination",
-    "aggregatecondition"       => "AggregateCondition",
-    "aggregaterule"            => "AggregateRule",
+    "aggregatecombination"     => "Entity::Combination::AggregateCombination",
+    "aggregatecondition"       => "Entity::AggregateCondition",
+    "aggregaterule"            => "Entity::AggregateRule",
     "apache2"                  => "Entity::Component::Apache2",
     "apache2virtualhost"       => "Apache2Virtualhost",
     "billinglimit"             => "Entity::Billinglimit",
     "classtype"                => "ClassType",
     "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
-    "clustermetric"            => "Clustermetric",
-    "collectorindicator"       => "CollectorIndicator",
+    "clustermetric"            => "Entity::Clustermetric",
+    "collectorindicator"       => "Entity::CollectorIndicator",
+    "combination"              => "Entity::Combination",
     "component"                => "Entity::Component",
     "componenttype"            => "ComponentType",
     "connector"                => "Entity::Connector",
@@ -57,7 +58,7 @@ my %resources = (
     "host"                     => "Entity::Host",
     "hostmodel"                => "Entity::Hostmodel",
     "iface"                    => "Entity::Iface",
-    "indicator"                => "Indicator",
+    "indicator"                => "Entity::Indicator",
     "indicatorset"             => "Indicatorset",
     "interface"                => "Entity::Interface",
     "interfacerole"            => "Entity::InterfaceRole",
@@ -92,9 +93,9 @@ my %resources = (
     "nfscontaineraccessclient" => "Entity::NfsContainerAccessClient",
     "nfscontaineraccess"       => "Entity::ContainerAccess::NfsContainerAccess",
     "nfsd3"                    => "Entity::Component::Nfsd3",
-    "nodemetriccombination"    => "NodemetricCombination",
-    "nodemetriccondition"      => "NodemetricCondition",
-    "nodemetricrule"           => "NodemetricRule",
+    "nodemetriccombination"    => "Entity::Combination::NodemetricCombination",
+    "nodemetriccondition"      => "Entity::NodemetricCondition",
+    "nodemetricrule"           => "Entity::NodemetricRule",
     "node"                     => "Externalnode::Node",
     "notificationsubscription" => "NotificationSubscription",
     "openiscsi2"               => "Entity::Component::Openiscsi2",
@@ -464,7 +465,7 @@ sub setupREST {
                                        Entity->get(
                                            id => $dbix->get_column(($dbix->result_source->primary_columns)[0])
                                        ) :
-                                       $dbix; 
+                                       $dbix;
 
                             my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
                             return to_json(db_to_json($obj, \@expand));
@@ -480,7 +481,7 @@ sub setupREST {
                     $parent = $parent->parent;
                 }
             }
- 
+
             return to_json($obj->toJSON);
         };
 

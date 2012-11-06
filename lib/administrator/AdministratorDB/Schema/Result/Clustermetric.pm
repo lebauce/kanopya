@@ -27,7 +27,7 @@ __PACKAGE__->table("clustermetric");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 clustermetric_label
@@ -69,7 +69,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "clustermetric_label",
@@ -108,18 +108,18 @@ __PACKAGE__->set_primary_key("clustermetric_id");
 
 =head1 RELATIONS
 
-=head2 clustermetric_service_provider
+=head2 clustermetric
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
+Related object: L<AdministratorDB::Schema::Result::Entity>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "clustermetric_service_provider",
-  "AdministratorDB::Schema::Result::ServiceProvider",
-  { service_provider_id => "clustermetric_service_provider_id" },
+  "clustermetric",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "clustermetric_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -138,8 +138,31 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 17:07:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ylmwbVS/go9USL3167QL9Q
+=head2 clustermetric_service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "clustermetric_service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "clustermetric_service_provider_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-31 16:06:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/C5qvnV5AI45J/F81F2scQ
+
+ __PACKAGE__->belongs_to(
+   "parent",
+     "AdministratorDB::Schema::Result::Entity",
+         { "foreign.entity_id" => "self.clustermetric_id" },
+             { cascade_copy => 0, cascade_delete => 1 }
+ );
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

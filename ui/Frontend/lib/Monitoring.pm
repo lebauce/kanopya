@@ -5,7 +5,8 @@ use Dancer::Plugin::Ajax;
 use Data::Dumper;
 
 use Administrator;
-use NodemetricCombination;
+use Entity::Combination::NodemetricCombination;
+use Entity::Combination::AggregateCombination;
 use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
 
@@ -161,12 +162,12 @@ sub _computeClustermetricCombination () {
     my $combination_id = $args{combination_id};
     my $start_timestamp = $args{start_tms};
     my $stop_timestamp = $args{stop_tms};
-    my $combination = AggregateCombination->get('id' => $combination_id);
+    my $combination = Entity::Combination::AggregateCombination->get('id' => $combination_id);
     my $error;
     my %aggregate_combination;
     my @histovalues;
     my %rep;
-    
+
     eval {
         %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
         #$log->info('values returned by compute values: '.Dumper \%aggregate_combination);
@@ -218,7 +219,7 @@ sub _computeNodemetricCombination {
     my $cluster_id = $args{cluster_id};
     my $nodemetric_combination_id = $args{combination_id};
     my $service_provider = Entity::ServiceProvider->get(id=>$cluster_id);
-    my $nodemetric_combination = NodemetricCombination->get('id' => $nodemetric_combination_id);
+    my $nodemetric_combination = Entity::Combination::NodemetricCombination->get('id' => $nodemetric_combination_id);
     my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
 
     $log->debug('[Cluster id '.$cluster_id.']: The requested combination: '.$nodemetric_combination_id.' is built on the top of the following indicators: '."@indicator_ids");
@@ -232,7 +233,7 @@ sub _computeNodemetricCombination {
     eval {
         my %indicators;
         foreach my $indicator_id (@indicator_ids) {
-            my $indicator = Indicator->get(id => $indicator_id);
+            my $indicator = Entity::Indicator->get(id => $indicator_id);
             $indicators{$indicator->indicator_oid} = $indicator;
         }
 

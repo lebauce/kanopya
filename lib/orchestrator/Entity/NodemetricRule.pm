@@ -11,14 +11,14 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package NodemetricRule;
+package Entity::NodemetricRule;
 
 use strict;
 use warnings;
-use base 'BaseDB';
+use base 'Entity';
 use Data::Dumper;
 use Externalnode;
-use NodemetricCondition;
+use Entity::NodemetricCondition;
 use Entity::ServiceProvider;
 use VerifiedNoderule;
 use List::MoreUtils qw {any} ;
@@ -168,28 +168,17 @@ sub toString{
         for my $element (@array) {
             if( $element =~ m/id(\d+)/)
             {
-                $element = NodemetricCondition->get('id'=>substr($element,2))->toString(depth => $depth - 1);
+                $element = Entity::NodemetricCondition->get('id'=>substr($element,2))->toString(depth => $depth - 1);
             }
          }
          return "@array";
     }
 };
 
-#C/P of homonym method in AggregateRulePackage
 sub getDependantConditionIds {
     my $self = shift;
-    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
-    my @array = split(/(id\d+)/,$formula);
-
-    my @conditionIds;
-
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            push @conditionIds, substr($element,2);
-        }
-    }
-    return @conditionIds;
+    my %ids = map { $_ => undef } ($self->nodemetric_rule_formula =~ m/id(\d+)/g);
+    return keys %ids
 }
 
 sub evalOnOneNode{
@@ -206,7 +195,7 @@ sub evalOnOneNode{
     #replace each id by its evaluation
     for my $element (@array) {
         if( $element =~ m/id(\d+)/){
-            $element = NodemetricCondition->get('id'=>substr($element,2))
+            $element = Entity::NodemetricCondition->get('id'=>substr($element,2))
                                           ->evalOnOneNode(
                                             'monitored_values_for_one_node' => $monitored_values_for_one_node
                                           );
@@ -336,35 +325,10 @@ sub setVerifiedRule{
     });
 }
 
-sub checkFormula {
-    my $class = shift;
-    my %args = @_;
-
-    my $formula = (\%args)->{formula};
-
-    my @array = split(/(id\d+)/,$formula);;
-
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            if (!(NodemetricCondition->search(hash => {'nodemetric_condition_id'=>substr($element,2)}))){
-                return {
-                    value     => '0',
-                    attribute => substr($element,2),
-                };
-            }
-        }
-    }
-    return {
-        value     => '1',
-    };
-}
-
 sub disable {
     my $self = shift;
-    
-    $self->{_dbix}->verified_noderules->delete_all;
 
+    $self->{_dbix}->verified_noderules->delete_all;
     $self->setAttr(name => 'nodemetric_rule_state', value => 'disabled');
     $self->save();
 };
@@ -384,7 +348,7 @@ sub setAllRulesUndefForANode{
     my $cluster_id     = $args{cluster_id};
     my $node_id        = $args{node_id};
 
-    my @nodemetric_rules = NodemetricRule->search(
+    my @nodemetric_rules = Entity::NodemetricRule->search(
                                hash => {
                                    nodemetric_rule_service_provider_id => $cluster_id,
                                    nodemetric_rule_state               => 'enabled',

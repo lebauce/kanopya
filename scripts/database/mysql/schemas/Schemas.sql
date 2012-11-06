@@ -1173,7 +1173,7 @@ CREATE TABLE `indicatorset` (
 --
 
 CREATE TABLE `indicator` (
-  `indicator_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `indicator_id` int(8) unsigned NOT NULL,
   `indicator_label` char(64) NOT NULL,
   `indicator_name` char(64) NOT NULL,
   `indicator_oid` char(64) NOT NULL,
@@ -1186,20 +1186,22 @@ CREATE TABLE `indicator` (
   PRIMARY KEY (`indicator_id`),
   KEY (`indicatorset_id`),
   FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`indicator_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 
 CREATE TABLE `collector_indicator` (
-  `collector_indicator_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `collector_indicator_id` int(8) unsigned NOT NULL,
   `indicator_id` int(8) unsigned NOT NULL,
   `collector_manager_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`collector_indicator_id`),
   KEY `indicator_id` (`indicator_id`),
   KEY `collector_manager_id` (`collector_manager_id`),
   FOREIGN KEY (`indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`collector_manager_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`collector_manager_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`collector_indicator_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 
@@ -1222,7 +1224,7 @@ CREATE TABLE `collect` (
 --
 
 CREATE TABLE `clustermetric` (
-  `clustermetric_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `clustermetric_id` int(8) unsigned NOT NULL,
   `clustermetric_label` char(255),
   `clustermetric_service_provider_id` int(8) unsigned NOT NULL,
   `clustermetric_indicator_id` int(8) unsigned NOT NULL,
@@ -1232,21 +1234,58 @@ CREATE TABLE `clustermetric` (
   KEY (`clustermetric_service_provider_id`),
   KEY (`clustermetric_indicator_id`),
   FOREIGN KEY (`clustermetric_indicator_id`) REFERENCES `collector_indicator` (`collector_indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`clustermetric_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`clustermetric_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`clustermetric_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `combination`
+--
+
+CREATE TABLE `combination` (
+  `combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
+  `service_provider_id` int(8) unsigned NOT NULL,
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`combination_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+
+
+--
+-- Table structure for table `constant_combination`
+--
+CREATE TABLE `constant_combination` (
+  `constant_combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
+  `value` char(255) NOT NULL,
+  FOREIGN KEY (`constant_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+
 
 --
 -- Table structure for table `aggregate_combination`
 --
-
 CREATE TABLE `aggregate_combination` (
-  `aggregate_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `aggregate_combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `aggregate_combination_label` char(255),
-  `aggregate_combination_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_combination_formula` char(255) NOT NULL,
-  KEY (`aggregate_combination_service_provider_id`),
-  FOREIGN KEY (`aggregate_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`aggregate_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `nodemetric_combination`
+--
+
+CREATE TABLE `nodemetric_combination` (
+  `nodemetric_combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
+  `nodemetric_combination_label` char(255),
+  `nodemetric_combination_formula` char(255) NOT NULL,
+  FOREIGN KEY (`nodemetric_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
 
 
 --
@@ -1254,7 +1293,7 @@ CREATE TABLE `aggregate_combination` (
 --
 
 CREATE TABLE `aggregate_rule` (
-  `aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `aggregate_rule_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `aggregate_rule_label` char(255),
   `aggregate_rule_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_rule_formula` char(255) NOT NULL ,
@@ -1269,7 +1308,8 @@ CREATE TABLE `aggregate_rule` (
   KEY (`aggregate_rule_service_provider_id`),
   FOREIGN KEY (`aggregate_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`workflow_id`),
-  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`aggregate_rule_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
@@ -1278,35 +1318,24 @@ CREATE TABLE `aggregate_rule` (
 --
 
 CREATE TABLE `aggregate_condition` (
-  `aggregate_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `aggregate_condition_id` int(8) unsigned NOT NULL,
   `aggregate_condition_label` char(255),
   `aggregate_condition_service_provider_id` int(8) unsigned NOT NULL,
-  `aggregate_combination_id` int(8) unsigned NOT NULL,
+  `left_combination_id` int(8) unsigned NOT NULL,
+  `right_combination_id` int(8) unsigned NOT NULL,
   `comparator` char(32) NOT NULL,
-  `threshold` double NOT NULL,
   `state` char(32) NOT NULL,
   `time_limit` char(32),
   `last_eval` BOOLEAN DEFAULT NULL,
   KEY (`aggregate_condition_service_provider_id`),
   FOREIGN KEY (`aggregate_condition_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   PRIMARY KEY (`aggregate_condition_id`),
-  KEY (`aggregate_combination_id`),
-  FOREIGN KEY (`aggregate_combination_id`) REFERENCES `aggregate_combination` (`aggregate_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY (`left_combination_id`),
+  FOREIGN KEY (`left_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`right_combination_id`),
+  FOREIGN KEY (`right_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`aggregate_condition_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
---
--- Table structure for table `nodemetric_combination`
---
-
-CREATE TABLE `nodemetric_combination` (
-  `nodemetric_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `nodemetric_combination_label` char(255),
-  `nodemetric_combination_service_provider_id`  int(8) unsigned NOT NULL,
-  `nodemetric_combination_formula` char(255) NOT NULL,
-  KEY (`nodemetric_combination_service_provider_id`),
-  FOREIGN KEY (`nodemetric_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 
 --
@@ -1314,16 +1343,19 @@ CREATE TABLE `nodemetric_combination` (
 --
 
 CREATE TABLE `nodemetric_condition` (
-  `nodemetric_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `nodemetric_condition_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_label` char(255),
   `nodemetric_condition_service_provider_id`  int(8) unsigned NOT NULL,
-  `nodemetric_condition_combination_id` int(8) unsigned NOT NULL,
+  `left_combination_id` int(8) unsigned NOT NULL,
+  `right_combination_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_comparator` char(32) NOT NULL,
-  `nodemetric_condition_threshold` double NOT NULL,
   PRIMARY KEY (`nodemetric_condition_id`),
-  KEY (`nodemetric_condition_combination_id`),
-  FOREIGN KEY (`nodemetric_condition_combination_id`) REFERENCES `nodemetric_combination` (`nodemetric_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`nodemetric_condition_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY (`left_combination_id`),
+  KEY (`right_combination_id`),
+  FOREIGN KEY (`left_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`right_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`nodemetric_condition_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`nodemetric_condition_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1332,7 +1364,7 @@ CREATE TABLE `nodemetric_condition` (
 --
 
 CREATE TABLE `nodemetric_rule` (
-  `nodemetric_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nodemetric_rule_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `nodemetric_rule_label` char(255),
   `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_formula` char(255) NOT NULL,
@@ -1343,7 +1375,8 @@ CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_description` TEXT,
   FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`nodemetric_rule_service_provider_id`),
-  FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`nodemetric_rule_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 --

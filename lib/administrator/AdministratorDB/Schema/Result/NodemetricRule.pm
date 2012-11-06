@@ -3,6 +3,12 @@ package AdministratorDB::Schema::Result::NodemetricRule;
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
+=head1 NAME
+
+AdministratorDB::Schema::Result::NodemetricRule
+
+=cut
+
 use strict;
 use warnings;
 
@@ -82,7 +88,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "nodemetric_rule_label",
@@ -95,7 +101,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "nodemetric_rule_formula",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 255 },
   "nodemetric_rule_last_eval",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "nodemetric_rule_timestamp",
@@ -181,6 +187,12 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-15 11:21:08
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Q+Ff8UOs9tqSBMYFyVj4Yw
 
+ __PACKAGE__->belongs_to(
+   "parent",
+     "AdministratorDB::Schema::Result::Entity",
+         { "foreign.entity_id" => "self.nodemetric_rule_id" },
+             { cascade_copy => 0, cascade_delete => 1 }
+ );
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 1;

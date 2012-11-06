@@ -25,9 +25,9 @@ lives_ok {
 
     use Entity::ServiceProvider::Outside::Externalcluster;
     use Entity::Connector::MockMonitor;
-    use Clustermetric;
-    use AggregateCombination;
-    use NodemetricCombination;
+    use Entity::Clustermetric;
+    use Entity::Combination::AggregateCombination;
+    use Entity::Combination::NodemetricCombination;
 } 'All uses';
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -38,7 +38,7 @@ my ($indic1, $indic2);
 my $service_provider;
 my $aggregator;
 eval{
-    $aggregator= Aggregator->new();
+    $aggregator = Aggregator->new();
 
     $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
@@ -47,6 +47,7 @@ eval{
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
     );
+
 
     my $mock_monitor = Entity::Connector::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
@@ -75,14 +76,14 @@ eval{
     );
 
     # Get indicators
-    $indic1 = CollectorIndicator->find (
+    $indic1 = Entity::CollectorIndicator->find (
         hash => {
             collector_manager_id        => $mock_monitor->id,
             'indicator.indicator_oid'   => 'Memory/PercentMemoryUsed',
         }
     );
 
-    $indic2 = CollectorIndicator->find (
+    $indic2 = Entity::CollectorIndicator->find (
         hash => {
             collector_manager_id        => $mock_monitor->id,
             'indicator.indicator_oid'   => 'Memory/Pool Paged Bytes'
@@ -123,12 +124,12 @@ if($@) {
 sub testClusterMetric {
     my %args = @_;
 
-    my $service_provider     = $args{service_provider};
-    my $aggregator          = $args{aggregator};
+    my $service_provider = $args{service_provider};
+    my $aggregator       = $args{aggregator};
 
     diag('Cluster metric computing (last value)');
 
-    my $cm = Clustermetric->new(
+    my $cm = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
         clustermetric_indicator_id => ($indic1->id),
         clustermetric_statistics_function_name => 'mean',
@@ -184,14 +185,14 @@ sub testAggregateCombination {
     diag('Aggregate combination computing (last value)');
 
     # Cluster metrics
-    my $cm1 = Clustermetric->new(
+    my $cm1 = Entity::Clustermetric->new(
         clustermetric_service_provider_id       => $service_provider->id,
         clustermetric_indicator_id              => ($indic1->id),
         clustermetric_statistics_function_name  => 'sum',
         clustermetric_window_time               => '1200',
     );
 
-    my $cm2 = Clustermetric->new(
+    my $cm2 = Entity::Clustermetric->new(
         clustermetric_service_provider_id       => $service_provider->id,
         clustermetric_indicator_id              => ($indic2->id),
         clustermetric_statistics_function_name  => 'sum',
@@ -199,19 +200,19 @@ sub testAggregateCombination {
     );
 
     # Combination
-    my $acomb_ident = AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => 'id'.($cm1->id),
+    my $acomb_ident = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm1->id),
     );
 
-    my $acomb_warn = AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => '10 / id'.($cm1->id),
+    my $acomb_warn = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => '10 / id'.($cm1->id),
     );
 
-    my $acomb1 = AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
+    my $acomb1 = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
     );
 
     my $mock_conf = "{'default':{ 'const':50 }, 'indics' : { 'Memory/Pool Paged Bytes' : { 'const':null }}}";
@@ -260,14 +261,14 @@ sub testAggregateCombination {
     $aggregator->update();
     is($acomb1->computeLastValue(), 10+10*3, 'Combination correctly computed (with one node not responding)');
 
-    my $acomb2 = AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => '(3.5+id'.($cm1->id).')*(id'.($cm1->id).'/10.1-12.876)',
+    my $acomb2 = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => '(3.5+id'.($cm1->id).')*(id'.($cm1->id).'/10.1-12.876)',
     );
 
-    my $acomb3 = AggregateCombination->new(
-        aggregate_combination_service_provider_id   =>  $service_provider->id,
-        aggregate_combination_formula               => '100000000000000000000000000 * id'.($cm1->id),
+    my $acomb3 = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => '100000000000000000000000000 * id'.($cm1->id),
     );
 
     $service_provider->addManagerParameter(
@@ -293,14 +294,14 @@ sub testNodemetricCombination {
     diag('Nodemetric combination computing');
 
     # Combinations
-    my $ncomb_ident = NodemetricCombination->new(
-        nodemetric_combination_service_provider_id => $service_provider->id,
-        nodemetric_combination_formula             => 'id'.($indic1->id),
+    my $ncomb_ident = Entity::Combination::NodemetricCombination->new(
+        service_provider_id             => $service_provider->id,
+        nodemetric_combination_formula  => 'id'.($indic1->id),
     );
 
-    my $ncomb2 = NodemetricCombination->new(
-        nodemetric_combination_service_provider_id => $service_provider->id,
-        nodemetric_combination_formula             => '(id'.($indic1->id).' + 5) * id'.($indic2->id),
+    my $ncomb2 = Entity::Combination::NodemetricCombination->new(
+        service_provider_id             => $service_provider->id,
+        nodemetric_combination_formula  => '(id'.($indic1->id).' + 5) * id'.($indic2->id),
     );
 
     is(
@@ -368,7 +369,7 @@ sub testBigAggregation {
         );
     }
 
-    my $cm = Clustermetric->new(
+    my $cm = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
         clustermetric_indicator_id => ($indic1->id),
         clustermetric_statistics_function_name => 'sum',
@@ -443,7 +444,7 @@ sub testStatisticFunctions {
     my @cms = ();
     for my $func (@funcs) {
         push @cms,
-            Clustermetric->new(
+            Entity::Clustermetric->new(
                 clustermetric_service_provider_id       => $service_provider->id,
                 clustermetric_indicator_id              => ($indic1->id),
                 clustermetric_statistics_function_name  => $func,
@@ -454,9 +455,9 @@ sub testStatisticFunctions {
     my @acs = ();
     for my $cm (@cms) {
         push @acs,
-            AggregateCombination->new(
-                aggregate_combination_service_provider_id   =>  $service_provider->id,
-                aggregate_combination_formula               => 'id'.($cm->id),
+            Entity::Combination::AggregateCombination->new(
+                service_provider_id             =>  $service_provider->id,
+                aggregate_combination_formula   => 'id'.($cm->id),
             );
     }
 

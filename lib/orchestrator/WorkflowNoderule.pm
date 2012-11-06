@@ -19,7 +19,7 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
-use NodemetricRule;
+use Entity::NodemetricRule;
 use Entity::Workflow;
 
 use Log::Log4perl "get_logger";
@@ -74,7 +74,7 @@ sub workflowState{
             return {state => 'ready_to_launch'};
         }
         elsif ($workflow->state eq 'done') {
-            my $rule = NodemetricRule->get(id => $workflow_noderule->nodemetric_rule_id);
+            my $rule = Entity::NodemetricRule->get (id => $workflow_noderule->nodemetric_rule_id);
             my $delay = $rule->workflow_def->getParamPreset()->{specific}->{delay};
             if (defined $delay && $delay > 0) {
 

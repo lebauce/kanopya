@@ -27,8 +27,14 @@ __PACKAGE__->table("indicator");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
+
+=head2 indicator_label
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 64
 
 =head2 indicator_name
 
@@ -73,6 +79,13 @@ __PACKAGE__->table("indicator");
   is_nullable: 1
   size: 32
 
+=head2 service_provider_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -80,7 +93,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "indicator_label",
@@ -104,6 +117,13 @@ __PACKAGE__->add_columns(
   },
   "indicator_unit",
   { data_type => "char", is_nullable => 1, size => 32 },
+  "service_provider_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -119,6 +139,36 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("indicator_id");
 
 =head1 RELATIONS
+
+=head2 collector_indicators
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
+
+=cut
+
+__PACKAGE__->has_many(
+  "collector_indicators",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.indicator_id" => "self.indicator_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 indicator
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "indicator",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "indicator_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 =head2 indicatorset
 
@@ -140,26 +190,36 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 service_provider
 
-=head2 collector_indicators
+Type: belongs_to
 
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 =cut
 
-__PACKAGE__->has_many(
-  "collector_indicators",
-  "AdministratorDB::Schema::Result::CollectorIndicator",
-  { "foreign.indicator_id" => "self.indicator_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-31 16:06:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zSI/9T4gg7ZutpSppMEUsA
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-07 17:07:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7YfjHg4nM1lx3wdOlWTa+Q
+ __PACKAGE__->belongs_to(
+   "parent",
+     "AdministratorDB::Schema::Result::Entity",
+         { "foreign.entity_id" => "self.indicator_id" },
+             { cascade_copy => 0, cascade_delete => 1 }
+ );
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
