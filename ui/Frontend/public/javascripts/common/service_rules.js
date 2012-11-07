@@ -25,6 +25,8 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     var dial = $('<div>');
     var form = $('<form>').appendTo(dial).submit(submitForm);
 
+    // Submit the form (create or update)
+    // Also manage creation of associated rule
     function submitForm() {
         // remove hidden element from form (unused fields depending on condition type)
         $(this).find('.hidden').remove();
@@ -35,9 +37,24 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
             url     : (editid ? '/api/'+condition_type+'/'+editid : '/api/'+condition_type),
             data    : inputs,
             error   : function(error) { alert(error.responseText) },
-            success : function() {
-                // Reload all visible grids
-                $('.ui-jqgrid-btable:visible').trigger('reloadGrid');
+            success : function(condition) {
+                // Manage creation of associated rule
+                if (form.find('#create_rule_check').attr('checked')) {
+                    var field_prefix = condition_type.replace('condition', '_rule');
+                    var data = {};
+                    data[field_prefix + '_label']                = condition[fields.name];
+                    data[field_prefix + '_service_provider_id']  = sp_id;
+                    data[field_prefix + '_formula']              = 'id' + condition.pk;
+                    data[field_prefix + '_state']                = 'enabled';
+                    $.ajax({
+                        url     : '/api/' + field_prefix.replace('_', ''),
+                        type    : 'POST',
+                        data    : data,
+                        success : function() { reloadVisibleGrids() }
+                    });
+                } else {
+                    reloadVisibleGrids();
+                }
             }
         });
         return false;
@@ -116,6 +133,13 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
         .append($('<span>', {id:'left_unit'})).append($('<span>', {id:'right_unit', 'class':'hidden'}))
         .append('<br>').append($('<span>', {id:'unit_warning', 'class':'ui-state-error'}));
 
+    // Create associated rule option
+    if (!editid) {
+        form.append('<br>').append('<br>');
+        form.append($('<label>', {'for':'create_rule_check', html:'Create associated rule '}))
+            .append($('<input>', {type:'checkbox', id:'create_rule_check'}));
+    }
+
     // Add options to combinations selects
     // case nodemetric cond : left operand = node metric combi      #   right operand = node metric combi | service metric combi
     // case aggregate cond  : left operand = service metric combi   #   right operand = service metric combi
@@ -144,6 +168,8 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
         loaded++;
     });
 
+    // Open the dialog only when all combinations (for selects) are retrieved
+    // Set the value of fields (default or according to edited condition)
     function openDialogWhenLoaded() {
         if (loaded < 2) {
             setTimeout(openDialogWhenLoaded, 10);

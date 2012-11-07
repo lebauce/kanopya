@@ -20,3 +20,8 @@ function setCellWithRelatedValue(url, grid, rowid, colName, fieldName) {
         }
     });
 }
+
+// Reload all visible grids
+function reloadVisibleGrids() {
+    $('.ui-jqgrid-btable:visible').trigger('reloadGrid');
+}
