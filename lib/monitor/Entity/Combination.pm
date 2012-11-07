@@ -95,12 +95,7 @@ Get the list of conditions which depends on the combinations and all the combina
 sub getDependencies {
     my $self = shift;
 
-    my @conditions = (
-        $self->aggregate_condition_left_combinations,
-        $self->aggregate_condition_right_combinations,
-        $self->nodemetric_condition_left_combinations,
-        $self->nodemetric_condition_right_combinations,
-    );
+    my @conditions = $self->getDependentConditions;
 
     my %dependencies;
     for my $condition (@conditions) {
@@ -109,6 +104,19 @@ sub getDependencies {
     return \%dependencies;
 }
 
+
+sub getDependentConditions {
+    my $self = shift;
+
+    my @conditions = (
+        $self->aggregate_condition_left_combinations,
+        $self->aggregate_condition_right_combinations,
+        $self->nodemetric_condition_left_combinations,
+        $self->nodemetric_condition_right_combinations,
+    );
+
+    return @conditions;
+}
 
 =pod
 

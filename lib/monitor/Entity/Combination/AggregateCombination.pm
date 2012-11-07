@@ -154,13 +154,15 @@ sub new {
     }
 
     my $formula = (\%args)->{aggregate_combination_formula};
+    _verify ($args{aggregate_combination_formula});
 
-    _verify($formula);
     my $self = $class->SUPER::new(%args);
-    if (! defined $args{aggregate_combination_label} || $args{aggregate_combination_label} eq '') {
-        $self->setAttr (name=>'aggregate_combination_label', value => $self->toString());
-        $self->save ();
+    my $toString = $self->toString();
+    if ((! defined $args{aggregate_combination_label}) || $args{aggregate_combination_label} eq '') {
+        $self->setAttr (name=>'aggregate_combination_label', value => $toString);
     }
+    $self->setAttr (name=>'aggregate_combination_formula_string', value => $toString);
+    $self->save ();
     return $self;
 }
 
@@ -220,8 +222,9 @@ sub toString {
     # replace each rule id by its evaluation
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            # Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = Entity::Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1);
+            $element = ($depth > 0) ?
+                Entity::Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1):
+                Entity::Clustermetric->get('id'=>substr($element,2))->clustermetric_formula_string;
         }
     }
     return List::Util::reduce { $a . $b } @array;
@@ -564,4 +567,27 @@ sub computeValueFromMonitoredValues {
     my $self = shift;
     return $self->computeLastValue()
 }
+
+sub combination_formula_string {
+    my $self = shift;
+    return $self->aggregate_combination_formula_string
+}
+
+sub updateFormulaString {
+    my $self = shift;
+    $self->setAttr (name=>'aggregate_combination_formula_string', value => $self->toString());
+    $self->save ();
+    my @conditions = $self->getDependentConditions;
+    map { $_->updateFormulaString } @conditions;
+    return $self;
+}
+
+
+sub update {
+    my ($self, %args) = @_;
+    my $rep = $self->SUPER::update (%args);
+    $self->updateFormulaString;
+    return $rep;
+}
+
 1;
