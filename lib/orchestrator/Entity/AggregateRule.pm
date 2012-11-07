@@ -140,8 +140,7 @@ sub formula_label {
 }
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     # Clone case
     if ($args{aggregate_rule_id}) {
@@ -151,14 +150,16 @@ sub new {
     }
 
     my $formula = (\%args)->{aggregate_rule_formula};
+    _verify ($args{aggregate_rule_formula});
 
-    _verify($formula);
     my $self = $class->SUPER::new(%args);
 
-    if((!defined $args{aggregate_rule_label}) || $args{aggregate_rule_label} eq ''){
-        $self->setAttr(name=>'aggregate_rule_label', value => $self->toString());
-        $self->save();
+    my $toString = $self->toString();
+    if ((! defined $args{aggregate_rule_label}) || $args{aggregate_rule_label} eq '') {
+        $self->setAttr(name=>'aggregate_rule_label', value => $toString);
     }
+    $self->setAttr(name=>'aggregate_rule_formula_string', value => $toString);
+    $self->save();
     return $self;
 }
 
@@ -192,28 +193,22 @@ sub _verify {
 
 sub toString(){
     my ($self, %args) = @_;
-    my $depth;
-    if(defined $args{depth}) {
-        $depth = $args{depth};
-    }
-    else {
-        $depth = -1;
-    }
+    my $depth = (defined $args{depth}) ? $args{depth} : -1;
 
     if($depth == 0) {
-        return $self->getAttr(name => 'aggregate_rule_label');
+        return $self->aggregate_rule_label;
     }
 
-
-    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
-    my @array = split(/(id\d+)/,$formula);
+    my @array = split (/(id\d+)/, $self->aggregate_rule_formula);
     for my $element (@array) {
         if ($element =~ m/id(\d+)/) {
-            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->toString (depth => $depth - 1);
+            $element = ($depth > 0) ?
+                Entity::AggregateCondition->get ('id'=>substr($element,2))->toString (depth => $depth - 1) :
+                Entity::AggregateCondition->get ('id'=>substr($element,2))->aggregate_condition_formula_string ;
         }
     }
-    return "@array";
 
+    return List::Util::reduce { $a . $b } @array;
 }
 
 
@@ -367,6 +362,8 @@ Links clones to the specified service provider. Only clones objects that do not 
 
 @param dest_service_provider_id id of the service provider where to import the clone
 
+@return cloned object
+
 =end classdoc
 
 =cut
@@ -421,6 +418,20 @@ sub clone {
     }
 
     return $clone;
+}
+
+sub updateFormulaString {
+    my $self = shift;
+    $self->setAttr(name=>'aggregate_rule_formula_string', value => $self->toString());
+    $self->save();
+}
+
+sub update {
+    my ($self, %args) = @_;
+    
+    my $rep = $self->SUPER::update (%args);
+    $self->updateFormulaString;
+    return $rep;
 }
 
 1;
