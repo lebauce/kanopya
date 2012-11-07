@@ -252,7 +252,7 @@ sub computeValues{
 
     General::checkParams args => \%args, required => ['start_time','stop_time'];
 
-    my @cm_ids = $self->dependantClusterMetricIds();
+    my @cm_ids = $self->dependentClusterMetricIds();
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
         my $cm = Entity::Clustermetric->get('id' => $cm_id);
@@ -322,7 +322,7 @@ sub compute{
     my $self = shift;
     my %args = @_;
 
-    my @requiredArgs = $self->dependantClusterMetricIds();
+    my @requiredArgs = $self->dependentClusterMetricIds();
 
     checkMissingParams(args => \%args, required => \@requiredArgs);
 
@@ -370,7 +370,7 @@ Return the ids of Clustermetrics of the formulas with no doublon.
 
 =cut
 
-sub dependantClusterMetricIds() {
+sub dependentClusterMetricIds() {
     my $self = shift;
     my %ids = map { $_ => undef } ($self->aggregate_combination_formula =~ m/id(\d+)/g);
     return keys %ids;
@@ -413,7 +413,7 @@ sub computeFromArrays{
     my $self = shift;
     my %args = @_;
 
-    my @requiredArgs = $self->dependantClusterMetricIds();
+    my @requiredArgs = $self->dependentClusterMetricIds();
 
     General::checkParams args => \%args, required => \@requiredArgs;
 
@@ -501,7 +501,7 @@ sub getUnit {
 
 =begin classdoc
 
-Return the dependant indicator ids. Since AggregateCombination formula does not contains indicator,
+Return the dependent indicator ids. Since AggregateCombination formula does not contains indicator,
 this method return void.
 
 @return void array
@@ -510,7 +510,7 @@ this method return void.
 
 =cut
 
-sub getDependantIndicatorIds {
+sub getDependentIndicatorIds {
     return ();
 }
 

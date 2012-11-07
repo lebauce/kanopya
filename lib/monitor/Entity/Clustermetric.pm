@@ -251,7 +251,7 @@ sub getUnit {
     return $indicator_unit;
 }
 
-sub getDependencies {
+sub getDependentCombinations {
     my $self = shift;
 
     my @aggregate_combinations_from_same_service = Entity::Combination::AggregateCombination->search(
@@ -347,7 +347,7 @@ sub delete {
     LOOP:
     while (@aggregate_combinations_from_same_service) {
         my $aggregate_combination = pop @aggregate_combinations_from_same_service;
-        my @cluster_metric_ids = $aggregate_combination->dependantClusterMetricIds();
+        my @cluster_metric_ids = $aggregate_combination->dependentClusterMetricIds();
 
         for my $cluster_metric_id (@cluster_metric_ids) {
             if ($id == $cluster_metric_id) {

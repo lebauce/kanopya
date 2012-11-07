@@ -252,7 +252,7 @@ sub delete {
     LOOP:
     while (@rules_from_same_service) {
         my $rule = pop @rules_from_same_service;
-        my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
+        my @rule_dependant_condition_ids = $rule->getDependentConditionIds;
         for my $condition_id (@rule_dependant_condition_ids) {
             if ($id == $condition_id) {
                 $rule->delete();

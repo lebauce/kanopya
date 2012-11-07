@@ -329,17 +329,17 @@ sub updateState() {
     }
 }
 
-sub getDependantConditionIds {
+sub getDependentConditionIds {
     my $self = shift;
     my %ids = map { $_ => undef } ($self->aggregate_rule_formula =~ m/id(\d+)/g);
     return keys %ids;
 }
 
 
-sub isCombinationDependant{
+sub isCombinationDependent{
     my $self         = shift;
     my $condition_id = shift;
-    my @dep_cond_id = $self->getDependantConditionIds();
+    my @dep_cond_id = $self->getDependentConditionIds();
     my $rep = any {$_ eq $condition_id} @dep_cond_id;
     return $rep;
 }

@@ -138,7 +138,7 @@ sub getDependencies {
         for my $nm_combi (@all_the_nodemetric_combinations) {
             #TODO general getName() to be compaptible with KIM
             my $service_provider_name = $nm_combi->service_provider->externalcluster_name;
-            my @collector_indicator_ids = $nm_combi->getDependantCollectorIndicatorIds();
+            my @collector_indicator_ids = $nm_combi->getDependentCollectorIndicatorIds();
             for my $nm_indicator_id (@collector_indicator_ids) {
                 if ($collector_indicator_id == $nm_indicator_id) {
                     $dependencies{$service_provider_name}->{'node scope'}
@@ -185,7 +185,7 @@ sub delete {
         NODEMETRIC_COMBINATION:
         while (@all_the_nodemetric_combinations) {
             my $nm_combi  = pop @all_the_nodemetric_combinations;
-            my @collector_indicator_ids = $nm_combi->getDependantCollectorIndicatorIds();
+            my @collector_indicator_ids = $nm_combi->getDependentCollectorIndicatorIds();
             for my $nm_indicator_id (@collector_indicator_ids) {
                 $log->info("$collector_indicator_id vs $nm_indicator_id");
                 if ($collector_indicator_id == $nm_indicator_id) {

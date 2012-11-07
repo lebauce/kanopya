@@ -206,7 +206,7 @@ Return an array of the CollectorIndicator ids of the formula
 
 =cut
 
-sub getDependantCollectorIndicatorIds{
+sub getDependentCollectorIndicatorIds{
     my $self = shift;
     my %ids = map { $_ => undef } ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
     return keys %ids;
@@ -225,7 +225,7 @@ Return an array of the Indicator ids of the formula
 
 =cut
 
-sub getDependantIndicatorIds{
+sub getDependentIndicatorIds{
     my $self = shift;
 
     my @indicator_ids;

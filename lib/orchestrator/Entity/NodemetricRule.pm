@@ -196,7 +196,7 @@ sub toString{
     }
 };
 
-sub getDependantConditionIds {
+sub getDependentConditionIds {
     my $self = shift;
     my %ids = map { $_ => undef } ($self->nodemetric_rule_formula =~ m/id(\d+)/g);
     return keys %ids

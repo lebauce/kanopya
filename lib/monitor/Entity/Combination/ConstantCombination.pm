@@ -69,7 +69,7 @@ sub computeLastValue {
     return $self->value;
 }
 
-sub getDependantIndicatorIds {
+sub getDependentIndicatorIds {
     my $self = shift;
     return ();
 }

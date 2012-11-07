@@ -196,7 +196,7 @@ sub getDependencies {
 
     LOOP:
     for my $rule (@rules_from_same_service) {
-        my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
+        my @rule_dependant_condition_ids = $rule->getDependentConditionIds;
         for my $condition_id (@rule_dependant_condition_ids) {
             if ($id == $condition_id) {
                 $dependencies{$rule->nodemetric_rule_label} = {};
@@ -216,7 +216,7 @@ sub delete {
     RULE:
     while(@rules_from_same_service) {
         my $rule = pop @rules_from_same_service;
-        my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
+        my @rule_dependant_condition_ids = $rule->getDependentConditionIds;
         for my $condition_id (@rule_dependant_condition_ids) {
             if ($id == $condition_id) {
                 $rule->delete();
@@ -231,9 +231,9 @@ sub delete {
     $comb_right->deleteIfConstant();
 }
 
-sub getDependantIndicatorIds {
+sub getDependentIndicatorIds {
     my $self = shift;
-    return ($self->left_combination->getDependantIndicatorIds(), $self->right_combination->getDependantIndicatorIds());
+    return ($self->left_combination->getDependentIndicatorIds(), $self->right_combination->getDependentIndicatorIds());
 }
 
 sub update {
