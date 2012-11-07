@@ -1,5 +1,8 @@
 package Frontend;
 
+use strict;
+use warnings;
+
 use Dancer ':syntax';
 #use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
@@ -21,6 +24,7 @@ prefix undef;
 my $dir = Kanopya::Config::getKanopyaDir();
 
 Log::Log4perl->init($dir.'/kanopya/conf/webui-log.conf');
+
 
 hook 'before' => sub {
     $ENV{EID} = session('EID');

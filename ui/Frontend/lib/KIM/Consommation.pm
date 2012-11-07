@@ -13,11 +13,11 @@ get '/consommation/cluster/:clusterid' => sub {
 
   my $adm       = Administrator->new;
 
-  my $cluster   = Entity->get(id => param('clusterid'));
+  my $cluster   = Entity->methodCall(method => 'get', param => { id => param('clusterid') });
   my $user      = $cluster->user;
 
   header 'Content-Disposition'  => "attachment; filename='user-" . $user->getId . "-" . $cluster->getAttr(name => 'cluster_name') . ".csv'";
 
-  return $cluster->getMonthlyConsommation;
+  return $cluster->methodCall(method => 'getMonthlyConsommation');
 };
 

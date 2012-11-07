@@ -263,10 +263,10 @@ sub jsonify {
     if (ref($var) and ref($var) ne "HASH") {
         if ($var->can("toJSON")) {
             if ($var->isa("Entity::Operation")) {
-                return Entity::Operation->get(id => $var->getId)->toJSON;
+                return Entity::Operation->methodCall(method => 'get', params => { id => $var->id })->toJSON;
             }
             elsif ($var->isa("Entity::Workflow")) {
-                return Entity::Workflow->get(id => $var->getId)->toJSON;
+                return Entity::Workflow->methodCall(method => 'get', params => { id => $var->id })->toJSON;
             } else {
                 return $var->toJSON();
             }
@@ -286,7 +286,7 @@ sub setupREST {
                 require (General::getLocFromClass(entityclass => $class));
 
                 my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-                my $obj = $class->get(id => params->{id}, prefetch => \@expand);
+                my $obj = $class->methodCall(method => 'get', params => { id => params->{id}, prefetch => \@expand });
                 return to_json($obj->toJSON(expand => \@expand));
             },
 
