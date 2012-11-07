@@ -362,7 +362,7 @@ Links clones to the specified service provider. Only clones objects that do not 
 
 @param dest_service_provider_id id of the service provider where to import the clone
 
-@return cloned object
+@return clone object
 
 =end classdoc
 

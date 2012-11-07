@@ -133,11 +133,12 @@ sub new {
     }
 
     my $self = $class->SUPER::new(%args);
-
-    if(!defined $args{aggregate_condition_label} || $args{aggregate_condition_label} eq ''){
-        $self->setAttr(name=>'aggregate_condition_label', value => $self->toString());
-        $self->save();
+    my $toString = $self->toString();
+    $self->setAttr (name=>'aggregate_condition_formula_string', value => $toString);
+    if ((! defined $args{aggregate_condition_label}) || $args{aggregate_condition_label} eq '') {
+        $self->setAttr (name=>'aggregate_condition_label', value => $toString);
     }
+    $self->save ();
     return $self;
 }
 
@@ -162,20 +163,20 @@ sub updateName {
 
 sub toString {
     my ($self, %args) = @_;
-    my $depth;
-    if(defined $args{depth}) {
-        $depth = $args{depth};
-    }
-    else {
-        $depth = -1;
-    }
+    my $depth = (defined $args{depth}) ? $args{depth} : -1 ;
 
     if($depth == 0) {
         return $self->getAttr(name => 'aggregate_condition_label');
     }
-    else{
-        return $self->left_combination->toString(depth => $depth - 1).$self->comparator.$self->right_combination->toString(depth => $depth - 1);
+    elsif ($depth < 0) {
+        return $self->left_combination->toString(depth => $depth - 1).' '
+               .$self->comparator.' '
+               .$self->right_combination->toString(depth => $depth - 1);
     }
+    # else > 0
+    return $self->left_combination->combination_formula_string.' '
+           .$self->comparator.' '
+           .$self->right_combination->combination_formula_string;
 }
 
 sub eval{
@@ -208,19 +209,37 @@ sub eval{
     }
 }
 
-sub getDependencies {
+sub getDependentRules {
     my $self = shift;
-    my @rules_from_same_service = Entity::AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
+    my @rules_from_same_service = Entity::AggregateRule->search(
+                                      hash => {
+                                          aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id
+                                      }
+                                  );
 
-    my %dependencies;
-    my $id = $self->getId;
+    my @rules;
+    my $id = $self->id;
+    RULE:
     for my $rule (@rules_from_same_service) {
-        my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
+        my @rule_dependant_condition_ids = $rule->getDependentConditionIds;
         for my $condition_id (@rule_dependant_condition_ids) {
             if ($id == $condition_id) {
-                $dependencies{$rule->aggregate_rule_label} = {};
+                push @rules, $rule;
+                next RULE;
             }
         }
+    }
+    return @rules;
+}
+
+sub getDependencies {
+    my $self = shift;
+
+    my @rules = $self->getDependentRules;
+
+    my %dependencies;
+    for my $rule (@rules) {
+        $dependencies{$rule->aggregate_rule_label} = {};
     }
     return \%dependencies;
 }
@@ -247,12 +266,16 @@ sub delete {
 sub update {
     my ($self, %args) = @_;
 
-    my $left_combi = $self->left_combination;
+    my $service_provider_id = $args{aggregate_condition_service_provider_id} ?
+                                  $args{aggregate_condition_service_provider_id} :
+                                  $self->aggregate_condition_service_provider_id ;
+
+    my $left_combi  = $self->left_combination;
     my $right_combi = $self->right_combination;
 
     if ((! defined $args{right_combination_id}) && defined $args{threshold}) {
         my $comb = Entity::Combination::ConstantCombination->new (
-            service_provider_id => $args{aggregate_condition_service_provider_id},
+            service_provider_id => $service_provider_id,
             value => $args{threshold},
         );
         delete $args{threshold};
@@ -261,16 +284,18 @@ sub update {
 
     if ((! defined $args{left_combination_id}) && defined $args{threshold}) {
         my $comb = Entity::Combination::ConstantCombination->new (
-            service_provider_id => $args{aggregate_condition_service_provider_id},
+            service_provider_id => $service_provider_id,
             value => $args{threshold},
         );
         delete $args{threshold};
         $args{left_combination_id} = $comb->id;
     }
 
-    my $rep = $self->SUPER::update(%args);
-    $left_combi->deleteIfConstant();
-    $right_combi->deleteIfConstant();
+    my $rep = $self->SUPER::update (%args);
+    $left_combi->deleteIfConstant;
+    $right_combi->deleteIfConstant;
+
+    $rep->updateFormulaString;
     return $rep;
 }
 
@@ -282,6 +307,8 @@ Clones the condition and all related objects.
 Links clones to the specified service provider. Only clones objects that do not exist in service provider.
 
 @param dest_service_provider_id id of the service provider where to import the clone
+
+@return clone object
 
 =end classdoc
 
@@ -310,6 +337,19 @@ sub clone {
         label_attr_name     => 'aggregate_condition_label',
         attrs_clone_handler => $attrs_cloner
     );
+}
+
+sub updateFormulaString {
+    my $self = shift;
+
+    $self->setAttr (name=>'aggregate_condition_formula_string', value => $self->toString());
+    $self->save ();
+
+    my @rules = $self->getDependentRules;
+
+    for my $rule (@rules) {
+        $rule->updateFormulaString;
+    }
 }
 
 1;
