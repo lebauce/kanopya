@@ -22,6 +22,9 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
         });
     }
 
+    var dial = $('<div>');
+    var form = $('<form>').appendTo(dial).submit(submitForm);
+
     function submitForm() {
         // remove hidden element from form (unused fields depending on condition type)
         $(this).find('.hidden').remove();
@@ -40,8 +43,16 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
         return false;
     }
 
-    var dial = $('<div>');
-    var form = $('<form>').appendTo(dial).submit(submitForm);
+    function checkUnit() {
+        var right_unit  = form.find('#right_unit').text();
+        var unit_warn   = form.find('#unit_warning');
+        if (right_unit && form.find('#left_unit').text() !== right_unit) {
+            unit_warn.text('warning : not the same unit ('+right_unit+')');
+            unit_warn.show();
+        } else {
+            unit_warn.hide();
+        }
+    }
 
     // Name input
     if (!editid) {
@@ -55,12 +66,25 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
         .append($('<option>', {value:'cond_combi',  html:'Combinations comparison'}))
         .change(function() {
             $('.cond_view').toggleClass('hidden');
+            if ($('#view_cond_combi').is(':visible')) {
+                $('#view_cond_combi select').change();
+            } else {
+                form.find('#right_unit').empty();
+                form.find('#unit_warning').hide();
+            }
         });
     form.append($('<label>', {'for':'type_select', html:'Type : '})).append(type_select);
     form.append('<br>').append('<br>');
 
     // Left operand
     var left_operand_select = $('<select>', {name : 'left_combination_id'}).appendTo(form);
+    left_operand_select.change(function() {
+        var combi_id = $(this).find('option:selected').val();
+        $.get('/api/combination/'+combi_id+'?expand=unit').success(function(combi) {
+           form.find('#left_unit').text(combi.unit);
+           checkUnit();
+        });
+    });
 
     // Operator
     var operator_select = $('<select>', {name:fields.operator}).appendTo(form);
@@ -79,6 +103,18 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     $('<span>', {id:'view_cond_combi', 'class':'cond_view hidden'}).append(
             right_combi_select.append(right_combi_select_group_node).append(right_combi_select_group_service)
     ).appendTo(form);
+    right_combi_select.change(function() {
+        var combi_id = $(this).find('option:selected').val();
+        $.get('/api/combination/'+combi_id+'?expand=unit').success(function(combi) {
+            form.find('#right_unit').text(combi.unit);
+            checkUnit();
+        });
+    });
+
+    // Unit info
+    form.append('<br>').append($('<label>', {'for':'unit_info', html:'Unit : '}))
+        .append($('<span>', {id:'left_unit'})).append($('<span>', {id:'right_unit', 'class':'hidden'}))
+        .append('<br>').append($('<span>', {id:'unit_warning', 'class':'ui-state-error'}));
 
     // Add options to combinations selects
     // case nodemetric cond : left operand = node metric combi      #   right operand = node metric combi | service metric combi
@@ -131,6 +167,7 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
                     form.find('#view_cond_combi').removeClass('hidden');
                 }
             }
+            left_operand_select.change();
 
             // Open dialog when everything is loaded
             $('*').removeClass('cursor-wait');
