@@ -2059,7 +2059,6 @@ that returns the specified attribute or the relation blessed to a BaseDB object.
 
 sub AUTOLOAD {
     my $self = shift;
-    my %args = @_;
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $accessor = $autoload[-1];
