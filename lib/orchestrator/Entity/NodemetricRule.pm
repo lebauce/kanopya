@@ -216,40 +216,32 @@ sub evalOnOneNode{
 };
 
 sub isVerifiedForANode{
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    my $externalnode_id;
-    if(defined $args{externalnode_hostname}){
-        my $node = Externalnode->find(hash => {externalnode_hostname => $args{externalnode_hostname}});
-       $externalnode_id = $node->getId();
-    }
-    else {
-        $externalnode_id = $args{externalnode_id};
-    }
+    my $externalnode_id = (defined $args{externalnode_hostname}) ?
+                          Externalnode->find (hash => {externalnode_hostname => $args{externalnode_hostname}})->id :
+                          $args{externalnode_id};
 
-
-    my $row = $self->{_dbix}
-        ->verified_noderules
-        ->find({
+    my $verified_noderule_state;
+    eval {
+        $verified_noderule_state = VerifiedNoderule->find(hash => {
             verified_noderule_externalnode_id    => $externalnode_id,
-        });
-
-    if(defined $row){
-        my $state = $row->verified_noderule_state;
-        switch ($state){
-            case 'verified'{
-                return 1;
-            }
-            case 'undef'{
-                return undef;
-            }
-        }
-        return 1;
-    }else{
+            verified_noderule_nodemetric_rule_id => $self->id,
+        })->verified_noderule_state;
+    };
+    if($@) {
         return 0;
     }
 
+    if ($verified_noderule_state eq 'verified') {
+        return 1;
+    }
+    elsif ($verified_noderule_state eq 'undef') {
+        return undef;
+    }
+
+    throw Kanopya::Exception::Internal::WrongValue(error => 'Wrong state value '.
+    $verified_noderule_state.' for rule <'.$self->id.'> and node <'.($externalnode_id).'>');
 };
 
 sub deleteVerifiedRule  {

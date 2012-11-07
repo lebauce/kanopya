@@ -450,13 +450,18 @@ sub test_nodemetric_rules {
 
     $orchestrator->manage_aggregates();
 
+    is ($nr_t->isVerifiedForANode(externalnode_id => $node->id), 1, 'Check node rule true via method');
+    is ($nr_f->isVerifiedForANode(externalnode_id => $node->id), 0, 'Check node rule false via method');
+    ok (! defined $nr_t->isVerifiedForANode(externalnode_id => $node2->id), 'Check node rule undef via method (a)');
+    ok (! defined $nr_f->isVerifiedForANode(externalnode_id => $node2->id), 'Check node rule undef via method (b)');
+
     dies_ok {
         VerifiedNoderule->find(hash => {
             verified_noderule_externalnode_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $nr_f->id,
             verified_noderule_state              => 'verified',
         })
-    } 'Check node rule false';
+    } 'Check node rule false in db';
 
     lives_ok {
         VerifiedNoderule->find(hash => {
@@ -464,7 +469,7 @@ sub test_nodemetric_rules {
             verified_noderule_nodemetric_rule_id => $nr_t->id,
             verified_noderule_state              => 'verified',
         });
-    } 'Check node rule true';
+    } 'Check node rule true in db';
 
     lives_ok {
         VerifiedNoderule->find(hash => {
@@ -472,7 +477,7 @@ sub test_nodemetric_rules {
             verified_noderule_nodemetric_rule_id => $nr_t->id,
             verified_noderule_state              => 'undef',
         });
-    } 'Check node undef - rule 1';
+    } 'Check node undef in db - rule 1';
 
     lives_ok {
         VerifiedNoderule->find(hash => {
@@ -480,7 +485,9 @@ sub test_nodemetric_rules {
             verified_noderule_nodemetric_rule_id => $nr_t->id,
             verified_noderule_state              => 'undef',
         });
-    } 'Check node undef- rule 2';
+    } 'Check node undef in db - rule 2';
+
+    
 
     test_not_n();
     test_or_n();
