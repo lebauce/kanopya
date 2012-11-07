@@ -6,7 +6,7 @@ require('common/service_common.js');
 var rulestates = ['enabled','disabled'];
 var comparators = ['<','>'];
 
-
+// Manage creation or edition of condition (node or service)
 function conditionDialog(sp_id, condition_type, fields, editid) {
     $('*').addClass('cursor-wait');
 
@@ -216,98 +216,6 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     openDialogWhenLoaded();
 }
 
-function _nodemetricconditionmodal(elem_id, editid) {
-    var combinationsWithUnits = {};
-
-    function combiUnits(combinationId) {
-        
-        $.ajax({
-            url: '/api/nodemetriccombination/' + combinationId + '?expand=unit',
-            async   : false,
-            success: function(answer) {
-                $(answer).each(function(row) {
-                    combinationUnit = answer.unit;
-                    combinationLabel = answer.nodemetric_combination_label;
-                    //combinationsWithUnits[combinationLabel + '(' + combinationUnit + ')'] = answer.pk;
-                    combi = combinationLabel + ' (' + combinationUnit + ')';
-                });
-            }
-        });
-        return combi;
-        }
-    
-    var service_fields  = {
-        nodemetric_condition_label    : {
-            label   : 'Name',
-            type    : 'text',
-        },
-        nodemetric_condition_combination_id :{
-            label       : 'Combination',
-            display     : 'nodemetric_combination_id',
-            cond        : '?service_provider_id=' + elem_id,
-            formatter   : combiUnits,
-        },
-        nodemetric_condition_comparator    : {
-            label   : 'Comparator',
-            type    : 'select',
-            options   : comparators,
-        },
-        nodemetric_condition_threshold: {
-            label   : 'Threshold',
-            type    : 'text',
-            //value   : CombinationUnit,
-        },
-        nodemetric_condition_service_provider_id:{
-            type: 'hidden',
-            value: elem_id,
-        }
-    };
-    var service_opts    = {
-        title       : ((editid === undefined) ? 'Create' : 'Edit') + ' a Condition',
-        name        : 'nodemetriccondition',
-        fields      : service_fields,
-        error       : function(data) {
-            $("div#waiting_default_insert").dialog("destroy");
-        },
-        callback    : function(elem, form) {
-            if (editid !== undefined) {
-                $.ajax({
-                    url     : '/api/nodemetriccondition/' + editid + '/updateName',
-                    type    : 'POST'
-                });
-            } else {
-                if ($(form).find('#input_create_rule').attr('checked')) {
-                    $.ajax({
-                        url     : '/api/nodemetricrule',
-                        type    : 'POST',
-                        data    : {
-                            nodemetric_rule_label               : elem.nodemetric_condition_label,
-                            nodemetric_rule_service_provider_id : elem_id,
-                            nodemetric_rule_formula             : 'id' + elem.pk,
-                            nodemetric_rule_state               : 'enabled'
-                        },
-                        success : function() {
-                            $('#service_resources_nodemetric_rules_' + elem_id).trigger('reloadGrid');
-                        }
-                    });
-                }
-            }
-            $('#service_resources_nodemetric_conditions_' + elem_id).trigger('reloadGrid');
-        }
-    };
-    if (editid !== undefined) {
-        service_opts.id = editid;
-        service_opts.fields.nodemetric_condition_label.type = 'hidden';
-    } else {
-        service_opts.fields.create_rule = {
-            type    : 'checkbox',
-            skip    : true,
-            label   : 'Create associated rule ?'
-        };
-    }
-    (new ModalForm(service_opts)).start();
-}
-
 function showNodeConditionModal(sp_id, editid) {
     conditionDialog(
             sp_id,
@@ -384,9 +292,7 @@ function createNodemetricRule(container_id, elem_id) {
     button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
-  
-    ////////////////////////////////////// Node Rule Forumla Construciton ///////////////////////////////////////////
-        
+
         $(function() {
             var availableTags = new Array();
             $.ajax({
@@ -403,104 +309,10 @@ function createNodemetricRule(container_id, elem_id) {
             makeAutocompleteAndTranslate($( "#input_nodemetric_rule_formula" ), availableTags);
 
         });
-    ////////////////////////////////////// END OF : Node Rule Forumla Construciton ///////////////////////////////////////////
-  
+
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
-
-function serviceconditionmodal(elem_id, editid) {
-    
-    function combiUnits(combinationId) {
-        $.ajax({
-            url: '/api/aggregatecombination/' + combinationId + '?expand=unit',
-            async   : false,
-            success: function(answer) {
-                $(answer).each(function(row) {
-                    combinationUnit = answer.unit;
-                    combinationLabel = answer.aggregate_combination_label;
-                    combi = combinationLabel + ' (' + combinationUnit + ')';
-                });
-            }
-        });
-        return combi;
-    }
-    
-    var service_fields  = {
-        aggregate_condition_label    : {
-            label   : 'Name',
-            type    : 'text',
-        },
-        aggregate_combination_id :{
-            label       : 'Combination',
-            display     : 'aggregate_combination_id',
-            cond        : '?service_provider_id=' + elem_id,
-            formatter   : combiUnits,
-        },
-        comparator  : {
-            label   : 'Comparator',
-            type    : 'select',
-            options : comparators,
-        },
-        threshold:{
-            label   : 'Threshold',
-            type    : 'text',
-        },
-        state:{
-            label   : 'Enabled',
-            type    : 'select',
-            options   : rulestates,
-        },
-        aggregate_condition_service_provider_id :{
-            type    : 'hidden',
-            value   : elem_id,
-        },
-    };
-    var service_opts    = {
-        title       : ((editid === undefined) ? 'Create' : 'Edit') + ' a Service Condition',
-        name        : 'aggregatecondition',
-        fields      : service_fields,
-        error       : function(data) {
-            $("div#waiting_default_insert").dialog("destroy");
-        },
-        callback    : function(elem, form) {
-            if (editid !== undefined) {
-                $.ajax({
-                    url     : '/api/aggregatecondition/' + editid + '/updateName',
-                    type    : 'POST'
-                });
-            } else {
-                if ($(form).find('#input_create_rule').attr('checked')) {
-                    $.ajax({
-                        url     : '/api/aggregaterule',
-                        type    : 'POST',
-                        data    : {
-                            aggregate_rule_label                : elem.aggregate_condition_label,
-                            aggregate_rule_service_provider_id  : elem_id,
-                            aggregate_rule_formula              : 'id' + elem.pk,
-                            aggregate_rule_state                : elem.state
-                        },
-                        success : function() {
-                            $('#service_resources_aggregate_rules_' + elem_id).trigger('reloadGrid');
-                        }
-                    });
-                }
-            }
-            $('#service_resources_aggregate_conditions_' + elem_id).trigger('reloadGrid');
-        }
-    };
-    if (editid !== undefined) {
-        service_opts.id = editid;
-        service_opts.fields.aggregate_condition_label.type  = 'hidden';
-    } else {
-        service_opts.fields.create_rule = {
-            type    : 'checkbox',
-            skip    : true,
-            label   : 'Create associated rule ?'
-        };
-    }
-    (new ModalForm(service_opts)).start();
-}
 
 function createServiceCondition(container_id, elem_id) {
     var button = $("<button>", {html : 'Add a Service Condition'});
@@ -550,9 +362,7 @@ function createServiceRule(container_id, elem_id) {
     button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
-        
-    
-        ////////////////////////////////////// Service Rule Forumla Construction ///////////////////////////////////////////
+
         $(function() {
             var availableTags = new Array();
             $.ajax({
@@ -570,12 +380,11 @@ function createServiceRule(container_id, elem_id) {
             makeAutocompleteAndTranslate( $( "#input_aggregate_rule_formula" ), availableTags );
 
         });
-        //////////////////////////////////////  END OF : Service Rule Forumla Construction ///////////////////////////////////////////
+
     
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);  
 };
-    ////////////////////////END OF : NODES AND METRICS MODALS//////////////////////////////////
 
 function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     var container = $("#" + container_id);
