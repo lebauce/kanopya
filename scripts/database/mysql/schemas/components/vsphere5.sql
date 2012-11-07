@@ -11,6 +11,8 @@ CREATE TABLE `vsphere5` (
     `vsphere5_login` char(255),
     `vsphere5_pwd` char(255),
     `vsphere5_url` char(255),
+    `overcommitment_memory_factor` double unsigned NOT NULL DEFAULT '1',
+    `overcommitment_cpu_factor` double unsigned NOT NULL DEFAULT '1',
     PRIMARY KEY (`vsphere5_id`),
     CONSTRAINT FOREIGN KEY (`vsphere5_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
