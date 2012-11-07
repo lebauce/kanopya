@@ -43,6 +43,12 @@ __PACKAGE__->table("vsphere5_vm");
   is_nullable: 0
   size: 128
 
+=head2 vsphere5_uuid
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 128
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -61,6 +67,8 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "vsphere5_guest_id",
+  { data_type => "char", is_nullable => 0, size => 128 },
+  "vsphere5_uuid",
   { data_type => "char", is_nullable => 0, size => 128 },
 );
 
@@ -90,7 +98,7 @@ __PACKAGE__->belongs_to(
   "vsphere5",
   "AdministratorDB::Schema::Result::Vsphere5",
   { vsphere5_id => "vsphere5_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 vsphere5_vm
@@ -105,12 +113,12 @@ __PACKAGE__->belongs_to(
   "vsphere5_vm",
   "AdministratorDB::Schema::Result::VirtualMachine",
   { virtual_machine_id => "vsphere5_vm_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-27 16:47:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:t6LcbBTxoCfjhL7I+krQ9g
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2012-11-07 15:53:40
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8dSMHRmvaxA8x8+XuhqYrw
 
 __PACKAGE__->belongs_to(
   "parent",

@@ -27,6 +27,11 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
+    vsphere5_uuid => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
