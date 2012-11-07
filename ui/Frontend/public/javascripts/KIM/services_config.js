@@ -3,15 +3,15 @@ require('kanopyaformwizard.js');
 
 function loadServicesConfig(cid, eid) {
         create_grid({
-            url: '/api/component?service_provider_id=' + eid,
+            url: '/api/component?service_provider_id=' + eid + '&expand=component_type',
             content_container_id: cid,
             grid_id: 'services_components',
             rowNum : 20,
             colNames: [ 'ID', 'Component', 'Version' ],
             colModel: [
                 { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
-                { name: 'component_type_id', index: 'component_type_id', width: 200, formatter: fromIdToComponentName },
-                { name: 'component_type_id', index: 'component_type_id', width: 200, formatter: fromIdToComponentVersion },
+                { name: 'component_type.component_name', index: 'component_type.component_name', width: 200 },
+                { name: 'component_type.component_version', index: 'component_type.component_version', width: 200 },
             ],
             caption: 'Components',
             details : {
