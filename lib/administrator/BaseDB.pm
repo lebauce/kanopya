@@ -39,6 +39,7 @@ use Class::ISA;
 use Hash::Merge;
 use POSIX qw(ceil);
 use vars qw($AUTOLOAD);
+use Clone qw(clone);
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -349,7 +350,7 @@ sub getAttrDefs {
             requireClass($modulename);
 
             eval {
-                $attr_def = $modulename->getAttrDef();
+                $attr_def = clone($modulename->getAttrDef());
             };
 
             my $schema;
