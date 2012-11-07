@@ -299,13 +299,17 @@ sub retrieveClustersAndHypervisors {
         if (ref ($child_view) eq 'ClusterComputeResource') {
             $compute_resource_infos = {
                 name => $child_view->name,
-                type => 'cluster'
+                type => 'cluster',
             };
         }
         elsif(ref ($child_view) eq 'ComputeResource') {
+            my $view = $self->getView(mo_ref => $child_view->host->[0]);
+            my $uuid = $view->hardware->systemInfo->uuid;
+
             $compute_resource_infos = {
                 name => $child_view->name,
-                type => 'hypervisor'
+                type => 'hypervisor',
+                uuid => $uuid,
             };
         }
         else {
@@ -359,7 +363,8 @@ sub retrieveClusterHypervisors {
         my $hypervisor_view  = $self->getView(mo_ref => $hypervisor);
         my %hypervisor_infos = (
             name => $hypervisor_view->name,
-            type => 'clusterHypervisor'
+            type => 'clusterHypervisor',
+            uuid => $hypervisor_view->hardware->systemInfo->uuid,
         );
 
         push @hypervisors_infos, \%hypervisor_infos;
@@ -410,6 +415,7 @@ sub retrieveHypervisorVms {
         my $vm_infos = {
             name => $vm->name,
             type => 'vm',
+            uuid => $vm->config->uuid,
         };
 
         push @vms_infos, $vm_infos;
@@ -487,10 +493,6 @@ sub findEntityView {
                              'array_property' => undef,
                              'begin_entity'   => undef,
                          });
-
-    #Check of Filter parameters
-    General::checkParams(args     => $args{hash_filter},
-                         required => ['name'],);
 
     $self->negociateConnection();
 
@@ -601,9 +603,6 @@ sub findEntityViews {
 
     return $views;
 }
-
-#TODO: manage the possibility that the entities, for example clusters can be into vsphere
-#folders
 
 =pod
 
