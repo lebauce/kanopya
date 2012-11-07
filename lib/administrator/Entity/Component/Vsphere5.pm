@@ -630,7 +630,6 @@ sub register {
                                          optional => {
                                              parent => undef,
                                          });
-    $self->negociateConnection();
 
     my @register_items = @{ $args{register_items} };
 
