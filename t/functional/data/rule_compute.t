@@ -277,10 +277,10 @@ sub test_nodemetric_condition {
         })
     } 'Check mixed nodemetric rule node 2 (b)';
 
-    is ($nc_agg_th_right->toString(),'mean(RAM used)>-1.2','Check to String (a)');
-    is ($nc_agg_th_left->toString(),'-1.4<mean(RAM used)','Check to String (b)');
-    is ($nc_mix_1->toString(),'RAM used<mean(RAM used)','Check to String (c)');
-    is ($nc_mix_2->toString(),'mean(RAM used)<RAM used','Check to String (d)');
+    is ($nc_agg_th_right->toString(),'mean(RAM used) > -1.2','Check to String (a)');
+    is ($nc_agg_th_left->toString(),'-1.4 < mean(RAM used)','Check to String (b)');
+    is ($nc_mix_1->toString(),'RAM used < mean(RAM used)','Check to String (c)');
+    is ($nc_mix_2->toString(),'mean(RAM used) < RAM used','Check to String (d)');
 }
 
 sub test_two_combinations_on_nodemetric_condition {
@@ -563,10 +563,18 @@ sub test_aggregate_combination {
     is ($ac_right->eval,1, 'Check condition combi right');
     is ($ac_both->eval,1, 'Check condition combi both');
 
+    is ($ac_left->toString(),'sum(RAM used) < 12.34','Check to string (a)');
+    is ($ac_right->toString(),'-43.21 < sum(RAM used)','Check to string (b)');
+    is ($ac_both->toString(),'sum(RAM used) < 2*sum(RAM used)','Check to string (c)');
 
-    is ($ac_left->toString(),'sum(RAM used)<12.34','Check to string (a)');
-    is ($ac_right->toString(),'-43.21<sum(RAM used)','Check to string (b)');
-    is ($ac_both->toString(),'sum(RAM used)<2*sum(RAM used)','Check to string (c)');
+    $cm->update (clustermetric_statistics_function_name => 'min');
+    $comb->update (aggregate_combination_formula => '-id'.($cm->id));
+    $ac_left->update (comparator => '==', threshold => '43.12');
+
+    is (Entity->get(id => $ac_left->id)->aggregate_condition_formula_string,'-min(RAM used) == 43.12','Check update formula string (a)');
+    is (Entity->get(id => $ac_right->id)->aggregate_condition_formula_string,'-43.21 < -min(RAM used)','Check update formula string (b)');
+    is (Entity->get(id => $ac_both->id)->aggregate_condition_formula_string,'-min(RAM used) < 2*min(RAM used)','Check update formula string (c)');
+    
     # Condition are not verified when not linked to a rule
 }
 
@@ -709,11 +717,16 @@ sub test_and {
     );
 
     $orchestrator->manage_aggregates();
-    is($rule1->eval, 1, 'Check 1 && 1 rule');
-    is($rule2->eval, 0, 'Check 1 && 0 rule');
-    is($rule3->eval, 0, 'Check 0 && 1 rule');
-    is($rule4->eval, 0, 'Check 0 && 0 rule');
+    is ($rule1->eval, 1, 'Check 1 && 1 rule');
+    is ($rule2->eval, 0, 'Check 1 && 0 rule');
+    is ($rule3->eval, 0, 'Check 0 && 1 rule');
+    is ($rule4->eval, 0, 'Check 0 && 0 rule');
+
+    is ($rule1->aggregate_rule_formula_string, 'sum(RAM used) > 0 && sum(RAM used) > 0', 'Check formula string aggregate rule before update');
+    $rule1->update (aggregate_rule_formula => 'id'.$ac_t->id.' && ! id'.$ac_t->id);
+    is ($rule1->aggregate_rule_formula_string, 'sum(RAM used) > 0 && ! sum(RAM used) > 0', 'Check formula string aggregate rule after update');
 }
+
 sub test_or_n {
 
     my $r1 = Entity::NodemetricRule->new(
