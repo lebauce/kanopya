@@ -30,25 +30,37 @@ __PACKAGE__->table("vsphere5");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 vsphere5_pwd
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 68
-
 =head2 vsphere5_login
 
   data_type: 'char'
   is_nullable: 1
-  size: 128
+  size: 255
 
-=cut
+=head2 vsphere5_pwd
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 255
 
 =head2 vsphere5_url
 
   data_type: 'char'
   is_nullable: 1
-  size: 128
+  size: 255
+
+=head2 overcommitment_memory_factor
+
+  data_type: 'double precision'
+  default_value: 1
+  extra: {unsigned => 1}
+  is_nullable: 0
+
+=head2 overcommitment_cpu_factor
+
+  data_type: 'double precision'
+  default_value: 1
+  extra: {unsigned => 1}
+  is_nullable: 0
 
 =cut
 
@@ -60,12 +72,26 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "vsphere5_pwd",
-  { data_type => "char", is_nullable => 1, size => 68 },
   "vsphere5_login",
-  { data_type => "char", is_nullable => 1, size => 128 },
+  { data_type => "char", is_nullable => 1, size => 255 },
+  "vsphere5_pwd",
+  { data_type => "char", is_nullable => 1, size => 255 },
   "vsphere5_url",
-  { data_type => "char", is_nullable => 1, size => 128 },
+  { data_type => "char", is_nullable => 1, size => 255 },
+  "overcommitment_memory_factor",
+  {
+    data_type => "double precision",
+    default_value => 1,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
+  "overcommitment_cpu_factor",
+  {
+    data_type => "double precision",
+    default_value => 1,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -94,7 +120,7 @@ __PACKAGE__->belongs_to(
   "vsphere5",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "vsphere5_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 vsphere5_datacenters
@@ -158,14 +184,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-23 17:42:38
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1x9ezT9ZY1yBA6DedltHwA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2012-11-07 11:15:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GkH+FA6YpO/ExjngID99lQ
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
     { "foreign.component_id" => "self.vsphere5_id" },
-    { cascade_copy => 0, cascade_delete => 1 } 
+    { cascade_copy => 0, cascade_delete => 1 }
 );
 
 1;

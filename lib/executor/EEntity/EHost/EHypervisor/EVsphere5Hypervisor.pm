@@ -125,11 +125,7 @@ sub getVmResources {
     # If no vm specified, get resources for all hypervisor vms.
     my @vms;
     if (not defined $args{vm}) {
-        my $vms_mo_ref = $hypervisor_view->vm;
-        foreach my $vm_ref (@$vms_mo_ref) {
-            my $VM = $vsphere->getView(mo_ref => $vm_ref);
-            push @vms, $VM->name;
-        }
+        @vms = $self->getVms;
     } else {
         push @vms, $args{vm};
     }
