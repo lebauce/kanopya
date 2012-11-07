@@ -179,10 +179,31 @@ sub registerUsers {
           type    => 'Entity',
           desc    => 'Entity master group containing all entities',
           system  => 1 },
+        { name    => 'Admin',
+          type    => 'User',
+          desc    => 'Privileged users for administration tasks',
+          system  => 1,
+          profile => [ 'Super Admin', 'God profile : full access to the user interface.' ] },
         { name    => 'Administrator',
           type    => 'User',
           desc    => 'Administrator group',
+          system  => 0,
           profile => [ 'Administrator', 'administrator profile' ] },
+        { name    => 'ServiceDeveloper',
+          type    => 'User',
+          desc    => 'Service developer group',
+          system  => 0,
+          profile => [ 'Services Developer', 'services dev profile' ] },
+        { name    => 'Sales',
+          type    => 'User',
+          desc    => 'Sales group',
+          system  => 0,
+          profile => [ 'Sales', 'sale profile' ] },
+        { name    => 'Customer',
+          type    => 'User',
+          desc    => 'Customer group',
+          system  => 0,
+          profile => [ 'Customer', 'customer profile' ] },
         { name    => 'User',
           type    => 'User',
           desc    => 'User master group containing all users',
@@ -203,12 +224,17 @@ sub registerUsers {
           type    => 'ServiceProvider',
           desc    => 'ServiceProvider master group containing all service providers',
           system  => 1,
-          methods => [ 'getServiceProfile', 'create', 'getServiceProviders', 'findManager' ] },
+          methods => {
+              'Administrator' => [ 'getServiceProfile', 'getServiceProviders', 'findManager' ] }
+        },
         { name    => 'Cluster',
           type    => 'Cluster',
           desc    => 'Cluster master group containing all clusters',
           system  => 1,
-          methods => [ 'findManager' ] },
+          methods => {
+              'Administrator' => [ 'findManager' ],
+              'Sales'         => [ 'subscribe' ],
+        }},
         { name    => 'Kernel',
           type    => 'Kernel',
           desc    => 'Kernel master group containing all kernels',
@@ -228,58 +254,77 @@ sub registerUsers {
         { name    => 'Component',
           type    => 'Component',
           desc    => 'Component group containing all components',
-          system  => 0,
-          methods => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType' ] },
+          system  => 1,
+          methods => {
+              'Administrator' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ]
+        }},
         { name    => 'Connector',
           type    => 'Connector',
           desc    => 'Connector group containing all connectors',
-          system  => 0,
-          methods => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType' ] },
+          system  => 1,
+          methods => {
+              'Administrator' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ]
+        }},
+        { name    => 'Policy',
+          type    => 'Policy',
+          desc    => 'Policy group containing all policies',
+          system  => 1,
+          methods => {
+              'Administrator'    => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers', 'getFlattenedHash' ],
+              'ServiceDeveloper' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers', 'getFlattenedHash' ]
+        }},
+        { name    => 'ServiceTemplate',
+          type    => 'ServiceTemplate',
+          desc    => 'ServiceTemplate group containing all service templates',
+          system  => 1,
+          methods => {
+              'ServiceDeveloper' => [ 'create', 'update', 'remove', 'get' ]
+        }},
         { name    => 'Gp',
           type    => 'Gp',
           desc    => 'Groups master group containing all groups',
           system  => 1 },
-        { name    => 'Admin',
-          type    => 'User',
-          desc    => 'Privileged users for administration tasks',
-          system  => 1,
-          profile => [ 'Super Admin', 'God profile : full access to the user interface.' ] },
-        { name    => 'ServiceDeveloper',
-          type    => 'User',
-          desc    => 'Service developer group',
-          system  => 0,
-          profile => [ 'Services Developer', 'services dev profile' ] },
-        { name    => 'Sales',
-          type    => 'User',
-          desc    => 'Sales group',
-          system  => 0,
-          profile => [ 'Sale', 'sale profile' ] },
-        { name    => 'Customer',
-          type    => 'User',
-          desc    => 'Customer group',
-          system  => 0,
-          profile => [ 'Customer', 'customer profile' ] }
     ];
 
-    for my $group (@{$groups}) {
-        my $gp = Entity::Gp->new(
-            gp_name   => $group->{name},
-            gp_desc   => $group->{desc},
-            gp_system => $group->{system} || 0,
-            gp_type   => $group->{type}
-        );
+    # Add a group for all classtype, allows the CRUD for Administrator
+    for my $classtype (@classes) {
+        $classtype =~ s/.*\:\://g;
+        push @{$groups}, {
+            name    => $classtype,
+            type    => $classtype,
+            desc    => $classtype . ' group',
+            system  => 1,
+            methods => {
+                'Administrator' => [ 'get', 'create', 'update', 'remove', 'subscribe' ]
+            }
+        };
+    }
 
-        if ($group->{name} eq 'Administrator') {
-            $admin_group = $gp;
+    my @adminprofiles;
+    my $profilegroups = {};
+    for my $group (@{$groups}) {
+        my $gp;
+        eval {
+            $gp = Entity::Gp->find(hash => { gp_name => $group->{name} });
+        };
+        if ($@) {
+            $gp = Entity::Gp->new(
+                      gp_name   => $group->{name},
+                      gp_desc   => $group->{desc},
+                      gp_system => $group->{system} || 0,
+                      gp_type   => $group->{type}
+                  );
         }
 
         if (defined ($group->{methods})) {
-            for my $method (@{$group->{methods}}) {
-                Entityright->new(
-                    entityright_consumed_id => $gp->id,
-                    entityright_consumer_id => $admin_group->id,
-                    entityright_method      => $method
-                );
+            for my $gpname (keys %{ $group->{methods} }) {
+                for my $method (@{ $group->{methods}->{$gpname} }) {
+                    Entityright->new(
+                        entityright_consumed_id => $gp->id,
+                        entityright_consumer_id => $profilegroups->{$gpname}->id,
+                        entityright_method      => $method
+                    );
+                }
             }
         }
 
@@ -291,11 +336,16 @@ sub registerUsers {
                 profile_id => $prof->id,
                 gp_id      => $gp->id
             } );
+
+            if ($group->{system} == 0) {
+                push @adminprofiles, $prof;
+                $profilegroups->{$group->{name}} = $gp;
+            }
         }
     }
 
     my $admin_user = Entity::User->create(
-                         user_system       => 1,
+                         user_system       => 0,
                          user_login        => "admin",
                          user_password     => $args{admin_password},
                          user_firstname    => 'Kanopya',
@@ -305,12 +355,12 @@ sub registerUsers {
                          user_desc         => 'God user for administrative tasks.'
                      );
 
-    my $admin_profile = Profile->find(hash => { profile_name => 'Super Admin' });
-
-    UserProfile->new(
-        user_id    => $admin_user->id,
-        profile_id => $admin_profile->id
-    );
+    for my $profile (@adminprofiles) {
+        UserProfile->new(
+            user_id    => $admin_user->id,
+            profile_id => $profile->id
+        );
+    }
 
     my $executor_user = Entity::User->create(
         user_system       => 1,
@@ -322,14 +372,12 @@ sub registerUsers {
         user_creationdate => today(),
         user_desc         => 'User used by executor'
     );
-
-    UserProfile->new(
-        user_id    => $executor_user->id,
-        profile_id => $admin_profile->id
-    );
-
-    $admin_group->appendEntity(entity => $admin_user);
-    $admin_group->appendEntity(entity => $executor_user);
+#
+#    UserProfile->new(
+#        user_id    => $executor_user->id,
+#        profile_id => $admin_profile->id
+#    );
+#    $admin_group->appendEntity(entity => $executor_user);
 }
 
 sub registerKernels {
