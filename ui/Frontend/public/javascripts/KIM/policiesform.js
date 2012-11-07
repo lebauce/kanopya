@@ -1325,24 +1325,16 @@ var PolicyForm = (function() {
 
     PolicyForm.prototype.ajaxCall = function (method, route, data) {
         var response;
-        try {
-            $.ajax({
-                type        : method,
-                async       : false,
-                url         : route,
-                data        : data,
-                dataTYpe    : 'json',
-                error       : function(xhr, status, error) {
-                    console.log('Ajax call failled: ' + xhr.status);
-                },
-                success     : $.proxy(function(d) {
-                    response = d;
-                }, this)
-            });
-        }
-        catch (error) {
-            console.log('Ajax call failled: ' + error.message);
-        }
+        $.ajax({
+            type        : method,
+            async       : false,
+            url         : route,
+            data        : data,
+            dataTYpe    : 'json',
+            success     : $.proxy(function(d) {
+                response = d;
+            }, this)
+        });
         return response;
     }
 
