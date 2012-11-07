@@ -2038,11 +2038,11 @@ sub methodCall {
 
     # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
     my ($granted, $perm_holder_id);
-    if ($methods->{$args{method}}->{perm_holder} eq 'mastergroup') {
-        $perm_holder_id = $self->getMasterGroup->id;
-    }
-    elsif ($class and $methods->{$args{method}}->{perm_holder} eq 'entity') {
+    if ($class) {
         $perm_holder_id = $self->id;
+    }
+    else {
+        $perm_holder_id = $self->getMasterGroup->id;
     }
 
     # Check the permissions for the logged user
