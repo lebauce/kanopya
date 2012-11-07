@@ -1008,7 +1008,7 @@ sub registerHypervisor {
     eval {
         $service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
                                          cluster_name => $service_provider_renamed,}
-                                     );
+                            );
     };
     if (defined $service_provider) {
         $errmsg  = 'vSphere component will not create new service provider for hypervisor ';
