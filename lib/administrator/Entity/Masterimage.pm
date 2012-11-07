@@ -60,6 +60,25 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+=head2 create
+
+=cut
+
+sub create {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'file_path' ]);
+
+    Entity::Operation->enqueue(
+        priority    => 200,
+        type        => 'DeployMasterimage',
+        params      => {
+            file_path   => $args{file_path}
+        }
+    );
+}
+
 =head2 remove
 
 =cut

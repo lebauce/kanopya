@@ -134,7 +134,7 @@ sub methods {
 
 =cut
 
-sub create {
+sub new {
     my ($class, %args) = @_;
 
     my $self = $class->SUPER::new(%args);
