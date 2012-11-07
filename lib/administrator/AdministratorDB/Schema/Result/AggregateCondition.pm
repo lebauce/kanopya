@@ -63,6 +63,11 @@ __PACKAGE__->table("aggregate_condition");
   is_nullable: 0
   size: 32
 
+=head2 aggregate_condition_formula_string
+
+  data_type: 'text'
+  is_nullable: 0
+
 =head2 time_limit
 
   data_type: 'char'
@@ -109,6 +114,8 @@ __PACKAGE__->add_columns(
   },
   "comparator",
   { data_type => "char", is_nullable => 0, size => 32 },
+  "aggregate_condition_formula_string",
+  { data_type => "text", is_nullable => 0 },
   "time_limit",
   { data_type => "char", is_nullable => 1, size => 32 },
   "last_eval",

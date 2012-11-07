@@ -41,74 +41,80 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    aggregate_rule_id          =>  {
-        pattern       => '^.*$',
+    aggregate_rule_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0,
+    },
+    aggregate_rule_label => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    aggregate_rule_service_provider_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 0,
+    },
+    aggregate_rule_formula => {
+        pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+        description     => "Construct a formula by condition's names with logical operators (and, or, not)."
+                           . " It's possible to use parenthesis with spaces between each element of the formula."
+                           . " Press a letter key to obtain the availalbe choice.",
+    },
+    aggregate_rule_formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    aggregate_rule_last_eval => {
+        pattern         => '^(0|1)$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    aggregate_rule_timestamp => {
+        pattern        => '^.*$',
         is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 0
-    },
-    aggregate_rule_label       =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
-    },
-    aggregate_rule_service_provider_id =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 1,
-        is_extended    => 0,
-        is_editable    => 0
-    },
-    aggregate_rule_formula     =>  {
-        pattern       => '^((id\d+)|and|or|not|[ ()!&|])+$',
-        is_mandatory   => 1,
         is_extended    => 0,
         is_editable    => 1,
-        description    => "Construct a formula by condition's names with logical operators (and, or, not)."
-                           . " It's possible to use parenthesis with spaces between each element of the formula."
-                           . " Press a letter key to obtain the availalbe choice."
     },
-    aggregate_rule_last_eval   =>  {
-        pattern       => '^(0|1)$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
+    aggregate_rule_state => {
+        pattern         => '(enabled|disabled|delayed|triggered)$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
     },
-    aggregate_rule_timestamp   =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
+    workflow_def_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
-    aggregate_rule_state       =>  {
-        pattern       => '(enabled|disabled|delayed|triggered)$',
-        is_mandatory   => 1,
-        is_extended    => 0,
-        is_editable    => 1
+    aggregate_rule_description => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
-    workflow_def_id            =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
+    workflow_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
-    aggregate_rule_description =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
-    },
-    workflow_id            =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
-    },
-    workflow_untriggerable_timestamp =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
+    workflow_untriggerable_timestamp => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
     formula_label => {
         is_virtual      => 1,

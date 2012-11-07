@@ -49,6 +49,11 @@ __PACKAGE__->table("aggregate_rule");
   is_nullable: 0
   size: 255
 
+=head2 aggregate_rule_formula_string
+
+  data_type: 'text'
+  is_nullable: 0
+
 =head2 aggregate_rule_last_eval
 
   data_type: 'integer'
@@ -112,6 +117,8 @@ __PACKAGE__->add_columns(
   },
   "aggregate_rule_formula",
   { data_type => "char", is_nullable => 0, size => 255 },
+  "aggregate_rule_formula_string",
+  { data_type => "text", is_nullable => 0 },
   "aggregate_rule_last_eval",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "aggregate_rule_timestamp",

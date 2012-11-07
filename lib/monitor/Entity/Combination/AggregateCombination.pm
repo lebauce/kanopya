@@ -44,13 +44,13 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 0
+        is_editable     => 0,
     },
     aggregate_combination_label => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
     aggregate_combination_formula => {
         pattern         => '^((id\d+)|[ .+*()-/]|\d)+$',
@@ -59,7 +59,13 @@ use constant ATTR_DEF => {
         is_editable     => 1,
         description     =>  "Construct a formula by service metric's names with all mathematical operators."
                             ." It's possible to use parenthesis with spaces between each element of the formula."
-                            ." Press a letter key to obtain the available choice."
+                            ." Press a letter key to obtain the available choice.",
+    },
+    aggregate_combination_formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
     formula_label => {
         is_virtual      => 1,

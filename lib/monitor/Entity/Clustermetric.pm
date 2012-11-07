@@ -55,6 +55,12 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 1
     },
+    clustermetric_formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
     clustermetric_indicator_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,

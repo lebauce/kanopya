@@ -122,4 +122,9 @@ a ConstantCombination. Also used to avoid deep recursion.
 =cut
 
 sub deleteIfConstant {};
+
+sub combination_formula_string {
+    return undef;
+}
+
 1;
