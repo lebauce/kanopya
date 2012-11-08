@@ -72,14 +72,10 @@ sub new {
     # Add the entity in the master group corresponding to it concrete class
     # and also in the master group Entity.
     my $mastergroup = $class->getMasterGroup;
-    print "self: $self, try to insert in group: " . $mastergroup->gp_name . "\n";
     if ($mastergroup->gp_name ne 'Entity') {
-        print "self: $self, inserting alse in Entity \n";
         Entity->getMasterGroup->appendEntity(entity => $self);
-        print "self: $self, inserted in Entity \n";
     }
     $mastergroup->appendEntity(entity => $self);
-    print "self: $self, inserted in group " . $mastergroup->gp_name . "\n";
 
     return $self;
 }
@@ -156,8 +152,7 @@ sub getMasterGroupName {
     my $class = ref $self || $self;
     my @array = split(/::/, "$class");
     my $mastergroup = pop(@array);
-    
-    print "CLASS is $class, and mastergroup is " . $mastergroup . "\n";
+
     return $mastergroup;
 }
 
