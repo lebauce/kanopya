@@ -108,15 +108,13 @@ function associateAdminManager(sp_id, component_category, manager_type) {
     // Associate sp to manager
     $.ajax({
         type    : 'POST',
-        url     : 'api/serviceprovidermanager',
+        url     : 'api/serviceprovider/' + sp_id + '/addManager',
         async   : false,
         data    : {
-            service_provider_id : sp_id,
-            manager_id          : manager_id,
-            manager_type        : manager_type
+            manager_id   : manager_id,
+            manager_type : manager_type
         }
      });
-
 }
 
 function createPolicyServiceProvider() {
