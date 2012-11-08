@@ -705,6 +705,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_provider_managers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_provider_managers",
+  "AdministratorDB::Schema::Result::ServiceProviderManager",
+  { "foreign.manager_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 service_template
 
 Type: might_have
@@ -806,8 +821,8 @@ Composing rels: L</ingroups> -> gp
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-06 16:03:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DqoMkItJMaoXDsw2qrHvsQ
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-08 14:54:52
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uTu+fyc5jS4HCorythfIQg
 
 __PACKAGE__->might_have(
   "workflow",
