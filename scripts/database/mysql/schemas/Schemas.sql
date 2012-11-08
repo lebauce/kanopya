@@ -1376,7 +1376,6 @@ CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_formula` char(255) NOT NULL,
   `nodemetric_rule_formula_string` TEXT NOT NULL,
-  `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_state` char(32) NOT NULL,
   `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,

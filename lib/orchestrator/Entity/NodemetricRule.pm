@@ -62,12 +62,6 @@ use constant ATTR_DEF => {
                            . " It's possible to use parenthesis with spaces between each element of the formula"
                            . ". Press a letter key to obtain the available choice.",
     },
-    nodemetric_rule_last_eval => {
-        pattern         => '^(0|1)$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
     nodemetric_rule_timestamp => {
         pattern         => '^.*$',
         is_mandatory    => 0,
