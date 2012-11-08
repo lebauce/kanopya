@@ -104,12 +104,6 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 1,
     },
-    nodemetric_rule_unit => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
     formula_label => {
         is_virtual      => 1,
     }
