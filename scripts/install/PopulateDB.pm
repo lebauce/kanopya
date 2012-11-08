@@ -271,7 +271,7 @@ sub registerUsers {
           desc    => 'Component group containing all components',
           system  => 1,
           methods => {
-              'Administrator'    => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ],
+              'Administrator'    => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers', 'getConf', 'setConf' ],
               'ServiceDeveloper' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ]
         }},
         { name    => 'Connector',
@@ -279,7 +279,7 @@ sub registerUsers {
           desc    => 'Connector group containing all connectors',
           system  => 1,
           methods => {
-              'Administrator'    => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ],
+              'Administrator'    => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers', 'getConf', 'setConf' ],
               'ServiceDeveloper' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ]
         }},
         { name    => 'Policy',
@@ -297,23 +297,18 @@ sub registerUsers {
           methods => {
               'ServiceDeveloper' => [ 'create', 'update', 'remove', 'get' ]
         }},
+        { name    => 'Network',
+          type    => 'Network',
+          desc    => 'Network group containing all service templates',
+          system  => 1,
+          methods => {
+              'Administrator' => [ 'associatePoolip', 'dissociatePoolip' ]
+        }},
         { name    => 'Gp',
           type    => 'Gp',
           desc    => 'Groups master group containing all groups',
           system  => 1 },
     ];
-
-    # Add a group for all classtype, allows the CRUD for Administrator
-#    for my $classtype (@classes) {
-#        $classtype =~ s/.*\:\://g;
-#        push @{$groups}, {
-#            name    => $classtype,
-#            type    => $classtype,
-#            desc    => $classtype . ' group',
-#            system  => 1,
-#
-#        };
-#    }
 
     my @adminprofiles;
     my $profilegroups = {};
@@ -352,7 +347,7 @@ sub registerUsers {
                 gp_id      => $gp->id
             } );
 
-            if ($group->{system} == 0) {
+            if ($group->{system} == 0 and $group->{name} ne 'Customer') {
                 push @adminprofiles, $prof;
                 $profilegroups->{$group->{name}} = $gp;
             }
