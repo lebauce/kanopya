@@ -82,6 +82,7 @@ my @classes = (
     'Entity::ContainerAccess::LocalContainerAccess',
     'Entity::Container::LvmContainer',
     'Entity::Container::LocalContainer',
+    'Entity::Component',
     'Entity::Component::Lvm2',
     'Entity::Component::Iscsitarget1',
     'Entity::Component::Apache2',
@@ -108,6 +109,7 @@ my @classes = (
     'Entity::Poolip',
     'Entity::Network::Vlan',
     'Entity::Masterimage',
+    'Entity::Connector',
     'Entity::Connector::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Connector::NetappManager',
@@ -204,10 +206,22 @@ sub registerUsers {
           desc    => 'Customer group',
           system  => 0,
           profile => [ 'Customer', 'customer profile' ] },
+        # Duplicate Entity group here for setting permissions on methods
+        # as we need to create profiles users groups before setting permissions on methods.
+        { name    => 'Entity',
+          type    => 'Entity',
+          desc    => 'Entity master group containing all entities',
+          system  => 1,
+          methods => {
+              'Administrator' => [ 'get', 'create', 'update', 'remove', 'subscribe' ]
+        }},
         { name    => 'User',
           type    => 'User',
           desc    => 'User master group containing all users',
-          system  => 1 },
+          system  => 1,
+          methods => {
+              'Administrator' => [ 'setProfiles' ],
+        }},
         { name    => 'Processormodel',
           type    => 'Processormodel',
           desc    => 'Processormodel master group containing all processor models',
@@ -225,8 +239,9 @@ sub registerUsers {
           desc    => 'ServiceProvider master group containing all service providers',
           system  => 1,
           methods => {
-              'Administrator' => [ 'getServiceProfile', 'getServiceProviders', 'findManager' ] }
-        },
+              'Administrator'    => [ 'getServiceProfile', 'getServiceProviders', 'findManager', 'addManager' ],
+              'ServiceDeveloper' => [ 'getServiceProfile', 'getServiceProviders', 'findManager', 'addManager' ],
+        }},
         { name    => 'Cluster',
           type    => 'Cluster',
           desc    => 'Cluster master group containing all clusters',
@@ -256,22 +271,24 @@ sub registerUsers {
           desc    => 'Component group containing all components',
           system  => 1,
           methods => {
-              'Administrator' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ]
+              'Administrator'    => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ],
+              'ServiceDeveloper' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ]
         }},
         { name    => 'Connector',
           type    => 'Connector',
           desc    => 'Connector group containing all connectors',
           system  => 1,
           methods => {
-              'Administrator' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ]
+              'Administrator'    => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ],
+              'ServiceDeveloper' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ]
         }},
         { name    => 'Policy',
           type    => 'Policy',
           desc    => 'Policy group containing all policies',
           system  => 1,
           methods => {
-              'Administrator'    => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers', 'getFlattenedHash' ],
-              'ServiceDeveloper' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers', 'getFlattenedHash' ]
+              'Administrator'    => [ 'getFlattenedHash' ],
+              'ServiceDeveloper' => [ 'getFlattenedHash' ]
         }},
         { name    => 'ServiceTemplate',
           type    => 'ServiceTemplate',
@@ -287,18 +304,16 @@ sub registerUsers {
     ];
 
     # Add a group for all classtype, allows the CRUD for Administrator
-    for my $classtype (@classes) {
-        $classtype =~ s/.*\:\://g;
-        push @{$groups}, {
-            name    => $classtype,
-            type    => $classtype,
-            desc    => $classtype . ' group',
-            system  => 1,
-            methods => {
-                'Administrator' => [ 'get', 'create', 'update', 'remove', 'subscribe' ]
-            }
-        };
-    }
+#    for my $classtype (@classes) {
+#        $classtype =~ s/.*\:\://g;
+#        push @{$groups}, {
+#            name    => $classtype,
+#            type    => $classtype,
+#            desc    => $classtype . ' group',
+#            system  => 1,
+#
+#        };
+#    }
 
     my @adminprofiles;
     my $profilegroups = {};
@@ -968,7 +983,6 @@ sub registerKanopyaMaster {
             component_template_id => $component_template,
             defined ($component->{conf}) ? %{$component->{conf}} : ()
         );
-
         if (defined $component->{manager}) {
             ServiceProviderManager->new(
                 service_provider_id => $admin_cluster->id,
