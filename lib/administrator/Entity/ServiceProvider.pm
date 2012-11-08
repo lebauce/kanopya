@@ -62,47 +62,37 @@ sub methods {
     return {
         addComponent => {
             description => 'add a component to this cluster',
-            perm_holder => 'entity',
         },
         removeComponent => {
             description => 'remove a component from this cluster',
-            perm_holder => 'entity',
         },
         addManager => {
             description => 'addManager',
-            perm_holder => 'entity',
         },
         getNodeMonitoringData => {
             description => 'get monitoring data of a node',
-            perm_holder => 'entity',
         },
         enableNode => {
             description => 'Enable node',
-            perm_holder => 'entity',
         },
         disableNode => {
             description => 'Disable node',
-            perm_holder => 'entity',
         },
         # TODO(methods): Remove this method from the api once the policy ui has been reviewed
         findManager => {
             description => 'findManager',
-            perm_holder => 'mastergroup',
         },
         # TODO(methods): Remove this method from the api once the policy ui has been reviewed
         getServiceProviders => {
             description => 'getServiceProviders',
-            perm_holder => 'mastergroup',
         },
         # TODO(methods): Remove this method from the api once the merge of component/connector
         addManagerParameters => {
             description => 'add paramaters to a manager',
-            perm_holder => 'entity',
         },
         # TODO(methods): Remove this method from the api once the merge of component/connector
         getManagerParameters => {
             description => 'getManagerParameters',
-            perm_holder => 'entity',
         },
     };
 }
