@@ -178,7 +178,12 @@ sub validation {
                  );
 
             # TODO: Use multi recipient send, instead of sending one mail per subcriber
-            $notifier->notify(user => $subscribtion->subscriber, subject => $subject, message => $message);
+            eval {
+                $notifier->notify(user => $subscribtion->subscriber, subject => $subject, message => $message);
+            };
+            if ($@) {
+                $log->error("Validation notification failled: " . $@);
+            }
         }
     }
 
