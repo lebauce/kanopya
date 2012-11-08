@@ -45,58 +45,64 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 0
+        is_editable     => 0,
     },
-    nodemetric_rule_label =>  {
+    nodemetric_rule_label => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
-    nodemetric_rule_formula =>  {
+    nodemetric_rule_formula => {
         pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
         is_mandatory    => 1,
         is_extended     => 0,
         is_editable     => 1,
         description     => "Construct a formula by condition's names with logical operators (and, or, not)."
                            . " It's possible to use parenthesis with spaces between each element of the formula"
-                           . ". Press a letter key to obtain the available choice."
+                           . ". Press a letter key to obtain the available choice.",
     },
-    nodemetric_rule_last_eval =>  {
+    nodemetric_rule_last_eval => {
         pattern         => '^(0|1)$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
-    nodemetric_rule_timestamp =>  {
+    nodemetric_rule_timestamp => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
-    nodemetric_rule_state =>  {
+    nodemetric_rule_state => {
         pattern         => '(enabled|disabled|disabled_temp)$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
-    nodemetric_rule_service_provider_id =>  {
+    nodemetric_rule_service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
-    workflow_def_id =>  {
+    workflow_def_id => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
     nodemetric_rule_description => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
+    },
+    nodemetric_rule_formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
     formula_label => {
         is_virtual      => 1,
@@ -136,14 +142,20 @@ sub new {
     }
 
     my $self = $class->SUPER::new(%args);
-    if(!defined $args{nodemetric_rule_label} || $args{nodemetric_rule_label} eq ''){
-        $self->setAttr(name=>'nodemetric_rule_label', value => $self->toString());
-        $self->save();
+
+    my $toString = $self->toString();
+
+    $self->setAttr(name=>'nodemetric_rule_formula_string', value => $toString);
+    if ((! defined $args{nodemetric_rule_label}) || $args{nodemetric_rule_label} eq ''){
+        $self->setAttr(name=>'nodemetric_rule_label', value => $toString);
     }
+    $self->save();
+
     # When enabled, set undef for each node (will be update next orchestrator loop)
-    if($self->getAttr('name' => 'nodemetric_rule_state') eq 'enabled'){
+    if ($self->getAttr('name' => 'nodemetric_rule_state') eq 'enabled'){
         $self->setUndefForEachNode();
     }
+
     return $self;
 }
 
@@ -387,6 +399,8 @@ Links clones to the specified service provider. Only clones objects that do not 
 
 @param dest_service_provider_id id of the service provider where to import the clone
 
+@return clone object
+
 =end classdoc
 
 =cut
@@ -440,6 +454,19 @@ sub clone {
     }
 
     return $clone;
+}
+
+sub updateFormulaString {
+    my $self = shift;
+    $self->setAttr(name=>'nodemetric_rule_formula_string', value => $self->toString());
+    $self->save();
+}
+
+sub update {
+    my ($self, %args) = @_;
+    my $rep = $self->SUPER::update (%args);
+    $self->updateFormulaString;
+    return $rep;
 }
 
 1;
