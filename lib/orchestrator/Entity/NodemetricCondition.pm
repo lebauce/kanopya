@@ -74,6 +74,12 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 1,
     },
+    nodemetric_condition_unit => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

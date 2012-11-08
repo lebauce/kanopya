@@ -74,6 +74,12 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 1,
     },
+    aggregate_rule_unit => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
     aggregate_rule_last_eval => {
         pattern         => '^(0|1)$',
         is_mandatory    => 0,

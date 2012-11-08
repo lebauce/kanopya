@@ -68,6 +68,11 @@ __PACKAGE__->table("nodemetric_condition");
   data_type: 'text'
   is_nullable: 0
 
+=head2 nodemetric_condition_unit
+
+  data_type: 'text'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -105,6 +110,8 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "nodemetric_condition_formula_string",
   { data_type => "text", is_nullable => 0 },
+  "nodemetric_condition_unit",
+  { data_type => "text", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY

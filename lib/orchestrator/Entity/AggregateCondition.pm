@@ -57,6 +57,12 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 1,
     },
+    aggregate_condition_unit => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
     aggregate_condition_service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,

@@ -37,6 +37,11 @@ __PACKAGE__->table("combination");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 combination_unit
+
+  data_type: 'text'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -54,6 +59,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "combination_unit",
+  { data_type => "text", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY

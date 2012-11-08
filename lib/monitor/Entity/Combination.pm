@@ -41,17 +41,20 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 0
+        is_editable     => 0,
     },
     service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
-    combination_formula_string => {
-        is_virtual => 1,
-    }
+    combination_unit => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
