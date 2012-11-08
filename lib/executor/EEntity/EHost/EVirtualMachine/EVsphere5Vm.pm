@@ -14,6 +14,16 @@
 
 # Maintained by Dev Team of Hedera <>Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+EVsphere5Vm
+
+=end classdoc
+
+=cut
+
 package EEntity::EHost::EVirtualMachine::EVsphere5Vm;
 use base "EEntity::EHost::EVirtualMachine";
 

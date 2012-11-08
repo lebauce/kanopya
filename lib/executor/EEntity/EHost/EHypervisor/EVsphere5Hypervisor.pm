@@ -14,6 +14,16 @@
 
 # Maintained by Dev Team of Hedera <>Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+EVsphere5Hypervisor
+
+=end classdoc
+
+=cut
+
 package EEntity::EHost::EHypervisor::EVsphere5Hypervisor;
 use base "EEntity::EHost::EHypervisor";
 
