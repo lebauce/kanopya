@@ -14,6 +14,7 @@ use Operationtype;
 use Kanopya::Exceptions;
 use Entity::Operation;
 use NotificationSubscription;
+use Entity::ServiceProvider::Inside::Cluster;
 
 my $log = get_logger("");
 
@@ -293,8 +294,14 @@ sub subscribe {
 
     General::checkParams(args     => \%args,
                          required => [ 'subscriber_id', 'operationtype' ],
-                         optional => { 'service_provider_id' => 1,
+                         optional => { 'service_provider_id' => undef,
                                        'validation'          => 0 });
+
+    if (not defined $args{service_provider_id}) {
+        $args{service_provider_id} = Entity::ServiceProvider::Inside::Cluster->find(
+                                         hash => { cluster_name => 'Kanopya' }
+                                     )->id;
+    }
 
     my $operationtype = Operationtype->find(hash => { operationtype_name => $args{operationtype} });
     NotificationSubscription->new(
@@ -416,6 +423,26 @@ sub setAttr {
     else {
         $self->SUPER::setAttr(%args);
     }
+}
+
+=pod
+
+=begin classdoc
+
+Return the delegatee entity on which the permissions must be checked.
+By default, permissions are checked on the entity itself.
+
+@return the delegatee entity.
+
+=end classdoc
+
+=cut
+
+
+sub getDelegatee {
+    my $self = shift;
+
+    return $self;
 }
 
 sub toJSON {
