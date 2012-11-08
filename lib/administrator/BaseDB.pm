@@ -1502,10 +1502,14 @@ Get the primary key column name
 
 sub getPrimaryKey {
     my $self = shift;
+    my $class = ref($self) || $self;
 
-    return ($self->{_dbix}->result_source->primary_columns)[0];
+    if (ref ($self)) {
+        return ($self->{_dbix}->result_source->primary_columns)[0];
+    } else {
+        return ($class->getResultSource->primary_columns)[0];
+    }
 }
-
 
 =pod
 
@@ -1755,6 +1759,12 @@ sub classFromDbix {
     return normalizeName($name);
 }
 
+sub getResultSource {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my $adm = Administrator->new();
+    return $adm->{db}->source(_buildClassNameFromString($class));
+}
 
 =pod
 
@@ -1820,7 +1830,7 @@ Only clone if object doesn't alredy exist in destination object (based on label_
 
 @param dest_object_id id of the related object where to import cloned object
 @param relationship name of the belongs_to relationship linking to owner object
-@param label_attr_name name of the attr used to know if object already exists in related objects of dest
+@optional label_attr_name name of the attr used to know if object already exists in related objects of dest
 @optional attrs_clone_handler function called to handle specific attrs cloning, must return the new attrs hash
 
 @return the cloned object
@@ -1832,16 +1842,17 @@ Only clone if object doesn't alredy exist in destination object (based on label_
 sub _importToRelated {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['dest_obj_id', 'relationship', 'label_attr_name']);
+    General::checkParams(args => \%args, required => ['dest_obj_id', 'relationship']);
 
     my $dest_obj_id  = $args{dest_obj_id};
     my %attrs       = $self->getAttrs();
 
-    my $class = caller();
+    my $caller_class = caller();
 
     # Don't clone If already exists (based on label_attr_name)
     my $obj = eval {
-        return $class->find( hash => {
+        return undef if (!$args{label_attr_name});
+        return $caller_class->find( hash => {
             $args{relationship} . '_id' => $dest_obj_id,
             $args{label_attr_name}      => $attrs{$args{label_attr_name}}
         });
@@ -1855,11 +1866,17 @@ sub _importToRelated {
     if ($args{attrs_clone_handler}) {
         %attrs = $args{attrs_clone_handler}(attrs => \%attrs);
     }
-    # Remove the origin entity id
-    delete $attrs{$self->getPrimaryKey()};
+
+    # Remove all primary keys of hierachy of the origin obj
+    my $class;
+    for my $subclass (split('::', ref $self)) {
+        $class .= $subclass;
+        delete $attrs{$class->getPrimaryKey()};
+        $class .= '::';
+    }
 
     # Create the object
-    my $clone_elem = $class->new( %attrs );
+    my $clone_elem = $caller_class->new( %attrs );
 
     return $clone_elem;
 }

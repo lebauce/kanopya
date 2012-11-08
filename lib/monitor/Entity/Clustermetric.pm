@@ -276,13 +276,14 @@ sub getDependencies {
 
 =begin classdoc
 
-Method used to clone the cluster metric and link the clone to the specified service provider.
-Both linked service providers must have the same collector manager.
+Clones the cluster metric and links clone to the specified service provider.
+Only clone object if do not exists in service provider.
+Source and dest linked service providers must have the same collector manager.
 
 throw Kanopya::Exception::Internal::NotFound if dest service provider does not have a collector manager
 throw Kanopya::Exception::Internal::Inconsistency if both services haven't the same collector manager
 
-@param dest_service_provider_id id of the service provider where to clone the rule
+@param dest_service_provider_id id of the service provider where to import the clone
 
 =end classdoc
 

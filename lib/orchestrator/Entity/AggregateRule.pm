@@ -139,7 +139,7 @@ sub new {
 
     # Clone case
     if ($args{aggregate_rule_id}) {
-        return AggregateRule->get( id => $args{aggregate_rule_id})->clone(
+        return $class->get( id => $args{aggregate_rule_id})->clone(
             dest_service_provider_id => $args{service_provider_id}
         );
     }
@@ -356,9 +356,10 @@ sub setAttr {
 
 =begin classdoc
 
-Method used to clone the rule and link the clone to the specified service provider
+Clones the rule and all related objects.
+Links clones to the specified service provider. Only clones objects that do not exist in service provider.
 
-@param dest_service_provider_id id of the service provider where to clone the rule
+@param dest_service_provider_id id of the service provider where to import the clone
 
 =end classdoc
 
@@ -376,7 +377,7 @@ sub clone {
         $attrs->{aggregate_rule_formula}    = $self->_cloneFormula(
             dest_sp_id              => $attrs->{aggregate_rule_service_provider_id},
             formula                 => $attrs->{aggregate_rule_formula},
-            formula_object_class    => 'AggregateCondition'
+            formula_object_class    => 'Entity::AggregateCondition'
         );
         $attrs->{aggregate_rule_last_eval}  = undef;
         $attrs->{workflow_def_id}           = undef;

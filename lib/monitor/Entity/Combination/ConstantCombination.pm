@@ -72,4 +72,29 @@ sub toString {
     my $self = shift;
     return $self->value;
 };
+
+=pod
+
+=begin classdoc
+
+Clones the combination.
+Links clone to the specified service provider
+
+@param dest_service_provider_id id of the service provider where to import the clone
+
+=end classdoc
+
+=cut
+
+sub clone {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_service_provider_id']);
+
+    $self->_importToRelated(
+        dest_obj_id         => $args{'dest_service_provider_id'},
+        relationship        => 'service_provider',
+    );
+}
+
 1;

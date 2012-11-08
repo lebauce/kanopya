@@ -272,9 +272,10 @@ sub update {
 
 =begin classdoc
 
-Method used to clone the condition and link the clone to the specified service provider
+Clones the condition and all related objects.
+Links clones to the specified service provider. Only clones objects that do not exist in service provider.
 
-@param dest_service_provider_id id of the service provider where to clone the rule
+@param dest_service_provider_id id of the service provider where to import the clone
 
 =end classdoc
 
@@ -288,9 +289,11 @@ sub clone {
     my $attrs_cloner = sub {
         my %args = @_;
         my $attrs = $args{attrs};
-        $attrs->{ 'aggregate_combination_id' } = $self->aggregate_combination->clone(
-            dest_service_provider_id => $attrs->{aggregate_condition_service_provider_id}
-        )->id;
+        for my $operand ('left_combination', 'right_combination') {
+            $attrs->{ $operand . '_id' } = $self->$operand->clone(
+                dest_service_provider_id => $attrs->{aggregate_condition_service_provider_id}
+            )->id;
+        }
         $attrs->{last_eval} = undef;
         return %$attrs;
     };

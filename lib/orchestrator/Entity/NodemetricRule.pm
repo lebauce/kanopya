@@ -130,7 +130,7 @@ sub new {
 
     # Clone case
     if ($args{nodemetric_rule_id}) {
-        return NodemetricRule->get( id => $args{nodemetric_rule_id})->clone(
+        return $class->get( id => $args{nodemetric_rule_id})->clone(
             dest_service_provider_id => $args{service_provider_id}
         );
     }
@@ -382,9 +382,10 @@ sub setAllRulesUndefForANode{
 
 =begin classdoc
 
-Method used to clone the rule and link the clone to the specified service provider
+Clones the rule and all related objects.
+Links clones to the specified service provider. Only clones objects that do not exist in service provider.
 
-@param dest_service_provider_id id of the service provider where to clone the rule
+@param dest_service_provider_id id of the service provider where to import the clone
 
 =end classdoc
 
@@ -402,7 +403,7 @@ sub clone {
         $attrs->{nodemetric_rule_formula}  = $self->_cloneFormula(
             dest_sp_id              => $attrs->{nodemetric_rule_service_provider_id},
             formula                 => $attrs->{nodemetric_rule_formula},
-            formula_object_class    => 'NodemetricCondition'
+            formula_object_class    => 'Entity::NodemetricCondition'
         );
         $attrs->{workflow_def_id}   = undef;
         return %$attrs;

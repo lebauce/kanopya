@@ -134,7 +134,7 @@ sub new {
 
     # Clone case
     if ($args{nodemetric_combination_id}) {
-        return NodemetricCombination->get( id => $args{nodemetric_combination_id})->clone(
+        return $class->get( id => $args{nodemetric_combination_id})->clone(
             dest_service_provider_id => $args{service_provider_id}
         );
     }
@@ -338,13 +338,14 @@ sub getUnit {
 
 =begin classdoc
 
-Method used to clone the combination and link the clone to the specified service provider.
-Both linked service providers must have the same collector manager.
+Clones the combination and links clone to the specified service provider.
+Only clone object if do not exists in service provider.
+Source and dest linked service providers must have the same collector manager.
 
 throw Kanopya::Exception::Internal::NotFound if dest service provider does not have a collector manager
 throw Kanopya::Exception::Internal::Inconsistency if both services haven't the same collector manager
 
-@param dest_service_provider_id id of the service provider where to clone the rule
+@param dest_service_provider_id id of the service provider where to import the clone
 
 =end classdoc
 
@@ -358,7 +359,7 @@ sub clone {
     # Check that both services use the same collector manager
     my $src_collector_manager = ServiceProviderManager->find( hash => {
         manager_type        => 'collector_manager',
-        service_provider_id => $self->nodemetric_combination_service_provider_id
+        service_provider_id => $self->service_provider_id
     });
     my $dest_collector_manager = ServiceProviderManager->find( hash => {
         manager_type        => 'collector_manager',
@@ -372,7 +373,7 @@ sub clone {
 
     $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
-        relationship        => 'nodemetric_combination_service_provider',
+        relationship        => 'service_provider',
         label_attr_name     => 'nodemetric_combination_label',
     );
 }

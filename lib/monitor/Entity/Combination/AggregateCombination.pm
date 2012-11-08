@@ -142,7 +142,7 @@ sub new {
 
     # Clone case
     if ($args{aggregate_combination_id}) {
-        return AggregateCombination->get( id => $args{aggregate_combination_id})->clone(
+        return $class->get( id => $args{aggregate_combination_id})->clone(
             dest_service_provider_id => $args{service_provider_id}
         );
     }
@@ -509,9 +509,10 @@ sub getDependantIndicatorIds {
 
 =begin classdoc
 
-Method used to clone the combination and link the clone to the specified service provider
+Clones the combination and all related objects.
+Links clones to the specified service provider. Only clones objects that do not exist in service provider.
 
-@param dest_service_provider_id id of the service provider where to clone the rule
+@param dest_service_provider_id id of the service provider where to import the clone
 
 =end classdoc
 
@@ -526,16 +527,16 @@ sub clone {
         my %args = @_;
         my $attrs = $args{attrs};
         $attrs->{aggregate_combination_formula}  = $self->_cloneFormula(
-            dest_sp_id              => $attrs->{aggregate_combination_service_provider_id},
+            dest_sp_id              => $attrs->{service_provider_id},
             formula                 => $attrs->{aggregate_combination_formula},
-            formula_object_class    => 'Clustermetric'
+            formula_object_class    => 'Entity::Clustermetric'
         );
         return %$attrs;
     };
 
     $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
-        relationship        => 'aggregate_combination_service_provider',
+        relationship        => 'service_provider',
         label_attr_name     => 'aggregate_combination_label',
         attrs_clone_handler => $attrs_cloner
     );
