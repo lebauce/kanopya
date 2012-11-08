@@ -4,8 +4,16 @@ require('KIM/customers.js');
 require('KIM/servicetemplates.js');
 require('KIM/policies.js');
 
-$.getJSON("/api/cluster?cluster_name=Kanopya",
-          function (data) { kanopya_cluster = data[0].pk; });
+// Get the kanopya cluster id
+$.getJSON("/api/cluster?cluster_name=Kanopya", function (data) {
+    kanopya_cluster = data[0].pk;
+
+    // Get the PhysicalHoster id
+    $.getJSON("/api/cluster/" + kanopya_cluster + "/components?expand=component_type&component_type.component_name=Physicalhoster", function (data) {
+        physical_hoster = data[0].pk;
+    });
+});
+
 
 // each link will show the div with id "view_<id>" and hide all div in "#view-container"
 // onLoad handlers are called with params (content_container_id)
@@ -13,7 +21,7 @@ var mainmenu_def = {
     'Infrastructure' : {
         'Compute' : [
             { label : 'Overview', id : 'compute_overview'},
-            { label : 'Hosts', id : 'hosts', onLoad : function(cid) { require('KIM/hosts.js'); hosts_list(cid, '2'); } },
+            { label : 'Hosts', id : 'hosts', onLoad : function(cid) { require('KIM/hosts.js'); hosts_list(cid, physical_hoster); } },
             { label : 'UCS', id : 'ucs', onLoad : function(cid) { require('KIM/ucs.js'); ucs_list(cid); } }
         ],
         'Storage' : [
