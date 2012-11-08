@@ -41,6 +41,18 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+=head2 getGenericMasterGroupName
+
+    Get an alternative group name if the correponding group 
+    of the concrete class of the entity do not exists.
+
+=cut
+
+sub getGenericMasterGroupName {
+    my $self = shift;
+    return 'Network';
+}
+
 =head2 toString
 
     desc: return a string representation of the entity
