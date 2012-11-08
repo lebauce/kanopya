@@ -43,24 +43,20 @@ sub methods {
     return {
         create => {
             description => 'create a new entity',
-            perm_holder => 'mastergroup',
         },
         remove => {
             description => 'remove an entity',
-            perm_holder => 'mastergroup',
         },
         update => {
             description => 'update an entity',
-            perm_holder => 'mastergroup',
         },
         subscribe => {
             description => 'subscribe to notification about this entity.',
-            perm_holder => 'entity',
         }
     };
 }
 
-=head2 getMasterGroupName
+=head2 new
 
     Override BaseDB constructor to add the newly created entity
     to the corresponding group. 
@@ -73,7 +69,18 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    $class->getMasterGroup->appendEntity(entity => $self);
+    # Add the entity in the master group corresponding to it concrete class
+    # and also in the master group Entity.
+    my $mastergroup = $class->getMasterGroup;
+    print "self: $self, try to insert in group: " . $mastergroup->gp_name . "\n";
+    if ($mastergroup->gp_name ne 'Entity') {
+        print "self: $self, inserting alse in Entity \n";
+        Entity->getMasterGroup->appendEntity(entity => $self);
+        print "self: $self, inserted in Entity \n";
+    }
+    $mastergroup->appendEntity(entity => $self);
+    print "self: $self, inserted in group " . $mastergroup->gp_name . "\n";
+
     return $self;
 }
 
@@ -149,6 +156,8 @@ sub getMasterGroupName {
     my $class = ref $self || $self;
     my @array = split(/::/, "$class");
     my $mastergroup = pop(@array);
+    
+    print "CLASS is $class, and mastergroup is " . $mastergroup . "\n";
     return $mastergroup;
 }
 

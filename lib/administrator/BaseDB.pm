@@ -60,7 +60,6 @@ sub methods {
     return {
         get => {
             description => 'get an object',
-            perm_holder => 'mastergroup',
         },
     };
 }
