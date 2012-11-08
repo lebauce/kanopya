@@ -281,6 +281,48 @@ sub test_nodemetric_condition {
     is ($nc_agg_th_left->toString(),'-1.4 < mean(RAM used)','Check to String (b)');
     is ($nc_mix_1->toString(),'RAM used < mean(RAM used)','Check to String (c)');
     is ($nc_mix_2->toString(),'mean(RAM used) < RAM used','Check to String (d)');
+
+
+    $cm->update (clustermetric_statistics_function_name => 'min');
+    $ncomb->update (nodemetric_combination_formula  => '2*id'.($indic1->id));
+    $comb->update (aggregate_combination_formula   => '3*id'.($cm->id));
+
+    $nc_agg_th_left->update (nodemetric_condition_comparator => '==');
+    is (Entity->get(id => $nc_agg_th_left->id)->toString(),'-1.4 == 3*min(RAM used)','Check update nodemetric String (a)');
+
+    dies_ok { $nc_agg_th_right->update (left_combination_id => $ncomb->id);} 'not only one left combination update';
+    dies_ok { $nc_agg_th_right->update (right_combination_id => $ncomb->id);} 'not only one right combination update';
+    dies_ok { $nc_agg_th_right->update (nodemetric_condition_threshold => $ncomb->id);} 'not only threshold update';
+
+    is (Entity->get(id => $nc_agg_th_right->id)->nodemetric_condition_formula_string,'3*min(RAM used) > -1.2','Check update nodemetric tring (b)');
+    is (Entity->get(id => $nc_mix_1->id)->toString(),'2*RAM used < 3*min(RAM used)','Check update nodemetric String (c)');
+    is (Entity->get(id => $nc_mix_2->id)->toString(),'3*min(RAM used) < 2*RAM used','Check update nodemetric String (d)');
+
+    my $old_const_id = $nc_agg_th_left->left_combination_id;
+
+    $nc_agg_th_left->update (
+        left_combination_id => $comb->id,
+        right_combination_id => $ncomb->id,
+    );
+
+    is (Entity->get(id => $nc_agg_th_left->id)->toString(),'3*min(RAM used) == 2*RAM used','Check update nodemetric String (e)');
+    dies_ok { Entity->get(id => $old_const_id) } 'Old constant comb has been removed';
+
+    $nc_agg_th_left->update (
+        left_combination_id => $ncomb->id,
+        nodemetric_condition_threshold => 21.01,
+    );
+    is (Entity->get(id => $nc_agg_th_left->id)->toString(),'2*RAM used == 21.01','Check update nodemetric String (f)');
+
+    $old_const_id = $nc_agg_th_left->right_combination_id;
+    $nc_agg_th_left->update (
+        left_combination_id => $ncomb->id,
+        nodemetric_condition_threshold => 19.83,
+    );
+    is (Entity->get(id => $nc_agg_th_left->id)->toString(),'2*RAM used == 19.83','Check update nodemetric String (g)');
+    dies_ok { Entity->get(id => $old_const_id) } 'Old constant comb has been removed';
+
+
 }
 
 sub test_two_combinations_on_nodemetric_condition {
@@ -569,13 +611,16 @@ sub test_aggregate_combination {
 
     $cm->update (clustermetric_statistics_function_name => 'min');
     $comb->update (aggregate_combination_formula => '-id'.($cm->id));
-    $ac_left->update (comparator => '==', threshold => '43.12');
+    $ac_left->update (
+        threshold => '21.01',
+        comparator => '==',
+        right_combination_id => $comb2->id,
+    );
 
-    is (Entity->get(id => $ac_left->id)->aggregate_condition_formula_string,'-min(RAM used) == 43.12','Check update formula string (a)');
-    is (Entity->get(id => $ac_right->id)->aggregate_condition_formula_string,'-43.21 < -min(RAM used)','Check update formula string (b)');
-    is (Entity->get(id => $ac_both->id)->aggregate_condition_formula_string,'-min(RAM used) < 2*min(RAM used)','Check update formula string (c)');
-    
-    # Condition are not verified when not linked to a rule
+    is (Entity->get(id => $ac_right->id)->aggregate_condition_formula_string,'-43.21 < -min(RAM used)','Check update formula string (a)');
+    is (Entity->get(id => $ac_both->id)->aggregate_condition_formula_string,'-min(RAM used) < 2*min(RAM used)','Check update formula string (b)');
+    is (Entity->get(id => $ac_left->id)->aggregate_condition_formula_string,'21.01 == 2*min(RAM used)','Check update formula string (c)');
+
 }
 
 sub test_aggregate_rules {
@@ -1021,7 +1066,6 @@ sub test_aggregate_condition_update {
     my $old_constant_comb_id = $ac_left->right_combination_id;
 
     $ac_left->update(
-        aggregate_condition_service_provider_id => $service_provider->id,
         left_combination_id => $comb2->id,
         comparator => '>',
         threshold => '12.35',
@@ -1041,14 +1085,12 @@ sub test_aggregate_condition_update {
 
     $old_constant_comb_id = $ac_right->left_combination_id;
     $ac_right->update(
-        aggregate_condition_service_provider_id => $service_provider->id,
         threshold => '-43.2',
         comparator => '>',
         left_combination_id => $comb2->id,
     );
-    
-    $ac_right = Entity->get (id => $ac_right->id);
 
+    $ac_right = Entity->get (id => $ac_right->id);
     ok (
         $ac_right->left_combination_id == $comb2->id
         && $ac_right->comparator eq '>'
