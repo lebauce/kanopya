@@ -218,6 +218,7 @@ sub new {
 
     my $toString = $self->toString();
     $self->setAttr(name=>'clustermetric_formula_string', value=>$toString);
+    $self->setAttr(name=>'clustermetric_unit', value=>$self->computeUnit());
     if ((! defined $args{clustermetric_label}) || $args{clustermetric_label} eq '') {
         $self->setAttr(name=>'clustermetric_label', value=>$toString);
     }
@@ -245,6 +246,11 @@ sub toString {
 }
 
 sub getUnit {
+    my $self = shift;
+    return $self->clustermetric_unit;
+}
+
+sub computeUnit {
     my $self = shift;
 
     my $stat_func = $self->clustermetric_statistics_function_name;
@@ -370,9 +376,10 @@ sub update {
     my ($self, %args) = @_;
     $self->SUPER::update (%args);
     $self->setAttr(name=>'clustermetric_formula_string', value=>$self->toString());
+    $self->setAttr(name=>'clustermetric_unit', value=>$self->computeUnit());
     $self->save();
     my @combinations = $self->getDependentCombinations;
-    map { $_->updateFormulaString } @combinations;
+    map { $_->updateFormulaString ; $_->updateUnit} @combinations;
     return $self;
 }
 

@@ -158,6 +158,7 @@ sub new {
         $self->setAttr(name=>'nodemetric_combination_label', value => $toString);
     }
     $self->setAttr (name=>'nodemetric_combination_formula_string', value => $toString);
+    $self->setAttr (name=>'combination_unit', value => $self->computeUnit());
     $self->save ();
 
 
@@ -311,16 +312,14 @@ sub computeValueFromMonitoredValues {
 
 =begin classdoc
 
-Return the formula of the combination in which the indicator id is
+Compute the formula of the combination in which the indicator id is
 replaced by its Unit or by '?' when unit is not specified in database
-
-@return the formula of the combination
 
 =end classdoc
 
 =cut
 
-sub getUnit {
+sub computeUnit {
     my $self = shift;
 
     #Split nodemtric_rule id from $formula
@@ -329,17 +328,13 @@ sub getUnit {
     my $ref_element;
     my $are_same_units = 0;
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             $element = Entity::CollectorIndicator->get(id => substr($element,2))->indicator->indicator_unit || '?';
+
             if (not defined $ref_element) {
                 $ref_element = $element;
             } else {
-                if ($ref_element eq $element) {
-                    $are_same_units = 1;
-                } else {
-                    $are_same_units = 0;
-                }
+                $are_same_units = ($ref_element eq $element) ? 1 : 0;
             }
         }
     }
@@ -360,13 +355,13 @@ sub updateFormulaString {
     $self->save ();
     my @conditions = $self->getDependentConditions;
     map { $_->updateFormulaString } @conditions;
-    return $self;
 }
 
 sub update {
     my ($self, %args) = @_;
     my $rep = $self->SUPER::update (%args);
     $self->updateFormulaString;
+    $self->updateUnit;
     return $rep;
 }
 

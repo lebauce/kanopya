@@ -161,6 +161,7 @@ sub new {
     if ((! defined $args{aggregate_combination_label}) || $args{aggregate_combination_label} eq '') {
         $self->setAttr (name=>'aggregate_combination_label', value => $toString);
     }
+    $self->setAttr (name=>'combination_unit', value => $self->computeUnit());
     $self->setAttr (name=>'aggregate_combination_formula_string', value => $toString);
     $self->save ();
     return $self;
@@ -459,14 +460,14 @@ sub checkMissingParams {
 
 =begin classdoc
 
-Return the formula of the combination in which the indicator id is
+Compute the formula of the combination in which the indicator id is
 replaced by its Unit or by '?' when unit is not specified in database
 
 =end classdoc
 
 =cut
 
-sub getUnit {
+sub computeUnit {
     my ($self, %args) = @_;
 
     # Split aggregate_rule id from formula
@@ -475,21 +476,21 @@ sub getUnit {
     my $ref_element;
     my $are_same_units = 0;
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             $element = Entity::Clustermetric->get('id'=>substr($element,2))->getUnit();
 
             if (not defined $ref_element) {
                 $ref_element = $element;
             } else {
-                if ($ref_element eq $element) {
-                    $are_same_units = 1;
-                } else {
-                    $are_same_units = 0;
-                }
+                $are_same_units = ($ref_element eq $element) ? 1 : 0;
             }
         }
     }
+
+    # Warning, this code works only when combination is composed by + or - operator
+    # return wrong value when composed by / or *
+    # TODO improve
+
     if ($are_same_units == 1) {
         @array = $ref_element;
     }
@@ -581,7 +582,6 @@ sub updateFormulaString {
     $self->save ();
     my @conditions = $self->getDependentConditions;
     map { $_->updateFormulaString } @conditions;
-    return $self;
 }
 
 
@@ -589,6 +589,7 @@ sub update {
     my ($self, %args) = @_;
     my $rep = $self->SUPER::update (%args);
     $self->updateFormulaString;
+    $self->updateUnit;
     return $rep;
 }
 

@@ -115,4 +115,17 @@ sub combination_formula_string {
     return undef;
 }
 
+sub getUnit {
+    my $self = shift;
+    return $self->combination_unit;
+}
+
+sub updateUnit {
+    my $self = shift;
+    $self->setAttr (name=>'combination_unit', value => $self->computeUnit());
+    $self->save ();
+}
+
+sub computeUnit {
+}
 1;
