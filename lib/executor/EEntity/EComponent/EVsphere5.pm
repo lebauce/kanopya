@@ -14,6 +14,16 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+EVsphere
+
+=end classdoc
+
+=cut
+
 package EEntity::EComponent::EVsphere5;
 
 use base "EEntity::EComponent";
