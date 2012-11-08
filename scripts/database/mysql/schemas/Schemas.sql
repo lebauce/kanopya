@@ -1285,6 +1285,7 @@ CREATE TABLE `nodemetric_combination` (
   `nodemetric_combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `nodemetric_combination_label` char(255),
   `nodemetric_combination_formula` char(255) NOT NULL,
+  `nodemetric_combination_formula_string` TEXT NOT NULL,
   FOREIGN KEY (`nodemetric_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
@@ -1352,6 +1353,7 @@ CREATE TABLE `nodemetric_condition` (
   `left_combination_id` int(8) unsigned NOT NULL,
   `right_combination_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_comparator` char(32) NOT NULL,
+  `nodemetric_condition_formula_string` TEXT NOT NULL,
   PRIMARY KEY (`nodemetric_condition_id`),
   KEY (`left_combination_id`),
   KEY (`right_combination_id`),
@@ -1371,6 +1373,7 @@ CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_label` char(255),
   `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_formula` char(255) NOT NULL,
+  `nodemetric_rule_formula_string` TEXT NOT NULL,
   `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_state` char(32) NOT NULL,
