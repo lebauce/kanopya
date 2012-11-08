@@ -434,4 +434,9 @@ sub update {
     return $rep;
 }
 
+sub delete {
+    my $self = shift;
+    $self->workflow_def->delete();
+    $self->SUPER::delete();
+}
 1;

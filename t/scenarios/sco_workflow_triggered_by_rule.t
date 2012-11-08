@@ -358,6 +358,17 @@ eval{
         });
     } 'Check service WorkflowNoderule has been deleted';
 
+    my $wf1;
+    my $wf2;
+    lives_ok { $wf1 = Entity->get(id=>$rule2->id)->workflow_def } 'Check workflow def';
+    lives_ok { $wf2 = Entity->get(id=>$arule2->id)->workflow_def } 'Check workflow def';
+
+    $rule2->delete();
+    $arule2->delete();
+
+    dies_ok { WorkflowDef->get(id => $wf1->id)} 'Check workflow def deleted';
+    dies_ok { WorkflowDef->get(id => $wf2->id)} 'Check workflow def deleted';
+
     #$adm->commitTransaction;
     $adm->rollbackTransaction;
 };
