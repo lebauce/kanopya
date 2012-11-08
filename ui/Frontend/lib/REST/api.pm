@@ -239,8 +239,13 @@ sub getResources {
 
     $rows = (defined ($params{dataType}) && $params{dataType} eq "hash") ?
                 $result->{rows} : $result;
-    for my $obj (@$rows) {
-        push @$objs, $obj->toJSON(virtuals => 1, expand => $params{prefetch});
+    if (ref $rows eq "ARRAY") {
+        for my $obj (@$rows) {
+            push @$objs, $obj->toJSON(virtuals => 1, expand => $params{prefetch});
+        }
+    }
+    else {
+        return $result->toJSON(virtuals => 1, expand => $params{prefetch});
     }
 
     if (defined ($params{dataType}) && $params{dataType} eq "hash") {

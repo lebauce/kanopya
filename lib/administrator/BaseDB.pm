@@ -919,6 +919,7 @@ sub getJoinQuery {
     my $source = $class->getResultSource;
     my $on = "";
     my $relation;
+    my $accessor = "single";
 
     my @joins;
     my $i = 0;
@@ -928,13 +929,7 @@ sub getJoinQuery {
                            defined ($source->result_class->_m2m_metadata->{$comp});
         my @segment = ();
 
-        if ($many_to_many) {
-            splice @comps, $i, 1, ($source->result_class->_m2m_metadata->{$comp}->{relation},
-                                   $source->result_class->_m2m_metadata->{$comp}->{foreign_relation});
-            next;
-        }
-
-        while (!$source->has_relationship($comp)) {
+        while (!$source->has_relationship($comp) && !$many_to_many) {
             if ($args{reverse}) {
                 $relation = $source->reverse_relationship_info("parent");
                 @segment = ((keys %$relation)[0], @segment);
@@ -944,6 +939,16 @@ sub getJoinQuery {
             }
             last if ! $source->has_relationship("parent");
             $source = $source->related_source("parent");
+            $many_to_many = $source->result_class->can("_m2m_metadata") &&
+                            defined ($source->result_class->_m2m_metadata->{$comp});
+        }
+
+        if ($source->result_class->can("_m2m_metadata") &&
+            defined ($source->result_class->_m2m_metadata->{$comp})) {
+            splice @comps, $i, 1, ($source->result_class->_m2m_metadata->{$comp}->{relation},
+                                   $source->result_class->_m2m_metadata->{$comp}->{foreign_relation});
+            @joins = (@joins, @segment);
+            next;
         }
 
         if ($args{reverse}) {
@@ -956,6 +961,11 @@ sub getJoinQuery {
         }
         else {
             @joins = (@joins, @segment, $comp);
+        }
+
+        $relation = $source->relationship_info($comp);
+        if ($relation->{attrs}->{accessor} eq "multi") {
+            $accessor = "multi";
         }
 
         $source = $source->related_source($comp);
@@ -978,9 +988,10 @@ sub getJoinQuery {
         $joins = { $comp => $joins };
     }
 
-    return { source => $source,
-             join   => $joins,
-             on     => $on };
+    return { source   => $source,
+             join     => $joins,
+             on       => $on,
+             accessor => $accessor };
 }
 
 
@@ -1118,9 +1129,10 @@ sub searchRelated {
     my $searched_class = classFromDbix($join->{source});
     requireClass($searched_class);
 
-    return $searched_class->search(%args, raw_hash => { $join->{on} => $args{id} },
-                                          hash     => $args{hash},
-                                          join     => $join->{join});
+    my $method = $join->{accessor} eq "single" ? "find" : "search";
+    return $searched_class->$method(%args, raw_hash => { $join->{on} => $args{id} },
+                                           hash     => $args{hash},
+                                           join     => $join->{join});
 }
 
 =pod
@@ -1702,7 +1714,7 @@ sub getClassHierarchy {
     my @supers = Class::ISA::super_path($classpath);
 
     my @hierarchy;
-    if ($supers[0] eq 'BaseDB') {
+    if (defined ($supers[0]) && $supers[0] eq 'BaseDB') {
         @hierarchy = _buildClassNameFromString($classpath);
     }
     else {
