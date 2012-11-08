@@ -592,4 +592,28 @@ sub update {
     return $rep;
 }
 
+=pod
+
+=begin classdoc
+
+Delete the object and all the conditions which depend on it.
+
+=end classdoc
+
+=cut
+
+sub delete {
+    my $self = shift;
+    my @conditions = (
+        $self->aggregate_condition_left_combinations,
+        $self->aggregate_condition_right_combinations,
+        $self->nodemetric_condition_left_combinations,
+        $self->nodemetric_condition_right_combinations,
+    );
+
+    while (@conditions) {
+        (pop @conditions)->delete();
+    }
+    return $self->SUPER::delete();
+};
 1;

@@ -43,42 +43,18 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 0
     },
-    service_provider_id =>  {
+    service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
         is_editable     => 1
     },
+    combination_formula_string => {
+        is_virtual => 1,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-
-=pod
-
-=begin classdoc
-
-Delete the object and all the conditions which depend on it.
-
-=end classdoc
-
-=cut
-
-sub delete {
-    my $self = shift;
-    my @conditions = (
-        $self->aggregate_condition_left_combinations,
-        $self->aggregate_condition_right_combinations,
-        $self->nodemetric_condition_left_combinations,
-        $self->nodemetric_condition_right_combinations,
-    );
-
-    while (@conditions) {
-        (pop @conditions)->delete();
-    }
-    return $self->SUPER::delete();
-};
-
 
 =pod
 
@@ -129,7 +105,8 @@ a ConstantCombination. Also used to avoid deep recursion.
 
 =cut
 
-sub deleteIfConstant {};
+sub deleteIfConstant {
+};
 
 sub combination_formula_string {
     return undef;
