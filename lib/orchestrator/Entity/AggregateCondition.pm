@@ -270,32 +270,50 @@ sub update {
                                   $args{aggregate_condition_service_provider_id} :
                                   $self->aggregate_condition_service_provider_id ;
 
-    my $left_combi  = $self->left_combination;
-    my $right_combi = $self->right_combination;
+    my $two_attributes = 0;
+    if (defined $args{threshold}) { $two_attributes++; }
+    if (defined $args{left_combination_id}) { $two_attributes++; }
+    if (defined $args{right_combination_id}) { $two_attributes++; }
 
-    if ((! defined $args{right_combination_id}) && defined $args{threshold}) {
-        my $comb = Entity::Combination::ConstantCombination->new (
-            service_provider_id => $service_provider_id,
-            value => $args{threshold},
-        );
-        delete $args{threshold};
-        $args{right_combination_id} = $comb->id;
+    if ($two_attributes == 0) {
+        my $rep = $self->SUPER::update (%args);
+        $rep->updateFormulaString;
+        return $rep;
     }
 
-    if ((! defined $args{left_combination_id}) && defined $args{threshold}) {
-        my $comb = Entity::Combination::ConstantCombination->new (
+    if ( $two_attributes != 2) {
+        my $error = 'When updating nodemetric condition, have to specify two attributes between '.
+                    'nodemetric_condition_threshold, left_combination_id and right_combination';
+        throw Kanopya::Exception::Internal::WrongValue(error => $error);
+    }
+
+    my $old_left_combination = $self->left_combination;
+    my $old_right_combination = $self->right_combination;
+
+    if (! defined $args{left_combination_id}) {
+        my $new_left_combination =  Entity::Combination::ConstantCombination->new (
             service_provider_id => $service_provider_id,
-            value => $args{threshold},
+            value => $args{threshold}
         );
         delete $args{threshold};
-        $args{left_combination_id} = $comb->id;
+        $args{left_combination_id} = $new_left_combination->id;
+    }
+    elsif (! defined $args{right_combination_id}) {
+        my $new_right_combination =  Entity::Combination::ConstantCombination->new (
+            service_provider_id => $service_provider_id,
+            value => $args{threshold}
+        );
+        delete $args{threshold};
+        $args{right_combination_id} = $new_right_combination->id;
+    }
+    else {
+        # do nothing, update will just replace both ids with right and left combination ids
     }
 
     my $rep = $self->SUPER::update (%args);
-    $left_combi->deleteIfConstant;
-    $right_combi->deleteIfConstant;
-
     $rep->updateFormulaString;
+    $old_left_combination->deleteIfConstant();
+    $old_right_combination->deleteIfConstant();
     return $rep;
 }
 
