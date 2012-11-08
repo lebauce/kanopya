@@ -60,7 +60,7 @@ sub getAvailableMemory {
                   );
 
     #get vsphere hypervisor's view
-    my $view_args       = {name => $self->node->externalnode_hostname};
+    my $view_args       = {'hardware.systemInfo.uuid' => $self->vsphere5_uuid};
     my $hypervisor_view = $vsphere->findEntityView(
                               view_type    => 'HostSystem',
                               hash_filter  => $view_args,
@@ -116,7 +116,7 @@ sub getVmResources {
 
     my $vsphere = $self->vsphere5;
 
-    my $view_args       = {name => $self->host_hostname};
+    my $view_args       = {'hardware.systemInfo.uuid' => $self->vsphere5_uuid};
     my $hypervisor_view = $vsphere->findEntityView(
                               view_type   => 'HostSystem',
                               hash_filter => $view_args,
@@ -136,7 +136,7 @@ sub getVmResources {
     foreach my $vm (@vms) {
         my $vm_view = $vsphere->findEntityView(
                           view_type    => 'VirtualMachine',
-                          hash_filter  => {name => $vm->node->externalnode_hostname},
+                          hash_filter  => {'config.uuid' => $vm->vsphere5_uuid},
                           begin_entity => $hypervisor_view,
                       );
 

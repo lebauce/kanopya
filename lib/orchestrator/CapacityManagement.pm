@@ -96,8 +96,8 @@ sub new {
             throw Kanopya::Exception(error => 'No cloud manager, nor cluster, nor hypervisor id, Capacity Manager cannot construct infra');
         }
 
-        $self->{_admin}                 = Administrator->new();
-        $self->{_infra}                 = $self->_constructInfra();
+        $self->{_admin} = Administrator->new();
+        $self->{_infra} = $self->_constructInfra();
 
         # Get availble memory for all cloud manager hosts (hypervisors)
         my $overcommitment_factors =  $self->{_cloud_manager}->getOvercommitmentFactors();
