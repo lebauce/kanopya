@@ -823,13 +823,8 @@ sub get {
     General::checkParams(args => \%args, required => [ 'id' ],
                                          optional => { 'prefetch' => [ ] });
 
-    my $self;
-    my $pk = $class->getPrimaryKey;
-
-    $self = $class->find(hash     => { "me.$pk" => $args{id} },
-                         prefetch => $args{prefetch});
-
-    return $self;
+    return $class->find(hash     => { 'me.' . $class->getPrimaryKey => $args{id} },
+                        prefetch => $args{prefetch});
 }
 
 =pod
@@ -2006,7 +2001,9 @@ By default, permissions are checked on the entity itself.
 sub getDelegatee {
     my $self = shift;
 
-    return $self;
+    throw Kanopya::Exception::NotImplemented(
+              error => "Non entity classes must implement getDelegatee for perimssions check."
+          );
 }
 
 
@@ -2038,10 +2035,10 @@ sub methodCall {
     # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
     my ($granted, $perm_holder_id);
     if ($class) {
-        $perm_holder_id = $self->id;
+        $perm_holder_id = $self->getDelegatee->id;
     }
     else {
-        $perm_holder_id = $self->getMasterGroup->id;
+        $perm_holder_id = $self->getDelegatee->getMasterGroup->id;
     }
 
     # Check the permissions for the logged user
