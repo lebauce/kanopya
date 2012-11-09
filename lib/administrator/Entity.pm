@@ -177,42 +177,6 @@ sub asString {
     return ref $self, " ( ",  @s,  " )";
 }
 
-=head2 getPerms
-
-    class : public
-
-    desc : return a structure describing method permissions for the current authenticated user.
-        If called on a class, return methods permissions holded by mastergroup only.
-        Else return all methods permissions.
-
-    return : hash ref
-
-=cut
-
-sub getPerms {
-    my $self = shift;
-    my $class = ref $self;
-    my $adm = Administrator->new();
-    my $mastergroupeid = $self->getMasterGroup->id;
-    my $methods = $self->methods();
-    my $granted;
-
-    foreach my $m (keys %$methods) {
-        if($methods->{$m}->{'perm_holder'} eq 'mastergroup') {
-            $granted = $adm->getRightChecker->checkPerm(entity_id => $mastergroupeid, method => $m);
-            $methods->{$m}->{'granted'} = $granted;
-        }
-        elsif($class and $methods->{$m}->{'perm_holder'} eq 'entity') {
-            $granted = $adm->getRightChecker->checkPerm(entity_id => $self->id, method => $m);
-            $methods->{$m}->{'granted'} = $granted;
-        }
-        else {
-            delete $methods->{$m};
-        }
-    }
-    #$log->debug(Dumper $methods);
-    return $methods;
-}
 
 =head2 addPerm
 
