@@ -44,15 +44,21 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    disk_type => {
+        is_virtual => 1
+    },
+    export_type => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getExportType {
-    return "NFS export";
+sub exportType {
+    return "NFS repository";
 }
 
-sub getDiskType {
+sub diskType {
     return "Virtual machine disk";
 }
 

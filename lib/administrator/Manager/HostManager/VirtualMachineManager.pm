@@ -131,13 +131,8 @@ sub hypervisors {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 getHostType
 
-    Desc: return the type of the host managed by this host manager
-
-=cut
-
-sub getHostType {
+sub hostType {
     return "Virtual Machine";
 }
 

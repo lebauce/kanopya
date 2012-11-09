@@ -40,16 +40,6 @@ use constant BOOT_POLICIES => {
     boot_on_san  => 'BootOnSan',
 };
 
-sub methods {
-    return {
-        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
-        getHostType => {
-            description => 'Return the type of managed hosts.',
-            perm_holder => 'entity',
-        },
-    };
-}
-
 =head2 checkHostManagerParams
 
 =cut
@@ -212,13 +202,7 @@ sub getBootPolicies {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 getHostType
-
-    Desc: return the name of the host managed by this host manager
-
-=cut
-
-sub getHostType {
+sub hostType {
     return "Host";
 }
 

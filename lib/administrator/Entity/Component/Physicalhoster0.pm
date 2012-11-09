@@ -32,7 +32,12 @@ use IO::Socket;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    # TODO: move this virtual attr to HostManager attr def when supported
+    host_type => {
+        is_virtual => 1
+    }
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -41,7 +46,7 @@ sub getBootPolicies {
             Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
 }
 
-sub getHostType {
+sub hostType {
     return "Physical host";
 }
 

@@ -44,11 +44,14 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 0,
     },
+    disk_type => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getDiskType {
+sub diskType {
     return "LVM logical volume";
 }
 

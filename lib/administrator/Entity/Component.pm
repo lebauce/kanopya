@@ -32,24 +32,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-=head2 new
-
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of component entity.
-          This is an abstract class, DO NOT instantiate it.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component from parameters.
-B<Comment>  : 
-To save data in DB call save() on returned obj (after modification)
-Like all component, instantiate it creates a new empty component instance.
-You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
 use constant ATTR_DEF => {
     service_provider_id => {
         pattern        => '^\d*$',
@@ -70,6 +52,10 @@ use constant ATTR_DEF => {
         is_editable    => 0
     },
     priority => {
+        is_virtual => 1
+    },
+    # TODO: move this virtual attr to HostManager attr def when supported
+    host_type => {
         is_virtual => 1
     }
 };
@@ -285,5 +271,10 @@ sub getNetConf {}
 sub needBridge { return 0; }
 sub getHostsEntries { return; }
 sub getPuppetDefinition { return ""; }
+
+# TODO: move this virtual attr to HostManager attr def when supported
+sub hostType  {
+    return "";
+}
 
 1;

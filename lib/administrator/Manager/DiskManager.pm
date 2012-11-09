@@ -33,11 +33,6 @@ my $errmsg;
 sub methods {
     return {
         # TODO(methods): Remove this method from the api once the policy ui has been reviewed
-        getDiskType => {
-            description => 'get the type of managed disks.',
-            perm_holder => 'entity',
-        },
-        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
         getExportManagers => {
             description => 'get thje available export manager for this disk manager.',
             perm_holder => 'entity',
@@ -113,6 +108,10 @@ sub getExportManagers {
     my %args = @_;
 
     return [];
+}
+
+sub diskType {
+    return '';
 }
 
 1;

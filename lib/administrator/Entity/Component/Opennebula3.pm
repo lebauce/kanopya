@@ -137,6 +137,10 @@ use constant ATTR_DEF => {
         relation    => 'single_multi',
         is_editable => 0,
     },
+    # TODO: move this virtual attr to HostManager attr def when supported
+    host_type => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -241,10 +245,6 @@ sub getBootPolicies {
     return (Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
             Manager::HostManager->BOOT_POLICIES->{pxe_nfs},
             Manager::HostManager->BOOT_POLICIES->{virtual_disk});
-}
-
-sub getHostType {
-    return "Virtual Machine";
 }
 
 sub getConf {

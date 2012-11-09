@@ -46,8 +46,8 @@ use VMware::VIRuntime;
 
 use General;
 use Kanopya::Exceptions;
-use Vsphere5Repository;
-use Vsphere5Datacenter;
+use Entity::Component::Vsphere5::Vsphere5Repository;
+use Entity::Component::Vsphere5::Vsphere5Datacenter;
 use Entity::User;
 use Entity::Policy;
 use Entity::ServiceTemplate;
@@ -78,6 +78,10 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_extended  => 0
+    },
+    # TODO: move this virtual attr to HostManager attr def when supported
+    host_type => {
+        is_virtual => 1
     }
 };
 

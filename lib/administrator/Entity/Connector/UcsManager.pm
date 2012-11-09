@@ -32,7 +32,12 @@ use Cisco::UCS;
 use Cisco::UCS::VLAN;
 use Log::Log4perl "get_logger";
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    # TODO: move this virtual attr to HostManager attr def when supported
+    host_type => {
+        is_virtual => 1
+    }
+};
 
 my ($schema, $config, $oneinstance);
 my $log = get_logger("");
@@ -62,7 +67,7 @@ sub getBootPolicies {
             Manager::HostManager->BOOT_POLICIES->{boot_on_san});
 }
 
-sub getHostType {
+sub hostType {
     return "UCS blade";
 }
 

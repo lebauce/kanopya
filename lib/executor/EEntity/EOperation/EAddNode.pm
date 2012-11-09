@@ -65,7 +65,7 @@ sub prerequisites {
     }
 
     my $cluster = $self->{context}->{cluster};
-    my $host_type = $cluster->getHostManager()->getHostType();
+    my $host_type = $cluster->getHostManager->hostType;
 
     if($host_type eq 'Virtual Machine') {
 
