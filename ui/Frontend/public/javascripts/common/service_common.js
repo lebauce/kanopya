@@ -63,19 +63,17 @@ function addResourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, sp
         $(cellContent).append($('<img>', { rel : 'ok', src : '/images/icons/up.png' })).append(ok);
         $(cellContent).append($('<img>', { rel : 'notok', src : '/images/icons/broken.png' })).append(notok);
         $(cellContent).append($('<img>', { rel : 'undef', src : '/images/icons/down.png' })).append(undef);
-        var req_data = { 'externalnode_id' : rowdata.pk };
-        req_data[ext + 'cluster_id'] = sp_id;
         $.ajax({
-            url         : '/api/nodemetricrule/' + nodemetricrules[i].pk + '/isVerifiedForANode',
-            type        : 'POST',
+            url         : '/api/nodemetricrule/' + nodemetricrules[i].pk + '/verified_noderules?verified_noderule_externalnode_id='+rowdata.pk,
             contentType : 'application/json',
-            data        : JSON.stringify(req_data),
             success     : function(data) {
-                if (parseInt(data) === 0) {
-                    $(ok).text(parseInt($(ok).text()) + 1);
-                } else if (parseInt(data) === 1) {
+                var verified_node_rule = data[0];
+                if (verified_node_rule === undefined) {
+                    // Do not show green light for lisibility
+                    //$(ok).text(parseInt($(ok).text()) + 1);
+                } else if (verified_node_rule.verified_noderule_state === 'verified') {
                     $(notok).text(parseInt($(notok).text()) + 1);
-                } else if (data === null) {
+                } else if (verified_node_rule.verified_noderule_state === 'undef') {
                     $(undef).text(parseInt($(undef).text()) + 1);
                 }
                 if (parseInt($(ok).text()) <= 0) { $(cellContent).find('*[rel="ok"]').css('display', 'none'); } else { $(cellContent).find('*[rel="ok"]').css('display', 'inline'); }
