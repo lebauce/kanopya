@@ -94,33 +94,18 @@ eval{
         }
     );
 
+
+
     test_aggregate_condition_update();
     test_nodemetric_condition_update();
     test_aggregate_combination();
+    test_aggregate_rules_undef();
     test_aggregate_rules();
     test_two_combinations_on_nodemetric_condition();
     test_aggregate_combination_on_nodemetric_condition();
     test_nodemetric_condition();
     test_nodemetric_rules();
-
-    my @cms = Entity::Clustermetric->search (hash => {});
-    
-    my @cm_ids = map {$_->id} @cms;
-    for my $cm_id (@cm_ids) {
-        lives_ok {
-            open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd');
-            close(FILE);
-        } 'Check rrd '.($cm_id).' is present';
-    }
-    while (@cms) { (pop @cms)->delete(); };
-
-    is (scalar Entity::Combination::AggregateCombination->search (hash => {}), 0, 'Check all aggregate combinations are deleted');
-    is (scalar Entity::AggregateRule->search (hash => {}), 0, 'Check all aggregate rules are deleted');
-
-    for my $cm_id (@cm_ids) {
-        ok (! defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd'), 'Check rrd '.($cm_id).' has been removed');
-        close(FILE);
-    }
+    test_rrd_remove();
     $adm->rollbackTransaction;
     #$adm->commitTransaction();
 };
@@ -130,6 +115,31 @@ if($@) {
     print $error."\n";
 }
 
+sub test_rrd_remove {
+    my @cms = Entity::Clustermetric->search (hash => {
+        clustermetric_service_provider_id => $service_provider->id
+    });
+    
+    my @cm_ids = map {$_->id} @cms;
+    while (@cms) { (pop @cms)->delete(); };
+
+    is (scalar Entity::Combination::AggregateCombination->search (hash => {
+        service_provider_id => $service_provider->id
+    }), 0, 'Check all aggregate combinations are deleted');
+
+    is (scalar Entity::AggregateRule->search (hash => {
+        aggregate_rule_service_provider_id => $service_provider->id
+    }), 0, 'Check all aggregate rules are deleted');
+
+    my $one_rrd_remove = 0;
+    for my $cm_id (@cm_ids) {
+        if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+            $one_rrd_remove++;
+        }
+        close(FILE);
+    }
+    ok ($one_rrd_remove == 0, "Check all have been removed, still $one_rrd_remove rrd");
+}
 sub test_nodemetric_condition {
     # Clustermetric
     my $cm = Entity::Clustermetric->new(
@@ -529,12 +539,62 @@ sub test_nodemetric_rules {
         });
     } 'Check node undef in db - rule 2';
 
-    
-
     test_not_n();
     test_or_n();
     test_and_n();
     test_big_formulas_n();
+}
+
+sub test_aggregate_rules_undef {
+
+    my $cm = Entity::Clustermetric->new(
+        clustermetric_service_provider_id => $service_provider->id,
+        clustermetric_indicator_id => ($indic1->id),
+        clustermetric_statistics_function_name => 'sum',
+        clustermetric_window_time => '1200',
+    );
+
+    my $comb = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm->id),
+    );
+
+    my $ac = Entity::AggregateCondition->new(
+        aggregate_condition_service_provider_id => $service_provider->id,
+        left_combination_id => $comb->id,
+        comparator => '>',
+        threshold => '0',
+    );
+
+    my $rule = Entity::AggregateRule->new(
+        aggregate_rule_service_provider_id => $service_provider->id,
+        aggregate_rule_formula => 'id'.$ac->id,
+        aggregate_rule_state => 'enabled'
+    );
+
+    sleep(2);
+    $aggregator->update();
+    $orchestrator->manage_aggregates();
+
+    ok (defined $comb->computeLastValue(), 'cm ok, check cm');
+    is ($ac->eval(), 1, 'cm ok, check condition');
+    is (Entity->get(id=>$ac->id)->last_eval, 1, 'cm ok, check condition');
+    is (Entity->get(id=>$rule->id)->aggregate_rule_last_eval, 1, 'cm ok, check rule');
+
+    $service_provider->addManagerParameter(
+        manager_type    => 'collector_manager',
+        name            => 'mockmonit_config',
+        value           =>  "{'default':{'const':null}}",
+    );
+
+    sleep(2);
+    $aggregator->update();
+    $orchestrator->manage_aggregates();
+
+    ok (! defined $comb->computeLastValue(), 'Undef cm, check cm');
+    ok (! defined Entity->get(id=>$ac->id)->last_eval, 'Undef cm, check condition (a)');
+    ok (! defined Entity->get(id=>$ac->id)->eval(), 'Undef cm, check condition (b)' );
+    ok (! defined Entity->get(id=>$rule->id)->aggregate_rule_last_eval, 'Undef cm, check rule');
 }
 
 sub test_aggregate_combination {
