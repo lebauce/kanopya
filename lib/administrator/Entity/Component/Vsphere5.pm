@@ -1620,7 +1620,7 @@ sub formatName {
 
     General::checkParams(args => \%args, required => ['name']);
 
-    (my $name = $args{name}) =~ s/[^\w\d+]/_/g;
+    (my $name = $args{name}) =~ s/[^\w\d]/_/g;
 
     return $name;
 }

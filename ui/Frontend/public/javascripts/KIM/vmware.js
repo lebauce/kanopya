@@ -20,21 +20,27 @@ function buildNodes (rawData, parentName, parentType, grandParentName) {
                 'parent_name'   :   parentName,
             },
         };
-        //TODO always treeType except in formatCheckedNodes
-        //'treeType' used for display
-        //'type' : property to be returned
+        //'treeType' : used for display & 'type' : property to be returned
         if (node.type == 'vm') {
             treenode.attr['type'] = node.type;
+            //Only VM and Hypervisors have UUID
+            treenode.attr['uuid'] = node.uuid;
         }
         else {
             //Other nodes than VMs can be opened (they may contain children)
             treenode.state = 'closed';
             if (node.type == 'clusterHypervisor') {
                 treenode.attr['type'] = 'hypervisor';
-                treenode.attr['grand_parent_name'] = grandParentName;
+                //Only VM and Hypervisors have UUID
+                treenode.attr['uuid'] = node.uuid;
+                treenode.attr['grand_parent_name'] = grandParentName;//to save Datacenter Name of Hypervisor
             }
             else {
                 treenode.attr['type'] = node.type;
+                if (node.type == 'hypervisor') {
+                    //Only VM and Hypervisors have UUID
+                    treenode.attr['uuid'] = node.uuid;
+                }
             }
         }
         if (node.registered == 1) {//Item already registered
@@ -55,6 +61,7 @@ function formatCheckedNodes (nodes) {
             var formattedNode = {
                 name        : node.attr('name'),
                 type        : node.attr('type'),
+                uuid        : node.attr('uuid'),
                 children    : formatCheckedNodes(node.children('ul').children('li')),
             };
             tree.push(formattedNode);
@@ -71,7 +78,6 @@ function vmwareBrowser (event) {
     var browser        = $('<div>');
     var tree_container = $('<div>', {id : 'vmware_tree'});
 
-    //TODO Get ID directly from Kanopya (VirtualMachineManager)
     //Get the vSphere Component ID
     var vsphere_component_id;
     $.ajax( {
@@ -139,25 +145,32 @@ function vmwareBrowser (event) {
                         if ( current_node.attr('treeType') == 'datacenter' ) {
                             //Retrieve Clusters and Hypervisors on a Datacenter
                             data_sent = {
-                               'datacenter_name'    :    current_node.attr('name'),
+                                'datacenter_name'    :    current_node.attr('name'),
                             };
                             grandParentNodeTreeName = null;
                         }
                         else if ( current_node.attr('treeType') == 'cluster' ) {
                             //Retrieve Hypervisors on a Cluster
                             data_sent = {
-                               'datacenter_name'    :    current_node.attr('parent_name'),
-                               'cluster_name'       :    current_node.attr('name'),
+                                'datacenter_name'    :    current_node.attr('parent_name'),
+                                'cluster_name'       :    current_node.attr('name'),
                             };
                             //We save datacenter name for Hypervisor
                             grandParentNodeTreeName = current_node.attr('parent_name');
                         }
-                        else if ( current_node.attr('treeType') == 'clusterHypervisor' ||
-                                  current_node.attr('treeType') == 'hypervisor' ) {
+                        else if ( current_node.attr('treeType') == 'clusterHypervisor') {
                             //Retrieve Virtual Machines on an Hypervisor hosted on a Cluster
                             data_sent = {
-                               'datacenter_name'    :    current_node.attr('grand_parent_name'),
-                               'hypervisor_name'    :    current_node.attr('name'),
+                                'datacenter_name'    :    current_node.attr('grand_parent_name'),
+                                'hypervisor_name'    :    current_node.attr('name'),
+                            };
+                            grandParentNodeTreeName = null;
+                        }
+                        else if ( current_node.attr('treeType') == 'hypervisor' ) {
+                            //Retrieve Virtual Machines on an Hypervisor hosted on a Cluster
+                            data_sent = {
+                                'datacenter_name'    :    current_node.attr('parent_name'),
+                                'hypervisor_name'    :    current_node.attr('name'),
                             };
                             grandParentNodeTreeName = null;
                         }
@@ -195,9 +208,7 @@ function vmwareBrowser (event) {
                 var firstLevelTree = $(tree_container).children('ul').children('li');
                 var formattedCheckedNodes = formatCheckedNodes(firstLevelTree);
 
-                //TODO Check length if > 0
                 //Send Formatted checked nodes to API to be inserted in Kanopya Database
-
                 $.ajax({
                     type        :   'POST',
                     url         :   url_base + '/register',
