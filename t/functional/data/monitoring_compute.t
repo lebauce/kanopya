@@ -146,7 +146,7 @@ sub testClusterMetric {
         value           => "{'nodes' : { 'node_1' : { 'const':null }, 'node_2' : { 'const':null }}}"
     );
     $aggregator->update();
-    is($cm->getLastValueFromDB(), 'U', 'Do not store when all values undef');
+    ok (! defined $cm->getLastValueFromDB(), 'Do not store when all values undef');
 
     # All node responds
     $service_provider->addManagerParameter(
