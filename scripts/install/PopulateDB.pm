@@ -216,7 +216,7 @@ sub registerUsers {
           desc    => 'User master group containing all users',
           system  => 1,
           methods => {
-              'Sales' => [ 'setProfiles' ],
+              'Sales' => [ 'setProfiles', 'create', 'update', 'remove', 'get' ],
         }},
         { name    => 'Processormodel',
           type    => 'Processormodel',
@@ -235,7 +235,7 @@ sub registerUsers {
           desc    => 'ServiceProvider master group containing all service providers',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getServiceProfile', 'addManager' ],
+              'ServiceDeveloper' => [ 'addManager', 'create', 'remove' ],
         }},
         { name    => 'Cluster',
           type    => 'Cluster',
@@ -265,28 +265,32 @@ sub registerUsers {
           desc    => 'Component group containing all components',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers' ]
+              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
+              'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
         }},
         { name    => 'Connector',
           type    => 'Connector',
           desc    => 'Connector group containing all connectors',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers' ]
+              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
+              'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
         }},
         { name    => 'Policy',
           type    => 'Policy',
           desc    => 'Policy group containing all policies',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getFlattenedHash' ]
+              'ServiceDeveloper' => [ 'getFlattenedHash', 'get' ],
+              'Sales'            => [ 'getFlattenedHash', 'get' ]
         }},
         { name    => 'ServiceTemplate',
           type    => 'ServiceTemplate',
           desc    => 'ServiceTemplate group containing all service templates',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'create', 'update', 'remove', 'get' ]
+              'ServiceDeveloper' => [ 'create', 'update', 'remove', 'get' ],
+              'Sales'            => [ 'get' ]
           }
         },
         { name    => 'Network',
@@ -315,7 +319,7 @@ sub registerUsers {
         BaseDB::requireClass($classtype);
 
         my $parenttype = BaseDB::_parentClass($classtype);
-        my $methods    = $classtype->methods();
+        my $methods    = $classtype->getMethods();
         for my $parentmethod (keys $parenttype->getMethods()) {
             delete $methods->{$parentmethod};
         }
