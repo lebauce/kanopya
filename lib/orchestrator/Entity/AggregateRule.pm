@@ -223,6 +223,8 @@ sub eval {
         if ($element =~ m/id(\d+)/) {
             $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->eval();
             if( !defined $element) {
+                $self->setAttr(name => 'aggregate_rule_last_eval', value=>undef);
+                $self->save();
                 return undef;
             }
         }
