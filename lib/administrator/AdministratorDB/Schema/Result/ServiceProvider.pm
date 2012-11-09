@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::ServiceProvider;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::ServiceProvider
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<service_provider>
 
 =cut
 
@@ -45,26 +65,20 @@ __PACKAGE__->add_columns(
   "service_provider_name",
   { data_type => "char", is_nullable => 1, size => 32 },
 );
-__PACKAGE__->set_primary_key("service_provider_id");
 
-=head1 RELATIONS
+=head1 PRIMARY KEY
 
-=head2 combinations
+=over 4
 
-Type: has_many
+=item * L</service_provider_id>
 
-Related object: L<AdministratorDB::Schema::Result::Combination>
+=back
 
 =cut
 
-__PACKAGE__->has_many(
-  "combinations",
-  "AdministratorDB::Schema::Result::Combination",
-  {
-    "foreign.service_provider_id" => "self.service_provider_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+__PACKAGE__->set_primary_key("service_provider_id");
+
+=head1 RELATIONS
 
 =head2 aggregate_conditions
 
@@ -132,6 +146,36 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 collects
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Collect>
+
+=cut
+
+__PACKAGE__->has_many(
+  "collects",
+  "AdministratorDB::Schema::Result::Collect",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 combinations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Combination>
+
+=cut
+
+__PACKAGE__->has_many(
+  "combinations",
+  "AdministratorDB::Schema::Result::Combination",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 components
 
 Type: has_many
@@ -143,6 +187,68 @@ Related object: L<AdministratorDB::Schema::Result::Component>
 __PACKAGE__->has_many(
   "components",
   "AdministratorDB::Schema::Result::Component",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 connectors
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Connector>
+
+=cut
+
+__PACKAGE__->has_many(
+  "connectors",
+  "AdministratorDB::Schema::Result::Connector",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 dashboard
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Dashboard>
+
+=cut
+
+__PACKAGE__->might_have(
+  "dashboard",
+  "AdministratorDB::Schema::Result::Dashboard",
+  {
+    "foreign.dashboard_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 externalnodes
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Externalnode>
+
+=cut
+
+__PACKAGE__->has_many(
+  "externalnodes",
+  "AdministratorDB::Schema::Result::Externalnode",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 indicators
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Indicator>
+
+=cut
+
+__PACKAGE__->has_many(
+  "indicators",
+  "AdministratorDB::Schema::Result::Indicator",
   { "foreign.service_provider_id" => "self.service_provider_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -162,23 +268,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-
-=head2 externalnodes
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Externalnode>
-
-=cut
-
-__PACKAGE__->has_many(
-  "externalnodes",
-  "AdministratorDB::Schema::Result::Externalnode",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
 =head2 interfaces
 
 Type: has_many
@@ -193,7 +282,6 @@ __PACKAGE__->has_many(
   { "foreign.service_provider_id" => "self.service_provider_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
-
 
 =head2 nodemetric_conditions
 
@@ -229,6 +317,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 notification_subscriptions
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NotificationSubscription>
+
+=cut
+
+__PACKAGE__->has_many(
+  "notification_subscriptions",
+  "AdministratorDB::Schema::Result::NotificationSubscription",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 outside
 
 Type: might_have
@@ -256,15 +359,14 @@ __PACKAGE__->belongs_to(
   "service_provider",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "service_provider_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 service_provider_managers
 
 Type: has_many
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-01 13:39:57
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sTr9fruYiAtq0Te7ID7Idg
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
 
 =cut
 
@@ -275,17 +377,25 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 indicatorsets
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-08 15:21:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fX1IhYDvpDq4zGM2tpWAJQ
+Type: many_to_many
+
+Composing rels: L</collects> -> indicatorset
+
+=cut
+
+__PACKAGE__->many_to_many("indicatorsets", "collects", "indicatorset");
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
- __PACKAGE__->belongs_to(
-   "parent",
-     "AdministratorDB::Schema::Result::Entity",
-         { "foreign.entity_id" => "self.service_provider_id" },
-             { cascade_copy => 0, cascade_delete => 1 }
- );
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-08 19:38:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0GcBqKsCM4NV2zF5nj4u5Q
+
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "service_provider_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 1;
