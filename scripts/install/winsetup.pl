@@ -204,6 +204,14 @@ $cmd  = "mysql -u $db_user -p$db_pwd < \"$conf_vars->{data_sql}\"";
 $exec = `$cmd 2>&1`;
 print "done\n";
 
+# Populate DB with more data (perl script instead of sql)
+print "populate database...";
+require PopulateDB;
+populateDB(login    => $db_user,
+           password => $db_pwd,
+           %db_data);
+print "done\n";
+
 #######################
 #Service configuration#
 #######################
