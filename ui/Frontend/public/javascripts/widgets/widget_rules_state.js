@@ -34,7 +34,7 @@ function displayRulesGraph(widget, sp_id) {
                     var service_rules = { '0' : [], '1' : [], 'undef' : [] };
                     for (var i=0;i<rules.length;i++) {
                         var rule_state = rules[i].aggregate_rule_last_eval;
-                        var type_idx = (rule_state === undefined) ? 'undef' : rule_state;
+                        var type_idx = (rule_state === undefined || rule_state === null) ? 'undef' : rule_state;
                         service_rules[ type_idx ].push(rules[i]);
                     }
                     var service_rules_series = [
