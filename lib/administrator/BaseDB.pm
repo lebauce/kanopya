@@ -1079,17 +1079,7 @@ sub search {
             bless $obj, $class_type;
         }
 
-        if($@) {
-            my $exception = $@;
-            if(Kanopya::Exception::Permission::Denied->caught()) {
-                $log->debug("no right to access to object <$table> with <$row->id>");
-                next;
-            }
-            else { $exception->rethrow(); }
-        }
-        else {
-            push @objs, $obj;
-        }
+        push @objs, $obj;
     }
 
     if (defined ($args{dataType}) and $args{dataType} eq "hash") {
