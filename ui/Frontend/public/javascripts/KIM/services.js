@@ -22,7 +22,7 @@ var Service = (function(_super) {
 
 var resources  = {};
 
-function    servicesListFilter(elem) {
+function servicesListFilter(elem) {
     if (resources.hasOwnProperty(elem.pk)) {
         return false;
     } else {
@@ -31,21 +31,12 @@ function    servicesListFilter(elem) {
 }
 
 function servicesList (container_id, elem_id) {
-    $.ajax({
-        url         : '/api/serviceprovider/getServiceProviders',
-        type        : 'POST',
-        async       : false,
-        contentType : 'application/json',
-        data        : JSON.stringify({ category : 'Cloudmanager' }),
-        success     : function(data) {
-            resources  = {};
-            for (var i in data) if (data.hasOwnProperty(i)) {
-                if (data[i] != undefined) {
-                    resources[data[i].pk] = true;
-                }
-            }
-        }
-    });
+    resources  = {};
+    var providers = getServiceProviders('Cloudmanager');
+    for (var provider in providers) {
+        resources[providers[provider].pk] = true;
+    }
+
     var container = $('#' + container_id);
 
     $('a[href=#content_services_overview_static]').text('Service instances');
@@ -331,11 +322,11 @@ function nodedetailsaction(cid, eid) {
             var remoteUrl   = data.host.remote_session_url;
             var isVirtual   = false;
             $.ajax({    
-                url     : '/api/entity/' + data.host.host_manager_id + '/getHostType',
-                type    : 'POST',
+                url     : '/api/entity/' + data.host.host_manager_id,
+                type    : 'GET',
                 async   : false,
                 success : function(ret) {
-                    if (ret === 'Virtual Machine') isVirtual = true;
+                    if (ret.host_type === 'Virtual Machine') isVirtual = true;
                 }
             });
             var buttons   = [
@@ -353,7 +344,7 @@ function nodedetailsaction(cid, eid) {
                     action  : '/api/host/' + data.host.pk + '/resubmit',
                     confirm : 'The node will be stopped and restarted'
                 },
-               {
+                {
                     label       : 'Scale Cpu',
                     icon        : 'arrowthick-2-n-s',
                     condition   : isVirtual,

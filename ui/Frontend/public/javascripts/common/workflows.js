@@ -1,6 +1,7 @@
 require('jquery/jquery.form.js');
 require('jquery/jquery.form.wizard.js');
 require('common/general.js');
+require('common/service_common.js');
 
 function createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
     function createParameterList(parameters) {
@@ -165,41 +166,36 @@ function deleteWorkflowDef(workflowdef_id) {
 }
 
 function sco_workflow(container_id) {
-    var container       = $("#" + container_id);
-    var connectorTypeId;
-    $.ajax({
-        type        : 'POST',
-        url         : '/api/serviceprovider/findManager',
-        contentType : 'application/json',
-        data        : JSON.stringify({ 'category' : 'WorkflowManager' }),
-        success     : function(data) {
-            var workflowmanagers    = data;
-            for (var i in workflowmanagers) if (workflowmanagers.hasOwnProperty(i)) {
-                $.ajax({
-                    url     : '/api/serviceprovider/' + workflowmanagers[i].service_provider_id,
-                    type    : 'GET',
-                    async   : false,
-                    success : function(data) {
-                        workflowmanagers[i].service_provider        = data;
-                        workflowmanagers[i].service_provider_name   = data.label;
-                    }
-                });
+    var container = $("#" + container_id);
+
+    var workflowmanagers = findManager('WorkflowManager');
+    for (var i in workflowmanagers) if (workflowmanagers.hasOwnProperty(i)) {
+        $.ajax({
+            url     : '/api/serviceprovider/' + workflowmanagers[i].service_provider_id,
+            type    : 'GET',
+            async   : false,
+            success : function(data) {
+                workflowmanagers[i].service_provider      = data;
+                workflowmanagers[i].service_provider_name = data.label;
+                workflowmanagers[i].name = workflowmanagers[i].component_type ? workflowmanagers[i].component_type.component_name : workflowmanagers[i].connector_type.connector_name
+                workflowmanagers[i].id = workflowmanagers[i].pk;
             }
-            create_grid({
-                grid_id                 : 'workflowmanagement',
-                content_container_id    : container_id,
-                caption                 : 'Workflow manager',
-                colNames                : [ 'Id', 'Service', 'Type' ],
-                colModel                : [
-                    { name : 'id', index : 'id', width : 60, sorttype : 'int', hidden : true },
-                    { name : 'service_provider_name', index : 'service_provider_name'},
-                    { name : 'name', index : 'name' },
-                ],
-                data                    : workflowmanagers,
-                action_delete           : 'no'
-            });
-        }
+        });
+    }
+    create_grid({
+        grid_id                 : 'workflowmanagement',
+        content_container_id    : container_id,
+        caption                 : 'Workflow manager',
+        colNames                : [ 'Id', 'Service', 'Type' ],
+        colModel                : [
+            { name : 'id', index : 'id', width : 60, sorttype : 'int', hidden : true },
+            { name : 'service_provider_name', index : 'service_provider_name'},
+            { name : 'name', index : 'name' },
+        ],
+        data                    : workflowmanagers,
+        action_delete           : 'no'
     });
+
     $(container).append(createWorkflowRuleAssociationButton())
 }
 

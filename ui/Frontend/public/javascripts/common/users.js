@@ -15,7 +15,7 @@ function user_addbutton_action(e, displayed) {
     } else {
         displayed = [ 'user_firstname', 'user_lastname', 'user_email', 
                       'user_desc', 'user_login', 'user_password', 
-                      'user_lastaccess', 'user_creationdate',
+                      'user_lastaccess', 'user_creationdate', 'user_system',
                       'user_sshkey', 'user_profiles' ];
 
         relations = { 'quotas' : [ 'resource', 'current', 'quota' ] };
@@ -52,7 +52,7 @@ function Users() {
                                   .button({ icons : { primary : 'ui-icon-plusthick' } });
 
         var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
-                               'user_login', 'user_password', 'user_sshkey', 'user_profiles' ];
+                               'user_login', 'user_password', 'user_system', 'user_sshkey', 'user_profiles' ];
         var creation_relations = { 'quotas' : [ 'resource', 'quota' ] };
         $(user_addbutton).bind('click', { displayed : creation_attrs, relations : creation_relations }, user_addbutton_action);
     };

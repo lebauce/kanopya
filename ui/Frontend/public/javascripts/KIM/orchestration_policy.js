@@ -1,5 +1,6 @@
 require('common/service_monitoring.js');
 require('common/service_rules.js');
+require('common/service_common.js');
 
 // Return a hash with data of all grids in container cont_id
 // keys are grid url
@@ -90,20 +91,7 @@ function orchestrationPolicyForm(policy_opts, sp_id, edit_mode, grid) {
 
 // Associate to service provider <sp_id> the manager <type> corresponding to component installed on kanopya cluster
 function associateAdminManager(sp_id, component_category, manager_type) {
-    var manager_id;
-
-    // Get manager id
-    $.ajax({
-        url     : '/api/serviceprovider/findManager',
-        type    : 'POST',
-        async   : false,
-        data    : {
-            category : component_category
-        },
-        success : function(data) {
-            manager_id = data[0].pk;
-        }
-    });
+    var manager_id = findManager(component_category)[0].pk;
 
     // Associate sp to manager
     $.ajax({
@@ -130,7 +118,6 @@ function createPolicyServiceProvider() {
     });
 
     associateAdminManager(sp_id, 'Collectormanager', 'collector_manager');
-
     associateAdminManager(sp_id, 'Workflowmanager', 'workflow_manager');
 
     return sp_id;

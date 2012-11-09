@@ -163,3 +163,64 @@ function makeAutocompleteAndTranslate(field, availableTags) {
         }
     });
 }
+
+
+function getServiceProviders(category) {
+    if (category['category'] !== undefined) {
+        category = category['category'];
+    }
+
+    var providers = [];
+    $.ajax({
+        url         : '/api/serviceprovider?expand=components,connectors,components.component_type,connectors.connector_type',
+        type        : 'GET',
+        async       : false,
+        success     : function(data) {
+            for (var i in data) if (data.hasOwnProperty(i)) {
+                for (var component in data[i].components) {
+                    if (data[i].components[component].component_type.component_category === category) {
+                        providers.push(data[i]);
+                        break
+                    }
+                }
+                for (var connector in data[i].connectors) {
+                    if (data[i].connectors[connector].connector_type.connector_category === category) {
+                        providers.push(data[i]);
+                        break
+                    }
+                }
+            }
+        }
+    });
+    return providers;
+}
+
+function findManager(category, service_provider_id) {
+    if (category['category'] !== undefined) {
+        service_provider_id = category['service_provider_id'];
+        category = category['category'];
+    }
+
+    var managers = [];
+    var types = ['component', 'connector'];
+    for (var i in types) {
+        var type = types[i];
+        var url = '/api/' + type + '?expand=' + type + '_type&' + type + '_type.' + type + '_category=' + category;
+
+        if (service_provider_id) {
+            url += '&service_provider_id=' + service_provider_id;
+        }
+
+        $.ajax({
+            url     : url,
+            type    : 'GET',
+            async   : false,
+            success : function(data) {
+                for (manager in data) {
+                    managers.push(data[manager]);
+                }
+            }
+        });
+    }
+    return managers;
+}
