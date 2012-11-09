@@ -369,6 +369,31 @@ eval{
     dies_ok { WorkflowDef->get(id => $wf1->id)} 'Check workflow def deleted';
     dies_ok { WorkflowDef->get(id => $wf2->id)} 'Check workflow def deleted';
 
+    sub test_rrd_remove {
+    my @cms = Entity::Clustermetric->search (hash => {
+        clustermetric_service_provider_id => $service_provider->id
+    });
+    
+    my @cm_ids = map {$_->id} @cms;
+    while (@cms) { (pop @cms)->delete(); };
+
+    is (scalar Entity::Combination::AggregateCombination->search (hash => {
+        service_provider_id => $service_provider->id
+    }), 0, 'Check all aggregate combinations are deleted');
+
+    is (scalar Entity::AggregateRule->search (hash => {
+        aggregate_rule_service_provider_id => $service_provider->id
+    }), 0, 'Check all aggregate rules are deleted');
+
+    my $one_rrd_remove = 0;
+    for my $cm_id (@cm_ids) {
+        if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+            $one_rrd_remove++;
+        }
+        close(FILE);
+    }
+    ok ($one_rrd_remove == 0, "Check all have been removed, still $one_rrd_remove rrd");
+}
     #$adm->commitTransaction;
     $adm->rollbackTransaction;
 };
@@ -376,6 +401,7 @@ if($@) {
     $adm->rollbackTransaction;
     my $error = $@;
     print $error."\n";
+    test_rrd_remove();
 }
 
 sub service_rule_objects_creation {
