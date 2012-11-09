@@ -78,15 +78,6 @@ sub methods {
         disableNode => {
             description => 'Disable node',
         },
-        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
-        findManager => {
-            description => 'findManager',
-        },
-        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
-        getServiceProviders => {
-            description => 'getServiceProviders',
-        },
-        # TODO(methods): Remove this method from the api once the merge of component/connector
         addManagerParameters => {
             description => 'add paramaters to a manager',
         },
@@ -192,26 +183,18 @@ sub getManager {
 sub getNodes {
     my ($self, %args) = @_;
 
-    my @nodes = Externalnode->search(
-                    hash => {
-                        service_provider_id => $self->getId(),
-                    }
-    );
+    my @nodes = Externalnode->search(hash => {
+                    service_provider_id => $self->getId(),
+                });
 
     my @node_hashs;
-
     for my $node (@nodes){
-
-        my @verified_rules = VerifiedNoderule->search(
-                                                   hash => {
-                                                       verified_noderule_state => 'verified'
-                                                   }
-                                               );
-        my @undef_rules    = VerifiedNoderule->search(
-                                                   hash => {
-                                                       verified_noderule_state => 'undef'
-                                                   }
-                                               );
+        my @verified_rules = VerifiedNoderule->search(hash => {
+                                verified_noderule_state => 'verified'
+                             });
+        my @undef_rules    = VerifiedNoderule->search(hash => {
+                                verified_noderule_state => 'undef'
+                             });
 
         push @node_hashs, {
             state              => $node->getAttr(name => 'externalnode_state'),
@@ -224,74 +207,6 @@ sub getNodes {
     return \@node_hashs;
 }
 
-sub findManager {
-    my $key;
-    my ($class, %args) = @_;
-    my @managers = ();
-
-    if (defined $args{service_provider_id} and $args{service_provider_id} != 1 and $args{category} eq 'Export') {
-        $args{category} = 'Storage';
-    }
-
-    $key = defined $args{id} ? { component_id => $args{id} } : {};
-    $key->{service_provider_id} = $args{service_provider_id} if defined $args{service_provider_id};
-    foreach my $component (Entity::Component->search(hash => $key)) {
-        my $component_type = $component->component_type;
-        if ($component_type->component_category eq $args{category}) {
-            push @managers, {
-                "category"            => $component_type->component_category,
-                "name"                => $component_type->component_name,
-                "id"                  => $component->id,
-                "pk"                  => $component->id,
-                "service_provider_id" => $component->service_provider_id,
-                "host_type"           => $component->can("getHostType") ? $component->getHostType() : "",
-            }
-        }
-    }
-
-    $key = defined $args{id} ? { connector_id => $args{id} } : {};
-    $key->{service_provider_id} = $args{service_provider_id} if defined $args{service_provider_id};
-    foreach my $connector (Entity::Connector->search(hash => $key)) {
-        my $connector_type = $connector->connector_type;
-
-        if ($connector_type->connector_category eq $args{category}) {
-            push @managers, {
-                "category"            => $connector_type->connector_category,
-                "name"                => $connector_type->connector_name,
-                "id"                  => $connector->id,
-                "pk"                  => $connector->id,
-                "service_provider_id" => $connector->service_provider_id,
-                "host_type"           => $connector->can("getHostType") ? $connector->getHostType() : "",
-            }
-        }
-    }
-
-    return wantarray ? @managers : \@managers;
-}
-
-sub getServiceProviders {
-    my ($class, %args) = @_;
-    my @providers;
-
-    if (defined $args{category}) {
-        my @managers = $class->findManager(category => $args{category});
-
-        my $service_providers = {};
-        for my $manager (@managers) {
-            my $provider = Entity::ServiceProvider->get(id => $manager->{service_provider_id});
-            if (not exists $service_providers->{$provider->getId}) {
-                $service_providers->{$provider->getId} = $provider;
-            }
-
-            @service_providers = values %$service_providers;
-        }
-    }
-    else {
-        @service_providers = Entity::ServiceProvider->search(hash => {});
-    }
-
-    return wantarray ? @service_providers : \@service_providers;
-}
 
 =head2 addManager
 
@@ -566,6 +481,72 @@ sub addComponentFromType {
 
     my $component = $comp_class->new();
     return $self->addComponent(component => $component);
+}
+
+=head2 addConnector
+
+link an existing connector with the outside service provider
+
+=cut
+
+sub addConnector {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['connector']);
+
+    my $connector = $args{connector};
+    $connector->setAttr(name  => 'service_provider_id',
+                        value => $self->id);
+    $connector->save();
+
+    return $connector->id;
+}
+
+=head2 addConnectorFromType
+
+Create and link a connector from type to the outside service provider
+
+=cut
+
+sub addConnectorFromType {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['connector_type_id']);
+
+    my $type_id = $args{connector_type_id};
+    my $adm = Administrator->new();
+    my $row = $adm->{db}->resultset('ConnectorType')->find($type_id);
+    my $conn_name = $row->get_column('connector_name');
+    my $conn_class = 'Entity::Connector::'.$conn_name;
+    my $location = General::getLocFromClass(entityclass => $conn_class);
+    eval {require $location };
+    my $connector = $conn_class->new();
+
+    $self->addConnector( connector => $connector );
+
+    return $connector->id;
+}
+
+sub removeConnector {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['connector_id']);
+
+    my $connector = Entity::Connector->get(id => $args{connector_id});
+    $connector->remove;
+
+}
+
+sub getConnectors {
+    my $self = shift;
+    my %args = @_;
+
+    return Entity::Connector->search(
+               hash => { service_provider_id => $self->id }
+           );
 }
 
 1;
