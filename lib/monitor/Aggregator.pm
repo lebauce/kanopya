@@ -249,24 +249,29 @@ sub _computeCombinationAndFeedTimeDB {
             }
         }
 
+        my $clustermetric_id = $clustermetric->id;
         # Compute the $clustermetric value from all @dataStored values
         if (0 < (scalar @dataStored)) {
             my $statValue = $clustermetric->compute(values => \@dataStored);
 
-            if(defined $statValue){
-                # Store in DB and time stamp
-                RRDTimeData::updateTimeDataStore(
-                    clustermetric_id => $clustermetric->getId,
-                    time             => time(),
-                    value            => $statValue,
-                );
-            } else {
-                $log->info("*** [WARNING] No statvalue computed for clustermetric " . $clustermetric->getId);
+            # Store in DB and time stamp
+            RRDTimeData::updateTimeDataStore(
+                clustermetric_id => $clustermetric_id,
+                time             => time(),
+                value            => $statValue,
+            );
+            if (!defined $statValue) {
+                $log->info("*** [WARNING] No statvalue computed for clustermetric " . $clustermetric_id);
             }
         } else {
             # This case is current and produce lot of log
             # TODO better handling (and user feedback) of missing data
-            $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric->getId);
+            $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric_id);
+            RRDTimeData::updateTimeDataStore(
+                clustermetric_id => $clustermetric_id,
+                time             => time(),
+                value            => undef,
+            );
         }
     }
 }
