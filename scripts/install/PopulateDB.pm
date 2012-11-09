@@ -350,7 +350,6 @@ sub registerUsers {
             $gp = Entity::Gp->new(
                       gp_name   => $group->{name},
                       gp_desc   => $group->{desc},
-                      gp_system => $group->{system} || 0,
                       gp_type   => $group->{type}
                   );
         }

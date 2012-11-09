@@ -917,7 +917,6 @@ CREATE TABLE `gp` (
   `gp_name` char(32) NOT NULL,
   `gp_type` char(32) NOT NULL,
   `gp_desc` char(255) DEFAULT NULL,
-  `gp_system` int(1) unsigned NOT NULL,
   PRIMARY KEY (`gp_id`),
   FOREIGN KEY (`gp_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`gp_name`)
