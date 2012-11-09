@@ -102,6 +102,13 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 0
     },
+    user_system => {
+        label        => 'Grant full persmissions',
+        type         => 'boolean',
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_editable  => 1
+    },
     quotas => {
         label        => 'Quotas',
         type         => 'relation',
