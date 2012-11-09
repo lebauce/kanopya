@@ -603,7 +603,8 @@ Construct the proper BaseDB based instance from a DBIx row
 sub fromDBIx {
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'row' ]);
+    General::checkParams(args => \%args, required => [ 'row' ],
+                                         optional => { deep => 0 });
 
     my $modulename = classFromDbix($args{row}->result_source);
 
@@ -619,11 +620,19 @@ sub fromDBIx {
     # TODO: We need to use prefetch to get the parent/childs attrs,
     #       and use the concrete class type. Use 'get' for instance.
 
-    return bless {
-        _dbix      => $args{row},
-    }, $modulename;
+    my $obj = bless {
+                  _dbix      => $args{row},
+              }, $modulename;
 
-    # return $modulename->get(id => getRowPrimaryKey(row => $args{row}));
+    if ($args{deep} && $args{row}->has_column('class_type_id')) {
+        my $class_type = getClassType(id => $obj->class_type_id);
+        if (length($class_type) > length($modulename)) {
+            requireClass($class_type);
+            $obj = $class_type->get(id => $obj->id);
+        }
+    }
+
+    return $obj;
 }
 
 
@@ -646,7 +655,8 @@ sub getAttr {
     my $class = ref($self);
     my %args  = @_;
 
-    General::checkParams(args => \%args, required => ['name']);
+    General::checkParams(args => \%args, required => [ 'name' ],
+                                         optional => { deep => 0 });
 
     my $dbix = $self->{_dbix};
     my $attr = $class->getAttrDefs()->{$args{name}};
@@ -666,11 +676,11 @@ sub getAttr {
             my $name = $args{name};
             my $relinfo = $dbix->relationship_info($args{name});
             if ($relinfo->{attrs}->{accessor} eq "multi") {
-                return map { fromDBIx(row => $_) } $dbix->$name;
+                return map { fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
             }
             else {
                 if ($dbix->$name) {
-                    $value = fromDBIx(row => $dbix->$name);
+                    $value = fromDBIx(row => $dbix->$name, deep => $args{deep});
                 }
             }
             last;
@@ -678,7 +688,7 @@ sub getAttr {
         # The attr is a many to many relation
         elsif ($dbix->can($args{name})) {
             my $name = $args{name};
-            return map { fromDBIx(row => $_) } $dbix->$name;
+            return map { fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
         }
         # The attr is a virtual attr
         elsif (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) and
@@ -1263,7 +1273,7 @@ sub toJSON {
 
     General::checkParams(args     => \%args,
                          optional => { 'no_relations' => 0, 'model' => undef, 'raw' => 0,
-                                       'virtuals' => 1, 'expand' => [] });
+                                       'virtuals' => 1, 'expand' => [], 'deep' => 0 });
 
     my $pk;
     my $hash = {};
@@ -1324,14 +1334,16 @@ sub toJSON {
                 $hash->{$comp} = [];
                 if ($is_relation eq 'single_multi' ||
                     $is_relation eq 'multi') {
-                    for my $item ($obj->getAttr(name => $comp)) {
-                        push @{$hash->{$comp}}, $item->toJSON(expand => [ join('.', @comps) ]);
+                    for my $item ($obj->getAttr(name => $comp, deep => $args{deep})) {
+                        push @{$hash->{$comp}}, $item->toJSON(expand => [ join('.', @comps) ],
+                                                              deep   => $args{deep});
                     }
                 }
                 elsif ($is_relation eq 'single') {
                     my $obj = $self->getAttr(name => $comp);
                     if ($obj) {
-                        $hash->{$comp} = $obj->toJSON(expand => [ join('.', @comps) ]);
+                        $hash->{$comp} = $obj->toJSON(expand => [ join('.', @comps) ],
+                                                      deep   => $args{deep});
                     }
                 }
             }

@@ -196,6 +196,11 @@ sub getResources {
         delete $query{page};
     }
 
+    if (defined $query{deep}) {
+        $params{deep} = $query{deep};
+        delete $query{deep};
+    }
+
     if (defined $query{rows}) {
         $params{rows} = $query{rows};
         delete $query{rows};
@@ -241,11 +246,15 @@ sub getResources {
                 $result->{rows} : $result;
     if (ref $rows eq "ARRAY") {
         for my $obj (@$rows) {
-            push @$objs, $obj->toJSON(virtuals => 1, expand => $params{prefetch});
+            push @$objs, $obj->toJSON(virtuals => 1,
+                                      expand   => $params{prefetch},
+                                      deep     => $params{deep});
         }
     }
     else {
-        return $result->toJSON(virtuals => 1, expand => $params{prefetch});
+        return $result->toJSON(virtuals => 1,
+                               expand   => $params{prefetch},
+                               deep     => $params{deep});
     }
 
     if (defined ($params{dataType}) && $params{dataType} eq "hash") {
@@ -287,7 +296,8 @@ sub setupREST {
 
                 my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
                 my $obj = $class->methodCall(method => 'get', params => { id => params->{id}, prefetch => \@expand });
-                return to_json($obj->toJSON(expand => \@expand));
+                return to_json($obj->toJSON(expand => \@expand,
+                                            deep   => params->{deep}));
             },
 
             create => sub {
