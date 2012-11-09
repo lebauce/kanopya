@@ -54,10 +54,6 @@ use constant ATTR_DEF => {
     priority => {
         is_virtual => 1
     },
-    # TODO: move this virtual attr to HostManager attr def when supported
-    host_type => {
-        is_virtual => 1
-    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -272,9 +268,5 @@ sub needBridge { return 0; }
 sub getHostsEntries { return; }
 sub getPuppetDefinition { return ""; }
 
-# TODO: move this virtual attr to HostManager attr def when supported
-sub hostType  {
-    return "";
-}
 
 1;
