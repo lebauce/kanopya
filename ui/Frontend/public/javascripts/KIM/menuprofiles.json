@@ -8,12 +8,12 @@
         "submenu_entries" : []
     },
     "3" : {
-        "menu_entries"    : [ "Infrastructure", "Business", "Administration" ],
-        "submenu_entries" : [ "Compute", "Storage", "IaaS", "Network", "System", "Policies", "Customers", "Kanopya", "Right Management", "Monitoring" ]
+        "menu_entries"    : [ "Infrastructure", "Administration" ],
+        "submenu_entries" : [ "Compute", "Storage", "IaaS", "Network", "System", "Customers", "Kanopya", "Right Management", "Monitoring" ]
     },
     "4" : {
-        "menu_entries"    : [ "Infrastructure", "Business", "Administration" ],
-        "submenu_entries" : [ "Customers" ]
+        "menu_entries"    : [ "Infrastructure", "Administration" ],
+        "submenu_entries" : [ "Policies" ]
     },
     "5" : {
         "menu_entries"    : [ "Infrastructure", "Business", "Administration" ],
