@@ -121,7 +121,7 @@ sub methods {
 # Virtual attribute getter
 sub formula_label {
     my $self = shift;
-    return $self->toString();
+    return $self->nodemetric_rule_formula_string;
 }
 
 sub new {

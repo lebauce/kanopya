@@ -124,7 +124,7 @@ Formula label virtual attribute getter
 
 sub formula_label {
     my $self = shift;
-    return $self->toString();
+    return $self->aggregate_combination_formula_string;
 }
 
 

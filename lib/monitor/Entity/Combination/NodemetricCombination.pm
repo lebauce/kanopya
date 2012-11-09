@@ -37,9 +37,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    formula_label => {
-        is_virtual      => 1,
-    },
     nodemetric_combination_label => {
         pattern         => '^.*$',
         is_mandatory    => 0,
@@ -60,6 +57,9 @@ use constant ATTR_DEF => {
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1,
+    },
+    formula_label => {
+        is_virtual      => 1,
     },
 };
 
@@ -122,7 +122,7 @@ Formula label virtual attribute getter
 
 sub formula_label {
     my $self = shift;
-    return $self->toString();
+    return $self->nodemetric_combination_formula_string;
 }
 
 =pod
