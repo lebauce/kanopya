@@ -94,10 +94,6 @@ function groupsList (container_id, elem_id) {
                             'Distribution', 'Kernel'
                 ]
             },
-            gp_system: {
-                type: 'hidden',
-                value: '0'
-            },
             gp_desc: {
                 label: 'Description',
                 type: 'textarea'
@@ -142,7 +138,7 @@ function _generatePermissionsSelect(container, condition, changeCallback, callba
     changeCallback  = changeCallback || $.noop;
     callback        = callback || $.noop;
     $.ajax({
-        url     : '/api/gp?' + condition,
+        url     : '/api/gp' + condition,
         type    : 'GET',
         success : function(data) {
             var gpselect    = $('<select>', { rel : $(container).attr('rel') }).prependTo(container).bind('change', changeCallback);
@@ -222,11 +218,11 @@ function permissions(cid) {
                 break;
             }
         }
-        _generatePermissionsSelect(targetGroupSelector, 'gp_type=' + gname, showtable, cb);
+        _generatePermissionsSelect(targetGroupSelector, '&gp_type=' + gname, showtable, cb);
     }
 
-    _generatePermissionsSelect(groupSelector, 'gp_system=1', groupSelectorChange);
-    _generatePermissionsSelect(userGroupSelector, 'gp_system=0&gp_type=User', showtable);
+    _generatePermissionsSelect(groupSelector, '', groupSelectorChange);
+    _generatePermissionsSelect(userGroupSelector, '&gp_type=User', showtable);
 
     $.ajax({
         url     : '/api/user?user_system=0',

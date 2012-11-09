@@ -58,7 +58,7 @@ sub methods {
 sub new {
     my $class = shift;
     my %args = @_;
-    
+
     # avoid abstract Entity::Connector instanciation
     if($class !~ /Entity::Connector::(.+)/) {
         my $errmsg = "Entity::Connector must not be instanciated without a concret connector class";
@@ -72,25 +72,17 @@ sub new {
     my $connector_type = $admin->{db}->resultset('ConnectorType')->search(
         { connector_name    => $connector_name }
     )->first;
-    
+
     if (not defined $connector_type) {
         throw Kanopya::Exception::Internal(error => "Connector type $connector_name not found in DB");
     }
-    my $connector_type_id = $connector_type->id;
-    
-    return $class->SUPER::new(%args, connector_type_id => $connector_type_id );
-}
 
-=head2 getGenericMasterGroupName
+    my $self = $class->SUPER::new(%args, connector_type_id => $connector_type->id);
 
-    Get an alternative group name if the correponding group 
-    of the concrete class of the entity do not exists.
+    # Add the component to the Component group
+    Entity::Connector->getMasterGroup->appendEntity(entity => $self);
 
-=cut
-
-sub getGenericMasterGroupName {
-    my $self = shift;
-    return 'Connector';
+    return $self;
 }
 
 sub getConnectorTypes {

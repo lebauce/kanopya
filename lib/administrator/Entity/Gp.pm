@@ -59,12 +59,6 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 1
     },
-    gp_system => {
-        pattern      => '^\d$',
-        is_mandatory => 1,
-        is_extended  => 0,
-        is_editable  => 0
-    },
     gp_type => {
         pattern      => '^\w*$',
         is_mandatory => 1,

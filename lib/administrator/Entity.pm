@@ -141,7 +141,7 @@ sub getMasterGroup {
         $group = Entity::Gp->find(hash => { gp_name => $self->getMasterGroupName });
     };
     if ($@) {
-        $group = Entity::Gp->find(hash => { gp_name => $self->getGenericMasterGroupName });
+        $group = Entity::Gp->find(hash => { gp_name => 'Entity' });
     }
     return $group;
 }
@@ -161,18 +161,6 @@ sub getMasterGroupName {
     my $mastergroup = pop(@array);
 
     return $mastergroup;
-}
-
-=head2 getGenericMasterGroupName
-
-    Get an alternative group name if the correponding group 
-    of the concrete class of the entity do not exists.
-
-=cut
-
-sub getGenericMasterGroupName {
-    my $self = shift;
-    return 'Entity';
 }
 
 sub asString {

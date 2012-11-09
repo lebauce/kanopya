@@ -77,7 +77,7 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    # avoid abstract Entity::Component instanciation
+    # Avoid abstract Entity::Component instanciation
     if ($class !~ /Entity::Component.*::(\D+)(\d*)/) {
         $errmsg = "Entity::Component->new : Entity::Component must not " .
                   "be instanciated without a concret component class";
@@ -88,14 +88,14 @@ sub new {
     my $component_name    = $1;
     my $component_version = $2;
 
-    # set base configuration if not passed to this constructor
+    # Set base configuration if not passed to this constructor
     my $config = (%args) ? \%args : $class->getBaseConfiguration();
     my $template_id = undef;
     if (exists $args{component_template_id} and defined $args{component_template_id}) {
         $template_id = $args{component_template_id};
     }
 
-    # we set the corresponding component_type
+    # We set the corresponding component_type
     my $hash = { component_name => $component_name };
     if (defined ($component_version) && $component_version) {
         $hash->{component_version} = $component_version;
@@ -105,6 +105,10 @@ sub new {
                                   %$config);
 
     bless $self, $class;
+
+    # Add the component to the Component group
+    Entity::Component->getMasterGroup->appendEntity(entity => $self);
+
     return $self;
 }
 
@@ -147,18 +151,6 @@ sub setConf {
     if ($updated) {
         $self->save();
     }
-}
-
-=head2 getGenericMasterGroupName
-
-    Get an alternative group name if the correponding group 
-    of the concrete class of the entity do not exists.
-
-=cut
-
-sub getGenericMasterGroupName {
-    my $self = shift;
-    return 'Component';
 }
 
 =head2 getPolicyParams
