@@ -1,8 +1,10 @@
 # This script is called during setup to insert some kanopya data in DB
 # The other way to insert data during setup is Data.sql.tt (pb: id management)
 #
+
 use lib qw(/opt/kanopya/lib/common/ /opt/kanopya/lib/administrator/ /opt/kanopya/lib/executor/ /opt/kanopya/lib/monitor/ /opt/kanopya/lib/orchestrator/ /opt/kanopya/lib/external);
 
+use BaseDB;
 use Kanopya::Config;
 use Administrator;
 use ComponentType;
@@ -65,6 +67,11 @@ use Entity::Component::Linux::Redhat;
 use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
 
+# Catch warnings to clean the setup output (this warnings are not kanopya code related)
+$SIG{__WARN__} = sub {
+    my $warn_msg = $_[0];
+};
+
 my @classes = (
     'Entity::Gp',
     'Entity::Host',
@@ -74,7 +81,6 @@ my @classes = (
     'Entity::Systemimage',
     'Entity::User',
     'Entity::ServiceProvider::Inside::Cluster',
-    'Entity::ServiceProvider::Inside::Server',
     'Entity::ServiceProvider::Outside::Netapp',
     'Entity::ServiceProvider::Outside::UnifiedComputingSystem',
     'Entity::ContainerAccess::IscsiContainerAccess',
@@ -119,7 +125,6 @@ my @classes = (
     'Entity::Container::NetappVolume',
     'Entity::Container::FileContainer',
     'Entity::ContainerAccess::FileContainerAccess',
-    'Entity::ManagerParameter',
     'Entity::NfsContainerAccessClient',
     'Entity::Network',
     'Entity::InterfaceRole',
@@ -206,21 +211,12 @@ sub registerUsers {
           desc    => 'Customer group',
           system  => 0,
           profile => [ 'Customer', 'customer profile' ] },
-        # Duplicate Entity group here for setting permissions on methods
-        # as we need to create profiles users groups before setting permissions on methods.
-        { name    => 'Entity',
-          type    => 'Entity',
-          desc    => 'Entity master group containing all entities',
-          system  => 1,
-          methods => {
-              'Administrator' => [ 'get', 'create', 'update', 'remove', 'subscribe' ]
-        }},
         { name    => 'User',
           type    => 'User',
           desc    => 'User master group containing all users',
           system  => 1,
           methods => {
-              'Administrator' => [ 'setProfiles' ],
+              'Sales' => [ 'setProfiles' ],
         }},
         { name    => 'Processormodel',
           type    => 'Processormodel',
@@ -239,16 +235,14 @@ sub registerUsers {
           desc    => 'ServiceProvider master group containing all service providers',
           system  => 1,
           methods => {
-              'Administrator'    => [ 'getServiceProfile', 'getServiceProviders', 'findManager', 'addManager' ],
-              'ServiceDeveloper' => [ 'getServiceProfile', 'getServiceProviders', 'findManager', 'addManager' ],
+              'ServiceDeveloper' => [ 'getServiceProfile', 'addManager' ],
         }},
         { name    => 'Cluster',
           type    => 'Cluster',
           desc    => 'Cluster master group containing all clusters',
           system  => 1,
           methods => {
-              'Administrator' => [ 'findManager' ],
-              'Sales'         => [ 'subscribe' ],
+              'Sales' => [ 'subscribe' ],
         }},
         { name    => 'Kernel',
           type    => 'Kernel',
@@ -271,23 +265,20 @@ sub registerUsers {
           desc    => 'Component group containing all components',
           system  => 1,
           methods => {
-              'Administrator'    => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers', 'getConf', 'setConf' ],
-              'ServiceDeveloper' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ]
+              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers' ]
         }},
         { name    => 'Connector',
           type    => 'Connector',
           desc    => 'Connector group containing all connectors',
           system  => 1,
           methods => {
-              'Administrator'    => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers', 'getConf', 'setConf' ],
-              'ServiceDeveloper' => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType', 'getExportManagers' ]
+              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers' ]
         }},
         { name    => 'Policy',
           type    => 'Policy',
           desc    => 'Policy group containing all policies',
           system  => 1,
           methods => {
-              'Administrator'    => [ 'getFlattenedHash' ],
               'ServiceDeveloper' => [ 'getFlattenedHash' ]
         }},
         { name    => 'ServiceTemplate',
@@ -296,19 +287,53 @@ sub registerUsers {
           system  => 1,
           methods => {
               'ServiceDeveloper' => [ 'create', 'update', 'remove', 'get' ]
-        }},
+          }
+        },
         { name    => 'Network',
           type    => 'Network',
           desc    => 'Network group containing all service templates',
-          system  => 1,
-          methods => {
-              'Administrator' => [ 'associatePoolip', 'dissociatePoolip' ]
-        }},
+          system  => 1 },
         { name    => 'Gp',
           type    => 'Gp',
           desc    => 'Groups master group containing all groups',
           system  => 1 },
+        # Re-handle the Entity group here to set permissions on methods,
+        # indeed, we need have user groups created before setting permissions,
+        # but we need to have the Entity group created at first.
+        { name    => 'Entity',
+          type    => 'Entity',
+          desc    => 'Entity master group containing all entities',
+          system  => 1,
+          methods => {
+              'Administrator' => [ 'create', 'update', 'remove', 'get' ]
+          }
+        },
     ];
+
+    # Browse all class types to find api methods
+    for my $classtype (@classes) {
+        BaseDB::requireClass($classtype);
+
+        my $parenttype = BaseDB::_parentClass($classtype);
+        my $methods    = $classtype->methods();
+        for my $parentmethod (keys $parenttype->getMethods()) {
+            delete $methods->{$parentmethod};
+        }
+
+        my @methodlist = keys $methods;
+        if (scalar (@methodlist)) {
+            $classtype =~ s/.*\:\://g;
+            push @{$groups}, {
+                name    => $classtype,
+                type    => $classtype,
+                desc    => $classtype . " master group",
+                system  => 1,
+                methods => {
+                    'Administrator' => \@methodlist
+                }
+            }
+        }
+    }
 
     my @adminprofiles;
     my $profilegroups = {};
@@ -329,6 +354,9 @@ sub registerUsers {
         if (defined ($group->{methods})) {
             for my $gpname (keys %{ $group->{methods} }) {
                 for my $method (@{ $group->{methods}->{$gpname} }) {
+                    print "- Setting permissions for group " . $gpname .
+                          ", on method " . $gp->gp_name . "->" . $method . "\n";
+
                     Entityright->new(
                         entityright_consumed_id => $gp->id,
                         entityright_consumer_id => $profilegroups->{$gpname}->id,
@@ -347,7 +375,7 @@ sub registerUsers {
                 gp_id      => $gp->id
             } );
 
-            if ($group->{system} == 0 and $group->{name} ne 'Customer') {
+            if ($group->{system} == 0) {
                 push @adminprofiles, $prof;
                 $profilegroups->{$group->{name}} = $gp;
             }
