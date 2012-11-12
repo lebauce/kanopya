@@ -534,7 +534,7 @@ function workflowslist(cid, eid) {
 
 function runningworkflowslist(cid, eid) {
     create_grid({
-        url                  : '/api/workflow?state=running&entity_id='+eid,   
+        url                  : '/api/workflow?state=running&related_id='+eid,
         caption              : 'Running workflows',
         content_container_id : cid,
         grid_id              : 'runningworkflowsgrid',
@@ -562,7 +562,7 @@ function runningworkflowslist(cid, eid) {
 
 function historicworkflowslist(cid, eid) {
     create_grid({
-        url                     : '/api/workflow?state=<>,running&entity_id='+eid,   
+        url                     : '/api/workflow?state=<>,running&related_id='+eid,
         caption                 : 'History',
         content_container_id    : cid,
         grid_id                 : 'historicworkflowsgrid',
