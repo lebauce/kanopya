@@ -55,6 +55,9 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 1,
     },
+    combination_formula_string => {
+        is_virtual      => 1,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -101,7 +104,7 @@ sub getDependentConditions {
 
 =begin classdoc
 
-Abstract class implemented in ConstantCombination. Used when deleting a condition which has created
+Abstract method implemented in ConstantCombination. Used when deleting a condition which has created
 a ConstantCombination. Also used to avoid deep recursion.
 
 =end classdoc
@@ -115,15 +118,42 @@ sub combination_formula_string {
     return undef;
 }
 
+
+=pod
+
+=begin classdoc
+
+@deprecated
+
+Return the unit attribute. Method used to ensure backward compatibility.
+Preferable to get directly the attribute.
+
+@return combination_unit attribute
+
+=end classdoc
+
+=cut
+
 sub getUnit {
     my $self = shift;
     return $self->combination_unit;
 }
 
+
+=pod
+
+=begin classdoc
+
+Update the combination_unit attribute
+
+=end classdoc
+
+=cut
+
 sub updateUnit {
     my $self = shift;
-    $self->setAttr (name=>'combination_unit', value => $self->computeUnit());
-    $self->save ();
+    $self->setAttr(name => 'combination_unit', value => $self->computeUnit());
+    $self->save();
 }
 
 sub computeUnit {
