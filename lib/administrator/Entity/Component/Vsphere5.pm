@@ -1624,4 +1624,21 @@ sub formatName {
 
     return $name;
 }
+
+=pod
+
+=begin classdoc
+
+override DESTROY to disconnect any open session toward a vSphere instance
+
+=end classdoc
+
+=cut
+
+sub DESTROY {
+    my $self = shift;
+
+    $self->disconnect();
+}
+
 1;
