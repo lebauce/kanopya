@@ -19,6 +19,7 @@
 Condition on combination value
 
 @see <package>Entity::Combination</package>
+@see <package>Entity::Combination::ConstantCombination</package>
 
 =end classdoc
 
