@@ -42,31 +42,38 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
     nodemetric_condition_service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
     left_combination_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 1},
+        is_editable     => 1,
+    },
     nodemetric_condition_comparator => {
         pattern         => '^(>|<|>=|<=|==)$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
     right_combination_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 1
-    }
+        is_editable     => 1,
+    },
+    nodemetric_condition_formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -109,11 +116,13 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    if(!defined $args{nodemetric_condition_label} || $args{nodemetric_condition_label} eq ''){
-        $self->setAttr(name=>'nodemetric_condition_label', value => $self->toString());
-        $self->save();
-    }
+    my $toString = $self->toString();
 
+    $self->setAttr (name=>'nodemetric_condition_formula_string', value => $toString);
+    if(!defined $args{nodemetric_condition_label} || $args{nodemetric_condition_label} eq ''){
+        $self->setAttr(name=>'nodemetric_condition_label', value => $toString);
+    }
+    $self->save();
     return $self;
 }
 
@@ -138,19 +147,15 @@ sub updateName {
 
 sub toString {
     my ($self, %args) = @_;
-    my $depth;
-    if(defined $args{depth}) {
-        $depth = $args{depth};
-    }
-    else {
-        $depth = -1;
-    }
+    my $depth = (defined $args{depth}) ? $args{depth} : -1;
+
     if($depth == 0) {
         return $self->nodemetric_condition_label;
     }
-    else{
-        return $self->left_combination->toString(depth => $depth - 1).$self->nodemetric_condition_comparator.$self->right_combination->toString(depth => $depth - 1);
-    }
+
+    return $self->left_combination->toString(depth => $depth - 1).' '
+           .$self->nodemetric_condition_comparator.' '
+           .$self->right_combination->toString(depth => $depth - 1);
 };
 
 sub evalOnOneNode{
@@ -187,36 +192,50 @@ sub evalOnOneNode{
     }
 }
 
-sub getDependencies {
+
+sub getDependentRules {
     my $self = shift;
-    my @rules_from_same_service = Entity::NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
+    my @rules_from_same_service = Entity::NodemetricRule->search(
+                                      hash => {
+                                          nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id
+                                      }
+                                  );
 
-    my %dependencies;
-    my $id = $self->getId;
-
-    LOOP:
+    my @rules;
+    my $id = $self->id;
+    RULE:
     for my $rule (@rules_from_same_service) {
-        my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
+        my @rule_dependant_condition_ids = $rule->getDependentConditionIds;
         for my $condition_id (@rule_dependant_condition_ids) {
             if ($id == $condition_id) {
-                $dependencies{$rule->nodemetric_rule_label} = {};
-                next LOOP;
+                push @rules, $rule;
+                next RULE;
             }
         }
+    }
+    return @rules;
+}
+
+sub getDependencies {
+    my $self = shift;
+
+    my @rules = $self->getDependentRules;
+
+    my %dependencies;
+    for my $rule (@rules) {
+        $dependencies{$rule->nodemetric_rule_label} = {};
     }
     return \%dependencies;
 }
 
 sub delete {
     my $self = shift;
-    $log->info('Entering deletion system');
-
     my @rules_from_same_service = Entity::NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
     my $id = $self->getId;
     RULE:
     while(@rules_from_same_service) {
         my $rule = pop @rules_from_same_service;
-        my @rule_dependant_condition_ids = $rule->getDependantConditionIds;
+        my @rule_dependant_condition_ids = $rule->getDependentConditionIds;
         for my $condition_id (@rule_dependant_condition_ids) {
             if ($id == $condition_id) {
                 $rule->delete();
@@ -231,38 +250,62 @@ sub delete {
     $comb_right->deleteIfConstant();
 }
 
-sub getDependantIndicatorIds {
+sub getDependentIndicatorIds {
     my $self = shift;
-    return ($self->left_combination->getDependantIndicatorIds(), $self->right_combination->getDependantIndicatorIds());
+    return ($self->left_combination->getDependentIndicatorIds(), $self->right_combination->getDependentIndicatorIds());
 }
 
 sub update {
     my ($self, %args) = @_;
+    my $service_provider_id = $args{nodemetric_condition_service_provider_id} ?
+                                  $args{nodemetric_condition_service_provider_id} :
+                                  $self->nodemetric_condition_service_provider_id ;
 
-    my $left_combi = $self->left_combination;
-    my $right_combi = $self->right_combination;
 
-    if ((! defined $args{right_combination_id}) && defined $args{nodemetric_condition_threshold}) {
-        my $comb =  Entity::Combination::ConstantCombination->new (
-            service_provider_id => $args{nodemetric_condition_service_provider_id},
+    my $two_attributes = 0;
+    if (defined $args{nodemetric_condition_threshold}) { $two_attributes++; }
+    if (defined $args{left_combination_id}) { $two_attributes++; }
+    if (defined $args{right_combination_id}) { $two_attributes++; }
+
+    if ( $two_attributes == 0) {
+        my $rep = $self->SUPER::update (%args);
+        $rep->updateFormulaString;
+        return $rep;
+    }
+
+    if ( $two_attributes != 2) {
+        my $error = 'When updating nodemetric condition, have to specify two attributes between '.
+                    'nodemetric_condition_threshold, left_combination_id and right_combination';
+        throw Kanopya::Exception::Internal::WrongValue(error => $error);
+    }
+
+    my $old_left_combination = $self->left_combination;
+    my $old_right_combination = $self->right_combination;
+
+    if (! defined $args{left_combination_id}) {
+        my $new_left_combination =  Entity::Combination::ConstantCombination->new (
+            service_provider_id => $service_provider_id,
             value => $args{nodemetric_condition_threshold}
         );
         delete $args{nodemetric_condition_threshold};
-        $args{right_combination_id} = $comb->id;
+        $args{left_combination_id} = $new_left_combination->id;
     }
-
-    if ((! defined $args{left_combination_id}) && defined $args{nodemetric_condition_threshold}) {
-        my $comb =  Entity::Combination::ConstantCombination->new (
-            service_provider_id => $args{nodemetric_condition_service_provider_id},
+    elsif (! defined $args{right_combination_id}) {
+        my $new_right_combination =  Entity::Combination::ConstantCombination->new (
+            service_provider_id => $service_provider_id,
             value => $args{nodemetric_condition_threshold}
         );
         delete $args{nodemetric_condition_threshold};
-        $args{left_combination_id} = $comb->id;
+        $args{right_combination_id} = $new_right_combination->id;
+    }
+    else {
+        # do nothing, update will just replace both ids with right and left combination ids
     }
 
-    my $rep = $self->SUPER::update(%args);
-    $left_combi->deleteIfConstant();
-    $right_combi->deleteIfConstant();
+    my $rep = $self->SUPER::update (%args);
+    $rep->updateFormulaString;
+    $old_left_combination->deleteIfConstant();
+    $old_right_combination->deleteIfConstant();
     return $rep;
 }
 
@@ -274,6 +317,8 @@ Clones the condition and all related objects.
 Links clones to the specified service provider. Only clones objects that do not exist in service provider.
 
 @param dest_service_provider_id id of the service provider where to import the clone
+
+@return clone object
 
 =end classdoc
 
@@ -301,6 +346,19 @@ sub clone {
         label_attr_name     => 'nodemetric_condition_label',
         attrs_clone_handler => $attrs_cloner
     );
+}
+
+sub updateFormulaString {
+    my $self = shift;
+
+    $self->setAttr (name=>'nodemetric_condition_formula_string', value => $self->toString());
+    $self->save ();
+
+    my @rules = $self->getDependentRules;
+
+    for my $rule (@rules) {
+        $rule->updateFormulaString;
+    }
 }
 
 1;

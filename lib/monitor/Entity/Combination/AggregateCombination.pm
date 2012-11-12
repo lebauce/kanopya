@@ -44,13 +44,13 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 0
+        is_editable     => 0,
     },
     aggregate_combination_label => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
     },
     aggregate_combination_formula => {
         pattern         => '^((id\d+)|[ .+*()-/]|\d)+$',
@@ -59,7 +59,13 @@ use constant ATTR_DEF => {
         is_editable     => 1,
         description     =>  "Construct a formula by service metric's names with all mathematical operators."
                             ." It's possible to use parenthesis with spaces between each element of the formula."
-                            ." Press a letter key to obtain the available choice."
+                            ." Press a letter key to obtain the available choice.",
+    },
+    aggregate_combination_formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
     formula_label => {
         is_virtual      => 1,
@@ -118,7 +124,7 @@ Formula label virtual attribute getter
 
 sub formula_label {
     my $self = shift;
-    return $self->toString();
+    return $self->aggregate_combination_formula_string;
 }
 
 
@@ -148,13 +154,16 @@ sub new {
     }
 
     my $formula = (\%args)->{aggregate_combination_formula};
+    _verify ($args{aggregate_combination_formula});
 
-    _verify($formula);
     my $self = $class->SUPER::new(%args);
-    if (! defined $args{aggregate_combination_label} || $args{aggregate_combination_label} eq '') {
-        $self->setAttr (name=>'aggregate_combination_label', value => $self->toString());
-        $self->save ();
+    my $toString = $self->toString();
+    if ((! defined $args{aggregate_combination_label}) || $args{aggregate_combination_label} eq '') {
+        $self->setAttr (name=>'aggregate_combination_label', value => $toString);
     }
+    $self->setAttr (name=>'combination_unit', value => $self->computeUnit());
+    $self->setAttr (name=>'aggregate_combination_formula_string', value => $toString);
+    $self->save ();
     return $self;
 }
 
@@ -214,8 +223,9 @@ sub toString {
     # replace each rule id by its evaluation
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            # Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = Entity::Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1);
+            $element = ($depth > 0) ?
+                Entity::Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1):
+                Entity::Clustermetric->get('id'=>substr($element,2))->clustermetric_formula_string;
         }
     }
     return List::Util::reduce { $a . $b } @array;
@@ -243,7 +253,7 @@ sub computeValues{
 
     General::checkParams args => \%args, required => ['start_time','stop_time'];
 
-    my @cm_ids = $self->dependantClusterMetricIds();
+    my @cm_ids = $self->dependentClusterMetricIds();
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
         my $cm = Entity::Clustermetric->get('id' => $cm_id);
@@ -313,7 +323,7 @@ sub compute{
     my $self = shift;
     my %args = @_;
 
-    my @requiredArgs = $self->dependantClusterMetricIds();
+    my @requiredArgs = $self->dependentClusterMetricIds();
 
     checkMissingParams(args => \%args, required => \@requiredArgs);
 
@@ -361,7 +371,7 @@ Return the ids of Clustermetrics of the formulas with no doublon.
 
 =cut
 
-sub dependantClusterMetricIds() {
+sub dependentClusterMetricIds() {
     my $self = shift;
     my %ids = map { $_ => undef } ($self->aggregate_combination_formula =~ m/id(\d+)/g);
     return keys %ids;
@@ -404,7 +414,7 @@ sub computeFromArrays{
     my $self = shift;
     my %args = @_;
 
-    my @requiredArgs = $self->dependantClusterMetricIds();
+    my @requiredArgs = $self->dependentClusterMetricIds();
 
     General::checkParams args => \%args, required => \@requiredArgs;
 
@@ -450,14 +460,14 @@ sub checkMissingParams {
 
 =begin classdoc
 
-Return the formula of the combination in which the indicator id is
+Compute the formula of the combination in which the indicator id is
 replaced by its Unit or by '?' when unit is not specified in database
 
 =end classdoc
 
 =cut
 
-sub getUnit {
+sub computeUnit {
     my ($self, %args) = @_;
 
     # Split aggregate_rule id from formula
@@ -466,21 +476,21 @@ sub getUnit {
     my $ref_element;
     my $are_same_units = 0;
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             $element = Entity::Clustermetric->get('id'=>substr($element,2))->getUnit();
 
             if (not defined $ref_element) {
                 $ref_element = $element;
             } else {
-                if ($ref_element eq $element) {
-                    $are_same_units = 1;
-                } else {
-                    $are_same_units = 0;
-                }
+                $are_same_units = ($ref_element eq $element) ? 1 : 0;
             }
         }
     }
+
+    # Warning, this code works only when combination is composed by + or - operator
+    # return wrong value when composed by / or *
+    # TODO improve
+
     if ($are_same_units == 1) {
         @array = $ref_element;
     }
@@ -492,7 +502,7 @@ sub getUnit {
 
 =begin classdoc
 
-Return the dependant indicator ids. Since AggregateCombination formula does not contains indicator,
+Return the dependent indicator ids. Since AggregateCombination formula does not contains indicator,
 this method return void.
 
 @return void array
@@ -501,7 +511,7 @@ this method return void.
 
 =cut
 
-sub getDependantIndicatorIds {
+sub getDependentIndicatorIds {
     return ();
 }
 
@@ -513,6 +523,8 @@ Clones the combination and all related objects.
 Links clones to the specified service provider. Only clones objects that do not exist in service provider.
 
 @param dest_service_provider_id id of the service provider where to import the clone
+
+@return clone object
 
 =end classdoc
 
@@ -558,4 +570,51 @@ sub computeValueFromMonitoredValues {
     my $self = shift;
     return $self->computeLastValue()
 }
+
+sub combination_formula_string {
+    my $self = shift;
+    return $self->aggregate_combination_formula_string
+}
+
+sub updateFormulaString {
+    my $self = shift;
+    $self->setAttr (name=>'aggregate_combination_formula_string', value => $self->toString());
+    $self->save ();
+    my @conditions = $self->getDependentConditions;
+    map { $_->updateFormulaString } @conditions;
+}
+
+
+sub update {
+    my ($self, %args) = @_;
+    my $rep = $self->SUPER::update (%args);
+    $self->updateFormulaString;
+    $self->updateUnit;
+    return $rep;
+}
+
+=pod
+
+=begin classdoc
+
+Delete the object and all the conditions which depend on it.
+
+=end classdoc
+
+=cut
+
+sub delete {
+    my $self = shift;
+    my @conditions = (
+        $self->aggregate_condition_left_combinations,
+        $self->aggregate_condition_right_combinations,
+        $self->nodemetric_condition_left_combinations,
+        $self->nodemetric_condition_right_combinations,
+    );
+
+    while (@conditions) {
+        (pop @conditions)->delete();
+    }
+    return $self->SUPER::delete();
+};
 1;

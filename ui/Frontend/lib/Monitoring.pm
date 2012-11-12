@@ -220,7 +220,7 @@ sub _computeNodemetricCombination {
     my $nodemetric_combination_id = $args{combination_id};
     my $service_provider = Entity::ServiceProvider->get(id=>$cluster_id);
     my $nodemetric_combination = Entity::Combination::NodemetricCombination->get('id' => $nodemetric_combination_id);
-    my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
+    my @indicator_ids = $nodemetric_combination->getDependentIndicatorIds();
 
     $log->debug('[Cluster id '.$cluster_id.']: The requested combination: '.$nodemetric_combination_id.' is built on the top of the following indicators: '."@indicator_ids");
 

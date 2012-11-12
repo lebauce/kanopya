@@ -94,33 +94,18 @@ eval{
         }
     );
 
+
+
     test_aggregate_condition_update();
     test_nodemetric_condition_update();
     test_aggregate_combination();
+    test_aggregate_rules_undef();
     test_aggregate_rules();
     test_two_combinations_on_nodemetric_condition();
     test_aggregate_combination_on_nodemetric_condition();
     test_nodemetric_condition();
     test_nodemetric_rules();
-
-    my @cms = Entity::Clustermetric->search (hash => {});
-    
-    my @cm_ids = map {$_->id} @cms;
-    for my $cm_id (@cm_ids) {
-        lives_ok {
-            open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd');
-            close(FILE);
-        } 'Check rrd '.($cm_id).' is present';
-    }
-    while (@cms) { (pop @cms)->delete(); };
-
-    is (scalar Entity::Combination::AggregateCombination->search (hash => {}), 0, 'Check all aggregate combinations are deleted');
-    is (scalar Entity::AggregateRule->search (hash => {}), 0, 'Check all aggregate rules are deleted');
-
-    for my $cm_id (@cm_ids) {
-        ok (! defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd'), 'Check rrd '.($cm_id).' has been removed');
-        close(FILE);
-    }
+    test_rrd_remove();
     $adm->rollbackTransaction;
     #$adm->commitTransaction();
 };
@@ -130,6 +115,31 @@ if($@) {
     print $error."\n";
 }
 
+sub test_rrd_remove {
+    my @cms = Entity::Clustermetric->search (hash => {
+        clustermetric_service_provider_id => $service_provider->id
+    });
+    
+    my @cm_ids = map {$_->id} @cms;
+    while (@cms) { (pop @cms)->delete(); };
+
+    is (scalar Entity::Combination::AggregateCombination->search (hash => {
+        service_provider_id => $service_provider->id
+    }), 0, 'Check all aggregate combinations are deleted');
+
+    is (scalar Entity::AggregateRule->search (hash => {
+        aggregate_rule_service_provider_id => $service_provider->id
+    }), 0, 'Check all aggregate rules are deleted');
+
+    my $one_rrd_remove = 0;
+    for my $cm_id (@cm_ids) {
+        if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+            $one_rrd_remove++;
+        }
+        close(FILE);
+    }
+    ok ($one_rrd_remove == 0, "Check all have been removed, still $one_rrd_remove rrd");
+}
 sub test_nodemetric_condition {
     # Clustermetric
     my $cm = Entity::Clustermetric->new(
@@ -277,10 +287,52 @@ sub test_nodemetric_condition {
         })
     } 'Check mixed nodemetric rule node 2 (b)';
 
-    is ($nc_agg_th_right->toString(),'mean(RAM used)>-1.2','Check to String (a)');
-    is ($nc_agg_th_left->toString(),'-1.4<mean(RAM used)','Check to String (b)');
-    is ($nc_mix_1->toString(),'RAM used<mean(RAM used)','Check to String (c)');
-    is ($nc_mix_2->toString(),'mean(RAM used)<RAM used','Check to String (d)');
+    is ($nc_agg_th_right->toString(),'mean(RAM used) > -1.2','Check to String (a)');
+    is ($nc_agg_th_left->toString(),'-1.4 < mean(RAM used)','Check to String (b)');
+    is ($nc_mix_1->toString(),'RAM used < mean(RAM used)','Check to String (c)');
+    is ($nc_mix_2->toString(),'mean(RAM used) < RAM used','Check to String (d)');
+
+
+    $cm->update (clustermetric_statistics_function_name => 'min');
+    $ncomb->update (nodemetric_combination_formula  => '2*id'.($indic1->id));
+    $comb->update (aggregate_combination_formula   => '3*id'.($cm->id));
+
+    $nc_agg_th_left->update (nodemetric_condition_comparator => '==');
+    is (Entity->get(id => $nc_agg_th_left->id)->toString(),'-1.4 == 3*min(RAM used)','Check update nodemetric String (a)');
+
+    dies_ok { $nc_agg_th_right->update (left_combination_id => $ncomb->id);} 'not only one left combination update';
+    dies_ok { $nc_agg_th_right->update (right_combination_id => $ncomb->id);} 'not only one right combination update';
+    dies_ok { $nc_agg_th_right->update (nodemetric_condition_threshold => $ncomb->id);} 'not only threshold update';
+
+    is (Entity->get(id => $nc_agg_th_right->id)->nodemetric_condition_formula_string,'3*min(RAM used) > -1.2','Check update nodemetric tring (b)');
+    is (Entity->get(id => $nc_mix_1->id)->toString(),'2*RAM used < 3*min(RAM used)','Check update nodemetric String (c)');
+    is (Entity->get(id => $nc_mix_2->id)->toString(),'3*min(RAM used) < 2*RAM used','Check update nodemetric String (d)');
+
+    my $old_const_id = $nc_agg_th_left->left_combination_id;
+
+    $nc_agg_th_left->update (
+        left_combination_id => $comb->id,
+        right_combination_id => $ncomb->id,
+    );
+
+    is (Entity->get(id => $nc_agg_th_left->id)->toString(),'3*min(RAM used) == 2*RAM used','Check update nodemetric String (e)');
+    dies_ok { Entity->get(id => $old_const_id) } 'Old constant comb has been removed';
+
+    $nc_agg_th_left->update (
+        left_combination_id => $ncomb->id,
+        nodemetric_condition_threshold => 21.01,
+    );
+    is (Entity->get(id => $nc_agg_th_left->id)->toString(),'2*RAM used == 21.01','Check update nodemetric String (f)');
+
+    $old_const_id = $nc_agg_th_left->right_combination_id;
+    $nc_agg_th_left->update (
+        left_combination_id => $ncomb->id,
+        nodemetric_condition_threshold => 19.83,
+    );
+    is (Entity->get(id => $nc_agg_th_left->id)->toString(),'2*RAM used == 19.83','Check update nodemetric String (g)');
+    dies_ok { Entity->get(id => $old_const_id) } 'Old constant comb has been removed';
+
+
 }
 
 sub test_two_combinations_on_nodemetric_condition {
@@ -487,12 +539,62 @@ sub test_nodemetric_rules {
         });
     } 'Check node undef in db - rule 2';
 
-    
-
     test_not_n();
     test_or_n();
     test_and_n();
     test_big_formulas_n();
+}
+
+sub test_aggregate_rules_undef {
+
+    my $cm = Entity::Clustermetric->new(
+        clustermetric_service_provider_id => $service_provider->id,
+        clustermetric_indicator_id => ($indic1->id),
+        clustermetric_statistics_function_name => 'sum',
+        clustermetric_window_time => '1200',
+    );
+
+    my $comb = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm->id),
+    );
+
+    my $ac = Entity::AggregateCondition->new(
+        aggregate_condition_service_provider_id => $service_provider->id,
+        left_combination_id => $comb->id,
+        comparator => '>',
+        threshold => '0',
+    );
+
+    my $rule = Entity::AggregateRule->new(
+        aggregate_rule_service_provider_id => $service_provider->id,
+        aggregate_rule_formula => 'id'.$ac->id,
+        aggregate_rule_state => 'enabled'
+    );
+
+    sleep(2);
+    $aggregator->update();
+    $orchestrator->manage_aggregates();
+
+    ok (defined $comb->computeLastValue(), 'cm ok, check cm');
+    is ($ac->eval(), 1, 'cm ok, check condition');
+    is (Entity->get(id=>$ac->id)->last_eval, 1, 'cm ok, check condition');
+    is (Entity->get(id=>$rule->id)->aggregate_rule_last_eval, 1, 'cm ok, check rule');
+
+    $service_provider->addManagerParameter(
+        manager_type    => 'collector_manager',
+        name            => 'mockmonit_config',
+        value           =>  "{'default':{'const':null}}",
+    );
+
+    sleep(2);
+    $aggregator->update();
+    $orchestrator->manage_aggregates();
+
+    ok (! defined $comb->computeLastValue(), 'Undef cm, check cm');
+    ok (! defined Entity->get(id=>$ac->id)->last_eval, 'Undef cm, check condition (a)');
+    ok (! defined Entity->get(id=>$ac->id)->eval(), 'Undef cm, check condition (b)' );
+    ok (! defined Entity->get(id=>$rule->id)->aggregate_rule_last_eval, 'Undef cm, check rule');
 }
 
 sub test_aggregate_combination {
@@ -563,11 +665,22 @@ sub test_aggregate_combination {
     is ($ac_right->eval,1, 'Check condition combi right');
     is ($ac_both->eval,1, 'Check condition combi both');
 
+    is ($ac_left->toString(),'sum(RAM used) < 12.34','Check to string (a)');
+    is ($ac_right->toString(),'-43.21 < sum(RAM used)','Check to string (b)');
+    is ($ac_both->toString(),'sum(RAM used) < 2*sum(RAM used)','Check to string (c)');
 
-    is ($ac_left->toString(),'sum(RAM used)<12.34','Check to string (a)');
-    is ($ac_right->toString(),'-43.21<sum(RAM used)','Check to string (b)');
-    is ($ac_both->toString(),'sum(RAM used)<2*sum(RAM used)','Check to string (c)');
-    # Condition are not verified when not linked to a rule
+    $cm->update (clustermetric_statistics_function_name => 'min');
+    $comb->update (aggregate_combination_formula => '-id'.($cm->id));
+    $ac_left->update (
+        threshold => '21.01',
+        comparator => '==',
+        right_combination_id => $comb2->id,
+    );
+
+    is (Entity->get(id => $ac_right->id)->aggregate_condition_formula_string,'-43.21 < -min(RAM used)','Check update formula string (a)');
+    is (Entity->get(id => $ac_both->id)->aggregate_condition_formula_string,'-min(RAM used) < 2*min(RAM used)','Check update formula string (b)');
+    is (Entity->get(id => $ac_left->id)->aggregate_condition_formula_string,'21.01 == 2*min(RAM used)','Check update formula string (c)');
+
 }
 
 sub test_aggregate_rules {
@@ -709,11 +822,16 @@ sub test_and {
     );
 
     $orchestrator->manage_aggregates();
-    is($rule1->eval, 1, 'Check 1 && 1 rule');
-    is($rule2->eval, 0, 'Check 1 && 0 rule');
-    is($rule3->eval, 0, 'Check 0 && 1 rule');
-    is($rule4->eval, 0, 'Check 0 && 0 rule');
+    is ($rule1->eval, 1, 'Check 1 && 1 rule');
+    is ($rule2->eval, 0, 'Check 1 && 0 rule');
+    is ($rule3->eval, 0, 'Check 0 && 1 rule');
+    is ($rule4->eval, 0, 'Check 0 && 0 rule');
+
+    is ($rule1->aggregate_rule_formula_string, 'sum(RAM used) > 0 && sum(RAM used) > 0', 'Check formula string aggregate rule before update');
+    $rule1->update (aggregate_rule_formula => 'id'.$ac_t->id.' && ! id'.$ac_t->id);
+    is ($rule1->aggregate_rule_formula_string, 'sum(RAM used) > 0 && ! sum(RAM used) > 0', 'Check formula string aggregate rule after update');
 }
+
 sub test_or_n {
 
     my $r1 = Entity::NodemetricRule->new(
@@ -1008,7 +1126,6 @@ sub test_aggregate_condition_update {
     my $old_constant_comb_id = $ac_left->right_combination_id;
 
     $ac_left->update(
-        aggregate_condition_service_provider_id => $service_provider->id,
         left_combination_id => $comb2->id,
         comparator => '>',
         threshold => '12.35',
@@ -1028,14 +1145,12 @@ sub test_aggregate_condition_update {
 
     $old_constant_comb_id = $ac_right->left_combination_id;
     $ac_right->update(
-        aggregate_condition_service_provider_id => $service_provider->id,
         threshold => '-43.2',
         comparator => '>',
         left_combination_id => $comb2->id,
     );
-    
-    $ac_right = Entity->get (id => $ac_right->id);
 
+    $ac_right = Entity->get (id => $ac_right->id);
     ok (
         $ac_right->left_combination_id == $comb2->id
         && $ac_right->comparator eq '>'

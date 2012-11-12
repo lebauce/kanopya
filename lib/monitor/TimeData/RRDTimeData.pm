@@ -298,17 +298,13 @@ sub fetchTimeDataStore {
 
 sub updateTimeDataStore {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['clustermetric_id', 'time', 'value']);
+    General::checkParams(args => \%args, required => ['clustermetric_id', 'time']);
 
-    my $name = _formatName(name => $args{'clustermetric_id'});
-    my $datasource;
-    if (defined $args{'datasource'}){
-        $datasource = $args{'datasource'};
-    }else{
-        $datasource = 'aggregate';
-    }
     my $time = $args{'time'};
-    my $value = $args{'value'};
+    my $name = _formatName(name => $args{'clustermetric_id'});
+
+    my $datasource = (defined $args{'datasource'}) ? $args{'datasource'} : 'aggregate';
+    my $value      = (defined $args{'value'})      ? $args{'value'}      : 'U';
 
     my $cmd = $rrd.' updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
     $log->debug($cmd);
@@ -318,7 +314,7 @@ sub updateTimeDataStore {
     # print $exec."\n";
     $log->debug($exec);
 
-    if ($exec =~ m/^ERROR.*/){
+    if ($exec =~ m/^ERROR.*/) {
         throw Kanopya::Exception::Internal(error => 'RRD update failed: '.$exec);
     }
 }
@@ -369,9 +365,9 @@ sub getLastUpdatedValue {
 
     #we replace the '-1.#IND000000e+000' values for "undef"
     while (my ($timestamp, $value) = each %values) {
-        if ($value eq '-1.#IND000000e+000'){
+        if ($value eq '-1.#IND000000e+000' || $value eq 'U') {
             $values{$timestamp} = undef;
-            }
+        }
     }
 
     #print Dumper(\%values);

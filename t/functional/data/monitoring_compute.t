@@ -90,6 +90,7 @@ eval{
         }
     );
 
+    testCombinationUnit();
     # Tests
     testClusterMetric(
         service_provider    => $service_provider,
@@ -111,6 +112,8 @@ eval{
         service_provider    => $service_provider,
         aggregator          => $aggregator,
     );
+
+    test_rrd_remove();
 
     $adm->rollbackTransaction;
 };
@@ -143,7 +146,7 @@ sub testClusterMetric {
         value           => "{'nodes' : { 'node_1' : { 'const':null }, 'node_2' : { 'const':null }}}"
     );
     $aggregator->update();
-    is($cm->getLastValueFromDB(), 'U', 'Do not store when all values undef');
+    ok (! defined $cm->getLastValueFromDB(), 'Do not store when all values undef');
 
     # All node responds
     $service_provider->addManagerParameter(
@@ -467,4 +470,75 @@ sub testStatisticFunctions {
         is($ac->computeLastValue(),shift @values,'Check function '.shift @funcs);
     }
 
+}
+
+sub testCombinationUnit {
+    # Cluster metrics
+    my $cm1 = Entity::Clustermetric->new(
+        clustermetric_service_provider_id       => $service_provider->id,
+        clustermetric_indicator_id              => ($indic1->id),
+        clustermetric_statistics_function_name  => 'sum',
+        clustermetric_window_time               => '1200',
+    );
+
+    is ($cm1->getUnit(),'%','Check unit % (a)');
+    $cm1->update(clustermetric_statistics_function_name => 'min');
+    is ($cm1->getUnit(),'%','Check unit % (b)');
+    $cm1->update(clustermetric_indicator_id => ($indic2->id));
+    is ($cm1->getUnit(),'Bytes','Check unit bytes');
+    $cm1->update(clustermetric_statistics_function_name => 'kurtosis');
+    is ($cm1->getUnit(),'-','Check unit bytes');
+
+    my $cm2 = Entity::Clustermetric->new(
+        clustermetric_service_provider_id       => $service_provider->id,
+        clustermetric_indicator_id              => ($indic2->id),
+        clustermetric_statistics_function_name  => 'sum',
+        clustermetric_window_time               => '1200',
+    );
+
+    my $acomb = Entity::Combination::AggregateCombination->new(
+        service_provider_id             =>  $service_provider->id,
+        aggregate_combination_formula   => 'id'.($cm2->id).' + id'.($cm1->id),
+    );
+    is ($acomb->getUnit(),'Bytes + -','Check aggregate combination unit');
+
+    $acomb->update (aggregate_combination_formula   => 'id'.($cm1->id).' + id'.($cm2->id)) ;
+
+    is ($acomb->getUnit(),'- + Bytes','Check aggregate combination unit');
+
+    # Combinations
+    my $ncomb = Entity::Combination::NodemetricCombination->new(
+        service_provider_id             => $service_provider->id,
+        nodemetric_combination_formula  => 'id'.($indic1->id).' + id'.($indic2->id),
+    );
+
+    is ($ncomb->getUnit(),'% + Bytes','Check nodemetric combination unit');
+    $ncomb->update (nodemetric_combination_formula => 'id'.($indic2->id).' + id'.($indic1->id));
+    is ($ncomb->getUnit(),'Bytes + %','Check nodemetric combination unit update');
+}
+
+sub test_rrd_remove {
+    my @cms = Entity::Clustermetric->search (hash => {
+        clustermetric_service_provider_id => $service_provider->id
+    });
+    
+    my @cm_ids = map {$_->id} @cms;
+    while (@cms) { (pop @cms)->delete(); };
+
+    is (scalar Entity::Combination::AggregateCombination->search (hash => {
+        service_provider_id => $service_provider->id
+    }), 0, 'Check all aggregate combinations are deleted');
+
+    is (scalar Entity::AggregateRule->search (hash => {
+        aggregate_rule_service_provider_id => $service_provider->id
+    }), 0, 'Check all aggregate rules are deleted');
+
+    my $one_rrd_remove = 0;
+    for my $cm_id (@cm_ids) {
+        if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+            $one_rrd_remove++;
+        }
+        close(FILE);
+    }
+    ok ($one_rrd_remove == 0, "Check all have been removed, still $one_rrd_remove rrd");
 }

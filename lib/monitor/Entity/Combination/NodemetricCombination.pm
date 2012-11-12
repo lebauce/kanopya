@@ -37,18 +37,30 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    nodemetric_combination_label => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    nodemetric_combination_formula => {
+        pattern         => '^((id\d+)|[ .+*()-/]|\d)+$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+        description     => "Construct a formula by indicator's names with all mathematical operators.
+                            It's possible to use parenthesis with spaces between each element
+                            of the formula.",
+    },
+    nodemetric_combination_formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
     formula_label => {
         is_virtual      => 1,
     },
-    nodemetric_combination_label     =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_combination_formula =>  {pattern       => '^((id\d+)|[ .+*()-/]|\d)+$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1,
-                                 description    => "Construct a formula by indicator's names with all mathematical operators. It's possible to use parenthesis with spaces between each element of the formula."},
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -110,7 +122,7 @@ Formula label virtual attribute getter
 
 sub formula_label {
     my $self = shift;
-    return $self->toString();
+    return $self->nodemetric_combination_formula_string;
 }
 
 =pod
@@ -141,10 +153,14 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
+    my $toString = $self->toString();
     if(!defined $args{nodemetric_combination_label} || $args{nodemetric_combination_label} eq ''){
-        $self->setAttr(name=>'nodemetric_combination_label', value => $self->toString());
-        $self->save();
+        $self->setAttr(name=>'nodemetric_combination_label', value => $toString);
     }
+    $self->setAttr (name=>'nodemetric_combination_formula_string', value => $toString);
+    $self->setAttr (name=>'combination_unit', value => $self->computeUnit());
+    $self->save ();
+
 
     # Ask the collector manager to collect the related indicator
     my $service_provider = $self->service_provider;
@@ -191,7 +207,7 @@ sub toString {
         }
     }
     return join('',@array);
-    
+
 }
 
 =pod
@@ -206,7 +222,7 @@ Return an array of the CollectorIndicator ids of the formula
 
 =cut
 
-sub getDependantCollectorIndicatorIds{
+sub getDependentCollectorIndicatorIds{
     my $self = shift;
     my %ids = map { $_ => undef } ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
     return keys %ids;
@@ -225,7 +241,7 @@ Return an array of the Indicator ids of the formula
 
 =cut
 
-sub getDependantIndicatorIds{
+sub getDependentIndicatorIds{
     my $self = shift;
 
     my @indicator_ids;
@@ -262,7 +278,7 @@ sub computeValueFromMonitoredValues {
     General::checkParams(args => \%args, required => [ 'monitored_values_for_one_node' ]);
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
 
-    #Split aggregate_rule id from $formula
+    #Split _rule id from $formula
     my @array = split(/(id\d+)/,$self->nodemetric_combination_formula);
 
     #replace each rule id by its evaluation
@@ -296,16 +312,14 @@ sub computeValueFromMonitoredValues {
 
 =begin classdoc
 
-Return the formula of the combination in which the indicator id is
+Compute the formula of the combination in which the indicator id is
 replaced by its Unit or by '?' when unit is not specified in database
-
-@return the formula of the combination
 
 =end classdoc
 
 =cut
 
-sub getUnit {
+sub computeUnit {
     my $self = shift;
 
     #Split nodemtric_rule id from $formula
@@ -314,17 +328,13 @@ sub getUnit {
     my $ref_element;
     my $are_same_units = 0;
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             $element = Entity::CollectorIndicator->get(id => substr($element,2))->indicator->indicator_unit || '?';
+
             if (not defined $ref_element) {
                 $ref_element = $element;
             } else {
-                if ($ref_element eq $element) {
-                    $are_same_units = 1;
-                } else {
-                    $are_same_units = 0;
-                }
+                $are_same_units = ($ref_element eq $element) ? 1 : 0;
             }
         }
     }
@@ -332,6 +342,27 @@ sub getUnit {
         @array = $ref_element;
     }
     return join('',@array);
+}
+
+sub combination_formula_string {
+    my $self = shift;
+    return $self->nodemetric_combination_formula_string
+}
+
+sub updateFormulaString {
+    my $self = shift;
+    $self->setAttr (name=>'nodemetric_combination_formula_string', value => $self->toString());
+    $self->save ();
+    my @conditions = $self->getDependentConditions;
+    map { $_->updateFormulaString } @conditions;
+}
+
+sub update {
+    my ($self, %args) = @_;
+    my $rep = $self->SUPER::update (%args);
+    $self->updateFormulaString;
+    $self->updateUnit;
+    return $rep;
 }
 
 =pod
@@ -346,6 +377,8 @@ throw Kanopya::Exception::Internal::NotFound if dest service provider does not h
 throw Kanopya::Exception::Internal::Inconsistency if both services haven't the same collector manager
 
 @param dest_service_provider_id id of the service provider where to import the clone
+
+@return clone object
 
 =end classdoc
 
@@ -376,6 +409,31 @@ sub clone {
         relationship        => 'service_provider',
         label_attr_name     => 'nodemetric_combination_label',
     );
+}
+
+=pod
+
+=begin classdoc
+
+Delete the object and all the conditions which depend on it.
+
+=end classdoc
+
+=cut
+
+sub delete {
+    my $self = shift;
+    my @conditions = (
+        $self->aggregate_condition_left_combinations,
+        $self->aggregate_condition_right_combinations,
+        $self->nodemetric_condition_left_combinations,
+        $self->nodemetric_condition_right_combinations,
+    );
+
+    while (@conditions) {
+        (pop @conditions)->delete();
+    }
+    return $self->SUPER::delete();
 }
 
 1;

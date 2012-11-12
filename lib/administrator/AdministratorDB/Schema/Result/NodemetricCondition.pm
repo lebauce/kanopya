@@ -63,6 +63,11 @@ __PACKAGE__->table("nodemetric_condition");
   is_nullable: 0
   size: 32
 
+=head2 nodemetric_condition_formula_string
+
+  data_type: 'text'
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -98,6 +103,8 @@ __PACKAGE__->add_columns(
   },
   "nodemetric_condition_comparator",
   { data_type => "char", is_nullable => 0, size => 32 },
+  "nodemetric_condition_formula_string",
+  { data_type => "text", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -126,6 +133,21 @@ __PACKAGE__->belongs_to(
   "left_combination",
   "AdministratorDB::Schema::Result::Combination",
   { combination_id => "left_combination_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 nodemetric_condition
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "nodemetric_condition",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "nodemetric_condition_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 

@@ -41,74 +41,80 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    aggregate_rule_id          =>  {
-        pattern       => '^.*$',
+    aggregate_rule_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 0,
+    },
+    aggregate_rule_label => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    aggregate_rule_service_provider_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 0,
+    },
+    aggregate_rule_formula => {
+        pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+        description     => "Construct a formula by condition's names with logical operators (and, or, not)."
+                           . " It's possible to use parenthesis with spaces between each element of the formula."
+                           . " Press a letter key to obtain the availalbe choice.",
+    },
+    aggregate_rule_formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    aggregate_rule_last_eval => {
+        pattern         => '^(0|1)$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    aggregate_rule_timestamp => {
+        pattern        => '^.*$',
         is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 0
-    },
-    aggregate_rule_label       =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
-    },
-    aggregate_rule_service_provider_id =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 1,
-        is_extended    => 0,
-        is_editable    => 0
-    },
-    aggregate_rule_formula     =>  {
-        pattern       => '^((id\d+)|and|or|not|[ ()!&|])+$',
-        is_mandatory   => 1,
         is_extended    => 0,
         is_editable    => 1,
-        description    => "Construct a formula by condition's names with logical operators (and, or, not)."
-                           . " It's possible to use parenthesis with spaces between each element of the formula."
-                           . " Press a letter key to obtain the availalbe choice."
     },
-    aggregate_rule_last_eval   =>  {
-        pattern       => '^(0|1)$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
+    aggregate_rule_state => {
+        pattern         => '(enabled|disabled|delayed|triggered)$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
     },
-    aggregate_rule_timestamp   =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
+    workflow_def_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
-    aggregate_rule_state       =>  {
-        pattern       => '(enabled|disabled|delayed|triggered)$',
-        is_mandatory   => 1,
-        is_extended    => 0,
-        is_editable    => 1
+    aggregate_rule_description => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
-    workflow_def_id            =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
+    workflow_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
-    aggregate_rule_description =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
-    },
-    workflow_id            =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
-    },
-    workflow_untriggerable_timestamp =>  {
-        pattern       => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1
+    workflow_untriggerable_timestamp => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
     formula_label => {
         is_virtual      => 1,
@@ -130,12 +136,11 @@ sub methods {
 # Virtual attribute getter
 sub formula_label {
     my $self = shift;
-    return $self->toString();
+    return $self->aggregate_rule_formula_string;
 }
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     # Clone case
     if ($args{aggregate_rule_id}) {
@@ -145,14 +150,16 @@ sub new {
     }
 
     my $formula = (\%args)->{aggregate_rule_formula};
+    _verify ($args{aggregate_rule_formula});
 
-    _verify($formula);
     my $self = $class->SUPER::new(%args);
 
-    if((!defined $args{aggregate_rule_label}) || $args{aggregate_rule_label} eq ''){
-        $self->setAttr(name=>'aggregate_rule_label', value => $self->toString());
-        $self->save();
+    my $toString = $self->toString();
+    if ((! defined $args{aggregate_rule_label}) || $args{aggregate_rule_label} eq '') {
+        $self->setAttr(name=>'aggregate_rule_label', value => $toString);
     }
+    $self->setAttr(name=>'aggregate_rule_formula_string', value => $toString);
+    $self->save();
     return $self;
 }
 
@@ -186,28 +193,22 @@ sub _verify {
 
 sub toString(){
     my ($self, %args) = @_;
-    my $depth;
-    if(defined $args{depth}) {
-        $depth = $args{depth};
-    }
-    else {
-        $depth = -1;
-    }
+    my $depth = (defined $args{depth}) ? $args{depth} : -1;
 
     if($depth == 0) {
-        return $self->getAttr(name => 'aggregate_rule_label');
+        return $self->aggregate_rule_label;
     }
 
-
-    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
-    my @array = split(/(id\d+)/,$formula);
+    my @array = split (/(id\d+)/, $self->aggregate_rule_formula);
     for my $element (@array) {
         if ($element =~ m/id(\d+)/) {
-            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->toString (depth => $depth - 1);
+            $element = ($depth > 0) ?
+                Entity::AggregateCondition->get ('id'=>substr($element,2))->toString (depth => $depth - 1) :
+                Entity::AggregateCondition->get ('id'=>substr($element,2))->aggregate_condition_formula_string ;
         }
     }
-    return "@array";
 
+    return List::Util::reduce { $a . $b } @array;
 }
 
 
@@ -222,6 +223,8 @@ sub eval {
         if ($element =~ m/id(\d+)/) {
             $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->eval();
             if( !defined $element) {
+                $self->setAttr(name => 'aggregate_rule_last_eval', value=>undef);
+                $self->save();
                 return undef;
             }
         }
@@ -328,17 +331,17 @@ sub updateState() {
     }
 }
 
-sub getDependantConditionIds {
+sub getDependentConditionIds {
     my $self = shift;
     my %ids = map { $_ => undef } ($self->aggregate_rule_formula =~ m/id(\d+)/g);
     return keys %ids;
 }
 
 
-sub isCombinationDependant{
+sub isCombinationDependent{
     my $self         = shift;
     my $condition_id = shift;
-    my @dep_cond_id = $self->getDependantConditionIds();
+    my @dep_cond_id = $self->getDependentConditionIds();
     my $rep = any {$_ eq $condition_id} @dep_cond_id;
     return $rep;
 }
@@ -360,6 +363,8 @@ Clones the rule and all related objects.
 Links clones to the specified service provider. Only clones objects that do not exist in service provider.
 
 @param dest_service_provider_id id of the service provider where to import the clone
+
+@return clone object
 
 =end classdoc
 
@@ -417,4 +422,24 @@ sub clone {
     return $clone;
 }
 
+sub updateFormulaString {
+    my $self = shift;
+    $self->setAttr(name=>'aggregate_rule_formula_string', value => $self->toString());
+    $self->save();
+}
+
+sub update {
+    my ($self, %args) = @_;
+    
+    my $rep = $self->SUPER::update (%args);
+    $self->updateFormulaString;
+    return $rep;
+}
+
+sub delete {
+    my $self = shift;
+    my $workflow_def = $self->workflow_def;
+    if (defined $workflow_def) { $workflow_def->delete(); };
+    $self->SUPER::delete();
+}
 1;

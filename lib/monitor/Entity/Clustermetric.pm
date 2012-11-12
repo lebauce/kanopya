@@ -55,6 +55,18 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 1
     },
+    clustermetric_formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    clustermetric_unit => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
     clustermetric_indicator_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
@@ -199,17 +211,18 @@ sub new {
     my $clustermetric_id = $self->getAttr(name=>'clustermetric_id');
     RRDTimeData::createTimeDataStore(name => $clustermetric_id);
 
-    # Ask the collector manager to collect the related indicator
     my $service_provider = $self->clustermetric_service_provider;
     my $collector = $service_provider->getManager(manager_type => "collector_manager");
     $collector->collectIndicator(indicator_id        => $self->clustermetric_indicator_id,
-                                 service_provider_id => $service_provider->getId);
+                                 service_provider_id => $self->clustermetric_service_provider_id);
 
-    if (! defined $args{clustermetric_label} || $args{clustermetric_label} eq '') {
-        $self->setAttr(name=>'clustermetric_label', value=>$self->toString());
-        $self->save();
+    my $toString = $self->toString();
+    $self->setAttr(name=>'clustermetric_formula_string', value=>$toString);
+    $self->setAttr(name=>'clustermetric_unit', value=>$self->computeUnit());
+    if ((! defined $args{clustermetric_label}) || $args{clustermetric_label} eq '') {
+        $self->setAttr(name=>'clustermetric_label', value=>$toString);
     }
-
+    $self->save();
     return $self;
 }
 
@@ -234,6 +247,11 @@ sub toString {
 
 sub getUnit {
     my $self = shift;
+    return $self->clustermetric_unit;
+}
+
+sub computeUnit {
+    my $self = shift;
 
     my $stat_func = $self->clustermetric_statistics_function_name;
     my $keep_unit = grep { $_ eq $stat_func } qw(mean variance std max min sum);
@@ -245,7 +263,7 @@ sub getUnit {
     return $indicator_unit;
 }
 
-sub getDependencies {
+sub getDependentCombinations {
     my $self = shift;
 
     my @aggregate_combinations_from_same_service = Entity::Combination::AggregateCombination->search(
@@ -256,19 +274,30 @@ sub getDependencies {
 
     my $id = $self->getId;
 
-    my %dependencies;
+    my @combinations =();
     LOOP:
     for my $aggregate_combination (@aggregate_combinations_from_same_service) {
-        my @cluster_metric_ids = $aggregate_combination->dependantClusterMetricIds();
+        my @cluster_metric_ids = $aggregate_combination->dependentClusterMetricIds;
 
         for my $cluster_metric_id (@cluster_metric_ids) {
             if ($id == $cluster_metric_id) {
-                $dependencies{$aggregate_combination->aggregate_combination_label} = $aggregate_combination->getDependencies;
+                push @combinations, $aggregate_combination;
                 next LOOP;
             }
         }
     }
 
+    return @combinations;
+}
+
+sub getDependencies {
+    my $self = shift;
+    my @combinations = $self->getDependentCombinations;
+
+    my %dependencies = {};
+    for my $combination (@combinations) {
+        $dependencies{$combination->aggregate_combination_label} = $combination->getDependencies;
+    }
     return \%dependencies;
 }
 
@@ -330,7 +359,7 @@ sub delete {
     LOOP:
     while (@aggregate_combinations_from_same_service) {
         my $aggregate_combination = pop @aggregate_combinations_from_same_service;
-        my @cluster_metric_ids = $aggregate_combination->dependantClusterMetricIds();
+        my @cluster_metric_ids = $aggregate_combination->dependentClusterMetricIds();
 
         for my $cluster_metric_id (@cluster_metric_ids) {
             if ($id == $cluster_metric_id) {
@@ -341,6 +370,17 @@ sub delete {
     }
     RRDTimeData::deleteTimeDataStore(name => $id);
     return $self->SUPER::delete();
+}
+
+sub update {
+    my ($self, %args) = @_;
+    $self->SUPER::update (%args);
+    $self->setAttr(name=>'clustermetric_formula_string', value=>$self->toString());
+    $self->setAttr(name=>'clustermetric_unit', value=>$self->computeUnit());
+    $self->save();
+    my @combinations = $self->getDependentCombinations;
+    map { $_->updateFormulaString ; $_->updateUnit} @combinations;
+    return $self;
 }
 
 1;

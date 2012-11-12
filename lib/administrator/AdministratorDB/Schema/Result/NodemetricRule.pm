@@ -29,7 +29,7 @@ __PACKAGE__->table("nodemetric_rule");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 nodemetric_rule_label
@@ -49,13 +49,12 @@ __PACKAGE__->table("nodemetric_rule");
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 255
 
-=head2 nodemetric_rule_last_eval
+=head2 nodemetric_rule_formula_string
 
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
+  data_type: 'text'
+  is_nullable: 0
 
 =head2 nodemetric_rule_timestamp
 
@@ -102,8 +101,8 @@ __PACKAGE__->add_columns(
   },
   "nodemetric_rule_formula",
   { data_type => "char", is_nullable => 0, size => 255 },
-  "nodemetric_rule_last_eval",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "nodemetric_rule_formula_string",
+  { data_type => "text", is_nullable => 0 },
   "nodemetric_rule_timestamp",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "nodemetric_rule_state",
@@ -167,6 +166,26 @@ __PACKAGE__->has_many(
     "foreign.verified_noderule_nodemetric_rule_id" => "self.nodemetric_rule_id",
   },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 workflow_def
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "workflow_def",
+  "AdministratorDB::Schema::Result::WorkflowDef",
+  { workflow_def_id => "workflow_def_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 workflow_noderules

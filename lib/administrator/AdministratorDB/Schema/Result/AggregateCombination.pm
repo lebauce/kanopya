@@ -42,6 +42,11 @@ __PACKAGE__->table("aggregate_combination");
   is_nullable: 0
   size: 255
 
+=head2 aggregate_combination_formula_string
+
+  data_type: 'text'
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -56,6 +61,8 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 255 },
   "aggregate_combination_formula",
   { data_type => "char", is_nullable => 0, size => 255 },
+  "aggregate_combination_formula_string",
+  { data_type => "text", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY

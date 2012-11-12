@@ -41,44 +41,23 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
-        is_editable     => 0
+        is_editable     => 0,
     },
-    service_provider_id =>  {
+    service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 1
+        is_editable     => 1,
+    },
+    combination_unit => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-
-=pod
-
-=begin classdoc
-
-Delete the object and all the conditions which depend on it.
-
-=end classdoc
-
-=cut
-
-sub delete {
-    my $self = shift;
-    my @conditions = (
-        $self->aggregate_condition_left_combinations,
-        $self->aggregate_condition_right_combinations,
-        $self->nodemetric_condition_left_combinations,
-        $self->nodemetric_condition_right_combinations,
-    );
-
-    while (@conditions) {
-        (pop @conditions)->delete();
-    }
-    return $self->SUPER::delete();
-};
-
 
 =pod
 
@@ -95,12 +74,7 @@ Get the list of conditions which depends on the combinations and all the combina
 sub getDependencies {
     my $self = shift;
 
-    my @conditions = (
-        $self->aggregate_condition_left_combinations,
-        $self->aggregate_condition_right_combinations,
-        $self->nodemetric_condition_left_combinations,
-        $self->nodemetric_condition_right_combinations,
-    );
+    my @conditions = $self->getDependentConditions;
 
     my %dependencies;
     for my $condition (@conditions) {
@@ -109,6 +83,19 @@ sub getDependencies {
     return \%dependencies;
 }
 
+
+sub getDependentConditions {
+    my $self = shift;
+
+    my @conditions = (
+        $self->aggregate_condition_left_combinations,
+        $self->aggregate_condition_right_combinations,
+        $self->nodemetric_condition_left_combinations,
+        $self->nodemetric_condition_right_combinations,
+    );
+
+    return @conditions;
+}
 
 =pod
 
@@ -121,5 +108,24 @@ a ConstantCombination. Also used to avoid deep recursion.
 
 =cut
 
-sub deleteIfConstant {};
+sub deleteIfConstant {
+};
+
+sub combination_formula_string {
+    return undef;
+}
+
+sub getUnit {
+    my $self = shift;
+    return $self->combination_unit;
+}
+
+sub updateUnit {
+    my $self = shift;
+    $self->setAttr (name=>'combination_unit', value => $self->computeUnit());
+    $self->save ();
+}
+
+sub computeUnit {
+}
 1;

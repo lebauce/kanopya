@@ -394,7 +394,7 @@ sub _contructRetrieverOutput {
     #Get all the rules relative to the cluster_id
 
     for my $rule (@$rules){
-        my @conditions = $rule->getDependantConditionIds();
+        my @conditions = $rule->getDependentConditionIds();
         #Check each conditions (i.e. each Combination
         for my $condition_id (@conditions) {
 
@@ -403,9 +403,9 @@ sub _contructRetrieverOutput {
             # Get the related combination id (in order to parse its formula)
 
             # get the indicator ids used in combination formula
-            # my @indicator_ids = $combination->getDependantIndicatorIds();
+            # my @indicator_ids = $combination->getDependentIndicatorIds();
 
-            my @indicator_ids = $condition->getDependantIndicatorIds();
+            my @indicator_ids = $condition->getDependentIndicatorIds();
 
             for my $indicator_id (@indicator_ids) {
                 my $indicator = Entity::Indicator->get(id => $indicator_id);
