@@ -64,13 +64,14 @@ function loadServicesConfig (container_id, elem_id) {
     
     var that = this;
 
+    // Service details
+    var table   = $("<table>").css("width", "100%").appendTo(container);
     $.ajax({
         url     : '/api/serviceprovider/' + elem_id,
         type    : 'GET',
         success : function(data) {
             var external    = "";
             if (data.externalcluster_id != null) external = 'external';
-            var table   = $("<table>").css("width", "100%").appendTo(container);
             $(table).append($("<tr>").append($("<td>", { colspan : 2, class : 'table-title', text : "General" })));
             $(table).append($("<tr>").append($("<td>", { text : 'Name :', width : '100' })).append($("<td>", { text : data[external + 'cluster_name'] })));
             $(table).append($("<tr>").append($("<td>", { text : 'Description :' })).append($("<td>", { text : data[external + 'cluster_desc'] })));
