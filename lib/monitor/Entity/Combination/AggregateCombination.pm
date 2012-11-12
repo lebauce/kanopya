@@ -19,6 +19,7 @@
 Mathematical formula of cluster metrics.
 
 @see <package>Entity::Clustermetric</package>
+@see <package>Entity::AggregateRule</package>
 
 =end classdoc
 
@@ -31,10 +32,9 @@ use warnings;
 use Data::Dumper;
 use base 'Entity::Combination';
 use Entity::Clustermetric;
-use TimeData::RRDTimeData;
 use Kanopya::Exceptions;
 use List::Util qw {reduce};
-use List::MoreUtils qw {any} ;
+
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -148,7 +148,7 @@ sub new {
 
     # Clone case
     if ($args{aggregate_combination_id}) {
-        return $class->get( id => $args{aggregate_combination_id})->clone(
+        return $class->get(id => $args{aggregate_combination_id})->clone(
             dest_service_provider_id => $args{service_provider_id}
         );
     }
@@ -159,11 +159,11 @@ sub new {
     my $self = $class->SUPER::new(%args);
     my $toString = $self->toString();
     if ((! defined $args{aggregate_combination_label}) || $args{aggregate_combination_label} eq '') {
-        $self->setAttr (name=>'aggregate_combination_label', value => $toString);
+        $self->setAttr(name => 'aggregate_combination_label', value => $toString);
     }
-    $self->setAttr (name=>'combination_unit', value => $self->computeUnit());
-    $self->setAttr (name=>'aggregate_combination_formula_string', value => $toString);
-    $self->save ();
+    $self->setAttr(name => 'combination_unit', value => $self->computeUnit());
+    $self->setAttr(name => 'aggregate_combination_formula_string', value => $toString);
+    $self->save();
     return $self;
 }
 
@@ -186,7 +186,7 @@ sub _verify {
 
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            if (!(Entity::Clustermetric->search(hash => {'clustermetric_id'=>substr($element,2)}))){
+            if (! (Entity::Clustermetric->search(hash => {'clustermetric_id' => substr($element,2)}))){
                 my $errmsg = "Creating combination formula with an unknown clusterMetric id ($element) ";
                 $log->error($errmsg);
                 throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -224,8 +224,8 @@ sub toString {
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
             $element = ($depth > 0) ?
-                Entity::Clustermetric->get('id'=>substr($element,2))->toString(depth => $depth - 1):
-                Entity::Clustermetric->get('id'=>substr($element,2))->clustermetric_formula_string;
+                Entity::Clustermetric->get('id' => substr($element,2))->toString(depth => $depth - 1):
+                Entity::Clustermetric->get('id' => substr($element,2))->clustermetric_formula_string;
         }
     }
     return List::Util::reduce { $a . $b } @array;
@@ -257,7 +257,7 @@ sub computeValues{
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
         my $cm = Entity::Clustermetric->get('id' => $cm_id);
-        $allTheCMValues{$cm_id} = $cm -> getValuesFromDB(%args);
+        $allTheCMValues{$cm_id} = $cm->getValuesFromDB(%args);
     }
     return $self->computeFromArrays(%allTheCMValues);
 }
@@ -437,6 +437,20 @@ sub computeFromArrays{
     return %rep;
 }
 
+
+=pod
+
+=begin classdoc
+
+Dynamic param checker.
+
+@param required Array of required parameters
+@param args the checked args
+
+=end classdoc
+
+=cut
+
 sub checkMissingParams {
     my %args = @_;
 
@@ -475,9 +489,10 @@ sub computeUnit {
     # Replace each rule id by its evaluation
     my $ref_element;
     my $are_same_units = 0;
+
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            $element = Entity::Clustermetric->get('id'=>substr($element,2))->getUnit();
+            $element = Entity::Clustermetric->get('id' => substr($element,2))->getUnit();
 
             if (not defined $ref_element) {
                 $ref_element = $element;
@@ -554,6 +569,7 @@ sub clone {
     );
 }
 
+
 =pod
 
 =begin classdoc
@@ -571,10 +587,23 @@ sub computeValueFromMonitoredValues {
     return $self->computeLastValue()
 }
 
+# Virtual attribute
 sub combination_formula_string {
     my $self = shift;
     return $self->aggregate_combination_formula_string
 }
+
+
+=pod
+
+=begin classdoc
+
+Compute and update the instance formula_string attribute and call the update of the formula_string
+attribute of the objects which depend on the instance.
+
+=end classdoc
+
+=cut
 
 sub updateFormulaString {
     my $self = shift;
@@ -585,13 +614,24 @@ sub updateFormulaString {
 }
 
 
+=pod
+
+=begin classdoc
+
+Redefine update to call formula_string and unit attributes update.
+
+=end classdoc
+
+=cut
+
 sub update {
     my ($self, %args) = @_;
-    my $rep = $self->SUPER::update (%args);
+    my $rep = $self->SUPER::update(%args);
     $self->updateFormulaString;
     $self->updateUnit;
     return $rep;
 }
+
 
 =pod
 
