@@ -320,11 +320,11 @@ sub registerUsers {
 
         my $parenttype = BaseDB::_parentClass($classtype);
         my $methods    = $classtype->getMethods();
-        for my $parentmethod (keys $parenttype->getMethods()) {
+        for my $parentmethod (keys %{$parenttype->getMethods()}) {
             delete $methods->{$parentmethod};
         }
 
-        my @methodlist = keys $methods;
+        my @methodlist = keys %$methods;
         if (scalar (@methodlist)) {
             $classtype =~ s/.*\:\://g;
             push @{$groups}, {
