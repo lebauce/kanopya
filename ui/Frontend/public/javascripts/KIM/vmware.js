@@ -198,7 +198,7 @@ function vmwareBrowser (event) {
     browser.dialog({
         title   :   'VMware Browser',
         modal   :   true,
-        //TODO width's value in CSS rather specifing it here
+        //TODO width's value in CSS
         width   :   '400 px',
         buttons :   {
             Cancel: function () {
@@ -217,9 +217,9 @@ function vmwareBrowser (event) {
                         'register_items'    :   formattedCheckedNodes,
                     }),
                 }).done(function (success_msg){
-                    alert ('Data imported successfully in Kanopya ');
+                    alert ('Data imported successfully in Kanopya');
                 }).fail(function (error_msg){
-                    alert ('Error in data import ');
+                    alert ('Error in data import');
                 });
 
                 $(this).dialog('close');

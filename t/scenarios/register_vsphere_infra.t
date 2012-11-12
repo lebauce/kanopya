@@ -180,7 +180,7 @@ eval {
             foreach my $clusterOrHypervisor_vsphere (@{ $datacenter_vsphere->{children} }) {
                 $total_items_nbr++;
                 eval {
-                    (my $clusterOrHypervisor_vsphere_renamed = $clusterOrHypervisor_vsphere->{name}) =~ s/[^\w\d+]/_/g;
+                    (my $clusterOrHypervisor_vsphere_renamed = $clusterOrHypervisor_vsphere->{name}) =~ s/[^\w\d]/_/g;
                     my $clusterOrHypervisor_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
                                                           hash => {cluster_name => $clusterOrHypervisor_vsphere_renamed},
                                                       );
@@ -193,7 +193,7 @@ eval {
                     foreach my $vm_hypervisor_vsphere (@{ $clusterOrHypervisor_vsphere->{children} }) {
                         $total_items_nbr++;
                         eval {
-                            (my $vm_hypervisor_vsphere_renamed = $vm_hypervisor_vsphere->{name}) =~ s/[^\w\d+]/_/g;
+                            (my $vm_hypervisor_vsphere_renamed = $vm_hypervisor_vsphere->{name}) =~ s/[^\w\d]/_/g;
                             my $vm_hypervisor_vsphere_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
                                                                     hash => {cluster_name => $vm_hypervisor_vsphere_renamed},
                                                                 );
@@ -208,7 +208,7 @@ eval {
                         foreach my $vm_vsphere (@{ $hypervisorCluster_vsphere->{children} }) {
                             $total_items_nbr++;
                             eval {
-                                (my $vm_vsphere_renamed = $vm_vsphere->{name}) =~ s/[^\w\d+]/_/g;
+                                (my $vm_vsphere_renamed = $vm_vsphere->{name}) =~ s/[^\w\d]/_/g;
                                 my $vm_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
                                                      hash => {cluster_name => $vm_vsphere_renamed},
                                                  );
