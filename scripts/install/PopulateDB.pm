@@ -185,81 +185,97 @@ sub registerUsers {
         { name    => 'Entity',
           type    => 'Entity',
           desc    => 'Entity master group containing all entities',
-          system  => 1 },
+          system  => 1
+        },
         { name    => 'Admin',
           type    => 'User',
           desc    => 'Privileged users for administration tasks',
           system  => 1,
-          profile => [ 'Super Admin', 'God profile : full access to the user interface.' ] },
+          profile => [ 'Super Admin', 'God profile : full access to the user interface.' ]
+        },
         { name    => 'Administrator',
           type    => 'User',
           desc    => 'Administrator group',
           system  => 0,
-          profile => [ 'Administrator', 'administrator profile' ] },
+          profile => [ 'Administrator', 'administrator profile' ]
+        },
         { name    => 'ServiceDeveloper',
           type    => 'User',
           desc    => 'Service developer group',
           system  => 0,
-          profile => [ 'Services Developer', 'services dev profile' ] },
+          profile => [ 'Services Developer', 'services dev profile' ]
+        },
         { name    => 'Sales',
           type    => 'User',
           desc    => 'Sales group',
           system  => 0,
-          profile => [ 'Sales', 'sale profile' ] },
+          profile => [ 'Sales', 'sale profile' ]
+        },
         { name    => 'Customer',
           type    => 'User',
           desc    => 'Customer group',
           system  => 0,
-          profile => [ 'Customer', 'customer profile' ] },
+          profile => [ 'Customer', 'customer profile' ],
+          methods => {
+              'Sales' => [ 'create', 'update', 'remove', 'get' ],
+          }
+        },
         { name    => 'User',
           type    => 'User',
           desc    => 'User master group containing all users',
           system  => 1,
-          methods => {
-              'Sales' => [ 'setProfiles', 'create', 'update', 'remove', 'get' ],
-        }},
+        },
         { name    => 'Processormodel',
           type    => 'Processormodel',
           desc    => 'Processormodel master group containing all processor models',
-          system  => 1 },
+          system  => 1
+        },
         { name    => 'Hostmodel',
           type    => 'Hostmodel',
           desc    => 'Hostmodel master group containing all host models',
-          system  => 1 },
+          system  => 1
+        },
         { name    => 'Host',
           type    => 'Host',
           desc    => 'Host master group containing all hosts',
-          system  => 1 },
+          system  => 1
+        },
         { name    => 'ServiceProvider',
           type    => 'ServiceProvider',
           desc    => 'ServiceProvider master group containing all service providers',
           system  => 1,
           methods => {
               'ServiceDeveloper' => [ 'addManager', 'create', 'remove' ],
-        }},
+          }
+        },
         { name    => 'Cluster',
           type    => 'Cluster',
           desc    => 'Cluster master group containing all clusters',
           system  => 1,
           methods => {
               'Sales' => [ 'subscribe' ],
-        }},
+          }
+        },
         { name    => 'Kernel',
           type    => 'Kernel',
           desc    => 'Kernel master group containing all kernels',
-          system  => 1 },
+          system  => 1
+        },
         { name    => 'Systemimage',
           type    => 'Systemimage',
           desc    => 'Systemimage master group containing all system images',
-          system  => 1 },
+          system  => 1
+        },
         { name    => 'Operationtype',
           type    => 'Operationtype',
           desc    => 'Operationtype master group containing all operations',
-          system  => 1 },
+          system  => 1
+        },
         { name    => 'Masterimage',
           type    => 'Masterimage',
           desc    => 'Masterimage master group containing all master images',
-          system  => 1 },
+          system  => 1
+        },
         { name    => 'Component',
           type    => 'Component',
           desc    => 'Component group containing all components',
@@ -267,7 +283,8 @@ sub registerUsers {
           methods => {
               'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
               'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
-        }},
+          }
+        },
         { name    => 'Connector',
           type    => 'Connector',
           desc    => 'Connector group containing all connectors',
@@ -275,7 +292,8 @@ sub registerUsers {
           methods => {
               'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
               'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
-        }},
+          }
+        },
         { name    => 'Policy',
           type    => 'Policy',
           desc    => 'Policy group containing all policies',
@@ -283,7 +301,8 @@ sub registerUsers {
           methods => {
               'ServiceDeveloper' => [ 'getFlattenedHash', 'get' ],
               'Sales'            => [ 'getFlattenedHash', 'get' ]
-        }},
+          }
+        },
         { name    => 'ServiceTemplate',
           type    => 'ServiceTemplate',
           desc    => 'ServiceTemplate group containing all service templates',
@@ -296,11 +315,13 @@ sub registerUsers {
         { name    => 'Network',
           type    => 'Network',
           desc    => 'Network group containing all service templates',
-          system  => 1 },
+          system  => 1
+        },
         { name    => 'Gp',
           type    => 'Gp',
           desc    => 'Groups master group containing all groups',
-          system  => 1 },
+          system  => 1
+        },
         # Re-handle the Entity group here to set permissions on methods,
         # indeed, we need have user groups created before setting permissions,
         # but we need to have the Entity group created at first.

@@ -196,6 +196,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 customer
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Customer>
+
+=cut
+
+__PACKAGE__->might_have(
+  "customer",
+  "AdministratorDB::Schema::Result::Customer",
+  { "foreign.customer_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 messages
 
 Type: has_many
@@ -312,8 +327,8 @@ Composing rels: L</user_profiles> -> profile
 __PACKAGE__->many_to_many("profiles", "user_profiles", "profile");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-26 13:48:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YbTdI3j8irDPts5so452+Q
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-12 10:43:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1mETdwK3Jzv1HFAbEedQ9w
 
 __PACKAGE__->belongs_to(
   "parent",

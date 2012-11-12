@@ -863,6 +863,16 @@ CREATE TABLE `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `customer`
+-- Entity::User::Customer class
+
+CREATE TABLE `customer` (
+  `customer_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`customer_id`),
+  FOREIGN KEY (`customer_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `user_extension`
 
 CREATE TABLE `user_extension` (
