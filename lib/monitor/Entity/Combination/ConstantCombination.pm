@@ -18,6 +18,10 @@
 
 Constant value used as combination
 
+@see <package>Entity::CollectorIndicator</package>
+@see <package>Entity::NodemetricCondition</package>
+@see <package>Entity::AggregateCondition</package>
+
 =end classdoc
 
 =cut
@@ -34,14 +38,17 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    service_provider_id =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    value =>  {pattern       => '^((id\d+)|[ .+*()-/]|\d)+$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1,
+    service_provider_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    value => {
+        pattern         => '^((id\d+)|[ .+*()-/]|\d)+$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
     }
 };
 
@@ -59,25 +66,89 @@ sub label {
     return $self->value;
 }
 
+
+=pod
+
+=begin classdoc
+
+Return the value attribute. Use to be compatible with other Combination subclasses.
+
+@return value attribute.
+
+=end classdoc
+
+=cut
+
 sub computeValueFromMonitoredValues {
     my $self = shift;
     return $self->value;
 }
+
+
+=pod
+
+=begin classdoc
+
+Return the value attribute. Use to be compatible with other Combination subclasses.
+
+@return value attribute.
+
+=end classdoc
+
+=cut
 
 sub computeLastValue {
     my $self = shift;
     return $self->value;
 }
 
+
+=pod
+
+=begin classdoc
+
+Return empty string. Use to be compatible with other Combination subclasses.
+
+@return empty string.
+
+=end classdoc
+
+=cut
+
 sub getDependentIndicatorIds {
     my $self = shift;
     return ();
 }
 
+
+=pod
+
+=begin classdoc
+
+Call delete(). Used when deleting a condition which has created
+a ConstantCombination. Also used to avoid deep recursion.
+
+=end classdoc
+
+=cut
+
 sub deleteIfConstant {
     my $self = shift;
     return $self->delete();
 }
+
+
+=pod
+
+=begin classdoc
+
+Return the value attribute.
+
+@return value attribute.
+
+=end classdoc
+
+=cut
 
 sub toString {
     my $self = shift;
