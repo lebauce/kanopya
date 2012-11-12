@@ -201,6 +201,21 @@ sub resizeTimeDataStores {
     }
 }
 
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class. Create the RRD which will store the computed data.
+Set the formula string, the unit and the label if not defined.
+
+@return a class instance
+
+=end classdoc
+
+=cut
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -226,9 +241,16 @@ sub new {
     return $self;
 }
 
-=head2 toString
 
-    desc: return a string representation of the entity
+=pod
+
+=begin classdoc
+
+Compute a readable string of the formula.
+
+@return the string representation of the entity
+
+=end classdoc
 
 =cut
 
@@ -237,7 +259,7 @@ sub toString {
 
     my $depth = (defined $args{depth}) ? $args{depth} : -1;
 
-    if($depth == 0) {
+    if ($depth == 0) {
         return $self->getAttr(name => 'clustermetric_label');
     }
 
@@ -245,10 +267,39 @@ sub toString {
            '(' . $self->getIndicator()->toString() . ')';
 }
 
+
+=pod
+
+=begin classdoc
+
+@deprecated
+
+Return the unit attribute. Method used to ensure backward compatibility.
+Preferable to get directly the attribute.
+
+@return clustermetric_unit attribute
+
+=end classdoc
+
+=cut
+
 sub getUnit {
     my $self = shift;
     return $self->clustermetric_unit;
 }
+
+
+=pod
+
+=begin classdoc
+
+Compute a readable string of the unit.
+
+@return computed unit of the clustermetric
+
+=end classdoc
+
+=cut
 
 sub computeUnit {
     my $self = shift;
@@ -259,9 +310,21 @@ sub computeUnit {
         return '-';
     }
 
-    my $indicator_unit = $self->getIndicator()->indicator_unit || '?';
-    return $indicator_unit;
+    return  $self->getIndicator()->indicator_unit || '?';
 }
+
+
+=pod
+
+=begin classdoc
+
+Compute the aggregate combinations instances which depend on the clustermetric instance.
+
+@return Array of dependent aggregate combinations.
+
+=end classdoc
+
+=cut
 
 sub getDependentCombinations {
     my $self = shift;
@@ -289,6 +352,19 @@ sub getDependentCombinations {
 
     return @combinations;
 }
+
+
+=pod
+
+=begin classdoc
+
+Compute a hierarchical tree of the names of the objects which depend on the clustermetric instance.
+
+@return hash reference of the tree.
+
+=end classdoc
+
+=cut
 
 sub getDependencies {
     my $self = shift;
@@ -345,6 +421,16 @@ sub clone {
     );
 }
 
+=pod
+
+=begin classdoc
+
+Delete the instance, the RRD and all the instances which depend on it.
+
+=end classdoc
+
+=cut
+
 sub delete {
     my $self = shift;
 
@@ -356,7 +442,7 @@ sub delete {
 
     my $id = $self->getId;
 
-    LOOP:
+    COMBI:
     while (@aggregate_combinations_from_same_service) {
         my $aggregate_combination = pop @aggregate_combinations_from_same_service;
         my @cluster_metric_ids = $aggregate_combination->dependentClusterMetricIds();
@@ -364,7 +450,7 @@ sub delete {
         for my $cluster_metric_id (@cluster_metric_ids) {
             if ($id == $cluster_metric_id) {
                 $aggregate_combination->delete();
-                next LOOP;
+                next COMBI;
             }
         }
     }
@@ -372,14 +458,29 @@ sub delete {
     return $self->SUPER::delete();
 }
 
+=pod
+
+=begin classdoc
+
+Redefine update() in order to update the formula string and unit of instance which depend on the
+updated instance.
+
+@return updated instance.
+
+=end classdoc
+
+=cut
+
 sub update {
     my ($self, %args) = @_;
+
     $self->SUPER::update (%args);
-    $self->setAttr(name=>'clustermetric_formula_string', value=>$self->toString());
-    $self->setAttr(name=>'clustermetric_unit', value=>$self->computeUnit());
+    $self->setAttr(name => 'clustermetric_formula_string', value => $self->toString());
+    $self->setAttr(name => 'clustermetric_unit', value => $self->computeUnit());
     $self->save();
+
     my @combinations = $self->getDependentCombinations;
-    map { $_->updateFormulaString ; $_->updateUnit} @combinations;
+    map { $_->updateFormulaString ; $_->updateUnit } @combinations;
     return $self;
 }
 
