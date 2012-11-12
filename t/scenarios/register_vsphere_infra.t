@@ -168,35 +168,50 @@ eval {
     lives_ok {
         foreach my $datacenter_vsphere (@$registerItems) {
             $total_items_nbr++;
-            my $datacenter_kanopya;
             eval {
-                $datacenter_kanopya = $vsphere->getDatacenters(datacenter_name => $datacenter_vsphere->{name});
+                my $datacenter_kanopya = Vsphere5Datacenter->find(
+                                             hash => {vsphere5_datacenter_name => $datacenter_vsphere->{name}}
+                                         );
             };
-            if ($@ || not defined $datacenter_kanopya) {
+            if ($@) {
                 $ko_items_nbr++;
             }
 
             foreach my $clusterOrHypervisor_vsphere (@{ $datacenter_vsphere->{children} }) {
                 $total_items_nbr++;
                 eval {
-                    (my $clusterOrHypervisor_vsphere_renamed = $clusterOrHypervisor_vsphere->{name}) =~ s/[^\w\d+]/_/g;
+                    (my $clusterOrHypervisor_vsphere_renamed = $clusterOrHypervisor_vsphere->{name}) =~ s/[^\w\d]/_/g;
                     my $clusterOrHypervisor_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
-                                                       hash => {cluster_name => $clusterOrHypervisor_vsphere_renamed},
-                                                   );
+                                                          hash => {cluster_name => $clusterOrHypervisor_vsphere_renamed},
+                                                      );
                 };
                 if ($@) {
                     $ko_items_nbr++;
                 }
 
-                if ($clusterOrHypervisor_vsphere->{type} eq 'cluster') {
+                if ($clusterOrHypervisor_vsphere->{type} eq 'hypervisor') {
+                    foreach my $vm_hypervisor_vsphere (@{ $clusterOrHypervisor_vsphere->{children} }) {
+                        $total_items_nbr++;
+                        eval {
+                            (my $vm_hypervisor_vsphere_renamed = $vm_hypervisor_vsphere->{name}) =~ s/[^\w\d]/_/g;
+                            my $vm_hypervisor_vsphere_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
+                                                                    hash => {cluster_name => $vm_hypervisor_vsphere_renamed},
+                                                                );
+                        };
+                        if ($@) {
+                            $ko_items_nbr++;
+                        }
+                    }
+                }
+                elsif ($clusterOrHypervisor_vsphere->{type} eq 'cluster') {
                     foreach my $hypervisorCluster_vsphere (@{ $clusterOrHypervisor_vsphere->{children} }) {
                         foreach my $vm_vsphere (@{ $hypervisorCluster_vsphere->{children} }) {
                             $total_items_nbr++;
                             eval {
-                                (my $vm_vsphere_renamed = $vm_vsphere->{name}) =~ s/[^\w\d+]/_/g;
+                                (my $vm_vsphere_renamed = $vm_vsphere->{name}) =~ s/[^\w\d]/_/g;
                                 my $vm_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
-                                                  hash => {cluster_name => $vm_vsphere_renamed},
-                                              );
+                                                     hash => {cluster_name => $vm_vsphere_renamed},
+                                                 );
                             };
                             if ($@) {
                                 $ko_items_nbr++;

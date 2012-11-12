@@ -223,6 +223,7 @@ eval {
             cluster_nameserver1    => '208.67.222.222',
             cluster_nameserver2    => '127.0.0.1',
             # cluster_boot_policy    => 'PXE Boot via ISCSI',
+            masterimage_id         => $vm_masterimage->id,
             user_id                => $admin_user->getAttr(name => 'user_id'),
             managers               => {
                 host_manager => {

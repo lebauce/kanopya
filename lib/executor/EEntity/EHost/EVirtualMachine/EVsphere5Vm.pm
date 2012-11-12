@@ -69,8 +69,6 @@ Retrieve the memory currently used by a vsphere5 vm, in Bytes
 sub getRamUsedByVm {
     my ($self,%args) = @_;
 
-    my $e_hypervisor = EFactory::newEEntity(data => $self->hypervisor);
-
     my $vsphere = $self->vsphere5;
 
     #get the vm datacenter
@@ -85,14 +83,14 @@ sub getRamUsedByVm {
                   );
 
     #get vsphere virtual machine's view
-    my $vm_view   = $vsphere->findEntityView(
-                        view_type    => 'VirtualMachine',
-                        hash_filter  => {
-                            name => $self->node->externalnode_hostname,
-                        },
-                        begin_entity => $dc_view,
-                    );
-    
+    my $vm_view = $vsphere->findEntityView(
+                      view_type    => 'VirtualMachine',
+                      hash_filter  => {
+                          'config.uuid' => $self->vsphere5_uuid,
+                      },
+                      begin_entity => $dc_view,
+                  );
+
     if (defined $vm_view->summary->quickStats->hostMemoryUsage &&
         $vm_view->summary->quickStats->hostMemoryUsage != 0) {
         return {
@@ -102,7 +100,7 @@ sub getRamUsedByVm {
     else {
         $errmsg = 'Vm\'s used memory not available for vm '. $self->host_hostname;
         throw Kanopya::Exception::Internal(error => $errmsg);
-    } 
+    }
 }
 
 1;

@@ -69,7 +69,7 @@ sub addRepository {
 
     $self->negociateConnection();
 
-    my $hypervisor_name     = $args{host}->host_hostname;
+    my $hypervisor_uuid     = $args{host}->vsphere5_uuid;
     my $container_access    = $args{container_access};
     my $container_access_ip = $container_access->container_access_ip;
     my $export_full_path    = $container_access->container_access_export;
@@ -77,13 +77,13 @@ sub addRepository {
 
     my $view = $self->findEntityView(view_type      => 'HostSystem',
                                      hash_filter    => {
-                                         'name' => $hypervisor_name,
+                                         'hardware.systemInfo.uuid' => $hypervisor_uuid,
                                      });
 
-    my $datastore = HostNasVolumeSpec->new( accessMode => 'readWrite',
-                                            remoteHost => $container_access_ip,
-                                            localPath  => $args{repository_name},
-                                            remotePath => $export_path[1],
+    my $datastore = HostNasVolumeSpec->new(accessMode => 'readWrite',
+                                           remoteHost => $container_access_ip,
+                                           localPath  => $args{repository_name},
+                                           remotePath => $export_path[1],
                     );
 
     my $dsmv = $self->getView(mo_ref=>$view->configManager->datastoreSystem);

@@ -78,7 +78,18 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_extended  => 0
-    }
+    },
+    overcommitment_memory_factor => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+
+    },
+    overcommitment_memory_factor => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -299,13 +310,17 @@ sub retrieveClustersAndHypervisors {
         if (ref ($child_view) eq 'ClusterComputeResource') {
             $compute_resource_infos = {
                 name => $child_view->name,
-                type => 'cluster'
+                type => 'cluster',
             };
         }
         elsif(ref ($child_view) eq 'ComputeResource') {
+            my $view = $self->getView(mo_ref => $child_view->host->[0]);
+            my $uuid = $view->hardware->systemInfo->uuid;
+
             $compute_resource_infos = {
                 name => $child_view->name,
-                type => 'hypervisor'
+                type => 'hypervisor',
+                uuid => $uuid,
             };
         }
         else {
@@ -359,7 +374,8 @@ sub retrieveClusterHypervisors {
         my $hypervisor_view  = $self->getView(mo_ref => $hypervisor);
         my %hypervisor_infos = (
             name => $hypervisor_view->name,
-            type => 'clusterHypervisor'
+            type => 'clusterHypervisor',
+            uuid => $hypervisor_view->hardware->systemInfo->uuid,
         );
 
         push @hypervisors_infos, \%hypervisor_infos;
@@ -410,6 +426,7 @@ sub retrieveHypervisorVms {
         my $vm_infos = {
             name => $vm->name,
             type => 'vm',
+            uuid => $vm->config->uuid,
         };
 
         push @vms_infos, $vm_infos;
@@ -487,10 +504,6 @@ sub findEntityView {
                              'array_property' => undef,
                              'begin_entity'   => undef,
                          });
-
-    #Check of Filter parameters
-    General::checkParams(args     => $args{hash_filter},
-                         required => ['name'],);
 
     $self->negociateConnection();
 
@@ -602,9 +615,6 @@ sub findEntityViews {
     return $views;
 }
 
-#TODO: manage the possibility that the entities, for example clusters can be into vsphere
-#folders
-
 =pod
 
 =begin classdoc
@@ -630,7 +640,6 @@ sub register {
                                          optional => {
                                              parent => undef,
                                          });
-    $self->negociateConnection();
 
     my @register_items = @{ $args{register_items} };
 
@@ -652,6 +661,7 @@ sub register {
             $registered_item = $self->$register_method(
                                    name   => $register_item->{name},
                                    parent => $args{parent},
+                                   uuid   => $register_item->{uuid},
                                );
         };
         if ($@) {
@@ -751,6 +761,7 @@ sub registerVm {
 
     my $parent_service_provider   = $args{parent};
     my $service_provider_name     = $args{name};
+    my $vm_uuid                   = $args{uuid};
     #We substitute terms in (new string) to match cluster_name pattern
     my $service_provider_renamed = $self->formatName(name => $service_provider_name);
 
@@ -782,7 +793,7 @@ sub registerVm {
     my $vm_view = $self->findEntityView(
                       view_type    => 'VirtualMachine',
                       hash_filter  => {
-                          name => $service_provider_name,
+                          'config.uuid' => $vm_uuid,
                       },
                       begin_entity => $datacenter_view,
                   );
@@ -885,7 +896,7 @@ sub registerVm {
                 my $hypervisor_view = $self->findEntityView(
                                           view_type    => 'HostSystem',
                                           hash_filter  => {
-                                                name => $hypervisor_node->host->host_hostname,
+                                                'hardware.systemInfo.uuid' => $hypervisor_node->host->vsphere5_uuid,
                                           },
                                           begin_entity => $datacenter_view,
                                       );
@@ -934,7 +945,7 @@ sub registerVm {
                  );
 
         #promote new virtual machine class to a vsphere5Vm one
-        $self->addVM(host => $vm, guest_id => $vm_view->config->guestId);
+        $self->addVM(host => $vm, guest_id => $vm_view->config->guestId, uuid => $vm_uuid);
 
         my $node = Externalnode::Node->new(
                        inside_id             => $service_provider->id,
@@ -980,6 +991,7 @@ sub registerHypervisor {
 
     my $datacenter               = $args{parent};
     my $service_provider_name    = $args{name};
+    my $hv_uuid                  = $args{uuid}; 
     #We substitute terms in (new string) to match cluster_name pattern
     my $service_provider_renamed = $self->formatName(name => $service_provider_name);
     my $datacenter_name          = $datacenter->vsphere5_datacenter_name;
@@ -996,7 +1008,7 @@ sub registerHypervisor {
     my $hypervisor_view = $self->findEntityView(
                               view_type    => 'HostSystem',
                               hash_filter  => {
-                                  name => $service_provider_name,
+                                  'hardware.systemInfo.uuid' => $hv_uuid,
                               },
                               begin_entity => $datacenter_view,
                           );
@@ -1008,7 +1020,7 @@ sub registerHypervisor {
     eval {
         $service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
                                          cluster_name => $service_provider_renamed,}
-                                     );
+                            );
     };
     if (defined $service_provider) {
         $errmsg  = 'vSphere component will not create new service provider for hypervisor ';
@@ -1118,7 +1130,7 @@ sub registerHypervisor {
                  );
 
         #promote new hypervisor class to a vsphere5Hypervisor one
-        $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id);
+        $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id, uuid => $hv_uuid);
 
         my $node = Externalnode::Node->new(
                        inside_id             => $service_provider->id,
@@ -1306,7 +1318,11 @@ sub registerCluster {
                     );
 
             #promote new hypervisor class to a vsphere5Hypervisor one
-            $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id);
+            $self->addHypervisor(
+                host          => $hv,
+                datacenter_id => $datacenter->id,
+                uuid          => $hypervisor_view->hardware->systemInfo->uuid,
+            );
 
             my $node = Externalnode::Node->new(
                            inside_id             => $service_provider->id,
@@ -1511,12 +1527,13 @@ Promote a virtual machine object to a Vsphere5Vm one
 sub addVM {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'guest_id' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'guest_id', 'uuid' ]);
 
     my $vsphere5vm = Entity::Host::VirtualMachine::Vsphere5Vm->promote(
                          promoted          => $args{host},
                          vsphere5_id       => $self->id,
                          vsphere5_guest_id => $args{guest_id},
+                         vsphere5_uuid     => $args{uuid},
                      );
 
     return $vsphere5vm;
@@ -1574,14 +1591,15 @@ Promote an Hypervisor class into a Vsphere5Hypervisor one
 sub addHypervisor {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'datacenter_id' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'datacenter_id', 'uuid' ]);
 
     my $hypervisor_type = 'Entity::Host::Hypervisor::Vsphere5Hypervisor';
 
     my $vsphere5Hypervisor = $hypervisor_type->promote(
                                  promoted               => $args{host},
                                  vsphere5_id            => $self->id,
-                                 vsphere5_datacenter_id => $args{datacenter_id}
+                                 vsphere5_datacenter_id => $args{datacenter_id},
+                                 vsphere5_uuid          => $args{uuid},
                              );
 
     return $vsphere5Hypervisor;
@@ -1602,7 +1620,7 @@ sub formatName {
 
     General::checkParams(args => \%args, required => ['name']);
 
-    (my $name = $args{name}) =~ s/[^\w\d+]/_/g;
+    (my $name = $args{name}) =~ s/[^\w\d]/_/g;
 
     return $name;
 }
