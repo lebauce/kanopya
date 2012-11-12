@@ -71,14 +71,14 @@ eval{
     );
 
     # Get indicators
-    $indic1 = Entity::CollectorIndicator->find (
+    $indic1 = Entity::CollectorIndicator->find(
         hash => {
             collector_manager_id        => $mock_monitor->id,
             'indicator.indicator_oid'   => 'Memory/PercentMemoryUsed',
         }
     );
 
-    $indic2 = Entity::CollectorIndicator->find (
+    $indic2 = Entity::CollectorIndicator->find(
         hash => {
             collector_manager_id        => $mock_monitor->id,
             'indicator.indicator_oid'   => 'Memory/Pool Paged Bytes'
@@ -190,13 +190,13 @@ sub test_alerts_aggregator {
         value           => $mock_conf
     );
 
-    is (scalar Alert->search (hash=>{}), 0, 'Check there is no alert');
+    my $total_alert_before_test = scalar Alert->search(hash=>{});
 
     sleep 2;
     $aggregator->update ();
 
     my @alerts = Alert->search (hash=>{});
-    is (scalar @alerts, 1, 'Check one alert has been created');
+    is (scalar @alerts, $total_alert_before_test + 1, 'Check one alert has been created');
     my $first_alert = pop @alerts;
 
     my $alert_msg = "Indicator RAM pool paged(Memory/Pool Paged Bytes) was not retrieved by collector for node node_2";
@@ -207,7 +207,7 @@ sub test_alerts_aggregator {
     $aggregator->update ();
 
     @alerts = Alert->search (hash=>{});
-    is (scalar @alerts, 1, 'Check no more alert created');
+    is (scalar @alerts, $total_alert_before_test + 1, 'Check no more alert created');
     my $alert = pop @alerts;
 
     is ($alert->alert_message,$alert_msg,'Check alert message');
@@ -225,7 +225,7 @@ sub test_alerts_aggregator {
     $aggregator->update ();
 
     @alerts = Alert->search (hash=>{});
-    is (scalar @alerts, 1, 'Check no more alert created');
+    is (scalar @alerts, $total_alert_before_test + 1, 'Check no more alert created');
     $alert = pop @alerts;
 
     is ($alert->alert_message, $alert_msg, 'Check alert message');
@@ -243,7 +243,7 @@ sub test_alerts_aggregator {
     $aggregator->update();
 
     @alerts = Alert->search(hash=>{}, order_by => 'alert_id asc');
-    is (scalar @alerts, 2, 'Check one new alert created');
+    is (scalar @alerts, $total_alert_before_test + 2, 'Check one new alert created');
 
     $alert = pop @alerts;
     is ($alert->alert_message,$alert_msg,'Check alert message');
