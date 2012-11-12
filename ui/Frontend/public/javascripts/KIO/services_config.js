@@ -333,12 +333,15 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                             if (Object.keys(params).length > 0) {
                                 data.manager_params = params;
                             }
-                            setTimeout(function() { 
-                                var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
-                                dialog.css('text-align', 'center');
+                            setTimeout(function() {
+                                $('*').addClass('cursor-wait');
+                                var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait...",});
+                                dialog.css('text-align', 'center'); // text horizontal align
+                                dialog.css('line-height', '200px'); // text vertical align
                                 dialog.appendTo("body").dialog({
                                     resizable   : false,
-                                    title       : ""
+                                    title       : "",
+                                    height      : '250',
                                 });
                                 $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
                             }, 10);
@@ -365,6 +368,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                                     callback();
                                 },
                                 complete      : function() {
+                                    $('*').removeClass('cursor-wait');
                                     $("div#waiting_default_insert").dialog("destroy");
                                 },
                                 error         : function(error) {
