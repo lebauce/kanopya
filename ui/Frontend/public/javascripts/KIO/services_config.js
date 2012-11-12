@@ -212,15 +212,27 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
     var mode_config = instance_id && instance_id > 0;
     callback        = callback || $.noop;
     connectortype   = managerConnectorTranslate(managertype);
+    
+    // Quick (bad) fix to exclude managers from kanopya cluster
+    // TODO Do not use findManager rpc, refactor available managers request, review createmanagerDialog
+    var kanopya_cluster_id;
+    $.ajax({
+        url     : '/api/cluster?cluster_name=Kanopya',
+        async   : false,
+        success : function(kanopya_cluster) {
+            kanopya_cluster_id = kanopya_cluster[0].pk;
+        }
+    });
+
     $.ajax({
         url         : '/api/serviceprovider/' + sp_id + '/findManager',
         type        : 'POST',
         contentType : 'application/json',
         data        : JSON.stringify({ 'category' : connectortype }),
         success     : function(data) {
-            // we skip all managers of the Kanopya cluster (id=1)
+            // we skip all managers of the Kanopya cluster
             for (var i in data) if (data.hasOwnProperty(i)) {
-                if (data[i].service_provider_id == 1) {
+                if (data[i].service_provider_id == kanopya_cluster_id) {
                     data.splice(i,1);
                 }
             }
@@ -370,7 +382,8 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
 
 function createManagerButton(managertype, ctnr, sp_id, container_id) {
     var addManagerButton    = $("<a>", {
-        text : 'Link to a ' + managerConnectorTranslate(managertype)
+        text    : 'Link to a ' + managerConnectorTranslate(managertype),
+        style   : 'width:300px'
     }).button({ icons : { primary : 'ui-icon-link' } });
     var that                = this;
     var reload = function() {
