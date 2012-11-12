@@ -19,6 +19,7 @@
 Mathematical formula of collector indicators
 
 @see <package>Entity::CollectorIndicator</package>
+@see <package>Entity::NodemetricCondition</package>
 
 =end classdoc
 
@@ -349,13 +350,38 @@ sub combination_formula_string {
     return $self->nodemetric_combination_formula_string
 }
 
+
+=pod
+
+=begin classdoc
+
+Compute and update the formula_string attribute and call the update of the formula_string attribute
+ of objects which depend on the instance.
+
+=end classdoc
+
+=cut
+
 sub updateFormulaString {
     my $self = shift;
-    $self->setAttr (name=>'nodemetric_combination_formula_string', value => $self->toString());
-    $self->save ();
+    $self->setAttr(name => 'nodemetric_combination_formula_string', value => $self->toString());
+    $self->save();
     my @conditions = $self->getDependentConditions;
     map { $_->updateFormulaString } @conditions;
 }
+
+=pod
+
+=begin classdoc
+
+Redefine update() in order to update the formula string and unit of instance which depend on the
+updated instance.
+
+@return updated instance.
+
+=end classdoc
+
+=cut
 
 sub update {
     my ($self, %args) = @_;
