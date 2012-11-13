@@ -60,6 +60,7 @@ function Customers() {
         create_grid({
             url: '/api/user?user_profiles.profile.profile_name=Customer',
             content_container_id: container_id,
+            elem_name: 'user',
             grid_id: 'customers_list',
             colNames: ['user id','first name','last name','email' ],
             colModel: [    
@@ -67,7 +68,8 @@ function Customers() {
                  {name:'user_firstname',index:'user_firstname', width:120},
                  {name:'user_lastname',index:'user_lastname', width:120},
                  {name:'user_email',index:'user_email', width:250,}
-            ]
+            ],
+            rights: true
         });
         
         createAddCustomerButton(container_id);

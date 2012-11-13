@@ -110,6 +110,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
             },
             buttons: {
                 Ok: function() {
+                    if (details_info.onOk) {details_info.onOk()}
                     $(this).dialog('close');
                     
                 },
@@ -129,13 +130,8 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
         $(masterview).after($(view_detail_container).find('div.master_view').addClass('toRemove'));
     }
 
-
     // Load first tab content
     reload_content('content_' + details_info.tabs[0]['id'] + '_' + elem_id, elem_id, true);
-
-    //dialog.load('/api/host/' + elem_id);
-    //dialog.load('/details/iaas.html');
-
 }
 
 // Callback when click on remove icon for a row
@@ -166,6 +162,23 @@ function removeGridEntry (grid_id, id, url, method) {
     );
 }
 
+function editEntityRights(grid, rowid, rowdata, rowelem, options) {
+    var callback;
+    var details = {
+        tabs : [ { label : 'Assigned permissions',
+                   id : 'rights',
+                   onLoad : function(cid, eid) {
+                                callback = loadPermissionsModal(cid, eid, options.elem_name);
+                            }
+                 } ],
+
+        title : 'Assigned permissions',
+        onOk : function () { callback(); }
+    };
+    show_detail('entity_rights', 'entity_rights', rowelem.pk, rowdata, details);
+    return false;
+}
+
 function create_grid(options) {
 
     var content_container = $('#' + options.content_container_id);
@@ -193,30 +206,12 @@ function create_grid(options) {
     options.afterInsertRow  = options.afterInsertRow || $.noop;
     options.gridComplete    = options.gridComplete || $.noop;
 
-    // Add delete action column (by default)
     var deleteHandler = $.noop;
     var actions_col_idx = options.colNames.length;
-    if (options.action_delete === undefined || options.action_delete != 'no') {
+    if (options.action_delete === undefined || options.action_delete != 'no' || options.rights) {
+        // Delete handler
         var delete_url_base    = (options.action_delete && options.action_delete.url) || options.url;
         var delete_method_call = (options.action_delete && options.action_delete.method) || null;
-
-        options.colNames.push('');
-        options.colModel.push({index:'action_remove', width : '40px', formatter:
-            function(cell, formatopts, row) {
-                // We can't directly use 'actions' default formatter because it not support DELETE
-                // So we implement our own action delete formatter based on default 'actions' formatter behavior
-                var remove_action = '';
-                remove_action += '<div class="ui-pg-div ui-inline-del"';
-                remove_action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
-                remove_action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
-                remove_action += ' style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
-                remove_action += '<span class="ui-icon ui-icon-trash"></span>';
-                remove_action += '</div>';
-
-                return remove_action;
-            }});
-
-        // Delete handler
         if (options.action_delete && options.action_delete.callback) {
             deleteHandler = options.action_delete.callback;
         } else {
@@ -225,6 +220,36 @@ function create_grid(options) {
             }
         }
 
+        options.colNames.push('');
+        options.colModel.push({index:'actions', width : '40px', formatter:
+            function(cell, formatopts, row) {
+                var action = '';
+                // Add delete action column (by default)
+                if (options.action_delete === undefined || options.action_delete != 'no') {
+                    // We can't directly use 'actions' default formatter because it not support DELETE
+                    // So we implement our own action delete formatter based on default 'actions' formatter behavior
+                    action += '<div class="ui-pg-div ui-inline-del"';
+                    action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
+                    action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
+                    action += ' style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
+                    action += '<span class="ui-icon ui-icon-trash"></span>';
+                    action += '</div>';
+                }
+
+                if (options.rights) {
+                    // We can't directly use 'actions' default formatter because it not support DELETE
+                    // So we implement our own action delete formatter based on default 'actions' formatter behavior
+                    action += '<div class="ui-pg-div ui-inline-perms"';
+                    action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
+                    action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
+                    action += ' style="float:left;margin-left:5px;" title="Edit permissions for ' + (options.elem_name || 'element') + '">';
+                    action += '<span class="ui-icon ui-icon-key"></span>';
+                    action += '</div>';
+                }
+
+                return action;
+            }
+        });
     } else if (options.treeGrid === true) {
         // TreeGrids strangely want an additional column so we push an empty one...
         options.colNames.push('');
@@ -240,21 +265,12 @@ function create_grid(options) {
             repeatitems: false,
         },
 
-        afterInsertRow  : function(rowid, rowdata, rowelem) {
-                              // Manage delete action callback
-                              $(this).find('#'+rowid+' .ui-inline-del').click( function() {deleteHandler(rowid)} );
-                              // Callback custom handler
-                              return options.afterInsertRow(this, rowid, rowdata, rowelem);
-                          },
         gridComplete    : options.gridComplete,
-
         treeGrid        : options.treeGrid      || false,
         treeGridModel   : options.treeGridModel || '',
         ExpandColumn    : options.ExpandColumn  || '',
-
         caption         : options.caption || '',
         height          : options.height || 'auto',
-        //width         : options.width || 'auto',
         autowidth       : true,
         shrinkToFit     : true,
         colNames        : options.colNames,
@@ -266,10 +282,17 @@ function create_grid(options) {
         rowNum          : options.rowNum || 10,
         rowList         : options.rowList || undefined,
         autoencode      : true,
-//        onSelectRow: function (id) {
-//            var row_data = $('#' + options.grid_id).getRowData(id);
-//            show_detail(options.grid_id, id, row_data);
-//        },
+
+        afterInsertRow  : function(rowid, rowdata, rowelem) {
+            // Manage delete action callback
+            $(this).find('#'+rowid+' .ui-inline-del').click( function() { deleteHandler(rowid) } );
+
+            // Manage permissions
+            $(this).find('#'+rowid+' .ui-inline-perms').click( function() { editEntityRights(grid, rowid, rowdata, rowelem, options) } );
+
+            // Callback custom handler
+            return options.afterInsertRow(this, rowid, rowdata, rowelem);
+        },
 
         onCellSelect    : function(rowid, index, contents, target) {
             // Test if some options disable details
@@ -281,6 +304,7 @@ function create_grid(options) {
                 }
             }
         },
+
         loadError       : function (xhr, status, error) {
             var error_msg = xhr.responseText;
             alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 
@@ -327,9 +351,7 @@ function create_grid(options) {
         data: (options.hasOwnProperty('data')) ? options.data : []
     });
 
-    $('#' + options.grid_id).jqGrid('navGrid', '#' + pager_id, { edit: false, add: false, del: false }); 
-
-   //$('#' + options.grid_id).jqGrid('setGridWidth', $('#' + options.grid_id).closest('.current_content').width() - 20, true);
+    $('#' + options.grid_id).jqGrid('navGrid', '#' + pager_id, { edit: true, add: false, del: false });
 
     // If exists details conf then we set row as selectable
     if (options.details || details_def[grid_class]) {

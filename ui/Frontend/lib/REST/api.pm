@@ -49,6 +49,7 @@ my %resources = (
     "debian"                   => "Entity::Component::Debian",
     "entity"                   => "Entity",
     "entitycomment"            => "EntityComment",
+    "entityright"              => "Entityright",
     "externalcluster"          => "Entity::ServiceProvider::Outside::Externalcluster",
     "externalnode"             => "Externalnode",
     "filecontaineraccess"      => "Entity::ContainerAccess::FileContainerAccess",

@@ -36,6 +36,8 @@ function Users() {
         g_user_id = elem_id;
         create_grid({
             url: '/api/user',
+            elem_name: 'user',
+            rights: true,
             content_container_id: container_id,
             grid_id: 'users_list',
             details: { onSelectRow : user_addbutton_action },
@@ -65,6 +67,8 @@ var users = new Users();
 function loadGroups (container_id, elem_id) {
     create_grid({
         url: '/api/gp?gp_type=User',
+        elem_name: 'gp',
+        rights: true,
         content_container_id: container_id,
         grid_id: 'groups_list',
         colNames: [ 'group id', 'group name', 'group type' ],
@@ -117,6 +121,8 @@ function groupsList (container_id, elem_id) {
     var container = $('#' + container_id);
     create_grid({
         url: '/api/gp?gp_type=User',
+        elem_name: 'gp',
+        rights: true,
         content_container_id: container_id,
         grid_id: 'groups_list',
         colNames: [ 'group id', 'group name', 'group type' ],
