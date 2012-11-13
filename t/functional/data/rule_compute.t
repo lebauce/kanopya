@@ -640,6 +640,12 @@ sub test_aggregate_combination {
         right_combination_id => $comb2->id,
     );
 
+    my $rule = Entity::AggregateRule->new(
+        aggregate_rule_service_provider_id => $service_provider->id,
+        aggregate_rule_formula => 'id'.$ac_left->id.' && id'.$ac_right->id,
+        aggregate_rule_state => 'enabled'
+    );
+
     $service_provider->addManagerParameter(
         manager_type    => 'collector_manager',
         name            => 'mockmonit_config',
@@ -668,6 +674,7 @@ sub test_aggregate_combination {
     is ($ac_left->toString(),'sum(RAM used) < 12.34','Check to string (a)');
     is ($ac_right->toString(),'-43.21 < sum(RAM used)','Check to string (b)');
     is ($ac_both->toString(),'sum(RAM used) < 2*sum(RAM used)','Check to string (c)');
+    is ($rule->toString(), 'sum(RAM used) < 12.34 && -43.21 < sum(RAM used)', 'Check aggregate rule toString');
 
     $cm->update (clustermetric_statistics_function_name => 'min');
     $comb->update (aggregate_combination_formula => '-id'.($cm->id));
@@ -680,6 +687,15 @@ sub test_aggregate_combination {
     is (Entity->get(id => $ac_right->id)->aggregate_condition_formula_string,'-43.21 < -min(RAM used)','Check update formula string (a)');
     is (Entity->get(id => $ac_both->id)->aggregate_condition_formula_string,'-min(RAM used) < 2*min(RAM used)','Check update formula string (b)');
     is (Entity->get(id => $ac_left->id)->aggregate_condition_formula_string,'21.01 == 2*min(RAM used)','Check update formula string (c)');
+    is (Entity->get(id => $rule->id)->aggregate_rule_formula_string, '21.01 == 2*min(RAM used) && -43.21 < -min(RAM used)', 'Check update rule formula string');
+
+    $ac_left->update (
+        threshold => '26.10',
+        comparator => '==',
+        right_combination_id => $comb2->id,
+    );
+
+    is (Entity->get(id => $rule->id)->aggregate_rule_formula_string, '26.10 == 2*min(RAM used) && -43.21 < -min(RAM used)', 'Check only aggregator comparator update');
 
 }
 
