@@ -2027,7 +2027,25 @@ sub methodCall {
 
     my $adm = Administrator->new();
 
-    General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
+    General::checkParams(args => \%args, required => [ 'method' ],
+                                         optional => { 'params' => {} });
+
+    foreach my $key (keys %{$args{params}}) {
+        my $param = $args{params}->{$key};
+        if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
+            my $class = getClassType(id => $param->{class_type_id});
+
+            my $granted = $adm->getRightChecker->checkPerm(entity_id => $class->getDelegatee->getMasterGroup->id,
+                                                           method    => "get");
+            if (not $granted) {
+                my $msg = "Permission denied to get parameter " . $param->{pk};
+                throw Kanopya::Exception::Permission::Denied(error => $msg);
+            }
+
+            # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
+            $args{params}->{$key} = $class->get(id => $param->{pk});
+        }
+    }
 
     my $methods = $self->getMethods();
 
