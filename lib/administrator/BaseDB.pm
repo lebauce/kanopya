@@ -1310,6 +1310,7 @@ sub toJSON {
 
             my @comps = split(/\./, $expand);
             my $comp = shift @comps;
+            COMPONENT:
             while ($comp && $dbix) {
                 my $source = $dbix->result_source;
                 my $many_to_many = $source->result_class->can("_m2m_metadata") &&
@@ -1317,10 +1318,10 @@ sub toJSON {
 
                 if ($source->has_relationship($comp)) {
                     $is_relation = $source->relationship_info($comp)->{attrs}->{accessor};
-                    last;
+                    last COMPONENT;
                 } elsif ($many_to_many) {
                     $is_relation = "multi";
-                    last;
+                    last COMPONENT;
                 }
 
                 $dbix = $dbix->result_source->has_relationship('parent') ? $dbix->parent : undef;
