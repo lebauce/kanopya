@@ -47,7 +47,7 @@ General sub to validate required/optional arguments passed to methodes
 
 @param required array reference of strings (for required arguments)
 
-@optional optional array reference of strings (for optional arguments)
+@optional optional hash reference of strings (param name) associated to default value (for optional arguments)
 
 =end classdoc
 
