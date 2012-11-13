@@ -53,6 +53,12 @@ sub methods {
         },
         subscribe => {
             description => 'subscribe to notification about this entity.',
+        },
+        addPerm => {
+            description => 'subscribe to notification about this entity.',
+        },
+        removePerm => {
+            description => 'subscribe to notification about this entity.',
         }
     };
 }
