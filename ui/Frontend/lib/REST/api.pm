@@ -45,6 +45,7 @@ my %resources = (
     "connectortype"            => "ConnectorType",
     "container"                => "Entity::Container",
     "containeraccess"          => "Entity::ContainerAccess",
+    "customer"                 => "Entity::User::Customer",
     "dashboard"                => "Dashboard",
     "debian"                   => "Entity::Component::Debian",
     "entity"                   => "Entity",
