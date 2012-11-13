@@ -53,6 +53,9 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
+    # Automattically add the user to the Customer profile
+    $self->setProfiles(profile_names => [ 'Customer' ]);
+
     # Add the component to the Component group
     Entity::User->getMasterGroup->appendEntity(entity => $self);
 
