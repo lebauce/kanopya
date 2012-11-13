@@ -119,6 +119,8 @@ eval{
     dies_ok { Entity::Combination::AggregateCombination->get(id => $acombd2->id);} 'Check AggregateCombination deletion 2/2';
     dies_ok { Entity::AggregateCondition->get(id => $acd1->id);} 'Check AggregateCondition deletion 1/2';
     dies_ok { Entity::AggregateCondition->get(id => $acd2->id);} 'Check AggregateCondition deletion 2/2';
+    dies_ok { Entity::Combination::ConstantCombination->get(id => $acd1->right_combination_id)} 'Check ConstantCombination deletion';
+    dies_ok { Entity::Combination::ConstantCombination->get(id => $acd2->right_combination_id)} 'Check ConstantCombination deletion';
     dies_ok { Entity::AggregateRule->get(id => $rule1d->id);} 'Check AggregateRule deletion 1/3';
     dies_ok { Entity::AggregateRule->get(id => $rule2d->id);} 'Check AggregateRule deletion 2/3';
     dies_ok { Entity::AggregateRule->get(id => $rule3d->id);} 'Check AggregateRule deletion 3/3';
@@ -228,12 +230,16 @@ sub service_rule_objects_creation {
             threshold => '0',
         );
 
+        lives_ok { Entity::Combination::ConstantCombination->get(id => $acd1->right_combination_id)} 'Check ConstantCombination creation';
+
         $acd2 = Entity::AggregateCondition->new(
             aggregate_condition_service_provider_id => $service_provider->id,
             left_combination_id => $acombd2->id,
             comparator => '<',
             threshold => '0',
         );
+
+        lives_ok { Entity::Combination::ConstantCombination->get(id => $acd2->right_combination_id)} 'Check ConstantCombination creation';
 
         $ac3 = Entity::AggregateCondition->new(
             aggregate_condition_service_provider_id => $service_provider->id,

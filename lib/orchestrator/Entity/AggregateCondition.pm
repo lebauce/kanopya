@@ -260,7 +260,11 @@ sub delete {
             }
         }
     }
-    return $self->SUPER::delete();
+    my $comb_left  = $self->left_combination;
+    my $comb_right = $self->right_combination;
+    $self->SUPER::delete();
+    $comb_left->deleteIfConstant();
+    $comb_right->deleteIfConstant();
 }
 
 sub update {
