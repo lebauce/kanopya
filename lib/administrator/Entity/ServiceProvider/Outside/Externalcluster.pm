@@ -15,6 +15,17 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
+
+=pod
+
+=begin classdoc
+
+Specific Service Provider representing a cluster not directly managed by Kanopya
+
+=end classdoc
+
+=cut
+
 package Entity::ServiceProvider::Outside::Externalcluster;
 use base 'Entity::ServiceProvider::Outside';
 
@@ -273,16 +284,31 @@ sub getDisabledNodes {
     return \@nodes;
 }
 
+=pod
 
-=head2 updateNodes
+=begin classdoc
 
-    Update external nodes list using the linked DirectoryService connector
+Updates nodes list using the linked DirectoryService connector.
+If a node is already in cluster then do nothing for it.
+Every extra parameter will be transmitted to the DirectoryService connector (e.g password used)
+
+@optional synchro if defined then removes nodes that are no longer present in retrieved nodes list,
+                    else keeps all nodes. Default is undef.
+
+@return hashref with 3 keys:
+    retrieved_node_count    => total number of nodes retrieved (== total nodes count),
+    added_node_count        => number of newly added nodes,
+    removed_node_count      => number of removed nodes
+
+=end classdoc
 
 =cut
 
 sub updateNodes {
      my $self = shift;
      my %args = @_;
+
+    General::checkParams(args => \%args, optional => {'synchro' => undef});
 
      my $ds_manager = $self->getManager( manager_type => 'directory_service_manager' );
      my $mparams    = $self->getManagerParameters( manager_type => 'directory_service_manager' );
@@ -295,39 +321,44 @@ sub updateNodes {
         return {error => "$@"};
      };
 
-     my @created_nodes;
+    # We hashify nodes list for search and delete convenience
+    my %nodes_to_add = map { $_->{hostname} => 1 } @$nodes;
 
-     my $new_node_count = 0;
-     for my $node (@$nodes) {
-         if (defined $node->{hostname}) {
-            $new_node_count++;
+    # Differences between current nodes and retrieved nodes
+    my @nodes_to_remove;
+    for my $node ($self->externalnodes) {
+        if (exists $nodes_to_add{$node->externalnode_hostname}) {
+            # node already in cluster, do not add it
+            delete $nodes_to_add{$node->externalnode_hostname};
+        } else {
+            # node not in retrieved list, we delete it (delayed because it's current loop item)
+            push @nodes_to_remove, $node;
+        }
+    }
 
-            my $row;
-            eval {
-                $row = Externalnode->find( hash => {
-                              externalnode_hostname => $node->{hostname},
-                              service_provider_id   => $self->getId(),
-                          });
-            };
-            if ($@) {
-                $errmsg = 'could not find '.$node->{hostname}.' while updating nodes';
-                $log->info($errmsg);
-            }
+    # Remove obsolet nodes (mode synchro)
+    if (defined $args{synchro}) {
+        for my $node (@nodes_to_remove) {
+            $node->remove();
+        }
+    }
 
-            if(! defined $row){
-                my $node_row = Externalnode->new(
-                    externalnode_hostname   => $node->{hostname},
-                    externalnode_state      => 'down',
-                    service_provider_id     => $self->getId(),
-                );
-                $node->{id} =  $node_row->externalnode_id;
-                push @created_nodes, $node;
-            }
-         }
-     }
+    # Add new nodes
+    my $added_node_count = 0;
+    for my $node_name (keys %nodes_to_add) {
+        Externalnode->new(
+            externalnode_hostname   => $node_name,
+            externalnode_state      => 'down',
+            service_provider_id     => $self->id,
+        );
+        $added_node_count++;
+    }
 
-     return {created_nodes => \@created_nodes, node_count => $new_node_count};
-     # TODO remove dead nodes from db
+    return {
+        retrieved_node_count    => scalar @$nodes,
+        added_node_count        => $added_node_count,
+        removed_node_count      => scalar @nodes_to_remove
+    };
 }
 
 =head2 getNodesMetrics
