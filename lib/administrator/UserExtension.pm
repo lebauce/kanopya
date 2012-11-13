@@ -46,4 +46,29 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+=pod
+
+=begin classdoc
+
+Return class User as delegateee class for UserExtention permissions.
+
+@return the delegatee entity.
+
+=end classdoc
+
+=cut
+
+sub getDelegatee {
+    my $self = shift;
+    my $class = ref $self;
+
+    if (not $class) {
+        return "Entity::User";
+    }
+    else {
+        return $self->user;
+    }
+}
+
 1;
