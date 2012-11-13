@@ -32,7 +32,7 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
     },
     resource => {
-        label        => 'Ressource type',
+        label        => 'Resource type',
         type         => 'enum',
         options      => [ 'ram', 'cpu' ],
         pattern      => '^(ram|cpu)$',
