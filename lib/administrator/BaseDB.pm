@@ -2001,7 +2001,7 @@ sub getDelegatee {
     my $self = shift;
 
     throw Kanopya::Exception::NotImplemented(
-              error => "Non entity classes must implement getDelegatee for perimssions check."
+              error => "Non entity class <$self> must implement getDelegatee method for permissions check."
           );
 }
 
