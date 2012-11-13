@@ -46,7 +46,7 @@ function Customers() {
     
     Customers.prototype.load_details = function(container_id, elem_id) {
         var customer_opts = {
-            name   : 'user',
+            name   : 'customer',
             fields : { user_firstname : {label: 'First name'},
                        user_lastname  : {label: 'Last name'},
                        user_email     : {label: 'Email'},
@@ -77,7 +77,7 @@ function Customers() {
             $.ajax({ 
                 type: 'delete', 
                 async: false, 
-                url: '/api/user/'+elem_id,
+                url: '/api/customer/' + elem_id,
                 success: function() { $('#'+container_id).closest('.master_view').parent().dialog('close'); },
                 error: function(jqXHR, textStatus, errorThrown) { 
                     alert(jqXHR.responseText);
@@ -90,7 +90,7 @@ function Customers() {
 
     Customers.prototype.load_services = function(container_id, elem_id) {
         create_grid({
-            url: '/api/cluster?user_id='+elem_id,
+            url: '/api/cluster?user_id=' + elem_id,
             content_container_id: container_id,
             grid_id: 'customer_services_list',
             colNames: ['cluster id','Name', 'Description', '' ],
