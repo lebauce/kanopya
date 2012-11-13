@@ -132,11 +132,12 @@ eval{
                     output_dir => '/tmp'
                 },
                 data => {
-                    template_content => '[% service_provider_name %]',
+                    template_content => '[% service_provider_name %] [% specific_attribute %]',
                 }
             }
         );
     } 'Create a new service workflow';
+
 
     lives_ok {
         $sco->associateWorkflow (
@@ -150,7 +151,7 @@ eval{
         $sco->associateWorkflow (
             new_workflow_name => $agg_rule_ids->{agg_rule2_id}.'_'.($service_wf->workflow_def_name),
             origin_workflow_def_id => $service_wf->id,
-            specific_params => {},
+            specific_params => {specific_attribute => 'hello world!'},
             rule_id         => $agg_rule_ids->{agg_rule2_id},
         ) } 'Associate service workflow to service rule 2';
 
@@ -260,7 +261,7 @@ eval{
         push @lines, $_;
     }
 
-    ok ( $lines[0] eq $service_provider->externalcluster_name."\n", 'Check service file contain line 1');
+    ok ( $lines[0] eq $service_provider->externalcluster_name." hello world!\n", 'Check service file contain line 1');
     ok ( $lines[1] eq $return_file, 'Check service file contain line 2');
 
     close(FILE);
