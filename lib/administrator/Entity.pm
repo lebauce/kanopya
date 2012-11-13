@@ -99,9 +99,14 @@ sub update {
     # Try to lock the entoty while updating it
     $self->lock(consumer => $self);
 
-    $self->SUPER::update(%args);
-
+    eval {
+        $self->SUPER::update(%args);
+    };
+    if ($@) {
+        $self->unlock(consumer => $self);
+    }
     $self->unlock(consumer => $self);
+
     return $self;
 }
 
@@ -117,7 +122,12 @@ sub remove {
     # Try to lock the entoty while updating it
     $self->lock(consumer => $self);
 
-    $self->SUPER::remove(%args);
+    eval {
+        $self->SUPER::remove(%args);
+    };
+    if ($@) {
+        $self->unlock(consumer => $self);
+    }
 
     $self->unlock(consumer => $self);
 }
