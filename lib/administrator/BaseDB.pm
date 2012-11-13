@@ -1320,9 +1320,6 @@ sub toJSON {
                     last;
                 } elsif ($many_to_many) {
                     $is_relation = "multi";
-                    @comps = ($source->result_class->_m2m_metadata->{$comp}->{relation},
-                              $source->result_class->_m2m_metadata->{$comp}->{foreign_relation},
-                              @comps);
                     last;
                 }
 
