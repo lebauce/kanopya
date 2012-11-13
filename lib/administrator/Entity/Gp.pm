@@ -1,6 +1,5 @@
-# Entity::Gp.pm
-
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,19 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 16 july 2010
-
-=head1 NAME
-
-Entity::Gp
-
-=head1 SYNOPSIS
-
-=head1 DESCRIPTION
-
-blablabla
-
-=cut
 
 package Entity::Gp;
 use base "Entity";
@@ -39,9 +25,6 @@ use Administrator;
 use General;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
-
-
-our $VERSION = "1.00";
 
 my $log = get_logger("");
 my $errmsg;
@@ -82,26 +65,35 @@ sub getSize {
     return $self->{_dbix}->ingroups->count();
 }
 
-=head2 appendEntity
 
-    Class : Public
+=pod
 
-    Desc : append an entity object to the groups ; the entity must have been saved to the database before adding it to a group.
+=begin classdoc
 
-    args:
-        entity : Entity::* object : an Entity object
+Add an entity in a this group. Do not throw exception if entity
+already in the group, but warn the error as , it should not be occurs.
+
+@param entity the entity to add in the group
+
+=end classdoc
 
 =cut
 
+
 sub appendEntity {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => ['entity']);
 
-    my $entity_id = $args{entity}->id;
-    $self->{_dbix}->ingroups->create({
-        gp_id     => $self->getAttr(name => 'gp_id'),
-        entity_id => $entity_id
-    });
+    eval {
+        $self->{_dbix}->ingroups->create({
+            gp_id     => $self->id,
+            entity_id => $args{entity}->id
+        });
+    };
+    if ($@) {
+        $log->warn("$args{entity} seems already in group $self: $@");
+    }
 }
 
 =head2 removeEntity
