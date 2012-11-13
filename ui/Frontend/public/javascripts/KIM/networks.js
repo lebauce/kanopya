@@ -137,7 +137,8 @@ function networks_list(cid) {
         details                 : {
             tabs    : [
                 { label : 'PoolIPs', onLoad : networks_details_poolips }
-            ]
+            ],
+            title   : {from_column : 'network_name'},
         },
         afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
             if (rowdata.vlan_number != null) {
