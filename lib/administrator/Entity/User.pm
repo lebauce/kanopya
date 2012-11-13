@@ -146,12 +146,12 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    my $cryptpasswd  = General::cryptPassword(password => $self->{_dbix}->user_password);
+    my $cryptpasswd  = General::cryptPassword(password => $self->user_password);
     my $creationdate = DateTime->now->set_time_zone('local');
 
-    $self->{_dbix}->user_password($cryptpasswd);
-    $self->{_dbix}->user_creationdate("$creationdate");
-    $self->{_dbix}->user_lastaccess(undef);
+    $self->setAttr(name => 'user_password', value => $cryptpasswd);
+    $self->setAttr(name => 'user_creationdate', value => "$creationdate");
+    $self->setAttr(name => 'user_lastaccess', value => undef);
     $self->save();
 
     return $self;
@@ -241,15 +241,31 @@ sub releaseQuota {
 sub setProfiles {
     my ($self, %args) = @_; 
 
-    $self->{_dbix}->user_profiles->delete_all;
+    General::checkParams(args => \%args, required => [ 'profile_names' ]);
+
+    # Firstly check the validity for profiles
+    my $profilestoset = {};
     foreach my $profile_name (@{$args{profile_names}}) {
-        my $profile;
         eval {
-            $profile = Profile->find(hash => { profile_name => $profile_name });
+            $profilestoset->{$profile_name} = Profile->find(hash => { profile_name => $profile_name });
         };
         if ($@) {
             throw Kanopya::Exception::Internal::IncorrectParam(error => "Unknown profile $profile_name");
         }
+    }
+
+    # Then browse the current user profiles, and remove profiles not defined
+    # in the profile list given in parameters
+    foreach my $user_profile ($self->user_profiles) {
+        if (defined $profilestoset->{$user_profile->profile->profile_name}) {
+            delete $profilestoset->{$user_profile->profile->profile_name};
+        }
+        else {
+            $user_profile->remove();
+        }
+    }
+    # Finally create the newly defined profiles
+    foreach my $profile (values %{ $profilestoset }) {
         UserProfile->create(user_id => $self->id, profile_id => $profile->id);
     }
 }
