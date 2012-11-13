@@ -144,17 +144,11 @@ sub methods {
 sub new {
     my ($class, %args) = @_;
 
-    my $self = $class->SUPER::new(%args);
+    $args{user_password}     = General::cryptPassword(password => $args{user_password});
+    $args{user_creationdate} = DateTime->now->set_time_zone('local');
+    $args{user_lastaccess}   = undef;
 
-    my $cryptpasswd  = General::cryptPassword(password => $self->user_password);
-    my $creationdate = DateTime->now->set_time_zone('local');
-
-    $self->setAttr(name => 'user_password', value => $cryptpasswd);
-    $self->setAttr(name => 'user_creationdate', value => "$creationdate");
-    $self->setAttr(name => 'user_lastaccess', value => undef);
-    $self->save();
-
-    return $self;
+    return $class->SUPER::new(%args);
 }
 
 =head2 setAttr
