@@ -1100,6 +1100,7 @@ sub save {
     my $id;
     if ( $dbix->in_storage ) {
         $dbix->update;
+        $self->{_dbix} = $dbix->get_from_storage;
         while ($dbix->can('parent')) {
             $dbix = $dbix->parent;
             $dbix->update;
