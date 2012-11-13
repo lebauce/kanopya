@@ -80,6 +80,7 @@ my @classes = (
     'Entity::Processormodel',
     'Entity::Systemimage',
     'Entity::User',
+    'Entity::User::Customer',
     'Entity::ServiceProvider::Inside::Cluster',
     'Entity::ServiceProvider::Outside::Netapp',
     'Entity::ServiceProvider::Outside::UnifiedComputingSystem',
