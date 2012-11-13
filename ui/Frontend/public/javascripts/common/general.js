@@ -29,6 +29,7 @@ function getMathematicOperator(formula) {
  *  - login        : 'username',
  *  - dialog_title : 'Title',
  *  - url          : '/api/entity/xxx/methodName',
+ *  - data         : {}, extra data to transmit besides password
  *  - success      : function(data) { }
  */
 function callMethodWithPassword( options ) {
@@ -56,14 +57,16 @@ function callMethodWithPassword( options ) {
                         onClose     : function() { $(this).remove(); }
                     });
                     $(waitingPopup).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
+
+                    var req_data = { password : passwd };
+                    $.extend(req_data, options.data);
+
                     var response_data;
                     $.ajax({
                         url         : options.url,
                         type        : 'POST',
                         async       : false,
-                        data        : JSON.stringify({
-                            password    : passwd
-                        }),
+                        data        : JSON.stringify(req_data),
                         contentType : 'application/json',
                         complete    : function(data) {
                             $(waitingPopup).dialog('close');
