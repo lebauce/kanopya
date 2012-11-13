@@ -79,30 +79,48 @@ function servicesList (container_id, elem_id) {
 }
 
 function createUpdateNodeButton(container, elem_id, grid) {
-    var button = $("<button>", { text : 'Update Nodes' }).button({ icons : { primary : 'ui-icon-refresh' } });
+    var import_button = $("<button>", { text : 'Import nodes', title : 'Add new nodes in service', 'class':'update_node_button' })
+        .button({ icons : { primary : 'ui-icon-arrowthick-1-w' } });
+    var synchro_button = $("<button>", { text : 'Synchronize', title : 'Add new nodes in service and remove old nodes', 'class':'update_node_button' })
+        .button({ icons : { primary : 'ui-icon-arrowthick-2-e-w' } });
+
     // Check if there is a configured directory service
     var manager = isThereAManager(elem_id, 'directory_service_manager');
     if (manager) {
-        $(button).bind('click', function(event) {
-            require('common/general.js');
-            callMethodWithPassword({
-                    login        : manager.ad_user,
-                    dialog_title : "Update service nodes",
-                    url          : '/api/externalcluster/' + elem_id + '/updateNodes',
-                    success      : function(data) {
-                        $(grid).trigger("reloadGrid");
-                        if (data.node_count) {
-                            alert(data.node_count + ' nodes retrieved');
+        function bindButton(button, data) {
+            button.bind('click', function(event) {
+                require('common/general.js');
+                callMethodWithPassword({
+                        login        : manager.ad_user,
+                        dialog_title : "Update service nodes",
+                        url          : '/api/externalcluster/' + elem_id + '/updateNodes',
+                        data         : data,
+                        success      : function(data) {
+                            $(grid).trigger("reloadGrid");
+                            if (data.node_count) {
+                                alert(
+                                        data.retrieved_node_count + ' nodes retrieved\n' +
+                                        data.added_node_count + ' nodes added to service\n' +
+                                        data.removed_node_count + ' nodes removed from service'
+                                );
+                            }
                         }
-                    }
+                });
             });
-        });
+        }
+        bindButton(import_button, {});
+        bindButton(synchro_button, { synchro : 1 });
     } else {
-        $(button).attr('disabled', 'disabled');
-        $(button).attr('title', 'Your service must be connected with a directory.')
+        function disableButton(button) {
+            button.attr('disabled', 'disabled');
+            button.attr('title', 'Your service must be connected with a directory.');
+        }
+        disableButton(import_button);
+        disableButton(synchro_button);
     }
     // Finally, append the button in the DOM tree
-    $(container).append(button);
+    $(container).append(import_button);
+    $(container).append(synchro_button);
 }
 
 function loadServicesResources (container_id, elem_id) {

@@ -340,6 +340,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                                 dialog.css('line-height', '200px'); // text vertical align
                                 dialog.appendTo("body").dialog({
                                     resizable   : false,
+                                    draggable   : false,
                                     title       : "",
                                     height      : '250',
                                 });
