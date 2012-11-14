@@ -35,6 +35,10 @@ sub methods {
         'getDirectoryTree'  => {
             'description'   => 'getDirectoryTree',
             'perm_holder'   => 'entity'
+        },
+        'searchDirectory'  => {
+            'description'   => 'searchDirectory',
+            'perm_holder'   => 'entity'
         }
     };
 }
@@ -54,6 +58,10 @@ sub getNodes {
 }
 
 sub getDirectoryTree {
+    throw Kanopya::Exceptions::NotImplemented();
+}
+
+sub searchDirectory {
     throw Kanopya::Exceptions::NotImplemented();
 }
 

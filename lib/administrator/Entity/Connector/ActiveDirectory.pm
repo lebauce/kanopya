@@ -138,6 +138,69 @@ sub getDirectoryTree {
     }];
 }
 
+=head2 searchDirectory
+
+    desc: return all objects matching search_string
+    args: password
+    args: search_string : filter objects with attr 'name', 'cn' or 'ou' containing search_string
+    returns:    [ ADnode, ...]
+                with    ADnode = {
+                            name => <node common name>,
+                            dn => <node distinguished name>,
+                        }
+
+=cut
+
+sub searchDirectory {
+    my $self = shift;
+    my %args = @_;
+
+    my $ldap = $self->_ldapObj(
+        ad_host             => $self->getAttr(name => 'ad_host'),
+        ad_user             => $self->getAttr(name => 'ad_user'),
+        ad_pwd              => $args{password},
+        ad_usessl           => $self->getAttr(name => 'ad_usessl'),
+    );
+
+    # get Root DN
+    my $mesg = $ldap->search(
+        base => '',
+        scope => 'base',
+        filter => 'cn=*'
+    );
+
+    my @entries = $mesg->entries;
+    my $entry = shift @entries;
+    my $root = $entry->get_value('rootDomainNamingContext');
+
+    my $search_string = $args{search_string};
+    my $filter = '(|(name=*'.$search_string.'*)(cn=*'.$search_string.'*)(ou=*'.$search_string.'*))';
+
+    # search
+    my $result = $ldap->search (base    => $root,
+                                scope   => "sub",
+                                filter  => $filter,
+                                attrs   =>  ['name', 'distinguishedName', 'showInAdvancedViewOnly']
+                              );
+
+    $result->code && die $result->error;
+
+    # Buid ret
+    my @objects;
+    for my $entry ($result->entries) {
+        my $advanced = $entry->get_value('showInAdvancedViewOnly');
+        next if ($advanced && $advanced eq 'TRUE');
+
+        my $elem = {
+            name        => $entry->get_value('name'),
+            dn          => $entry->get_value('distinguishedName'),
+        };
+        push @objects, $elem;
+    }
+
+    return \@objects;
+}
+
 sub _getTree {
     my $self = shift;
     my %args = @_;
