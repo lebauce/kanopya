@@ -457,7 +457,7 @@ sub startHost {
     my $cluster = Entity->get(id => $args{host}->getClusterId());
     my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
     my $image = $args{host}->getNodeSystemimage();
-    my $image_name = $image->getAttr(name => 'systemimage_name');
+    my $image_name = $image->systemimage_name;
 
     my %repo = $self->_getEntity()->getImageRepository(
                    container_access_id => $disk_params->{container_access_id}
@@ -465,7 +465,7 @@ sub startHost {
 
     my $image_templatefile = $self->generateImageTemplate(
         image_name        => $image_name,
-        image_source      => $repo{datastore_id}.'/'.$image_name.'.img',
+        image_source      => $repo{datastore_id} . '/' . $image->container->container_device,
     );
 
     my $imageid = $self->oneimage_create(
