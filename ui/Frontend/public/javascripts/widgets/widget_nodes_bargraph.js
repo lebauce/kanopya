@@ -76,8 +76,12 @@ function showNodemetricCombinationBarGraph(curobj,nodemetric_combination_id, nod
                 mean = null;
             }
 
-            // Apply nodes selection opt
-            if (nodes_selection_opt.type !== 'all' ) {
+            // Apply nodes selection and sorting opt
+            if (nodes_selection_opt.type == 'bottom' ) {
+                data.nodelist.reverse();
+                data.values.reverse();
+            }
+            if (nodes_selection_opt.count !== 'All' ) {
                 data.nodelist   = data.nodelist.slice(0,nodes_selection_opt.count);
                 data.values     = data.values.slice(0,nodes_selection_opt.count);
             }
@@ -195,7 +199,7 @@ function nodemetricCombinationBarGraph(series, div_id, max, title, unit, mean_va
 function setNodesSelection(widget_elem, widget) {
     var type_select     = widget_elem.find('.order_type');
     var count_select    = widget_elem.find('.display_count');
-    var count_options   = [5,10,20,50];
+    var count_options   = ['All',5,10,20,50];
     for (var i in count_options) {
         count_select.append($('<option>', { value: count_options[i], html: count_options[i]}));
     }
@@ -203,7 +207,6 @@ function setNodesSelection(widget_elem, widget) {
     // Manage save/load
     type_select.change( function() {
         var val = $(this).find(':selected').attr('id');
-        val == 'all' ? count_select.hide() : count_select.show();
         if (widget !== undefined) widget.addMetadataValue('displayopt_type', val);
     });
     count_select.change( function() {
