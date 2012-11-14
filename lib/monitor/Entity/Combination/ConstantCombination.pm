@@ -66,7 +66,10 @@ sub label {
     return $self->value;
 }
 
-
+sub combination_formula_string {
+    my $self = shift;
+    return $self->value
+}
 =pod
 
 =begin classdoc

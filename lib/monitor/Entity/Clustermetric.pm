@@ -255,14 +255,7 @@ Compute a readable string of the formula.
 =cut
 
 sub toString {
-    my ($self, %args) = @_;
-
-    my $depth = (defined $args{depth}) ? $args{depth} : -1;
-
-    if ($depth == 0) {
-        return $self->getAttr(name => 'clustermetric_label');
-    }
-
+    my $self = shift;
     return $self->clustermetric_statistics_function_name .
            '(' . $self->getIndicator()->toString() . ')';
 }

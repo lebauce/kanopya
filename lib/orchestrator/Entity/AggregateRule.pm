@@ -191,20 +191,13 @@ sub _verify {
     }
 }
 
-sub toString(){
-    my ($self, %args) = @_;
-    my $depth = (defined $args{depth}) ? $args{depth} : -1;
-
-    if($depth == 0) {
-        return $self->aggregate_rule_label;
-    }
+sub toString {
+    my $self = shift;
 
     my @array = split (/(id\d+)/, $self->aggregate_rule_formula);
     for my $element (@array) {
         if ($element =~ m/id(\d+)/) {
-            $element = ($depth > 0) ?
-                Entity::AggregateCondition->get ('id'=>substr($element,2))->toString (depth => $depth - 1) :
-                Entity::AggregateCondition->get ('id'=>substr($element,2))->aggregate_condition_formula_string ;
+            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->aggregate_condition_formula_string ;
         }
     }
 

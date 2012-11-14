@@ -162,19 +162,9 @@ sub updateName {
 =cut
 
 sub toString {
-    my ($self, %args) = @_;
-    my $depth = (defined $args{depth}) ? $args{depth} : -1 ;
+    my $self = shift;
 
-    if($depth == 0) {
-        return $self->getAttr(name => 'aggregate_condition_label');
-    }
-    elsif ($depth < 0) {
-        return $self->left_combination->toString(depth => $depth - 1).' '
-               .$self->comparator.' '
-               .$self->right_combination->toString(depth => $depth - 1);
-    }
-    # else > 0
-    return $self->left_combination->combination_formula_string.' '
+    return  $self->left_combination->combination_formula_string.' '
            .$self->comparator.' '
            .$self->right_combination->combination_formula_string;
 }

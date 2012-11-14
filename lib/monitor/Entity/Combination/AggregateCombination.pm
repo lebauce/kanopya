@@ -157,6 +157,7 @@ sub new {
     _verify ($args{aggregate_combination_formula});
 
     my $self = $class->SUPER::new(%args);
+
     my $toString = $self->toString();
     if ((! defined $args{aggregate_combination_label}) || $args{aggregate_combination_label} eq '') {
         $self->setAttr(name => 'aggregate_combination_label', value => $toString);
@@ -209,23 +210,14 @@ Return a string representation of the entity
 =cut
 
 sub toString {
-    my ($self, %args) = @_;
-
-    my $depth = (defined $args{depth}) ? $args{depth} : -1;
-    if ($depth == 0) {
-        return $self->aggregate_combination_label;
-    }
-
-    my $formula = $self->aggregate_combination_formula;
+    my $self = shift;
 
     # Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/, $formula);
+    my @array = split(/(id\d+)/, $self->aggregate_combination_formula);
     # replace each rule id by its evaluation
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            $element = ($depth > 0) ?
-                Entity::Clustermetric->get('id' => substr($element,2))->toString(depth => $depth - 1):
-                Entity::Clustermetric->get('id' => substr($element,2))->clustermetric_formula_string;
+            $element = Entity::Clustermetric->get('id' => substr($element,2))->clustermetric_formula_string;
         }
     }
     return List::Util::reduce { $a . $b } @array;

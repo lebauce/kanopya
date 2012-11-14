@@ -147,16 +147,11 @@ sub updateName {
 =cut
 
 sub toString {
-    my ($self, %args) = @_;
-    my $depth = (defined $args{depth}) ? $args{depth} : -1;
+    my $self = shift;
 
-    if($depth == 0) {
-        return $self->nodemetric_condition_label;
-    }
-
-    return $self->left_combination->toString(depth => $depth - 1).' '
+    return  $self->left_combination->combination_formula_string.' '
            .$self->nodemetric_condition_comparator.' '
-           .$self->right_combination->toString(depth => $depth - 1);
+           .$self->right_combination->combination_formula_string;
 };
 
 sub evalOnOneNode{

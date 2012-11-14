@@ -176,30 +176,16 @@ sub setUndefForEachNode{
     }
 }
 
-sub toString{
-    my ($self, %args) = @_;
-    my $depth;
-    if(defined $args{depth}) {
-        $depth = $args{depth};
-    }
-    else {
-        $depth = -1;
-    }
+sub toString {
+    my $self = shift;
 
-    if($depth == 0) {
-        return $self->getAttr(name => 'nodemetric_rule_label');
-    }
-    else{
-        my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
-        my @array = split(/(id\d+)/,$formula);
-        for my $element (@array) {
-            if( $element =~ m/id(\d+)/)
-            {
-                $element = Entity::NodemetricCondition->get('id'=>substr($element,2))->toString(depth => $depth - 1);
-            }
-         }
-         return "@array";
-    }
+    my @array = split(/(id\d+)/,$self->nodemetric_rule_formula);
+    for my $element (@array) {
+        if ($element =~ m/id(\d+)/) {
+            $element = Entity::NodemetricCondition->get('id'=>substr($element,2))->nodemetric_condition_formula_string;
+        }
+     }
+     return "@array";
 };
 
 sub getDependentConditionIds {

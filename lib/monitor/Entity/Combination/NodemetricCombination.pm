@@ -190,12 +190,7 @@ Return a string representation of the entity
 =cut
 
 sub toString {
-    my ($self, %args) = @_;
-    my $depth = (defined $args{depth}) ? $args{depth} : -1;
-
-    if($depth == 0) {
-        return $self->nodemetric_combination_label;
-    }
+    my $self = shift;
 
     #Split nodemetric_rule id from $formula
     my @array = split(/(id\d+)/, $self->nodemetric_combination_formula);
