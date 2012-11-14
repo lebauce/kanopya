@@ -327,9 +327,15 @@ function create_grid(options) {
         data: (options.hasOwnProperty('data')) ? options.data : []
     });
 
-    $('#' + options.grid_id).jqGrid('navGrid', '#' + pager_id, { edit: false, add: false, del: false }); 
-
-   //$('#' + options.grid_id).jqGrid('setGridWidth', $('#' + options.grid_id).closest('.current_content').width() - 20, true);
+    $('#' + options.grid_id).jqGrid(
+            'navGrid',
+            '#' + pager_id,
+            { edit: false, add: false, del: false },    // pager actions
+            {},
+            {},
+            {},
+            { closeAfterSearch: true }                  // search options
+    );
 
     // If exists details conf then we set row as selectable
     if (options.details || details_def[grid_class]) {
