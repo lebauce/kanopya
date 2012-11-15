@@ -64,7 +64,7 @@ my %conf_data = (
     kanopya_server_domain_name => 'kanopya.localdomain',
     db_name                    => 'kanopya',
     db_pwd                     => 'K4n0pY4',
-	crypt_salt				   => $crypt_salt,
+    crypt_salt		           => $crypt_salt,
 );
 
 #Welcome message - accepting Licence is mandatory
@@ -83,14 +83,9 @@ my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kan
 print $cmd."\n";
 my $exec = `$cmd 2>&1`;
 
-#export PERL5LIB
-print 'exporting PERL5LIB'."\n";
-$cmd = '$Env:PERL5LIB = ' . "\"$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external;$kanopya_dir\\kanopya\\lib\\external\\NetApp\"";
-print $cmd."\n";
-$exec = `$cmd 2>&1`;
-
-print $exec."\n";
-print 'You will have to restart a shell session to enjoy the newly configured PERL5LIB in it'."\n";
+#lol.
+push @INC, ("$kanopya_dir" . 'kanopya\lib\common', "$kanopya_dir" . 'kanopya\lib\administrator', "$kanopya_dir" . 'kanopya\lib\executor', "$kanopya_dir" . 'kanopya\lib\monitor', "$kanopya_dir" . 'kanopya\lib\orchestrator', "$kanopya_dir" . 'kanopya\lib\external', "$kanopya_dir" . 'kanopya\lib\external\NetApp');
+$DB::single =1;
 
 ######################
 #Directories Creation#
