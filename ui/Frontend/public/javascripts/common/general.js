@@ -242,32 +242,27 @@ function getRawValue(val, unit_field_id) {
 
 function ajax(method, route, data, onsuccess, onerror) {
     var response;
-    try {
-        var opts = {
-            type        : method,
-            async       : false,
-            url         : route,
-            data        : data,
-            dataType    : 'json',
-            error       : onerror ? onerror : function(xhr, status, error) {
-                console.log('Ajax call failled: ' + xhr.status);
-            },
-            success     :  function(d) {
-                response = d;
-                if(onsuccess) {
-                    onsuccess(d);
-                }
-            },
-        }
-        if (data && method === 'POST') {
-            opts.data = JSON.stringify(data);
-            opts.contentType = 'application/json';
-        }
-        $.ajax(opts);
+    var opts = {
+        type        : method,
+        async       : false,
+        url         : route,
+        data        : data,
+        dataType    : 'json',
+        error       : onerror ? onerror : function(xhr, status, error) {
+            console.log('Ajax call failled: ' + xhr.status);
+        },
+        success     :  function(d) {
+            response = d;
+            if(onsuccess) {
+                onsuccess(d);
+            }
+        },
     }
-    catch (error) {
-        console.log('Ajax call failled: ' + error.message);
+    if (data && method === 'POST') {
+        opts.data = JSON.stringify(data);
+        opts.contentType = 'application/json';
     }
+    $.ajax(opts);
     return response;
 }
 

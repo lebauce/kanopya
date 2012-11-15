@@ -27,6 +27,29 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 
+sub methods {
+    return {
+        scaleHost => {
+            description => 'scale host\'s cpu / memory',
+            perm_holder => 'entity',
+        },
+        migrate => {
+            description => 'migrate a host',
+            perm_holder => 'entity',
+        },
+        optimiaas  => {
+            description => 'optimize IaaS (packing)',
+            perm_holder => 'entity',
+        },
+        # TODO(methods): Remove this method from the api once the merge of component/connector
+        hypervisors => {
+            description => 'get the hypervisors manzaged by the cloud component',
+            perm_holder => 'entity',
+        },
+    };
+}
+
+
 sub createVirtualHost {
     my ($self,%args) = @_;
 
@@ -83,13 +106,33 @@ sub scaleHost {
                           params => $wf_params);
 }
 
-=head2 getHostType
-
-    Desc: return the type of the host managed by this host manager
+=head2 migrate
 
 =cut
 
-sub getHostType {
+sub migrate {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
+=pod
+
+=begin classdoc
+
+Abstract method to get the list of hypervisors managed by this host manager.
+
+@return the hypervisor list
+
+=end classdoc
+
+=cut
+
+sub hypervisors {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
+sub hostType {
     return "Virtual Machine";
 }
 

@@ -1,13 +1,15 @@
 # This script is called during setup to insert some kanopya data in DB
 # The other way to insert data during setup is Data.sql.tt (pb: id management)
 #
+
 use lib qw(/opt/kanopya/lib/common/ /opt/kanopya/lib/administrator/ /opt/kanopya/lib/executor/ /opt/kanopya/lib/monitor/ /opt/kanopya/lib/orchestrator/ /opt/kanopya/lib/external);
 
+use BaseDB;
 use Kanopya::Config;
 use Administrator;
 use ComponentType;
 use Entity::Component;
-use WorkflowDef;
+use Entity::WorkflowDef;
 use Operationtype;
 use NetworkPoolip;
 use Entity::Policy;
@@ -44,7 +46,7 @@ use Entity::Iface;
 use Ip;
 use Externalnode::Node;
 use ServiceProviderManager;
-use Lvm2Vg;
+use Entity::Component::Lvm2::Lvm2Vg;
 use Scope;
 use ScopeParameter;
 use Entity::Component::Lvm2;
@@ -65,6 +67,11 @@ use Entity::Component::Linux::Redhat;
 use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
 
+# Catch warnings to clean the setup output (this warnings are not kanopya code related)
+$SIG{__WARN__} = sub {
+    my $warn_msg = $_[0];
+};
+
 my @classes = (
     'Entity::Gp',
     'Entity::Host',
@@ -73,8 +80,8 @@ my @classes = (
     'Entity::Processormodel',
     'Entity::Systemimage',
     'Entity::User',
+    'Entity::User::Customer',
     'Entity::ServiceProvider::Inside::Cluster',
-    'Entity::ServiceProvider::Inside::Server',
     'Entity::ServiceProvider::Outside::Netapp',
     'Entity::ServiceProvider::Outside::UnifiedComputingSystem',
     'Entity::ContainerAccess::IscsiContainerAccess',
@@ -82,6 +89,7 @@ my @classes = (
     'Entity::ContainerAccess::LocalContainerAccess',
     'Entity::Container::LvmContainer',
     'Entity::Container::LocalContainer',
+    'Entity::Component',
     'Entity::Component::Lvm2',
     'Entity::Component::Iscsitarget1',
     'Entity::Component::Apache2',
@@ -108,6 +116,7 @@ my @classes = (
     'Entity::Poolip',
     'Entity::Network::Vlan',
     'Entity::Masterimage',
+    'Entity::Connector',
     'Entity::Connector::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Connector::NetappManager',
@@ -117,7 +126,6 @@ my @classes = (
     'Entity::Container::NetappVolume',
     'Entity::Container::FileContainer',
     'Entity::ContainerAccess::FileContainerAccess',
-    'Entity::ManagerParameter',
     'Entity::NfsContainerAccessClient',
     'Entity::Network',
     'Entity::InterfaceRole',
@@ -161,6 +169,7 @@ my @classes = (
     'Entity::AggregateRule',
     'Entity::NodemetricCondition',
     'Entity::NodemetricRule',
+    'Entity::WorkflowDef'
 );
 
 sub registerClassTypes {
@@ -177,106 +186,208 @@ sub registerUsers {
         { name    => 'Entity',
           type    => 'Entity',
           desc    => 'Entity master group containing all entities',
-          system  => 1 },
-        { name    => 'Administrator',
-          type    => 'User',
-          desc    => 'Administrator group',
-          profile => [ 'Administrator', 'administrator profile' ] },
-        { name    => 'User',
-          type    => 'User',
-          desc    => 'User master group containing all users',
-          system  => 1 },
-        { name    => 'Processormodel',
-          type    => 'Processormodel',
-          desc    => 'Processormodel master group containing all processor models',
-          system  => 1 },
-        { name    => 'Hostmodel',
-          type    => 'Hostmodel',
-          desc    => 'Hostmodel master group containing all host models',
-          system  => 1 },
-        { name    => 'Host',
-          type    => 'Host',
-          desc    => 'Host master group containing all hosts',
-          system  => 1 },
-        { name    => 'ServiceProvider',
-          type    => 'ServiceProvider',
-          desc    => 'ServiceProvider master group containing all service providers',
-          system  => 1,
-          methods => [ 'getServiceProfile', 'create' ] },
-        { name    => 'Cluster',
-          type    => 'Cluster',
-          desc    => 'Cluster master group containing all clusters',
-          system  => 1 },
-        { name    => 'Kernel',
-          type    => 'Kernel',
-          desc    => 'Kernel master group containing all kernels',
-          system  => 1 },
-        { name    => 'Systemimage',
-          type    => 'Systemimage',
-          desc    => 'Systemimage master group containing all system images',
-          system  => 1 },
-        { name    => 'Operationtype',
-          type    => 'Operationtype',
-          desc    => 'Operationtype master group containing all operations',
-          system  => 1 },
-        { name    => 'Masterimage',
-          type    => 'Masterimage',
-          desc    => 'Masterimage master group containing all master images',
-          system  => 1 },
-        { name    => 'Component',
-          type    => 'Component',
-          desc    => 'Component group containing all components',
-          system  => 0,
-          methods => [ 'getHostType', 'getPolicyParams', 'getDiskType', 'getExportType' ] },
-        { name    => 'Connector',
-          type    => 'Connector',
-          desc    => 'Connector group containing all connectors',
-          system  => 0 },
-        { name    => 'Gp',
-          type    => 'Gp',
-          desc    => 'Groups master group containing all groups',
-          system  => 1 },
+          system  => 1
+        },
         { name    => 'Admin',
           type    => 'User',
           desc    => 'Privileged users for administration tasks',
           system  => 1,
-          profile => [ 'Super Admin', 'God profile : full access to the user interface.' ] },
+          profile => [ 'Super Admin', 'God profile : full access to the user interface.' ]
+        },
+        { name    => 'Administrator',
+          type    => 'User',
+          desc    => 'Administrator group',
+          system  => 0,
+          profile => [ 'Administrator', 'administrator profile' ]
+        },
         { name    => 'ServiceDeveloper',
           type    => 'User',
           desc    => 'Service developer group',
           system  => 0,
-          profile => [ 'Services Developer', 'services dev profile' ] },
+          profile => [ 'Services Developer', 'services dev profile' ]
+        },
         { name    => 'Sales',
           type    => 'User',
           desc    => 'Sales group',
           system  => 0,
-          profile => [ 'Sale', 'sale profile' ] },
+          profile => [ 'Sales', 'sale profile' ]
+        },
         { name    => 'Customer',
           type    => 'User',
           desc    => 'Customer group',
           system  => 0,
-          profile => [ 'Customer', 'customer profile' ] }
+          profile => [ 'Customer', 'customer profile' ],
+          methods => {
+              'Sales' => [ 'create', 'update', 'remove', 'get' ],
+          }
+        },
+        { name    => 'User',
+          type    => 'User',
+          desc    => 'User master group containing all users',
+          system  => 1,
+        },
+        { name    => 'Processormodel',
+          type    => 'Processormodel',
+          desc    => 'Processormodel master group containing all processor models',
+          system  => 1
+        },
+        { name    => 'Hostmodel',
+          type    => 'Hostmodel',
+          desc    => 'Hostmodel master group containing all host models',
+          system  => 1
+        },
+        { name    => 'Host',
+          type    => 'Host',
+          desc    => 'Host master group containing all hosts',
+          system  => 1
+        },
+        { name    => 'ServiceProvider',
+          type    => 'ServiceProvider',
+          desc    => 'ServiceProvider master group containing all service providers',
+          system  => 1,
+          methods => {
+              'ServiceDeveloper' => [ 'addManager', 'create', 'remove' ],
+          }
+        },
+        { name    => 'Cluster',
+          type    => 'Cluster',
+          desc    => 'Cluster master group containing all clusters',
+          system  => 1,
+          methods => {
+              'Sales' => [ 'subscribe' ],
+          }
+        },
+        { name    => 'Kernel',
+          type    => 'Kernel',
+          desc    => 'Kernel master group containing all kernels',
+          system  => 1
+        },
+        { name    => 'Systemimage',
+          type    => 'Systemimage',
+          desc    => 'Systemimage master group containing all system images',
+          system  => 1
+        },
+        { name    => 'Operationtype',
+          type    => 'Operationtype',
+          desc    => 'Operationtype master group containing all operations',
+          system  => 1
+        },
+        { name    => 'Masterimage',
+          type    => 'Masterimage',
+          desc    => 'Masterimage master group containing all master images',
+          system  => 1
+        },
+        { name    => 'Component',
+          type    => 'Component',
+          desc    => 'Component group containing all components',
+          system  => 1,
+          methods => {
+              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
+              'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
+          }
+        },
+        { name    => 'Connector',
+          type    => 'Connector',
+          desc    => 'Connector group containing all connectors',
+          system  => 1,
+          methods => {
+              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
+              'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
+          }
+        },
+        { name    => 'Policy',
+          type    => 'Policy',
+          desc    => 'Policy group containing all policies',
+          system  => 1,
+          methods => {
+              'ServiceDeveloper' => [ 'getFlattenedHash', 'get' ],
+              'Sales'            => [ 'getFlattenedHash', 'get' ]
+          }
+        },
+        { name    => 'ServiceTemplate',
+          type    => 'ServiceTemplate',
+          desc    => 'ServiceTemplate group containing all service templates',
+          system  => 1,
+          methods => {
+              'ServiceDeveloper' => [ 'create', 'update', 'remove', 'get' ],
+              'Sales'            => [ 'get' ]
+          }
+        },
+        { name    => 'Network',
+          type    => 'Network',
+          desc    => 'Network group containing all service templates',
+          system  => 1
+        },
+        { name    => 'Gp',
+          type    => 'Gp',
+          desc    => 'Groups master group containing all groups',
+          system  => 1
+        },
+        # Re-handle the Entity group here to set permissions on methods,
+        # indeed, we need have user groups created before setting permissions,
+        # but we need to have the Entity group created at first.
+        { name    => 'Entity',
+          type    => 'Entity',
+          desc    => 'Entity master group containing all entities',
+          system  => 1,
+          methods => {
+              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm' ]
+          }
+        },
     ];
 
-    for my $group (@{$groups}) {
-        my $gp = Entity::Gp->new(
-            gp_name   => $group->{name},
-            gp_desc   => $group->{desc},
-            gp_system => $group->{system} || 0,
-            gp_type   => $group->{type}
-        );
+    # Browse all class types to find api methods
+    for my $classtype (@classes) {
+        BaseDB::requireClass($classtype);
 
-        if ($group->{name} eq 'Administrator') {
-            $admin_group = $gp;
+        my $parenttype = BaseDB::_parentClass($classtype);
+        my $methods    = $classtype->getMethods();
+        for my $parentmethod (keys %{$parenttype->getMethods()}) {
+            delete $methods->{$parentmethod};
+        }
+
+        my @methodlist = keys %$methods;
+        if (scalar (@methodlist)) {
+            $classtype =~ s/.*\:\://g;
+            push @{$groups}, {
+                name    => $classtype,
+                type    => $classtype,
+                desc    => $classtype . " master group",
+                system  => 1,
+                methods => {
+                    'Administrator' => \@methodlist
+                }
+            }
+        }
+    }
+
+    my @adminprofiles;
+    my $profilegroups = {};
+    for my $group (@{$groups}) {
+        my $gp;
+        eval {
+            $gp = Entity::Gp->find(hash => { gp_name => $group->{name} });
+        };
+        if ($@) {
+            $gp = Entity::Gp->new(
+                      gp_name   => $group->{name},
+                      gp_desc   => $group->{desc},
+                      gp_type   => $group->{type}
+                  );
         }
 
         if (defined ($group->{methods})) {
-            for my $method (@{$group->{methods}}) {
-                Entityright->new(
-                    entityright_consumed_id => $gp->id,
-                    entityright_consumer_id => $admin_group->id,
-                    entityright_method      => $method
-                );
+            for my $gpname (keys %{ $group->{methods} }) {
+                for my $method (@{ $group->{methods}->{$gpname} }) {
+                    print "- Setting permissions for group " . $gpname .
+                          ", on method " . $gp->gp_name . "->" . $method . "\n";
+
+                    Entityright->new(
+                        entityright_consumed_id => $gp->id,
+                        entityright_consumer_id => $profilegroups->{$gpname}->id,
+                        entityright_method      => $method
+                    );
+                }
             }
         }
 
@@ -288,11 +399,16 @@ sub registerUsers {
                 profile_id => $prof->id,
                 gp_id      => $gp->id
             } );
+
+            if ($group->{system} == 0) {
+                push @adminprofiles, $prof;
+                $profilegroups->{$group->{name}} = $gp;
+            }
         }
     }
 
-    my $admin_user = Entity::User->new(
-                         user_system       => 1,
+    my $admin_user = Entity::User->create(
+                         user_system       => 0,
                          user_login        => "admin",
                          user_password     => $args{admin_password},
                          user_firstname    => 'Kanopya',
@@ -302,14 +418,14 @@ sub registerUsers {
                          user_desc         => 'God user for administrative tasks.'
                      );
 
-    my $admin_profile = Profile->find(hash => { profile_name => 'Super Admin' });
+    for my $profile (@adminprofiles) {
+        UserProfile->new(
+            user_id    => $admin_user->id,
+            profile_id => $profile->id
+        );
+    }
 
-    UserProfile->new(
-        user_id    => $admin_user->id,
-        profile_id => $admin_profile->id
-    );
-
-    my $executor_user = Entity::User->new(
+    my $executor_user = Entity::User->create(
         user_system       => 1,
         user_login        => "executor",
         user_password     => $args{admin_password},
@@ -319,14 +435,12 @@ sub registerUsers {
         user_creationdate => today(),
         user_desc         => 'User used by executor'
     );
-
-    UserProfile->new(
-        user_id    => $executor_user->id,
-        profile_id => $admin_profile->id
-    );
-
-    $admin_group->appendEntity(entity => $admin_user);
-    $admin_group->appendEntity(entity => $executor_user);
+#
+#    UserProfile->new(
+#        user_id    => $executor_user->id,
+#        profile_id => $admin_profile->id
+#    );
+#    $admin_group->appendEntity(entity => $executor_user);
 }
 
 sub registerKernels {
@@ -911,12 +1025,12 @@ sub registerKanopyaMaster {
         eval {
             $component_template = ComponentTemplate->find(hash => { component_template_name => lc $name })->id;
         };
+
         my $comp = $class->new(
             service_provider_id   => $admin_cluster->id,
             component_template_id => $component_template,
             defined ($component->{conf}) ? %{$component->{conf}} : ()
         );
-
         if (defined $component->{manager}) {
             ServiceProviderManager->new(
                 service_provider_id => $admin_cluster->id,
@@ -928,7 +1042,7 @@ sub registerKanopyaMaster {
         $installed->{$component->{name}} = $comp;
     }
 
-    my $vg = Lvm2Vg->new(
+    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
         lvm2_id           => $installed->{"Lvm"}->id,
         lvm2_vg_name      => $args{kanopya_vg_name},
         lvm2_vg_freespace => $args{kanopya_vg_free_space},

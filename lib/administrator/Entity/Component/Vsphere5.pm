@@ -1,5 +1,5 @@
-# Vsphere5.pm - Vsphere5 component
 #    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -45,12 +45,9 @@ use warnings;
 use VMware::VIRuntime;
 
 use General;
-
-use Data::Dumper;
-use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
-use Vsphere5Repository;
-use Vsphere5Datacenter;
+use Entity::Component::Vsphere5::Vsphere5Repository;
+use Entity::Component::Vsphere5::Vsphere5Datacenter;
 use Entity::User;
 use Entity::Policy;
 use Entity::ServiceTemplate;
@@ -59,6 +56,9 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::ContainerAccess;
+
+use Data::Dumper;
+use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -83,13 +83,11 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
-
     },
-    overcommitment_memory_factor => {
-        pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
+    # TODO: move this virtual attr to HostManager attr def when supported
+    host_type => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -1406,7 +1404,7 @@ Return the list of hypervisors managed by the component
 
 =cut
 
-sub getHypervisors {
+sub hypervisors {
     my $self = shift;
 
     my @hypervisors = Entity::Host::Hypervisor::Vsphere5Hypervisor->search(

@@ -30,6 +30,10 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
+sub exportType {
+    return '';
+}
+
 =head2 checkExportManagerParams
 
 =cut

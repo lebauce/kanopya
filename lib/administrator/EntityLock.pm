@@ -46,12 +46,3 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

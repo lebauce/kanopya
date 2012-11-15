@@ -15,7 +15,7 @@ function user_addbutton_action(e, displayed) {
     } else {
         displayed = [ 'user_firstname', 'user_lastname', 'user_email', 
                       'user_desc', 'user_login', 'user_password', 
-                      'user_lastaccess', 'user_creationdate',
+                      'user_lastaccess', 'user_creationdate', 'user_system',
                       'user_sshkey', 'user_profiles' ];
 
         relations = { 'quotas' : [ 'resource', 'current', 'quota' ] };
@@ -36,6 +36,8 @@ function Users() {
         g_user_id = elem_id;
         create_grid({
             url: '/api/user',
+            elem_name: 'user',
+            rights: true,
             content_container_id: container_id,
             grid_id: 'users_list',
             details: { onSelectRow : user_addbutton_action },
@@ -52,83 +54,9 @@ function Users() {
                                   .button({ icons : { primary : 'ui-icon-plusthick' } });
 
         var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
-                               'user_login', 'user_password', 'user_sshkey', 'user_profiles' ];
+                               'user_login', 'user_password', 'user_system', 'user_sshkey', 'user_profiles' ];
         var creation_relations = { 'quotas' : [ 'resource', 'quota' ] };
         $(user_addbutton).bind('click', { displayed : creation_attrs, relations : creation_relations }, user_addbutton_action);
-    };
-  
-    Users.prototype.load_details = function(container_id, elem_id) {
-        var users_opts = {
-            name   : 'user',
-            title  : 'User details',
-            fields : { user_firstname   : {label: 'First name'},
-                       user_lastname    : {label: 'Last name'},
-                       user_email       : {label: 'Email'},
-                       user_login       : {label: 'Login'},
-                       user_creationdate: {label: 'Creation date'},
-                       user_desc        : {label: 'Description'},
-                    },
-        };
-        
-        var details = new DetailsTable(container_id, elem_id, users_opts);
-       
-        details.addAction({label: 'update', action: function() {
-            var form = new ModalForm({
-                id       : elem_id,
-                title    : 'Update user',
-                name     : 'user',
-                fields   : users_opts.fields,
-                callback : function() { details.refresh(); }
-            }).start();
-        }});
-        
-        details.addAction({label: 'detele', action: function() {
-            $.ajax({ 
-                type: 'delete', 
-                async: false, 
-                url: '/api/user/'+elem_id,
-                success: function() { $('#'+container_id).closest('.master_view').parent().dialog('close'); },
-                error: function(jqXHR, textStatus, errorThrown) { 
-                    alert(jqXHR.responseText); } 
-            });
-            
-            
-        }});
-        details.show();
-    };
-    
-    Users.prototype.load_profiles = function(container_id, elem_id) {
-        /* retrieve profiles list  */
-        var container = $('#'+container_id);
-        var table = $('<table>',  {id: 'profiles_table'});
-        table.appendTo(container);
-        
-        var grid = table.jqGrid({
-            datatype: 'local',
-            colNames:['profile'],
-            colModel :[ 
-              {name:'profile_name', index:'profile_name', width:500, align:'left'}, 
-
-            ],
-            rowNum:10,
-            sortorder: 'desc',
-            viewrecords: true,
-            gridview: true,
-            autoencode: true,
-        }); 
-
-        $.ajax({
-            url: '/api/user/'+elem_id+'/getProfiles',
-            type: 'POST', 
-            async: false, 
-            //data: undefined, 
-            //contentType: 'application/json',
-            //dataType: 'json', 
-            success: function(data) { 
-                for(var i=0;i<data.length;i++) grid.jqGrid('addRowData',i+1,{ profile_name: data[i]});
-                grid.trigger("reloadGrid");
-            }
-        });
     };
 }
   
@@ -139,6 +67,8 @@ var users = new Users();
 function loadGroups (container_id, elem_id) {
     create_grid({
         url: '/api/gp?gp_type=User',
+        elem_name: 'gp',
+        rights: true,
         content_container_id: container_id,
         grid_id: 'groups_list',
         colNames: [ 'group id', 'group name', 'group type' ],
@@ -164,10 +94,6 @@ function groupsList (container_id, elem_id) {
                             'Distribution', 'Kernel'
                 ]
             },
-            gp_system: {
-                type: 'hidden',
-                value: '0'
-            },
             gp_desc: {
                 label: 'Description',
                 type: 'textarea'
@@ -191,6 +117,8 @@ function groupsList (container_id, elem_id) {
     var container = $('#' + container_id);
     create_grid({
         url: '/api/gp?gp_type=User',
+        elem_name: 'gp',
+        rights: true,
         content_container_id: container_id,
         grid_id: 'groups_list',
         colNames: [ 'group id', 'group name', 'group type' ],
@@ -210,7 +138,7 @@ function _generatePermissionsSelect(container, condition, changeCallback, callba
     changeCallback  = changeCallback || $.noop;
     callback        = callback || $.noop;
     $.ajax({
-        url     : '/api/gp?' + condition,
+        url     : '/api/gp' + condition,
         type    : 'GET',
         success : function(data) {
             var gpselect    = $('<select>', { rel : $(container).attr('rel') }).prependTo(container).bind('change', changeCallback);
@@ -290,11 +218,11 @@ function permissions(cid) {
                 break;
             }
         }
-        _generatePermissionsSelect(targetGroupSelector, 'gp_type=' + gname, showtable, cb);
+        _generatePermissionsSelect(targetGroupSelector, '&gp_type=' + gname, showtable, cb);
     }
 
-    _generatePermissionsSelect(groupSelector, 'gp_system=1', groupSelectorChange);
-    _generatePermissionsSelect(userGroupSelector, 'gp_system=0&gp_type=User', showtable);
+    _generatePermissionsSelect(groupSelector, '', groupSelectorChange);
+    _generatePermissionsSelect(userGroupSelector, '&gp_type=User', showtable);
 
     $.ajax({
         url     : '/api/user?user_system=0',

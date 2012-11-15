@@ -91,7 +91,7 @@ sub postStart {
 
 sub ping {
     my ($self) = @_;
-    my $ip = $self->getAdminIp;
+    my $ip = $self->adminIp;
     my $ping = Net::Ping->new("icmp");
     my $pingable = $ping->ping($ip, 2);
     $ping->close();
@@ -108,7 +108,7 @@ sub checkUp {
             $self->getEContext->execute(command => "uptime");
         };
         if ($@) {
-            $log->info("Ehost->checkUp for host <" . $self->getAdminIp .
+            $log->info("Ehost->checkUp for host <" . $self->adminIp .
                        ">, host pingable but not sshable");
             return 0;
         }
@@ -121,7 +121,7 @@ sub getEContext {
     my $self = shift;
 
     return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp,
-                                 ip_destination => $self->getAdminIp);
+                                 ip_destination => $self->adminIp);
 }
 
 sub timeOuted {

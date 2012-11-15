@@ -44,32 +44,21 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    disk_type => {
+        is_virtual => 1
+    },
+    export_type => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        'getExportType' => {
-            'description' => 'Return the type of managed exports.',
-            'perm_holder' => 'entity',
-        },
-        'getDiskType' => {
-            'description' => 'Return the type of managed disks.',
-            'perm_holder' => 'entity',
-        },
-        'getExportManagers' => {
-            'description' => 'Return the availables export managers for this disk manager.',
-            'perm_holder' => 'entity',
-        },
-    }
+sub exportType {
+    return "NFS repository";
 }
 
-sub getExportType {
-    return "NFS export";
-}
-
-sub getDiskType {
+sub diskType {
     return "Virtual machine disk";
 }
 
@@ -118,7 +107,7 @@ sub getConf {
         $opennebula = $cluster->getComponent(name => "Opennebula", version => "3");
     };
     if ($@) {
-        # Tyr to find the first clutsre with opennebula3 installed
+        # Try to find the first cluster with opennebula3 installed
         my @services = Entity::ServiceProvider->search(hash => {});
         for my $serviceprovider (@services) {
             eval {

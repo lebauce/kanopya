@@ -34,32 +34,22 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    disk_type => {
+        is_virtual => 1
+    },
+    export_type => {
+        is_virtual => 1
+    }
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        'getExportType' => {
-            'description' => 'Return the type of managed exports.',
-            'perm_holder' => 'entity',
-        },
-        'getDiskType' => {
-            'description' => 'Return the type of managed disks.',
-            'perm_holder' => 'entity',
-        },
-        'getExportManagers' => {
-            'description' => 'Return the availables export managers for this disk manager.',
-            'perm_holder' => 'entity',
-        },
-    }
-}
-
-sub getExportType {
+sub exportType {
     return "ISCSI target";
 }
 
-sub getDiskType {
+sub diskType {
     return "NetApp lun";
 }
 

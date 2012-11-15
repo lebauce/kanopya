@@ -1,5 +1,5 @@
-# Iscsitarget1.pm -Ietd (iscsi target) 1 server component (Adminstrator side)
 #    Copyright 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,43 +12,10 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 5 august 2010
 
-=head1 NAME
 
-<Entity::Component::Iscsitarget1> <Iscsitarget component concret class>
-
-=head1 VERSION
-
-This documentation refers to <Entity::Component::Iscsitarget1> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Entity::Component::Iscsitarget1>;
-
-my $component_instance_id = 2; # component instance id
-
-Entity::Component::Iscsitarget1->get(id=>$component_instance_id);
-
-# Cluster id
-
-my $cluster_id = 3;
-
-# Component id are fixed, please refer to component id table
-
-my $component_id =2 
-
-Entity::Component::Iscsitarget1->new(component_id=>$component_id, cluster_id=>$cluster_id);
-
-=head1 DESCRIPTION
-
-Entity::Component::Iscsitarget1 is class allowing to instantiate an Mysql5 component
-This Entity is empty but present methods to set configuration.
-
-=head1 METHODS
-
-=cut
 package Entity::Component::Iscsitarget1;
 use base "Entity::Component";
 use base "Manager::ExportManager";
@@ -71,20 +38,15 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    export_type => {
+        is_virtual => 1
+    }
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        'getExportType' => {
-            'description' => 'Return the type of managed exports.',
-            'perm_holder' => 'entity',
-        },
-    }
-}
-
-sub getExportType {
+sub exportType {
     return "ISCSI target";
 }
 

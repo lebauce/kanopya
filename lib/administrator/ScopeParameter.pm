@@ -11,21 +11,27 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package ScopeParameter;
+use base 'BaseDB';
 
 use strict;
 use warnings;
-use base 'BaseDB';
+
 
 use constant ATTR_DEF => {
-    scope_parameter_name              =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    scope_id                          =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
+    scope_parameter_name => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    scope_id => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

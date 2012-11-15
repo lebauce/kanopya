@@ -1,6 +1,5 @@
-# ECluster.pm - Abstract class of EClusters object
-
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,23 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
-
-ECluster - execution class of cluster entities
-
-=head1 SYNOPSIS
-
-
-
-=head1 DESCRIPTION
-
-ECluster is the execution class of cluster entities
-
-=head1 METHODS
-
-=cut
 package EEntity::EServiceProvider::EInside::ECluster;
 use base 'EEntity';
 
@@ -66,7 +49,7 @@ sub create {
     my $config = Kanopya::Config::get('executor');
 
     # Create cluster directory
-    my $dir = "$config->{clusters}->{directory}/" . $self->getAttr(name => "cluster_name");
+    my $dir = "$config->{clusters}->{directory}/" . $self->cluster_name;
     my $command = "mkdir -p $dir";
     $self->getExecutorEContext->execute(command => $command);
     $log->debug("Execution : mkdir -p $dir");
@@ -83,6 +66,11 @@ sub create {
         $args{components}->{$component->component_type->component_name} = {
             component_type => $component->component_type_id
         };
+    }
+
+    # Set default permissions on this cluster for the related customer
+    for my $method (keys %{ $self->getMethods }) {
+        $self->addPerm(consumer => $self->user, method => $method);
     }
 
     # Use the method for policy applying to configure manager, components, and interfaces.
@@ -192,7 +180,7 @@ sub generateHostsConf {
         my $tmp = {
             hostname   => $node->getAttr(name => 'host_hostname'),
             domainname => $args{kanopya_domainname},
-            ip         => $node->getAdminIp
+            ip         => $node->adminIp
         };
 
         push @hosts_entries, $tmp;
@@ -257,7 +245,7 @@ sub updateHostsFile {
             my $tmp = {
                 hostname   => $node->getAttr(name => 'host_hostname'),
                 domainname => $args{kanopya_domainname},
-                ip         => $node->getAdminIp
+                ip         => $node->adminIp
             };
             if($cluster->getAttr(name => 'cluster_id') eq $cluster_id) {
                 push @cluster_nodes, $tmp;

@@ -14,6 +14,7 @@ use Operationtype;
 use Kanopya::Exceptions;
 use Entity::Operation;
 use NotificationSubscription;
+use Entity::ServiceProvider::Inside::Cluster;
 
 my $log = get_logger("");
 
@@ -32,26 +33,37 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    comment => {
+        is_virtual   => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        getWorkflows => {
-            description => 'get the current workflows about this entity.',
-            perm_holder => 'entity'
+        create => {
+            description => 'create a new entity',
+        },
+        remove => {
+            description => 'remove an entity',
+        },
+        update => {
+            description => 'update an entity',
         },
         subscribe => {
             description => 'subscribe to notification about this entity.',
-            perm_holder => 'entity'
+        },
+        addPerm => {
+            description => 'subscribe to notification about this entity.',
+        },
+        removePerm => {
+            description => 'subscribe to notification about this entity.',
         }
     };
 }
 
-sub primarykey { return 'entity_id'; }
-
-=head2 getMasterGroupName
+=head2 new
 
     Override BaseDB constructor to add the newly created entity
     to the corresponding group. 
@@ -64,7 +76,14 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    $class->getMasterGroup->appendEntity(entity => $self);
+    # Add the entity in the master group corresponding to it concrete class
+    # and also in the master group Entity.
+    my $mastergroup = $class->getMasterGroup;
+    if ($mastergroup->gp_name ne 'Entity') {
+        Entity->getMasterGroup->appendEntity(entity => $self);
+    }
+    $mastergroup->appendEntity(entity => $self);
+
     return $self;
 }
 
@@ -80,9 +99,14 @@ sub update {
     # Try to lock the entoty while updating it
     $self->lock(consumer => $self);
 
-    $self->SUPER::update(%args);
-
+    eval {
+        $self->SUPER::update(%args);
+    };
+    if ($@) {
+        $self->unlock(consumer => $self);
+    }
     $self->unlock(consumer => $self);
+
     return $self;
 }
 
@@ -98,7 +122,12 @@ sub remove {
     # Try to lock the entoty while updating it
     $self->lock(consumer => $self);
 
-    $self->SUPER::remove(%args);
+    eval {
+        $self->SUPER::remove(%args);
+    };
+    if ($@) {
+        $self->unlock(consumer => $self);
+    }
 
     $self->unlock(consumer => $self);
 }
@@ -122,7 +151,7 @@ sub getMasterGroup {
         $group = Entity::Gp->find(hash => { gp_name => $self->getMasterGroupName });
     };
     if ($@) {
-        $group = Entity::Gp->find(hash => { gp_name => $self->getGenericMasterGroupName });
+        $group = Entity::Gp->find(hash => { gp_name => 'Entity' });
     }
     return $group;
 }
@@ -140,19 +169,8 @@ sub getMasterGroupName {
     my $class = ref $self || $self;
     my @array = split(/::/, "$class");
     my $mastergroup = pop(@array);
+
     return $mastergroup;
-}
-
-=head2 getGenericMasterGroupName
-
-    Get an alternative group name if the correponding group 
-    of the concrete class of the entity do not exists.
-
-=cut
-
-sub getGenericMasterGroupName {
-    my $self = shift;
-    return 'Entity';
 }
 
 sub asString {
@@ -163,42 +181,6 @@ sub asString {
     return ref $self, " ( ",  @s,  " )";
 }
 
-=head2 getPerms
-
-    class : public
-
-    desc : return a structure describing method permissions for the current authenticated user.
-        If called on a class, return methods permissions holded by mastergroup only.
-        Else return all methods permissions.
-
-    return : hash ref
-
-=cut
-
-sub getPerms {
-    my $self = shift;
-    my $class = ref $self;
-    my $adm = Administrator->new();
-    my $mastergroupeid = $self->getMasterGroup->id;
-    my $methods = $self->methods();
-    my $granted;
-
-    foreach my $m (keys %$methods) {
-        if($methods->{$m}->{'perm_holder'} eq 'mastergroup') {
-            $granted = $adm->getRightChecker->checkPerm(entity_id => $mastergroupeid, method => $m);
-            $methods->{$m}->{'granted'} = $granted;
-        }
-        elsif($class and $methods->{$m}->{'perm_holder'} eq 'entity') {
-            $granted = $adm->getRightChecker->checkPerm(entity_id => $self->id, method => $m);
-            $methods->{$m}->{'granted'} = $granted;
-        }
-        else {
-            delete $methods->{$m};
-        }
-    }
-    #$log->debug(Dumper $methods);
-    return $methods;
-}
 
 =head2 addPerm
 
@@ -280,8 +262,14 @@ sub subscribe {
 
     General::checkParams(args     => \%args,
                          required => [ 'subscriber_id', 'operationtype' ],
-                         optional => { 'service_provider_id' => 1,
+                         optional => { 'service_provider_id' => undef,
                                        'validation'          => 0 });
+
+    if (not defined $args{service_provider_id}) {
+        $args{service_provider_id} = Entity::ServiceProvider::Inside::Cluster->find(
+                                         hash => { cluster_name => 'Kanopya' }
+                                     )->id;
+    }
 
     my $operationtype = Operationtype->find(hash => { operationtype_name => $args{operationtype} });
     NotificationSubscription->new(
@@ -308,38 +296,7 @@ sub activate {
     }
 }
 
-sub getEntities {
-    my $class = shift;
-    my %args = @_;
-    my @objs = ();
-    my ($rs, $entity_class);
-
-    General::checkParams(args => \%args, required => ['type', 'hash']);
-
-    my $adm = Administrator->new();
-
-    $rs = $adm->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
-
-    my $id_name = lc($args{type}) . "_id";
-    $entity_class = "Entity::$args{type}";
-
-    while ( my $row = $rs->next ) {
-        my $id = $row->get_column($id_name);
-        my $obj = eval { $entity_class->get(id => $id); };
-        if($@) {
-            my $exception = $@;
-            if (Kanopya::Exception::Permission::Denied->caught()) {
-                $log->info("no right to access to object <$args{type}> with  <$id>");
-                next;
-            }
-            else { $exception->rethrow(); }
-        }
-        else { push @objs, $obj; }
-    }
-    return  @objs;
-}
-
-sub getComment {
+sub comment {
     my $self = shift;
 
     my $comment_id = $self->getAttr(name => 'entity_comment_id');
@@ -369,21 +326,6 @@ sub setComment {
     }
 }
 
-sub getWorkflows {
-    my ($self, %args) = @_;
-    my $hash = {};
-    if(defined $args{state})  {
-        $hash->{state} = $args{state};
-    }
-    
-    $hash->{entity_id} = $self->id;
-    my @workflows = Entity::Workflow->search(hash => $hash);
-
-    # TODO: join tables workflow and workflow_parameter to get
-    #       paramters of running workflow only.
-
-    return wantarray ? @workflows : \@workflows;
-}
 
 sub lock {
     my $self = shift;
@@ -439,18 +381,6 @@ sub unlock {
     }
 }
 
-sub getAttr {
-    my $self = shift;
-    my %args = @_;
-
-    if ($args{name} eq "comment") {
-        return $self->getComment();
-    }
-    else {
-        return $self->SUPER::getAttr(%args);
-    }
-}
-
 sub setAttr {
     my $self = shift;
     my %args = @_;
@@ -461,6 +391,26 @@ sub setAttr {
     else {
         $self->SUPER::setAttr(%args);
     }
+}
+
+=pod
+
+=begin classdoc
+
+Return the delegatee entity on which the permissions must be checked.
+By default, permissions are checked on the entity itself.
+
+@return the delegatee entity.
+
+=end classdoc
+
+=cut
+
+
+sub getDelegatee {
+    my $self = shift;
+
+    return $self;
 }
 
 sub toJSON {
@@ -479,48 +429,6 @@ sub toJSON {
         }
     }
     return $hash;
-}
-
-=head2
-
-    It is convenient to override this method in Entity,
-    for centralizing permmissions checking.
-
-=cut
-
-sub methodCall {
-    my $self  = shift;
-    my $class = ref $self;
-    my %args  = @_;
-
-    my $adm = Administrator->new();
-
-    General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
-
-    my $methods = $self->getMethods();
-
-    # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
-    my ($granted, $perm_holder_id);
-    if ($methods->{$args{method}}->{perm_holder} eq 'mastergroup') {
-        $perm_holder_id = $self->getMasterGroup->id;
-    }
-    elsif ($class and $methods->{$args{method}}->{perm_holder} eq 'entity') {
-        $perm_holder_id = $self->id;
-    }
-
-    # Check the permissions for the logged user
-    $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder_id, method => $args{method});
-    if (not $granted) {
-        my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
-        Message->send(
-            from    => 'Permissions checker',
-            level   => 'error',
-            content => $msg
-        );
-        throw Kanopya::Exception::Permission::Denied(error => $msg);
-    }
-
-    return $self->SUPER::methodCall(%args);
 }
 
 1;

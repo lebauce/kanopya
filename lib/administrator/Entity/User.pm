@@ -26,6 +26,7 @@ use DateTime;
 use Kanopya::Exceptions;
 use General;
 use Profile;
+use UserProfile;
 use Entity::Gp;
 use Quota;
 
@@ -101,6 +102,13 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 0
     },
+    user_system => {
+        label        => 'Grant full persmissions',
+        type         => 'boolean',
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_editable  => 1
+    },
     quotas => {
         label        => 'Quotas',
         type         => 'relation',
@@ -118,85 +126,29 @@ use constant ATTR_DEF => {
     }
 };
 
+sub getAttrDef{ return ATTR_DEF; }
+
 sub methods {
     return {
-        create => {
-            description => 'create a new user',
-            perm_holder => 'mastergroup',
-        },
-        get => {
-            description => 'view this user',
-            perm_holder => 'entity',
-        },
-        update => {
-            description => 'save changes applied on this user',
-            perm_holder => 'entity',
-        },
-        remove => {
-            description => 'delete this user',
-            perm_holder => 'entity',
-        },
-        setperm => {
-            description => 'set permissions on this user',
-            perm_holder => 'entity',
-        },
-        getProfiles => {
-            description => 'get user profiles',
-            perm_holder => 'entity',
-        },
         setProfiles => {
             description => 'set user profiles',
             perm_holder => 'entity',
         },
-        getExtensions => {
-            description => 'get extended user attributes',
-            perm_holder => 'entity',
-        },
-        setExtension => {
-            description => 'create or update extended user attribute',
-            perm_holder => 'entity',
-        },
     };
-}
-
-=head2 getUsers
-
-    Class: public
-    desc: retrieve several Entity::User instances
-    args:
-        hash : hashref : where criteria
-    return: @ : array of Entity::User instances
-    
-=cut
-
-sub getUsers {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    return $class->search(%args);
 }
 
 =head2 create 
 
 =cut
 
-sub create {
-    my ($class, %args) = @_;
-    my $self = $class->SUPER::new(%args);
-    my $cryptpasswd = General::cryptPassword(password => $self->{_dbix}->user_password);
-    $self->{_dbix}->user_password($cryptpasswd);
-    my $dt = DateTime->now->set_time_zone('local');
-    $self->{_dbix}->user_creationdate("$dt");
-    $self->{_dbix}->user_lastaccess(undef);
-    $self->save();
-    return $self;
-}
-
 sub new {
-    my $self = shift;
-    $self->create(@_);
+    my ($class, %args) = @_;
+
+    $args{user_password}     = General::cryptPassword(password => $args{user_password});
+    $args{user_creationdate} = DateTime->now->set_time_zone('local');
+    $args{user_lastaccess}   = undef;
+
+    return $class->SUPER::new(%args);
 }
 
 =head2 setAttr
@@ -207,7 +159,9 @@ sub new {
 
 sub setAttr {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => ['name']);
+
     my $value;
     if($args{name} eq 'user_password') {
         $args{value} = General::cryptPassword(password => $args{value});
@@ -280,61 +234,34 @@ sub releaseQuota {
 
 sub setProfiles {
     my ($self, %args) = @_; 
-    my $adm = Administrator->new;
-    $self->{_dbix}->user_profiles->delete_all;
+
+    General::checkParams(args => \%args, required => [ 'profile_names' ]);
+
+    # Firstly check the validity for profiles
+    my $profilestoset = {};
     foreach my $profile_name (@{$args{profile_names}}) {
         eval {
-            my $profile = Profile->find(hash => { profile_name => $profile_name } );
-
-            # Link the user to the profile
-            $self->{_dbix}->user_profiles->create({ profile_id => $profile->id });
-
-            # Automatically add the user in the groups associated to this profile
-            my $rs = $profile->{_dbix}->profile_gps;
-            while (my $row = $rs->next) {
-                my $gp = Entity::Gp->get(id => $row->gp->id);
-                $gp->appendEntity(entity => $self);
-            }
+            $profilestoset->{$profile_name} = Profile->find(hash => { profile_name => $profile_name });
         };
         if ($@) {
             throw Kanopya::Exception::Internal::IncorrectParam(error => "Unknown profile $profile_name");
         }
     }
-}
 
-sub getProfiles {
-    my ($self) = @_;
-    my $result = $self->{_dbix}->user_profiles; 
-    my @array = ();
-    while(my $row = $result->next) {
-        push @array, $row->profile->get_column('profile_name');
+    # Then browse the current user profiles, and remove profiles not defined
+    # in the profile list given in parameters
+    foreach my $user_profile ($self->user_profiles) {
+        if (defined $profilestoset->{$user_profile->profile->profile_name}) {
+            delete $profilestoset->{$user_profile->profile->profile_name};
+        }
+        else {
+            $user_profile->remove();
+        }
     }
-    return \@array;
-}
-
-sub getExtensions {
-    my ($self) = @_;
-    my $extensions = [];
-    my $rs = $self->{_dbix}->user_extensions;
-    while (my $row = $rs->next) {
-        my %hash = ( 
-            id    => $row->get_column('user_extension_id'),
-            key   => $row->get_column('user_extension_key'),
-            value => $row->get_column('user_extension_value'),
-        );
-        push @$extensions, \%hash;
+    # Finally create the newly defined profiles
+    foreach my $profile (values %{ $profilestoset }) {
+        UserProfile->create(user_id => $self->id, profile_id => $profile->id);
     }
-    return $extensions;
-}
-
-sub setExtension {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['key','value']);
-    my $rs = $self->{_dbix}->user_extensions->update_or_create(
-        { user_extension_key => $args{key},user_extension_value => $args{value} },
-        { key => 'user_id' }
-    );
-    
 }
 
 =head2 toString
@@ -347,10 +274,6 @@ sub toString {
     my $self = shift;
     my $string = $self->{_dbix}->get_column('user_firstname'). " ". $self->{_dbix}->get_column('user_lastname');
     return $string;
-}
-
-sub getAttrDef{
-    return ATTR_DEF;
 }
 
 1;

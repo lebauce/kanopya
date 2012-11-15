@@ -39,7 +39,6 @@ use constant ATTR_DEF => {
     },
 };
 
-
 sub getAttrDef { return ATTR_DEF; }
 
 1;

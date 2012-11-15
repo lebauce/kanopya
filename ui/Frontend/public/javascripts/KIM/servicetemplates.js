@@ -14,8 +14,8 @@ var service_template = {
         step         : 'Service',
         label        : 'Service template description',
         type         : 'textarea',
-        is_mandatory : false,
-    },
+        is_mandatory : false
+    }
 }
 
 var service = {
@@ -24,13 +24,13 @@ var service = {
         label        : 'Service name',
         type         : 'text',
         is_mandatory : true,
-        pattern      : '^[a-zA-Z_0-9]+$',
+        pattern      : '^[a-zA-Z_0-9]+$'
     },
     cluster_desc : {
         step         : 'Service',
         label        : 'Service description',
         type         : 'textarea',
-        is_mandatory : false,
+        is_mandatory : false
     },
     user_id : {
         step         : 'Service',
@@ -39,7 +39,7 @@ var service = {
         entity       : 'user',
         rawfilter    : '?user_profiles.profile.profile_name=Customer',
         display      : 'user_login',
-        is_mandatory : true,
+        is_mandatory : true
     },
     service_template_id : {
         step         : 'Service',
@@ -52,8 +52,8 @@ var service = {
         pattern         : '^[1-9][0-9]*',
         values_provider : true,
         fields_provided  : [],
-        disable_filled  : true,
-    },
+        disable_filled  : true
+    }
 }
 
 function load_service_template_content (container_id) {
@@ -76,11 +76,11 @@ function load_service_template_content (container_id) {
           display         : 'policy_name',
           values_provider : {
             func : 'getFlattenedHash',
-            args : { },
+            args : { }
           },
           is_mandatory : true,
           trigger      : true,
-          pattern      : '^[1-9][0-9]*$',
+          pattern      : '^[1-9][0-9]*$'
         };
 
         for (var field in policy_def) {
@@ -139,9 +139,9 @@ function load_service_template_content (container_id) {
             $(subscribeButton).click(function() {
                 var details = {
                     tabs : [
-                        { label : 'Notification subscriptions', id : 'subscription', onLoad : function(cid, eid) { loadSubscriptionModal(cid, eid, 'AddCluster'); } },
+                        { label : 'Notification subscriptions', id : 'subscription', onLoad : function(cid, eid) { loadSubscriptionModal(cid, eid, 'AddCluster'); } }
                     ],
-                    title : 'Notification subscriptions',
+                    title : 'Notification subscriptions'
                 };
                 show_detail('entity_subscription_list', 'entity_subscription_list', rowelem.pk, rowdata, details);
             });
@@ -166,7 +166,7 @@ function load_service_template_details (elem_id, row_data, grid_id) {
             entity          : 'policy',
             filters         : { policy_type : policy },
             display         : 'policy_name',
-            is_mandatory    : true,
+            is_mandatory    : true
         };
     }
 

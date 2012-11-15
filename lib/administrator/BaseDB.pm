@@ -39,6 +39,7 @@ use Class::ISA;
 use Hash::Merge;
 use POSIX qw(ceil);
 use vars qw($AUTOLOAD);
+use Clone qw(clone);
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -57,24 +58,8 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        toString => {
-            description => 'toString',
-            perm_holder => 'entity',
-        },
-        create => {
-            description => 'create a new object',
-            perm_holder => 'mastergroup',
-        },
-        remove => {
-            description => 'remove an object',
-            perm_holder => 'mastergroup',
-        },
-        update => {
-            description => 'update an object',
-            perm_holder => 'mastergroup',
-        },
-        methodCall => {
-            description => 'Call an object method',
+        get => {
+            description => 'get an object',
         },
     };
 }
@@ -182,7 +167,8 @@ sub update {
     my $updated = 0;
     for my $attr (keys %$hash) {
         my $currentvalue = $self->getAttr(name => $attr);
-        if ("$hash->{$attr}" ne "$currentvalue") {
+        if ((defined $currentvalue and "$hash->{$attr}" ne "$currentvalue") or
+            (not defined $currentvalue and defined $hash->{$attr})) {
             $self->setAttr(name => $attr, value => $hash->{$attr});
 
             if (not $updated) { $updated = 1; }
@@ -353,17 +339,17 @@ sub getAttrDefs {
     General::checkParams(args => \%args, optional => { 'group_by' => 'none' });
 
     my $attributedefs = {};
-    my @classes = split(/::/, (split("=", "$class"))[0]);
+    my $modulename = $class;
+    my @hierachy = $class->getClassHierarchy;
 
-    my $currentclass;
-    while(@classes) {
-        $currentclass = join('::', @classes);
-
+    while(@hierachy) {
         my $attr_def = {};
-        if ($currentclass ne "BaseDB") {
-            requireClass($currentclass);
+
+        if ($modulename ne "BaseDB") {
+            requireClass($modulename);
+
             eval {
-                $attr_def = $currentclass->getAttrDef();
+                $attr_def = clone($modulename->getAttrDef());
             };
 
             my $schema;
@@ -372,7 +358,7 @@ sub getAttrDefs {
             };
             if ($@) {
                 my $adm = Administrator->new();
-                $schema = $adm->{db}->source(_buildClassNameFromString($currentclass));
+                $schema = $adm->{db}->source(_buildClassNameFromString($modulename));
             }
 
             my @relnames = $schema->relationships();
@@ -405,15 +391,20 @@ sub getAttrDefs {
         }
 
         if ($attr_def) {
-            $attributedefs->{$currentclass} = $attr_def;
+            $attributedefs->{$modulename} = $attr_def;
         }
-        pop @classes;
+
+        if (scalar(@hierachy) > 1) {
+            $modulename = _parentClass($modulename);
+        }
+
+        pop @hierachy;
     }
 
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
     # Add the BaseDB attrs to the upper class attrs
-    $attributedefs->{$currentclass} = $merge->merge($attributedefs->{$currentclass}, BaseDB::getAttrDef());
+    $attributedefs->{$modulename} = $merge->merge($attributedefs->{$modulename}, BaseDB::getAttrDef());
 
     if ($args{group_by} eq 'module') {
         return $attributedefs;
@@ -497,9 +488,10 @@ sub checkAttrs {
         foreach my $module (keys %$attributes_def) {
             if (exists $attributes_def->{$module}->{$attr}){
                 my $value = $attrs->{$attr};
+                my $pattern = $attributes_def->{$module}->{$attr}->{pattern};
 
                 if (((not defined $value) and $attributes_def->{$module}->{$attr}->{is_mandatory}) or
-                    ((defined $value) and $value !~ m/($attributes_def->{$module}->{$attr}->{pattern})/)) {
+                    ((defined $value and defined $pattern) and $value !~ m/($pattern)/)) {
                     $errmsg = "$class"."->checkAttrs detect a wrong value ($value) for param : $attr on class $module";
                     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
                 }
@@ -611,20 +603,36 @@ Construct the proper BaseDB based instance from a DBIx row
 sub fromDBIx {
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'row' ]);
+    General::checkParams(args => \%args, required => [ 'row' ],
+                                         optional => { deep => 0 });
 
-    my $name = classFromDbix($args{row}->result_source);
+    my $modulename = classFromDbix($args{row}->result_source);
 
-    requireClass($name);
+    eval {
+        requireClass($modulename);
+    };
+    if ($@) {
+        my $err = $@;
+        my $basedb = bless { _dbix => $args{row} }, "BaseDB";
+        return $basedb;
+    }
 
     # TODO: We need to use prefetch to get the parent/childs attrs,
     #       and use the concrete class type. Use 'get' for instance.
 
-#    return bless {
-#        _dbix      => $args{row},
-#    }, $name;
+    my $obj = bless {
+                  _dbix      => $args{row},
+              }, $modulename;
 
-    return $name->get(id => getRowPrimaryKey(row => $args{row}));
+    if ($args{deep} && $args{row}->has_column('class_type_id')) {
+        my $class_type = getClassType(id => $obj->class_type_id);
+        if (length($class_type) > length($modulename)) {
+            requireClass($class_type);
+            $obj = $class_type->get(id => $obj->id);
+        }
+    }
+
+    return $obj;
 }
 
 
@@ -647,7 +655,8 @@ sub getAttr {
     my $class = ref($self);
     my %args  = @_;
 
-    General::checkParams(args => \%args, required => ['name']);
+    General::checkParams(args => \%args, required => [ 'name' ],
+                                         optional => { deep => 0 });
 
     my $dbix = $self->{_dbix};
     my $attr = $class->getAttrDefs()->{$args{name}};
@@ -657,26 +666,44 @@ sub getAttr {
     # Recursively search in the dbix objets, following
     # the 'parent' relation
     while ($found) {
+        # The attr is a column
         if ($dbix->has_column($args{name})) {
             $value = $dbix->get_column($args{name});
             last;
         }
+        # The attr is a relation
         elsif ($dbix->has_relationship($args{name})) {
             my $name = $args{name};
             my $relinfo = $dbix->relationship_info($args{name});
             if ($relinfo->{attrs}->{accessor} eq "multi") {
-                return map { fromDBIx(row => $_) } $dbix->$name;
+                return map { fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
             }
             else {
                 if ($dbix->$name) {
-                    $value = fromDBIx(row => $dbix->$name);
+                    $value = fromDBIx(row => $dbix->$name, deep => $args{deep});
                 }
             }
             last;
         }
-        elsif ($self->can($args{name}) and defined $attr and $attr->{is_virtual}) {
+        # The attr is a many to many relation
+        elsif ($dbix->can($args{name})) {
+            my $name = $args{name};
+            return map { fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
+        }
+        # The attr is a virtual attr
+        elsif (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) and
+               defined $attr and $attr->{is_virtual}) {
+
             my $method = $args{name};
-            $value = $self->$method();
+            # Firstly try to call method with camel-case style
+            eval {
+                my $camelcased_method = normalizeMethod($method);
+                $value = $self->$camelcased_method();
+            };
+            if ($@) {
+                # If failled with camel-cased, try the original attr name as method
+                $value = $self->$method();
+            }
             last;
         }
         elsif ($dbix->can('parent')) {
@@ -803,36 +830,12 @@ Retrieve one instance from an id
 sub get {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'id' ]);
+    General::checkParams(args => \%args, required => [ 'id' ],
+                                         optional => { 'prefetch' => [ ] });
 
-    my $adm = Administrator->new();
-    eval {
-        my $dbix = $adm->getRow(id => $args{id}, table => _rootTable($class));
-        $class   = $dbix->class_type->get_column('class_type');
-    };
-    if ($@) {
-        $log->debug("Unable to retreive concrete class name, using $class.");
-    }
-
-    my $table = _buildClassNameFromString($class);
-    my $location = General::getLocFromClass(entityclass => $class);
-    eval { require $location; };
-    if ($@) {
-        throw Kanopya::Exception::Internal::UnknownClass(
-                  error => "Could not find $location :\n$@"
-              );
-    }
-
-    my $dbix = $adm->getRow(id => $args{id}, table => $table);
-    my $self = {
-        _dbix => $dbix,
-    };
-
-    bless $self, $class;
-
-    return $self;
+    return $class->find(hash     => { 'me.' . $class->getPrimaryKey => $args{id} },
+                        prefetch => $args{prefetch});
 }
-
 
 =pod
 
@@ -882,18 +885,19 @@ Build the join query required to get all the attributes of the whole class hiera
 
 sub getJoin {
     my ($class) = @_;
-
-    my $parent_join;
-    my @hierarchy = split(/::/, $class);
-    my $depth = scalar @hierarchy;
-    my $n = $depth;
     my $adm = Administrator->new();
-    while ($n > 0) {
-        last if $hierarchy[$n - 1] eq "BaseDB";
-        $parent_join = $adm->{db}->source($hierarchy[$n - 1])->has_relationship("parent") ?
+
+    my @hierarchy = $class->getClassHierarchy;
+    my $depth = scalar @hierarchy;
+
+    my $current = $depth;
+    my $parent_join;
+    while ($current > 0) {
+        last if $hierarchy[$current - 1] eq "BaseDB";
+        $parent_join = $adm->{db}->source($hierarchy[$current - 1])->has_relationship("parent") ?
                            ($parent_join ? { parent => $parent_join } : { "parent" => undef }) :
                            $parent_join;
-        $n -= 1;
+        $current -= 1;
     }
 
     return $parent_join;
@@ -913,30 +917,85 @@ Build the JOIN query to get the attributes of a multi level depth relationship.
 =cut
 
 sub getJoinQuery {
-    my ($class, @comps) = @_;
+    my ($class, %args) = @_;
 
-    my $adm = Administrator->new();
-    my $source = $adm->{db}->source(_buildClassNameFromString($class));
+    my @comps = @{$args{comps}};
+    my $source = $class->getResultSource;
+    my $on = "";
+    my $relation;
+    my $accessor = "single";
 
     my @joins;
-    for my $comp (@comps) {
+    my $i = 0;
+    while ($i < scalar @comps) {
+        my $comp = $comps[$i];
+        my $many_to_many = $source->result_class->can("_m2m_metadata") &&
+                           defined ($source->result_class->_m2m_metadata->{$comp});
         my @segment = ();
-        while (! $source->has_relationship($comp)) {
-            @segment = ("parent", @segment);
+
+        while (!$source->has_relationship($comp) && !$many_to_many) {
+            if ($args{reverse}) {
+                $relation = $source->reverse_relationship_info("parent");
+                @segment = ((keys %$relation)[0], @segment);
+            }
+            else {
+                @segment = ("parent", @segment);
+            }
             last if ! $source->has_relationship("parent");
             $source = $source->related_source("parent");
+            $many_to_many = $source->result_class->can("_m2m_metadata") &&
+                            defined ($source->result_class->_m2m_metadata->{$comp});
+        }
+
+        if ($source->result_class->can("_m2m_metadata") &&
+            defined ($source->result_class->_m2m_metadata->{$comp})) {
+            splice @comps, $i, 1, ($source->result_class->_m2m_metadata->{$comp}->{relation},
+                                   $source->result_class->_m2m_metadata->{$comp}->{foreign_relation});
+            @joins = (@joins, @segment);
+            next;
+        }
+
+        if ($args{reverse}) {
+            $relation = $source->reverse_relationship_info($comp);
+            my $name = (keys %$relation)[0];
+            @joins = ($name, @segment, @joins);
+            if (!$on) {
+                $on = $name . "." . ($relation->{$name}->{source}->primary_columns)[0];
+            }
+        }
+        else {
+            @joins = (@joins, @segment, $comp);
+        }
+
+        $relation = $source->relationship_info($comp);
+        if ($relation->{attrs}->{accessor} eq "multi") {
+            $accessor = "multi";
         }
 
         $source = $source->related_source($comp);
-        @joins = (@joins, @segment, $comp);
+        $i += 1;
     }
+
+    # Get all the hierarchy of the relation
+    my @indepth;
+    if ($args{indepth}) {
+        my $depth_source = $source;
+        while ($depth_source->has_relationship("parent")) {
+            @indepth = ("parent", @indepth);
+            $depth_source = $depth_source->related_source("parent");
+        }
+    }
+    @joins = (@joins, @indepth);
 
     my $joins;
     for my $comp (reverse @joins) {
         $joins = { $comp => $joins };
     }
 
-    return $joins;
+    return { source   => $source,
+             join     => $joins,
+             on       => $on,
+             accessor => $accessor };
 }
 
 
@@ -967,14 +1026,25 @@ sub search {
 
     General::checkParams(args     => \%args,
                          required => [ 'hash' ],
-                         optional => { 'page' => undef, 'rows' => undef,
-                                       'order_by' => undef, 'dataType' => undef });
+                         optional => { 'page' => undef, 'rows' => undef, 'join' => undef,
+                                       'order_by' => undef, 'dataType' => undef,
+                                       'prefetch' => [ ], 'raw_hash' => { } });
 
     my $table = _buildClassNameFromString($class);
-    my $adm = Administrator->new();
-    my $join = $class->getJoin() || {};
+    my $adm   = Administrator->new();
+
+    my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
+    my $prefetch = $class->getJoin() || {};
+    $prefetch = $merge->merge($prefetch, $args{join});
+    my $source = $class->getResultSource;
+    for my $relation (@{$args{prefetch}}) {
+        my @comps = split(/\./, $relation);
+        $prefetch = $merge->merge($prefetch, $class->getJoinQuery(comps   => \@comps,
+                                                                  indepth => 1)->{join});
+    }
 
     for my $filter (keys %{$args{hash}}) {
+        next if substr($filter, 0, 3) eq "me.";
         my @comps = split('\.', $filter);
         my $value = $args{hash}->{$filter};
 
@@ -984,24 +1054,19 @@ sub search {
 
             delete $args{hash}->{$filter};
 
-            my $merge = Hash::Merge->new('RETAINMENT_PRECEDENT');
-            $join = $merge->merge($join, $class->getJoinQuery(@comps));
-
+            $prefetch = $merge->merge($prefetch, $class->getJoinQuery(comps => \@comps)->{join});
             $args{hash}->{$comps[-1] . '.' . $attr} = $value;
         }
     }
 
-    my $rs = $adm->_getDbixFromHash('table'    => $table,
-                                    'hash'     => $args{hash},
-                                    'page'     => $args{page},
-                                    'join'     => $join,
-                                    'rows'     => $args{rows},
-                                    'order_by' => $args{order_by});
+    $args{hash} = $merge->merge($args{hash}, $args{raw_hash});
 
-    while ( my $row = $rs->next ) {
-        my $obj = {
-             _dbix => $row,
-        };
+    my $rs = $adm->_getDbixFromHash('table' => $table,      'hash'     => $args{hash},
+                                    'page'  => $args{page}, 'prefetch' => $prefetch,
+                                    'rows'  => $args{rows}, 'order_by' => $args{order_by});
+
+    while (my $row = $rs->next) {
+        my $obj = { _dbix => $row };
 
         my $parent = $row;
         while ($parent->can('parent')) {
@@ -1013,32 +1078,24 @@ sub search {
             $class_type = getClassType(id => $parent->get_column("class_type_id"));
 
             if (length($class_type) > length($class)) {
-                $obj = Entity->get(id => $parent->get_column("entity_id"));
+                requireClass($class_type);
+                $obj = $class_type->get(id => $parent->get_column("entity_id"));
+            } else {
+                bless $obj, $class_type;
             }
         }
         else {
             $class_type = $class;
+            bless $obj, $class_type;
         }
 
-        bless $obj, $class_type;
-
-        if($@) {
-            my $exception = $@;
-            if(Kanopya::Exception::Permission::Denied->caught()) {
-                $log->debug("no right to access to object <$table> with <$row->id>");
-                next;
-            }
-            else { $exception->rethrow(); }
-        }
-        else {
-            push @objs, $obj;
-        }
+        push @objs, $obj;
     }
 
-    my $total = (defined ($args{page}) or defined ($args{rows})) ?
-                    $rs->pager->total_entries : $rs->count;
-
     if (defined ($args{dataType}) and $args{dataType} eq "hash") {
+        my $total = (defined ($args{page}) or defined ($args{rows})) ?
+                        $rs->pager->total_entries : $rs->count;
+
         return {
             page    => $args{page} || 1,
             pages   => ceil($total / ($args{rows} || ($args{page} ? 10 : 1))),
@@ -1048,9 +1105,29 @@ sub search {
         }
     }
 
-    return @objs;
+    return wantarray ? @objs : \@objs;
 }
 
+sub searchRelated {
+    my ($self, %args) = @_;
+    my $class = ref ($self) || $self;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'filters' ],
+                         optional => { 'hash' => { } });
+
+    my $adm = Administrator->new();
+    my $source = $adm->{db}->source(_buildClassNameFromString($class));
+    my $join = $class->getJoinQuery(comps   => $args{filters},
+                                    reverse => 1);
+    my $searched_class = classFromDbix($join->{source});
+    requireClass($searched_class);
+
+    my $method = $join->{accessor} eq "single" ? "find" : "search";
+    return $searched_class->$method(%args, raw_hash => { $join->{on} => $args{id} },
+                                           hash     => $args{hash},
+                                           join     => $join->{join});
+}
 
 =pod
 
@@ -1196,7 +1273,8 @@ sub toJSON {
     my $class = ref ($self) || $self;
 
     General::checkParams(args     => \%args,
-                         optional => { 'no_relations' => 0, 'model' => undef, 'raw' => 0 });
+                         optional => { 'no_relations' => 0, 'model' => undef, 'raw' => 0,
+                                       'virtuals' => 1, 'expand' => [], 'deep' => 0 });
 
     my $pk;
     my $hash = {};
@@ -1217,10 +1295,58 @@ sub toJSON {
             }
             else {
                 if ((not $args{no_empty}) or (defined $self->getAttr(name => $attr))) {
-                    $hash->{$attr} = $self->getAttr(name => $attr);
+                    if (! (!$args{virtuals} && $attributes->{$class}->{$attr}->{is_virtual})) {
+                        $hash->{$attr} = $self->getAttr(name => $attr);
+                    }
                 }
             }
         }
+    }
+
+    if ($args{expand}) {
+        for my $expand (@{$args{expand}}) {
+            my $obj = $self;
+            my $dbix = $self->{_dbix};
+            my $is_relation = 0;
+
+            my @comps = split(/\./, $expand);
+            my $comp = shift @comps;
+            COMPONENT:
+            while ($comp && $dbix) {
+                my $source = $dbix->result_source;
+                my $many_to_many = $source->result_class->can("_m2m_metadata") &&
+                                   defined ($source->result_class->_m2m_metadata->{$comp});
+
+                if ($source->has_relationship($comp)) {
+                    $is_relation = $source->relationship_info($comp)->{attrs}->{accessor};
+                    last COMPONENT;
+                } elsif ($many_to_many) {
+                    $is_relation = "multi";
+                    last COMPONENT;
+                }
+
+                $dbix = $dbix->result_source->has_relationship('parent') ? $dbix->parent : undef;
+            }
+
+            my @rest = join('.', @comps);
+            if ($is_relation) {
+                $hash->{$comp} = [];
+                if ($is_relation eq 'single_multi' ||
+                    $is_relation eq 'multi') {
+                    for my $item ($obj->getAttr(name => $comp, deep => $args{deep})) {
+                        push @{$hash->{$comp}}, $item->toJSON(expand => [ join('.', @comps) ],
+                                                              deep   => $args{deep});
+                    }
+                }
+                elsif ($is_relation eq 'single') {
+                    my $obj = $self->getAttr(name => $comp);
+                    if ($obj) {
+                        $hash->{$comp} = $obj->toJSON(expand => [ join('.', @comps) ],
+                                                      deep   => $args{deep});
+                    }
+                }
+            }
+       }
     }
 
     if ($args{model}) {
@@ -1228,11 +1354,11 @@ sub toJSON {
         my $adm = Administrator->new();
         my @hierarchy = split(/::/, $class);
         my $depth = scalar @hierarchy;
-        my $n = $depth;
+        my $current = $depth;
         my $parent;
 
-        for (my $n = $depth - 1; $n >= 0; $n--) {
-            $parent = $adm->{db}->source($hierarchy[$n]);
+        for (my $current = $depth - 1; $current >= 0; $current--) {
+            $parent = $adm->{db}->source($hierarchy[$current]);
             my @relnames = $parent->relationships();
             for my $relname (@relnames) {
                 my $relinfo = $parent->relationship_info($relname);
@@ -1245,7 +1371,7 @@ sub toJSON {
                     $resource =~ s/_//g;
 
                     $hash->{relations}->{$relname} = $relinfo;
-                    $hash->{relations}->{$relname}->{from} = $hierarchy[$n];
+                    $hash->{relations}->{$relname}->{from} = $hierarchy[$current];
                     $hash->{relations}->{$relname}->{resource} = $resource;
 
                     # We must have relation attrs within attrdef to keep
@@ -1336,6 +1462,7 @@ sub populateRelations {
 
         my $relation_schema = $self->{_dbix}->$relation->result_source;
         my $relationclass = classFromDbix($relation_schema);
+
         requireClass($relationclass);
 
         # Deduce the foreign key attr for link entries in relations multi
@@ -1566,6 +1693,36 @@ sub getKeyFromCond {
 
 =begin classdoc
 
+Build an array of the full class hierachy.
+
+@return the array containing all classes in the hierarchy.
+
+=end classdoc
+
+=cut
+
+sub getClassHierarchy {
+    my $class = shift;
+
+    my $classpath = (split("=", "$class"))[0];
+    my @supers = Class::ISA::super_path($classpath);
+
+    my @hierarchy;
+    if (defined ($supers[0]) && $supers[0] eq 'BaseDB') {
+        @hierarchy = _buildClassNameFromString($classpath);
+    }
+    else {
+        @hierarchy = split(/::/, $classpath);
+    }
+
+    return wantarray ? @hierarchy : \@hierarchy;
+}
+
+
+=pod
+
+=begin classdoc
+
 @deprecated
 
 Get the primary key of the object
@@ -1673,6 +1830,8 @@ sub _buildClassNameFromString {
 
 sub _rootTable {
     my ($class) = @_;
+
+    $class = join('::', $class->getClassHierarchy);
     $class =~ s/\:\:.*$//g;
     return $class;
 }
@@ -1719,6 +1878,29 @@ the characters that follows.
 
 sub normalizeName {
     my $name = shift;
+    $name = normalizeMethod($name);
+
+    return ucfirst($name);
+};
+
+
+=pod
+
+=begin classdoc
+
+Normalize the specified name by removing underscores and upper casing
+the characters that follows, excepted the first character.
+
+@param $name any name
+
+@return the normalized name
+
+=end classdoc
+
+=cut
+
+sub normalizeMethod {
+    my $name = shift;
     my $i = 0;
     while ($i < length($name)) {
         if (substr($name, $i, 1) eq "_") {
@@ -1727,7 +1909,7 @@ sub normalizeName {
         $i += 1;
     }
 
-    return ucfirst($name);
+    return $name;
 };
 
 
@@ -1756,13 +1938,23 @@ sub classFromDbix {
         $source = $source->related_source("parent");
         $name = ucfirst($source->from) . "::" . $name;
     }
-
     return normalizeName($name);
 }
+
+=pod
+
+=begin classdoc
+
+Return the DBIx ResultSource for this class.
+
+=end classdoc
+
+=cut
 
 sub getResultSource {
     my $self  = shift;
     my $class = ref($self) || $self;
+
     my $adm = Administrator->new();
     return $adm->{db}->source(_buildClassNameFromString($class));
 }
@@ -1781,8 +1973,7 @@ Dinamically load a module from the class name.
 
 sub requireClass {
     my $class = shift;
-    $class =~ s/\:\:/\//g;
-    my $location = $class . '.pm';
+    my $location = General::getLocFromClass(entityclass => $class);
 
     eval { require $location; };
     if ($@) {
@@ -1790,6 +1981,29 @@ sub requireClass {
             error => "Could not find $location :\n$@"
         );
     }
+}
+
+
+=pod
+
+=begin classdoc
+
+Return the delegatee entity on which the permissions must be checked.
+By default, permissions are checked on the entity itself.
+
+@return the delegatee entity.
+
+=end classdoc
+
+=cut
+
+
+sub getDelegatee {
+    my $self = shift;
+
+    throw Kanopya::Exception::NotImplemented(
+              error => "Non entity class <$self> must implement getDelegatee method for permissions check."
+          );
 }
 
 
@@ -1808,15 +2022,50 @@ It is convenient for centralizing permmissions checking.
 =cut
 
 sub methodCall {
-    my $self = shift;
+    my $self  = shift;
     my $class = ref $self;
-    my %args = @_;
+    my %args  = @_;
 
     my $adm = Administrator->new();
 
-    General::checkParams(args => \%args, required => [ 'method' ], optional => { 'params' => {} });
+    General::checkParams(args => \%args, required => [ 'method' ],
+                                         optional => { 'params' => {} });
 
-    # Call the requested method
+    foreach my $key (keys %{$args{params}}) {
+        my $param = $args{params}->{$key};
+        if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
+            my $class = getClassType(id => $param->{class_type_id});
+
+            my $granted = $adm->getRightChecker->checkPerm(entity_id => $class->getDelegatee->getMasterGroup->id,
+                                                           method    => "get");
+            if (not $granted) {
+                my $msg = "Permission denied to get parameter " . $param->{pk};
+                throw Kanopya::Exception::Permission::Denied(error => $msg);
+            }
+
+            # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
+            $args{params}->{$key} = $class->get(id => $param->{pk});
+        }
+    }
+
+    my $methods = $self->getMethods();
+
+    # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
+    my ($granted, $perm_holder_id);
+    if ($class) {
+        $perm_holder_id = $self->getDelegatee->id;
+    }
+    else {
+        $perm_holder_id = $self->getDelegatee->getMasterGroup->id;
+    }
+
+    # Check the permissions for the logged user
+    $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder_id, method => $args{method});
+    if (not $granted) {
+        my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
+        throw Kanopya::Exception::Permission::Denied(error => $msg);
+    }
+
     my $method = $args{method};
     return $self->$method(%{$args{params}});
 }
@@ -1935,7 +2184,6 @@ that returns the specified attribute or the relation blessed to a BaseDB object.
 
 sub AUTOLOAD {
     my $self = shift;
-    my %args = @_;
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $accessor = $autoload[-1];

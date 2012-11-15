@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::User;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::User
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<user>
 
 =cut
 
@@ -132,7 +152,31 @@ __PACKAGE__->add_columns(
   "user_sshkey",
   { data_type => "text", is_nullable => 1 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</user_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("user_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<user_login>
+
+=over 4
+
+=item * L</user_login>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("user_login", ["user_login"]);
 
 =head1 RELATIONS
@@ -149,6 +193,21 @@ __PACKAGE__->has_many(
   "clusters",
   "AdministratorDB::Schema::Result::Cluster",
   { "foreign.user_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 customer
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Customer>
+
+=cut
+
+__PACKAGE__->might_have(
+  "customer",
+  "AdministratorDB::Schema::Result::Customer",
+  { "foreign.customer_id" => "self.user_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -257,9 +316,19 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 profiles
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-03 14:14:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:n0YubF0cRkyeFaoOH+MW8w
+Type: many_to_many
+
+Composing rels: L</user_profiles> -> profile
+
+=cut
+
+__PACKAGE__->many_to_many("profiles", "user_profiles", "profile");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-12 10:43:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1mETdwK3Jzv1HFAbEedQ9w
 
 __PACKAGE__->belongs_to(
   "parent",

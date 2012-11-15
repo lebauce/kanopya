@@ -117,7 +117,9 @@ retrieve full path to entity class package
 
 sub getLocFromClass {
     my %args = @_;
-    checkParams(args => \%args, required => ['entityclass']);
+
+    checkParams(args => \%args, required => [ 'entityclass' ]);
+
     my $location = $args{entityclass};
     $location =~ s/\:\:/\//g;
     return $location . ".pm";

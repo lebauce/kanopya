@@ -75,7 +75,7 @@ sub workflowState{
         }
         elsif ($workflow->state eq 'done') {
             my $rule = Entity::NodemetricRule->get (id => $workflow_noderule->nodemetric_rule_id);
-            my $delay = $rule->workflow_def->getParamPreset()->{specific}->{delay};
+            my $delay = $rule->workflow_def->paramPresets->{specific}->{delay};
             if (defined $delay && $delay > 0) {
 
                 if (not defined $workflow_noderule->workflow_untriggerable_timestamp) {

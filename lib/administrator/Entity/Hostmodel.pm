@@ -40,26 +40,6 @@ use constant ATTR_DEF => {
     processormodel_id              => { pattern => '\d*', is_mandatory => 0, is_extended => 0 },
 };
 
-sub methods {
-    return {
-        'create'    => {'description' => 'create a new host model', 
-                        'perm_holder' => 'mastergroup',
-        },
-        'get'        => {'description' => 'view this host model', 
-                        'perm_holder' => 'entity',
-        },
-        'update'    => {'description' => 'save changes applied on this host model', 
-                        'perm_holder' => 'entity',
-        },
-        'remove'    => {'description' => 'delete this host model', 
-                        'perm_holder' => 'entity',
-        },
-        'setperm'    => {'description' => 'set permissions on this host model', 
-                        'perm_holder' => 'entity',
-        },
-    }; 
-}
-
 =head2 getHostmodels
 
 =cut

@@ -179,7 +179,7 @@ sub execute {
         my $hostname = $host->host_hostname;
         next if (not $hostname or $hostname eq '');
         push @data, {
-            ip         => $host->getAdminIp,
+            ip         => $host->adminIp,
             hostname   => $hostname,
             domainname => $self->{params}->{kanopya_domainname},
         };

@@ -32,11 +32,7 @@ use constant ATTR_DEF => {
 sub methods {
     return {
         associatePoolip => {
-            description => 'update network_poolip by adding network_id, poolipid',
-            perm_holder => 'entity',
-        },
-        getassociatedPoolip => {
-            description => 'list poolip_id associated to network',
+            description => 'associate a poolip to a network',
             perm_holder => 'entity',
         },
         dissociatePoolip => {

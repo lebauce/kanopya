@@ -32,7 +32,7 @@ my %resources = (
     "aggregatecondition"       => "Entity::AggregateCondition",
     "aggregaterule"            => "Entity::AggregateRule",
     "apache2"                  => "Entity::Component::Apache2",
-    "apache2virtualhost"       => "Apache2Virtualhost",
+    "apache2virtualhost"       => "Entity::Component::Apache2::Apache2Virtualhost",
     "billinglimit"             => "Entity::Billinglimit",
     "classtype"                => "ClassType",
     "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
@@ -45,10 +45,12 @@ my %resources = (
     "connectortype"            => "ConnectorType",
     "container"                => "Entity::Container",
     "containeraccess"          => "Entity::ContainerAccess",
+    "customer"                 => "Entity::User::Customer",
     "dashboard"                => "Dashboard",
     "debian"                   => "Entity::Component::Debian",
     "entity"                   => "Entity",
     "entitycomment"            => "EntityComment",
+    "entityright"              => "Entityright",
     "externalcluster"          => "Entity::ServiceProvider::Outside::Externalcluster",
     "externalnode"             => "Externalnode",
     "filecontaineraccess"      => "Entity::ContainerAccess::FileContainerAccess",
@@ -71,8 +73,8 @@ my %resources = (
     "keepalived1"              => "Entity::Component::Keepalived1",
     "kernel"                   => "Entity::Kernel",
     "linux"                    => "Entity::Component::Linux",
-    "linuxmount"               => "LinuxMount",
-    "lvm2vg"                   => "Lvm2Vg",
+    "linuxmount"               => "Entity::Component::Linux::LinuxMount",
+    "lvm2vg"                   => "Entity::Component::Lvm2::Lvm2Vg",
     "lvm2"                     => "Entity::Component::Lvm2",
     "lvmcontainer"             => "Entity::Container::LvmContainer",
     "mailnotifier0"            => "Entity::Component::Mailnotifier0",
@@ -140,10 +142,10 @@ my %resources = (
     "vlan"                     => "Entity::Network::Vlan",
     "vsphere5"                 => "Entity::Component::Vsphere5",
     "workflow"                 => "Entity::Workflow",
-    "workflowdef"              => "WorkflowDef",
+    "workflowdef"              => "Entity::WorkflowDef",
 );
 
-sub class_from_resource {
+sub classFromResource {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'resource' ]);
@@ -156,80 +158,7 @@ sub class_from_resource {
     return $resources{$args{resource}};
 }
 
-sub db_to_json {
-    my $obj = shift;
-    my $expand = shift || [];
-
-    my $basedb;
-    my $json;
-    if ($obj->isa("BaseDB")) {
-        $basedb = $obj;
-        $json = $obj->toJSON;
-    }
-    else {
-        $basedb = bless { _dbix => $obj }, "BaseDB";
-        $json = $basedb->toJSON;
-        my %columns = $obj->get_columns;
-        for my $key (keys %columns) {
-            if (defined $columns{$key}) {
-                $json->{$key} = $columns{$key};
-            }
-        }
-    }
-
-    # Usefull for including relation object contents
-    if (defined ($expand) and $expand) {
-        my $expands     = [];
-        my $subexp  = {};
-
-        for my $key (@$expand) {
-            my @key     = split('\.', $key);
-            my $size    = @key;
-            if ($size == 1) {
-                push(@$expands, $key);
-            }
-            else {
-                if (not exists($subexp->{$key[0]})) {
-                    $subexp->{$key[0]}  = [];
-                }
-                push(@{$subexp->{$key[0]}}, ($#key == 1) ? $key[1] : join('.', @key[1..$#key]));
-            }
-        }
-
-        for my $key (@$expands) {
-            # Search for $key in relations, possibly in upper classes
-            my $is_relation;
-            my $dbix = $basedb->{_dbix};
-            while ($dbix) {
-                if ($dbix->result_source->has_relationship($key)) {
-                    $is_relation = $dbix->result_source->relationship_info($key)->{attrs}->{accessor};
-                    last;
-                }
-                $dbix = $dbix->result_source->has_relationship('parent') ? $dbix->parent : undef;
-            }
-
-            if ($is_relation) {
-                my $nextexpand  = $subexp->{$key} || [];
-                if ($is_relation eq 'multi') {
-                    my $children = [];
-                    for my $item ($dbix->$key) {
-                        push @$children, db_to_json($item, $nextexpand);
-                    }
-                    $json->{$key} = $children;
-                }
-                else {
-                    $json->{$key} = db_to_json($basedb->getAttr(name => $key), $nextexpand);
-                }
-            }
-            else {
-                $json->{$key} = jsonify($basedb->getAttr(name => $key));
-            }
-        }
-    }
-    return $json;
-}
-
-sub handle_null_param {
+sub handleNullParam {
     my $param = shift;
     if (! defined $param || !length($param)) {
         return undef;
@@ -242,81 +171,99 @@ sub handle_null_param {
     }
 }
 
-sub format_results {
+sub getResources {
     my %args = @_;
 
     my $objs = [];
-    my $class = $args{class};
-    my $dataType = $args{dataType} || "";
-    my $expand = $args{expand} || [];
     my $table;
     my $result;
+    my $rows;
     my %params = ();
 
-    delete $args{class};
-    delete $args{dataType};
-    delete $args{expand};
+    my %query = %{$args{query}};
+    my $class = classFromResource(resource => $args{resource});
 
-    $params{page} = $args{page};
-    delete $args{page};
+    delete $query{splat};
 
-    if (defined $args{rows}) {
-        $params{rows} = $args{rows};
-        delete $args{rows};
+    if (defined $query{dataType}) {
+        if ($query{dataType} eq "jqGrid") {
+            $query{dataType} = "hash";
+        }
+        $params{dataType} = $query{dataType};
+        delete $query{dataType};
     }
 
-    if (defined $args{order_by}) {
-        $params{order_by} = $args{order_by};
-        delete $args{order_by};
+    if (defined $query{page}) {
+        $params{page} = $query{page};
+        delete $query{page};
     }
 
-    foreach my $attr (keys %args) {
-        my @filter = split(',', $args{$attr}, -1);
+    if (defined $query{deep}) {
+        $params{deep} = $query{deep};
+        delete $query{deep};
+    }
+
+    if (defined $query{rows}) {
+        $params{rows} = $query{rows};
+        delete $query{rows};
+    }
+
+    if (defined $query{order_by}) {
+        $params{order_by} = $query{order_by};
+        delete $query{order_by};
+    }
+
+    if (defined $query{expand}) {
+        my @prefetch = split(',', $query{expand});
+        $params{prefetch} = \@prefetch;
+        delete $query{expand};
+    }
+
+    foreach my $attr (keys %query) {
+        my @filter = split(',', $query{$attr}, -1);
         if (scalar (@filter) > 1) {
-            $filter[1] = handle_null_param($filter[1]);
+            $filter[1] = handleNullParam($filter[1]);
             my %filter = @filter;
-            $args{$attr} = \%filter;
+            $query{$attr} = \%filter;
         }
         else {
-            $args{$attr} = handle_null_param($args{$attr});
+            $query{$attr} = handleNullParam($query{$attr});
         }
     }
 
-    if ($class->isa("DBIx::Class::ResultSet")) {
-        my $results = $class->search_rs(\%args, \%params);
-        while (my $obj = $results->next) {
-            push @$objs, db_to_json($obj, $expand);
+    eval {
+        require (General::getLocFromClass(entityclass => $class));
+    };
+
+    if ($args{filters}) {
+        $result = $class->searchRelated(id       => $args{id},
+                                        filters  => $args{filters},
+                                        hash     => \%query,
+                                        %params);
+    } else {
+        $result = $class->search(hash => \%query, %params);
+    }
+
+    $rows = (defined ($params{dataType}) && $params{dataType} eq "hash") ?
+                $result->{rows} : $result;
+    if (ref $rows eq "ARRAY") {
+        for my $obj (@$rows) {
+            push @$objs, $obj->toJSON(virtuals => 1,
+                                      expand   => $params{prefetch},
+                                      deep     => $params{deep});
         }
-
-        my $total = (defined ($params{page}) or defined ($params{rows})) ?
-                        $results->pager->total_entries : $results->count;
-
-        $result = {
-            page    => $params{page} || 1,
-            pages   => $params{rows} ? ceil($total / $params{rows}) : 1,
-            records => scalar @$objs,
-            rows    => $objs,
-            total   => $total,
-        };
     }
     else {
-        eval {
-            require (General::getLocFromClass(entityclass => $class));
-        };
-
-        $result = $class->search(hash => \%args, dataType => "hash", %params);
-
-        for my $obj (@{$result->{rows}}) {
-            push @$objs, $obj->toJSON();
-        }
-
-        $result->{rows} = $objs;
+        return $result->toJSON(virtuals => 1,
+                               expand   => $params{prefetch},
+                               deep     => $params{deep});
     }
 
-    if ($dataType ne "jqGrid") {
-        return $result->{rows};
-    } else {
+    if (defined ($params{dataType}) && $params{dataType} eq "hash") {
+        $result->{rows} = $objs;
         return $result;
+    } else {
+        return $objs;
     }
 }
 
@@ -327,12 +274,12 @@ sub jsonify {
     if (ref($var) and ref($var) ne "HASH") {
         if ($var->can("toJSON")) {
             if ($var->isa("Entity::Operation")) {
-                return Entity::Operation->get(id => $var->getId)->toJSON;
+                return Entity::Operation->methodCall(method => 'get', params => { id => $var->id })->toJSON;
             }
             elsif ($var->isa("Entity::Workflow")) {
-                return Entity::Workflow->get(id => $var->getId)->toJSON;
+                return Entity::Workflow->methodCall(method => 'get', params => { id => $var->id })->toJSON;
             } else {
-                return $var->toJSON;
+                return $var->toJSON();
             }
         }
     }
@@ -342,7 +289,7 @@ sub jsonify {
 sub setupREST {
 
     foreach my $resource (keys %resources) {
-        my $class = class_from_resource(resource => $resource);
+        my $class = classFromResource(resource => $resource);
 
         resource "api/$resource" =>
             get    => sub {
@@ -350,7 +297,9 @@ sub setupREST {
                 require (General::getLocFromClass(entityclass => $class));
 
                 my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-                return to_json( db_to_json($class->get(id => params->{id}), \@expand));
+                my $obj = $class->methodCall(method => 'get', params => { id => params->{id}, prefetch => \@expand });
+                return to_json($obj->toJSON(expand => \@expand,
+                                            deep   => params->{deep}));
             },
 
             create => sub {
@@ -364,32 +313,8 @@ sub setupREST {
                 } else {
                     %params = params;
                 }
+                $obj = jsonify($class->methodCall(method => 'create', params => \%params));
 
-                if ($class->can('create')) {
-                    $obj = jsonify($class->methodCall(method => 'create', params => \%params));
-                }
-                else {
-                    # We probably do not want to directly enqueue operations,
-                    # as permissions are checked from methods calls.
-
-#                    eval {
-#                        my $location = "EOperation::EAdd" . ucfirst($resource) . ".pm";
-#                        $location =~ s/\:\:/\//g;
-#                        require $location;
-#                        $obj = Entity::Operation->enqueue(
-#                            priority => 200,
-#                            type     => 'Add' . ucfirst($resource),
-#                            params   => $hash
-#                        );
-#                        $obj = Entity::Operation->get(id => $obj->getId)->toJSON;
-#                    };
-#
-#                    if ($@) {
-#                        $obj = $class->new(params)->toJSON();
-#                    };
-
-                     $obj = $class->new(%params)->toJSON();
-                }
                 return to_json($obj);
             },
 
@@ -398,7 +323,7 @@ sub setupREST {
                 require (General::getLocFromClass(entityclass => $class));
 
                 my $obj = $class->get(id => params->{id});
-                $obj->can("remove") ? $obj->methodCall(method => 'remove') : $obj->delete();
+                $obj->methodCall(method => 'remove');
 
                 return to_json( { status => "success" } );
             },
@@ -425,64 +350,13 @@ sub setupREST {
             require (General::getLocFromClass(entityclass => $class));
 
             my ($id, $filters) = splat;
-            my $obj = $class->get(id => $id);
-
             my @filters = split("/", $filters);
-            my @objs;
-            my $result;
+            my %params = params;
 
-            my %query = params('query');
-            my $hash = \%query;
-
-            for my $filter (@filters) {
-                my $parent = $obj->{_dbix};
-
-                RELATION:
-                while (1) {
-                    if ($parent->result_source->has_relationship($filter)) {
-                        # TODO: prefetch filter so that we can just bless it
-                        # $obj = bless { _dbix => $parent->$filter }, "Entity";
-
-                        my $relinfo = $parent->result_source->relationship_info($filter);
-
-                        if ($relinfo->{attrs}->{accessor} eq "multi") {
-                            my @conds = keys %{$relinfo->{cond}};
-                            my $fk = BaseDB::getForeignKeyFromCond(cond => $conds[0]);
-                            my $class = BaseDB::classFromDbix($parent->result_source->related_source($filter));
-
-                            $hash->{$fk} = $parent->id;
-
-                            my $json = format_results(class    => $class,
-                                                      dataType => params->{dataType},
-                                                      %$hash);
-
-                            return to_json($json);
-                        }
-                        elsif (defined $parent->$filter) {
-                            my $dbix = $parent->$filter;
-
-                            $obj = $dbix->has_relationship("class_type") ?
-                                       Entity->get(
-                                           id => $dbix->get_column(($dbix->result_source->primary_columns)[0])
-                                       ) :
-                                       $dbix;
-
-                            my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-                            return to_json(db_to_json($obj, \@expand));
-                        }
-                        else {
-                            return "null";
-                        }
-
-                        last RELATION;
-                    }
-
-                    last if (not $parent->can('parent'));
-                    $parent = $parent->parent;
-                }
-            }
-
-            return to_json($obj->toJSON);
+            return to_json(getResources(resource => $resource,
+                                        id       => $id,
+                                        query    => \%params,
+                                        filters  => \@filters));
         };
 
         post qr{ /api/$resource/(.*) }x => sub {
@@ -535,19 +409,9 @@ sub setupREST {
             content_type 'application/json';
             require (General::getLocFromClass(entityclass => $class));
 
-            my $objs = [];
-            my $class = class_from_resource(resource => $resource);
-            my %query = params('query');
-            my %params = (
-                hash => \%query,
-            );
-
-            my $json = format_results(class     => $class,
-                                      dataType  => params->{dataType},
-                                      %query);
-
-            my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-            return to_json($json);
+            my %params = params;
+            return to_json(getResources(resource => $resource,
+                                        query    => \%params));
         }
     }
 }
@@ -555,12 +419,12 @@ sub setupREST {
 get '/api/attributes/:resource' => sub {
     content_type 'application/json';
 
-    my $class = class_from_resource(resource => params->{resource});
+    my $class = classFromResource(resource => params->{resource});
 
     require (General::getLocFromClass(entityclass => $class));
 
-    return to_json($class->toJSON(  model => 1,
-                                    no_relations => params->{no_relations}));
+    return to_json($class->toJSON(model => 1,
+                                  no_relations => params->{no_relations}));
 };
 
 get '/api' => sub {

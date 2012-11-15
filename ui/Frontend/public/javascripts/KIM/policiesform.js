@@ -1,7 +1,9 @@
 require('jquery/jquery.form.js');
 require('jquery/jquery.validate.js');
 require('jquery/jquery-ui-timepicker-addon.js');
-// require('jquery/jquery.form.wizard.js');
+
+// For getServiceProviders and findManager
+require('common/service_common.js');
 
 $.validator.addMethod("regex", function(value, element, regexp) {
     var re = new RegExp(regexp);
@@ -14,6 +16,12 @@ $.validator.addMethod("regex", function(value, element, regexp) {
     //return this.optional(element) || re.test(value);
     return re.test(value);
 }, "Please check your input");
+
+
+var workaroundFunctions = {
+    'getServiceProviders' : getServiceProviders,
+    'findManager'         : findManager
+};
 
 var PolicyForm = (function() {
     function PolicyForm(args) {
@@ -508,23 +516,29 @@ var PolicyForm = (function() {
             var method = 'GET';
             var args;
 
-            if (this.fields[elementName].filters) {
-                if (this.fields[elementName].filters.func) {
-                    method = 'POST';
-                    route += '/' + this.fields[elementName].filters.func;
-                    args = this.fields[elementName].filters.args;
-                } else {
-                    for (var filter in this.fields[elementName].filters) {
-                        route += delimiter + filter + '=' + this.fields[elementName].filters[filter];
-                        if (delimiter === '?') {
-                            delimiter = '&';
+            if (this.fields[elementName].filters &&
+                workaroundFunctions[this.fields[elementName].filters.func] !== undefined) {
+                datavalues = workaroundFunctions[this.fields[elementName].filters.func](this.fields[elementName].filters.args);
+
+            } else {
+                if (this.fields[elementName].filters) {
+                    if (this.fields[elementName].filters.func) {
+                        method = 'POST';
+                        route += '/' + this.fields[elementName].filters.func;
+                        args = this.fields[elementName].filters.args;
+                    } else {
+                        for (var filter in this.fields[elementName].filters) {
+                            route += delimiter + filter + '=' + this.fields[elementName].filters[filter];
+                            if (delimiter === '?') {
+                                delimiter = '&';
+                            }
                         }
                     }
+                } else if (this.fields[elementName].rawfilter) {
+                    route += this.fields[elementName].rawfilter;
                 }
-            } else if (this.fields[elementName].rawfilter) {
-                route += this.fields[elementName].rawfilter;
+                datavalues = this.ajaxCall(method, route, args);
             }
-            datavalues = this.ajaxCall(method, route, args);
         }
 
         if (! this.fields[elementName].is_mandatory) {
@@ -555,21 +569,7 @@ var PolicyForm = (function() {
                     text = this.ajaxCall('POST', '/api/' +  this.fields[elementName].entity + '/' + key + '/' + this.fields[elementName].display_func);
 
                 } else {
-
-                    /*
-                     * Ugly hack for getting the name of the service provider,
-                     * whatever its type. Please do not (git) blame me...
-                     */
-                    if (this.fields[elementName].entity === 'serviceprovider') {
-                        for (var attr in datavalues[value]) {
-                            if (attr.indexOf("_name", attr.length - "_name".length) !== -1) {
-                                display = attr;
-                            }
-                        }
-                    } else {
-                        display = this.fields[elementName].display || 'pk';
-                    }
-                    text = datavalues[value][display];
+                    text = datavalues[value][this.fields[elementName].display || 'pk'];
                 }
             } else if (datavalues instanceof Array) {
                 key  = datavalues[value];
@@ -849,14 +849,11 @@ var PolicyForm = (function() {
         var method = 'GET';
         var args;
 
-        if (this.fields[name].filters) {
-            method = 'POST';
-            route = '/api/' + this.fields[this.fields[name].parent].entity + '/' + selected_id;
-            route += '/' + this.fields[name].filters.func;
+        /* Ugly workaround to replace removed api methods */
+        if (this.fields[name].filters &&
+            workaroundFunctions[this.fields[name].filters.func] !== undefined) {
             args = this.fields[name].filters.args ? this.fields[name].filters.args : {};
 
-            // Arrgg, the parent field name is not 'service_provider_id', but 'storage_provider_id'...
-            //args[this.fields[name].parent] = selected_id;
             var reg = new RegExp("^.*_provider_id", "g");
             if (this.fields[name].parent.match(reg)) {
                 args['service_provider_id'] = selected_id;
@@ -864,21 +861,40 @@ var PolicyForm = (function() {
             else {
                 args[this.fields[name].parent] = selected_id;
             }
+            datavalues = workaroundFunctions[this.fields[name].filters.func](args);
 
         } else {
-            var parent = this.fields[name].parent;
-            var reg = new RegExp("^.*_provider_id", "g");
-            if (this.fields[name].parent.match(reg)) {
-                parent = 'service_provider_id';
+            if (this.fields[name].filters) {
+                method = 'POST';
+                route = '/api/' + this.fields[this.fields[name].parent].entity + '/' + selected_id;
+                route += '/' + this.fields[name].filters.func;
+                args = this.fields[name].filters.args ? this.fields[name].filters.args : {};
+
+                // Arrgg, the parent field name is not 'service_provider_id', but 'storage_provider_id'...
+                //args[this.fields[name].parent] = selected_id;
+                var reg = new RegExp("^.*_provider_id", "g");
+                if (this.fields[name].parent.match(reg)) {
+                    args['service_provider_id'] = selected_id;
+                }
+                else {
+                    args[this.fields[name].parent] = selected_id;
+                }
+
+            } else {
+                var parent = this.fields[name].parent;
+                var reg = new RegExp("^.*_provider_id", "g");
+                if (this.fields[name].parent.match(reg)) {
+                    parent = 'service_provider_id';
+                }
+                route = '/api/' + this.fields[name].entity + '/' + parent + '=' + selected_id;
             }
-            route = '/api/' + this.fields[name].entity + '/' + parent + '=' + selected_id;
+            datavalues = this.ajaxCall('POST', route, args);
         }
-        datavalues = this.ajaxCall('POST', route, args);
 
         // Inject all values in the select
         element.empty();
         for (var value in datavalues) {
-            var display = datavalues[value].pk;
+            var display = datavalues[value][this.fields[name].display] || datavalues[value].pk;
 
             if (this.fields[name].display_func && this.fields[name].entity) {
                 var resource_name = this.ajaxCall('POST', '/api/' +  this.fields[name].entity + '/' + datavalues[value].pk + '/' + this.fields[name].display_func);
@@ -919,7 +935,7 @@ var PolicyForm = (function() {
                 prefix  : this.fields[name].prefix,
                 disable_filled : this.fields[name].disable_filled,
                 hide_filled    : this.fields[name].hide_filled,
-                is_mandatory   : (this.fields[name].is_mandatory && this.fields[name].handle_mandatory),
+                is_mandatory   : (this.fields[name].is_mandatory && this.fields[name].handle_mandatory)
             }
 
             var tr = undefined;
@@ -1247,7 +1263,7 @@ var PolicyForm = (function() {
                 resizable       : false,
                 width           : 550,
                 buttons         : buttons,
-                closeOnEscape   : false,
+                closeOnEscape   : false
         };
         this.content.dialog(
                 $.extend({}, dialog_default_params, this.dialogParams)
@@ -1339,24 +1355,16 @@ var PolicyForm = (function() {
 
     PolicyForm.prototype.ajaxCall = function (method, route, data) {
         var response;
-        try {
-            $.ajax({
-                type        : method,
-                async       : false,
-                url         : route,
-                data        : data,
-                dataTYpe    : 'json',
-                error       : function(xhr, status, error) {
-                    console.log('Ajax call failled: ' + xhr.status);
-                },
-                success     : $.proxy(function(d) {
-                    response = d;
-                }, this)
-            });
-        }
-        catch (error) {
-            console.log('Ajax call failled: ' + error.message);
-        }
+        $.ajax({
+            type        : method,
+            async       : false,
+            url         : route,
+            data        : data,
+            dataTYpe    : 'json',
+            success     : $.proxy(function(d) {
+                response = d;
+            }, this)
+        });
         return response;
     }
 

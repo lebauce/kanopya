@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::Entity
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<entity>
 
@@ -183,13 +199,13 @@ Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
 =cut
 
 __PACKAGE__->might_have(
-  "collector_indicator",
+  "collector_indicator_collector_indicator",
   "AdministratorDB::Schema::Result::CollectorIndicator",
   { "foreign.collector_indicator_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 collector_indicator_collector_managers
+=head2 collector_indicators
 
 Type: has_many
 
@@ -198,7 +214,7 @@ Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
 =cut
 
 __PACKAGE__->has_many(
-  "collector_indicator_collector_managers",
+  "collector_indicators",
   "AdministratorDB::Schema::Result::CollectorIndicator",
   { "foreign.collector_manager_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -689,6 +705,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_provider_managers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_provider_managers",
+  "AdministratorDB::Schema::Result::ServiceProviderManager",
+  { "foreign.manager_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 service_template
 
 Type: might_have
@@ -734,7 +765,22 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 workflow
+=head2 workflow_def
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
+
+=cut
+
+__PACKAGE__->might_have(
+  "workflow_def",
+  "AdministratorDB::Schema::Result::WorkflowDef",
+  { "foreign.workflow_def_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 workflow_workflow
 
 Type: might_have
 
@@ -743,7 +789,7 @@ Related object: L<AdministratorDB::Schema::Result::Workflow>
 =cut
 
 __PACKAGE__->might_have(
-  "workflow",
+  "workflow_workflow",
   "AdministratorDB::Schema::Result::Workflow",
   { "foreign.workflow_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -775,16 +821,21 @@ Composing rels: L</ingroups> -> gp
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-31 16:06:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Uu7Ea0d89hBwHa+QBrRclA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-08 14:54:52
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uTu+fyc5jS4HCorythfIQg
 
-__PACKAGE__->has_many(
-  "collector_indicators",
-  "AdministratorDB::Schema::Result::CollectorIndicator",
-  { "foreign.collector_manager_id" => "self.entity_id" },
+__PACKAGE__->might_have(
+  "workflow",
+  "AdministratorDB::Schema::Result::Workflow",
+  { "foreign.workflow_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+__PACKAGE__->might_have(
+  "collector_indicator",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.collector_indicator_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

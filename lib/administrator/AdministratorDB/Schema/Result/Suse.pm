@@ -78,8 +78,8 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Linux",
-  { "foreign.linux_id" => "self.suse_id" },
-  { cascade_copy => 0, cascade_delete => 1 } 
+  { linux_id => "suse_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;

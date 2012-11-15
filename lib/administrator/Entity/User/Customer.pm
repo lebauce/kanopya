@@ -15,38 +15,51 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Lvm2Vg;
-use base 'BaseDB';
+package Entity::User::Customer;
+use base "Entity::User";
 
-use constant ATTR_DEF => {
-    lvm2_id => {
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d+$',
-        is_mandatory => 1,
-    },
-    lvm2_vg_name => {
-        label        => 'Name',
-        type         => 'string',
-        is_mandatory => 1,
-        is_editable  => 0,
-    },
-    lvm2_vg_freespace => {
-        label        => 'Free space',
-        type         => 'string',
-        unit         => 'byte',
-        is_mandatory => 1,
-        is_editable  => 0,
-    },
-    lvm2_vg_size => {
-        label        => 'Total size',
-        type         => 'string',
-        unit         => 'byte',
-        is_mandatory => 1,
-        is_editable  => 0,
-    },
-};
+use strict;
+use warnings;
 
-sub getAttrDef { return ATTR_DEF; }
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("");
+my $errmsg;
+
+use constant ATTR_DEF => {};
+
+sub getAttrDef{ return ATTR_DEF; }
+
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Override the Entity constructor to insert customers in
+the User group in addition of the automatically associated
+group Customer.
+
+@return a class instance
+
+=end classdoc
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = $class->SUPER::new(%args);
+
+    # Automattically add the user to the Customer profile
+    $self->setProfiles(profile_names => [ 'Customer' ]);
+
+    # Add the component to the Component group
+    Entity::User->getMasterGroup->appendEntity(entity => $self);
+
+    return $self;
+}
 
 1;

@@ -44,4 +44,30 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+=pod
+
+=begin classdoc
+
+Return the delegatee entity on which the permissions must be checked.
+By default, permissions are checked on the entity itself.
+
+@return the delegatee entity.
+
+=end classdoc
+
+=cut
+
+
+sub getDelegatee {
+    my $self = shift;
+    my $class = ref $self;
+
+    if (not $class) {
+        return 'Entity::Component';
+    }
+
+    return $self::SUPER->getDelegatee;
+}
+
 1;

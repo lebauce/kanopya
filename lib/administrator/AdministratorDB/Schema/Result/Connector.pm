@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::Connector
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<connector>
 
@@ -129,6 +145,21 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 mock_monitor
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::MockMonitor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "mock_monitor",
+  "AdministratorDB::Schema::Result::MockMonitor",
+  { "foreign.mock_monitor_id" => "self.connector_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 netapp_lun_manager
 
 Type: might_have
@@ -193,14 +224,14 @@ __PACKAGE__->might_have(
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Outside>
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "service_provider",
-  "AdministratorDB::Schema::Result::Outside",
-  { outside_id => "service_provider_id" },
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
@@ -224,30 +255,15 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 mock_monitor
 
-Type: might_have
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-08 19:38:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mkqBFtzGPJxNU7GdLiKqPg
 
-Related object: L<AdministratorDB::Schema::Result::MockMonitor>
-
-=cut
-
-__PACKAGE__->might_have(
-  "mock_monitor",
-  "AdministratorDB::Schema::Result::MockMonitor",
-  { "foreign.mock_monitor_id" => "self.connector_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-20 16:41:59
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HvyVFwqWOFlj4OsHXKpeXQ
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.connector_id" },
-    { cascade_copy => 0, cascade_delete => 1 }
+  { entity_id => "connector_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
+
 1;

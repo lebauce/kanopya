@@ -64,7 +64,7 @@ sub new {
     bless $self, $class;
 
     my $host = $args{host};
-    my $ip = $host->getAdminIp();
+    my $ip = $host->adminIp();
     my $component = $args{component};
     
     # Retrieve the apache port which doesn't use ssl

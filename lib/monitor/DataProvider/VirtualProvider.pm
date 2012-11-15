@@ -64,7 +64,7 @@ sub new {
     bless $self, $class;
 
     $self->{_host} = $args{host};
-    $self->{_ip} = $args{host}->getAdminIp;
+    $self->{_ip} = $args{host}->adminIp;
     
     return $self;
 }

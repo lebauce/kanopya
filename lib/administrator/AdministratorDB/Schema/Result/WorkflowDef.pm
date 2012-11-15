@@ -27,7 +27,7 @@ __PACKAGE__->table("workflow_def");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 workflow_def_name
@@ -57,7 +57,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "workflow_def_name",
@@ -156,6 +156,36 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 workflow_def
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "workflow_def",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "workflow_def_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 workflow_def_managers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowDefManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_def_managers",
+  "AdministratorDB::Schema::Result::WorkflowDefManager",
+  { "foreign.workflow_def_id" => "self.workflow_def_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 workflow_def_origin
 
 Type: belongs_to
@@ -191,21 +221,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 workflow_def_managers
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::WorkflowDefManager>
-
-=cut
-
-__PACKAGE__->has_many(
-  "workflow_def_managers",
-  "AdministratorDB::Schema::Result::WorkflowDefManager",
-  { "foreign.workflow_def_id" => "self.workflow_def_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 workflow_steps
 
 Type: has_many
@@ -222,9 +237,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-08 14:15:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:db6bctsP+fkUrZEsXEBG2A
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-26 13:48:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5gbH/9VIPbQexrRieNVn7g
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "workflow_def_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

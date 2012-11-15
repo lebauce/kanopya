@@ -1,4 +1,5 @@
 require('common/formatters.js');
+require('common/service_common.js');
 
 //Check if there is a configured connector
 function isThereAConnector(elem_id, connector_category) {
@@ -29,19 +30,26 @@ function isThereAConnector(elem_id, connector_category) {
 }
 
 function isThereAManager(elem_id, category) {
-    var is  = null;
+    var manager = undefined;
 
     $.ajax({
-        url         : '/api/serviceprovider/' + elem_id + '/getManager',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ 'manager_type' : category }),
+        url         : '/api/serviceprovider/' + elem_id + '/service_provider_managers?manager_type=' + category,
+        type        : 'GET',
         async       : false,
         success     : function(data) {
-            is  = data;
+            if (data[0]) {
+                $.ajax({
+                    url         : '/api/entity/' + data[0].manager_id,
+                    type        : 'GET',
+                    async       : false,
+                    success     : function(component) {
+                        manager = component;
+                    }
+               });
+            }
         }
     });
-    return is;
+    return manager;
 }
 
 function deleteManager(pk, container_id, elem_id) {
@@ -64,14 +72,13 @@ function loadServicesConfig (container_id, elem_id) {
     
     var that = this;
 
-    // Service details
-    var table   = $("<table>").css("width", "100%").appendTo(container);
     $.ajax({
         url     : '/api/serviceprovider/' + elem_id,
         type    : 'GET',
         success : function(data) {
             var external    = "";
             if (data.externalcluster_id != null) external = 'external';
+            var table   = $("<table>").css("width", "100%").appendTo(container);
             $(table).append($("<tr>").append($("<td>", { colspan : 2, class : 'table-title', text : "General" })));
             $(table).append($("<tr>").append($("<td>", { text : 'Name :', width : '100' })).append($("<td>", { text : data[external + 'cluster_name'] })));
             $(table).append($("<tr>").append($("<td>", { text : 'Description :' })).append($("<td>", { text : data[external + 'cluster_desc'] })));
@@ -212,185 +219,162 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
     var mode_config = instance_id && instance_id > 0;
     callback        = callback || $.noop;
     connectortype   = managerConnectorTranslate(managertype);
-    
-    // Quick (bad) fix to exclude managers from kanopya cluster
-    // TODO Do not use findManager rpc, refactor available managers request, review createmanagerDialog
-    var kanopya_cluster_id;
-    $.ajax({
-        url     : '/api/cluster?cluster_name=Kanopya',
-        async   : false,
-        success : function(kanopya_cluster) {
-            kanopya_cluster_id = kanopya_cluster[0].pk;
+
+    // we skip all managers of the Kanopya cluster (id=1)
+    var managers = findManager(connectortype);
+    console.log(managers);
+    for (var i in managers) if (managers.hasOwnProperty(i)) {
+        if (managers[i].service_provider_id == 1) {
+            managers.splice(i, 1);
         }
+    }
+
+    if (managers.length <= 0) {
+        if (skippable) callback();
+        else {
+            alert('No technical service connected to a ' + connectortype + '.\nSee: Administration -> Technical Services');
+        }
+        return;
+    }
+    var select  = $("<select>", { name : 'managerselection' })
+    var fieldset= $('<fieldset>').css({'border' : 'none'});
+    for (var i in managers) if (managers.hasOwnProperty(i)) {
+        var theName = managers[i].component_type ? managers[i].component_type.component_name : managers[i].connector_type.connector_name;
+        var manager = managers[i];
+        $.ajax({
+            url     : '/api/externalcluster/' + managers[i].service_provider_id,
+            async   : false,
+            success : function(data) {
+                if (data.externalcluster_name != null) {
+                    theName = data.externalcluster_name + " - " + theName;
+                }
+                $(select).append($("<option>", { text : theName, value : manager.pk }));
+            }
+        });
+    }
+    $(select).bind('change', function(event) {
+        $(fieldset).empty();
+        console.log(event);
+        var manager_id = $(event.currentTarget).val();
+        $.ajax({
+            url     : '/api/entity/' + manager_id + '/getManagerParamsDef',
+            type    : 'POST',
+            success : function(data) {
+                var current_params = {};
+                if (mode_config) {
+                    $.ajax({
+                        url     : '/api/serviceprovider/' + sp_id + '/getManagerParameters',
+                        type    : 'POST',
+                        async   : false,
+                        data    : { manager_type : managertype },
+                        success : function(manager_params) {
+                            current_params = manager_params;
+                        }
+                    });
+                }
+                for (var i in data) if (data.hasOwnProperty(i)) {
+                    $(fieldset).append($('<label>', {
+                        text : managerParams(data[i]).label + " : ",
+                        for : data[i]
+                    })).append($('<'+ (managerParams(data[i]).type || 'input') +'>',
+                                { name : data[i], id : data[i], value : current_params[data[i]] })
+                    );
+
+                    // Specific management for custom form
+                    if (connectortype == 'DirectoryServiceManager' && data[i] == 'ad_nodes_base_dn') {
+                        $(fieldset).append($('<button>', {html : 'browse...'}).click( {manager_id : manager_id }, ActiveDirectoryBrowser ));
+                    }
+                }
+            }
+        });
     });
 
-    $.ajax({
-        url         : '/api/serviceprovider/' + sp_id + '/findManager',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ 'category' : connectortype }),
-        success     : function(data) {
-            // we skip all managers of the Kanopya cluster
-            for (var i in data) if (data.hasOwnProperty(i)) {
-                if (data[i].service_provider_id == kanopya_cluster_id) {
-                    data.splice(i,1);
-                }
-            }
+    // Don't show the manager dropdown list if we are configuring an alredy linked manager instance
+    // Set the value to the correct manager id (used to load params)
+    if (mode_config) {
+        $(select).val(comp_id);
+        $(select).hide();
+    }
+    $(select).trigger('change');
 
-            if (data.length <= 0) {
+    $("<div>").append($(select)).append(fieldset).appendTo('body').dialog({
+        title           : mode_config ? connectortype + ' configuration' : 'Link to a ' + connectortype,
+        closeOnEscape   : false,
+        resizable       : false,
+        modal           : true,
+        buttons         : {
+            'Cancel'    : function() {
+                $(this).dialog("destroy");
                 if (skippable) callback();
-                else {
-                    alert('No technical service connected to a ' + connectortype + '.\nSee: Administration -> Technical Services');
-                }
-                return;
-            }
-            var select  = $("<select>", { name : 'managerselection' })
-            var fieldset= $('<fieldset>').css({'border' : 'none'});
-            for (var i in data) if (data.hasOwnProperty(i)) {
-                var theName     = data[i].name;
-                var manager     = data[i];
-                $.ajax({
-                    url     : '/api/externalcluster/' + data[i].service_provider_id,
-                    async   : false,
-                    success : function(data) {
-                        if (data.externalcluster_name != null) {
-                            theName = data.externalcluster_name + " - " + theName;
-                        }
-                        $(select).append($("<option>", { text : theName, value : manager.id }));
+            },
+            'Ok'        : function() {
+                var dial    = this;
+                var data    = {
+                    manager_type        : managertype,
+                    manager_id          : $(select).attr('value')
+                };
+                var params  = {};
+                var ok      = true;
+                $(fieldset).find(':input:not(:button)').each(function() {
+                    if ( managerParams($(this).attr('name')).mandatory && ($(this).val() == null || $(this).val() === '')) {
+                      ok                            = false;
+                    } else {
+                      params[$(this).attr('name')]  = $(this).val();
                     }
                 });
-            }
-            $(select).bind('change', function(event) {
-                $(fieldset).empty();
-                var manager_id = $(event.currentTarget).val();
-                $.ajax({
-                    url     : '/api/entity/' + manager_id + '/getManagerParamsDef',
-                    type    : 'POST',
-                    success : function(data) {
-                        var current_params = {};
-                        if (mode_config) {
-                            $.ajax({
-                                url     : '/api/serviceprovider/' + sp_id + '/getManagerParameters',
-                                type    : 'POST',
-                                async   : false,
-                                data    : { manager_type : managertype },
-                                success : function(manager_params) {
-                                    current_params = manager_params;
-                                }
-                            });
-                        }
-                        for (var i in data) if (data.hasOwnProperty(i)) {
-                            $(fieldset).append($('<label>', {
-                                text : managerParams(data[i]).label + " : ",
-                                for : data[i]
-                            })).append($('<'+ (managerParams(data[i]).type || 'input') +'>',
-                                        { name : data[i], id : data[i], value : current_params[data[i]] })
-                            );
-
-                            // Specific management for custom form
-                            if (connectortype == 'DirectoryServiceManager' && data[i] == 'ad_nodes_base_dn') {
-                                $(fieldset).append('<br>');
-                                $(fieldset).append($('<button>', {html : 'browse...'}).click( {manager_id : manager_id }, ActiveDirectoryBrowser ));
-                                $(fieldset).append($('<button>', {html : 'search...'}).click( {manager_id : manager_id }, ActiveDirectorySearch ));
-                            }
-                        }
+                if (ok === true) {
+                    if (Object.keys(params).length > 0) {
+                        data.manager_params = params;
                     }
-                });
-            });
-
-            // Don't show the manager dropdown list if we are configuring an alredy linked manager instance
-            // Set the value to the correct manager id (used to load params)
-            if (mode_config) {
-                $(select).val(comp_id);
-                $(select).hide();
-            }
-            $(select).trigger('change');
-
-            $("<div>").append($(select)).append(fieldset).appendTo('body').dialog({
-                title           : mode_config ? connectortype + ' configuration' : 'Link to a ' + connectortype,
-                closeOnEscape   : false,
-                resizable       : false,
-                modal           : true,
-                buttons         : {
-                    'Cancel'    : function() {
-                        $(this).dialog("destroy");
-                        if (skippable) callback();
-                    },
-                    'Ok'        : function() {
-                        var dial    = this;
-                        var data    = {
-                            manager_type        : managertype,
-                            manager_id          : $(select).attr('value')
-                        };
-                        var params  = {};
-                        var ok      = true;
-                        $(fieldset).find(':input:not(:button)').each(function() {
-                            if ( managerParams($(this).attr('name')).mandatory && ($(this).val() == null || $(this).val() === '')) {
-                              ok                            = false;
-                            } else {
-                              params[$(this).attr('name')]  = $(this).val();
-                            }
+                    setTimeout(function() { 
+                        var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
+                        dialog.css('text-align', 'center');
+                        dialog.appendTo("body").dialog({
+                            resizable   : false,
+                            title       : ""
                         });
-                        if (ok === true) {
-                            if (Object.keys(params).length > 0) {
-                                data.manager_params = params;
-                            }
-                            setTimeout(function() {
-                                $('*').addClass('cursor-wait');
-                                var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait...",});
-                                dialog.css('text-align', 'center'); // text horizontal align
-                                dialog.css('line-height', '200px'); // text vertical align
-                                dialog.appendTo("body").dialog({
-                                    resizable   : false,
-                                    draggable   : false,
-                                    title       : "",
-                                    height      : '250',
-                                });
-                                $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
-                            }, 10);
+                        $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
+                    }, 10);
 
-                            var url;
-                            var post_data;
-                            if (mode_config) {
-                                url         = '/api/serviceprovidermanager/' + instance_id + '/addParams';
-                                post_data   = {
-                                        params      : data.manager_params,
-                                        override    : 1
-                                };
-                            } else {
-                                url         = '/api/serviceprovider/' + sp_id + '/addManager';
-                                post_data   = data;
-                            }
-                            $.ajax({
-                                url           : url,
-                                type          : 'POST',
-                                contentType   : 'application/json',
-                                data          : JSON.stringify(post_data),
-                                success       : function() {
-                                    $(dial).dialog("destroy");
-                                    callback();
-                                },
-                                complete      : function() {
-                                    $('*').removeClass('cursor-wait');
-                                    $("div#waiting_default_insert").dialog("destroy");
-                                },
-                                error         : function(error) {
-                                    alert(error.responseText);
-                                    if (skippable) callback();
-                                }
-                            });
-                        }
+                    var url;
+                    var post_data;
+                    if (mode_config) {
+                        url         = '/api/serviceprovider/' + sp_id + '/addManagerParameters';
+                        post_data   = {
+                                manager_type : managertype,
+                                params       : data.manager_params,
+                                override     : 1
+                        };
+                    } else {
+                        url         = '/api/serviceprovider/' + sp_id + '/addManager';
+                        post_data   = data;
                     }
+                    $.ajax({
+                        url           : url,
+                        type          : 'POST',
+                        contentType   : 'application/json',
+                        data          : JSON.stringify(post_data),
+                        success       : function() {
+                            $(dial).dialog("destroy");
+                            callback();
+                        },
+                        complete      : function() {
+                            $("div#waiting_default_insert").dialog("destroy");
+                        },
+                        error         : function(error) {
+                            alert(error.responseText);
+                            if (skippable) callback();
+                        }
+                    });
                 }
-            });
+            }
         }
     });
 }
 
 function createManagerButton(managertype, ctnr, sp_id, container_id) {
     var addManagerButton    = $("<a>", {
-        text    : 'Link to a ' + managerConnectorTranslate(managertype),
-        style   : 'width:300px'
+        text : 'Link to a ' + managerConnectorTranslate(managertype)
     }).button({ icons : { primary : 'ui-icon-link' } });
     var that                = this;
     var reload = function() {
@@ -414,7 +398,7 @@ function buildADTreeJSONData(ad_tree) {
                 data        : node.name,
                 attr        : { id : node.dn },
         }
-        if (node.children && node.children.length > 0) {
+        if (node.children.length > 0) {
             treenode.children = buildADTreeJSONData( node.children );
         }
         treedata.push( treenode );
@@ -424,7 +408,7 @@ function buildADTreeJSONData(ad_tree) {
 }
 
 function ActiveDirectoryBrowser(event) {
-    var dn_input = $(this).prevAll('input');
+    var dn_input = $(this).prev();
     var ad_id    = event.data.manager_id;
 
     // Get AD user
@@ -482,78 +466,5 @@ function ActiveDirectoryBrowser(event) {
                     }
                 });
             }
-    });
-}
-
-function ActiveDirectorySearch(event) {
-    var dn_input = $(this).prevAll('input');
-    var ad_id    = event.data.manager_id;
-
-    var browser         = $('<div>');
-    var tree_cont       = $('<div>', {style : 'height:300px'});
-    var search_input    = $('<input>', { style : 'width:200px'});
-    var search_button   = $('<button>', {html : 'search...'}).button({icon: {primary:'ui-icon-search'}});
-    var selected_dn_input = $('<input>', {disabled:'disabled', style : 'width:300px'});
-
-    browser.append($('<span>', {html : 'Search OU, Groups and Containers with name containing : '}))
-           .append(search_input)
-           .append(search_button)
-           .append('<br>').append('<hr>')
-           .append($('<span>', {html : 'DN : '}))
-           .append(selected_dn_input)
-           .append(tree_cont);
-
-    // Get AD user
-    var ad_user;
-    $.ajax({
-        url         : '/api/entity/' + ad_id,
-        async       : false,
-        success     : function(data) {
-            ad_user  = data.ad_user;
-        }
-    });
-
-    search_button.click( function() {
-        var search_string = search_input.val();
-        callMethodWithPassword({
-            login        : ad_user,
-            dialog_title : "",
-            url          : '/api/entity/' + ad_id + '/searchDirectory',
-            data         : { search_string : search_string },
-            success      : function(data) {
-                require('jquery/jquery.jstree.js');
-                var treedata = buildADTreeJSONData(data);
-                tree_cont.jstree({
-                    "plugins"   : ["themes","json_data","ui"],
-                    "themes"    : {
-                        url : "css/jstree_themes/default/style.css"
-                    },
-                    "json_data" : {
-                        "data"                  : treedata,
-                        "progressive_render"    : true
-                    }
-                }).bind("select_node.jstree", function (e, data) {
-                    selected_dn_input.val(data.rslt.obj.attr("id"));
-                });
-            }
-        });
-    });
-
-    browser.dialog({
-        title   : 'AD Search',
-        modal   : true,
-        width   : '450px',
-        buttons : {
-            Ok: function () {
-                dn_input.val(selected_dn_input.val());
-                $(this).dialog("close");
-            },
-            Cancel: function () {
-                $(this).dialog("close");
-            }
-        },
-        close: function (event, ui) {
-            $(this).remove();
-        }
     });
 }

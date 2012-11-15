@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package WorkflowDef;
-use base 'BaseDB';
+package Entity::WorkflowDef;
+use base 'Entity';
 
 use strict;
 use warnings;
@@ -40,26 +40,17 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    param_presets => {
+        is_virtual   => 1,
+    },
 };
 
 sub methods {
   return {
-    'setParamPreset'    => {
-      'description' => 'setParamPreset',
-      'perm_holder' => 'entity'
+    updateParamPreset => {
+        description => 'updateParamPreset',
+        perm_holder => 'entity',
     },
-    'updateParamPreset'    => {
-      'description' => 'updateParamPreset',
-      'perm_holder' => 'entity'
-    },
-    'getParamPreset'    => {
-      'description' => 'getParamPreset',
-      'perm_holder' => 'entity'
-    },
-    'addStep'           => {
-      'description' => 'addStep',
-      'perm_holder' => 'entity'
-    }
   }
 }
 
@@ -125,7 +116,7 @@ sub updateParamPreset{
     }
 }
 
-sub getParamPreset{
+sub paramPresets {
     my ($self,%args) = @_;
 
     my $param_preset_id = $self->getAttr(name => 'param_preset_id');

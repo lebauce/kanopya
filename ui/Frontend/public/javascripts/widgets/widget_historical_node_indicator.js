@@ -100,9 +100,10 @@ function showIndicatorGraph(curobj,indic_id,indic_name,indic_unit,start,stop, sp
 
     $.ajax({
         type : 'POST',
-        url : '/api/externalnode/' + node_id + '/getMonitoringData',
+        url : '/api/serviceprovider/' + sp_id + '/getNodeMonitoringData',
         contentType : 'application/json',
         data : JSON.stringify( {
+            node_id : node_id,
             indicator_ids : [indic_id],
             historical : 1,
             start   : parseInt(start / 1000),

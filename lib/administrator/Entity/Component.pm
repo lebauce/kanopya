@@ -32,24 +32,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-=head2 new
-
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of component entity.
-          This is an abstract class, DO NOT instantiate it.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component from parameters.
-B<Comment>  : 
-To save data in DB call save() on returned obj (after modification)
-Like all component, instantiate it creates a new empty component instance.
-You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
 use constant ATTR_DEF => {
     service_provider_id => {
         pattern        => '^\d*$',
@@ -71,25 +53,23 @@ use constant ATTR_DEF => {
     },
     priority => {
         is_virtual => 1
-    }
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        getPolicyParams => {
-            description => 'get the parameters required for policies definition.',
-            perm_holder => 'entity',
-        },
         getConf   => {
-            description   => 'get configuration',
-            perm_holder   => 'entity'
+            description => 'get configuration',
         },
         setConf   => {
-            description   => 'set configuration',
-            perm_holder   => 'entity'
-        }
+            description => 'set configuration',
+        },
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
+        getPolicyParams => {
+            description => 'get the parameters required for policies definition.',
+        },
     }
 };
 
@@ -97,7 +77,7 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    # avoid abstract Entity::Component instanciation
+    # Avoid abstract Entity::Component instanciation
     if ($class !~ /Entity::Component.*::(\D+)(\d*)/) {
         $errmsg = "Entity::Component->new : Entity::Component must not " .
                   "be instanciated without a concret component class";
@@ -108,14 +88,14 @@ sub new {
     my $component_name    = $1;
     my $component_version = $2;
 
-    # set base configuration if not passed to this constructor
+    # Set base configuration if not passed to this constructor
     my $config = (%args) ? \%args : $class->getBaseConfiguration();
     my $template_id = undef;
     if (exists $args{component_template_id} and defined $args{component_template_id}) {
         $template_id = $args{component_template_id};
     }
 
-    # we set the corresponding component_type
+    # We set the corresponding component_type
     my $hash = { component_name => $component_name };
     if (defined ($component_version) && $component_version) {
         $hash->{component_version} = $component_version;
@@ -125,6 +105,10 @@ sub new {
                                   %$config);
 
     bless $self, $class;
+
+    # Add the component to the Component group
+    Entity::Component->getMasterGroup->appendEntity(entity => $self);
+
     return $self;
 }
 
@@ -167,18 +151,6 @@ sub setConf {
     if ($updated) {
         $self->save();
     }
-}
-
-=head2 getGenericMasterGroupName
-
-    Get an alternative group name if the correponding group 
-    of the concrete class of the entity do not exists.
-
-=cut
-
-sub getGenericMasterGroupName {
-    my $self = shift;
-    return 'Component';
 }
 
 =head2 getPolicyParams
@@ -287,63 +259,6 @@ sub getNetConf {}
 sub needBridge { return 0; }
 sub getHostsEntries { return; }
 sub getPuppetDefinition { return ""; }
-=head1 DIAGNOSTICS
 
-Exceptions are thrown when mandatory arguments are missing.
-Exception : Kanopya::Exception::Internal::IncorrectParam
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
-
-=head1 DEPENDENCIES
-
-This module depends of 
-
-=over
-
-=item KanopyaException module used to throw exceptions managed by handling programs
-
-=item Entity module which is its mother class implementing global entity method
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
-
-=cut
 
 1;

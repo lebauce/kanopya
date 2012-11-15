@@ -22,7 +22,7 @@ var Service = (function(_super) {
 
 var resources  = {};
 
-function    servicesListFilter(elem) {
+function servicesListFilter(elem) {
     if (resources.hasOwnProperty(elem.pk)) {
         return false;
     } else {
@@ -31,21 +31,12 @@ function    servicesListFilter(elem) {
 }
 
 function servicesList (container_id, elem_id) {
-    $.ajax({
-        url         : '/api/serviceprovider/getServiceProviders',
-        type        : 'POST',
-        async       : false,
-        contentType : 'application/json',
-        data        : JSON.stringify({ category : 'Cloudmanager' }),
-        success     : function(data) {
-            resources  = {};
-            for (var i in data) if (data.hasOwnProperty(i)) {
-                if (data[i] != undefined) {
-                    resources[data[i].pk] = true;
-                }
-            }
-        }
-    });
+    resources  = {};
+    var providers = getServiceProviders('Cloudmanager');
+    for (var provider in providers) {
+        resources[providers[provider].pk] = true;
+    }
+
     var container = $('#' + container_id);
 
     $('a[href=#content_services_overview_static]').text('Service instances');
@@ -201,10 +192,10 @@ function loadServicesResources (container_id, elem_id) {
             });
             // admin ip 
             $.ajax({
-                url     : '/api/host/' + host_id + '/getAdminIp',
-                type    : 'POST',
-                success : function(data) {
-                    $(grid).setCell(rowid, 'admin_ip', data);
+                url     : '/api/host/' + host_id,
+                type    : 'GET',
+                success : function(host) {
+                    $(grid).setCell(rowid, 'admin_ip', host.admin_ip);
                 }
             });
         
@@ -251,13 +242,11 @@ function runScaleWorkflow(type, eid, spid) {
                     amount = getRawValue(amount, 'scale_amount_unit');
                     $.ajax({
                         async       : false,
-                        url         : '/api/serviceprovider/' + spid + '/getManager',
-                        contentType : 'application/json',
-                        type        : 'POST',
-                        data        : JSON.stringify({ manager_type : 'host_manager' }),
+                        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?manager_type=host_manager',
+                        type        : 'GET',
                         success     : function(hmgr) {
                             $.ajax({
-                                url         : '/api/entity/' + hmgr.pk + '/scaleHost',
+                                url         : '/api/entity/' + hmgr.manager_id + '/scaleHost',
                                 type        : 'POST',
                                 contentType : 'application/json', 
                                 data        : JSON.stringify({  
@@ -282,13 +271,11 @@ function migrate(spid, eid) {
     var sel     = $('<select>').appendTo(cont);
     $.ajax({
         async       : false,
-        url         : '/api/serviceprovider/' + spid + '/getManager',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ manager_type : 'host_manager' }),
+        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?manager_type=host_manager',
+        type        : 'GET',
         success     : function(hmgr) {
             $.ajax({
-                url     : '/api/opennebula3/' + hmgr.pk + '/getHypervisors',
+                url     : '/api/opennebula3/' + hmgr.manager_id + '/hypervisors',
                 type    : 'POST',
                 success : function(data) {
                     for (var i in data) if (data.hasOwnProperty(i)) {
@@ -303,7 +290,7 @@ function migrate(spid, eid) {
                                 var hyp = $(sel).val();
                                 if (hyp != null && hyp != "") {
                                     $.ajax({
-                                        url         : '/api/opennebula3/' + hmgr.pk + '/migrate',
+                                        url         : '/api/opennebula3/' + hmgr.manager_id + '/migrate',
                                         type        : 'POST',
                                         contentType : 'application/json',
                                         data        : JSON.stringify({
@@ -332,22 +319,14 @@ function nodedetailsaction(cid, eid) {
     $.ajax({
         url     : '/api/node/' + eid + '?expand=host',
         success : function(data) {
-            var remoteUrl   = null;
+            var remoteUrl   = data.host.remote_session_url;
             var isVirtual   = false;
-            $.ajax({
-                url         : '/api/host/' + data.host.pk + '/getRemoteSessionURL',
-                type        : 'POST',
-                async       : false,
-                success     : function(ret) {
-                    remoteUrl   = ret;
-                }
-            });
             $.ajax({    
-                url     : '/api/host/' + data.host.pk + '/getHostType',
-                type    : 'POST',
+                url     : '/api/entity/' + data.host.host_manager_id,
+                type    : 'GET',
                 async   : false,
                 success : function(ret) {
-                    if (ret === 'Virtual Machine') isVirtual = true;
+                    if (ret.host_type === 'Virtual Machine') isVirtual = true;
                 }
             });
             var buttons   = [
@@ -365,7 +344,7 @@ function nodedetailsaction(cid, eid) {
                     action  : '/api/host/' + data.host.pk + '/resubmit',
                     confirm : 'The node will be stopped and restarted'
                 },
-               {
+                {
                     label       : 'Scale Cpu',
                     icon        : 'arrowthick-2-n-s',
                     condition   : isVirtual,

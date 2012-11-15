@@ -30,19 +30,12 @@ my $errmsg;
 
 sub methods {
     return {
-        'getManagerParamsDef'  => {
-            'description'   => 'getParamsDef',
-            'perm_holder'   => 'entity'
+        # TODO(methods): Remove this method from the api once we can use virtual attrs on managers
+        getManagerParamsDef => {
+            description => 'getParamsDef',
+            perm_holder => 'entity',
         }
     };
-}
-
-=head2 getManagerParamsDef
-
-=cut
-
-sub getManagerParamsDef {
-    return {  };
 }
 
 =head2 checkManagerParams
@@ -75,6 +68,14 @@ sub checkManagerParams {
     elsif ($args{manager_type} eq 'notification_manager') {
         return $self->checkNotificationManagerParams(%{ $args{manager_params} });
     }
+}
+
+=head2 getManagerParamsDef
+
+=cut
+
+sub getManagerParamsDef {
+    return {};
 }
 
 1;

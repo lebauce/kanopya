@@ -95,81 +95,78 @@ function add_menutree(container, label, menu_info, elem_id) {
 
 // Create and link all generic menu elements based on mainmenu_def from conf
 function build_mainmenu() {
-    
     var container = $('#mainmenu-container');
-    // There is the beginning of display filtering by profile config :
-    var submenu_elements;
-    var menu_elements;
+
+    var submenu_elements = undefined;
+    var menu_elements    = undefined;
+
     // Get the list of menuentries for the current profile :
-    var user_profile = get_user_profile();
-    //console.log(user_profile);
+    var user_profiles = get_user_profiles();
     $.ajax({
         async    : false,
-        url      : '/javascripts/KIM/menuprofiles.json',
-        dataType : 'json',
+        url      : 'javascripts/KIM/menuprofiles.json',
         type     : 'GET',
+        dataType : 'json',
         success  : function(data) {
-            //console.log(data);
-            for (i=0; i<data.length; i++) {
-                if (data[i].profile_id == user_profile) {
-                    submenu_elements = data[i].submenu_entries;
-                    menu_elements = data[i].menu_entries;
+            for (var profile in user_profiles) {
+                if (data[user_profiles[profile]] != undefined) {
+                    if (menu_elements !== undefined) {
+                        menu_elements    = arrayIntersect(menu_elements, data[user_profiles[profile]].menu_entries);
+                        submenu_elements = arrayIntersect(submenu_elements, data[user_profiles[profile]].submenu_entries)
+                    } else {
+                        menu_elements    = data[user_profiles[profile]].menu_entries;
+                        submenu_elements = data[user_profiles[profile]].submenu_entries;
+                    }
                 }
             }
-        } 
+        }
     });
-    // There is the end of display filtering by profile config :
-    
     
     for (var label in mainmenu_def) {
-        //if (menu_elements.search(label) != -1) {
-        if (menu_elements.search(label) == -1) {
+        if ($.inArray(label, menu_elements) < 0) {
             var menu_head = $('<h3 id="menuhead_' + label.replace(/ /g, '_') + '"><a href="#">' + label + '</a></h3>');
-            var menu_def = mainmenu_def[label];
-            container.append(menu_head);
             var content = $('<ul></ul>');
+            container.append(menu_head);
             container.append(content);
-        }
-        
-        if (menu_def['onLoad']) {
-            // Custom menu
-            menu_head.click(menu_def['onLoad']);
-        } else if (menu_def['json']) {
-            // Dynamic load from json
-            menu_head.click(menu_def['json'], loadMenuFromJSON);
-        } else if(menu_def['jsontree']) {
-            menu_head.click(menu_def['jsontree'], loadTreeMenuFromJSON);
-        } else {
-            // Static menu
-            for (var sublabel in menu_def) {
-                // Filter by profile :
-                if (submenu_elements.search(sublabel) == -1) {
-                //if (sublabel.search(submenu_elements) != -1) {
-                    var submenu_links = menu_def[sublabel];
-                    add_menu(content, sublabel, submenu_links);
+
+            if (mainmenu_def[label]['onLoad']) {
+                // Custom menu
+                menu_head.click(mainmenu_def[label]['onLoad']);
+
+            } else if (mainmenu_def[label]['json']) {
+                // Dynamic load from json
+                menu_head.click(mainmenu_def[label]['json'], loadMenuFromJSON);
+
+            } else if(mainmenu_def[label]['jsontree']) {
+                menu_head.click(mainmenu_def[label]['jsontree'], loadTreeMenuFromJSON);
+
+            } else {
+                for (var sublabel in mainmenu_def[label]) {
+                    if ($.inArray(sublabel, submenu_elements) < 0) {
+                        add_menu(content, sublabel, mainmenu_def[label][sublabel]);
+                    }
                 }
             }
-        }
-        // Specific view when select menu head
-        // Filter by profile :
-        if (menu_def['masterView']) {
-            var view_id = 'view_' + label.replace(/ /g, '_');
-            build_submenu($('#view-container'), view_id, menu_def['masterView']);
-            menu_head.click( {view_id: view_id}, onViewLinkSelect);
+            // Specific view when select menu head
+            if (mainmenu_def[label]['masterView']) {
+                var view_id = 'view_' + label.replace(/ /g, '_');
+                build_submenu($('#view-container'), view_id, mainmenu_def[label]['masterView']);
+                menu_head.click( {view_id: view_id}, onViewLinkSelect);
+            }
         }
     }
-    
+
     container.accordion( {
         clearStyle  : true,     // size to content
         active      : false,    // all parts closed at start
     } );
 }
 
-function get_user_profile () {
+function get_user_profiles () {
     // Get username of current logged user :
     var username = '';
     var userid;
-    var profileid;
+    var profiles = [];
     $.ajax({
         async   : false,
         url     : '/me',
@@ -192,10 +189,12 @@ function get_user_profile () {
         url     : '/api/userprofile?user_id=' + userid,
         tyepe   : 'GET',
         success : function(data) {
-            profileid = data[0].profile_id;
+            for (var profile in data) {
+                profiles.push(data[profile].profile_id);
+            }
         }
     });
-    return profileid;
+    return profiles;
 }
 
 function build_submenu(container, view_id, links, elem_id) {
@@ -352,6 +351,19 @@ function loadTreeMenuFromJSON(event) {
     
 }
 
+function arrayIntersect(arr1, arr2) {
+    var temp = new Array();
+
+    for(var i = 0; i < arr1.length; i++) {
+        for(var k = 0; k < arr2.length; k++) {
+            if(arr1[i] == arr2[k]) {
+                temp[temp.length] = arr1[i];
+
+            }
+        }
+    }
+    return temp;
+}
 
 $(document).ready(function () {
     build_mainmenu();

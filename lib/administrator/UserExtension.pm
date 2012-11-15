@@ -1,4 +1,4 @@
-# Copyright � 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2012 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -45,5 +45,30 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+
+=pod
+
+=begin classdoc
+
+Return class User as delegateee class for UserExtention permissions.
+
+@return the delegatee entity.
+
+=end classdoc
+
+=cut
+
+sub getDelegatee {
+    my $self = shift;
+    my $class = ref $self;
+
+    if (not $class) {
+        return "Entity::User";
+    }
+    else {
+        return $self->user;
+    }
+}
 
 1;

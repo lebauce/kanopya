@@ -1,5 +1,5 @@
-# Lvm2.pm Logical volume manager component (Adminstrator side)
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,41 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 22 august 2010
-=head1 NAME
-
-<Entity::Component::Lvm2> <Lvm2 component concret class>
-
-=head1 VERSION
-
-This documentation refers to <Entity::Component::Lvm2> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Entity::Component::Lvm2>;
-
-my $component_instance_id = 2; # component instance id
-
-Entity::Component::Lvm2->get(id=>$component_instance_id);
-
-# Cluster id
-
-my $cluster_id = 3;
-
-# Component id are fixed, please refer to component id table
-
-my $component_id =2 
-
-Entity::Component::Lvm2->new(component_id=>$component_id, cluster_id=>$cluster_id);
-
-=head1 DESCRIPTION
-
-Entity::Component::Lvm2 is class allowing to instantiate an Lvm2 component
-This Entity is empty but present methods to set configuration.
-
-=head1 METHODS
-
-=cut
 
 package Entity::Component::Lvm2;
 use base "Entity::Component";
@@ -79,24 +44,14 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 0,
     },
+    disk_type => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        'getDiskType' => {
-            'description' => 'Return the type of managed disks.',
-            'perm_holder' => 'entity',
-        },
-        'getExportManagers' => {
-            'description' => 'Return the availables export managers for this disk manager.',
-            'perm_holder' => 'entity',
-        },
-    }
-}
-
-sub getDiskType {
+sub diskType {
     return "LVM logical volume";
 }
 

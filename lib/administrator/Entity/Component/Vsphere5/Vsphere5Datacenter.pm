@@ -15,7 +15,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Vsphere5Datacenter;
+package Entity::Component::Vsphere5::Vsphere5Datacenter;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {

@@ -140,3 +140,10 @@ $(document).ready(function () {
     // call for the themeswitcher
     //$('#switcher').themeswitcher();
 });
+
+$(document).ajaxError(function(e, jqXHR, settings, exception) {
+    if (jqXHR.status === 403) {
+        alert(JSON.parse(jqXHR.responseText).reason);
+        throw new Error(JSON.parse(jqXHR.responseText).reason);
+    }
+})

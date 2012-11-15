@@ -389,7 +389,7 @@ sub readyNodeRemoving {
     my $EKeepalived = EFactory::newEEntity(data => $self);
 
     my $context = $EKeepalived->getEContext();
-    my $result = $context->execute(command => "ipvsadm -L -n | grep " . $host->getAdminIp());
+    my $result = $context->execute(command => "ipvsadm -L -n | grep " . $host->adminIp());
     my @result = split(/\n/, $result->{stdout});
     foreach my $line (@result) {
         my @cols = split(/[\t| ]+/, $line);

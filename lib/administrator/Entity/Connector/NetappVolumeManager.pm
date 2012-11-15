@@ -33,32 +33,22 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    disk_type => {
+        is_virtual => 1
+    },
+    export_type => {
+        is_virtual => 1
+    }
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        'getExportType' => {
-            'description' => 'Return the type of managed exports.',
-            'perm_holder' => 'entity',
-        },
-        'getDiskType' => {
-            'description' => 'Return the type of managed disks.',
-            'perm_holder' => 'entity',
-        },
-        'getExportManagers' => {
-            'description' => 'Return the availables export managers for this disk manager.',
-            'perm_holder' => 'entity',
-        },
-    }
-}
-
-sub getExportType {
+sub exportType {
     return "NFS export";
 }
 
-sub getDiskType {
+sub diskType {
     return "NetApp volume";
 }
 
@@ -295,7 +285,7 @@ sub getConf {
             aggregate_state     => $netapp_aggr->state,
             aggregate_totalsize => General::bytesToHuman(value => $netapp_aggr->size_total, precision => 5),
             aggregate_sizeused  => General::bytesToHuman(value => $netapp_aggr->size_used, precision => 5),
-            entity_comment      => $aggr->getComment,
+            entity_comment      => $aggr->comment,
         };
 
         my @contained_volumes = $netapp_aggr->child_get("volumes")->children_get;
@@ -313,7 +303,7 @@ sub getConf {
                 container_filesystem    => $volume->container_filesystem,
                 container_freespace     => General::bytesToHuman(value => $volume->container_freespace, precision => 5),
                 disk_manager_id         => $volume->disk_manager_id,
-                entity_comment          => $volume->getComment,
+                entity_comment          => $volume->comment,
             };
         }
 

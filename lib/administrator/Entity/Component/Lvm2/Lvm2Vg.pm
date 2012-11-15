@@ -15,16 +15,35 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Opennebula3Hypervisor;
+package Entity::Component::Lvm2::Lvm2Vg;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
-    onehost_id => {
-        label        => 'Opennebula host id',
-        type         => 'string',
-        pattern      => '^.*$',
+    lvm2_id => {
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d+$',
         is_mandatory => 1,
-        is_editable  => 1,
+    },
+    lvm2_vg_name => {
+        label        => 'Name',
+        type         => 'string',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
+    lvm2_vg_freespace => {
+        label        => 'Free space',
+        type         => 'string',
+        unit         => 'byte',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
+    lvm2_vg_size => {
+        label        => 'Total size',
+        type         => 'string',
+        unit         => 'byte',
+        is_mandatory => 1,
+        is_editable  => 0,
     },
 };
 

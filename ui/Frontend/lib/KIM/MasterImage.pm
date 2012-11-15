@@ -4,7 +4,7 @@ use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 
 use Administrator;
-use Entity::Operation;
+use Entity::Masterimage;
 
 prefix undef;
 
@@ -14,13 +14,7 @@ ajax '/uploadmasterimage' => sub {
     my $fileName    = $file->filename;
     
     $file->copy_to("/tmp/$fileName");
-    Entity::Operation->enqueue(
-        priority    => 200,
-        type        => 'DeployMasterimage',
-        params      => {
-            file_path   => "/tmp/$fileName"
-        }
-    );
+    Entity::Masterimage->create(file_path => "/tmp/$fileName");
 
     content_type 'application/json';
     return to_json { file => $fileName };

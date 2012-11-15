@@ -32,16 +32,14 @@ blablabla
 package Entity::ServiceProvider;
 use base "Entity";
 
-use Kanopya::Exceptions;
 use General;
+use Administrator;
+use Kanopya::Exceptions;
 use Entity::Component;
 use Entity::Connector;
 use Entity::Interface;
-use Administrator;
+
 use ServiceProviderManager;
-use Entity::Component::Fileimagemanager0;
-use Entity::Connector::NetappVolumeManager;
-use Entity::Connector::NetappLunManager;
 
 use List::Util qw[min max];
 use Log::Log4perl "get_logger";
@@ -62,35 +60,95 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        findManager => {
-            description => 'findManager',
-            perm_holder => 'mastergroup'
+        addComponent => {
+            description => 'add a component to this cluster',
         },
-        getManager => {
-            description => 'getManager',
-            perm_holder => 'entity'
+        removeComponent => {
+            description => 'remove a component from this cluster',
         },
-        getServiceProviders => {
-            description => 'getServiceProviders',
-            perm_holder => 'mastergroup',
+        addManager => {
+            description => 'addManager',
         },
-        'addManager'    => {
-            'description'   => 'addManager',
-            'perm_holder'   => 'entity'
+        getNodeMonitoringData => {
+            description => 'get monitoring data of a node',
         },
-        'getManagerParameters'  => {
-            'description'   => 'getManagerParameters',
-            'perm_holder'   => 'entity'
+        enableNode => {
+            description => 'Enable node',
         },
-        'getManagers'   => {
-            'description'   => 'get all managers associated with a service provider',
-            'perm_holder'   => 'entity'
-        }
+        disableNode => {
+            description => 'Disable node',
+        },
+        addManagerParameters => {
+            description => 'add paramaters to a manager',
+        },
+        # TODO(methods): Remove this method from the api once the merge of component/connector
+        getManagerParameters => {
+            description => 'getManagerParameters',
+        },
     };
 }
 
-sub getNodesMetrics {
+
+=pod
+
+=begin classdoc
+
+Get the monitoring data for a node.
+
+@return node monitoring data
+
+=end classdoc
+
+=cut
+
+sub getNodeMonitoringData {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node_id', 'indicator_ids' ]);
+
+    my $node_id = delete $args{node_id};
+    return ExternalNode->get(id => $node_id)->getMonitoringData(%args);
 }
+
+
+=pod
+
+=begin classdoc
+
+Enable a node.
+
+=end classdoc
+
+=cut
+
+sub enableNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node_id' ]);
+
+    return ExternalNode->get(id => $args{node_id})->enable();
+}
+
+
+=pod
+
+=begin classdoc
+
+Disable a node.
+
+=end classdoc
+
+=cut
+
+sub disableNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node_id' ]);
+
+    return ExternalNode->get(id => $args{node_id})->disable();
+}
+
+sub getNodesMetrics {}
 
 sub getState {
     throw Kanopya::Exception::NotImplemented();
@@ -122,47 +180,21 @@ sub getManager {
     return Entity->get(id => $cluster_manager->getAttr(name => 'manager_id'));
 }
 
-=head2 getManagers
-
-    Desc: get all managers associated with a service provider
-    Return: a list of manager objects
-
-=cut
-
-sub getManagers {
-    my $self            = shift;
-
-    my @clustermanagers = ServiceProviderManager->search(hash => { service_provider_id => $self->getId });
-    my @managers        = ();
-    for my $clustermanager (@clustermanagers) {
-        push @managers, Entity->get(id => $clustermanager->getAttr(name => 'manager_id'));
-    }
-    return wantarray ? @managers : \@managers;
-}
-
 sub getNodes {
     my ($self, %args) = @_;
 
-    my @nodes = Externalnode->search(
-                    hash => {
-                        service_provider_id => $self->getId(),
-                    }
-    );
+    my @nodes = Externalnode->search(hash => {
+                    service_provider_id => $self->getId(),
+                });
 
     my @node_hashs;
-
     for my $node (@nodes){
-
-        my @verified_rules = VerifiedNoderule->search(
-                                                   hash => {
-                                                       verified_noderule_state => 'verified'
-                                                   }
-                                               );
-        my @undef_rules    = VerifiedNoderule->search(
-                                                   hash => {
-                                                       verified_noderule_state => 'undef'
-                                                   }
-                                               );
+        my @verified_rules = VerifiedNoderule->search(hash => {
+                                verified_noderule_state => 'verified'
+                             });
+        my @undef_rules    = VerifiedNoderule->search(hash => {
+                                verified_noderule_state => 'undef'
+                             });
 
         push @node_hashs, {
             state              => $node->getAttr(name => 'externalnode_state'),
@@ -175,92 +207,6 @@ sub getNodes {
     return \@node_hashs;
 }
 
-sub findManager {
-    my $key;
-    my ($class, %args) = @_;
-    my @managers = ();
-
-    if (defined $args{service_provider_id} and $args{service_provider_id} != 1 and $args{category} eq 'Export') {
-        $args{category} = 'Storage';
-    }
-
-    $key = defined $args{id} ? { component_id => $args{id} } : {};
-    $key->{service_provider_id} = $args{service_provider_id} if defined $args{service_provider_id};
-    foreach my $component (Entity::Component->search(hash => $key)) {
-        my $component_type = $component->component_type;
-        if ($component_type->component_category eq $args{category}) {
-            push @managers, {
-                "category"            => $component_type->component_category,
-                "name"                => $component_type->component_name,
-                "id"                  => $component->id,
-                "pk"                  => $component->id,
-                "service_provider_id" => $component->service_provider_id,
-                "host_type"           => $component->can("getHostType") ? $component->getHostType() : "",
-            }
-        }
-    }
-
-    $key = defined $args{id} ? { connector_id => $args{id} } : {};
-    $key->{service_provider_id} = $args{service_provider_id} if defined $args{service_provider_id};
-    foreach my $connector (Entity::Connector->search(hash => $key)) {
-        my $connector_type = $connector->connector_type;
-
-        if ($connector_type->connector_category eq $args{category}) {
-            push @managers, {
-                "category"            => $connector_type->connector_category,
-                "name"                => $connector_type->connector_name,
-                "id"                  => $connector->id,
-                "pk"                  => $connector->id,
-                "service_provider_id" => $connector->service_provider_id,
-                "host_type"           => $connector->can("getHostType") ? $connector->getHostType() : "",
-            }
-        }
-    }
-
-    # Workaround to get the Fileimagemanager0 in the disk manager list of an external equipment.
-    # We really need to fix this.
-#    if (defined $args{service_provider_id} and $args{service_provider_id} != 1) {
-#        if ($args{category} eq 'Storage') {
-#            eval {
-#                $fileimagemanager = Entity::Component::Fileimagemanager0->find(hash => { service_provider_id => 1 });
-#                push @managers, {
-#                     "category"            => 'Storage',
-#                     "name"                => 'Fileimagemanager',
-#                     "id"                  => $fileimagemanager->getAttr(name => "component_id"),
-#                     "pk"                  => $fileimagemanager->getAttr(name => "component_id"),
-#                     "service_provider_id" => $fileimagemanager->getAttr(name => "service_provider_id"),
-#                     "host_type"           => $fileimagemanager->can("getHostType") ? $fileimagemanager->getHostType() : "",
-#                };
-#            };
-#        }
-#    }
-
-    return wantarray ? @managers : \@managers;
-}
-
-sub getServiceProviders {
-    my ($class, %args) = @_;
-    my @providers;
-
-    if (defined $args{category}) {
-        my @managers = $class->findManager(category => $args{category});
-
-        my $service_providers = {};
-        for my $manager (@managers) {
-            my $provider = Entity::ServiceProvider->get(id => $manager->{service_provider_id});
-            if (not exists $service_providers->{$provider->getId}) {
-                $service_providers->{$provider->getId} = $provider;
-            }
-
-            @service_providers = values %$service_providers;
-        }
-    }
-    else {
-        @service_providers = Entity::ServiceProvider->search(hash => {});
-    }
-
-    return wantarray ? @service_providers : \@service_providers;
-}
 
 =head2 addManager
 
@@ -277,7 +223,7 @@ sub addManager {
     General::checkParams(args => \%args, required => [ 'manager_id', "manager_type" ]);
 
     my $manager = ServiceProviderManager->new(
-                      service_provider_id => $self->entity_id,
+                      service_provider_id => $self->id,
                       manager_type        => $args{manager_type},
                       manager_id          => $args{manager_id}
                   );
@@ -307,6 +253,37 @@ sub addManagerParameter {
 
     $cluster_manager->addParams(params => { $args{name} => $args{value} });
 }
+
+
+=pod
+
+=begin classdoc
+
+Set parameters of a manager defined by its type.
+
+@param manager_type the of the manager on which we set the params
+@param params the parameters hash to set 
+
+=end classdoc
+
+=cut
+
+sub addManagerParameters {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "manager_type", "params" ],
+                         optional => { "override" => 0 });
+
+    my $manager = ServiceProviderManager->find(hash => {
+                      manager_type        => $args{manager_type},
+                      service_provider_id => $self->id
+                  });
+
+    $manager->addParams(params => $args{params}, override => $args{override});
+}
+
 
 =head2 getManagerParameters
 
@@ -504,6 +481,72 @@ sub addComponentFromType {
 
     my $component = $comp_class->new();
     return $self->addComponent(component => $component);
+}
+
+=head2 addConnector
+
+link an existing connector with the outside service provider
+
+=cut
+
+sub addConnector {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['connector']);
+
+    my $connector = $args{connector};
+    $connector->setAttr(name  => 'service_provider_id',
+                        value => $self->id);
+    $connector->save();
+
+    return $connector->id;
+}
+
+=head2 addConnectorFromType
+
+Create and link a connector from type to the outside service provider
+
+=cut
+
+sub addConnectorFromType {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['connector_type_id']);
+
+    my $type_id = $args{connector_type_id};
+    my $adm = Administrator->new();
+    my $row = $adm->{db}->resultset('ConnectorType')->find($type_id);
+    my $conn_name = $row->get_column('connector_name');
+    my $conn_class = 'Entity::Connector::'.$conn_name;
+    my $location = General::getLocFromClass(entityclass => $conn_class);
+    eval {require $location };
+    my $connector = $conn_class->new();
+
+    $self->addConnector( connector => $connector );
+
+    return $connector->id;
+}
+
+sub removeConnector {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['connector_id']);
+
+    my $connector = Entity::Connector->get(id => $args{connector_id});
+    $connector->remove;
+
+}
+
+sub getConnectors {
+    my $self = shift;
+    my %args = @_;
+
+    return Entity::Connector->search(
+               hash => { service_provider_id => $self->id }
+           );
 }
 
 1;

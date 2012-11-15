@@ -74,7 +74,7 @@ sub addNode {
                 $log->debug("adding realserver definition in database");
                  my $rsid = $keepalived->addRealserver(
                     virtualserver_id => $vsid,
-                    realserver_ip => $args{host}->getAdminIp,
+                    realserver_ip => $args{host}->adminIp,
                     realserver_port => $port,
                     realserver_checkport => $port,
                     realserver_checktimeout => 15,
@@ -111,7 +111,7 @@ sub addNode {
         foreach my $vs (@$virtualservers) {
             my $rsid = $keepalived->addRealserver(
                 virtualserver_id => $vs->{virtualserver_id},
-                realserver_ip => $args{host}->getAdminIp,
+                realserver_ip => $args{host}->adminIp,
                 realserver_port => $vs->{virtualserver_port},
                 realserver_checkport => $vs->{virtualserver_port},
                 realserver_checktimeout => 15,
@@ -140,13 +140,13 @@ sub preStopNode {
     
     General::checkParams(args => \%args, required => ['host', 'cluster']);
     
-    if ($args{cluster}->getMasterNodeIp() ne $args{host}->getAdminIp()) {
+    if ($args{cluster}->getMasterNodeIp() ne $args{host}->adminIp()) {
         my $keepalived      = $self->_getEntity();
         my $virtualservers  = $keepalived->getVirtualservers();
         
         foreach my $vs (@{$virtualservers}) {
             my $realserver_id = $keepalived->getRealserverId(virtualserver_id   => $vs->{virtualserver_id},
-                                                             realserver_ip      => $args{host}->getAdminIp());
+                                                             realserver_ip      => $args{host}->adminIp());
             
             $keepalived->setRealServerWeightToZero(virtualserver_id => $vs->{virtualserver_id},
                                                    realserver_id    => $realserver_id);
@@ -164,7 +164,7 @@ sub stopNode {
     
     my $keepalived = $self->_getEntity();
     my $masternodeip = $args{cluster}->getMasterNodeIp();
-    if($masternodeip eq $args{host}->getAdminIp) {
+    if($masternodeip eq $args{host}->adminIp) {
         # this host is the masternode so we remove virtualserver definitions
         $log->debug('No master node ip retreived, we are stopping the master node');
         my $virtualservers = $keepalived->getVirtualservers();
@@ -177,7 +177,7 @@ sub stopNode {
         
         foreach my $vs (@{$virtualservers}) {
             my $realserver_id = $keepalived->getRealserverId(virtualserver_id   => $vs->{virtualserver_id},
-                                                             realserver_ip      => $args{host}->getAdminIp());
+                                                             realserver_ip      => $args{host}->adminIp());
             
             $keepalived->removeRealserver(virtualserver_id  => $vs->{virtualserver_id},
                                           realserver_id     => $realserver_id);
@@ -202,7 +202,7 @@ sub cleanNode {
 
     foreach my $vs (@$virtualservers) {
        my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->{virtualserver_id},
-                                                        realserver_ip => $args{host}->getAdminIp);
+                                                        realserver_ip => $args{host}->adminIp);
 
 
        $keepalived->removeRealserver(
@@ -212,7 +212,7 @@ sub cleanNode {
 
     # If masternode then delete virtual server entry in db
     my $masternodeip = $args{cluster}->getMasterNodeIp();
-    if($masternodeip eq $args{host}->getAdminIp) {
+    if($masternodeip eq $args{host}->adminIp) {
         foreach my $vs (@$virtualservers) {
            $keepalived->removeVirtualserver(virtualserver_id => $vs->{virtualserver_id});
         }
@@ -356,7 +356,7 @@ sub postStartNode{
     
     my $keepalived = $self->_getEntity();
     my $masternodeip = $args{cluster}->getMasterNodeIp();
-    if($masternodeip eq $args{host}->getAdminIp) {
+    if($masternodeip eq $args{host}->adminIp) {
         # this host is the masternode so we remove virtualserver definitions
         return;        
     } else {

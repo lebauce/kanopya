@@ -40,23 +40,6 @@ use constant BOOT_POLICIES => {
     boot_on_san  => 'BootOnSan',
 };
 
-sub methods {
-    return {
-        'getHostType'   => {
-            'description'   => 'Return the type of managed hosts.',
-            'perm_holder'   => 'entity'
-        },
-        'scaleHost'     => {
-            'description'   => "scale host's cpu / memory",
-            'perm_holder'   => 'entity'
-        },
-        'migrate'       => {
-            'description'   => "migrate a host",
-            'perm_holder'  => "entity"
-        }
-    };
-}
-
 =head2 checkHostManagerParams
 
 =cut
@@ -219,13 +202,7 @@ sub getBootPolicies {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 getHostType
-
-    Desc: return the name of the host managed by this host manager
-
-=cut
-
-sub getHostType {
+sub hostType {
     return "Host";
 }
 
@@ -236,22 +213,6 @@ sub getHostType {
 =cut
 
 sub getRemoteSessionURL {
-    throw Kanopya::Exception::NotImplemented();
-}
-
-=head2 scaleHost
-
-=cut
-
-sub scaleHost {
-    throw Kanopya::Exception::NotImplemented();
-}
-
-=head2 migrate
-
-=cut
-
-sub migrate {
     throw Kanopya::Exception::NotImplemented();
 }
 

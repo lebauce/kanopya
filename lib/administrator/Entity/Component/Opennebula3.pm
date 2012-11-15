@@ -1,5 +1,5 @@
-# Opennebula3.pm - Opennebula3 component
 #    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,41 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-
-=head1 NAME
-
-<Entity::Component::Opennebula3> <Opennebula3 component concret class>
-
-=head1 VERSION
-
-This documentation refers to <Entity::Component::Opennebula3> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Entity::Component::Opennebula3>;
-
-my $component_instance_id = 2; # component instance id
-
-Entity::Component::Opennebula3->get(id=>$component_instance_id);
-
-# Cluster id
-
-my $cluster_id = 3;
-
-# Component id are fixed, please refer to component id table
-
-my $component_id =2
-
-Entity::Component::Opennebula3->new(component_id=>$component_id, cluster_id=>$cluster_id);
-
-=head1 DESCRIPTION
-
-Entity::Component::Opennebula3 is class allowing to instantiate a Opennebula3 component
-This Entity is empty but present methods to set configuration.
-
-=head1 METHODS
-
-=cut
 
 package Entity::Component::Opennebula3;
 use base "Entity::Component";
@@ -171,6 +136,10 @@ use constant ATTR_DEF => {
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 0,
+    },
+    # TODO: move this virtual attr to HostManager attr def when supported
+    host_type => {
+        is_virtual => 1
     }
 };
 
@@ -192,20 +161,6 @@ sub getBaseConfiguration {
     };
 }
 
-sub methods {
-    return {
-        getHypervisors  => {
-            description => 'get hypervisors',
-            perm_holder => 'entity'
-        },
-        optimiaas  => {
-            description => 'optimize IaaS (packing)',
-            perm_holder => 'entity'
-        },
-    };
-}
-
-
 sub getOvercommitmentFactors {
     my ($self) = @_;
     return {
@@ -214,12 +169,7 @@ sub getOvercommitmentFactors {
     }
 }
 
-
-=head2 getHypervisors
-
-=cut
-
-sub getHypervisors {
+sub hypervisors {
     my $self = shift;
 
     my @hypervisors = Entity::Host::Hypervisor::Opennebula3Hypervisor->search(hash => { opennebula3_id => $self->getId });
@@ -295,10 +245,6 @@ sub getBootPolicies {
     return (Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
             Manager::HostManager->BOOT_POLICIES->{pxe_nfs},
             Manager::HostManager->BOOT_POLICIES->{virtual_disk});
-}
-
-sub getHostType {
-    return "Virtual Machine";
 }
 
 sub getConf {
@@ -561,66 +507,32 @@ sub getRemoteSessionURL {
 
     General::checkParams(args => \%args, required => ['host']);
 
-    return "vnc://" . $args{host}->hypervisor->getAdminIp() . ":" . $args{host}->vnc_port;
+    return "vnc://" . $args{host}->hypervisor->adminIp() . ":" . $args{host}->vnc_port;
 }
 
-=head1 DIAGNOSTICS
-
-Exceptions are thrown when mandatory arguments are missing.
-Exception : Kanopya::Exception::Internal::IncorrectParam
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
-
-=head1 DEPENDENCIES
-
-This module depends of
-
-=over
-
-=item KanopyaException module used to throw exceptions managed by handling programs
-
-=item Entity::Component module which is its mother class implementing global component method
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
+=head2 scaleHost
 
 =cut
+
+sub scaleHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host_id', 'scalein_value', 'scalein_type' ]);
+
+    my $host = Entity->get(id => $args{host_id});
+
+    my $wf_params = {
+        scalein_value => $args{scalein_value},
+        scalein_type  => $args{scalein_type},
+        context       => {
+            host              => $host,
+            cloudmanager_comp => $self
+        }
+    };
+
+    Entity::Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
+                          params => $wf_params);
+}
 
 1;

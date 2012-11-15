@@ -145,7 +145,7 @@ sub validation {
             };
             if ($@) {
                 $log->warn("Unable to get the master kanopya public ip, use the admin ip.");
-                $ip = $kanopya->getMasterNode->getAdminIp;
+                $ip = $kanopya->getMasterNode->adminIp;
             }
 
             my $input;
@@ -178,7 +178,12 @@ sub validation {
                  );
 
             # TODO: Use multi recipient send, instead of sending one mail per subcriber
-            $notifier->notify(user => $subscribtion->subscriber, subject => $subject, message => $message);
+            eval {
+                $notifier->notify(user => $subscribtion->subscriber, subject => $subject, message => $message);
+            };
+            if ($@) {
+                $log->error("Validation notification failled: " . $@);
+            }
         }
     }
 

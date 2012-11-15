@@ -20,18 +20,18 @@ var policies = {
         policy_name : {
             label        : 'Policy name',
             type         : 'text',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         policy_desc : {
             label        : 'Policy description',
             type         : 'textarea',
-            is_mandatory : 0,
+            is_mandatory : 0
         },
         policy_type : {
             label        : 'Policy type',
             type         : 'hidden',
             value        : 'hosting',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         host_provider_id : {
             label        : 'Host provider',
@@ -39,11 +39,12 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'serviceprovider',
+            display      : 'label',
             filters      : {
                 func : 'getServiceProviders',
-                args : { category: 'Cloudmanager' },
+                args : { category: 'Cloudmanager' }
             },
-            depends      : [ 'host_manager_id' ],
+            depends      : [ 'host_manager_id' ]
         },
         host_manager_id : {
             label        : "Host type",
@@ -54,31 +55,31 @@ var policies = {
             parent       : 'host_provider_id',
             filters      : {
                 func : 'findManager',
-                args : { category: 'Cloudmanager' },
+                args : { category: 'Cloudmanager' }
             },
-            display_func : 'getHostType',
+            display      : 'host_type',
             params       : {
                 func : 'getPolicyParams',
-                args : { policy_type: 'hosting' },
-            },
-        },
+                args : { policy_type: 'hosting' }
+            }
+        }
     },
     storage: {
         policy_name : {
             label        : 'Policy name',
             type         : 'text',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         policy_desc : {
             label        : 'Policy description',
             type         : 'textarea',
-            is_mandatory : 0,
+            is_mandatory : 0
         },
         policy_type : {
             label        : 'Policy type',
             type         : 'hidden',
             value        : 'storage',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         storage_provider_id : {
             label        : 'Data store',
@@ -86,11 +87,12 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'serviceprovider',
+            display      : 'label',
             filters      : {
                 func : 'getServiceProviders',
-                args : { category: 'Storage' },
+                args : { category: 'Storage' }
             },
-            depends      : [ 'disk_manager_id' ],
+            depends      : [ 'disk_manager_id' ]
         },
         disk_manager_id : {
             label        : "Storage format",
@@ -101,14 +103,14 @@ var policies = {
             parent       : 'storage_provider_id',
             filters      : {
                 func : 'findManager',
-                args : { category: 'Storage' },
+                args : { category: 'Storage' }
             },
-            display_func : 'getDiskType',
+            display      : 'disk_type',
             params       : {
                 func : 'getPolicyParams',
-                args : { policy_type: 'storage' },
+                args : { policy_type: 'storage' }
             },
-//            depends      : [ 'export_manager_id' ],
+            depends      : [ 'export_manager_id' ]
         },
         export_manager_id : {
             label        : "Export protocol",
@@ -116,61 +118,56 @@ var policies = {
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
             entity       : 'component',
-            parent       : 'storage_provider_id',
+            parent       : 'disk_manager_id',
             filters      : {
-                func : 'findManager',
-                args : { category: 'Export' },
+                func : 'getExportManagers'
             },
-//            parent       : 'disk_manager_id',
-//            filters      : {
-//                func : 'getExportManagers',
-//            },
-            display_func : 'getExportType',
-        },
+            display      : 'export_type'
+        }
     },
     network: {
         policy_name : {
             step         : 'Policy',
             label        : 'Policy name',
             type         : 'text',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         policy_desc : {
             step         : 'Policy',
             label        : 'Policy description',
             type         : 'textarea',
-            is_mandatory : 0,
+            is_mandatory : 0
         },
         policy_type : {
             step         : 'Policy',
             label        : 'Policy type',
             type         : 'hidden',
             value        : 'network',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         cluster_domainname : {
             step         : 'Policy',
             label        : 'Domain name',
             type         : 'text',
-            pattern      : '^[a-z0-9-]+(\\.[a-z0-9-]+)+$',
+            pattern      : '^[a-z0-9-]+(\\.[a-z0-9-]+)+$'
         },
         cluster_nameserver1 : {
             step         : 'Policy',
             label        : 'Name server 1',
             type         : 'text',
-            pattern      : '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$',
+            pattern      : '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
         },
         cluster_nameserver2 : {
             step         : 'Policy',
             label        : 'Name server 2',
             type         : 'text',
-            pattern      : '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$',
+            pattern      : '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
         },
         network_interface : {
             step         : 'Interfaces',
             type         : 'composite',
             set          : 'Interfaces',
-            add_label    : 'Add a network interface',
+            add_label    : 'Add a network interface'
         },
         interface_role : {
             label        : 'Interface role',
@@ -178,54 +175,54 @@ var policies = {
             entity       : 'interfacerole',
             display      : 'interface_role_name',
             composite    : 'network_interface',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         default_gateway : {
             label        : 'Default gateway',
             type         : 'radio',
-            composite    : 'network_interface',
+            composite    : 'network_interface'
         },
         interface_networks : {
             label        : 'Network',
             type         : 'select',
             entity       : 'network',
             display      : 'network_name',
-            composite    : 'network_interface',
-        },
+            composite    : 'network_interface'
+        }
     },
     system: {
         policy_name : {
             step         : 'Policy',
             label        : 'Policy name',
             type         : 'text',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         policy_desc : {
             step         : 'Policy',
             label        : 'Policy description',
             type         : 'textarea',
-            is_mandatory : 0,
+            is_mandatory : 0
         },
         policy_type : {
             step         : 'Policy',
             label        : 'Policy type',
             type         : 'hidden',
             value        : 'system',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         masterimage_id : {
             step         : 'Policy',
             label        : 'Master image',
             type         : 'select',
             entity       : 'masterimage',
-            display      : 'masterimage_name',
+            display      : 'masterimage_name'
         },
         kernel_id : {
             step         : 'Policy',
             label        : 'Kernel',
             type         : 'select',
             entity       : 'kernel',
-            display      : 'kernel_name',
+            display      : 'kernel_name'
         },
         systemimage_size : {
             step         : 'Policy',
@@ -237,18 +234,18 @@ var policies = {
         cluster_si_shared : {
             step         : 'Policy',
             label        : 'System image shared',
-            type         : 'checkbox',
+            type         : 'checkbox'
         },
         cluster_si_persistent : {
             step         : 'Policy',
             label        : 'Persistent system images',
-            type         : 'checkbox',
+            type         : 'checkbox'
         },
         cluster_basehostname : {
             step         : 'Policy',
             label        : 'Cluster base hostname',
             type         : 'text',
-            pattern      : '^[a-z_0-9]+$',
+            pattern      : '^[a-z_0-9]+$'
         },
         component_type : {
             step         : 'Components',
@@ -257,41 +254,41 @@ var policies = {
             entity       : 'componenttype',
             display      : 'component_name',
             set          : 'Components',
-            add_label    : 'Add a component',
-        },
+            add_label    : 'Add a component'
+        }
     },
     scalability: {
         policy_name : {
             label        : 'Policy name',
             type         : 'text',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         policy_desc : {
             label        : 'Policy description',
             type         : 'textarea',
-            is_mandatory : 0,
+            is_mandatory : 0
         },
         policy_type : {
             label        : 'Policy type',
             type         : 'hidden',
             value        : 'scalability',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         cluster_min_node : {
             label        : 'Minimum node number',
             type         : 'text',
-            pattern      : '^[1-9][0-9]*$',
+            pattern      : '^[1-9][0-9]*$'
         },
         cluster_max_node : {
             label        : 'Maximum node number',
             type         : 'text',
-            pattern      : '^[1-9][0-9]*$',
+            pattern      : '^[1-9][0-9]*$'
         },
         cluster_priority : {
             label        : 'Cluster priority',
             type         : 'text',
-            pattern      : '^[1-9][0-9]*$',
-        },
+            pattern      : '^[1-9][0-9]*$'
+        }
     },
     billing: {
         policy_name     : {
@@ -343,7 +340,7 @@ var policies = {
             label       : 'Type',
             options     : {
                 'cpu' : 'cpu',
-                'ram' : 'ram',
+                'ram' : 'ram'
             },
             is_mandatory: 1
         },
@@ -399,28 +396,28 @@ var policies = {
             step         : 'Policy',
             label        : 'Policy name',
             type         : 'text',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         policy_desc : {
             step         : 'Policy',
             label        : 'Policy description',
             type         : 'textarea',
-            is_mandatory : 0,
+            is_mandatory : 0
         },
         policy_type : {
             step         : 'Policy',
             label        : 'Policy type',
             type         : 'hidden',
             value        : 'orchestration',
-            is_mandatory : 1,
+            is_mandatory : 1
         },
         monitoring : {
             step         : 'Monitoring',
-            type         : 'hidden',
+            type         : 'hidden'
         },
         rules : {
             step         : 'Rules',
-            type         : 'hidden',
+            type         : 'hidden'
         }
     }
 }

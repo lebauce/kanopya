@@ -110,7 +110,7 @@ return all known resources.
 @param vm the target vm
 @param resources an array containing the desired resources
 
-@return \%vms_ressources
+@return \%vms_resources
 
 =end classdoc
 

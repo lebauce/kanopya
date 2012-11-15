@@ -117,11 +117,11 @@ sub methods {
     return {
         validate => {
             description => 'Validate the operation execution.',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
         },
         deny => {
             description => 'Deny the operation execution.',
-            perm_holder => 'entity'
+            perm_holder => 'entity',
         }
     };
 }
@@ -165,8 +165,8 @@ sub new {
 
     # If workflow not defined, initiate a new one with parameters
     if (not defined $args{workflow_id}) {
-        my $workflow = Entity::Workflow->new();
-        $args{workflow_id} = $workflow->getAttr(name => 'workflow_id');
+        my $workflow = Entity::Workflow->new(workflow_name => $args{type});
+        $args{workflow_id} = $workflow->id;
     }
 
     # Compute the execution time if required

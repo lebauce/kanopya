@@ -44,35 +44,31 @@ function loadServicesDetails(cid, eid, is_iaas) {
     var managerstable   = $('<table>').appendTo(div);
 
     $.ajax({
-        url     : '/api/serviceprovider/' + eid + '/getManagers',
-        type    : 'POST',
+        url     : '/api/serviceprovider/' + eid + '/service_provider_managers?expand=manager,manager.class_type',
+        type    : 'GET',
         success : function(data) {
             for (var i in data) if (data.hasOwnProperty(i)) {
-                var tr  = $('<tr>').appendTo(managerstable);
+                var tr = $('<tr>').appendTo(managerstable);
 
-                // Ugly test to handle both managers type component/connector
-                if (data[i].component_type_id) {
-                    $.ajax({
-                        url     : '/api/componenttype/' + data[i].component_type_id,
-                        success : function(line) {
-                            return (function(component_type) {
-                                $(line).append($('<th>', { text : component_type.component_category + ' : ' }))
-                                       .append($('<td>', { text : component_type.component_name }));
-                            });
-                        }(tr)
-                    });
+                // Here is a workaround to handle both type of manager: component and connector
+                // This will disapear in a future version of the kanopya model.
+                var type;
+                if ((new RegExp('^Entity::Component')).test(data[i].manager.class_type.class_type)) {
+                    type = 'component';
                 } else {
-                    $.ajax({
-                        url     : '/api/connectortype/' + data[i].connector_type_id,
-                        success : function(line) {
-                            return (function(connector_type) {
-                                $(line).append($('<th>', { text : connector_type.connector_category + ' : ' }))
-                                       .append($('<td>', { text : connector_type.connector_name }));
-                            });
-                        }(tr)
-                    });
-
+                    type = 'connector';
                 }
+
+                var component_or_connector;
+                $.ajax({
+                    url     : '/api/' + type + '/' + data[i].manager_id + '?expand=' + type + '_type',
+                    async   : false,
+                    success : function(data) {
+                        component_or_connector = data;
+                    }
+                });
+                $(tr).append($('<th>', { text : component_or_connector[type + '_type'][type + '_category'] + ' : ' }))
+                     .append($('<td>', { text : component_or_connector[type + '_type'][type + '_name'] }));
             }
         }
     });

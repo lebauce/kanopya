@@ -1,6 +1,7 @@
 require('jquery/jquery.form.js');
 require('jquery/jquery.form.wizard.js');
 require('common/general.js');
+require('common/service_common.js');
 
 function createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
     function createParameterList(parameters) {
@@ -165,41 +166,36 @@ function deleteWorkflowDef(workflowdef_id) {
 }
 
 function sco_workflow(container_id) {
-    var container       = $("#" + container_id);
-    var connectorTypeId;
-    $.ajax({
-        type        : 'POST',
-        url         : '/api/serviceprovider/findManager',
-        contentType : 'application/json',
-        data        : JSON.stringify({ 'category' : 'WorkflowManager' }),
-        success     : function(data) {
-            var workflowmanagers    = data;
-            for (var i in workflowmanagers) if (workflowmanagers.hasOwnProperty(i)) {
-                $.ajax({
-                    url     : '/api/serviceprovider/' + workflowmanagers[i].service_provider_id,
-                    type    : 'GET',
-                    async   : false,
-                    success : function(data) {
-                        workflowmanagers[i].service_provider        = data;
-                        workflowmanagers[i].service_provider_name   = data.label;
-                    }
-                });
+    var container = $("#" + container_id);
+
+    var workflowmanagers = findManager('WorkflowManager');
+    for (var i in workflowmanagers) if (workflowmanagers.hasOwnProperty(i)) {
+        $.ajax({
+            url     : '/api/serviceprovider/' + workflowmanagers[i].service_provider_id,
+            type    : 'GET',
+            async   : false,
+            success : function(data) {
+                workflowmanagers[i].service_provider      = data;
+                workflowmanagers[i].service_provider_name = data.label;
+                workflowmanagers[i].name = workflowmanagers[i].component_type ? workflowmanagers[i].component_type.component_name : workflowmanagers[i].connector_type.connector_name
+                workflowmanagers[i].id = workflowmanagers[i].pk;
             }
-            create_grid({
-                grid_id                 : 'workflowmanagement',
-                content_container_id    : container_id,
-                caption                 : 'Workflow manager',
-                colNames                : [ 'Id', 'Service', 'Type' ],
-                colModel                : [
-                    { name : 'id', index : 'id', width : 60, sorttype : 'int', hidden : true },
-                    { name : 'service_provider_name', index : 'service_provider_name'},
-                    { name : 'name', index : 'name' },
-                ],
-                data                    : workflowmanagers,
-                action_delete           : 'no'
-            });
-        }
+        });
+    }
+    create_grid({
+        grid_id                 : 'workflowmanagement',
+        content_container_id    : container_id,
+        caption                 : 'Workflow manager',
+        colNames                : [ 'Id', 'Service', 'Type' ],
+        colModel                : [
+            { name : 'id', index : 'id', width : 60, sorttype : 'int', hidden : true },
+            { name : 'service_provider_name', index : 'service_provider_name'},
+            { name : 'name', index : 'name' },
+        ],
+        data                    : workflowmanagers,
+        action_delete           : 'no'
     });
+
     $(container).append(createWorkflowRuleAssociationButton())
 }
 
@@ -259,21 +255,23 @@ function workflowRuleConfigure(wfdef_id) {
     }
 
     $.ajax({
-        type    :'POST',
-        url     : 'api/workflowdef/' + wfdef_id + '/getParamPreset',
+        type    : 'GET',
+        url     : '/api/workflowdef/' + wfdef_id,
         success : function(data) {
-            param_preset = data;
-            if (data.specific === null) {
+            param_preset = data.param_presets;
+            if (param_preset.specific === null) {
                 alert('This workflow has no parameter');
                 return;
             }
             $.get(
-                    'api/workflowdef/' + wfdef_id + '/workflow_def_origin',
+                    '/api/workflowdef/' + wfdef_id + '/workflow_def_origin',
                     function(wf_origin) {
-                        $.post(
-                                'api/workflowdef/' + wf_origin.pk + '/getParamPreset',
-                                function (origin_params) {
-                                    $.each(data.specific, function(k,v) {
+                        $.get(
+                                '/api/workflowdef/' + wf_origin.pk,
+                                function (data) {
+                                    var origin_params = data.param_presets;
+
+                                    $.each(param_preset.specific, function(k,v) {
                                         var field_info  = origin_params.specific[k];
                                         var line        = $("<tr>").appendTo(form);
                                         $(line).append($("<td>").append($("<label>", {
@@ -407,14 +405,12 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
     }
 
     $.ajax({
-        url         : '/api/serviceprovider/' + serviceprovider_id + '/getManager',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ 'manager_type' : 'workflow_manager' }),
+        url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?manager_type=workflow_manager',
+        type        : 'GET',
         success     : function(data) {
             manager = data;
             $.ajax({
-                    url         : '/api/entity/' + manager.pk + '/getWorkflowDefs',
+                    url         : '/api/entity/' + manager.manager_id + '/getWorkflowDefs',
                     type        : 'POST',
                     contentType : 'application/json',
                     data        : JSON.stringify({ 'no_associate' : 1 }),
@@ -427,9 +423,10 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
                             $(select).bind('change', createForm);
                             $(data).each( function() {
                                 var wfd = this;
-                                $.post(
-                                        '/api/workflowdef/' + wfd.pk + '/getParamPreset',
-                                        function(wfd_params) {
+                                $.get(
+                                        '/api/workflowdef/' + wfd.pk,
+                                        function(data) {
+                                            var wfd_params = data.param_presets;
                                             if (wfd_params.internal && wfd_params.internal.scope_id == scid) {
                                                   wfd.specificparams  = wfd_params.specific;
                                                   wfdefs.push(wfd);
@@ -462,17 +459,15 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
 
 function workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
     $.ajax({
-        url         : '/api/serviceprovider/' + serviceprovider_id + '/getManager',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ 'manager_type' : 'workflow_manager' }),
+        url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?manager_type=workflow_manager',
+        type        : 'GET',
         success     : function(manager) {
             var params = {
                     workflow_def_id : wfdef_id,
                     rule_id         : rule_id
             };
             $.ajax({
-                url         : '/api/entity/' + manager.pk + '/deassociateWorkflow',
+                url         : '/api/entity/' + manager.manager_id + '/deassociateWorkflow',
                 type        : 'POST',
                 contentType : 'application/json',
                 data        : JSON.stringify(params),
@@ -499,11 +494,11 @@ function appendWorkflowActionsButtons(elem, cid, rule_id, wfdef_id, serviceprovi
 
 function workflowslist(cid, eid) {
     $.ajax({
-        url     : '/api/serviceprovider/' + eid + '/getWorkflows',
-        type    : 'POST',
+        url     : '/api/workflow?related_id=' + eid,
+        type    : 'GET',
         success : function(data) {
             for (var i in data) if (data.hasOwnProperty(i)) {
-                data[i].currentOperation    = 'Loading...';
+                data[i].currentOperation = 'Loading...';
             }
             create_grid({
                 content_container_id    : cid,
@@ -513,14 +508,15 @@ function workflowslist(cid, eid) {
                 colNames                : [ 'Id', 'Name', 'State', 'Current Operation' ],
                 afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
                     $.ajax({
-                        url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
-                        type    : 'POST',
+                        url     : '/api/operation?workflow_id=' + rowdata.pk + '&state=<>,succeeded&order_by=execution_rank%20ASC',
+                        type    : 'GET',
                         success : function(data) {
-                            rowelem.currentOperation    = data.type;
+                            var operation = data[0];
+                            rowelem.currentOperation = operation.label ? operation.label : operation.type;
                             $(grid).setCell(rowid, 'currentOperation', rowelem.currentOperation);
                         }
                     });
-                },
+                },  
                 colModel                : [
                     { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
                     { name : 'workflow_name', index : 'workflow_name' },
@@ -542,10 +538,11 @@ function runningworkflowslist(cid, eid) {
         colNames             : [ 'Id', 'Name', 'Current Operation', 'Step' ],
         afterInsertRow       : function(grid, rowid, rowdata, rowelem) {
             $.ajax({
-                url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
-                type    : 'POST',
+                url     : '/api/operation?workflow_id=' + rowdata.pk + '&state=<>,succeeded&order_by=execution_rank%20ASC',
+                type    : 'GET',
                 success : function(data) {
-                    rowelem.currentOperation    = data.type;
+                    var operation = data[0];
+                    rowelem.currentOperation = operation.label ? operation.label : operation.type;
                     $(grid).setCell(rowid, 'currentOperation', rowelem.currentOperation);
                 }
             });
@@ -589,10 +586,11 @@ function workflowsoverview(cid, eid) {
         afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
             if (rowdata.state != 'done') {
                 $.ajax({
-                    url     : '/api/workflow/' + rowdata.pk + '/getCurrentOperation',
-                    type    : 'POST',
+                    url     : '/api/operation?workflow_id=' + rowdata.pk + '&state=<>,succeeded&order_by=execution_rank%20ASC',
+                    type    : 'GET',
                     success : function(data) {
-                        $(grid).setCell(rowid, 'currentOperation', data.type);
+                        var operation = data[0];
+                        $(grid).setCell(rowid, 'currentOperation', operation.label ? operation.label : operation.type);
                     }
                 });
             } else {

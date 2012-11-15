@@ -14,10 +14,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Profile;
+use base 'BaseDB';
 
 use strict;
 use warnings;
-use base 'BaseDB';
+
 
 use constant ATTR_DEF => {
     profile_name => {
@@ -27,7 +28,6 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 1
     },
-    
     profile_desc => {
         label        => 'Description',
         type         => 'text',

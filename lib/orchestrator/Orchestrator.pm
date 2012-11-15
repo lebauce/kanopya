@@ -61,7 +61,7 @@ use Entity::AggregateRule;
 use Entity::NodemetricRule;
 use Entity::NodemetricCondition;
 use Entity::Combination::NodemetricCombination;
-use WorkflowDef;
+use Entity::WorkflowDef;
 use WorkflowNoderule;
 use Entity::Workflow;
 use Message;
@@ -503,8 +503,8 @@ sub clustermetricManagement{
                     }
                     elsif ( $aggregate_rule->aggregate_rule_state eq 'triggered' ) {
                         my $wf_def_id = $aggregate_rule->getAttr(name => 'workflow_def_id');
-                        my $wf_def    = WorkflowDef->get(id => $wf_def_id);
-                        my $wf_params = $wf_def->getParamPreset();
+                        my $wf_def    = Entity::WorkflowDef->get(id => $wf_def_id);
+                        my $wf_params = $wf_def->paramPresets;
                         my $delay = $wf_params->{specific}->{delay};
                         $log->info('wf_params = '.(Dumper $wf_params));
 
@@ -609,7 +609,7 @@ sub manage {
 
         eval {
             #TODO keep cluster id from the beginning (get by name is not really good)
-            my $cluster_id = Entity::ServiceProvider::Inside::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
+            my $cluster_id = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => $cluster })->id;
 
             my $rules_manager = $self->{_admin}->{manager}{rules};
 
@@ -1055,7 +1055,7 @@ sub getClusterByName {
     my $self = shift;
     my %args = @_;
 
-       my @cluster = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { cluster_name => $args{cluster_name} } );
+       my @cluster = Entity::ServiceProvider::Inside::Cluster->search(hash => { cluster_name => $args{cluster_name} });
        die "More than one cluster with the name '$args{cluster_name}'" if ( 1 < @cluster);
        die "Cluster with name '$args{cluster_name}' no longer exists" if ( 0 == @cluster);
        return pop @cluster;

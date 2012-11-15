@@ -30,7 +30,7 @@ sub configureNode {
 
     # Generation of memcached.conf
     my $data = { connection_port => $conf->{memcached1_port},
-                 listening_address => $args{host}->getAdminIp };
+                 listening_address => $args{host}->adminIp };
 
     my $file = $self->generateNodeFile(
         cluster       => $cluster,

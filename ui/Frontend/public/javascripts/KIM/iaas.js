@@ -30,7 +30,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
         return;
     }
     $.ajax({
-        url     : '/api/entity/' + cloudmanagerid + '/getHypervisors',
+        url     : '/api/entity/' + cloudmanagerid + '/hypervisors',
         type    : 'POST',
         success : function(data) {
             var topush  = [];
@@ -41,12 +41,9 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 data[i].type    = 'hypervisor';
                 data[i].vmcount = 0;
                 $.ajax({
-                    async       : false,
-                    url         : '/api/entity/' + data[i].id + '/getVms',
-                    type        : 'POST',
-                    contentType : 'application/json',
-                    data        : JSON.stringify({ }),
-                    success     : function(hyp) {
+                    async   : false,
+                    url     : '/api/host/' + data[i].id + '/virtual_machines',
+                    success : function(hyp) {
                         return (function(vms) {
                             hyp.totalRamUsed    = 0;
                             hyp.totalCoreUsed   = 0;
@@ -115,11 +112,11 @@ function displayAdminIps() {
     for (var i in dataIds) if (dataIds.hasOwnProperty(i)) {
         var rowData = $(grid).jqGrid('getRowData', dataIds[i]);
         $.ajax({
-            url     : '/api/host/' + rowData.entity_id + '/getAdminIp',
-            type    : 'POST',
+            url     : '/api/host/' + rowData.entity_id,
+            type    : 'GET',
             success : function(grid, rowid) {
                 return function(data) {
-                    $(grid).jqGrid('setCell', rowid, 'adminip', data);
+                    $(grid).jqGrid('setCell', rowid, 'adminip', data.admin_ip);
                 };
             }(grid, dataIds[i])
         });
@@ -208,57 +205,50 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
 
 function load_iaas_content (container_id) {
     require('common/formatters.js');
-    $.ajax({
-        url         : '/api/serviceprovider/getServiceProviders',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ category : 'Cloudmanager' }),
-        success     : function(data) {
-            var iaas    = [];
-            $.ajax({
-                url         : '/api/serviceprovider/findManager',
-                type        : 'POST',
-                contentType : 'application/json',
-                data        : JSON.stringify({ category : 'Cloudmanager' }),
-                success     : function(managers) {
-                    for (var i in data) if (data.hasOwnProperty(i)) {
-                        for (var j in managers) if (managers.hasOwnProperty(j)) {
-                            if (managers[j].service_provider_id === data[i].pk) {
-                                if (managers[j].host_type === "Virtual Machine") {
-                                    data[i].cloudmanager    = managers[j];
-                                    iaas.push(data[i]);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    var tabs    = [];
-                    // Add the same tabs than 'Services'
-                    jQuery.extend(true, tabs, mainmenu_def.Services.jsontree.submenu);
-                    // Add the tab 'Hypervisor'
-                    tabs.push({label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor });
-                    // change details tab callback to inform we are in IAAS mode
-                    var details_tab = $.grep(tabs, function (e) {return e.id == 'service_details'});
-                    details_tab[0].onLoad = function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid, 1);};
+    var iaas   = [];
+    var iaases = getServiceProviders('Cloudmanager');
+    for (var i in iaases) {
+        for (var component in iaases[i].components) {
+            var component = iaases[i].components[component];
+            if (component.component_type.component_category === 'Cloudmanager' &&
+                component.host_type === 'Virtual Machine') {
+                iaases[i].cloudmanager = component;
+                iaas.push(iaases[i]);
+            }
+        }
+        for (var connector in iaases[i].connectors) {
+            var connector = iaases[i].connectors[connector];
+            if (connector.connector_type.connector_category === 'Cloudmanager' &&
+                connector.host_type === 'Virtual Machine') {
+                iaases[i].cloudmanager = connector;
+                iaas.push(iaases[i]);
+            }
+        }
+    }
 
-                    create_grid({
-                        data                    : iaas,
-                        content_container_id    : container_id,
-                        grid_id                 : 'iaas_list',
-                        colNames                : [ 'ID', 'Name', 'State', 'ManagerID' ],
-                        colModel                : [
-                            { name : 'pk', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
-                            { name : 'cluster_name', index : 'cluster_name', width : 200 },
-                            { name : 'cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter },
-                            { name : 'cloudmanager.pk', index : 'cloudmanager.pk', width : 60, hidden : true, sorttype : 'int' }
-                        ],
-                        details                 : {
-                            noDialog    : true,
-                            tabs        : tabs
-                        }
-                    });
-                }
-            });
+    var tabs = [];
+    // Add the same tabs than 'Services'
+    jQuery.extend(true, tabs, mainmenu_def.Services.jsontree.submenu);
+    // Add the tab 'Hypervisor'
+    tabs.push({label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor });
+    // change details tab callback to inform we are in IAAS mode
+    var details_tab = $.grep(tabs, function (e) {return e.id == 'service_details'});
+    details_tab[0].onLoad = function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid, 1);};
+
+    create_grid({
+        data                    : iaas,
+        content_container_id    : container_id,
+        grid_id                 : 'iaas_list',
+        colNames                : [ 'ID', 'Name', 'State', 'ManagerID' ],
+        colModel                : [
+            { name : 'pk', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
+            { name : 'cluster_name', index : 'cluster_name', width : 200 },
+            { name : 'cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter },
+            { name : 'cloudmanager.pk', index : 'cloudmanager.pk', width : 60, hidden : true, sorttype : 'int' }
+        ],
+        details                 : {
+            noDialog    : true,
+            tabs        : tabs
         }
     });
 }

@@ -139,6 +139,7 @@ CREATE TABLE `service_provider_manager` (
   `param_preset_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_provider_manager_id`),
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`manager_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`param_preset_id`),
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -668,11 +669,12 @@ CREATE TABLE `workflow` (
 --
 
 CREATE TABLE `workflow_def` (
-  `workflow_def_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `workflow_def_id` int(8) unsigned NOT NULL,
   `workflow_def_name` char(64) DEFAULT NULL,
   `param_preset_id` int(8) unsigned DEFAULT NULL,
   `workflow_def_origin` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`workflow_def_id`),
+  FOREIGN KEY (`workflow_def_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`workflow_def_name`),
   KEY (`param_preset_id`),
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -861,6 +863,16 @@ CREATE TABLE `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `customer`
+-- Entity::User::Customer class
+
+CREATE TABLE `customer` (
+  `customer_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`customer_id`),
+  FOREIGN KEY (`customer_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `user_extension`
 
 CREATE TABLE `user_extension` (
@@ -915,7 +927,6 @@ CREATE TABLE `gp` (
   `gp_name` char(32) NOT NULL,
   `gp_type` char(32) NOT NULL,
   `gp_desc` char(255) DEFAULT NULL,
-  `gp_system` int(1) unsigned NOT NULL,
   PRIMARY KEY (`gp_id`),
   FOREIGN KEY (`gp_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`gp_name`)
@@ -1076,7 +1087,7 @@ CREATE TABLE `connector` (
   PRIMARY KEY (`connector_id`),
   FOREIGN KEY (`connector_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`service_provider_id`),
-  FOREIGN KEY (`service_provider_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`connector_type_id`),
   FOREIGN KEY (`connector_type_id`) REFERENCES `connector_type` (`connector_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -333,10 +333,22 @@ sub _getDbixFromHash {
         $args{page} = 1;
     }
 
+    # Catch specifics warnings to avoid Dancer to raise an error 500 on warnings
+    $SIG{__WARN__} = sub {
+        my $warn_msg = $_[0];
+        if ($warn_msg =~ m/Prefetching multiple has_many rel/) {
+            $log->warn($warn_msg);
+        }
+        else {
+            #arn $warn_msg;
+        }
+    };
+
     my $dbix;
     eval {
         $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
-                                                                { prefetch => $args{join},
+                                                                { prefetch => $args{prefetch},
+                                                                  join     => $args{join},
                                                                   rows     => $args{rows},
                                                                   page     => $args{page},
                                                                   order_by => $args{order_by} });

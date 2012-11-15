@@ -1,4 +1,4 @@
-# Copyright fazf© 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2012 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -54,15 +54,6 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-sub methods {
-    return {
-        'addParams'   => {
-            'description'   => 'addParams',
-            'perm_holder'   => 'entity'
-        }
-    };
-}
 
 sub addParams {
     my $self = shift;
