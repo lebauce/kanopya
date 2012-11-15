@@ -27,7 +27,7 @@
     </aggregator.conf>
     
     <libkanopya.conf template="libkanopya.conf.tt">
-        <datas db_user="dbuser" admin_password="dbpassword1" logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" dbport="dbport" dbip="dbip" dmz_net_add="dmz_net_add" dmz_net_mask="dmz_net_mask"/>
+        <datas crypt_salt ="crypt_salt" db_user="dbuser" admin_password="dbpassword1" logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" dbport="dbport" dbip="dbip" dmz_net_add="dmz_net_add" dmz_net_mask="dmz_net_mask"/>
     </libkanopya.conf>
     
     <monitor.conf template="monitor.conf.tt">

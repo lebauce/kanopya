@@ -49,6 +49,8 @@ my $tmp_monitor      = 'C:\tmp\monitor\graph\\';
 my $tmp_orchestrator = 'C:\tmp\orchestrator\graph\\';
 my $timedata_dir     = 'C:\tmp\monitor\TimeData\\';
 
+my $crypt_salt = join '', ('.','/',0..9,'A'..'Z','a'..'z')[rand 64, rand 64];
+
 my %conf_data = (
     logdir                     => $log_directory,
     internal_net_add           => '10.0.1.0',
@@ -59,16 +61,16 @@ my %conf_data = (
     dbport                     => '3306',
     dbip                       => '127.0.0.1',
     admin_password             => 'K4n0pY4', 
-    kanopya_server_domain_name => 'hostname',
+    kanopya_server_domain_name => 'kanopya.localdomain',
     db_name                    => 'kanopya',
     db_pwd                     => 'K4n0pY4',
+	crypt_salt				   => $crypt_salt,
 );
 
 #Welcome message - accepting Licence is mandatory
 welcome();
 
 #generation of configuration files
-my $crypt_salt = join '', ('.','/',0..9,'A'..'Z','a'..'z')[rand 64, rand 64];
 genConf();
 
 ###########################
@@ -77,9 +79,15 @@ genConf();
 
 #init PERL5LIB
 print 'initialazing PERL5LIB'."\n";
-my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\ui\\lib;$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external"];
+my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external;$kanopya_dir\\kanopya\\lib\\external\\NetApp"];
 print $cmd."\n";
 my $exec = `$cmd 2>&1`;
+
+#export PERL5LIB
+print 'exporting PERL5LIB'."\n";
+$cmd = '$Env:PERL5LIB = ' . "\"$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external;$kanopya_dir\\kanopya\\lib\\external\\NetApp\"";
+print $cmd."\n";
+$exec = `$cmd 2>&1`;
 
 print $exec."\n";
 print 'You will have to restart a shell session to enjoy the newly configured PERL5LIB in it'."\n";
@@ -108,8 +116,7 @@ createDir('time data temp', $timedata_dir);
 ################
 
 #Data.sql generation
-my @kanopya_pvs;
-
+my @kanopya_pvs = ('kanopya_pv_name');
 my %db_data = (
     kanopya_vg_name          => 'vg1',
     kanopya_vg_size          => '100',
@@ -118,9 +125,10 @@ my %db_data = (
     ipv4_internal_ip         => '192.168.100.100',
     ipv4_internal_netmask    => $conf_data{internal_net_mask},
     ipv4_internal_network_ip => $conf_data{internal_net_add},
+	admin_interface          => 'eth0',
     admin_domainname         => $conf_data{kanopya_server_domain_name},
     mb_hw_address            => 'FF:FF:FF:FF:FF:FF',
-    admin_password           => crypt($conf_data{admin_password}, '$6$'.$crypt_salt.'$'),
+    admin_password           => $conf_data{admin_password},
     admin_kernel             => '2.39',
     tmstp                    => time(),
     poolip_addr              => '10.0.0.1',
@@ -199,18 +207,10 @@ print "components DB schemas loaded\n";
 $/ = "\n"; 
 
 #And to conclude, we insert initial datas in the DB
-print "inserting initial datas...";
-$cmd  = "mysql -u $db_user -p$db_pwd < \"$conf_vars->{data_sql}\""; 
-$exec = `$cmd 2>&1`;
-print "done\n";
-
-# Populate DB with more data (perl script instead of sql)
-print "populate database...";
-require PopulateDB;
-populateDB(login    => $db_user,
-           password => $db_pwd,
-           %db_data);
-print "done\n";
+#print "inserting initial datas...";
+#$cmd  = "mysql -u $db_user -p$db_pwd < \"$conf_vars->{data_sql}\""; 
+#$exec = `$cmd 2>&1`;
+#print "done\n";
 
 #######################
 #Service configuration#
@@ -231,7 +231,6 @@ chop($kanopya_dir);
 while (my ($service,$file) = each %$services) {
     print 'installing '."$service ... \n";
     my $cmd = qq[perl.exe "$service_dir$file" -i "$kanopya_dir" $login $pwd];
-
     eval {
         system($cmd);
     };
@@ -253,6 +252,14 @@ while (my ($service,$file) = each %$services) {
         }
     }
 }
+
+# Populate DB with more data (perl script instead of sql)
+print "populate database...";
+require PopulateDB;
+populateDB(login    => $db_user,
+           password => $db_pwd,
+           %db_data);
+print "done\n";
 
 # Dancer configuration
 useTemplate(
@@ -281,7 +288,7 @@ sub welcome {
     print "This script will configure your Kanopya instance\n";
     print "We advise to install Kanopya instance on a dedicated server\n";
     print "First please validate the user licence\n";
-    getLicence();
+    #getLicence();
     print "Do you accept the licence ? (y/n)\n";
     chomp($validate_licence = <STDIN>);
     exit if ($validate_licence ne 'y');
