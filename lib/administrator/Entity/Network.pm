@@ -27,6 +27,18 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 0,
     },
+    network_addr => {
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+    },
+    network_netmask => {
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+    },
+    network_gateway => {
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+    },
 };
 
 sub methods {

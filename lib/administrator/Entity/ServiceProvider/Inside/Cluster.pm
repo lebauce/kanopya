@@ -506,7 +506,8 @@ sub configureInterfaces {
     if (defined $args{interfaces}) {
         for my $interface_pattern (values %{ $args{interfaces} }) {
             if ($interface_pattern->{interface_role}) {
-                my $role = Entity::InterfaceRole->get(id => $interface_pattern->{interface_role});
+#                my $role = Entity::InterfaceRole->get(id => $interface_pattern->{interface_role});
+                my $role;
 
                 # TODO: This mechanism do not allows to define many interfaces
                 #       with the same role within policies.

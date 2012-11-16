@@ -22,7 +22,6 @@ use strict;
 use warnings;
 
 use ParamPreset;
-use Entity::InterfaceRole;
 use Entity::ServiceProvider::Inside::Cluster;
 
 use Data::Dumper;
@@ -153,8 +152,9 @@ sub buildPatternFromHash {
             # Handle networks interfaces
             elsif ($name =~ m/^interface_role_/) {
                 # Get the intefrace role name
-                my $role_name = Entity::InterfaceRole->get(id => $args{hash}->{$name})->getAttr(name => 'interface_role_name');
-                $pattern{interfaces}->{$role_name}->{interface_role} = $args{hash}->{$name};
+                 my $role_name;
+#                my $role_name = Entity::InterfaceRole->get(id => $args{hash}->{$name})->getAttr(name => 'interface_role_name');
+#                $pattern{interfaces}->{$role_name}->{interface_role} = $args{hash}->{$name};
 
                 my $interface_index = $name;
                 $interface_index =~ s/^interface_role_//g;

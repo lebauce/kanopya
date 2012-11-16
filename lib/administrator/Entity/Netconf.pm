@@ -15,27 +15,25 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Entity::InterfaceRole;
+package Entity::Netconf;
 use base "Entity";
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+
 my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    interface_role_name => {
-        pattern      => '^.{0,32}$',
+    netconf_name => {
+        label        => 'Network configuration name',
+        type         => 'string',
+        pattern      => '^.*$',
         is_mandatory => 1,
+        is_editable  => 1,
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-sub toString {
-    my $self = shift;
-    my $string = $self->{_dbix}->get_column('interface_role_name');
-    return $string;
-}
 
 1;

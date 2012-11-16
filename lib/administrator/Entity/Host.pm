@@ -530,24 +530,31 @@ sub getIfaces {
     my %args = @_;
     my @ifaces = ();
 
+    General::checkParams(args => \%args, optional => { 'role' => undef });
+
     # Make sure to have all pxe ifaces before non pxe ones within the resulting array
     foreach my $pxe (1, 0) {
-        my @ifcs = Entity::Iface->search(hash => { host_id   => $self->getAttr(name => 'host_id'),
-                                                   iface_pxe => $pxe });
+        my @ifcs = Entity::Iface->search(hash => { host_id => $self->id, iface_pxe => $pxe });
+
+        IFACE:
         for my $iface (@ifcs) {
-            if (defined ($args{role})) {
-                if (my $interface_id = $iface->isAssociated) {
-                    my $interface = Entity::Interface->get(id => $iface->getAttr(name => 'interface_id'));
-                    if ($interface->getRole->getAttr(name => 'interface_role_name') ne $args{role}) {
-                        next;
+            if (defined $args{role} and $iface->isAssociated) {
+                my $hasrole = 0;
+
+                NETCONFROLE:
+                for my $netconf ($iface->netconfs) {
+                    if ($netconf->netconf_role->netconf_role_name eq $args{role}) {
+                        $hasrole = 1;
+                        last NETCONFROLE;
                     }
                 }
+                if (not $hasrole) {
+                    next IFACE;
+                }
             }
-
             push @ifaces, $iface;
         }
     }
-
     return wantarray ? @ifaces : \@ifaces;
 }
 
@@ -593,8 +600,7 @@ sub getAdminIface {
     my @ifaces = $self->getIfaces(role => "admin");
     if (scalar (@ifaces) == 0 and defined $args{throw}) {
         throw Kanopya::Exception::Internal::NotFound(
-                  error => "Host <" . $self->getAttr(name => 'entity_id') .
-                           "> Could not find any iface associate to a admin interface."
+                  error => "Host <" . $self->id . "> Could not find any iface associate to a admin role."
               );
     }
     return $ifaces[0];

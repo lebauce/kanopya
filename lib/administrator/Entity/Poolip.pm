@@ -46,20 +46,12 @@ use constant ATTR_DEF => {
         pattern      => '.*',
         is_mandatory => 1,
     },
-    poolip_addr => {
+    poolip_first_addr => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
     },
-    poolip_mask => {
+    poolip_size => {
         pattern      => '[0-9]{1,2}',
-        is_mandatory => 1,
-    },
-    poolip_netmask => {
-        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
-        is_mandatory => 1,
-    },
-    poolip_gateway => {
-        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
     },
 };

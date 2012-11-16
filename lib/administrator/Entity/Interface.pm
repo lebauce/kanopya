@@ -23,7 +23,6 @@ use Kanopya::Exceptions;
 use Entity::Iface;
 use Entity::Poolip;
 use Entity::Network;
-use Entity::InterfaceRole;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -32,10 +31,6 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    interface_role_id => {
-        pattern      => '^\d+$',
-        is_mandatory => 1,
-    },
     service_provider_id => {
         pattern      => '^\d+$',
         is_mandatory => 1,
@@ -44,16 +39,13 @@ use constant ATTR_DEF => {
         pattern      => '^(0|1)$',
         is_mandatory => 0,
     },
+    bonds_nmubers => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-sub getRole {
-    my $self = shift;
-    my %args = @_;
-
-    return Entity::InterfaceRole->get(id => $self->getAttr(name => 'interface_role_id' ));
-}
 
 sub getNetworks {
     my $self = shift;

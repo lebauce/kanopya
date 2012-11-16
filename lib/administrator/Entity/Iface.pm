@@ -59,12 +59,6 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 1,
     },
-    interface_id => {
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d+$',
-        is_mandatory => 0,
-    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -118,7 +112,7 @@ sub isAssociated {
     my $self = shift;
     my %args = @_;
 
-    return $self->getAttr(name => 'interface_id');
+    return scalar(@{ $self->netconfs }) > 0;
 }
 
 sub assignIp {
