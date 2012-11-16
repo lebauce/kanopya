@@ -169,26 +169,18 @@ var policies = {
             set          : 'Interfaces',
             add_label    : 'Add a network interface'
         },
-        interface_role : {
-            label        : 'Interface role',
+        interface_networks : {
+            label        : 'Network configuration',
             type         : 'select',
-            entity       : 'interfacerole',
-            display      : 'interface_role_name',
-            composite    : 'network_interface',
-            is_mandatory : 1
-        },
+            entity       : 'netconf',
+            display      : 'netconf_name',
+            composite    : 'network_interface'
+        }
         default_gateway : {
             label        : 'Default gateway',
             type         : 'radio',
             composite    : 'network_interface'
         },
-        interface_networks : {
-            label        : 'Network',
-            type         : 'select',
-            entity       : 'network',
-            display      : 'network_name',
-            composite    : 'network_interface'
-        }
     },
     system: {
         policy_name : {

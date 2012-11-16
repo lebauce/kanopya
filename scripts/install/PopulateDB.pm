@@ -1139,7 +1139,7 @@ sub registerKanopyaMaster {
 
     my $admin_role = Entity::NetconfRole->find(hash => { netconf_role_name => "admin" });
 
-    my $netconf = Entity::Netconf->new(netconf_name => "Kanopya master network configuration",);
+    my $netconf = Entity::Netconf->new(netconf_name => "Kanopya network configuration",);
     $netconf->setAttr(name => 'netconf_role_id', value => $admin_role->id);
     $netconf->save();
 
