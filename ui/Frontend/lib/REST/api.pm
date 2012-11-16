@@ -92,6 +92,7 @@ my %resources = (
     "netapplunmanager"         => "Entity::Connector::NetappLunManager",
     "netappvolume"             => "Entity::Container::NetappVolume",
     "netappvolumemanager"      => "Entity::Connector::NetappVolumeManager",
+    "netconf"                  => "Entity::Netconf",
     "network"                  => "Entity::Network",
     "nfscontaineraccessclient" => "Entity::NfsContainerAccessClient",
     "nfscontaineraccess"       => "Entity::ContainerAccess::NfsContainerAccess",
