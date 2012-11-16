@@ -175,12 +175,12 @@ var policies = {
             entity       : 'netconf',
             display      : 'netconf_name',
             composite    : 'network_interface'
-        }
+        },
         default_gateway : {
             label        : 'Default gateway',
             type         : 'radio',
             composite    : 'network_interface'
-        },
+        }
     },
     system: {
         policy_name : {
