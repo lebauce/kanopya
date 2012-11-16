@@ -119,10 +119,10 @@ sub getCurrentOperation {
 
     my $op;
     eval {
-        $op = Entity::Operation->find(
+        $op = (Entity::Operation->search(
                   hash     => { workflow_id => $self->id, -not => { state => 'succeeded' } },
                   order_by => 'execution_rank ASC',
-              );
+              ))[0];
     };
     if ($@) {
         throw Kanopya::Exception::Internal::NotFound(
