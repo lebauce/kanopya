@@ -1,12 +1,12 @@
 use utf8;
-package AdministratorDB::Schema::Result::Network;
+package AdministratorDB::Schema::Result::NetconfRole;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::Network
+AdministratorDB::Schema::Result::NetconfRole
 
 =cut
 
@@ -31,15 +31,15 @@ use base 'DBIx::Class::IntrospectableM2M';
 
 use base qw/DBIx::Class::Core/;
 
-=head1 TABLE: C<network>
+=head1 TABLE: C<netconf_role>
 
 =cut
 
-__PACKAGE__->table("network");
+__PACKAGE__->table("netconf_role");
 
 =head1 ACCESSORS
 
-=head2 network_id
+=head2 netconf_role_id
 
   data_type: 'integer'
   default_value: 0
@@ -47,34 +47,16 @@ __PACKAGE__->table("network");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 network_name
+=head2 netconf_role_name
 
   data_type: 'char'
   is_nullable: 0
   size: 32
 
-=head2 network_addr
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 15
-
-=head2 network_netmask
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 15
-
-=head2 network_gateway
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 15
-
 =cut
 
 __PACKAGE__->add_columns(
-  "network_id",
+  "netconf_role_id",
   {
     data_type => "integer",
     default_value => 0,
@@ -82,45 +64,39 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "network_name",
+  "netconf_role_name",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "network_addr",
-  { data_type => "char", is_nullable => 0, size => 15 },
-  "network_netmask",
-  { data_type => "char", is_nullable => 0, size => 15 },
-  "network_gateway",
-  { data_type => "char", is_nullable => 0, size => 15 },
 );
 
 =head1 PRIMARY KEY
 
 =over 4
 
-=item * L</network_id>
+=item * L</netconf_role_id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("network_id");
+__PACKAGE__->set_primary_key("netconf_role_id");
 
 =head1 UNIQUE CONSTRAINTS
 
-=head2 C<network_name>
+=head2 C<netconf_role_name>
 
 =over 4
 
-=item * L</network_name>
+=item * L</netconf_role_name>
 
 =back
 
 =cut
 
-__PACKAGE__->add_unique_constraint("network_name", ["network_name"]);
+__PACKAGE__->add_unique_constraint("netconf_role_name", ["netconf_role_name"]);
 
 =head1 RELATIONS
 
-=head2 network
+=head2 netconf_role
 
 Type: belongs_to
 
@@ -129,35 +105,35 @@ Related object: L<AdministratorDB::Schema::Result::Entity>
 =cut
 
 __PACKAGE__->belongs_to(
-  "network",
+  "netconf_role",
   "AdministratorDB::Schema::Result::Entity",
-  { entity_id => "network_id" },
+  { entity_id => "netconf_role_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 poolips
+=head2 netconfs
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Poolip>
+Related object: L<AdministratorDB::Schema::Result::Netconf>
 
 =cut
 
 __PACKAGE__->has_many(
-  "poolips",
-  "AdministratorDB::Schema::Result::Poolip",
-  { "foreign.network_id" => "self.network_id" },
+  "netconfs",
+  "AdministratorDB::Schema::Result::Netconf",
+  { "foreign.netconf_role_id" => "self.netconf_role_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
 # Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-15 15:42:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bHm2CCKfvHk9NfPNp9TqwA
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ts437yanA0neehOehgjjWg
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-  { entity_id => "network_id" },
+  { entity_id => "netconf_role_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 

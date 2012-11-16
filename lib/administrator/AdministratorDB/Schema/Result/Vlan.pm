@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Vlan;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Vlan
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<vlan>
 
 =cut
 
@@ -26,6 +46,12 @@ __PACKAGE__->table("vlan");
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
+
+=head2 vlan_name
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 32
 
 =head2 vlan_number
 
@@ -44,38 +70,75 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "vlan_name",
+  { data_type => "char", is_nullable => 0, size => 32 },
   "vlan_number",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</vlan_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("vlan_id");
-__PACKAGE__->add_unique_constraint("vlan_number", ["vlan_number"]);
 
 =head1 RELATIONS
+
+=head2 netconf_vlans
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NetconfVlan>
+
+=cut
+
+__PACKAGE__->has_many(
+  "netconf_vlans",
+  "AdministratorDB::Schema::Result::NetconfVlan",
+  { "foreign.vlan_id" => "self.vlan_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 vlan
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Network>
+Related object: L<AdministratorDB::Schema::Result::Entity>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "vlan",
-  "AdministratorDB::Schema::Result::Network",
-  { network_id => "vlan_id" },
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "vlan_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 netconfs
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-17 14:30:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Q3JI5ZQon4EGbRWEDzWe3Q
+Type: many_to_many
+
+Composing rels: L</netconf_vlans> -> netconf
+
+=cut
+
+__PACKAGE__->many_to_many("netconfs", "netconf_vlans", "netconf");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-15 16:16:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:r95T4kAfU9mhOmoXOhBZJw
 
 __PACKAGE__->belongs_to(
   "parent",
-  "AdministratorDB::Schema::Result::Network",
-  { "foreign.network_id" => "self.vlan_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "vlan_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;

@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Poolip;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Poolip
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<poolip>
 
 =cut
 
@@ -22,7 +42,6 @@ __PACKAGE__->table("poolip");
 =head2 poolip_id
 
   data_type: 'integer'
-  default_value: 0
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
@@ -33,29 +52,24 @@ __PACKAGE__->table("poolip");
   is_nullable: 0
   size: 32
 
-=head2 poolip_addr
+=head2 poolip_first_addr
 
   data_type: 'char'
   is_nullable: 0
   size: 15
 
-=head2 poolip_mask
+=head2 poolip_size
 
   data_type: 'smallint'
   extra: {unsigned => 1}
   is_nullable: 0
 
-=head2 poolip_netmask
+=head2 network_id
 
-  data_type: 'char'
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 0
-  size: 15
-
-=head2 poolip_gateway
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 15
 
 =cut
 
@@ -63,25 +77,50 @@ __PACKAGE__->add_columns(
   "poolip_id",
   {
     data_type => "integer",
-    default_value => 0,
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
   },
   "poolip_name",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "poolip_addr",
+  "poolip_first_addr",
   { data_type => "char", is_nullable => 0, size => 15 },
-  "poolip_mask",
+  "poolip_size",
   { data_type => "smallint", extra => { unsigned => 1 }, is_nullable => 0 },
-  "poolip_netmask",
-  { data_type => "char", is_nullable => 0, size => 15 },
-  "poolip_gateway",
-  { data_type => "char", is_nullable => 0, size => 15 },
+  "network_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</poolip_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("poolip_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<poolip_name>
+
+=over 4
+
+=item * L</poolip_name>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("poolip_name", ["poolip_name"]);
-__PACKAGE__->add_unique_constraint("poolip_addr", ["poolip_addr", "poolip_mask"]);
 
 =head1 RELATIONS
 
@@ -100,19 +139,34 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 network_poolips
+=head2 netconf_poolips
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::NetworkPoolip>
+Related object: L<AdministratorDB::Schema::Result::NetconfPoolip>
 
 =cut
 
 __PACKAGE__->has_many(
-  "network_poolips",
-  "AdministratorDB::Schema::Result::NetworkPoolip",
+  "netconf_poolips",
+  "AdministratorDB::Schema::Result::NetconfPoolip",
   { "foreign.poolip_id" => "self.poolip_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 network
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Network>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "network",
+  "AdministratorDB::Schema::Result::Network",
+  { network_id => "network_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 poolip
@@ -130,15 +184,25 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 netconfs
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-24 11:28:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Jw15TWAOHfplOvN9E8XPrg
+Type: many_to_many
+
+Composing rels: L</netconf_poolips> -> netconf
+
+=cut
+
+__PACKAGE__->many_to_many("netconfs", "netconf_poolips", "netconf");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-15 15:42:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:l2wvGaFeIAJY3wtCmFFtFQ
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-  { "foreign.entity_id" => "self.poolip_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+  { entity_id => "poolip_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;

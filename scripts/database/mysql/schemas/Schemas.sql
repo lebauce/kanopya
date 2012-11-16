@@ -496,15 +496,12 @@ CREATE TABLE `iface` (
   `iface_mac_addr` char(18) NOT NULL ,
   `iface_pxe` int(10) UNSIGNED NOT NULL,
   `host_id` int(8) UNSIGNED NOT NULL,
-  `interface_id` int(8) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (`iface_id`),
   FOREIGN KEY (`iface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`iface_mac_addr`),
   UNIQUE KEY (`iface_name`,`host_id`),
   KEY (`host_id`),
-  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`interface_id`),
-  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -739,16 +736,16 @@ CREATE TABLE `systemimage` (
 -- Table structure for table `poolip`
 --
 CREATE TABLE `poolip` (
-  `poolip_id`      int(8) unsigned,
-  `poolip_name`    char(32) NOT NULL,
-  `poolip_addr`    char(15) NOT NULL,
-  `poolip_mask`    smallint unsigned NOT NULL,
-  `poolip_netmask` char(15) NOT NULL,
-  `poolip_gateway` char(15) NOT NULL,
+  `poolip_id`         int(8) unsigned NOT NULL,
+  `poolip_name`       char(32) NOT NULL,
+  `poolip_first_addr` char(15) NOT NULL,
+  `poolip_size`       smallint unsigned NOT NULL,
+  `network_id`        int(8) unsigned NOT NULL,
   PRIMARY KEY (`poolip_id`),
   FOREIGN KEY (`poolip_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`poolip_name`),
-  UNIQUE KEY (`poolip_addr`,`poolip_mask`)
+  KEY (`network_id`),
+  FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  UNIQUE KEY (`poolip_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -773,6 +770,9 @@ CREATE TABLE `ip` (
 CREATE TABLE `network` (
   `network_id`   int(8) unsigned,
   `network_name` char(32) NOT NULL,
+  `network_addr`    char(15) NOT NULL,
+  `network_netmask` char(15) NOT NULL,
+  `network_gateway` char(15) NOT NULL,
   PRIMARY KEY (`network_id`),
   FOREIGN KEY (`network_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`network_name`)
@@ -783,20 +783,10 @@ CREATE TABLE `network` (
 --
 CREATE TABLE `vlan` (
   `vlan_id`     int(8) unsigned,
+  `vlan_name` char(32) NOT NULL,
   `vlan_number` int unsigned NOT NULL,
   PRIMARY KEY (`vlan_id`),
-  FOREIGN KEY (`vlan_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `interface_role`
---
-CREATE TABLE `interface_role` (
-  `interface_role_id`   int(8) unsigned,
-  `interface_role_name` char(32) NOT NULL,
-  PRIMARY KEY (`interface_role_id`),
-  FOREIGN KEY (`interface_role_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`interface_role_name`)
+  FOREIGN KEY (`vlan_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -804,41 +794,90 @@ CREATE TABLE `interface_role` (
 --
 CREATE TABLE `interface` (
   `interface_id`        int(8) unsigned,
-  `interface_role_id`   int(8) unsigned NOT NULL,
   `service_provider_id` int(8) unsigned NOT NULL,
   `default_gateway`     int(8) unsigned NOT NULL DEFAULT 0,
+  `bonds_number`        int(8) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`interface_id`),
   FOREIGN KEY (`interface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`interface_role_id`),
-  FOREIGN KEY (`interface_role_id`) REFERENCES `interface_role` (`interface_role_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`service_provider_id`),
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `interface_network`
+-- Table structure for table `netconf`
 --
-CREATE TABLE `interface_network` (
-  `interface_id` int(8) unsigned NOT NULL,
-  `network_id`   int(8) unsigned NOT NULL,
-  PRIMARY KEY (`interface_id`, `network_id`),
-  KEY (`interface_id`),
-  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`network_id`),
-  FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+CREATE TABLE `netconf` (
+  `netconf_id`   int(8) unsigned,
+  `netconf_name` char(32) NOT NULL,
+  `netconf_role_id` int(8) unsigned NULL DEFAULT NULL,
+  PRIMARY KEY (`netconf_id`),
+  FOREIGN KEY (`netconf_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`netconf_role_id`),
+  FOREIGN KEY (`netconf_role_id`) REFERENCES `netconf_role` (`netconf_role_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  UNIQUE KEY (`netconf_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `network_poolip`
+-- Table structure for table `netconf_poolip`
 --
-CREATE TABLE `network_poolip` (
-  `network_id` int(8) unsigned NOT NULL,
-  `poolip_id`  int(8) unsigned NOT NULL,
-  PRIMARY KEY (`network_id`, `poolip_id`),
-  KEY (`network_id`),
-  FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+CREATE TABLE `netconf_poolip` (
+  `netconf_id` int(8) unsigned NOT NULL,
+  `poolip_id`   int(8) unsigned NOT NULL,
+  PRIMARY KEY (`netconf_id`, `poolip_id`),
+  KEY (`netconf_id`),
+  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`poolip_id`),
-  FOREIGN KEY (`poolip_id`) REFERENCES `poolip` (`poolip_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`poolip_id`) REFERENCES `poolip` (`poolip_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `netconf_vlan`
+--
+CREATE TABLE `netconf_vlan` (
+  `netconf_id` int(8) unsigned NOT NULL,
+  `vlan_id`   int(8) unsigned NOT NULL,
+  PRIMARY KEY (`netconf_id`, `vlan_id`),
+  KEY (`netconf_id`),
+  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`vlan_id`),
+  FOREIGN KEY (`vlan_id`) REFERENCES `vlan` (`vlan_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `netconf_interface`
+--
+CREATE TABLE `netconf_interface` (
+  `netconf_id` int(8) unsigned NOT NULL,
+  `interface_id`   int(8) unsigned NOT NULL,
+  PRIMARY KEY (`netconf_id`, `interface_id`),
+  KEY (`netconf_id`),
+  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`interface_id`),
+  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `netconf_iface`
+--
+CREATE TABLE `netconf_iface` (
+  `netconf_id` int(8) unsigned NOT NULL,
+  `iface_id`   int(8) unsigned NOT NULL,
+  PRIMARY KEY (`netconf_id`, `iface_id`),
+  KEY (`netconf_id`),
+  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`iface_id`),
+  FOREIGN KEY (`iface_id`) REFERENCES `iface` (`iface_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `netconf_role`
+--
+CREATE TABLE `netconf_role` (
+  `netconf_role_id`   int(8) unsigned,
+  `netconf_role_name` char(32) NOT NULL,
+  PRIMARY KEY (`netconf_role_id`),
+  FOREIGN KEY (`netconf_role_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  UNIQUE KEY (`netconf_role_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
