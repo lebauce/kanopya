@@ -169,7 +169,14 @@ my @classes = (
     'Entity::AggregateRule',
     'Entity::NodemetricCondition',
     'Entity::NodemetricRule',
-    'Entity::WorkflowDef'
+    'Entity::WorkflowDef',
+    'Entity::Component::Apache2::Apache2Virtualhost',
+    'Entity::Component::Linux::LinuxMount',
+    'Entity::Component::Lvm2::Lvm2Vg',
+    'Entity::Component::Opennebula3::Opennebula3Hypervisor',
+    'Entity::Component::Opennebula3::Opennebula3Repository',
+    'Entity::Component::Vsphere5::Vsphere5Datacenter',
+    'Entity::Component::Vsphere5::Vsphere5Repository'
 );
 
 sub registerClassTypes {
@@ -435,6 +442,7 @@ sub registerUsers {
         user_creationdate => today(),
         user_desc         => 'User used by executor'
     );
+
 #
 #    UserProfile->new(
 #        user_id    => $executor_user->id,

@@ -99,18 +99,6 @@ sub new {
 
     my $attrs = $class->checkAttrs(attrs => $hash);
 
-    # Get the class_type_id for class name
-    my $adm = Administrator->new();
-    eval {
-        my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                        hash  => { class_type => $class })->single;
-
-        $attrs->{class_type_id} = $rs->get_column('class_type_id');
-    };
-    if ($@) {
-        # Unregistred or abstract class, assuming it is not an Entity.
-    }
-
     my $self = $class->newDBix(attrs => $attrs);
     bless $self, $class;
 
@@ -613,8 +601,8 @@ sub fromDBIx {
     };
     if ($@) {
         my $err = $@;
-        my $basedb = bless { _dbix => $args{row} }, "BaseDB";
-        return $basedb;
+        $modulename = getClassType(class => $modulename);
+        requireClass($modulename);
     }
 
     # TODO: We need to use prefetch to get the parent/childs attrs,
@@ -855,8 +843,6 @@ get all the entries and cache them into a hash for *LOT* faster accesses.
 sub getClassType {
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'id' ]);
-
     my $adm = Administrator->new();
     if (not %class_type_cache) {
         my $class_types = $adm->_getDbixFromHash(table => "ClassType",
@@ -867,7 +853,18 @@ sub getClassType {
         }
     }
 
-    return $class_type_cache{$args{id}};
+    if (defined ($args{id})) {
+        return $class_type_cache{$args{id}};
+    } else {
+        for my $class_type_id (keys %class_type_cache) {
+            my $class_type = $class_type_cache{$class_type_id};
+            if ($class_type =~ "::$args{class}\$") {
+                return $class_type;
+            }
+        }
+    }
+
+    return "BaseDB";
 }
 
 

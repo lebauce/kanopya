@@ -74,6 +74,13 @@ sub new {
     my $class = shift;
     my %args = @_;
 
+    # Get the class_type_id for class name
+    my $adm = Administrator->new();
+    my $rs = $adm->_getDbixFromHash(table => "ClassType",
+                                    hash  => { class_type => $class })->single;
+
+    $args{class_type_id} = $rs->get_column('class_type_id');
+
     my $self = $class->SUPER::new(%args);
 
     # Add the entity in the master group corresponding to it concrete class
