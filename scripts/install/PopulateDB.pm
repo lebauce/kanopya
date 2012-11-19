@@ -1326,8 +1326,28 @@ sub populate_workflow_def {
         }
     );
     my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
+    $relieve_hypervisor_wf->addStep( operationtype_id => $relieve_hypervisor_op_id );
     $relieve_hypervisor_wf->addStep( operationtype_id => $resubmit_node_op_id );
     $relieve_hypervisor_wf->addStep( operationtype_id => $migrate_op_id );
+
+    # FlushHypervisor workflow def
+    my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflow(
+        workflow_name => 'HypervisorMaintenance',
+        params => {
+            internal => {
+                scope_id => 1,
+            },
+            automatic => {
+                context => { host => undef },
+            },
+        }
+    );
+    my $flush_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
+    $hypervisor_maintenance_wf->addStep( operationtype_id => $flush_hypervisor_op_id);
+    $hypervisor_maintenance_wf->addStep(
+        operationtype_id => Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id
+    );
+
 }
 
 sub populate_policies {
