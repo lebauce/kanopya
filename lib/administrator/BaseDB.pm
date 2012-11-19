@@ -2191,7 +2191,7 @@ sub AUTOLOAD {
     my @autoload = split(/::/, $AUTOLOAD);
     my $accessor = $autoload[-1];
 
-    return $self->getAttr(name => $accessor);
+    return $self->getAttr(name => $accessor, deep => 1);
 }
 
 
