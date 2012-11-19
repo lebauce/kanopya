@@ -113,6 +113,34 @@ sub enqueue {
     );
 }
 
+sub enqueueNow {
+    my ($self, %args) = @_;
+    my @operations = $self->operations;
+
+    my @sorted_operations = sort {
+        $b->execution_rank <=> $a->execution_rank
+    } @operations;
+
+    my $incr_num = 0;
+    for my $operation (@sorted_operations) {
+        if ($operation->state eq 'pending') {
+            my $execution_rank = $operation->execution_rank;
+            $execution_rank++;
+            $operation->setAttr(name => 'execution_rank', value => $execution_rank);
+            $operation->save();
+            $incr_num++;
+        }
+    }
+
+    my $operation = Entity::Operation->enqueueNow(
+        workflow_id => $self->getAttr(name => 'workflow_id'),
+        %args,
+    );
+    my $current_rank = $operation->execution_rank;
+    $operation->setAttr(name => 'execution_rank', value => ($current_rank - 1) - $incr_num );
+    $operation->save();
+}
+
 sub getCurrentOperation {
     my ($self, %args) = @_;
     my $adm = Administrator->new();
