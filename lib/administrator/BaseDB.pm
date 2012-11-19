@@ -612,12 +612,18 @@ sub fromDBIx {
                   _dbix      => $args{row},
               }, $modulename;
 
-    if ($args{deep} && $args{row}->has_column('class_type_id')) {
-        my $class_type = getClassType(id => $obj->class_type_id);
-        if (length($class_type) > length($modulename)) {
-            requireClass($class_type);
-            $obj = $class_type->get(id => $obj->id);
-        }
+    if ($args{deep} && $args{row}->result_source->from() ne "class_type") {
+        my $dbix = $args{row};
+        do {
+            if ($dbix->has_column('class_type_id')) {
+                my $class_type = getClassType(id => $dbix->get_column('class_type_id'));
+                requireClass($class_type);
+                return $class_type->get(id => $obj->id);
+            }
+            else {
+                $dbix = $dbix->has_relationship("parent") ? $dbix->parent : undef;
+            }
+        } while ($dbix);
     }
 
     return $obj;
