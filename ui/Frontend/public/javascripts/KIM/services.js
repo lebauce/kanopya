@@ -367,7 +367,15 @@ function nodedetailsaction(cid, eid) {
                     icon        : 'image',
                     condition   : (remoteUrl !== null && remoteUrl !== ''),
                     action      : function() { window.open(remoteUrl); }
-                }
+                },
+                {
+                    label   : 'Put node in maintenance',
+                    icon    : 'wrench',
+                    action  : '/api/host/' + data.host.pk + '/maintenance',
+                    confirm : 'All the virtual machines will be migrated and the hypervisor will be put in maintenance'
+                },
+
+
             ]
             require('KIM/services_details.js');
             createallbuttons(buttons, $('#' + cid));
