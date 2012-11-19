@@ -33,6 +33,13 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        maintenance => {
+            description => 'flush the hypervisor and deactivate it',
+        }
+    }
+}
 
 sub getVms {
     my $self = shift;
@@ -51,6 +58,22 @@ sub checkStoppable {
         throw Kanopya::Exception(error => "The hypervisor " . $self->host_hostname .
                                           " can't be stopped as it still runs virtual machines");
     }
+}
+
+sub getCloudManager {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+sub maintenance {
+    my $self = shift;
+    Entity::Workflow->run( name   => 'HypervisorMaintenance',
+                           params => {
+                               context => {
+                                    host => $self,
+                                    host_to_deactivate => $self,
+                               }
+                           }
+                      );
 }
 
 1;
