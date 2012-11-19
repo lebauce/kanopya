@@ -124,7 +124,7 @@ sub getCurrentOperation {
                   order_by => 'execution_rank ASC',
               ))[0];
     };
-    if ($@) {
+    if ($@ || !defined ($op)) {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "Not more operations within workflow <" . $self->id .  ">"
               );
