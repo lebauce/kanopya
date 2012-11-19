@@ -179,8 +179,8 @@ sub postrequisites {
             throw Kanopya::Exception(error => $error);
         }
     }
-    elsif ($migr_state->{state} == 'migr') {
-        # VM STILL MIGRATING
+    elsif ($migr_state->{state} eq 'migr') {
+        # vm is still migrating
         return 15;
     }
 }
