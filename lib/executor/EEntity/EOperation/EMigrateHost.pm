@@ -45,7 +45,6 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider;
 use Entity::Host;
-use EFactory;
 
 my $log = get_logger("");
 my $errmsg;
@@ -57,15 +56,12 @@ our $VERSION = '1.00';
 
 sub prepare {
     my $self = shift;
-    my %args = @_;
     $self->SUPER::prepare();
 
     General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
 
     if (not defined $self->{context}->{cloudmanager_comp}) {
-          $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(
-                                                      data => $self->{context}->{vm}->getHostManager()
-                                                  );
+        $self->{context}->{cloudmanager_comp} = $self->{context}->{vm}->getHostManager();
     }
 
     eval {
@@ -109,7 +105,7 @@ sub prepare {
 
             my $check = $cm->isMigrationAuthorized(vm_id => $vm_id, hv_id => $hv_id);
 
-            if ($check == 0){
+            if ($check == 0) {
                 my $errmsg = "Not enough resource in HV $hv_id for VM $vm_id migration";
                 throw Kanopya::Exception::Internal(error => $errmsg);
             }
@@ -127,7 +123,7 @@ sub prepare {
 sub execute {
     my $self = shift;
 
-    if (defined $self->{params}->{no_migration} ) {
+    if (defined $self->{params}->{no_migration}) {
         delete $self->{params}->{no_migration};
     }
     else {
@@ -161,11 +157,10 @@ sub postrequisites {
                '>, dest hypervisor: <' . $self->{context}->{host}->host_hostname . '>');
 
     if ($migr_state->{state} eq 'runn') {
-        # ON THE TARGETED HV
+        # On the targeted hv
         if ($migr_state->{hypervisor} eq $self->{context}->{host}->host_hostname) {
 
             # After checking migration -> store migration in DB
-            $log->info('Migration save in DB');
             $self->{context}->{cloudmanager_comp}->_getEntity->migrateHost(
                 host               => $self->{context}->{vm},
                 hypervisor_dst     => $self->{context}->{host},
@@ -174,7 +169,7 @@ sub postrequisites {
             return 0;
         }
         else {
-            #VM IS RUNNING BUT NOT ON ITS HYPERVISOR
+            # Vm is running but not on its hypervisor
             my $error = 'Migration of vm <' . $self->{context}->{vm}->id . '> failed, but still running...';
             Message->send(
                 from    => 'EMigrateHost',
