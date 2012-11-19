@@ -197,7 +197,7 @@ sub getDependentConditionIds {
 sub evalOnOneNode{
     my $self = shift;
     my %args = @_;
-    
+
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
 
     my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
@@ -452,7 +452,6 @@ sub update {
 sub delete {
     my $self = shift;
     my $workflow_def = $self->workflow_def;
-
     $self->SUPER::delete();
     if (defined $workflow_def) { $workflow_def->delete(); };
 }

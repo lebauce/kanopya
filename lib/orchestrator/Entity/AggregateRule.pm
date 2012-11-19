@@ -423,7 +423,7 @@ sub updateFormulaString {
 
 sub update {
     my ($self, %args) = @_;
-    
+
     my $rep = $self->SUPER::update (%args);
     $self->updateFormulaString;
     return $rep;
@@ -432,7 +432,6 @@ sub update {
 sub delete {
     my $self = shift;
     my $workflow_def = $self->workflow_def;
-
     $self->SUPER::delete();
     if (defined $workflow_def) { $workflow_def->delete(); };
 }
