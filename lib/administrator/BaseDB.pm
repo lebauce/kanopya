@@ -328,7 +328,7 @@ sub getAttrDefs {
 
     my $attributedefs = {};
     my $modulename = $class;
-    my @hierachy = $class->getClassHierarchy;
+    my @hierachy = getClassHierarchy($class);
 
     while(@hierachy) {
         my $attr_def = {};
@@ -884,7 +884,7 @@ sub getJoin {
     my ($class) = @_;
     my $adm = Administrator->new();
 
-    my @hierarchy = $class->getClassHierarchy;
+    my @hierarchy = getClassHierarchy($class);
     my $depth = scalar @hierarchy;
 
     my $current = $depth;
@@ -1828,7 +1828,7 @@ sub _buildClassNameFromString {
 sub _rootTable {
     my ($class) = @_;
 
-    $class = join('::', $class->getClassHierarchy);
+    $class = join('::', getClassHierarchy($class));
     $class =~ s/\:\:.*$//g;
     return $class;
 }
