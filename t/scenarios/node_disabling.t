@@ -156,10 +156,10 @@ eval{
     $adm->rollbackTransaction;
 };
 if($@) {
-    $adm->rollbackTransaction;
     my $error = $@;
     print $error."\n";
     test_rrd_remove();
+    $adm->rollbackTransaction;
 }
 
 sub test_rrd_remove {

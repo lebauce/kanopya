@@ -110,9 +110,9 @@ eval{
     #$adm->commitTransaction();
 };
 if($@) {
-    $adm->rollbackTransaction;
     my $error = $@;
     print $error."\n";
+    $adm->rollbackTransaction;
 }
 
 sub test_rrd_remove {
@@ -676,6 +676,17 @@ sub test_aggregate_combination {
     is ($ac_both->toString(),'sum(RAM used) < 2*sum(RAM used)','Check to string (c)');
     is ($rule->toString(), 'sum(RAM used) < 12.34 && -43.21 < sum(RAM used)', 'Check aggregate rule toString');
 
+
+    $ac_left->update(
+        aggregate_condition_service_provider_id => $service_provider->id,
+        left_combination_id => $comb->id,
+        comparator => '<',
+        threshold => '99.99',
+    );
+
+    print "***\n";
+    print Entity->get(id => $rule->id)->aggregate_rule_formula_string."\n";
+
     $cm->update (clustermetric_statistics_function_name => 'min');
     $comb->update (aggregate_combination_formula => '-id'.($cm->id));
     $ac_left->update (
@@ -689,14 +700,7 @@ sub test_aggregate_combination {
     is (Entity->get(id => $ac_left->id)->aggregate_condition_formula_string,'21.01 == 2*min(RAM used)','Check update formula string (c)');
     is (Entity->get(id => $rule->id)->aggregate_rule_formula_string, '21.01 == 2*min(RAM used) && -43.21 < -min(RAM used)', 'Check update rule formula string');
 
-    $ac_left->update (
-        threshold => '26.10',
-        comparator => '==',
-        right_combination_id => $comb2->id,
-    );
-
-    is (Entity->get(id => $rule->id)->aggregate_rule_formula_string, '26.10 == 2*min(RAM used) && -43.21 < -min(RAM used)', 'Check only aggregator comparator update');
-
+    
 }
 
 sub test_aggregate_rules {

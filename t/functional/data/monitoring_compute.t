@@ -118,10 +118,11 @@ eval{
     $adm->rollbackTransaction;
 };
 if($@) {
-    $adm->rollbackTransaction;
     my $error = $@;
     print $error."\n";
+    $adm->rollbackTransaction;
     fail('Exception occurs');
+    
 }
 
 sub testClusterMetric {
