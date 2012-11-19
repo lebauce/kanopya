@@ -496,12 +496,15 @@ CREATE TABLE `iface` (
   `iface_mac_addr` char(18) NOT NULL ,
   `iface_pxe` int(10) UNSIGNED NOT NULL,
   `host_id` int(8) UNSIGNED NOT NULL,
+  `interface_id` int(8) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (`iface_id`),
   FOREIGN KEY (`iface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`iface_mac_addr`),
   UNIQUE KEY (`iface_name`,`host_id`),
   KEY (`host_id`),
-  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`interface_id`),
+  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1688,12 +1691,8 @@ CREATE TABLE `policy` (
 
 CREATE TABLE `param_preset` (
   `param_preset_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `name` char(128) DEFAULT NULL,
-  `value` text DEFAULT NULL,
-  `relation` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`param_preset_id`),
-  KEY (`relation`),
-  FOREIGN KEY (`relation`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  `params`text DEFAULT NULL,
+  PRIMARY KEY (`param_preset_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

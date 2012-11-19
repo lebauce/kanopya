@@ -71,6 +71,13 @@ __PACKAGE__->table("iface");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 interface_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -93,6 +100,13 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "interface_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
 );
 
@@ -168,6 +182,26 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 interface
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Interface>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "interface",
+  "AdministratorDB::Schema::Result::Interface",
+  { interface_id => "interface_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
 =head2 ips
 
 Type: has_many
@@ -209,8 +243,8 @@ Composing rels: L</netconf_ifaces> -> netconf
 __PACKAGE__->many_to_many("netconfs", "netconf_ifaces", "netconf");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-15 16:02:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2GcvGbtUviiqq+t76d0UaQ
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-19 16:59:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1l+q4vG8jEuj8wnnKToDrg
 
 __PACKAGE__->belongs_to(
   "parent",

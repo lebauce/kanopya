@@ -1139,7 +1139,7 @@ sub registerKanopyaMaster {
 
     my $admin_role = Entity::NetconfRole->find(hash => { netconf_role_name => "admin" });
 
-    my $netconf = Entity::Netconf->new(netconf_name => "Kanopya network configuration",);
+    my $netconf = Entity::Netconf->new(netconf_name => "Kanopya admin",);
     $netconf->setAttr(name => 'netconf_role_id', value => $admin_role->id);
     $netconf->save();
 
@@ -1200,17 +1200,17 @@ sub registerScopes {
 }
 
 sub populate_workflow_def {
-    my $wf_manager_component_type_id = ComponentType->find( hash => {
+    my $wf_manager_component_type_id = ComponentType->find(hash => {
                                            component_category => 'Workflowmanager'
-                                       } )->id;
+                                       })->id;
 
-    my $kanopya_wf_manager           = Entity::Component->find( hash => {
-                                           component_type_id => $wf_manager_component_type_id,
-                                           service_provider_id => Kanopya::Config::get('executor')->{cluster}->{executor}
-                                       } );
+    my $kanopya_wf_manager = Entity::Component->find(hash => {
+                                 component_type_id   => $wf_manager_component_type_id,
+                                 service_provider_id => Kanopya::Config::get('executor')->{cluster}->{executor}
+                             });
 
-    my $scale_op_id                  = Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
-    my $scale_amount_desc            = "Format:\n - '+value' to increase\n - '-value' to decrease\n - 'value' to set";
+    my $scale_op_id       = Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
+    my $scale_amount_desc = "Format:\n - '+value' to increase\n - '-value' to decrease\n - 'value' to set";
 
     # ScaleIn cpu workflow def
     my $scale_cpu_wf = $kanopya_wf_manager->createWorkflow(
@@ -1371,17 +1371,15 @@ sub populate_policies {
     );
 
     # network
-    my $interfacerole = Entity::NetconfRole->find(hash => { netconf_role_name => 'admin' });
-    my $network = Entity::Network->find(hash => { network_name => 'admin' });
+    my $netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
     $policies{network} = Entity::Policy->new(
         policy_name => 'Default network configuration',
         policy_desc => 'Default network configuration, with admin and public interfaces',
         policy_type => 'network',
-        cluster_nameserver1 => '127.0.0.1',
-        cluster_nameserver2 => '127.0.0.1',
-        cluster_domainname  => 'hedera-technology.com',
-        interface_role_0    => $interfacerole->id,
-        interface_networks_0 => $network->id,
+        cluster_nameserver1  => '127.0.0.1',
+        cluster_nameserver2  => '127.0.0.1',
+        cluster_domainname   => 'hedera-technology.com',
+        interface_netconfs_0 => $netconf->id,
         default_gateway_0    => 1
     );
 

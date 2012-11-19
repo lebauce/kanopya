@@ -187,8 +187,8 @@ Composing rels: L</netconf_interfaces> -> netconf
 __PACKAGE__->many_to_many("netconfs", "netconf_interfaces", "netconf");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-15 15:42:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1cc1ZGbgC6YxpI8/nqVoNA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-19 16:59:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Lnzrvx6y8Y75SI6+PdyVmw
 
 __PACKAGE__->belongs_to(
   "parent",
