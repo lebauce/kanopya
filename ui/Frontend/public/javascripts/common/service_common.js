@@ -170,7 +170,7 @@ function getServiceProviders(category) {
 
     var providers = [];
     $.ajax({
-        url         : '/api/serviceprovider?expand=components,connectors,components.component_type,connectors.connector_type',
+        url         : '/api/serviceprovider?expand=components,connectors,components.component_type,connectors.connector_type&deep=1',
         type        : 'GET',
         async       : false,
         success     : function(data) {
