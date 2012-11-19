@@ -746,10 +746,10 @@ sub deactivate{
         type     => 'DeactivateHost',
         params   => {
             context => {
-                host => $self
-           }
-       }
-   );
+                host_to_deactivate => $self
+            }
+        }
+    );
 }
 
 =head2 toString
