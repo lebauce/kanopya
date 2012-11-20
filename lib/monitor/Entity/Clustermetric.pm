@@ -363,7 +363,7 @@ sub getDependencies {
     my $self = shift;
     my @combinations = $self->getDependentCombinations;
 
-    my %dependencies = {};
+    my %dependencies;
     for my $combination (@combinations) {
         $dependencies{$combination->aggregate_combination_label} = $combination->getDependencies;
     }

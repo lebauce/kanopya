@@ -81,7 +81,7 @@ sub getDependencies {
 
     my %dependencies;
     for my $condition (@conditions) {
-        $dependencies{$condition->nodemetric_condition_label} = $condition->getDependencies;
+        $dependencies{$condition->label} = $condition->getDependencies;
     }
     return \%dependencies;
 }

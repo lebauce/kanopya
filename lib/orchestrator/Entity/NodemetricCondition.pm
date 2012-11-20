@@ -127,6 +127,11 @@ sub new {
     return $self;
 }
 
+sub label {
+    my $self = shift;
+    return $self->nodemetric_condition_label;
+}
+
 =head2 updateName
 
     desc: set entity's name to .toString() return value
