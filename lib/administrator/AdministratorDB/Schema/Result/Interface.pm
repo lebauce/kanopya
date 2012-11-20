@@ -54,13 +54,6 @@ __PACKAGE__->table("interface");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 default_gateway
-
-  data_type: 'integer'
-  default_value: 0
-  extra: {unsigned => 1}
-  is_nullable: 0
-
 =head2 bonds_number
 
   data_type: 'integer'
@@ -86,13 +79,6 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "default_gateway",
-  {
-    data_type => "integer",
-    default_value => 0,
-    extra => { unsigned => 1 },
-    is_nullable => 0,
-  },
   "bonds_number",
   {
     data_type => "integer",
@@ -115,21 +101,6 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("interface_id");
 
 =head1 RELATIONS
-
-=head2 ifaces
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Iface>
-
-=cut
-
-__PACKAGE__->has_many(
-  "ifaces",
-  "AdministratorDB::Schema::Result::Iface",
-  { "foreign.interface_id" => "self.interface_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
 
 =head2 interface
 
@@ -187,8 +158,8 @@ Composing rels: L</netconf_interfaces> -> netconf
 __PACKAGE__->many_to_many("netconfs", "netconf_interfaces", "netconf");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-19 16:59:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Lnzrvx6y8Y75SI6+PdyVmw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-20 14:19:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:JZ2CYc0N1KHStrTXp4wOVg
 
 __PACKAGE__->belongs_to(
   "parent",

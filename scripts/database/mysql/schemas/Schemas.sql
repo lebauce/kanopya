@@ -109,6 +109,7 @@ CREATE TABLE `cluster` (
   `cluster_state` char(32) NOT NULL DEFAULT 'down:0',
   `cluster_prev_state` char(32),
   `cluster_basehostname` char(64) NOT NULL,
+  `default_gateway_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   `user_id` int(8) unsigned NOT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
@@ -124,6 +125,8 @@ CREATE TABLE `cluster` (
   FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`masterimage_id`),
   FOREIGN KEY (`masterimage_id`) REFERENCES `masterimage` (`masterimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`default_gateway_id`),
+  FOREIGN KEY (`default_gateway_id`) REFERENCES `network` (`network_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`service_template_id`),
   FOREIGN KEY (`service_template_id`) REFERENCES `service_template` (`service_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -496,15 +499,15 @@ CREATE TABLE `iface` (
   `iface_mac_addr` char(18) NOT NULL ,
   `iface_pxe` int(10) UNSIGNED NOT NULL,
   `host_id` int(8) UNSIGNED NOT NULL,
-  `interface_id` int(8) UNSIGNED DEFAULT NULL,
+  `master` int(8) UNSIGNED DEFAULT NULL,
   PRIMARY KEY (`iface_id`),
   FOREIGN KEY (`iface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`iface_mac_addr`),
   UNIQUE KEY (`iface_name`,`host_id`),
   KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`interface_id`),
-  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY (`master`),
+  FOREIGN KEY (`master`) REFERENCES `iface` (`iface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -798,7 +801,6 @@ CREATE TABLE `vlan` (
 CREATE TABLE `interface` (
   `interface_id`        int(8) unsigned,
   `service_provider_id` int(8) unsigned NOT NULL,
-  `default_gateway`     int(8) unsigned NOT NULL DEFAULT 0,
   `bonds_number`        int(8) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`interface_id`),
   FOREIGN KEY (`interface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,

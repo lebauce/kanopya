@@ -71,7 +71,7 @@ __PACKAGE__->table("iface");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 interface_id
+=head2 master
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -101,7 +101,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "interface_id",
+  "master",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -182,24 +182,19 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 interface
+=head2 ifaces
 
-Type: belongs_to
+Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Interface>
+Related object: L<AdministratorDB::Schema::Result::Iface>
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "interface",
-  "AdministratorDB::Schema::Result::Interface",
-  { interface_id => "interface_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+__PACKAGE__->has_many(
+  "ifaces",
+  "AdministratorDB::Schema::Result::Iface",
+  { "foreign.master" => "self.iface_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 ips
@@ -215,6 +210,26 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Result::Ip",
   { "foreign.iface_id" => "self.iface_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 master
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Iface>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "master",
+  "AdministratorDB::Schema::Result::Iface",
+  { iface_id => "master" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 netconf_ifaces
@@ -243,8 +258,8 @@ Composing rels: L</netconf_ifaces> -> netconf
 __PACKAGE__->many_to_many("netconfs", "netconf_ifaces", "netconf");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-19 16:59:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1l+q4vG8jEuj8wnnKToDrg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-20 10:39:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:M+FaXJlDyPcUsewh2ny4ag
 
 __PACKAGE__->belongs_to(
   "parent",

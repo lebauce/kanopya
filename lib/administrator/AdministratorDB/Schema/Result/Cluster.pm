@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Cluster;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Cluster
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<cluster>
 
 =cut
 
@@ -118,6 +138,13 @@ __PACKAGE__->table("cluster");
   is_nullable: 0
   size: 64
 
+=head2 default_gateway_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =head2 active
 
   data_type: 'integer'
@@ -202,6 +229,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
   "cluster_basehostname",
   { data_type => "char", is_nullable => 0, size => 64 },
+  "default_gateway_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
   "active",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "user_id",
@@ -233,8 +267,43 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</cluster_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("cluster_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<cluster_basehostname>
+
+=over 4
+
+=item * L</cluster_basehostname>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("cluster_basehostname", ["cluster_basehostname"]);
+
+=head2 C<cluster_name>
+
+=over 4
+
+=item * L</cluster_name>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("cluster_name", ["cluster_name"]);
 
 =head1 RELATIONS
@@ -254,19 +323,24 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 user
+=head2 default_gateway
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::User>
+Related object: L<AdministratorDB::Schema::Result::Network>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "user",
-  "AdministratorDB::Schema::Result::User",
-  { user_id => "user_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  "default_gateway",
+  "AdministratorDB::Schema::Result::Network",
+  { network_id => "default_gateway_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 kernel
@@ -309,41 +383,6 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 service_template
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_template",
-  "AdministratorDB::Schema::Result::ServiceTemplate",
-  { service_template_id => "service_template_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
-=head2 collects
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Collect>
-
-=cut
-
-__PACKAGE__->has_many(
-  "collects",
-  "AdministratorDB::Schema::Result::Collect",
-  { "foreign.cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 qos_constraints
 
 Type: has_many
@@ -374,6 +413,41 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_template
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_template",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
+  { service_template_id => "service_template_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+=head2 user
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::User>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "user",
+  "AdministratorDB::Schema::Result::User",
+  { user_id => "user_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 =head2 workload_characteristics
 
 Type: has_many
@@ -390,14 +464,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-10-22 09:48:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9q98+/reJcfJaKH2t6w6cg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-20 14:19:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UWuTvCkO+Iuh4zOn+/0MYw
 
 __PACKAGE__->belongs_to(
-   "parent",
-   "AdministratorDB::Schema::Result::Inside",
-      { "foreign.inside_id" => "self.cluster_id" },
-      { cascade_copy => 0, cascade_delete => 1 }
+  "parent",
+  "AdministratorDB::Schema::Result::Inside",
+  { inside_id => "cluster_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;
