@@ -136,7 +136,7 @@ sub hasIp {
     my $self = shift;
     my %args = @_;
 
-    my @ips = Ip->search(hash => { iface_id => $self->getAttr(name => 'entity_id') });
+    my @ips = Ip->search(hash => { iface_id => $self->id });
     return scalar(@ips);
 }
 

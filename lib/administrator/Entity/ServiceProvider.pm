@@ -349,7 +349,7 @@ sub getNetworkInterfaces {
     # TODO: use the new BaseDb feature,
     # my @interfaces = $self->getRelated(name => 'interfaces');
     my @interfaces = Entity::Interface->search(
-                         hash => { service_provider_id => $self->getAttr(name => 'entity_id') }
+                         hash => { service_provider_id => $self->id }
                      );
 
     return wantarray ? @interfaces : \@interfaces;
