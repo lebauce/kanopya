@@ -67,31 +67,16 @@ sub getUcs {
     return $class->search(%args);
 }
 
-sub create {
-    my $self = shift;
+sub new {
+    my $class = shift;
     my %args = @_;
 
-    my $addrip = new NetAddr::IP($args{ucs_addr});
-    if(not defined $addrip) {
-        $errmsg = "Ucs->create : wrong value for ip address!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    my $ucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->new(
-        ucs_name            => $args{ucs_name},
-        ucs_desc            => $args{ucs_desc},
-        ucs_addr            => $args{ucs_addr},
-        ucs_login           => $args{ucs_login},
-        ucs_passwd          => $args{ucs_passwd},
-        ucs_ou              => $args{ucs_ou},
-    );
+    my $self = $class->SUPER::new(%args);
 
     my $connector = Entity::Connector::UcsManager->new();
-    $ucs->addConnector('connector' => $connector);
+    $self->addConnector('connector' => $connector);
 
-    return $ucs;
-
+    return $self;
 }
 
 sub remove {

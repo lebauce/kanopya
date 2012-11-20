@@ -31,8 +31,6 @@ sub get {
 
     my $self = $class->SUPER::get(%args);
 
-    $self->init();
-
     return $self;
 }
 
