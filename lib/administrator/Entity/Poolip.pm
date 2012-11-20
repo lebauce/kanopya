@@ -93,7 +93,7 @@ sub popIp {
             next;
         }
         # If current ip index is higher than poolip size, exit loop
-        elsif (($ipaddr - $network + 1 ) > $self->getAttr(name => 'poolip_mask')) {
+        elsif (($ipaddr - $network + 1) > $self->getAttr(name => 'poolip_mask')) {
             last;
         }
 

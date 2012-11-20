@@ -55,19 +55,6 @@ use constant ATTR_DEF => {
     },
 };
 
-sub methods {
-    return {
-        associatePoolip => {
-            description => 'associate a poolip to a network',
-            perm_holder => 'entity',
-        },
-        dissociatePoolip => {
-            description => 'dissociate a pool ip from a network',
-            perm_holder => 'entity',
-        },
-    };
-}
-
 sub getAttrDef { return ATTR_DEF; }
 
 
@@ -81,78 +68,6 @@ sub toString {
     my $self = shift;
     my $string = $self->{_dbix}->get_column('network_name');
     return $string;
-}
-
-=head2 associatePoolip
-
-    desc:associate poolip to vlan
-
-=cut
-
-sub associatePoolip {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'poolip' ]);
-
-    my $poolip;
-    if (ref($args{poolip}) eq 'Entity::Poolip') {
-        $poolip = $args{poolip};
-    }
-    else {
-        $poolip = Entity::Poolip->get(id => $args{poolip});
-    }
-    my $res = $self->getNetworksPoolipsDbix->create({
-                  poolip_id  => $poolip->getAttr(name => 'entity_id'),
-                  network_id => $self->getAttr(name => 'entity_id')
-              });
-}
-
-=head2 getAssociatedPoolips
-
-    desc:get list of pool ip id associated to a vlan
-
-=cut
-
-sub getAssociatedPoolips {
-    my $self = shift;
-
-    my $pips = [];
-    my $poolips = $self->getNetworksPoolipsDbix;
-    while(my $poolip = $poolips->next) {
-        my $tmp = Entity::Poolip->get(id => $poolip->get_column('poolip_id'));
-        push @$pips, $tmp;
-    }
-    return $pips;
-}
-
-=head2 dissociatePoolip
-
-    desc:dessociate a pool ip from vlan without deleting it from pool ip list 
-
-=cut
-
-sub dissociatePoolip {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'poolip' ]);
-
-    my $poolip;
-    if (ref($args{poolip}) eq 'Entity::Poolip') {
-        $poolip = $args{poolip};
-    }
-    else {
-        $poolip = Entity::Poolip->get(id => $args{poolip});
-    }
-    $self->getNetworksPoolipsDbix->search({
-        poolip_id => $poolip->getAttr(name => 'entity_id')
-    })->single()->delete();
-}
-
-sub getNetworksPoolipsDbix {
-    my $self = shift;
-    return $self->{_dbix}->network_poolips;
 }
 
 1;

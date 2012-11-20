@@ -35,95 +35,31 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 1,
     },
-    default_gateway => {
-        pattern      => '^(0|1)$',
-        is_mandatory => 0,
-    },
-    bonds_nmubers => {
+    bonds_number => {
         pattern      => '^\d+$',
         is_mandatory => 0,
     },
+    netconf_interfaces => {
+        label        => 'Network configurations',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'netconf',
+        is_mandatory => 0,
+        is_editable  => 1,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getNetworks {
-    my $self = shift;
-    my %args = @_;
-    my @networks = ();
-
-    my $interface_networks = $self->{_dbix}->interface_networks;
-    while (my $interface_network = $interface_networks->next) {
-        push @networks, Entity::Network->get(id => $interface_network->get_column('network_id'));
-    }
-
-    return @networks;
-}
-
-sub associateNetwork {
+sub hasRole {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'network' ]);
+    General::checkParams(args => \%args, required => [ 'role' ]);
 
-    $self->{_dbix}->interface_networks->create({
-        network_id => $args{network}->getAttr(name => 'entity_id')
-    });
-}
+    my @roles = map { $_->netconf_role->netconf_role_name } $self->netconfs;
 
-sub assignIpToIface {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'iface' ]);
-
-    my $assigned = 0;
-    if ($self->getRole->getAttr(name => 'interface_role_name') ne 'vms') {
-        # Try to use poolips of the first associated network.
-        my $interface_networks = $self->{_dbix}->interface_networks;
-        while (my $interface_network = $interface_networks->next) {
-            # Try all asscoiated poolips
-            my $network_poolips = $interface_network->network->network_poolips;
-            while (my $net_poolip = $network_poolips->next){
-                my $poolip = Entity::Poolip->get(id => $net_poolip->poolip->get_column('poolip_id'));
-
-                # Try to pop an ip from the current pool
-                my $ip;
-                eval { $ip = $poolip->popIp(); };
-                if ($@) {
-                    $log->info("Cannot pop IP from pool <" . $poolip->getAttr(name => 'poolip_name') . ">\n$@");
-                    next;
-                }
-                $ip->setAttr(name  => 'iface_id', value => $args{iface}->getAttr(name => 'entity_id'));
-                $ip->save();
-                $log->info("Ip ".$ip->ip_addr." assigned to iface ".$args{iface}->iface_name);
-                $assigned = 1;
-                last;
-            }
-        }
-        # No free ip found
-        if (not $assigned) {
-            throw Kanopya::Exception::Internal::NotFound(
-                      error => "Unable to assign ip to iface <" .
-                               $args{iface}->getAttr(name => 'iface_name') . ">"
-                  );
-        }
-    }
-}
-
-sub getAssociatedIface {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'host' ]);
-
-    return Entity::Iface->find(hash => { interface_id => $self->getAttr(name => 'entity_id'),
-                                         host_id      => $args{host}->getAttr(name => 'entity_id') });
-}
-
-sub hasDefaultGateway {
-    my ($self) = @_;
-    return $self->{_dbix}->get_column('default_gateway');
+    return scalar grep { $_ eq $args{role} } @roles;
 }
 
 1;

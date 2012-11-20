@@ -399,10 +399,6 @@ sub becomeNode {
                    systemimage_id      => $args{systemimage_id},
                );
 
-    my $cluster = Entity::ServiceProvider->get(id => $args{inside_id});
-    $log->info("Associate host ifaces with service network interfaces");
-    $self->associateInterfaces(cluster => $cluster);
-
     return $node->id;
 }
 
@@ -443,14 +439,22 @@ sub stopToBeNode{
         $self->node->delete();
     }
 
-    # Dissociate iface from cluster interfaces
-    $self->dissociateInterfaces();
-
     # Remove node entry
     $self->setState(state => 'down');
 }
 
-sub associateInterfaces {
+sub isIfacesConfigured {
+    my $self = shift;
+    my %args = @_;
+
+    my $configured = 0;
+    for my $iface ($self->ifaces) {
+        $configured = scalar $iface->netconfs;
+    }
+    return $configured;
+}
+
+sub configureIfaces {
     my $self = shift;
     my %args = @_;
 
@@ -458,36 +462,11 @@ sub associateInterfaces {
 
     my @ifaces = $self->getIfaces;
 
-    # Try to find a proper iface to assign to each interfaces.
-    foreach my $interface (@{$args{cluster}->getNetworkInterfaces}) {
-        my $assigned = 0;
-        for my $iface (@ifaces) {
-            if (not $iface->isAssociated) {
-                eval {
-                    $iface->associateInterface(interface => $interface);
-                    $assigned = 1;
-                };
-                if ($@) { $log->debug($@); }
-                if ($assigned) { last; }
-            }
-        }
-        if (not $assigned) {
-            throw Kanopya::Exception::Internal(
-                      error => "Unable to associate interface <" . $interface->getAttr(name => 'entity_id') .
-                               "> to any iface of the host <" . $self->getAttr(name => 'entity_id') . ">"
-                  );
-        }
-    }
-}
-
-sub dissociateInterfaces {
-    my $self = shift;
-    my %args = @_;
-
-    for my $iface (@{$self->getIfaces}) {
-        if ($iface->isAssociated) {
-            $iface->dissociateInterface();
-        }
+    # Set the ifaces netconf according to the cluster interfaces
+    INTERFACES:
+    foreach my $interface (@{ $args{cluster}->interfaces }) {
+        my $iface = shift;
+        $iface->update(netconf_ifaces => \@{ $interface->netconfs });
     }
 }
 
@@ -516,9 +495,9 @@ sub addIface {
     my $iface = Entity::Iface->new(iface_name     => $args{iface_name},
                                    iface_mac_addr => $args{iface_mac_addr},
                                    iface_pxe      => $args{iface_pxe},
-                                   host_id        => $self->getAttr(name => 'host_id'));
+                                   host_id        => $self->id);
 
-    return $iface->getAttr(name => 'entity_id');
+    return $iface->id;
 }
 
 =head2 getIfaces
@@ -534,11 +513,14 @@ sub getIfaces {
 
     # Make sure to have all pxe ifaces before non pxe ones within the resulting array
     foreach my $pxe (1, 0) {
-        my @ifcs = Entity::Iface->search(hash => { host_id => $self->id, iface_pxe => $pxe });
+        my @ifcs = Entity::Iface->search(hash => { host_id   => $self->id,
+                                                   iface_pxe => $pxe,
+                                                   # Do not search bonding slave ifaces
+                                                   master    => undef });
 
         IFACE:
         for my $iface (@ifcs) {
-            if (defined $args{role} and $iface->isAssociated) {
+            if (defined $args{role}) {
                 my $hasrole = 0;
 
                 NETCONFROLE:
@@ -565,21 +547,21 @@ sub getIfaces {
 sub getPXEIface {
     my $self = shift;
 
-    my @pxe_ifaces = Entity::Iface->search(hash => {
-                         host_id   => $self->getAttr(name => 'host_id'),
+    my $pxe_iface;
+    eval {
+        $pxe_iface = Entity::Iface->find(hash => {
+                         host_id   => $self->host_id,
                          iface_pxe => 1,
+                         # Do not search bonding slave ifaces
+                         master    => undef
                      });
-
-    for my $iface (@pxe_ifaces) {
-        # An iface not associated to any cluster interface
-        # will not be assigned to an ip.
-        if ($iface->getAttr(name => 'interface_id')) {
-            return $iface;
-        }
+    };
+    if ($@) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "No pxe iface found."
+              );
     }
-    throw Kanopya::Exception::Internal::NotFound(
-              error => "No pxe iface associated to a cluster interface found."
-          );
+    return $pxe_iface;
 }
 
 sub removeIface {

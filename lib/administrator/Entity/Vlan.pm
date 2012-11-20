@@ -61,9 +61,4 @@ sub toString {
     return "Vlan <" . $self->vlan_name . ">, number <" . $self->vlan_number . ">.";
 }
 
-sub getNetworksPoolipsDbix {
-    my $self = shift;
-    return $self->{_dbix}->parent->network_poolips;
-}
-
 1;

@@ -59,85 +59,63 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 1,
     },
+    netconf_ifaces => {
+        label        => 'Network configurations',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'netconf',
+        is_mandatory => 0,
+        is_editable  => 1,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
 sub toString {
     my $self = shift;
-    my $string = "Iface: " . $self->{_dbix}->get_column('iface_name') .
-                 " - " . $self->{_dbix}->get_column('iface_mac_addr');
-    return $string;
-}
 
-sub associateInterface {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'interface' ]);
-
-    # Do not associate interface with role 'vms' to an pxe iface,
-    # because 'vms' associate iface will not be assigned to an ip,
-    # so could not be used as pxe boot iface.
-    if ($args{interface}->getRole->getAttr(name => 'interface_role_name') eq 'vms' and
-        $self->getAttr(name => 'iface_pxe')) {
-        throw Kanopya::Exception::Internal::NotFound(
-                  error => "Could not associate interface <" . $args{interface}->getAttr(name => 'entity_id') .
-                           "> with role 'vms' to a pxe iface <" . $self->getAttr(name => 'iface_mac_addr') . ">."
-              );
-    }
-
-    $log->info("Associate iface " .  $self->getAttr(name => 'iface_mac_addr') .
-               " to interface with role " . $args{interface}->getRole->getAttr(name => 'interface_role_name'));
-
-    $self->setAttr(name  => 'interface_id',
-                   value => $args{interface}->getAttr(name => 'entity_id'));
-    $self->save();
-}
-
-sub dissociateInterface {
-    my $self = shift;
-    my %args = @_;
-
-    @ips = Ip->search(hash => { iface_id => $self->getAttr(name => 'entity_id') });
-    for my $ip (@{ips}) {
-        my $poolip = Entity::Poolip->get(id => $ip->getAttr(name => 'poolip_id'));
-        $poolip->freeIp(ip => $ip);
-    }
-    $self->setAttr(name => 'interface_id', value => undef);
-    $self->save();
-}
-
-sub isAssociated {
-    my $self = shift;
-    my %args = @_;
-
-    return scalar(@{ $self->netconfs }) > 0;
+    return "Iface: " . $self->iface_name . " - " . $self->iface_mac_addr;
 }
 
 sub assignIp {
     my $self = shift;
     my %args = @_;
 
-    my $interface;
-    eval {
-        $interface = Entity::Interface->get(id => $self->getAttr(name => 'interface_id'));
-    };
-    if ($@) {
-        throw Kanopya::Exception::Internal::NotFound(
-                  error => "Iface " . $self->getAttr(name => 'iface_name') .
-                           " not associated to a cluster interface."
-              );
+    # Loop over all network configurations, and assign ip to ifaces
+    # for each network.
+    NETCONFS:
+    for my $netconf ($self->netconfs) {
+        if (scalar $netconf->poolips) {
+            POOLIPS:
+            for my $poolip ($netconf->poolips) {
+                # Try to pop an ip from the current pool
+                my $ip;
+                eval { $ip = $poolip->popIp(); };
+                if ($@) {
+                    $log->info("Cannot pop IP from pool <" . $poolip->poolip_name . ">\n$@");
+                    next POOLIPS;
+                }
+                $ip->setAttr(name  => 'iface_id', value => $args{iface}->id);
+                $ip->save();
+
+                $log->info("Ip " . $ip->ip_addr . " assigned to iface ". $self->iface_name);
+
+                # TODO: handle multiple ip on one iface.
+                last NETCONFS;
+            }
+            # No free ip found
+            throw Kanopya::Exception::Internal::NotFound(
+                      error => "Unable to assign ip to iface <" . $args{iface}->iface_name . ">"
+                  );
+        }
     }
-    $interface->assignIpToIface(iface => $self);
 }
 
 sub hasIp {
     my $self = shift;
     my %args = @_;
 
-    my @ips = Ip->search(hash => { iface_id => $self->id });
-    return scalar(@ips);
+    return scalar($self->ips);
 }
 
 sub getIPAddr {
@@ -147,15 +125,14 @@ sub getIPAddr {
     my $ip;
     eval {
         # TODO: handle multiple IP by Iface.
-         $ip = Ip->find(hash => { iface_id => $self->getAttr(name => 'entity_id') });
+        $ip = Ip->find(hash => { iface_id => $self->id });
     };
     if ($@) {
         throw Kanopya::Exception::Internal::NotFound(
-                  error => "Iface " . $self->getAttr(name => 'iface_name') .
-                           " not associated to any IP."
+                  error => "Iface " . $self->iface_name . " not associated to any IP."
               );
     }
-    return $ip->getAttr(name => 'ip_addr');
+    return $ip->ip_addr;
 }
 
 sub getPoolip {
@@ -165,22 +142,14 @@ sub getPoolip {
     my $ip;
     eval {
         # TODO: handle multiple IP by Iface.
-        $ip = Ip->find(hash => { iface_id => $self->getAttr(name => 'entity_id') });
+        $ip = Ip->find(hash => { iface_id => $self->id });
     };
     if ($@) {
         throw Kanopya::Exception::Internal::NotFound(
-                  error => "Iface " . $self->getAttr(name => 'iface_name') .
-                           " not associated to any IP."
+                  error => "Iface " . $self->iface_name . " not associated to any IP."
               );
     }
-
-    return Entity::Poolip->get(id => $ip->getAttr(name => 'poolip_id'));
-}
-
-sub getInterface {
-    my $self = shift;
-
-    return Entity::Interface->get(id => $self->getAttr(name => 'interface_id'));
+    return $ip->poolip;
 }
 
 =head generateMacAddress
@@ -200,9 +169,38 @@ sub generateMacAddress {
          $macaddress = random_regex($regexp);
          @ifaces = $class->search(hash => { iface_mac_addr => $macaddress },
                                   rows => 1);
-    } while( scalar(@ifaces) );
+    } while(scalar(@ifaces));
 
     return $macaddress;
+}
+
+sub hasRole {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'role' ]);
+
+    my @roles = map { $_->netconf_role->netconf_role_name } $self->netconfs;
+
+    return scalar grep { $_ eq $args{role} } @roles;
+}
+
+sub getVlans {
+    my $self = shift;
+    my %args = @_;
+
+    my @vlans;
+    for my $netconf ($self->netconfs) {
+        @vlans = (@vlans, $netconf->vlans);
+    }
+    return @vlans;
+}
+
+sub slaves {
+    my $self = shift;
+    my %args = @_;
+
+    return $self->ifaces;
 }
 
 1;
