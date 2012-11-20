@@ -904,6 +904,13 @@ sub registerIndicators {
 sub registerKanopyaMaster {
     my %args = @_;
 
+    my $admin_network = Entity::Network->new(
+                            network_name    => "admin",
+                            network_addr    => $args{ipv4_internal_network_ip},
+                            network_netmask => $args{poolip_netmask},
+                            network_gateway => $args{poolip_gateway}
+                        );
+
     my $admin = Entity::User->find(hash => { user_login => "admin" });
 
     my $master_kernel = Entity::Kernel->find(hash => { });
@@ -923,6 +930,7 @@ sub registerKanopyaMaster {
                             cluster_nameserver2   => '127.0.0.1',
                             cluster_state         => 'up:' . time(),
                             cluster_basehostname  => 'kanopya_',
+                            default_gateway_id    => $admin_network->id,
                             active                => 1,
                             user_id               => $admin->id,
                             kernel_id             => $master_kernel->id
@@ -1089,13 +1097,6 @@ sub registerKanopyaMaster {
     my $kanopya_initiator = "iqn.$year-$month."
         . join('.', reverse split(/\./, $domain)) . ':' . time();
 
-    my $admin_network = Entity::Network->new(
-                            network_name    => "admin",
-                            network_addr    => $args{ipv4_internal_network_ip},
-                            network_netmask => $args{poolip_netmask},
-                            network_gateway => $args{poolip_gateway}
-                        );
-
     my $poolip = Entity::Poolip->new(
                      poolip_name       => "kanopya_admin",
                      poolip_first_addr => $args{poolip_addr},
@@ -1105,7 +1106,6 @@ sub registerKanopyaMaster {
 
     my $admin_interface = Entity::Interface->new(
                               service_provider_id => $admin_cluster->id,
-                              default_gateway  => 1
                           );
 
     my $physical_hoster = Entity::Component::Physicalhoster0->find(hash => { });
