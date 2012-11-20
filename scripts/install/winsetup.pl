@@ -85,7 +85,6 @@ my $exec = `$cmd 2>&1`;
 
 #lol.
 push @INC, ("$kanopya_dir" . 'kanopya\lib\common', "$kanopya_dir" . 'kanopya\lib\administrator', "$kanopya_dir" . 'kanopya\lib\executor', "$kanopya_dir" . 'kanopya\lib\monitor', "$kanopya_dir" . 'kanopya\lib\orchestrator', "$kanopya_dir" . 'kanopya\lib\external', "$kanopya_dir" . 'kanopya\lib\external\NetApp');
-$DB::single =1;
 
 ######################
 #Directories Creation#
