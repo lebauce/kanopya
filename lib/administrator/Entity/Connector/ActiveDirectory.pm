@@ -252,7 +252,7 @@ sub retrieveNodes {
     my $mesg = $ldap->search(
         base => $ad_nodes_base_dn,
         scope => 'base',
-        filter => "cn=*",
+        filter => "distinguishedName=*",
     );
 
     $mesg->code && die $mesg->error;
