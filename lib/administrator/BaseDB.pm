@@ -1121,8 +1121,21 @@ sub searchRelated {
 
     my $adm = Administrator->new();
     my $source = $adm->{db}->source(_buildClassNameFromString($class));
-    my $join = $class->getJoinQuery(comps   => $args{filters},
-                                    reverse => 1);
+    my $join;
+    eval {
+        # If the function is called on a class that is only a base class of the
+        # class the relation is on (for example 'virtual_machines' on a Host),
+        # return a more understandable error message
+        $join = $class->getJoinQuery(comps   => $args{filters},
+                                     reverse => 1);
+    };
+    if ($@) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "Could not find a relation " .
+                           join('.', @{$args{filters}}) . " on $self"
+              );
+    }
+
     my $searched_class = classFromDbix($join->{source});
     requireClass($searched_class);
 
