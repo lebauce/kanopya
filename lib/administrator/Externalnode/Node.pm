@@ -94,4 +94,16 @@ sub remove() {
     $serviceProvider->removeNode('host_id' => $self->getAttr(name => 'host_id'));
 }
 
+sub getDelegatee {
+    my $self = shift;
+    my $class = ref $self;
+
+    if (not $class) {
+        return "Entity::ServiceProvider";
+    }
+    else {
+        return $self->service_provider;
+    }
+}
+
 1;
