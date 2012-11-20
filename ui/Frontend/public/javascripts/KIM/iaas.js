@@ -149,10 +149,11 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
         $(networktable).append($('<tr>').append($('<th>', { text : 'Network type' }))
                                         .append($('<th>', { text : 'Network' }))
                                         .append($('<th>', { text : 'Pool IP' })));
-        var expands = ['ifaces', 'ifaces.interface', 'ifaces.interface.interface_role',
-                       'ifaces.interface.interface_networks', 'ifaces.interface.interface_networks.network',
+        var expands = ['ifaces', 'ifaces.interface', 'ifaces.interface.interface_networks',
+                       'ifaces.interface.interface_networks.network',
                        'ifaces.interface.interface_networks.network.network_poolips',
-                       'ifaces.interface.interface_networks.network.network_poolips.poolip',];
+                       'ifaces.interface.interface_networks.network.network_poolips.poolip',
+                       'ifaces.interface.interface_role',];
         $.ajax({
             url     : '/api/host/' + data.entity_id + '?expand=' + expands.join(','),
             success : function(hostdata) {
