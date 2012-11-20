@@ -828,7 +828,8 @@ sub get {
                                          optional => { 'prefetch' => [ ] });
 
     return $class->find(hash     => { 'me.' . $class->getPrimaryKey => $args{id} },
-                        prefetch => $args{prefetch});
+                        prefetch => $args{prefetch},
+                        deep     => 1);
 }
 
 =pod
@@ -1160,7 +1161,8 @@ Return a single element matching the specified criterias take the same arguments
 sub find {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'hash' ]);
+    General::checkParams(args => \%args, required => [ 'hash' ],
+                                         optional => { deep => 0 });
 
     my @objects = $class->search(%args);
 
@@ -1355,7 +1357,7 @@ sub toJSON {
                     }
                 }
                 elsif ($is_relation eq 'single') {
-                    my $obj = $self->getAttr(name => $comp);
+                    my $obj = $self->getAttr(name => $comp, deep => 1);
                     if ($obj) {
                         $hash->{$comp} = $obj->toJSON(expand => [ join('.', @comps) ],
                                                       deep   => $args{deep});
