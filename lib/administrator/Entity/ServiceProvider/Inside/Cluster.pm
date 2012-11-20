@@ -62,13 +62,11 @@ use constant ATTR_DEF => {
     cluster_name => {
         pattern      => '^[\w\d\.]+$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_desc => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 1
     },
     cluster_type => {
@@ -80,13 +78,11 @@ use constant ATTR_DEF => {
     cluster_boot_policy => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_si_shared => {
         pattern      => '^(0|1)$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_si_persistent => {
@@ -98,73 +94,66 @@ use constant ATTR_DEF => {
     cluster_min_node => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 1
     },
     cluster_max_node => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 1
     },
     cluster_priority => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 1
     },
     cluster_state => {
         pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*|warning:\d*',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_domainname => {
         pattern      => '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_nameserver1 => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_nameserver2 => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_basehostname => {
         pattern      => '^[a-z_0-9-]+$',
         is_mandatory => 1,
-        is_extended  => 0,
+        is_editable  => 1
+    },
+    default_gateway_id => {
+        pattern      => '\d+',
+        is_mandatory => 0,
         is_editable  => 1
     },
     active => {
         pattern      => '^[01]$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 0
     },
     masterimage_id => {
         pattern      => '\d*',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 0
     },
     kernel_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 1
     },
 	user_id => {
         pattern      => '^\d+$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
 };
@@ -289,7 +278,7 @@ sub create {
         my $policy = Entity::Policy->get(id => $policy_id);
 
         # Load params preset into hash
-        my $policy_presets = $policy->getParamPreset->load();
+        my $policy_presets = $policy->param_preset->load();
 
         # Merge current polciy preset with others
         %params = %{ $merge->merge(\%params, \%$policy_presets) };
@@ -505,39 +494,18 @@ sub configureInterfaces {
 
     if (defined $args{interfaces}) {
         for my $interface_pattern (values %{ $args{interfaces} }) {
-            if ($interface_pattern->{interface_role}) {
-#                my $role = Entity::InterfaceRole->get(id => $interface_pattern->{interface_role});
-                my $role;
-
+            if ($interface_pattern->{interface_netconf}) {
                 # TODO: This mechanism do not allows to define many interfaces
                 #       with the same role within policies.
 
+                # TODO: Search among existing interfaces to avoid to re-create its.
+
                 # Check if an interface with the same role already set, add it otherwise,
                 # Add networks to the interrface if not exists.
-                my $interface;
-                eval {
-                    $interface = Entity::Interface->find(
-                                     hash => { service_provider_id => $self->getAttr(name => 'entity_id'),
-                                               interface_role_id   => $role->getAttr(name => 'entity_id') }
-                                 );
-                };
-                if ($@) {
-                    my $default_gateway = (defined $interface_pattern->{default_gateway} && $interface_pattern->{default_gateway} == 1) ? 1 : 0;
-                    $interface = $self->addNetworkInterface(interface_role  => $role,
-                                                            default_gateway => $default_gateway);
-                }
-
-                if ($interface_pattern->{interface_networks}) {
-                    for my $network_id (@{ $interface_pattern->{interface_networks} }) {
-                        eval {
-                            $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
-                        };
-                        if($@) {
-                            my $msg = 'Interface <' .$interface->id . '> already associated with network <' . $network_id . '>';
-                            $log->debug($msg);
-                        }
-                    }
-                }
+                my $bonds_number = $interface_pattern->{bonds_number};
+                $bonds_number = defined $bonds_number ? $bonds_number : 1;
+                $self->addNetworkInterface(netconfs     => [ $interface_pattern->{interface_netconf} ],
+                                           bonds_number => $bonds_number);
             }
         }
     }

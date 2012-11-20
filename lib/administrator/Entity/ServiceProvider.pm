@@ -317,42 +317,16 @@ sub getManagerParameters {
 sub addNetworkInterface {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'interface_role' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'netconfs' ],
+                         optional => { 'bonds_number' => 1 });
 
     my $params = {
-        interface_role_id   => $args{interface_role}->getAttr(name => 'entity_id'),
-        service_provider_id => $self->getAttr(name => 'entity_id')
+        service_provider_id => $self->id,
+        bonds_number        => $args{bonds_number},
+        netconf_interfaces  => $args{netconfs},
     };
-    if (defined $args{default_gateway}) {
-        $params->{default_gateway} = $args{default_gateway};
-    }
-    my $interface = Entity::Interface->new(%$params);
-
-    # Associate to networks if defined
-    if (defined $args{networks}) {
-        for my $network ($args{networks}) {
-            $interface->associateNetwork(network => $network);
-        }
-    }
-    return $interface;
-}
-
-=head2 getNetworkInterfaces
-
-    Desc : return a list of NetworkInterface
-
-=cut
-
-sub getNetworkInterfaces {
-    my ($self) = @_;
-
-    # TODO: use the new BaseDb feature,
-    # my @interfaces = $self->getRelated(name => 'interfaces');
-    my @interfaces = Entity::Interface->search(
-                         hash => { service_provider_id => $self->id }
-                     );
-
-    return wantarray ? @interfaces : \@interfaces;
+    return Entity::Interface->new(%$params);
 }
 
 =head2 removeNetworkInterface

@@ -63,7 +63,7 @@ sub addParams {
 
     my $preset;
     eval {
-        $preset = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
+        $preset = $self->param_preset;
 
         if ($args{override}) {
             $preset->update(params => $args{params});
@@ -73,9 +73,8 @@ sub addParams {
         }
     };
     if ($@) {
-        $preset = ParamPreset->new(name => 'param_preset_id', params => $args{params});
-        $self->setAttr(name  => 'param_preset_id',
-                       value => $preset->getAttr(name => 'param_preset_id'));
+        $preset = ParamPreset->new(params => $args{params});
+        $self->setAttr(name => 'param_preset_id', value => $preset->id);
         $self->save();
     }
 }
@@ -83,8 +82,8 @@ sub addParams {
 sub getParams {
     my $self = shift;
     my %args = @_;
-    
-    my $id = $self->getAttr(name => 'param_preset_id');
+
+    my $id = $self->param_preset_id;
     if(not defined $id) {
         return {};
     }
