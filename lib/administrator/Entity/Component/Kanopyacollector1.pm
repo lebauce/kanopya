@@ -26,6 +26,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Monitor::Retriever;
 use Entity::Indicator;
+use Entity::CollectorIndicator;
 use Indicatorset;
 use Collect;
 use Log::Log4perl "get_logger";
@@ -63,6 +64,28 @@ sub getAttrDef { return ATTR_DEF; }
 
 =cut
 
+sub new {
+    my ($class, %args) = @_;
+    my $self = $class->SUPER::new(%args);
+    
+    my @indicator_sets = (
+        Indicatorset->search(hash =>{indicatorset_name => 'mem'}),
+        Indicatorset->search(hash =>{indicatorset_name => 'cpu'}),
+        Indicatorset->search(hash =>{indicatorset_name => 'apache_stats'}),
+        Indicatorset->search(hash =>{indicatorset_name => 'apache_workers'}),
+        Indicatorset->search(hash =>{indicatorset_name => 'billing'}),
+        Indicatorset->search(hash =>{indicatorset_name => 'diskIOTable'}),
+        Indicatorset->search(hash =>{indicatorset_name => 'interfaces'}),
+        Indicatorset->search(hash =>{indicatorset_name => 'vsphere_vm'}),
+        Indicatorset->search(hash =>{indicatorset_name => 'vsphere_host'}),
+    );
+
+    $self->createCollectorIndicators(
+        indicator_sets => \@indicator_sets,
+    );
+
+    return $self;
+}
 sub retrieveData {
     my ($self, %args) = @_;
 
@@ -144,7 +167,7 @@ sub retrieveData {
 sub getIndicators {
     my ($self, %args) = @_;
 
-    return Indicator->search(
+    return Entity::Indicator->search(
         hash => { "indicatorset.indicatorset_provider" => 'SnmpProvider' }
     );
 }
@@ -162,7 +185,7 @@ sub getIndicator {
 
     General::checkParams(args => \%args, required => ['id']);
 
-    return Indicator->get(id => $args{id});
+    return Entity::Indicator->get(id => $args{id});
 }
 
 =head2 collectIndicator
@@ -174,7 +197,8 @@ sub getIndicator {
 sub collectIndicator {
     my ($self, %args) = @_;
 
-    my $indicator = Indicator->get(id => $args{indicator_id});
+    my $collector_indicator = Entity::CollectorIndicator->get(id => $args{indicator_id});
+    my $indicator = $collector_indicator->indicator;
 
     eval {
         my $adm = Administrator->new();
