@@ -9,14 +9,14 @@ function host_addbutton_action(e) {
         type       : 'host',
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : [ 'host_desc', 'host_core', 'host_ram', 'kernel_id', 'host_serial_number' ],
-        relations  : { 'ifaces' : [ 'iface_name', 'iface_mac_addr', 'iface_pxe' ] },
+        relations  : { 'ifaces' : [ 'iface_name', 'iface_mac_addr', 'iface_pxe', 'netconf_ifaces' ] },
         rawattrdef : {
             'host_manager_id' : {
-                'value' : g_host_manager_id,
+                'value' : g_host_manager_id
             },
             'active' : {
-                'value' : 1,
-            },
+                'value' : 1
+            }
         }
     })).start();
 }

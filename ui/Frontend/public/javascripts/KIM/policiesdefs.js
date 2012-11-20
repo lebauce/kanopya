@@ -163,22 +163,31 @@ var policies = {
             type         : 'text',
             pattern      : '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
         },
+        default_gateway_id : {
+            step         : 'Policy',
+            label        : 'Default gateway network',
+            type         : 'select',
+            entity       : 'network',
+            display      : 'network_name'
+        },
         network_interface : {
             step         : 'Interfaces',
             type         : 'composite',
             set          : 'Interfaces',
             add_label    : 'Add a network interface'
         },
-        interface_networks : {
+        interface_netconfs : {
             label        : 'Network configuration',
             type         : 'select',
             entity       : 'netconf',
             display      : 'netconf_name',
-            composite    : 'network_interface'
+            composite    : 'network_interface',
+            is_mandatory : 1
         },
-        default_gateway : {
-            label        : 'Default gateway',
-            type         : 'radio',
+        bonds_number : {
+            label        : 'Bonding slave count',
+            type         : 'text',
+            pattern      : '^[0-9.]+$',
             composite    : 'network_interface'
         }
     },
