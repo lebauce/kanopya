@@ -21,6 +21,7 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
+use Entity::Indicator;
 use VerifiedNoderule;
 
 use Data::Dumper;
@@ -90,7 +91,7 @@ sub getMonitoringData {
     # Construst indicators params as expected by CollectorManager
     my %indicators;
     for my $indic_id (@{$args{indicator_ids}}) {
-        $indicators{$indic_id} = Indicator->get(id => $indic_id);
+        $indicators{$indic_id} = Entity::Indicator->get(id => $indic_id);
     }
     delete $args{indicator_ids};
 

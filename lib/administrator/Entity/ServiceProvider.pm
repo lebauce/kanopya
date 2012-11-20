@@ -38,6 +38,7 @@ use Kanopya::Exceptions;
 use Entity::Component;
 use Entity::Connector;
 use Entity::Interface;
+use Externalnode;
 
 use ServiceProviderManager;
 
@@ -107,7 +108,7 @@ sub getNodeMonitoringData {
     General::checkParams(args => \%args, required => [ 'node_id', 'indicator_ids' ]);
 
     my $node_id = delete $args{node_id};
-    return ExternalNode->get(id => $node_id)->getMonitoringData(%args);
+    return Externalnode->get(id => $node_id)->getMonitoringData(%args);
 }
 
 
