@@ -1372,6 +1372,7 @@ sub populate_policies {
 
     # network
     my $netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
+    my $network = Entity::Network->find(hash => { network_name => 'admin' });
     $policies{network} = Entity::Policy->new(
         policy_name => 'Default network configuration',
         policy_desc => 'Default network configuration, with admin and public interfaces',
@@ -1379,8 +1380,8 @@ sub populate_policies {
         cluster_nameserver1  => '127.0.0.1',
         cluster_nameserver2  => '127.0.0.1',
         cluster_domainname   => 'hedera-technology.com',
+        default_gateway_id   => $network->id,
         interface_netconfs_0 => $netconf->id,
-        default_gateway_0    => 1
     );
 
     # scalability
