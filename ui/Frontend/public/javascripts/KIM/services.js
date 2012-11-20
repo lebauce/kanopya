@@ -246,7 +246,7 @@ function runScaleWorkflow(type, eid, spid) {
                         type        : 'GET',
                         success     : function(hmgr) {
                             $.ajax({
-                                url         : '/api/entity/' + hmgr.manager_id + '/scaleHost',
+                                url         : '/api/entity/' + hmgr[0].manager_id + '/scaleHost',
                                 type        : 'POST',
                                 contentType : 'application/json', 
                                 data        : JSON.stringify({  
@@ -275,7 +275,7 @@ function migrate(spid, eid) {
         type        : 'GET',
         success     : function(hmgr) {
             $.ajax({
-                url     : '/api/opennebula3/' + hmgr.manager_id + '/hypervisors',
+                url     : '/api/opennebula3/' + hmgr[0].manager_id + '/hypervisors',
                 type    : 'POST',
                 success : function(data) {
                     for (var i in data) if (data.hasOwnProperty(i)) {
@@ -290,7 +290,7 @@ function migrate(spid, eid) {
                                 var hyp = $(sel).val();
                                 if (hyp != null && hyp != "") {
                                     $.ajax({
-                                        url         : '/api/opennebula3/' + hmgr.manager_id + '/migrate',
+                                        url         : '/api/opennebula3/' + hmgr[0].manager_id + '/migrate',
                                         type        : 'POST',
                                         contentType : 'application/json',
                                         data        : JSON.stringify({
