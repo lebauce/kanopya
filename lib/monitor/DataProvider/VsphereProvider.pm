@@ -18,7 +18,7 @@ use strict;
 use warnings;
 
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
-use Vsphere5Datacenter;
+use Entity::Component::Vsphere5::Vsphere5Datacenter;
 use Kanopya::Exceptions;
 
 use Data::Dumper;
