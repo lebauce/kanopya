@@ -5,7 +5,7 @@ require('modalform.js');
 
 var g_user_id = undefined;
 
-function user_addbutton_action(e, displayed) {
+function user_addbutton_action(e) {
     // When called from user details, e is the user id, event instead.
     var displayed;
     var relations;

@@ -26,8 +26,32 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     netconf_name => {
-        label        => 'Network configuration name',
+        label        => 'Name',
         type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1,
+    },
+    netconf_vlans => {
+        label        => 'VLANs',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'vlan',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    netconf_poolips => {
+        label        => 'Pools IPs',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'poolip',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    netconf_role_id => {
+        label        => 'Role',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,

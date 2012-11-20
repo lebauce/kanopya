@@ -43,16 +43,30 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     poolip_name => {
+        label        => 'Name',
         pattern      => '.*',
         is_mandatory => 1,
+        is_editable  => 1,
     },
     poolip_first_addr => {
+        label        => 'First Address',
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
+        is_editable  => 1,
     },
     poolip_size => {
+        label        => 'Size',
         pattern      => '[0-9]{1,2}',
         is_mandatory => 1,
+        is_editable  => 1,
+    },
+    network_id => {
+        label        => 'Network',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_editable  => 1,
     },
 };
 
@@ -122,25 +136,15 @@ sub getPoolip {
     return $class->search(%args);
 }
 
-sub create {
+sub new {
     my ($class, %args) = @_;
-
-    $class->checkAttrs(attrs => \%args);
-
-    my $addrip = new NetAddr::IP($args{poolip_addr});
+    my $addrip = new NetAddr::IP($args{poolip_first_addr});
     if(not defined $addrip) {
-        $errmsg = "Poolip->create : wrong value for address!";
+        $errmsg = "Wrong value for poolip_first_addr!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-
-    my $poolip = Entity::Poolip->new(
-        poolip_name    => $args{poolip_name},
-        poolip_addr    => $args{poolip_addr},
-        poolip_mask    => $args{poolip_mask},
-        poolip_netmask => $args{poolip_netmask},
-        poolip_gateway => $args{poolip_gateway},
-    );
+    return $class->SUPER::new(%args);
 }
 
 sub remove {

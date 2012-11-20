@@ -786,7 +786,7 @@ var KanopyaFormWizard = (function() {
     }
 
     KanopyaFormWizard.prototype.errorPlacement = function(error, element) {
-        // Check if the input come from a listing by seraching
+        // Check if the input come from a listing by searching
         // a possibly defined td for the error label
         var errortd = this.form.find('td.error_' + element.attr('name')).get(0);
         if (errortd) {
@@ -873,7 +873,7 @@ var KanopyaFormWizard = (function() {
     KanopyaFormWizard.prototype.validateForm = function () {
         var _this = this;
 
-        // Add validation rules for inputs inserted dinamically in the form.
+        // Add validation rules for inputs inserted dynamically in the form.
         $(this.form).find(':input').each(function () {
             for (var rule in _this.validateRules[$(this).attr('name')]) {
                 var rules = $(this).rules();

@@ -20,16 +20,18 @@ use base "Entity";
 
 use constant ATTR_DEF => {
     vlan_name => {
+        label        => 'Name',
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0,
-        is_editable  => 0,
+        is_editable  => 1,
     },
     vlan_number => {
+        label        => 'Number',
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_extended  => 0,
-        is_editable  => 0,
+        is_editable  => 1,
     },
 };
 

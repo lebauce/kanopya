@@ -22,22 +22,36 @@ use Entity::Poolip;
 
 use constant ATTR_DEF => {
     network_name => {
+        label        => 'Name',
         pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0,
-        is_editable  => 0,
+        is_editable  => 1,
     },
     network_addr => {
+        label        => 'Network Address',
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
+        is_editable  => 1,
     },
     network_netmask => {
+        label        => 'Netmask',
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
+        is_editable  => 1,
     },
     network_gateway => {
+        label        => 'Gateway',
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
+        is_editable  => 1,
+    },
+    poolips => {
+        label        => 'Pools Ip',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_mandatory => 0,
+        is_editable  => 1,      
     },
 };
 

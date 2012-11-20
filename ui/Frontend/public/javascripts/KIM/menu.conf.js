@@ -31,8 +31,10 @@ var mainmenu_def = {
         'IaaS'    : [ { label : 'IaaS', id : 'iaas', onLoad : load_iaas_content} ],
         'Network' : [
             { label : 'Overview', id : 'network_overview' },
-            { label : 'Networks', id : 'network_vlans', onLoad : function(cid) { require('KIM/networks.js'); networks_list(cid); } },
-            { label : 'PoolIPs', id : 'network_poolips', onLoad : function(cid) { require('KIM/poolips.js'); poolips_list(cid); } }
+            { label : 'Networks', id : 'network_networks', onLoad : function(cid) { require('KIM/networks.js'); networks_list(cid); } },
+            { label : 'VLANs', id : 'network_vlans', onLoad : function(cid) { require('KIM/vlans.js'); vlans_list(cid); } },
+            { label : 'PoolIPs', id : 'network_poolips', onLoad : function(cid) { require('KIM/poolips.js'); poolips_list(cid); } },
+            { label : 'Network Configuration', id : 'network_netconf', onLoad : function(cid) { require('KIM/netconf.js'); netconfs_list(cid); } }
         ],
         'System'  : [
             { label : 'Master Images',  id : 'master_image',    onLoad : function(cid) { require('KIM/masterimage.js'); masterimagesMainView(cid); }    },
