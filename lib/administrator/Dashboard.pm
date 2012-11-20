@@ -36,4 +36,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getDelegatee {
+    my $self = shift;
+    my $class = ref $self;
+
+    if (!$class) {
+        return "Entity::ServiceProvider";
+    } else {
+        return $self->dashboard_service_provider;
+    }
+}
+
 1;
