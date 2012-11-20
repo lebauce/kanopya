@@ -101,7 +101,7 @@ sub generateConfiguration {
 sub preconfigureSystemimage {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
-                         required => ['files','cluster','host','mount_point']);
+                         required => [ 'files', 'cluster', 'host', 'mount_point' ]);
 
     my $econtext = $self->getExecutorEContext;
     
@@ -358,7 +358,7 @@ sub _generateNetConf {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'mount_point', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
 
     # search for an potential 'loadbalanced' component
     my $cluster_components = $args{cluster}->getComponents(category => "all");
@@ -374,30 +374,29 @@ sub _generateNetConf {
 
     # Pop an IP adress for all host iface,
     my @net_ifaces;
-    INTERFACES:
-    foreach my $interface (@{$args{cluster}->getNetworkInterfaces}) {
-        my $iface;
-        eval {
-            $iface = $interface->getAssociatedIface(host => $args{host});
-        };
-        if ($@) {
-            $log->debug("Skipping configuration for interface " . $interface->getRole->interface_role_name);
-            next INTERFACES;
+    IFACES:
+    foreach my $iface (@{ $args{host}->getIfaces }) {
+        if (not $iface->netconfs) {
+            $log->debug("Skipping configuration for non associated iface " . $iface->iface_name);
+            next IFACES;
         }
 
         # Only add non pxe iface to /etc/network/interfaces
-        if (not $iface->getAttr(name => 'iface_pxe')) {
+        if (not $iface->iface_pxe) {
             my ($gateway, $netmask, $ip, $method);
 
             if ($iface->hasIp) {
-                my $pool = $iface->getPoolip;
-                $netmask = $pool->poolip_netmask;
-                $ip = $iface->getIPAddr;
-                $gateway = $interface->hasDefaultGateway() ? $pool->poolip_gateway : undef;
-                $method = "static";
+                my $network = $iface->getPoolip->network;
+                $netmask    = $network->network_netmask;
+                $ip         = $iface->getIPAddr;
+
                 if ($is_loadbalanced and not $is_masternode) {
                     $gateway = $args{cluster}->getMasterNodeIp
                 }
+                else {
+                    $gateway = ($network->id == $args{cluster}->default_gateway->id) ? $network->network_gateway : undef;
+                }
+                $method = "static";
             }
             else {
                 $method = "manual";
@@ -407,10 +406,9 @@ sub _generateNetConf {
                                 name    => $iface->iface_name,
                                 address => $ip,
                                 netmask => $netmask,
-                                gateway => $gateway,
-                                role    => $interface->getRole->interface_role_name };
+                                gateway => $gateway };
 
-            $log->info("Iface " .$iface->iface_name . " configured via static file");
+            $log->info("Iface " . $iface->iface_name . " configured via static file");
         }
     }
 
