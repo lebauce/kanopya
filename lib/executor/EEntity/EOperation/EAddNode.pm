@@ -219,10 +219,16 @@ sub execute {
     if (not defined $self->{context}->{host}) {
         # Just call Master node addition, other node will be add by the state manager
         $self->{context}->{host} = $self->{context}->{cluster}->addNode();
-    }
 
-    if (not defined $self->{context}->{host}) {
-        throw Kanopya::Exception::Internal(error => "Could not find a usable host");
+        if (not defined $self->{context}->{host}) {
+            throw Kanopya::Exception::Internal(error => "Could not find a usable host");
+        }
+
+        # If the host ifaces are not configured to netconfs at resource declaration step,
+        # associate them according to the cluster interfaces netconfs
+        if (not $self->{context}->{host}->isIfacesConfigured) {
+            $self->{context}->{host}->configureIfaces(cluster => $self->{context}->{cluster});
+        }
     }
 
     # Check the user quota on ram and cpu
@@ -291,12 +297,3 @@ sub _cancel {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

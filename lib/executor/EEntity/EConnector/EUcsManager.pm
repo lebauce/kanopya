@@ -200,9 +200,9 @@ sub applyVLAN {
     my @ethernets = $sp->children("vnicEther");
     for my $ethernet (@ethernets) {
         if ($ethernet->{name} eq 'v' . $args{iface}->getAttr(name => "iface_name")) {
-            $log->info("Applying vlan " . $args{vlan}->getAttr(name => "network_name") .
+            $log->info("Applying vlan " . $args{vlan}->vlan_name .
                        " on " . $ethernet->{name} . " interface of " . $host->getAttr(name => "host_serial_number"));
-            $ethernet->applyVLAN(name   => $args{vlan}->getAttr(name => "network_name"),
+            $ethernet->applyVLAN(name   => $args{vlan}->vlan_name,
                                  delete => (defined ($args{delete}) and $args{delete}) ? 1 : 0);
         }
     }

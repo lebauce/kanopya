@@ -26,7 +26,7 @@ use Entity::ServiceProvider::Inside::Cluster;
 use General;
 use Kanopya::Config;
 use EFactory;
-use Entity::InterfaceRole;
+use Entity::NetconfRole;
 
 use Template;
 use String::Random;
@@ -85,27 +85,24 @@ sub create {
     );
 
     # Automatically add the admin interface if not exists
-    my $adminrole = Entity::InterfaceRole->find(hash => { interface_role_name => 'admin' });
+    my $adminrole = Entity::NetconfRole->find(hash => { netconf_role_name => 'admin' });
     eval {
-        Entity::Interface->find(
-            hash => { service_provider_id => $self->getAttr(name => 'entity_id'),
-                      interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
-        );
+        Entity::Interface->find(hash => {
+            service_provider_id => $self->id,
+            'netconf_interfaces.netconf.netconf_role.netconf_role_id' => $adminrole->id
+        });
     };
     if ($@) {
         $log->debug("Automatically add the admin interface as it is not defined.");
 
         my $kanopya   = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
-        my $interface = Entity::Interface->find(
-                            hash => { service_provider_id => $kanopya->getAttr(name => 'entity_id'),
-                                      interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
-                        );
+        my $interface = Entity::Interface->find(hash => {
+                            service_provider_id => $kanopya->id,
+                            'netconf_interfaces.netconf.netconf_role.netconf_role_id' => $adminrole->id
+                        });
 
-        $self->addNetworkInterface(
-            interface_role  => $adminrole,
-            networks        => $interface->getNetworks,
-            default_gateway => 1
-        );
+        my @netconfs = $interface->netconfs;
+        $self->addNetworkInterface(netconfs => \@netconfs);
     }
 }
 
@@ -117,14 +114,12 @@ sub addNode {
     my $host_manager_params = $self->getManagerParameters(manager_type => 'host_manager');
 
     # Add the number of required ifaces to paramaters.
-    my @interfaces = $self->getNetworkInterfaces;
-    $host_manager_params->{ifaces} = scalar(@interfaces);
+    $host_manager_params->{ifaces} = scalar($self->interfaces);
 
     my $ehost_manager = EFactory::newEEntity(data => $host_manager);
     my $host = $ehost_manager->getFreeHost(%$host_manager_params);
 
-    $log->debug("Host manager <" . $host_manager->id .
-                "> returned free host " . (ref $host));
+    $log->debug("Host manager <" . $host_manager->id . "> returned free host <$host>");
 
     return $host;
 }
