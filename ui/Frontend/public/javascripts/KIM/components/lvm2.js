@@ -85,7 +85,7 @@ var Lvm2 = (function(_super) {
                 lvm2_id : {
                     type         : 'relation',
                     relation     : 'single',
-                    is_mandatory : true,
+                    is_mandatory : false,
                 },
                 lvm2_lv_name : {
                     label        : 'Name',
