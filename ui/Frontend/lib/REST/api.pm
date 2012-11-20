@@ -59,6 +59,7 @@ my %resources = (
     "haproxy1"                 => "Entity::Component::HAProxy1",
     "host"                     => "Entity::Host",
     "hostmodel"                => "Entity::Hostmodel",
+    "hypervisor"               => "Entity::Host::Hypervisor",
     "iface"                    => "Entity::Iface",
     "indicator"                => "Entity::Indicator",
     "indicatorset"             => "Indicatorset",
