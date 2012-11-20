@@ -270,11 +270,30 @@ __PACKAGE__->has_many(
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
- __PACKAGE__->belongs_to(
+
+__PACKAGE__->belongs_to(
    "parent",
      "AdministratorDB::Schema::Result::Entity",
          { "foreign.entity_id" => "self.service_provider_id" },
              { cascade_copy => 0, cascade_delete => 1 }
  );
+
+__PACKAGE__->has_many(
+  "nodemetric_combinations",
+  "AdministratorDB::Schema::Result::NodemetricCombination",
+  {
+    "foreign.service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+__PACKAGE__->has_many(
+  "aggregate_combinations",
+  "AdministratorDB::Schema::Result::AggregateCombination",
+  {
+    "foreign.service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 1;
