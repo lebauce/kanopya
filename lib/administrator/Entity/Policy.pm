@@ -91,12 +91,9 @@ sub new {
         }
         $self->save();
 
-        # Remove the old policy configuration parttern.
-        my $presets = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
-
         # Build the policy pattern from
         my $pattern = $class->buildPatternFromHash(policy_type => $attrs->{policy_type}, hash => \%args);
-        $presets->update(params => $pattern, override => 1);
+        $self->param_preset->update(params => $pattern, override => 1);
     }
     # Else this a policy creation
     else {
@@ -104,8 +101,8 @@ sub new {
 
         # Build the policy pattern from
         my $pattern = $class->buildPatternFromHash(policy_type => $attrs->{policy_type}, hash => \%args);
-        my $preset  = ParamPreset->new(name => $attrs->{policy_type} . '_policy', params => $pattern);
-        $attrs->{param_preset_id} = $preset->getAttr(name => 'param_preset_id');
+        my $preset  = ParamPreset->new(params => $pattern);
+        $attrs->{param_preset_id} = $preset->id;
 
         $self = $class->SUPER::new(%$attrs);
     }
@@ -150,19 +147,14 @@ sub buildPatternFromHash {
                 $pattern{components}->{'component_' . $args{hash}->{$name}}->{component_type} = $args{hash}->{$name};
             }
             # Handle networks interfaces
-            elsif ($name =~ m/^interface_role_/) {
+            elsif ($name =~ m/^interface_netconfs_/) {
                 # Get the intefrace role name
-                 my $role_name;
-#                my $role_name = Entity::InterfaceRole->get(id => $args{hash}->{$name})->getAttr(name => 'interface_role_name');
-#                $pattern{interfaces}->{$role_name}->{interface_role} = $args{hash}->{$name};
+                $pattern{interfaces}->{$args{hash}->{$name}}->{interface_netconf} = $args{hash}->{$name};
 
                 my $interface_index = $name;
-                $interface_index =~ s/^interface_role_//g;
-                if ($args{hash}->{'interface_networks_' . $interface_index}) {
-                    $pattern{interfaces}->{$role_name}->{interface_networks} = [ $args{hash}->{'interface_networks_' . $interface_index} ];
-                }
-                if ($args{hash}->{'default_gateway_' . $interface_index}) {
-                    $pattern{interfaces}->{$role_name}->{default_gateway} = $args{hash}->{'default_gateway_' . $interface_index};
+                $interface_index =~ s/^interface_netconfs_//g;
+                if ($args{hash}->{'bonds_number_' . $interface_index}) {
+                    $pattern{interfaces}->{$args{hash}->{$name}}->{bonds_number} = $args{hash}->{'bonds_number_' . $interface_index};
                 }
             }
             # Handle billing limit
@@ -174,7 +166,7 @@ sub buildPatternFromHash {
                     defined($args{hash}->{'limit_type_' . $limit_index})) {
                     my $limit   = {
                         start   => $args{hash}->{'limit_start_' . $limit_index},
-                        ending  => $args{hash}->{'limit_ending_'   . $limit_index},
+                        ending  => $args{hash}->{'limit_ending_' . $limit_index},
                         value   => $args{hash}->{'limit_value_' . $limit_index},
                         type    => $args{hash}->{'limit_type_'  . $limit_index}
                     };
@@ -222,7 +214,7 @@ sub getFlattenedHash {
     my %args = @_;
 
     my %flat_hash;
-    my $pattern = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'))->load();
+    my $pattern = $self->param_preset->load();
 
     # Transform the policy configuration pattern to a flat hash
     for my $name (keys %$pattern) {
@@ -256,9 +248,9 @@ sub getFlattenedHash {
 
                 # For instance, do not return a list of network, as we are not able
                 # to handle mutliple network association to one interface.
-                if (defined $interface->{interface_networks} and ref($interface->{interface_networks}) eq 'ARRAY' and
-                    scalar($interface->{interface_networks})) {
-                    $interface->{interface_networks} = $interface->{interface_networks}[0];
+                if (defined $interface->{interface_netconfs} and ref($interface->{interface_netconfs}) eq 'ARRAY' and
+                    scalar($interface->{interface_netconfs})) {
+                    $interface->{interface_netconfs} = $interface->{interface_netconfs}[0];
                 }
                 push @{ $flat_hash{'network_interface'} }, $interface;
             }
@@ -296,13 +288,6 @@ sub getFlattenedHash {
 
     $log->debug("Returning flattened policy hash:\n" . Dumper(\%flat_hash));
     return \%flat_hash;
-}
-
-sub getParamPreset {
-    my $self = shift;
-    my %args = @_;
-
-    return ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
 }
 
 1;
