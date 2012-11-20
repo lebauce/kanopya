@@ -129,7 +129,7 @@ sub getDirectoryTree {
     my @entries = $mesg->entries;
     my $entry = shift @entries;
     my ($domain) = split(':', $entry->get_value('ldapServiceName'));
-    my $root = $entry->get_value('rootDomainNamingContext');
+    my $root = $entry->get_value('defaultNamingContext');
 
     return [{
         name        => $domain,
@@ -171,7 +171,7 @@ sub searchDirectory {
 
     my @entries = $mesg->entries;
     my $entry = shift @entries;
-    my $root = $entry->get_value('rootDomainNamingContext');
+    my $root = $entry->get_value('defaultNamingContext');
 
     my $search_string = $args{search_string};
     my $filter = '(|(name=*'.$search_string.'*)(cn=*'.$search_string.'*)(ou=*'.$search_string.'*))';
