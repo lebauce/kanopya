@@ -1067,7 +1067,8 @@ sub search {
 
     my $rs = $adm->_getDbixFromHash('table' => $table,      'hash'     => $args{hash},
                                     'page'  => $args{page}, 'prefetch' => $prefetch,
-                                    'rows'  => $args{rows}, 'order_by' => $args{order_by});
+                                    'rows'  => $args{rows}, 'order_by' => $args{order_by},
+                                    'join'  => $args{join});
 
     while (my $row = $rs->next) {
         my $obj = { _dbix => $row };
