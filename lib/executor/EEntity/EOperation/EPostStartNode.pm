@@ -190,7 +190,7 @@ sub _cancel {
     my $self = shift;
 
     $log->info("Cancel post start node, we will try to remove node link for <" .
-               $self->{context}->{host}->getAttr(name => "entity_id") . ">");
+               $self->{context}->{host} . ">");
 
     eval {
         $self->{context}->{host}->stopToBeNode();
@@ -206,12 +206,3 @@ sub _cancel {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

@@ -11,21 +11,6 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-=head1 NAME
-
-EEntity::EComponent::EIscsitarget1 - EIscsitarget1 executor class.
-
-=head1 SYNOPSIS
-
-None for moment
-
-=head1 DESCRIPTION
-
-None for the moment
-
-=head1 METHODS
-
-=cut
 
 package EEntity::EComponent::EIscsitarget1;
 use base "EManager::EExportManager";
@@ -202,7 +187,7 @@ sub addTarget {
 
     # Create the new target
     $cmd = "ietadm --op new --tid=$tid --params Name=$args{target_name}";
-    $result = $self->getEContext->execute(command => $cmd);
+    $self->getEContext->execute(command => $cmd);
 }
 
 sub gettid {
