@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package EEntity::EContainerAccess::EIscsiContainerAccess::EIscsiContainerAccessMock;
-use base "EEntity::EContainerAccess::EIscsiContainerAccess";
+package EEntity::EServiceProvider::EInside::ECluster::EClusterMock;
+use base 'EEntity::EServiceProvider::EInside::ECluster';
 
 use strict;
 use warnings;
@@ -24,36 +24,23 @@ use warnings;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
+my $errmsg;
 
-my $fakedevice = "/tmp/EIscsiContainerAccessMock";
+sub checkComponents {
+    my ($self, %args) = @_;
 
-sub connect {
-    my $self = shift;
-    my %args = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    # Create a fake file to return it as the device
-    my $cmd = "dd if=/dev/zero of=$fakedevice bs=1 count=1 seek=" . $self->container->container_size;
-    $args{econtext}->execute(command => $cmd);
-
-    $log->info("Mock: returning <$fakedevice> as fake device.");
-    return $fakedevice;
+    $log->info("Mock: return 1 to simulate all components up.");
+    return 1;
 }
 
-=head2 disconnect
+sub postStartNode {
+    my ($self, %args) = @_;
 
-    desc: Deleting open-iscsi node.
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
-=cut
-
-sub disconnect {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    $log->info("Mock: doing nothing instead of disconnecting the device.");
+    $log->info("Mock: doing nothing instead of calling postStartNode cluster omponents.");
 }
 
 1;
