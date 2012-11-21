@@ -53,7 +53,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^.*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
     },
 };
