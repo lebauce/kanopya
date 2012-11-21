@@ -324,51 +324,11 @@ sub _generatePXEConf {
     }
 
     ## Here we create a dedicated initramfs for the node
-    # we create a temporary working directory for the initrd
-
-    $log->info('Build dedicated initramfs');
-    my $initrddir = "/tmp/$clustername-$hostname";
-    my $cmd = "mkdir -p $initrddir";
-    $self->getEContext->execute(command => $cmd);
-
-    # check and retrieve compression type
-    my $initrd = "$tftpdir/initrd_$kernel_version";
-    $cmd = "file $initrd | grep -o -E '(gzip|bzip2)'";
-    my $result = $self->getEContext->execute(command => $cmd);
-    my $decompress;
-    chomp($result->{stdout});
-    if($result->{stdout} eq 'gzip') {
-        $decompress = 'zcat';
-    } elsif($result->{stdout} eq 'bzip2') {
-        $decompress = 'bzcat';
-    } else {
-        throw Kanopya::Exception::Internal(
-            error => "Invalid compress type for $initrd ; must be gzip or bzip2"
-        );
-    }
-
-    # we decompress and extract the original initrd to this directory
-    $cmd = "(cd $initrddir && $decompress $initrd | cpio -i)";
-    $self->getEContext->execute(command => $cmd);
-
-    # append files to the archive directory
-    my $sourcefile = $args{mount_point}.'/etc/udev/rules.d/70-persistent-net.rules';
-    $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
-    $self->getEContext->execute(command => $cmd);
-
-    # create the final storing directory
-    my $path = "$tftpdir/$clustername/$hostname";
-    $cmd = "mkdir -p $path";
-    $self->getEContext->execute(command => $cmd);
-
-    # rebuild and compress the new initrd
-    my $newinitrd = $path."/initrd_$kernel_version";
-    $cmd = "(cd $initrddir && find . | cpio -H newc -o | bzip2 > $newinitrd)";
-    $self->getEContext->execute(command => $cmd);
-
-    # finaly we remove the temporary directory
-    $cmd = "rm -r $initrddir";
-    $self->getEContext->execute(command => $cmd);
+    my $linux_component = $args{cluster}->getComponent(category => "system");
+    $linux_component->buildInitramfs(cluster     => $args{cluster},
+                                     host        => $args{host},
+                                     mount_point => $args{host},
+                                    );
 
     my $gateway  = undef;
     my $pxeiface = $args{host}->getPXEIface;

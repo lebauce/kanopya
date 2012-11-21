@@ -443,6 +443,71 @@ sub _generateNetConf {
     $self->_writeNetConf(ifaces => \@net_ifaces, %args);
 }
 
+sub buildInitramfs {
+    my ($self, %args) = @_;
+    General::checkParams(args     =>\%args,
+                         required => ['cluster', 'host', 'mount_point']);
+    
+    my $econtext = $self->getExecutorEContext;
+    
+    my $cluster_kernel_id = $args{cluster}->kernel_id;
+    my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
+
+    my $clustername = $args{cluster}->cluster_name;
+    my $hostname = $args{host}->host_hostname;
+
+    my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+
+    my $tftpdir = $self->{config}->{tftp}->{directory};
+
+    ## Here we create a dedicated initramfs for the node
+    # we create a temporary working directory for the initrd
+
+    $log->info('Build dedicated initramfs');
+    my $initrddir = "/tmp/$clustername-$hostname";
+    my $cmd = "mkdir -p $initrddir";
+    $econtext->execute(command => $cmd);
+
+    # check and retrieve compression type
+    my $initrd = "$tftpdir/initrd_$kernel_version";
+    $cmd = "file $initrd | grep -o -E '(gzip|bzip2)'";
+    my $result = $econtext->execute(command => $cmd);
+    my $decompress;
+    chomp($result->{stdout});
+    if($result->{stdout} eq 'gzip') {
+        $decompress = 'zcat';
+    } elsif($result->{stdout} eq 'bzip2') {
+        $decompress = 'bzcat';
+    } else {
+        throw Kanopya::Exception::Internal(
+            error => "Invalid compress type for $initrd ; must be gzip or bzip2"
+        );
+    }
+
+    # we decompress and extract the original initrd to this directory
+    $cmd = "(cd $initrddir && $decompress $initrd | cpio -i)";
+    $econtext->execute(command => $cmd);
+
+    # append files to the archive directory
+    my $sourcefile = $args{mount_point}.'/etc/udev/rules.d/70-persistent-net.rules';
+    $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
+    $econtext->execute(command => $cmd);
+
+    # create the final storing directory
+    my $path = "$tftpdir/$clustername/$hostname";
+    $cmd = "mkdir -p $path";
+    $econtext->execute(command => $cmd);
+
+    # rebuild and compress the new initrd
+    my $newinitrd = $path."/initrd_$kernel_version";
+    $cmd = "(cd $initrddir && find . | cpio -H newc -o | bzip2 > $newinitrd)";
+    $econtext->execute(command => $cmd);
+
+    # finaly we remove the temporary directory
+    $cmd = "rm -r $initrddir";
+    $econtext->execute(command => $cmd);
+}
+
 sub service {
     my ($self, %args) = @_;
 
