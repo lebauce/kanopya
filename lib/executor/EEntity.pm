@@ -52,13 +52,9 @@ my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-=head2 new
 
-    my $mb = Entity->new();
-
-Entity>new($data : hash EntityData) creates a new entity execution object.
-
-=cut
+my $mocks_classes = { 'EEntity::EComponent::EIscsitarget1' => 'EIscsitarget1Mock',
+                      'EEntity::EContainerAccess::EIscsiContainerAccess' => 'EIscsiContainerAccessMock' };
 
 sub new {
     my ($class, %args) = @_;
@@ -71,6 +67,9 @@ sub new {
         my $entityclass = ref($args{entity});
         $entityclass =~s/\:\:/\:\:E/g;
         $class = "E".$entityclass;
+        
+        # Use a possibly defined mock for this execution class
+        $class = $mocks_classes->{$class} ? $class . '::' . $mocks_classes->{$class} : $class;
 
         while ($class ne "EEntity") {
             my $location = General::getLocFromClass(entityclass => $class);
@@ -88,7 +87,6 @@ sub new {
         }
     }
 
-    
     my $config = Kanopya::Config::get('executor');
 
     my $self = {
@@ -155,6 +153,15 @@ sub generateNodeFile {
     return $path;
 }
 
+sub setMock {
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, optional => { 'mock' => undef });
+
+    $mocks_classes->{$class} = $args{mock};
+}
+
 sub AUTOLOAD {
     my $self = shift;
     my %args = @_;
@@ -171,12 +178,3 @@ sub DESTROY {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
