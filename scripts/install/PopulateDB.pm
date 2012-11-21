@@ -144,8 +144,6 @@ my @classes = (
     'Entity::Host::VirtualMachine',
     'Entity::Host::Hypervisor::Opennebula3Hypervisor',
     'Entity::Host::VirtualMachine::Opennebula3Vm',
-    'Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3KvmHypervisor',
-    'Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3XenHypervisor',
     'Entity::Component::Mailnotifier0',
     'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm',
     'Entity::ServiceTemplate',
@@ -175,7 +173,10 @@ my @classes = (
     'Entity::Component::Lvm2::Lvm2Vg',
     'Entity::Component::Opennebula3::Opennebula3Repository',
     'Entity::Component::Vsphere5::Vsphere5Datacenter',
-    'Entity::Component::Vsphere5::Vsphere5Repository'
+    'Entity::Component::Vsphere5::Vsphere5Repository',
+    'Entity::Component::Vmm',
+    'Entity::Component::Vmm::Kvm',
+    'Entity::Component::Vmm::Xen'
 );
 
 sub registerClassTypes {
@@ -650,6 +651,8 @@ sub registerComponents {
         [ 'Debian', '6', 'System', '/templates/components/debian' ],
         [ 'Redhat', '6', 'System', '/templates/components/redhat' ],
         [ 'Suse', '11', 'System', '/templates/components/suse' ],
+        [ 'Kvm', '1', 'Hypervisor', undef ],
+        [ 'Xen', '1', 'Hypervisor', undef ],
     ];
 
     for my $component_type (@{$components}) {

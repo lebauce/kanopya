@@ -29,8 +29,6 @@ use Entity::Operation;
 use Entity::ContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::Host::Hypervisor::Opennebula3Hypervisor;
-use Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3XenHypervisor;
-use Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3KvmHypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Host::VirtualMachine::Opennebula3Vm;
 use Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm;
@@ -380,14 +378,7 @@ sub addHypervisor {
 
     General::checkParams(args => \%args, required => [ 'host', 'onehost_id' ]);
 
-    my $hypervisor_type = 'Entity::Host::Hypervisor::Opennebula3Hypervisor::';
-    if ($self->hypervisor eq 'xen') {
-        $hypervisor_type .= 'Opennebula3XenHypervisor';
-    } else {
-        $hypervisor_type .= 'Opennebula3KvmHypervisor';
-    }
-
-    return $hypervisor_type->promote(
+    return Entity::Host::Hypervisor::Opennebula3Hypervisor->promote(
                promoted       => $args{host},
                opennebula3_id => $self->id,
                onehost_id     => $args{onehost_id}
@@ -505,7 +496,7 @@ sub getRemoteSessionURL {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['host']);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     return "vnc://" . $args{host}->hypervisor->adminIp() . ":" . $args{host}->vnc_port;
 }
