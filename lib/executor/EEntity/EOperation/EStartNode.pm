@@ -125,7 +125,7 @@ sub execute {
 
     $log->info("Generate network configuration");
     IFACE:
-    foreach my $iface (@{ $self->{context}->{host}->ifaces }) {
+    foreach my $iface (@{ $self->{context}->{host}->getIfaces }) {
         # Handle associated ifaces only
         if ($iface->netconfs) {
             # Public network on loadbalanced cluster must be configured only

@@ -286,6 +286,43 @@ sub updateHostsFile {
     $self->getExecutorEContext->send(src => $kanopya_hostfile, dest => "/etc/hosts");
 }
 
+sub checkComponents {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my @components = $self->getComponents(category => "all");
+    foreach my $component (@components) {
+        my $component_name = $component->component_type->component_name;
+        $log->debug("Browsing component: " . $component_name);
+
+        my $ecomponent = EFactory::newEEntity(data => $component);
+
+        if (not $ecomponent->isUp(host => $args{host}, cluster => $self)) {
+            $log->info("Component <$component_name> not yet operational on host <" . $args{host}->id .  ">");
+            return 0;
+        }
+    }
+    return 1;
+}
+
+sub postStartNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my @components = $self->getComponents(category => "all", order_by => "priority");
+
+    $log->info('Processing cluster components configuration for this node');
+    foreach my $component (@components) {
+        EFactory::newEEntity(data => $component)->postStartNode(
+            cluster   => $self,
+            host      => $args{host},
+            erollback => $args{erollback}
+        );
+    }
+}
+
 sub getEContext {
     my $self = shift;
 
@@ -294,12 +331,3 @@ sub getEContext {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
