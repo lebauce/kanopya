@@ -9,7 +9,8 @@ function host_addbutton_action(e) {
         type       : 'host',
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : [ 'host_desc', 'host_core', 'host_ram', 'kernel_id', 'host_serial_number' ],
-        relations  : { 'ifaces' : [ 'iface_name', 'iface_mac_addr', 'iface_pxe', 'netconf_ifaces' ] },
+        relations  : { 'ifaces'         : [ 'iface_name', 'iface_mac_addr', 'iface_pxe', 'netconf_ifaces' ],
+                       'bonding_ifaces' : [ 'bonding_iface_name', 'slave_ifaces' ] },
         rawattrdef : {
             'host_manager_id' : {
                 'value' : g_host_manager_id
@@ -17,7 +18,70 @@ function host_addbutton_action(e) {
             'active' : {
                 'value' : 1
             }
-        }
+        },
+        attrsCallback  : function (resource) {
+            var attributes;
+            var relations;
+
+            if (resource === 'host') {
+                // If ressource is the host, add the fake relation bonding_ifaces
+                var response = ajax('GET', '/api/attributes/' + resource);
+                response.attributes['bonding_ifaces'] = {
+                    label       : 'Bonding interfaces',
+                    type        : 'relation',
+                    relation    : 'single_multi',
+                    is_editable : true
+                };
+                response.relations['bonding_ifaces'] = {
+                    attrs : {
+                        accessor : 'multi'
+                    },
+                    cond : {
+                        'foreign.bonding_ifaces_id' : 'self.bonding_ifaces_id'
+                    },
+                    resource: 'bonding_ifaces'
+                };
+                return response;
+
+            } else if (resource === 'bonding_ifaces') {
+                attributes = {
+                    bonding_ifaces_id : {
+                        is_primary   : true,
+                        is_mandatory : false
+                    },
+                    bonding_iface_name : {
+                        label        : 'Bonding interface name',
+                        type         : 'string',
+                        is_mandatory : true
+                    },
+                    slave_ifaces : {
+                        label        : 'Salve interfaces',
+                        type         : 'relation',
+                        relation     : 'mutli',
+                        link_to      : 'iface',
+                        is_mandatory : false,
+                        is_editable  : true
+                    }
+                };
+                relations = {
+                    slave_ifaces : {
+                        attrs : {
+                            accessor : 'multi'
+                        },
+                        cond : {
+                            'foreign.iface_id' : 'self.iface_id'
+                        },
+                        resource: 'iface'
+                    }
+                };
+
+            } else {
+                return ajax('GET', '/api/attributes/' + resource);
+            }
+            return { attributes : attributes, relations : {} };
+        },
+        valuesCallback : undefined,
+        submitCallback : undefined
     })).start();
 }
 
