@@ -95,7 +95,7 @@ sub assignIp {
                     $log->info("Cannot pop IP from pool <" . $poolip->poolip_name . ">\n$@");
                     next POOLIPS;
                 }
-                $ip->setAttr(name  => 'iface_id', value => $args{iface}->id);
+                $ip->setAttr(name  => 'iface_id', value => $self->id);
                 $ip->save();
 
                 $log->info("Ip " . $ip->ip_addr . " assigned to iface ". $self->iface_name);
@@ -105,7 +105,7 @@ sub assignIp {
             }
             # No free ip found
             throw Kanopya::Exception::Internal::NotFound(
-                      error => "Unable to assign ip to iface <" . $args{iface}->iface_name . ">"
+                      error => "Unable to assign ip to iface <" . $self->iface_name . ">"
                   );
         }
     }
