@@ -391,7 +391,7 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
             params.specific_params[$(this).attr('name')] = getRawValue($(this).val(), 'unit_' + $(this).attr('name'));
         });
         $.ajax({
-            url         : '/api/entity/' + manager.pk + '/associateWorkflow',
+            url         : '/api/entity/' + manager.manager_id + '/associateWorkflow',
             type        : 'POST',
             contentType : 'application/json',
             data        : JSON.stringify(params),
@@ -465,13 +465,13 @@ function workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
     $.ajax({
         url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?manager_type=workflow_manager',
         type        : 'GET',
-        success     : function(manager) {
+        success     : function(managers) {
             var params = {
                     workflow_def_id : wfdef_id,
                     rule_id         : rule_id
             };
             $.ajax({
-                url         : '/api/entity/' + manager.manager_id + '/deassociateWorkflow',
+                url         : '/api/entity/' + managers[0].manager_id + '/deassociateWorkflow',
                 type        : 'POST',
                 contentType : 'application/json',
                 data        : JSON.stringify(params),
