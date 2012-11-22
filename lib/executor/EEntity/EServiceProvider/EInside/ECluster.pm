@@ -323,6 +323,53 @@ sub postStartNode {
     }
 }
 
+sub stopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my @components = $self->getComponents(category => "all");
+    $log->info('Processing cluster components configuration for this node');
+
+    foreach my $component (@components) {
+        EFactory::newEEntity(data => $component)->stopNode(
+            host    => $args{host},
+            cluster => $self
+        );
+    }
+}
+
+sub readyNodeRemoving {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    # Ask to all cluster component if they are ready for node addition.
+    my @components = $self->getComponents(category => "all");
+    foreach my $component (@components) {
+        if (not $component->readyNodeRemoving(host_id => $args{host}->id)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+sub postStopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my @components = $self->getComponents(category => "all");
+
+    # Ask to all cluster component if they are ready for node addition.
+    foreach my $component (@components) {
+        EFactory::newEEntity(data => $component)->postStopNode(
+            host    => $args{host},
+            cluster => $self
+        );
+    }
+}
+
 sub getEContext {
     my $self = shift;
 
