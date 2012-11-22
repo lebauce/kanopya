@@ -56,7 +56,6 @@ sub configureNode {
     );
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
-    my $hypervisor_type = $self->getHypervisorType();
 
     $log->debug('generate /lib/udev/rules.d/60-qemu-kvm.rules');
     $self->_generateQemuKvmUdev(%args);
@@ -75,7 +74,7 @@ sub configureNode {
     my $conf = $self->iaas->getConf();
     for my $repo (@{$conf->{opennebula3_repositories}}) {
         if (defined $repo->{datastore_id}) {
-            my $dir = $args{mount_point}.'/var/lib/one/datastores/' . $repo->{datastore_id};
+            my $dir = $args{mount_point} . '/var/lib/one/datastores/' . $repo->{datastore_id};
             my $cmd = "mkdir -p $dir";
             $self->getExecutorEContext->execute(command => $cmd);
         }
