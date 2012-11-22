@@ -302,7 +302,7 @@ sub getVMState {
     return { state => $state->{$state_id}->{$lcm_state_id}, hypervisor => $hypervisor_migr };
 }
 
-ssub scaleMemory {
+sub scaleMemory {
     my $self = shift;
     my %args = @_;
 
