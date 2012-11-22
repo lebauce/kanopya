@@ -168,15 +168,15 @@ function loadServicesConfig (container_id, elem_id) {
                 });
             }
 
-            if (isThereAManager(elem_id, 'workflow_manager') === null) {
+            if (!isThereAManager(elem_id, 'workflow_manager')) {
                 createManagerButton('workflow_manager', ctnr, elem_id, container_id);
             }
 
-            if (isThereAManager(elem_id, 'collector_manager') === null) {
+            if (!isThereAManager(elem_id, 'collector_manager')) {
                 createManagerButton('collector_manager', ctnr, elem_id, container_id);
             }
 
-            if (isThereAManager(elem_id, 'directory_service_manager') === null) {
+            if (!isThereAManager(elem_id, 'directory_service_manager')) {
                 createManagerButton('directory_service_manager', ctnr, elem_id, container_id);
             }
 
@@ -222,7 +222,6 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
 
     // we skip all managers of the Kanopya cluster (id=1)
     var managers = findManager(connectortype);
-    console.log(managers);
     for (var i in managers) if (managers.hasOwnProperty(i)) {
         if (managers[i].service_provider_id == 1) {
             managers.splice(i, 1);
@@ -242,11 +241,11 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
         var theName = managers[i].component_type ? managers[i].component_type.component_name : managers[i].connector_type.connector_name;
         var manager = managers[i];
         $.ajax({
-            url     : '/api/externalcluster/' + managers[i].service_provider_id,
+            url     : '/api/serviceprovider/' + managers[i].service_provider_id,
             async   : false,
             success : function(data) {
-                if (data.externalcluster_name != null) {
-                    theName = data.externalcluster_name + " - " + theName;
+                if (data.label != null) {
+                    theName = data.label + " - " + theName;
                 }
                 $(select).append($("<option>", { text : theName, value : manager.pk }));
             }
@@ -254,7 +253,6 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
     }
     $(select).bind('change', function(event) {
         $(fieldset).empty();
-        console.log(event);
         var manager_id = $(event.currentTarget).val();
         $.ajax({
             url     : '/api/entity/' + manager_id + '/getManagerParamsDef',
