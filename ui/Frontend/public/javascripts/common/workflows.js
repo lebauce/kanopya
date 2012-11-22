@@ -408,51 +408,55 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
         url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?manager_type=workflow_manager',
         type        : 'GET',
         success     : function(data) {
-            manager = data;
-            $.ajax({
-                    url         : '/api/entity/' + manager.manager_id + '/getWorkflowDefs',
-                    type        : 'POST',
-                    contentType : 'application/json',
-                    data        : JSON.stringify({ 'no_associate' : 1 }),
-                    success     : function(data) {
-                        var ok  = false;
-                        if (data.length <= 0) {
-                            alert('No workflow definition found.');
-                        } else {
-                            var select  = $('<select>').prependTo(dial);
-                            $(select).bind('change', createForm);
-                            $(data).each( function() {
-                                var wfd = this;
-                                $.get(
-                                        '/api/workflowdef/' + wfd.pk,
-                                        function(data) {
-                                            var wfd_params = data.param_presets;
-                                            if (wfd_params.internal && wfd_params.internal.scope_id == scid) {
-                                                  wfd.specificparams  = wfd_params.specific;
-                                                  wfdefs.push(wfd);
-                                                  $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
-                                                  $(select).change();
-                                              }
-                                        }
-                                );
-                            });
-                            $(dial).dialog({
-                                  resizable       : false,
-                                  closeOnEscape   : false,
-                                  modal           : true,
-                                  width           : '400px',
-                                  close           : function() { $(this).remove(); },
-                                  buttons         : {
-                                      'Cancel'    : function() { $(this).dialog('close'); },
-                                      'Ok'        : validateTheForm
-                                  }
-                            });
+            manager = data[0];
+            if (manager) {
+                $.ajax({
+                        url         : '/api/entity/' + manager.manager_id + '/getWorkflowDefs',
+                        type        : 'POST',
+                        contentType : 'application/json',
+                        data        : JSON.stringify({ 'no_associate' : 1 }),
+                        success     : function(data) {
+                            var ok  = false;
+                            if (data.length <= 0) {
+                                alert('No workflow definition found.');
+                            } else {
+                                var select  = $('<select>').prependTo(dial);
+                                $(select).bind('change', createForm);
+                                $(data).each( function() {
+                                    var wfd = this;
+                                    $.get(
+                                            '/api/workflowdef/' + wfd.pk,
+                                            function(data) {
+                                                var wfd_params = data.param_presets;
+                                                if (wfd_params.internal && wfd_params.internal.scope_id == scid) {
+                                                      wfd.specificparams  = wfd_params.specific;
+                                                      wfdefs.push(wfd);
+                                                      $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
+                                                      $(select).change();
+                                                  }
+                                            }
+                                    );
+                                });
+                                $(dial).dialog({
+                                      resizable       : false,
+                                      closeOnEscape   : false,
+                                      modal           : true,
+                                      width           : '400px',
+                                      close           : function() { $(this).remove(); },
+                                      buttons         : {
+                                          'Cancel'    : function() { $(this).dialog('close'); },
+                                          'Ok'        : validateTheForm
+                                      }
+                                });
+                            }
                         }
-                    }
-            });
+                });
+            } else {
+                alert("No workflow manager found.");
+            }
         },
-        error       : function() {
-            alert("No workflow manager found.");
+        error       : function(msg) {
+            alert(msg);
         }
     });
 }
