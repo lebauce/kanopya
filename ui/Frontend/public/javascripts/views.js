@@ -354,7 +354,7 @@ function create_grid(options) {
     $('#' + options.grid_id).jqGrid(
             'navGrid',
             '#' + pager_id,
-            { edit: true, add: false, del: false },    // pager actions
+            { edit: false, add: false, del: false },    // pager actions
             {},
             {},
             {},
