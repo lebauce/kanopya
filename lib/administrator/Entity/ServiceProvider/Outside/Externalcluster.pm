@@ -105,6 +105,9 @@ sub new {
 
     my $self = $class->SUPER::new( %args );
 
+    # Add the external cluster to the ServiceProvider group
+    Entity::ServiceProvider->getMasterGroup->appendEntity(entity => $self);
+
     return $self;
 }
 
