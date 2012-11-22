@@ -176,9 +176,9 @@ sub execute {
 
     # Component migration
     $log->info('Processing cluster components configuration for this node');
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
-    foreach my $i (keys %$components) {
-        my $comp = EFactory::newEEntity(data => $components->{$i});
+    my @components = $self->{context}->{cluster}->getComponents(category => "all");
+    foreach my $i (@components) {
+        my $comp = EFactory::newEEntity(data => $i);
         $log->debug("component is ".ref($comp));
 
         $comp->postStopNode(
