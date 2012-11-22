@@ -39,4 +39,13 @@ sub lvCreate{
     $log->info("Mock: doing nothing instead of lvm2 logical volume <$args{vg_name}/$args{lvm2_lv_name}> creation.");
 }
 
+sub mkfs {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "device", "fstype" ]);
+
+    $log->info("Mock: doing nothing instead of mkfs device <$args{device}> in <$args{fstype}>.");
+}
+
 1;
