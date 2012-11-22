@@ -123,6 +123,16 @@ sub isUp {
     return 1;
 }
 
+sub _generateQemuKvmUdev {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+
+    my $command = "echo 'KERNEL==\"kvm\", OWNER==\"oneadmin\", GROUP==\"kvm\", " .
+                  "MODE==\"0660\"' > $args{mount_point}/lib/udev/rules.d/60-qemu-kvm.rules";
+    $self->getExecutorEContext->execute(command => $command);
+}
+
 sub getAvailableMemory {
     my ($self, %args) = @_;
 
