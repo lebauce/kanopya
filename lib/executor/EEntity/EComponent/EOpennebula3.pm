@@ -215,6 +215,20 @@ sub registerHypervisor {
     $self->onehost_enable(host_nameorid => $hostname);
 }
 
+sub unregisterHypervisor {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'host' ]
+    );
+
+    $self->onehost_delete(host_nameorid => $args{host}->onehost_id);
+
+    $self->_getEntity->removeHypervisor(host => $args{host});
+}
+
+
 # Execute host migration to a new hypervisor
 sub migrateHost {
     my $self = shift;
