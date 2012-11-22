@@ -105,8 +105,14 @@ sub removeDisk{
 
     my $vg = $self->getMainVg();
     $self->lvRemove(lvm2_vg_id   => $vg->{vgid},
-                    lvm2_lv_name => $args{container}->getAttr(name => 'container_name'),
+                    lvm2_lv_name => $args{container}->container_name,
                     lvm2_vg_name => $vg->{vgname});
+
+    $self->_getEntity->lvRemove(lvm2_vg_id   => $vg->{vgid},
+                                lvm2_lv_name => $args{container}->container_name);
+
+    $self->vgSpaceUpdate(lvm2_vg_id   => $vg->{vgid},
+                         lvm2_vg_name => $vg->{vgname});
 
     $args{container}->delete();
 
@@ -216,10 +222,6 @@ sub lvRemove{
         # removed from vg.
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
-
-    $self->_getEntity()->lvRemove(%args);
-    $self->vgSpaceUpdate(lvm2_vg_id   => $args{lvm2_vg_id}, 
-                         lvm2_vg_name => $args{lvm2_vg_name});
 }
 
 1;

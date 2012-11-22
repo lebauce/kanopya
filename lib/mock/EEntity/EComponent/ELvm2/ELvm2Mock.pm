@@ -39,6 +39,16 @@ sub lvCreate{
     $log->info("Mock: doing nothing instead of lvm2 logical volume <$args{vg_name}/$args{lvm2_lv_name}> creation.");
 }
 
+sub lvRemove{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "lvm2_vg_id", "lvm2_vg_name", "lvm2_lv_name" ]);
+
+    $log->info("Mock: doing nothing instead of lvm2 logical volume <$args{vg_name}/$args{lvm2_lv_name}> deletion.");
+}
+
 sub mkfs {
     my $self = shift;
     my %args = @_;
