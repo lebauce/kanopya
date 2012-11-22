@@ -40,7 +40,24 @@ sub postStartNode {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    $log->info("Mock: doing nothing instead of calling postStartNode cluster omponents.");
+    $log->info("Mock: doing nothing instead of calling postStartNode on cluster omponents.");
+}
+
+sub stopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    $log->info("Mock: doing nothing instead of calling stopNode on cluster omponents.");
+}
+
+sub readyNodeRemoving {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    $log->info("Mock: return 1 to simulate all components ready for node removal.");
+    return 1;
 }
 
 1;

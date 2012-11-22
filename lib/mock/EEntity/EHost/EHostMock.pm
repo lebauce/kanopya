@@ -33,4 +33,11 @@ sub checkUp {
     return 1;
 }
 
+sub halt {
+    my ($self, %args) = @_;
+
+    $log->info("Mock: doing nothing instead of halting the host.");
+    return 1;
+}
+
 1;
