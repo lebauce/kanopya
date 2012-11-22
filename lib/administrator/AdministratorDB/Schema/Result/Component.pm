@@ -544,7 +544,7 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vmm_iaas
+=head2 vmms
 
 Type: has_many
 
@@ -553,7 +553,7 @@ Related object: L<AdministratorDB::Schema::Result::Vmm>
 =cut
 
 __PACKAGE__->has_many(
-  "vmm_iaas",
+  "vmms",
   "AdministratorDB::Schema::Result::Vmm",
   { "foreign.iaas_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },

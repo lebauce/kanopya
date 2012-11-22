@@ -86,7 +86,7 @@ __PACKAGE__->set_primary_key("vmm_id");
 
 =head1 RELATIONS
 
-=head2 iaa
+=head2 iaas
 
 Type: belongs_to
 
@@ -95,7 +95,7 @@ Related object: L<AdministratorDB::Schema::Result::Component>
 =cut
 
 __PACKAGE__->belongs_to(
-  "iaa",
+  "iaas",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "iaas_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
