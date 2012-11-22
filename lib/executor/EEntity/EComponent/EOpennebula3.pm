@@ -136,7 +136,8 @@ sub postStartNode {
         my $comp = $self->_getEntity();
         my $linux = $args{cluster}->getComponent(category => "System");
         my $oldconf = $linux->getConf();
-        my @mountentries = @{$oldconf->{linuxes_mount}};
+        my @mountentries;
+        my @mounts;
 
         for my $repo (@{$conf->{opennebula3_repositories}}) {
             if(not defined $repo->{datastore_id}) {
@@ -172,21 +173,17 @@ sub postStartNode {
                 };
             }
         }
-        $linux->setConf(conf => { linuxes_mount => \@mountentries});
+
+        @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
+        $linux->setConf(conf => { linuxes_mount => \@mounts });
+
+        for my $vmm ($self->vmms) {
+            $linux = $vmm->getServiceProvider->getComponent(category => "System");
+            $oldconf = $linux->getConf();
+            @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
+            $linux->setConf(conf => { linuxes_mount => \@mounts });
+        }
     }
-}
-
-sub preStopNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        required => [ 'cluster', 'host' ]
-    );
-
-    $self->onehost_delete(host_nameorid => $args{host}->onehost_id);
-
-    $self->_getEntity->removeHypervisor(host => $args{host});
 }
 
 sub registerHypervisor {
