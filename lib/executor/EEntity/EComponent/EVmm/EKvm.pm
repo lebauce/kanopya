@@ -287,4 +287,10 @@ sub getMinEffectiveRamVm {
     }
 }
 
+sub iaas {
+    my ($self, %args) = @_;
+
+    return EFactory::newEEntity(data => $self->getAttr(name => "iaas", deep => 1));
+}
+
 1;
