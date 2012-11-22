@@ -55,6 +55,17 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getDelegatee {
+    my $self = shift;
+    my $class = ref $self;
+
+    if (!$class) {
+        return "Entity::ServiceProvider";
+    } else {
+        return $self->service_provider;
+    }
+}
+
 sub addParams {
     my $self = shift;
     my %args = @_;
