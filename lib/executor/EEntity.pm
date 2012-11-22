@@ -53,8 +53,7 @@ my $errmsg;
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 
-my $mocks_classes = { 'EEntity::EComponent::EIscsitarget1' => 'EIscsitarget1Mock',
-                      'EEntity::EContainerAccess::EIscsiContainerAccess' => 'EIscsiContainerAccessMock' };
+my $mocks_classes = {};
 
 sub new {
     my ($class, %args) = @_;
