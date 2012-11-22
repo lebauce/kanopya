@@ -23,4 +23,32 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
+sub insertDefaultConfiguration {
+    my $self = shift;
+    
+    my @default_conf = (
+        {
+            linux_mount_device => 'devpts',
+            linux_mount_point => '/dev/pts',
+            linux_mount_filesystem => 'devpts',
+            linux_mount_options => 'mode=0620,gid=5',
+            linux_mount_dumpfreq => '0',
+            linux_mount_passnum => '0'
+        },
+        {
+            linux_mount_device => 'proc',
+            linux_mount_point => '/proc',
+            linux_mount_filesystem => 'proc',
+            linux_mount_options => 'defaults',
+            linux_mount_dumpfreq => '0',
+            linux_mount_passnum => '0'
+        },
+    );
+
+    foreach my $row (@default_conf) {
+        Entity::Component::Linux::LinuxMount->new(linux_id => $self->id,
+                                                  %$row);
+    }
+}
+
 1;
