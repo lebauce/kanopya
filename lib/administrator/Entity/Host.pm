@@ -463,10 +463,10 @@ sub configureIfaces {
     my @ifaces = $self->getIfaces;
 
     # Set the ifaces netconf according to the cluster interfaces
-    INTERFACES:
-    foreach my $interface (@{ $args{cluster}->interfaces }) {
-        my $iface = shift;
-        $iface->update(netconf_ifaces => \@{ $interface->netconfs });
+    foreach my $interface ($args{cluster}->interfaces) {
+        my $iface = shift @ifaces;
+        my @netconfs = $interface->netconfs;
+        $iface->update(netconf_ifaces => \@netconfs);
     }
 }
 
