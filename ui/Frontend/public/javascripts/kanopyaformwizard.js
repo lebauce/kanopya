@@ -223,10 +223,13 @@ var KanopyaFormWizard = (function() {
                 input.attr('multiple', 'multiple');
             }
 
+            // Get link_to attribute PK name for relation
+            var link_to_attribute_pk_name = this.attributedefs[name].link_to + '_id';
+
             // Inserting select options
             for (var i in attr.options) if (attr.options.hasOwnProperty(i)) {
 
-                var optionvalue = attr.options[i].pk || attr.options[i];
+                var optionvalue = attr.options[i][link_to_attribute_pk_name] || attr.options[i].pk || attr.options[i];
                 var optiontext  = attr.options[i].label || attr.options[i].pk || attr.options[i];
                 var option = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
                 if (attr.formatter != null) {
@@ -604,14 +607,14 @@ var KanopyaFormWizard = (function() {
 
     KanopyaFormWizard.prototype.getValues = function(type, id, attributes) {
         var url = '/api/' + type + '/' + id;
-
         // As the relations n-n are not defined in 'relation' param, we need to
         // browse the attributes to find relations attr that needs an expand to get values.
         var relations = jQuery.extend({}, this.relations);
         var multi_relations = {};
         for (var attr in attributes) {
             if (attributes[attr].type === 'relation' && attributes[attr].relation === 'multi') {
-                multi_relations[attr] = [];
+                // Save link_to attribute PK name for each relation
+                multi_relations[attr] = attributes[attr].link_to + '_id';
             }
         }
 
@@ -628,9 +631,10 @@ var KanopyaFormWizard = (function() {
         var values = ajax('GET', url);
 
         for (var value in multi_relations) {
-            var pk_values = []
+            var link_to_attribute_pk_name = multi_relations[value];
+            var pk_values = [];
             for (var entry in values[value]) {
-                pk_values.push(values[value][entry].pk);
+                pk_values.push(values[value][entry][link_to_attribute_pk_name]);
             }
             values[value] = pk_values;
         }
