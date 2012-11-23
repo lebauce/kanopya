@@ -3,9 +3,9 @@ function _require() {
 
     var loadedScripts = {};
 
-    return (function(fileName) {
+    return (function(fileName, force) {
         var script;
-        if (fileName in loadedScripts) { return; }
+        if (!force && fileName in loadedScripts) { return; }
         $.ajax({
             url         : '/javascripts/' + fileName,
             type        : 'GET',

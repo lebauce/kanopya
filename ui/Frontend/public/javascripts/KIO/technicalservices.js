@@ -119,7 +119,7 @@ function connectConnectorForm(eid, type, id, cb) {
 }
 
 function addTechnicalServiceButton(container) {
-    var button  = $("<a>", { text : 'Create a Technical Service' }).button({ icons : { primary : 'ui-icon-plusthick' } }).appendTo(container);
+    var button  = $("<a>", { text : 'Create a Technical Service', id : 'create-tech-service-button' }).button({ icons : { primary : 'ui-icon-plusthick' } }).appendTo(container);
     var service_fields  = {
         externalcluster_name    : {
             label   : 'Name',

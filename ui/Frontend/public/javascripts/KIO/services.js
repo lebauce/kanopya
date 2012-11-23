@@ -43,7 +43,7 @@ function createAddServiceButton(container) {
         }
     };
 
-    var button = $("<button>", {html : 'Add a service'}).button({ icons : { primary : 'ui-icon-plusthick' } });
+    var button = $("<button>", {html : 'Add a service', id : 'add-service-button'}).button({ icons : { primary : 'ui-icon-plusthick' } });
     button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
