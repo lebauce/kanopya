@@ -51,7 +51,8 @@ function host_addbutton_action(e) {
                     bonding_iface_name : {
                         label        : 'Bonding interface name',
                         type         : 'string',
-                        is_mandatory : true
+                        is_mandatory : true,
+                        is_editable  : true
                     },
                     slave_ifaces : {
                         label        : 'Salve interfaces',
@@ -93,6 +94,39 @@ function host_addbutton_action(e) {
             } else {
                 return false;
             }
+        },
+        valuesCallback  : function(type, id, attributes) {
+            var host = ajax('GET', '/api/' + type + '/' + id + '?expand=ifaces');
+
+            var ifaces = host['ifaces'];
+            host['ifaces'] = [];
+
+            var bonding_ifaces = {};
+            for (var index in ifaces) {
+                var iface = ifaces[index];
+                if (iface.master != undefined) {
+                    if (bonding_ifaces[iface.master] === undefined) {
+                        bonding_ifaces[iface.master] = [];
+                    }
+                    bonding_ifaces[iface.master].push(iface.iface_name);
+                }
+            }
+            for (var index in ifaces) {
+                var iface = ifaces[index];
+                if (bonding_ifaces[iface.iface_name] === undefined) {
+                    host['ifaces'].push(iface);
+                }
+            }
+
+            host['bonding_ifaces'] = [];
+            for (var bonding_iface_name in bonding_ifaces) {
+                host['bonding_ifaces'].push({
+                    bonding_iface_name : bonding_iface_name,
+                    slave_iface : bonding_ifaces[bonding_iface_name]
+                });
+            }
+
+            return host;
         },
         submitCallback  : function(data, $form, opts, onsuccess, onerror) {
             for (var bonding_index in data['bonding_ifaces']) {
