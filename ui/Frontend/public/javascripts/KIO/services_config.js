@@ -220,13 +220,18 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
     callback        = callback || $.noop;
     connectortype   = managerConnectorTranslate(managertype);
 
-    // we skip all managers of the Kanopya cluster (id=1)
-    var managers = findManager(connectortype);
-    for (var i in managers) if (managers.hasOwnProperty(i)) {
-        if (managers[i].service_provider_id == 1) {
-            managers.splice(i, 1);
+    // Retrieve kanopya cluster to exclude it from manager search
+    var kanopya_cluster_id;
+    $.ajax({
+        url     : '/api/cluster?cluster_name=Kanopya',
+        async   : false,
+        success : function(kanopya_cluster) {
+            kanopya_cluster_id = kanopya_cluster[0].pk;
         }
-    }
+    });
+
+    // we skip all managers of the Kanopya cluster
+    var managers = findManager(connectortype, kanopya_cluster_id, true);
 
     if (managers.length <= 0) {
         if (skippable) callback();

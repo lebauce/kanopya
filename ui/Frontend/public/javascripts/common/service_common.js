@@ -193,7 +193,7 @@ function getServiceProviders(category) {
     return providers;
 }
 
-function findManager(category, service_provider_id) {
+function findManager(category, service_provider_id, exclude) {
     if (category['category'] !== undefined) {
         service_provider_id = category['service_provider_id'];
         category = category['category'];
@@ -206,7 +206,7 @@ function findManager(category, service_provider_id) {
         var url = '/api/' + type + '?expand=' + type + '_type&' + type + '_type.' + type + '_category=' + category;
 
         if (service_provider_id) {
-            url += '&service_provider_id=' + service_provider_id;
+            url += '&service_provider_id=' + (exclude ? '<>,' : '') + service_provider_id;
         }
 
         $.ajax({
