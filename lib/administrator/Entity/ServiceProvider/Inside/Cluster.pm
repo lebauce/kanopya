@@ -503,7 +503,7 @@ sub configureInterfaces {
                 # Check if an interface with the same role already set, add it otherwise,
                 # Add networks to the interrface if not exists.
                 my $bonds_number = $interface_pattern->{bonds_number};
-                $bonds_number = defined $bonds_number ? $bonds_number : 1;
+                $bonds_number = defined $bonds_number ? $bonds_number : 0;
                 $self->addNetworkInterface(netconfs     => [ $interface_pattern->{interface_netconf} ],
                                            bonds_number => $bonds_number);
             }
