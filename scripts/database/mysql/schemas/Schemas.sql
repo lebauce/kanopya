@@ -495,19 +495,17 @@ CREATE TABLE `hypervisor` (
 
 CREATE TABLE `iface` (
   `iface_id` int(8) UNSIGNED NOT NULL,
-  `iface_name` char(32) NOT NULL ,
-  `iface_mac_addr` char(18) NOT NULL ,
+  `iface_name` char(32) NOT NULL,
+  `iface_mac_addr` char(18) DEFAULT NULL,
   `iface_pxe` int(10) UNSIGNED NOT NULL,
   `host_id` int(8) UNSIGNED NOT NULL,
-  `master` int(8) UNSIGNED DEFAULT NULL,
+  `master` char(32) DEFAULT NULL,
   PRIMARY KEY (`iface_id`),
   FOREIGN KEY (`iface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`iface_mac_addr`),
   UNIQUE KEY (`iface_name`,`host_id`),
   KEY (`host_id`),
-  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`master`),
-  FOREIGN KEY (`master`) REFERENCES `iface` (`iface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

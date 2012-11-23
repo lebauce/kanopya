@@ -43,7 +43,7 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:' .
                         '[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
     },
     iface_pxe => {
@@ -58,6 +58,12 @@ use constant ATTR_DEF => {
         relation     => 'single',
         pattern      => '^\d+$',
         is_mandatory => 1,
+    },
+    master => {
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_editable  => 1,
     },
     netconf_ifaces => {
         label        => 'Network configurations',
@@ -200,7 +206,8 @@ sub slaves {
     my $self = shift;
     my %args = @_;
 
-    return $self->ifaces;
+    my @slaves = grep { $_->master eq $self->iface_name } $self->host->ifaces;
+    return wantarray ? @slaves : \@slaves;
 }
 
 1;

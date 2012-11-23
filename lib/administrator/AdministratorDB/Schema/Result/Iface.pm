@@ -55,7 +55,7 @@ __PACKAGE__->table("iface");
 =head2 iface_mac_addr
 
   data_type: 'char'
-  is_nullable: 0
+  is_nullable: 1
   size: 18
 
 =head2 iface_pxe
@@ -73,10 +73,9 @@ __PACKAGE__->table("iface");
 
 =head2 master
 
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
+  data_type: 'char'
   is_nullable: 1
+  size: 32
 
 =cut
 
@@ -91,7 +90,7 @@ __PACKAGE__->add_columns(
   "iface_name",
   { data_type => "char", is_nullable => 0, size => 32 },
   "iface_mac_addr",
-  { data_type => "char", is_nullable => 0, size => 18 },
+  { data_type => "char", is_nullable => 1, size => 18 },
   "iface_pxe",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "host_id",
@@ -102,12 +101,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "master",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
+  { data_type => "char", is_nullable => 1, size => 32 },
 );
 
 =head1 PRIMARY KEY
@@ -182,21 +176,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 ifaces
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Iface>
-
-=cut
-
-__PACKAGE__->has_many(
-  "ifaces",
-  "AdministratorDB::Schema::Result::Iface",
-  { "foreign.master" => "self.iface_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 ips
 
 Type: has_many
@@ -210,26 +189,6 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Result::Ip",
   { "foreign.iface_id" => "self.iface_id" },
   { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 master
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Iface>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "master",
-  "AdministratorDB::Schema::Result::Iface",
-  { iface_id => "master" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
 );
 
 =head2 netconf_ifaces
@@ -258,8 +217,8 @@ Composing rels: L</netconf_ifaces> -> netconf
 __PACKAGE__->many_to_many("netconfs", "netconf_ifaces", "netconf");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-20 10:39:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:M+FaXJlDyPcUsewh2ny4ag
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-23 15:01:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FLSjX5ERBDTTZU0y5B42ew
 
 __PACKAGE__->belongs_to(
   "parent",
