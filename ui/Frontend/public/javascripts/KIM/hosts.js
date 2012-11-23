@@ -104,7 +104,7 @@ function host_addbutton_action(e) {
             var bonding_ifaces = {};
             for (var index in ifaces) {
                 var iface = ifaces[index];
-                if (iface.master != undefined) {
+                if (iface.master != undefined && iface.master !== "") {
                     if (bonding_ifaces[iface.master] === undefined) {
                         bonding_ifaces[iface.master] = [];
                     }
