@@ -354,3 +354,15 @@ function confirmDeleteWithDependencies(url, id, grid_ids) {
             }
     );
 }
+
+// On load we bind keydown event
+// If 'enter' is pressed we trigger click on 'Ok' button
+$(document).ready(function () {
+    $(document).keydown( function(e) {
+        if(e.which == 13) { // enter pressed
+            if(!$("input,textarea").is(":focus")){
+                $('.ui-button:contains("Ok"):visible').click();
+            }
+        }
+    });
+});
