@@ -452,8 +452,9 @@ sub update {
 sub delete {
     my $self = shift;
     my $workflow_def = $self->workflow_def;
-    if (defined $workflow_def) { $workflow_def->delete(); };
+
     $self->SUPER::delete();
+    if (defined $workflow_def) { $workflow_def->delete(); };
 }
 
 1;

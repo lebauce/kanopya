@@ -8,9 +8,10 @@ use Entity::ServiceProvider::Outside::Externalcluster;
 
 prefix '/kio';
 
+# Seem to be DEPRECATRED => TODO check and remove
 ajax '/services/:serviceid/nodes/update' => sub {
     content_type 'json';
-    my $adm = Administrator->new;                                                                                                                                                                                                              
+    my $adm = Administrator->new;
     my %res;
     my $node_count;
 

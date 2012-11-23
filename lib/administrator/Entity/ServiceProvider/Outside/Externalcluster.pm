@@ -345,7 +345,7 @@ sub updateNodes {
     return {
         retrieved_node_count    => scalar @$nodes,
         added_node_count        => $added_node_count,
-        removed_node_count      => scalar @nodes_to_remove
+        removed_node_count      => $args{synchro} ? scalar @nodes_to_remove : 0
     };
 }
 

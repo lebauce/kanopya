@@ -97,11 +97,11 @@ function createUpdateNodeButton(container, elem_id, grid) {
                         data         : data,
                         success      : function(data) {
                             $(grid).trigger("reloadGrid");
-                            if (data.node_count) {
+                            if (data) {
                                 alert(
                                         data.retrieved_node_count + ' nodes retrieved\n' +
-                                        data.added_node_count + ' nodes added to service\n' +
-                                        data.removed_node_count + ' nodes removed from service'
+                                        data.added_node_count     + ' nodes added to service\n' +
+                                        data.removed_node_count   + ' nodes removed from service'
                                 );
                             }
                         }

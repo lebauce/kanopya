@@ -398,4 +398,23 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+# Allow to directly access concrete combination even if foreign key is on Combination
+__PACKAGE__->has_many(
+  "nodemetric_combinations",
+  "AdministratorDB::Schema::Result::NodemetricCombination",
+  {
+    "foreign.service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+__PACKAGE__->has_many(
+  "aggregate_combinations",
+  "AdministratorDB::Schema::Result::AggregateCombination",
+  {
+    "foreign.service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 1;

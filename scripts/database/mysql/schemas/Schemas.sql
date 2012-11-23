@@ -1240,7 +1240,7 @@ CREATE TABLE `clustermetric` (
   `clustermetric_service_provider_id` int(8) unsigned NOT NULL,
   `clustermetric_indicator_id` int(8) unsigned NOT NULL,
   `clustermetric_statistics_function_name` char(32) NOT NULL,
-  `clustermetric_formula_string` TEXT NOT NULL,
+  `clustermetric_formula_string` TEXT,
   `clustermetric_unit` TEXT,
   `clustermetric_window_time` int(8) unsigned NOT NULL,
   PRIMARY KEY (`clustermetric_id`),
@@ -1285,7 +1285,7 @@ CREATE TABLE `aggregate_combination` (
   `aggregate_combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `aggregate_combination_label` char(255),
   `aggregate_combination_formula` char(255) NOT NULL,
-  `aggregate_combination_formula_string` TEXT NOT NULL,
+  `aggregate_combination_formula_string` TEXT,
   FOREIGN KEY (`aggregate_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
@@ -1298,7 +1298,7 @@ CREATE TABLE `nodemetric_combination` (
   `nodemetric_combination_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `nodemetric_combination_label` char(255),
   `nodemetric_combination_formula` char(255) NOT NULL,
-  `nodemetric_combination_formula_string` TEXT NOT NULL,
+  `nodemetric_combination_formula_string` TEXT,
   FOREIGN KEY (`nodemetric_combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
@@ -1313,7 +1313,7 @@ CREATE TABLE `aggregate_rule` (
   `aggregate_rule_label` char(255),
   `aggregate_rule_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_rule_formula` char(255) NOT NULL,
-  `aggregate_rule_formula_string` TEXT NOT NULL,
+  `aggregate_rule_formula_string` TEXT,
   `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
   `aggregate_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
   `aggregate_rule_state` char(32) NOT NULL ,
@@ -1341,7 +1341,7 @@ CREATE TABLE `aggregate_condition` (
   `left_combination_id` int(8) unsigned NOT NULL,
   `right_combination_id` int(8) unsigned NOT NULL,
   `comparator` char(32) NOT NULL,
-  `aggregate_condition_formula_string` TEXT NOT NULL,
+  `aggregate_condition_formula_string` TEXT,
   `time_limit` char(32),
   `last_eval` BOOLEAN DEFAULT NULL,
   KEY (`aggregate_condition_service_provider_id`),
@@ -1366,7 +1366,7 @@ CREATE TABLE `nodemetric_condition` (
   `left_combination_id` int(8) unsigned NOT NULL,
   `right_combination_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_comparator` char(32) NOT NULL,
-  `nodemetric_condition_formula_string` TEXT NOT NULL,
+  `nodemetric_condition_formula_string` TEXT,
   PRIMARY KEY (`nodemetric_condition_id`),
   KEY (`left_combination_id`),
   KEY (`right_combination_id`),
@@ -1386,7 +1386,7 @@ CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_label` char(255),
   `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_formula` char(255) NOT NULL,
-  `nodemetric_rule_formula_string` TEXT NOT NULL,
+  `nodemetric_rule_formula_string` TEXT,
   `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_state` char(32) NOT NULL,
   `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,
