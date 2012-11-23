@@ -343,7 +343,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                             title       : "",
                             height      : 250
                         });
-                        $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
+                        $(dialog).parents('div.ui-dialog').find('.ui-dialog-titlebar-close').remove();
                     }, 10);
 
                     var url;
