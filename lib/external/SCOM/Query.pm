@@ -124,9 +124,12 @@ sub getPerformance {
             push @monit_object_slice, (\@left, \@right);
             next OBJECT_SLICE;
         }
-        
+
         # Die if something wrong
-        die $cmd_res if ($cmd_res !~ 'DATASTART');
+        if ($cmd_res !~ '^PSComputerName' || $cmd_res !~ 'DATASTART') {
+            $cmd_res =~ s/DATASTART//g;
+            die 'SCOM request fails : ' . $cmd_res;
+        }
 
         # Build resulting data hash from cmd output
         my $h_res_slice    = $self->_formatToHash( 
@@ -165,7 +168,7 @@ sub _execCmd {
     #my $cmd_res = `powershell $full_cmd`;
     
     # Else use remote snap-in
-    my $cmd_res = `powershell invoke-command {$full_cmd} -ComputerName $self->{_management_server_name} $self->{_remote_invocation_options}`;
+    my $cmd_res = `powershell invoke-command {$full_cmd} -ComputerName $self->{_management_server_name} $self->{_remote_invocation_options} 2>&1`;
     
     return $cmd_res;
 }
