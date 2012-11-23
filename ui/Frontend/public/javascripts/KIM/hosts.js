@@ -22,7 +22,6 @@ function host_addbutton_action(e) {
         attrsCallback  : function (resource) {
             var attributes;
             var relations;
-
             if (resource === 'host') {
                 // If ressource is the host, add the fake relation bonding_ifaces
                 var response = ajax('GET', '/api/attributes/' + resource);
@@ -57,10 +56,11 @@ function host_addbutton_action(e) {
                     slave_ifaces : {
                         label        : 'Salve interfaces',
                         type         : 'relation',
-                        relation     : 'mutli',
+                        relation     : 'multi',
                         link_to      : 'iface',
                         is_mandatory : false,
-                        is_editable  : true
+                        is_editable  : true,
+                        reload_options : true
                     }
                 };
                 relations = {
@@ -78,10 +78,55 @@ function host_addbutton_action(e) {
             } else {
                 return ajax('GET', '/api/attributes/' + resource);
             }
-            return { attributes : attributes, relations : {} };
+            return { attributes : attributes, relations : relations };
         },
-        valuesCallback : undefined,
-        submitCallback : undefined
+        optionsCallback  : function (name, value, relations) {
+            if (name === 'slave_ifaces') {
+                // Find the input corresponding to defined ifaces,
+                // and build an options list with.
+                var options = [];
+                this.form.find('#input_iface_name').each(function() {
+                    options.push({ label : $(this).val(), pk : $(this).val() });
+                });
+                return options;
+
+            } else {
+                return false;
+            }
+        },
+        submitCallback  : function(data, $form, opts, onsuccess, onerror) {
+            for (var bonding_index in data['bonding_ifaces']) {
+                var bonding_iface = data['bonding_ifaces'][bonding_index];
+
+                var netconfs = undefined;
+                for (iface_index in data['ifaces']) {
+                    var iface = data['ifaces'][iface_index];
+                    if ($.inArray(iface.iface_name, bonding_iface.slave_ifaces) >= 0) {
+
+                        var iface_netconfs = iface.netconf_ifaces;
+                        if (netconfs === undefined) {
+                            netconfs = iface_netconfs;
+
+                        } else {
+                            // TODO: check if ifaces netconfs match exactly to the
+                            //       first slave iface found netconfs.
+                        }
+                        delete iface.netconf_ifaces;
+                        iface.master = bonding_iface.bonding_iface_name;
+                    }
+                }
+
+                data['ifaces'].push({
+                    iface_name     : bonding_iface.bonding_iface_name,
+                    iface_pxe      : 0,
+                    netconf_ifaces : netconfs
+                })
+            }
+            delete data['bonding_ifaces'];
+
+            return ajax($(this.form).attr('method').toUpperCase(),
+                        $(this.form).attr('action'), data, onsuccess, onerror);
+        }
     })).start();
 }
 
