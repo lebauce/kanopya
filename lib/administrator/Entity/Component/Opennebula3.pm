@@ -347,6 +347,23 @@ sub needBridge {
     return 1;
 }
 
+sub getHostsEntries {
+    my $self = shift;
+    my @hosts_entries = ();
+
+    for my $vmm ($self->vmms) {
+        foreach my $node (values %{$vmm->getServiceProvider->getHosts()}) {
+            push @hosts_entries, {
+                hostname   => $node->host_hostname,
+                domainname => $self->getServiceProvider->cluster_domainname,
+                ip         => $node->adminIp
+            };
+        }
+    }
+
+    return \@hosts_entries;
+}
+
 sub getTemplateDataOned {
     my $self = shift;
     my %data = $self->{_dbix}->get_columns();

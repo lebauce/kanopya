@@ -194,8 +194,17 @@ sub registerHypervisor {
         required => [ 'host' ]
     );
 
+    my $system = $self->getServiceProvider->getComponent(category => "System");
+    my $esystem = EFactory::newEEntity(data => $system);
+    $esystem->postStartNode(cluster => $self->getServiceProvider,
+                            host    => $args{host});
+
+    my $agent = $self->getServiceProvider->getComponent(category => "Configurationagent");
+    my $eagent = EFactory::newEEntity(data => $agent);
+    $eagent->postStartNode(cluster => $self->getServiceProvider);
+
     # hypervisor declaration
-    my $hostname = $args{host}->getAttr(name => 'host_hostname');
+    my $hostname = $args{host}->host_hostname;
     my $hostid = $self->onehost_create(hostname => $hostname);
 
     # Delete the hypervisor from opennebula if the operation fail later.
@@ -247,7 +256,7 @@ sub migrateHost {
     $log->debug("The VM <" . $args{host}->getId . "> is on the <" . $src_hypervisor->getId . "> host");
 
     my $hypervisor_id = $args{hypervisor_dst}->onehost_id;
-    my $hypervisor_host_name = $args{hypervisor_dst}->getAttr(name=>'host_hostname');
+    my $hypervisor_host_name = $args{hypervisor_dst}->host_hostname;
 
     my $host_id = $args{host}->onevm_id;
 
