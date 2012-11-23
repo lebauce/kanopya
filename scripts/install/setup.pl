@@ -406,6 +406,9 @@ useTemplate(
 );
 
 # Puppetmaster configuration
+
+writeFile('/etc/puppet/manifests/site.pp', "import \"nodes/*.pp\"\n");
+
 useTemplate(
     include  => '/opt/kanopya/templates/components/puppetmaster',
     template => 'puppet.conf.tt',
