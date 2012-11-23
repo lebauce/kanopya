@@ -80,7 +80,7 @@ sub generateConfiguration {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['cluster','host']);
+                         required => [ 'cluster', 'host' ]);
      
     my $generated_files = [];                     
                          
@@ -170,7 +170,7 @@ sub _generateFstab {
 sub _generateHosts {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster','host', 'kanopya_domainname' ]);
+    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'kanopya_domainname' ]);
 
     $log->debug('Generate /etc/hosts file');
 
@@ -179,20 +179,18 @@ sub _generateHosts {
 
     # we add each nodes 
     foreach my $node (values %$nodes) {
-        my $tmp = { 
+        push @hosts_entries, {
             hostname   => $node->getAttr(name => 'host_hostname'),
             domainname => $args{kanopya_domainname},
             ip         => $node->adminIp 
         };
-
-        push @hosts_entries, $tmp;
     }
 
     # we ask components for additional hosts entries
     my @components = $args{cluster}->getComponents(category => 'all');
     foreach my $component (@components) {
         my $entries = $component->getHostsEntries();
-        if(defined $entries) {
+        if (defined $entries) {
             foreach my $entry (@$entries) {
                 push @hosts_entries, $entry;
             }

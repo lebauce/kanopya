@@ -90,17 +90,6 @@ sub postStartNode {
     );
 
     $self->iaas->registerHypervisor(host => $args{host});
-
-    # create the directory and mount the container
-    # my $command = "mkdir -p /var/lib/one/datastores/$dsid";
-    # $self->getEContext->execute(command => $command);
-    # my $container_access = Entity::ContainerAccess->get(
-    #                        id => $repo->{container_access_id}
-    #                    );
-    # $command = 'mount -t nfs -o rw,sync,vers=3 ';
-    # $command .= $container_access->getAttr(name => 'container_access_export');
-    # $command .= " /var/lib/one/datastores/$dsid";
-    # $self->getEContext->execute(command => $command);
 }
 
 sub stopHost {
