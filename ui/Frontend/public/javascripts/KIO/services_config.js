@@ -72,13 +72,14 @@ function loadServicesConfig (container_id, elem_id) {
     
     var that = this;
 
+    // Service details
+    var table   = $("<table>").css("width", "100%").appendTo(container);
     $.ajax({
         url     : '/api/serviceprovider/' + elem_id,
         type    : 'GET',
         success : function(data) {
             var external    = "";
             if (data.externalcluster_id != null) external = 'external';
-            var table   = $("<table>").css("width", "100%").appendTo(container);
             $(table).append($("<tr>").append($("<td>", { colspan : 2, class : 'table-title', text : "General" })));
             $(table).append($("<tr>").append($("<td>", { text : 'Name :', width : '100' })).append($("<td>", { text : data[external + 'cluster_name'] })));
             $(table).append($("<tr>").append($("<td>", { text : 'Description :' })).append($("<td>", { text : data[external + 'cluster_desc'] })));
@@ -285,7 +286,9 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
 
                     // Specific management for custom form
                     if (connectortype == 'DirectoryServiceManager' && data[i] == 'ad_nodes_base_dn') {
+                        $(fieldset).append('<br>');
                         $(fieldset).append($('<button>', {html : 'browse...'}).click( {manager_id : manager_id }, ActiveDirectoryBrowser ));
+                        $(fieldset).append($('<button>', {html : 'search...'}).click( {manager_id : manager_id }, ActiveDirectorySearch ));
                     }
                 }
             }
@@ -330,11 +333,15 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                         data.manager_params = params;
                     }
                     setTimeout(function() { 
+                        $('*').addClass('cursor-wait');
                         var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
-                        dialog.css('text-align', 'center');
+                        dialog.css('text-align', 'center'); // text horizontal align
+                        dialog.css('line-height', '200px'); // text vertical align
                         dialog.appendTo("body").dialog({
                             resizable   : false,
-                            title       : ""
+                            draggable   : false,
+                            title       : "",
+                            height      : 250
                         });
                         $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
                     }, 10);
@@ -362,6 +369,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                             callback();
                         },
                         complete      : function() {
+                            $('*').removeClass('cursor-wait');
                             $("div#waiting_default_insert").dialog("destroy");
                         },
                         error         : function(error) {
@@ -377,7 +385,8 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
 
 function createManagerButton(managertype, ctnr, sp_id, container_id) {
     var addManagerButton    = $("<a>", {
-        text : 'Link to a ' + managerConnectorTranslate(managertype)
+        text    : 'Link to a ' + managerConnectorTranslate(managertype),
+        style   : 'width:300px'
     }).button({ icons : { primary : 'ui-icon-link' } });
     var that                = this;
     var reload = function() {
@@ -401,7 +410,7 @@ function buildADTreeJSONData(ad_tree) {
                 data        : node.name,
                 attr        : { id : node.dn },
         }
-        if (node.children.length > 0) {
+        if (node.children && node.children.length > 0) {
             treenode.children = buildADTreeJSONData( node.children );
         }
         treedata.push( treenode );
@@ -411,7 +420,7 @@ function buildADTreeJSONData(ad_tree) {
 }
 
 function ActiveDirectoryBrowser(event) {
-    var dn_input = $(this).prev();
+    var dn_input = $(this).prevAll('input');
     var ad_id    = event.data.manager_id;
 
     // Get AD user
@@ -469,5 +478,78 @@ function ActiveDirectoryBrowser(event) {
                     }
                 });
             }
+    });
+}
+
+function ActiveDirectorySearch(event) {
+    var dn_input = $(this).prevAll('input');
+    var ad_id    = event.data.manager_id;
+
+    var browser         = $('<div>');
+    var tree_cont       = $('<div>', {style : 'height:300px'});
+    var search_input    = $('<input>', { style : 'width:200px'});
+    var search_button   = $('<button>', {html : 'search...'}).button({icon: {primary:'ui-icon-search'}});
+    var selected_dn_input = $('<input>', {disabled:'disabled', style : 'width:300px'});
+
+    browser.append($('<span>', {html : 'Search OU, Groups and Containers with name containing : '}))
+           .append(search_input)
+           .append(search_button)
+           .append('<br>').append('<hr>')
+           .append($('<span>', {html : 'DN : '}))
+           .append(selected_dn_input)
+           .append(tree_cont);
+
+    // Get AD user
+    var ad_user;
+    $.ajax({
+        url         : '/api/entity/' + ad_id,
+        async       : false,
+        success     : function(data) {
+            ad_user  = data.ad_user;
+        }
+    });
+
+    search_button.click( function() {
+        var search_string = search_input.val();
+        callMethodWithPassword({
+            login        : ad_user,
+            dialog_title : "",
+            url          : '/api/entity/' + ad_id + '/searchDirectory',
+            data         : { search_string : search_string },
+            success      : function(data) {
+                require('jquery/jquery.jstree.js');
+                var treedata = buildADTreeJSONData(data);
+                tree_cont.jstree({
+                    "plugins"   : ["themes","json_data","ui"],
+                    "themes"    : {
+                        url : "css/jstree_themes/default/style.css"
+                    },
+                    "json_data" : {
+                        "data"                  : treedata,
+                        "progressive_render"    : true
+                    }
+                }).bind("select_node.jstree", function (e, data) {
+                    selected_dn_input.val(data.rslt.obj.attr("id"));
+                });
+            }
+        });
+    });
+
+    browser.dialog({
+        title   : 'AD Search',
+        modal   : true,
+        width   : '450px',
+        buttons : {
+            Ok: function () {
+                dn_input.val(selected_dn_input.val());
+                $(this).dialog("close");
+            },
+            Cancel: function () {
+                $(this).dialog("close");
+            }
+        },
+        close: function (event, ui) {
+            $(this).remove();
+        }
     });
 }
