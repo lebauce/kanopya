@@ -152,7 +152,7 @@ Variable getter
 
 =cut
 
-sub getInfra{
+sub getInfra {
     my ($self) = @_;
     return $self->{_infra};
 }
@@ -170,37 +170,38 @@ Use the cloud manager to get the infrastructure information
 
 =cut
 
-sub _constructInfra{
+sub _constructInfra {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => []);
     # OPTION : hv_capacities
 
     # Get the list of all hypervisors
-    my @hypervisors_r = $self->{_cloud_manager}->hypervisors();
+    my @hypervisors_r = $self->{_cloud_manager}->activeHypervisors();
     my $master_hv;
 
     my ($hvs, $vms);
     for my $hypervisor (@hypervisors_r) {
 
-        if( $hypervisor->node->master_node == 1 ) {
-            $master_hv = $hypervisor->getId;
+        if ($hypervisor->node->master_node == 1) {
+            $master_hv = $hypervisor->id;
         }
 
-        $hvs->{$hypervisor->getId} = {
+        $hvs->{$hypervisor->id} = {
             hv_capa => {
                 ram => $hypervisor->host_ram,
                 cpu => $hypervisor->host_core,
             },
             vm_ids  => [],
         };
+
         my @hypervisor_vms = $hypervisor->getVms();
         for my $vm (@hypervisor_vms) {
-            $vms->{$vm->getId} = {
+            $vms->{$vm->id} = {
                 ram => $vm->host_ram,
                 cpu => $vm->host_core,
             };
-            push @{$hvs->{$hypervisor->getId}->{vm_ids}}, $vm->getId;
+            push @{$hvs->{$hypervisor->getId}->{vm_ids}}, $vm->id;
         }
     }
 
@@ -292,6 +293,11 @@ sub isMigrationAuthorized{
     my $vm_id = $args{vm_id};
     my $hv_id = $args{hv_id};
 
+    if (not defined $self->{_infra}->{hvs}->{$hv_id}) {
+        $log->error("Hypervisor <$hv_id> is not an active host of the cloud manager");
+        return 0;
+    }
+
     my @resources = keys %{$self->{_infra}->{vms}->{$vm_id}};
 
     my $remaining_resources = $self->_getHvSizeRemaining(
@@ -302,7 +308,7 @@ sub isMigrationAuthorized{
         $log->info("Check $resource, good if :  ".$self->{_infra}->{vms}->{$vm_id}->{$resource}.' < '.$remaining_resources->{$resource});
 
         if( $self->{_infra}->{vms}->{$vm_id}->{$resource} > $remaining_resources->{$resource}  ) {
-            $log->info("Not enough $resource to migrate VM $vm_id (".$self->{_infra}->{vms}->{$vm_id}->{$resource}.") in HV $hv_id (".$remaining_resources->{$resource} );
+            $log->error("Not enough $resource to migrate VM $vm_id (".$self->{_infra}->{vms}->{$vm_id}->{$resource}.") in HV $hv_id (".$remaining_resources->{$resource} );
             return 0;
         }
     }
