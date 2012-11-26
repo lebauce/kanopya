@@ -369,52 +369,57 @@ sub update {
         # Update data for each host #
         #############################
         my %hosts_values = ();
-        my %threads = ();
-        my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
+        my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {}, expand => ['nodes']);
+
         foreach my $cluster (@clusters) {
             $log->info("# Update nodes data of cluster " . $cluster->getAttr( name => "cluster_name"));
 
-            # Get set to monitor for this cluster
-            my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster->getId );
+
+
 
             # Get components of this cluster
             my @components = $cluster->getComponents(category => 'all');
             my %components_by_name = map { $_->component_type->component_name => $_ } @components;
 
-            # Collect data for nodes in the cluster
-            foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
-                if ( $mb->getNodeState() =~ '^in' ) {
-                    my $host_name = $mb->getAttr( name => "host_hostname");
-                    my %params = (
-                        host       => $mb,
-                        components => \%components_by_name,
-                        sets       => $monitored_sets,
-                    );
-                    if ($THREADED) {
-                        my $thr = threads->create( 'updateHostData', $self, %params    );
-                        $threads{$host_name} = $thr;
-                    } else {
-                        my $ret = $self->updateHostData( %params );
-                        $hosts_values{ $host_name } = $ret;
-                    }
+            # Get set to monitor for this cluster
+            my @monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster->id );
+            my @db_monitored_sets  = ();
+            my @net_monitored_sets = ();
+
+            for my $monitor_set (@monitored_sets) {
+                if ($monitor_set->{data_provider} eq 'KanopyaDatabaseProvider') {
+                    push @db_monitored_sets, $monitor_set;
+                }
+                else {
+                    push @net_monitored_sets, $monitor_set;
                 }
             }
-        }
-        
-        #############################
-        # Wait end of all threads  #
-        ############################
-        if ($THREADED) {
-            while ( my ($host_name, $thr) = each %threads ) {
-                my $ret = $thr->join();
-                $hosts_values{ $host_name } = $ret;
+
+            # Collect data for nodes in the cluster
+            foreach my $node ($cluster->nodes) {
+                my $host = $node->host;
+
+                # Collect KanopyaDB anyway
+                my %params = (
+                    host       => $host,
+                    components => \%components_by_name,
+                    sets       => \@db_monitored_sets,
+                );
+                my $db_data = $self->updateHostData( %params );
+
+                # Collect rest of sets only if node is up
+                 my $net_data;
+                if ($node->node_state =~ '^in') {
+                    $params{sets} = \@net_monitored_sets;
+                    my $net_data = $self->updateHostData( %params );
+                }
+                $hosts_values{ $host->host_hostname } = Hash::Merge::merge($db_data, $net_data);
             }
         }
-        
+
         #################################################################
         # update clusters databases (nodes count and aggregated values) #
-        #################################################################    
-        my $time = time();
+        #################################################################
         foreach my $cluster (@clusters) {
             $self->updateClusterData(
                 cluster      => $cluster,
