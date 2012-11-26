@@ -514,7 +514,8 @@ var KanopyaFormWizard = (function() {
 
     KanopyaFormWizard.prototype.beforeSerialize = function(form, options) {
         var _this = this;
-        $(form).find(':input').not('.wizard-ignore').each(function () {
+        $(form).find(':input').not('.wizard-ignore').not('button').each(function () {
+            console.log(this);
             // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
             if (toInputType(_this.attributedefs[$(this).attr('name')].type) === 'checkbox') {
                 //if ($(this).attr('value') === 'on' && $(this).attr('checked')) {
