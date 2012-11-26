@@ -1381,7 +1381,7 @@ sub populate_policies {
         cluster_nameserver2  => '127.0.0.1',
         cluster_domainname   => 'hedera-technology.com',
         default_gateway_id   => $network->id,
-        interface_netconfs_0 => $netconf->id,
+        interface_netconfs_0 => [ $netconf->id ],
     );
 
     # scalability

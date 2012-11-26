@@ -262,7 +262,7 @@ sub create {
         $service_template = Entity::ServiceTemplate->get(id => $flatened_params{service_template_id});
         for my $policy (@{ $service_template->getPolicies }) {
             # Register policy ids in the params
-            push @{ $params{policies} }, $policy->getAttr(name => 'policy_id');
+            push @{ $params{policies} }, $policy->id;
 
             # Rebuild params as a configuration pattern
             my $pattern = Entity::Policy->buildPatternFromHash(policy_type => $policy->policy_type, hash => \%flatened_params);
@@ -273,7 +273,7 @@ sub create {
     General::checkParams(args => \%params, required => [ 'managers' ]);
     General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
-    # Firstly apply the policies presets on the cluster creation paramters.
+    # Firstly apply the policies presets on the cluster creation parameters.
     for my $policy_id (@{ $params{policies} }) {
         my $policy = Entity::Policy->get(id => $policy_id);
 
@@ -393,6 +393,8 @@ sub configureManagers {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, optional => { 'managers' => undef });
+
     # Workaround to handle connectors that have btoh category.
     # We need to fix this when we willmerge inside/outside.
     my ($wok_disk_manager, $wok_export_manager);
@@ -477,6 +479,7 @@ sub configureManagers {
     my $readonly_param = $export_manager->getReadOnlyParameter(
                              readonly => $self->getAttr(name => 'cluster_si_shared')
                          );
+
     # TODO: This will be usefull for the first call to applyPolicies at the cluster creation,
     #       but there will be export manager params consitency problem if policies are updated.
     if ($readonly_param) {
@@ -492,19 +495,18 @@ sub configureInterfaces {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, optional => { 'interfaces' => undef });
+
     if (defined $args{interfaces}) {
         for my $interface_pattern (values %{ $args{interfaces} }) {
-            if ($interface_pattern->{interface_netconf}) {
-                # TODO: This mechanism do not allows to define many interfaces
-                #       with the same role within policies.
-
+            if ($interface_pattern->{interface_netconfs}) {
                 # TODO: Search among existing interfaces to avoid to re-create its.
 
-                # Check if an interface with the same role already set, add it otherwise,
-                # Add networks to the interrface if not exists.
                 my $bonds_number = $interface_pattern->{bonds_number};
                 $bonds_number = defined $bonds_number ? $bonds_number : 0;
-                $self->addNetworkInterface(netconfs     => [ $interface_pattern->{interface_netconf} ],
+
+                my @netconfs = values $interface_pattern->{interface_netconfs};
+                $self->addNetworkInterface(netconfs     => \@netconfs,
                                            bonds_number => $bonds_number);
             }
         }
@@ -514,6 +516,8 @@ sub configureInterfaces {
 sub configureBillingLimits {
     my $self    = shift;
     my %args    = @_;
+
+    General::checkParams(args => \%args, optional => { 'billing_limits' => undef });
 
     if (defined($args{billing_limits})) {
         foreach my $name (keys %{$args{billing_limits}}) {

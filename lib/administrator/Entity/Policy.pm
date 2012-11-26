@@ -143,29 +143,33 @@ sub buildPatternFromHash {
                 }
             }
             # Handle components
-            elsif ($name =~ m/^component_type_/) {
+            elsif ($name =~ m/^component_type_/ and $args{policy_type} eq 'system') {
                 $pattern{components}->{'component_' . $args{hash}->{$name}}->{component_type} = $args{hash}->{$name};
             }
             # Handle networks interfaces
-            elsif ($name =~ m/^interface_netconfs_/) {
+            elsif ($name =~ m/^interface_netconfs_/ and $args{policy_type} eq 'network') {
                 # Create the interface array if not exists
-                if (not $pattern{interfaces}) {
-                    $pattern{interfaces} = [];
-                }
-
                 if ($args{hash}->{$name} and ref($args{hash}->{$name}) ne 'ARRAY') {
                     $args{hash}->{$name} = [ $args{hash}->{$name} ];
                 }
-                my $interface = { interface_netconfs => $args{hash}->{$name} };
+                my $interface = {};
+                for my $netconf (@{ $args{hash}->{$name} }) {
+                    $interface->{interface_netconfs}->{$netconf} = $netconf;
+                }
 
                 (my $interface_index = $name) =~ s/^interface_netconfs_//g;
                 if ($args{hash}->{'bonds_number_' . $interface_index}) {
                     $interface->{bonds_number} = $args{hash}->{'bonds_number_' . $interface_index};
                 }
-                push @{ $pattern{interfaces} }, $interface;
+
+                my $identifier = join('_', @{ $args{hash}->{$name} }) . '_' . $interface->{bonds_number};
+                if (defined $pattern{interfaces}->{'interface_' . $identifier}) {
+                    $identifier .= '_' .  $interface_index;
+                }
+                $pattern{interfaces}->{'interface_' . $identifier} = $interface;
             }
             # Handle billing limit
-            elsif ($name =~ m/^limit_start_/) {
+            elsif ($name =~ m/^limit_start_/ and $args{policy_type} eq 'billing') {
                 my $limit_index = $name;
                 $limit_index    =~ s/^limit_start_//g;
 
@@ -248,15 +252,14 @@ sub getFlattenedHash {
         }
         # Handle network interfaces
         elsif ($name eq 'interfaces') {
-            for my $interface (@{ $pattern->{$name} }) {
+            for my $interface (values %{ $pattern->{$name} }) {
                 if (not defined $flat_hash{'network_interface'}) {
                     $flat_hash{'network_interface'} = [];
                 }
 
-                # For instance, do not return a list of network, as we are not able
-                # to handle mutliple network association to one interface.
-                if (defined $interface->{interface_netconfs} and ref($interface->{interface_netconfs}) eq 'ARRAY') {
-                    $interface->{interface_netconfs} = $interface->{interface_netconfs};
+                if (defined $interface->{interface_netconfs} and ref($interface->{interface_netconfs}) eq 'HASH') {
+                    my @netconfs = values %{ $interface->{interface_netconfs} };
+                    $interface->{interface_netconfs} = \@netconfs;
                 }
                 push @{ $flat_hash{'network_interface'} }, $interface;
             }
