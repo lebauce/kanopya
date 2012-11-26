@@ -59,7 +59,6 @@ sub updateHostData {
     my $host = $args{host};
     my $host_name = $host->host_hostname;
     my $host_ip = $host->adminIp;
-    my $host_state = $host->host_state;
     my $host_reachable = 1;
     my %all_values = ();
     my $error_happened = 0;
@@ -136,7 +135,7 @@ sub updateHostData {
                     $provider_class =~ /(.*)Provider/;
                     my $comp = $1;
                     my $mess = "Can not reach component '$comp' on $host_name ($host_ip)";
-                    if ( $host_state =~ "up" ) {
+                    if ( $host->host_state =~ "up" ) {
                         $log->info( "Unreachable host '$host_name' (IP $host_ip, component '$comp') => we stop collecting data.");
                         Message->send(from => 'Monitor', level => "warning", content => $mess );
                     }
@@ -203,13 +202,13 @@ sub updateHostData {
 sub updateClusterNodeCount {
     my $self = shift;
     my %args = @_;
-    
-    my ($cluster_name, $nodes_state, $hosts_state) = ($args{cluster_name}, $args{nodes_state}, $args{hosts_state});
-    
+
+    my ($cluster_name, $nodes_state) = ($args{cluster_name}, $args{nodes_state});
+
     # RRD for node count
     my $rrd_file = "$self->{_rrd_base_dir}/nodes_$cluster_name.rrd";
     my $rrd = RRDTool::OO->new( file =>  $rrd_file );
-    if ( not -e $rrd_file ) {    
+    if ( not -e $rrd_file ) {
         $log->info("Info: create nodes rrd for '$cluster_name'");
         $rrd->create('step'    => $self->{_time_step},
                      'archive' => { rows => $self->{_period} / $self->{_time_step} },
@@ -497,20 +496,19 @@ sub run_threaded {
 }
 
 =head2 run
-    
+
     Class : Public
-    
+
     Desc : Launch an update every time_step (configuration)
-    
+
 =cut
- 
+
 sub run {
     my $self = shift;
     my $running = shift;
-    
-    my $adm = $self->{_admin};
+
     Message->send(from => 'Monitor', level => 'info', content => "Kanopya Collector started.");
-    
+
     while ( $$running ) {
 
         my $start_time = time();
