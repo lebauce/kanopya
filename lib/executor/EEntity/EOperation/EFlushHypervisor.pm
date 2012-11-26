@@ -53,11 +53,16 @@ sub check {
 
 sub prepare {
     my $self = shift;
+
     $self->SUPER::prepare();
+
     if (not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
         my $error = 'Operation can only be applied to an hypervisor';
         throw Kanopya::Exception(error => $error);
     }
+
+    # variable used in maintenance workflows
+    $self->{context}->{host_to_deactivate} = $self->{context}->{host};
 }
 
 sub execute {
