@@ -20,6 +20,7 @@ Condition on combination value
 
 @see <package>Entity::Combination</package>
 @see <package>Entity::Combination::ConstantCombination</package>
+@see <package>Entity::Combination::NodemetricCombination</package>
 
 =end classdoc
 
@@ -348,6 +349,19 @@ sub clone {
         attrs_clone_handler => $attrs_cloner
     );
 }
+
+
+=pod
+
+=begin classdoc
+
+Compute and update the instance formula_string attribute and call the update of the formula_string
+attribute of the objects which depend on the instance.
+
+=end classdoc
+
+=cut
+
 
 sub updateFormulaString {
     my $self = shift;
