@@ -39,7 +39,7 @@ use constant ATTR_DEF => {
         is_editable  => 1,
     },
     iface_mac_addr => {
-        label        => 'MAC adress',
+        label        => 'MAC address',
         type         => 'string',
         pattern      => '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:' .
                         '[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',

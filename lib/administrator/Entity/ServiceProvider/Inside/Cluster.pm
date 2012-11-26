@@ -265,7 +265,7 @@ sub create {
             push @{ $params{policies} }, $policy->getAttr(name => 'policy_id');
 
             # Rebuild params as a configuration pattern
-            my $pattern = Entity::Policy->buildPatternFromHash(policy_type => $policy->getAttr(name => 'policy_type'), hash => \%flatened_params);
+            my $pattern = Entity::Policy->buildPatternFromHash(policy_type => $policy->policy_type, hash => \%flatened_params);
             %params = %{ $merge->merge(\%params, \%$pattern) };
         }
     }

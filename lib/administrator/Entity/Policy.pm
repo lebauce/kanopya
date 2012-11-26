@@ -148,14 +148,21 @@ sub buildPatternFromHash {
             }
             # Handle networks interfaces
             elsif ($name =~ m/^interface_netconfs_/) {
-                # Get the intefrace role name
-                $pattern{interfaces}->{$args{hash}->{$name}}->{interface_netconf} = $args{hash}->{$name};
-
-                my $interface_index = $name;
-                $interface_index =~ s/^interface_netconfs_//g;
-                if ($args{hash}->{'bonds_number_' . $interface_index}) {
-                    $pattern{interfaces}->{$args{hash}->{$name}}->{bonds_number} = $args{hash}->{'bonds_number_' . $interface_index};
+                # Create the interface array if not exists
+                if (not $pattern{interfaces}) {
+                    $pattern{interfaces} = [];
                 }
+
+                if ($args{hash}->{$name} and ref($args{hash}->{$name}) ne 'ARRAY') {
+                    $args{hash}->{$name} = [ $args{hash}->{$name} ];
+                }
+                my $interface = { interface_netconfs => $args{hash}->{$name} };
+
+                (my $interface_index = $name) =~ s/^interface_netconfs_//g;
+                if ($args{hash}->{'bonds_number_' . $interface_index}) {
+                    $interface->{bonds_number} = $args{hash}->{'bonds_number_' . $interface_index};
+                }
+                push @{ $pattern{interfaces} }, $interface;
             }
             # Handle billing limit
             elsif ($name =~ m/^limit_start_/) {
@@ -241,16 +248,15 @@ sub getFlattenedHash {
         }
         # Handle network interfaces
         elsif ($name eq 'interfaces') {
-            for my $interface (values %{ $pattern->{$name} }) {
+            for my $interface (@{ $pattern->{$name} }) {
                 if (not defined $flat_hash{'network_interface'}) {
                     $flat_hash{'network_interface'} = [];
                 }
 
                 # For instance, do not return a list of network, as we are not able
                 # to handle mutliple network association to one interface.
-                if (defined $interface->{interface_netconfs} and ref($interface->{interface_netconfs}) eq 'ARRAY' and
-                    scalar($interface->{interface_netconfs})) {
-                    $interface->{interface_netconfs} = $interface->{interface_netconfs}[0];
+                if (defined $interface->{interface_netconfs} and ref($interface->{interface_netconfs}) eq 'ARRAY') {
+                    $interface->{interface_netconfs} = $interface->{interface_netconfs};
                 }
                 push @{ $flat_hash{'network_interface'} }, $interface;
             }
