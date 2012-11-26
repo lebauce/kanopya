@@ -202,10 +202,13 @@ sub collectIndicator {
     eval {
         my $adm = Administrator->new();
         $adm->{db}->resultset('Collect')->create({
-            cluster_id      => $args{service_provider_id},
-            indicatorset_id => $indicator->indicatorset_id
+            service_provider_id => $args{service_provider_id},
+            indicatorset_id     => $indicator->indicatorset_id
         });
     };
+    if ($@) {
+        $log->info($@);
+    }
 }
 
 =head2 getCollectorType
