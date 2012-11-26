@@ -1142,7 +1142,7 @@ sub searchRelated {
     requireClass($searched_class);
 
     my $method = $join->{accessor} eq "single" ? "find" : "search";
-    return $searched_class->$method(%args, raw_hash => { $join->{on} => $args{id} },
+    return $searched_class->$method(%args, raw_hash => { $join->{on} => ref ($self) ? $self->id : $args{id} },
                                            hash     => $args{hash},
                                            join     => $join->{join});
 }
