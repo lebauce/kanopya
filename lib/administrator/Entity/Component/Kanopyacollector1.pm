@@ -74,6 +74,7 @@ sub new {
                 indicatorset_name => [
                     'mem', 'cpu', 'apache_stats', 'apache_workers', 'billing',
                     'diskIOTable', 'interfaces', 'vsphere_vm', 'vsphere_host',
+                    'state',
                 ]
             }
         )
