@@ -78,7 +78,7 @@ sub configureNode {
         my $admin = $args{host}->getAdminIface();
         my $network = NetAddr::IP->new(
             $admin->getIPAddr(),
-            $admin->getPoolip()->poolip_netmask,
+            $admin->getPoolip()->network->network_netmask,
         )->network();
     }
 
