@@ -195,11 +195,11 @@ function addFieldUnit(field_info, cont, id, selected_unit) {
             if (selected_unit) {
                 select_unit.find('[value="'+ unit_options[selected_unit] +'"]').attr('selected', 'selected');
             }
+            select_unit.addClass('wizard-ignore');
         } else {
-            $(cont).append( field_info.unit );
+            $(cont).append('  ' + field_info.unit);
         }
     }
-    select_unit.addClass('unit');
     return select_unit;
 }
 

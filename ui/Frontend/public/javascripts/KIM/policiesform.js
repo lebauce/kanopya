@@ -54,9 +54,6 @@ var PolicyForm = (function() {
         // input_trigger is the class for select element which has a onChange event
         // The callback could modify other fields of the form so we trigger change after all fields are created
         this.form.find('.input_trigger').change();
-
-        // Use jQuery.mutiselect (after DOM loading)
-        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
     }
 
     PolicyForm.prototype.handleField = function(elem) {
@@ -198,12 +195,12 @@ var PolicyForm = (function() {
 
         // Use jQuery.mutiselect (after DOM loading)
         this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
-        this.content.find('select[multiple!="multiple"]').not('.wizard-ignore').multiselect({
-            multiple: false,
-            header: "Select an option",
-            noneSelectedText: "-",
-            selectedList: 1
-        });
+//        this.content.find('select[multiple!="multiple"]').not('.wizard-ignore').multiselect({
+//            multiple: false,
+//            header: "Select an option",
+//            noneSelectedText: "-",
+//            selectedList: 1
+//        });
 
         return added;
     }
@@ -424,13 +421,10 @@ var PolicyForm = (function() {
                     $(unit_cont).empty();
                     current_unit = element.unit.value[$(this).val()];
                     var unit_input = addFieldUnit({ unit : current_unit }, unit_cont, unit_field_id);
-                    unit_input.addClass('wizard-ignore');
                 });
                 trigger_input.change();
             } else {
                 var unit_input = addFieldUnit(element, unit_cont, unit_field_id);
-                unit_input.addClass('wizard-ignore');
-
                 current_unit = element.unit;
             }
 
