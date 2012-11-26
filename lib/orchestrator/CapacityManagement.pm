@@ -125,7 +125,7 @@ sub new {
 
             # Manage CPU Overcommitment when cloud_manager is defined
         }
-            
+
         # Add extra information to VMs
 
         my @vm_ids = keys %{$self->{_infra}->{vms}};
@@ -223,7 +223,7 @@ Check if a scale-in is authorized w.r.t. the VM resources and the destination HV
 @param vm_id id of the checked vm
 @param hv_id id of the hypervisor of the vm
 @param resource_type scaled resource
-@param wanted_resource value of the resource you want to scale  
+@param wanted_resource value of the resource you want to scale
 
 @return 1 if scale-in is possible, return 0 if some resources are missing.
 
@@ -362,7 +362,7 @@ sub optimIaas{
 
 =begin classdoc
 
-Simplified the migration plan to avoir useless migration and to keep some vms in the master node 
+Simplified the migration plan to avoir useless migration and to keep some vms in the master node
 
 @param plan the orginal migration plan
 
@@ -960,7 +960,7 @@ sub _getHvSizeOccupied{
 
     for my $vm_id (@$hv_vms) {
         $size->{cpu} += $self->{_infra}->{vms}->{$vm_id}->{cpu};
-        $size->{ram} += $self->{_infra}->{vms}->{$vm_id}->{ram} + 32*1024*1024; #ADD MARGIN 32MB per VM
+        $size->{ram} += $self->{_infra}->{vms}->{$vm_id}->{ram};
         #TODO margin used originally for Xen. Can be parametered
     }
 
@@ -998,7 +998,7 @@ sub _getHvSizeRemaining {
     my $remaining_cpu = $all_the_cpu - $size->{cpu};
     my $remaining_ram;
 
-    if(defined $self->{_hvs_mem_available }) {
+    if(defined $self->{_hvs_mem_available}) {
         $remaining_ram = $self->{_hvs_mem_available}->{$hv_id};
         $log->info("HV <$hv_id> Remaining RAM <$remaining_ram> using real values");
     }
@@ -1114,7 +1114,7 @@ sub _scaleOrder{
 Modify the internal infrastructure when the algorithms plan a migration operation
 
 @param vm_id id of the vm
-@param hv_dest_id id of destination hypervisor 
+@param hv_dest_id id of destination hypervisor
 
 =end classdoc
 
@@ -1268,7 +1268,7 @@ with minimum space (average btw RAM and CPU)
 @param wanted_metrics values wanted for the vm
 @param hv_selection_ids hypervisor which can be used to perform the migration
 
-@return a hash with keys : hv_id => the hypervisor id, min_size_remaining => the 'score' used to 
+@return a hash with keys : hv_id => the hypervisor id, min_size_remaining => the 'score' used to
 compare 2 hypervisors
 
 =end classdoc
@@ -1342,7 +1342,7 @@ sub _migrateOtherVmToScale{
     my $new_value        = $args{new_value};
     my $scale_metric     = $args{scale_metric};
     my $hv_selection_ids = $args{hv_selection_ids};
-    
+
     my $hv_id            = $self->_getHvIdFromVmId(vm_id => $vm_id);
 
     my $vms_in_hv        = $self->{_infra}->{hvs}->{$hv_id}->{vm_ids};
@@ -1455,7 +1455,7 @@ sub _optimStep{
         # which would not have been able to empty anyway => once this HV used it
         # enables to empty the next HV Or perhaps next HV could have been empty
         #
-        # => option selected 
+        # => option selected
 
         @hv_selection_ids = grep { $_ != $hv_id } @$hv_selected_ids;
 
@@ -1499,7 +1499,7 @@ sub _optimStep{
 =begin classdoc
 
     Return a hash table indicating which hypervisors are empty and which hypervisors are not
-    empty 
+    empty
 
 =end classdoc
 
@@ -1666,9 +1666,9 @@ sub _computeRelativeResourceSize{
 =begin classdoc
 
     Return the ids of the HV with minimum number of VMs and the value
-    
+
     @return the ids of the HV with minimum number of VMs and the value
-    
+
 =end classdoc
 
 =cut
@@ -1718,6 +1718,11 @@ sub flushHypervisor {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['hv_id']);
 
+    if (not defined $self->{_infra}->{hvs}->{$args{hv_id}}) {
+        my $error = "Hypervisor <$args{hv_id}> is not an active host of the cloud manager";
+        throw Kanopya::Exception(error => $error);
+    }
+
     $self->{_operationPlan} = [];
     my $flush_results = $self->_getFlushHypervisorPlan(hv_id => $args{hv_id});
 
@@ -1754,7 +1759,7 @@ sub _getFlushHypervisorPlan {
 
     my $hv_selected_ids;
 
-    if ( defined $args{use_empty_hv} && $args{use_empty_hv} == 1) {
+    if (defined $args{use_empty_hv} && $args{use_empty_hv} == 1) {
         $hv_selected_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
     }
     else {
@@ -1764,9 +1769,10 @@ sub _getFlushHypervisorPlan {
     # Just remove current hv it self
     my @hv_selection_ids = grep { $_ != $hv_id } @$hv_selected_ids;
     $log->debug("List of HVs available to free <$hv_id> : @hv_selection_ids");
-    
+
     # Migrate all the vm of the selected hv
     my @vmlist = @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
+
     $log->info("List of VMs to migrate = @vmlist");
 
     my @operation_plan = ();
