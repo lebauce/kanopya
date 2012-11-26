@@ -70,7 +70,17 @@ sub maintenance {
                            params => {
                                context => {
                                     host => $self,
-                                    host_to_deactivate => $self,
+                               }
+                           }
+                      );
+}
+
+sub resubmitVms {
+    my $self = shift;
+    Entity::Workflow->run( name   => 'ResubmitHypervisor',
+                           params => {
+                               context => {
+                                    host => $self,
                                }
                            }
                       );
