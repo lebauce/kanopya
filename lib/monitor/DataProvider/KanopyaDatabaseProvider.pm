@@ -97,7 +97,8 @@ sub retrieveData {
 
     my %values = (
         "Cores"  => $host->host_core,
-        "Memory" => $host->host_ram
+        "Memory" => $host->host_ram,
+        "Up"     => (($host->getNodeState())[0] eq 'in') ? 1 : 0,
     );
 
     return ($time, \%values);
