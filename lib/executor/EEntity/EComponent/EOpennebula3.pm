@@ -28,7 +28,6 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
 use File::Copy;
-use Hash::Merge qw(merge);
 
 my $log = get_logger("");
 my $errmsg;
@@ -1396,18 +1395,14 @@ sub onevm_resubmit {
 
 sub getMaxRamFreeHV{
     my ($self, %args) = @_;
-    print "hoho\n";
     my @hypervisors = $self->hypervisors();
 
     my $max_hv  = shift @hypervisors;
     my $max_freeram = EFactory::newEEntity(data => $max_hv)->getAvailableMemory->{mem_effectively_available};
 
-    print $max_hv->host_hostname."\n";
     for my $hypervisor (@hypervisors) {
-        print $hypervisor->host_hostname."\n";
-        my $freeram =  EFactory::newEEntity(data => $hypervisor)->getAvailableMemory->{mem_effectively_available};
+        my $freeram = EFactory::newEEntity(data => $hypervisor)->getAvailableMemory->{mem_effectively_available};
 
-        print "hohu\n";
         if ($freeram > $max_freeram) {
             $max_freeram = $freeram;
             $max_hv  = $hypervisor;
