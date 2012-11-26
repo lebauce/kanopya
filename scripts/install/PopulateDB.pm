@@ -817,6 +817,17 @@ sub registerIndicators {
         },
         {
             set => {
+                name      => 'state',
+                provider  => 'KanopyaDatabaseProvider',
+                type      => 'GAUGE',
+            },
+            indicators => [
+                [ 'state/Up', 'Up', 'Host is up', undef, undef, 'FF000099', '', undef ],
+            ]
+        },
+
+        {
+            set => {
                 name      => 'diskIOTable',
                 provider  => 'SnmpProvider',
                 type      => 'COUNTER',
