@@ -48,16 +48,15 @@ my $errmsg;
 
 sub check {
     my $self = shift;
-    my %args = @_;
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 }
 
 
 sub prepare {
-    my ($self, %args) = @_;
+    my $self = shift;
     $self->SUPER::prepare();
 
-    if(not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
+    if (not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
         my $error = 'Operation can only be applied to an hypervisor';
         throw Kanopya::Exception(error => $error);
     }
@@ -65,10 +64,10 @@ sub prepare {
     my @cloudmanagers = $self->{context}->{host}->node->inside->getComponents(category => 'Cloudmanager');
     $self->{context}->{cloud_manager} = EFactory::newEEntity(data => $cloudmanagers[0]);
 
-    my $vm_min_effective_ram = $self->{context}->{host}->getMinEffectiveRamVm; #vm / ram
-    my $hv_max_effective_freeram = $self->{context}->{cloud_manager}->getMaxRamFreeHV;  #hv / ram
+    my $vm_min_effective_ram = $self->{context}->{host}->getMinEffectiveRamVm(); #vm / ram
+    my $hv_max_effective_freeram = $self->{context}->{cloud_manager}->getMaxRamFreeHV();  #hv / ram
 
-    if ($hv_max_effective_freeram->{hypervisor}->getId eq  $self->{context}->{host}->getId) {
+    if ($hv_max_effective_freeram->{hypervisor}->id eq  $self->{context}->{host}->id) {
         my $error = 'Hypervisor is already the least loaded one';
         throw Kanopya::Exception(error => $error);
     }
@@ -79,7 +78,7 @@ sub prepare {
   }
 
 sub execute {
-    my ($self, %args) = @_;
+    my $self = shift;
     $self->SUPER::execute();
 }
 
