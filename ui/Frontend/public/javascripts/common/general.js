@@ -187,7 +187,7 @@ function getReadableSize(sizeInBytes, exactValue) {
 function addFieldUnit(field_info, cont, id, selected_unit) {
     if (field_info && field_info.unit) {
         if (field_info.unit == 'byte') {
-            var select_unit     = $('<select>', {'id' : id});
+            var select_unit     = $('<select>', { id: id });//, width: 50 });
             //var unit_options    = {'B' : 1, 'KB' : 1024, 'MB' : 1024*1024, 'GB' : 1024*1024*1024};
             var unit_options    = {'MB' : 1024*1024, 'GB' : 1024*1024*1024};
             $.each(unit_options, function(label, byte) { select_unit.append($('<option>', { value: byte, html: label}))});
@@ -199,6 +199,7 @@ function addFieldUnit(field_info, cont, id, selected_unit) {
             $(cont).append( field_info.unit );
         }
     }
+    select_unit.addClass('unit');
     return select_unit;
 }
 

@@ -87,7 +87,9 @@ function host_addbutton_action(e) {
                 // and build an options list with.
                 var options = [];
                 this.form.find('#input_iface_name').each(function() {
-                    options.push({ label : $(this).val(), pk : $(this).val() });
+                    if ($(this).val() != "") {
+                        options.push({ label : $(this).val(), pk : $(this).val() });
+                    }
                 });
                 return options;
 

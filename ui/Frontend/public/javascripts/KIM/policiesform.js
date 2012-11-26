@@ -54,6 +54,9 @@ var PolicyForm = (function() {
         // input_trigger is the class for select element which has a onChange event
         // The callback could modify other fields of the form so we trigger change after all fields are created
         this.form.find('.input_trigger').change();
+
+        // Use jQuery.mutiselect (after DOM loading)
+        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
     }
 
     PolicyForm.prototype.handleField = function(elem) {
@@ -72,6 +75,7 @@ var PolicyForm = (function() {
             fieldset.append(set_table);
 
             var add_button = $("<input>", { text : this.fields[elem].add_label, id : 'add_button_' + elem, type: 'button', class : 'wizard-ignore' });
+            add_button.button();
 
             var that = this;
             add_button.bind('click', { elem: elem }, function(event) {
@@ -126,7 +130,7 @@ var PolicyForm = (function() {
             return 0;
         }
 
-        if (this.fields[elem].type === 'select' && !this.fields[elem].options) {
+        if ((this.fields[elem].type === 'select' || this.fields[elem].type === 'multiselect') && !this.fields[elem].options) {
             added.push(this.newDropdownElement(elem, undefined, value));
 
         } else if (this.fields[elem].type === 'composite') {
@@ -155,6 +159,8 @@ var PolicyForm = (function() {
 
             if (! this.fields[elem].disable_filled) {
                 var remove_button = $("<input>", { text : 'Remove', class : 'wizard-ignore ', type: 'button' });
+                remove_button.button();
+
                 var removebuttonline = $("<tr>", { class : classes }).css('position', 'relative');
 
                 $("<td>", { colspan : 2 }).append(remove_button).appendTo(removebuttonline);
@@ -189,6 +195,15 @@ var PolicyForm = (function() {
                 }
             }
         }
+
+        // Use jQuery.mutiselect (after DOM loading)
+        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
+        this.content.find('select[multiple!="multiple"]').not('.wizard-ignore').multiselect({
+            multiple: false,
+            header: "Select an option",
+            noneSelectedText: "-",
+            selectedList: 1
+        });
 
         return added;
     }
@@ -273,10 +288,9 @@ var PolicyForm = (function() {
         if (field.label !== undefined) {
             $(label).text(field.label);
         }
-        if (type === undefined ||
-            (type !== 'textarea' && type !== 'select')) {
+        if (type === undefined || (type !== 'textarea' && type !== 'select' && type !== 'multiselect')) {
             var type    = type || 'text';
-            var input   = $("<input>", { type : type, name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
+            var input   = $("<input>", { type : type, name : input_name, id : inputid,  width: 246, class : 'ui-corner-all input_' + elementName, rel : elementName });
 
             if (type === 'radio') {
                 var that = this;
@@ -298,10 +312,10 @@ var PolicyForm = (function() {
             }
         } else if (type === 'textarea') {
             var type    = 'textarea';
-            var input   = $("<textarea>", { type : type, name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
+            var input   = $("<textarea>", { type : type, name : input_name, id : inputid, class : 'ui-corner-all input_' + elementName, rel : elementName });
         }
-        else if (type === 'select') {
-            var input   = $("<select>", { width: 300, type : type, name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
+        else if (type === 'select' || type === 'multiselect') {
+            var input   = $("<select>", { width: 250, type : type, name : input_name, id : inputid, class : 'input_' + elementName, rel : elementName });
             var isArray = options instanceof Array;
             if (! this.fields[elementName].is_mandatory) {
                 var option  = $("<option>", { value : 0, text : '-' });
@@ -322,6 +336,9 @@ var PolicyForm = (function() {
             if (this.fields[elementName].onChange) {
                 input.change(this.fields[elementName].onChange);
                 input.addClass('input_trigger');
+            }
+            if (type === 'multiselect') {
+                input.attr('multiple', 'multiple');
             }
         }
 
@@ -406,11 +423,14 @@ var PolicyForm = (function() {
                 trigger_input.change( function() {
                     $(unit_cont).empty();
                     current_unit = element.unit.value[$(this).val()];
-                    addFieldUnit({ unit : current_unit }, unit_cont, unit_field_id);
+                    var unit_input = addFieldUnit({ unit : current_unit }, unit_cont, unit_field_id);
+                    unit_input.addClass('wizard-ignore');
                 });
                 trigger_input.change();
             } else {
-                addFieldUnit(element, unit_cont, unit_field_id);
+                var unit_input = addFieldUnit(element, unit_cont, unit_field_id);
+                unit_input.addClass('wizard-ignore');
+
                 current_unit = element.unit;
             }
 
@@ -431,6 +451,8 @@ var PolicyForm = (function() {
             if ($(input).attr('disabled') === 'disabled') {
                 $('#' + unit_field_id).attr('disabled', 'disabled');
             }
+            // TODO: Get the real lenght of the unit select box.
+            $(input).width($(input).width() - 50);
         }
 
         return tr;
@@ -458,7 +480,11 @@ var PolicyForm = (function() {
             $(label).text(this.fields[elementName].label);
         }
 
-        var input = $("<select>", { name : input_name, width: 300, id : inputid, class : 'input_' + elementName, rel : elementName });
+        var input = $("<select>", { name : input_name, width: 250, id : inputid, class : 'input_' + elementName, rel : elementName });
+
+        if (this.fields[elementName].type === 'multiselect') {
+            input.attr('multiple', 'multiple');
+        }
 
         this.validateRules[elementName] = {};
         // Check if the field is mandatory
@@ -583,7 +609,8 @@ var PolicyForm = (function() {
             var option = $("<option>", { value : key , text : text });
 
             $(input).append(option);
-            if (current !== undefined && current == key) {
+
+            if ((current !== undefined && current == key) || ($.isArray(current) && $.inArray(key, current) >= 0)) {
                 option.attr('selected', 'selected');
 
                 if (this.fields[elementName].disable_filled) {
@@ -1084,7 +1111,7 @@ var PolicyForm = (function() {
         var inputcontainer = $("<td>", { align : 'left', colspan : '2' }).append(input);
         var labelline = $("<tr>").append($(labelcontainer).append(this.createHelpElem(help)));
         var arealine = $("<tr>").append(inputcontainer);
-        $(input).css('width', '100%');
+        $(input).css('width', '99%');
 
         if (after) {
             this.form.find("#input_" + after).after(arealine);
@@ -1113,7 +1140,9 @@ var PolicyForm = (function() {
                 if (that.fields[id].prefix) {
                     $(this).attr('name', that.fields[id].prefix + $(this).attr('name'));
                 }
-                if ((that.fields[id].type === 'select' || that.fields[id].type === 'checkbox') && parseInt($(this).val()) == 0 ) {
+                if ((that.fields[id].type === 'select' ||
+                     that.fields[id].type === 'multiselect' ||
+                     that.fields[id].type === 'checkbox') && parseInt($(this).val()) == 0 ) {
                     $(this).attr('disabled', 'disabled');
                 }
                 if (that.fields[id].type === 'checkbox' && parseInt($(this).val())) {
@@ -1261,7 +1290,7 @@ var PolicyForm = (function() {
                 title           : this.title,
                 modal           : true,
                 resizable       : false,
-                width           : 550,
+                width           : 600,
                 buttons         : buttons,
                 closeOnEscape   : false
         };

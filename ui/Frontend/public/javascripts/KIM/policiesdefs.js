@@ -177,8 +177,8 @@ var policies = {
             add_label    : 'Add a network interface'
         },
         interface_netconfs : {
-            label        : 'Network configuration',
-            type         : 'select',
+            label        : 'Network configurations',
+            type         : 'multiselect',
             entity       : 'netconf',
             display      : 'netconf_name',
             composite    : 'network_interface',

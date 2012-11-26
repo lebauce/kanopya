@@ -120,9 +120,6 @@ var KanopyaFormWizard = (function() {
                                       this.attributedefs[relation_name].label || relation_name);
             }
         }
-
-        // Use jQuery.mutiselect (after DOM loading)
-        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
     }
 
     KanopyaFormWizard.prototype.buildFromAttrDef = function(attributes, displayed, values, relations, listing) {
@@ -161,6 +158,15 @@ var KanopyaFormWizard = (function() {
             $(this.content).css('width', $(this.content).width() + 15);
         }
         $(this.content).dialog('option', 'position', 'top');
+
+        // Use jQuery.mutiselect (after DOM loading)
+        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
+        this.content.find('select[multiple!="multiple"]').not('.wizard-ignore').multiselect({
+            multiple: false,
+            header: "Select an option",
+            noneSelectedText: "-",
+            selectedList: 1
+        });
     };
 
     KanopyaFormWizard.prototype.getOptions = function(name, value, relations) {
@@ -215,7 +221,7 @@ var KanopyaFormWizard = (function() {
 
         // Handle text fields
         if (toInputType(attr.type) === 'textarea') {
-            input = $("<textarea>");
+            input = $("<textarea>", { class : 'ui-corner-all' });
 
         // Handle select fields
         } else if (toInputType(attr.type) === 'select') {
@@ -247,7 +253,7 @@ var KanopyaFormWizard = (function() {
 
         // Handle other field types
         } else {
-            input = $("<input>", { type : attr.type ? toInputType(attr.type) : 'text', width: 246 });
+            input = $("<input>", { type : attr.type ? toInputType(attr.type) : 'text', class : 'ui-corner-all', width: 246 });
         }
 
         // Set the input attributes
@@ -355,7 +361,7 @@ var KanopyaFormWizard = (function() {
         // If listing mode, append the input horizontally to the last line.
         // Build the labels line if not exists
         if (listing) {
-            // TOTO: Handle all special caracters as accent, etc
+            // TODO: Handle all special caracters as accent, etc
             listing = listing.replace(/ /g, '_');
 
             if (input.attr('type') === 'checkbox') {
@@ -457,7 +463,7 @@ var KanopyaFormWizard = (function() {
                 }
 
                 linecontainer = $("<tr>").append(inputcontainer);
-                $(input).css('width', '100%');
+                $(input).css('width', '96%');
 
             } else {
                 linecontainer = $("<tr>").css('position', 'relative');
