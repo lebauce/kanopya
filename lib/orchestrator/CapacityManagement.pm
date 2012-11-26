@@ -97,20 +97,35 @@ sub new {
         $log->info('Overcommitment memory factor <'.($overcommitment_factors->{overcommitment_memory_factor}).'>');
 
         # Add extra information to hypervisors
-        my $hypervisors = $self->{_cloud_manager}->hypervisors();
-        for my $hypervisor (@$hypervisors) {
-            my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
-            my $hypervisor_available_memory = $ehypervisor->getAvailableMemory;
+        my @hypervisors = $self->{_cloud_manager}->activeHypervisors();
 
-            $self->{_hvs_mem_available}->{$hypervisor->id} = $hypervisor_available_memory->{mem_theoretically_available};
-            $self->{_infra}->{hvs}->{$hypervisor->id}->{hv_capa}->{ram_effective} = $hypervisor_available_memory->{mem_effectively_available};
-
-            # Manage CPU Overcommitment when cloud_manager is defined
-
+        for my $hypervisor (@hypervisors) {
+            # Non execution dependant information
             $self->{_infra}->{hvs}->{$hypervisor->id}
                                   ->{hv_capa}->{cpu} *= $overcommitment_factors->{overcommitment_cpu_factor};
         }
 
+        for my $hypervisor (@hypervisors) {
+            my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
+            my $hypervisor_available_memory;
+
+            eval {
+                $hypervisor_available_memory = $ehypervisor->getAvailableMemory;
+                $log->info(Dumper $hypervisor_available_memory);
+            };
+            if($@) {
+                $log->info($@);
+            }
+
+            if (defined $hypervisor_available_memory->{mem_theoretically_available}) {
+                $self->{_hvs_mem_available}->{$hypervisor->id} = $hypervisor_available_memory->{mem_theoretically_available};
+            }
+
+            $self->{_infra}->{hvs}->{$hypervisor->id}->{hv_capa}->{ram_effective} = $hypervisor_available_memory->{mem_effectively_available};
+
+            # Manage CPU Overcommitment when cloud_manager is defined
+        }
+            
         # Add extra information to VMs
 
         my @vm_ids = keys %{$self->{_infra}->{vms}};
