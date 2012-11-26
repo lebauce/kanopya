@@ -73,7 +73,7 @@ sub new {
     $self->{_operationPlan} = [];
 
     # Either the infra is get by params, or it is directly constructed
-    if(defined $args{infra}){
+    if (defined $args{infra}) {
         $self->{_infra} = $args{infra};
     }
     else {
@@ -81,25 +81,17 @@ sub new {
                                                            hypervisor_cluster_id => undef,
                                                            cloud_manager         => undef });
 
-        if (defined $args{cloud_manager}){
+        if (defined $args{cloud_manager}) {
             $self->{_cloud_manager} = $args{cloud_manager};
         }
-        elsif ( defined $self->{_cluster_id} ) {
-            my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_cluster_id});
-            $self->{_cloud_manager} = $cluster->getManager(manager_type => 'host_manager');
-        }
-        elsif ( defined  $self->{_hypervisor_cluster_id} ) {
-            my $hypervisor = Entity->get(id => $self->{_hypervisor_cluster_id});
-            $self->{_cloud_manager} = $hypervisor->getComponent(name => 'Opennebula', version => 3);
-        }
         else {
-            throw Kanopya::Exception(error => 'No cloud manager, nor cluster, nor hypervisor id, Capacity Manager cannot construct infra');
+            throw Kanopya::Exception(error => 'No cloud_manager arg capacity manager cannot construct infra');
         }
 
         $self->{_admin} = Administrator->new();
-        $self->{_infra} = $self->_constructInfra();
+        $self->{_infra} = $self->_constructInfra;
 
-        # Get availble memory for all cloud manager hosts (hypervisors)
+        # Get available memory for all cloud manager hosts (hypervisors)
         my $overcommitment_factors =  $self->{_cloud_manager}->getOvercommitmentFactors();
         $log->info('Overcommitment cpu    factor <'.($overcommitment_factors->{overcommitment_cpu_factor}).'>');
         $log->info('Overcommitment memory factor <'.($overcommitment_factors->{overcommitment_memory_factor}).'>');
