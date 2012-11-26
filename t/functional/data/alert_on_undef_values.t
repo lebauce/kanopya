@@ -147,25 +147,29 @@ if($@) {
     print $error."\n";
     $adm->rollbackTransaction;
     fail('Exception occurs');
-    
-    
+
+
 }
 
 sub test_rrd_remove {
     my @cms = Entity::Clustermetric->search (hash => {
         clustermetric_service_provider_id => $service_provider->id
     });
-    
+
     my @cm_ids = map {$_->id} @cms;
     while (@cms) { (pop @cms)->delete(); };
 
-    is (scalar Entity::Combination::AggregateCombination->search (hash => {
+    my @acs = Entity::Combination::AggregateCombination->search (hash => {
         service_provider_id => $service_provider->id
-    }), 0, 'Check all aggregate combinations are deleted');
+    });
 
-    is (scalar Entity::AggregateRule->search (hash => {
+    is ((scalar @acs), 0, 'Check all aggregate combinations are deleted');
+
+    my @ars = Entity::AggregateRule->search (hash => {
         aggregate_rule_service_provider_id => $service_provider->id
-    }), 0, 'Check all aggregate rules are deleted');
+    });
+
+    is (scalar @acs, 0, 'Check all aggregate rules are deleted');
 
     my $one_rrd_remove = 0;
     for my $cm_id (@cm_ids) {
@@ -192,7 +196,8 @@ sub test_alerts_aggregator {
         value           => $mock_conf
     );
 
-    my $total_alert_before_test = scalar Alert->search(hash=>{});
+    my @alerts = Alert->search(hash=>{});
+    my $total_alert_before_test = scalar( @alerts );
 
     sleep 2;
     $aggregator->update ();
@@ -263,7 +268,8 @@ sub test_alerts_orchestrator {
     my @alerts = Alert->search (hash => {});
     while (@alerts) { (pop @alerts)->delete() };
 
-    is (scalar Alert->search (hash => {}), 0, 'Check no alerts');
+    @alerts = Alert->search (hash => {});
+    is (scalar @alerts, 0, 'Check no alerts');
 
     my $mock_conf  = "{'default':{'const':10},"
                 . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
@@ -276,7 +282,8 @@ sub test_alerts_orchestrator {
 
     $orchestrator->manage_aggregates ();
 
-    is(scalar Alert->search (hash => {}), 0, 'Check no alert after orchestrator');
+    @alerts = Alert->search (hash => {});
+    is(scalar @alerts, 0, 'Check no alert after orchestrator');
 
     $mock_conf  = "{'default':{'const':10},"
                 . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
