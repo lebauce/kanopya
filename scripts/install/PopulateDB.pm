@@ -1341,7 +1341,7 @@ sub populate_workflow_def {
     $relieve_hypervisor_wf->addStep( operationtype_id => $resubmit_node_op_id );
     $relieve_hypervisor_wf->addStep( operationtype_id => $migrate_op_id );
 
-    # FlushHypervisor workflow def
+    # MaintenanceHypervisor workflow def
     my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflow(
         workflow_name => 'HypervisorMaintenance',
         params => {
@@ -1359,6 +1359,20 @@ sub populate_workflow_def {
         operationtype_id => Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id
     );
 
+    # Hypervisor resubmit workflow def
+    my $hypervisor_resubmit_wf = $kanopya_wf_manager->createWorkflow(
+        workflow_name => 'ResubmitHypervisor',
+        params => {
+            internal => {
+                scope_id => 1,
+            },
+            automatic => {
+                context => { host => undef },
+            },
+        }
+    );
+    my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
+    $hypervisor_resubmit_wf->addStep( operationtype_id => $resubmit_hypervisor_op_id);
 }
 
 sub populate_policies {
