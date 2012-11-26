@@ -248,7 +248,7 @@ sub label {
 sub create {
     my ($class, %params) = @_;
 
-    # Override params with poliies param presets
+    # Override params with policies param presets
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
     # Prepare the configuration pattern from the service template

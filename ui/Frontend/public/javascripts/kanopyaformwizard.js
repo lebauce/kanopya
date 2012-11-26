@@ -2,7 +2,7 @@ require('jquery/jquery.form.js');
 require('jquery/jquery.validate.js');
 require('jquery/jquery.form.wizard.js');
 require('jquery/jquery.qtip.min.js');
-
+require('jquery/jquery.multiselect.min.js');
 
 var KanopyaFormWizard = (function() {
     function KanopyaFormWizard(args) {
@@ -120,6 +120,9 @@ var KanopyaFormWizard = (function() {
                                       this.attributedefs[relation_name].label || relation_name);
             }
         }
+
+        // Use jQuery.mutiselect (after DOM loading)
+        //this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
     }
 
     KanopyaFormWizard.prototype.buildFromAttrDef = function(attributes, displayed, values, relations, listing) {
@@ -511,8 +514,12 @@ var KanopyaFormWizard = (function() {
 
     KanopyaFormWizard.prototype.beforeSerialize = function(form, options) {
         var _this = this;
+var i = 0;
         $(form).find(':input').not('.wizard-ignore').each(function () {
             // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
+i++;
+console.log('this ' + i);
+console.log($(this));
             if (toInputType(_this.attributedefs[$(this).attr('name')].type) === 'checkbox') {
                 //if ($(this).attr('value') === 'on' && $(this).attr('checked')) {
                 if ($(this).attr('checked')) {
@@ -595,7 +602,7 @@ var KanopyaFormWizard = (function() {
     KanopyaFormWizard.prototype.submit = function(data, $form, opts) {
         // We submit the form ourself because we want the data into json,
         // as we need to submit relations in a subhash.
-        $.ajax({
+/*        $.ajax({
             url         : $(this.form).attr('action'),
             type        : $(this.form).attr('method').toUpperCase(),
             contentType : 'application/json',
@@ -603,6 +610,7 @@ var KanopyaFormWizard = (function() {
             success     : $.proxy(this.onSuccess, this),
             error       : $.proxy(this.onError, this)
         });
+        */
     }
 
     KanopyaFormWizard.prototype.getValues = function(type, id, attributes) {
