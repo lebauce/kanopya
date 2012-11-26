@@ -169,6 +169,11 @@ sub getOvercommitmentFactors {
     }
 }
 
+sub hypervisors {
+    my $self = shift;
+    return $self->opennebula3_hypervisors;
+}
+
 sub activeHypervisors {
     my $self = shift;
 
