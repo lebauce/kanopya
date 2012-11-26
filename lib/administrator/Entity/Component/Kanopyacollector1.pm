@@ -67,17 +67,16 @@ sub getAttrDef { return ATTR_DEF; }
 sub new {
     my ($class, %args) = @_;
     my $self = $class->SUPER::new(%args);
-    
+
     my @indicator_sets = (
-        Indicatorset->search(hash =>{indicatorset_name => 'mem'}),
-        Indicatorset->search(hash =>{indicatorset_name => 'cpu'}),
-        Indicatorset->search(hash =>{indicatorset_name => 'apache_stats'}),
-        Indicatorset->search(hash =>{indicatorset_name => 'apache_workers'}),
-        Indicatorset->search(hash =>{indicatorset_name => 'billing'}),
-        Indicatorset->search(hash =>{indicatorset_name => 'diskIOTable'}),
-        Indicatorset->search(hash =>{indicatorset_name => 'interfaces'}),
-        Indicatorset->search(hash =>{indicatorset_name => 'vsphere_vm'}),
-        Indicatorset->search(hash =>{indicatorset_name => 'vsphere_host'}),
+        Indicatorset->search(
+            hash => {
+                indicatorset_name => [
+                    'mem', 'cpu', 'apache_stats', 'apache_workers', 'billing',
+                    'diskIOTable', 'interfaces', 'vsphere_vm', 'vsphere_host',
+                ]
+            }
+        )
     );
 
     $self->createCollectorIndicators(
