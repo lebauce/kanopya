@@ -439,12 +439,29 @@ sub _applyMigrationPlan{
     }
 }
 
+sub getHypervisorIdsForVMs{
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['vms_wanted_values']);
+
+    my %rep;
+    while (my ($vm_id, $wanted_values) = each (%{$args{vms_wanted_values}})) {
+        my $hv_id = $self->getHypervisorIdForVM(wanted_values => $wanted_values);
+        if (defined $hv_id) {
+            push @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}}, $vm_id;
+            $self->{_infra}->{vms}->{$vm_id} = $wanted_values;
+            $rep{$vm_id} = $hv_id;
+        }
+    }
+    return \%rep;
+}
+
+
 =pod
 
 =begin classdoc
 
-Return the hypervisor ID in which to place the vm. Choose the hypervisor with enough resource 
-with minimum size (in order to optimize infrastructure usage) 
+Return the hypervisor ID in which to re-place the vm. Choose the hypervisor with enough resource
+with minimum size (in order to optimize infrastructure usage)
 
 @param wanted_values the resource values of the VM
 
@@ -454,7 +471,43 @@ with minimum size (in order to optimize infrastructure usage)
 
 =cut
 
-sub getHypervisorIdForVM{
+sub getHypervisorIdResubmitVM {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['vm_id', 'wanted_values']);
+    # Remove me from present vm
+    $self->_removeVmfromInfra( vm_id => $args{vm_id} );
+    return $self->getHypervisorIdForVM(%args);
+}
+
+
+sub _removeVmfromInfra {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['vm_id']);
+    my $vm_id = $args{vm_id};
+    delete $self->{_infra}->{vms}->{$vm_id};
+
+    #TODO add a break to avoid continuing research once id is found
+    HV:for my $hv_id_it ( keys %{$self->{_infra}->{hvs}} ) {
+        @{$self->{_infra}->{hvs}->{$hv_id_it}->{vm_ids}} = grep {$vm_id != $_} @{$self->{_infra}->{hvs}->{$hv_id_it}->{vm_ids}};
+    }
+}
+
+=pod
+
+=begin classdoc
+
+Return the hypervisor ID in which to place the vm. Choose the hypervisor with enough resource
+with minimum size (in order to optimize infrastructure usage)
+
+@param wanted_values the resource values of the VM
+
+@return The hypervisor id
+
+=end classdoc
+
+=cut
+
+sub getHypervisorIdForVM {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['wanted_values']);
