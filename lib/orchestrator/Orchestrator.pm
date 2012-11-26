@@ -230,11 +230,11 @@ sub _evalAllRules {
                'monitored_values' => $monitored_values,
                'service_provider' => $service_provider,
            );
-           1;
-       } or do {
-            print 'Error in evaluation of rule'.($rule->getAttr(name=>'nodemetric_rule_id')).' of cluster '.($rule->getAttr(name=>'nodemetric_rule_service_provider_id')).": $@\n";
-            $log->error($@);
-            next RULE;
+       };
+       if ($@){
+           $log->error($@);
+           $log->error('Error in evaluation of rule '.($rule->id).' of cluster '.$service_provider->id);
+           next RULE;
        }
    }
    return $rep;
@@ -314,16 +314,20 @@ sub _evalRule {
             monitored_values_for_one_node => $monitored_values_for_one_node
         );
 
-        my $externalnode_id = Externalnode->find(hash => {
+        $log->info('Node Eval <'.$nodeEval.'>');
+        my $externalnode = Externalnode->find(hash => {
             externalnode_hostname => $host_name,
             service_provider_id   => $service_provider->id,
-        })->getId();
+        });
 
+        my $externalnode_id = $externalnode->id;
         # Manage Workflow
         my $workflowState = WorkflowNoderule->workflowState(
             externalnode_id    => $externalnode_id,
             nodemetric_rule_id => $rule_id,
         );
+
+        $log->info('Managing workflow state <'.$workflowState->{state}.'>');
 
         if(defined $nodeEval){
             if($nodeEval eq 0){
