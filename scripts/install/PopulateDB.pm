@@ -607,7 +607,9 @@ sub registerOperations {
         [ 'ProcessRule', 'Processing triggered rule' ],
         [ 'ResubmitNode', 'Resubmit a virtual machine to the IAAS' ],
         [ 'RelieveHypervisor', 'Relieve the hypervisor by migrating one VM' ],
-        [ 'Synchronize', 'Synchronize a component' ]
+        [ 'Synchronize', 'Synchronize a component' ],
+        [ 'FlushHypervisor', 'Compute flush hypervisor plan' ],
+        [ 'ResubmitHypervisor', 'Resubmit hypervisor virtual machines' ],
     ];
 
     for my $operation (@{$operations}) {
