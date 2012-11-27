@@ -119,6 +119,17 @@ sub update {
 
 =head2
 
+    Reload entity from database
+
+=cut
+
+sub reload {
+    my $self = shift;
+    return Entity->get(id => $self->id);
+}
+
+=head2
+
     Ensure to get the lock on the entity before removing it.
 
 =cut
