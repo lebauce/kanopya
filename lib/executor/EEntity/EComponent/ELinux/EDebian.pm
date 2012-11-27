@@ -76,7 +76,17 @@ sub _writeNetConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host', 'mount_point', 'interfaces' ]);
+                         required => [ 'cluster', 'host', 'mount_point', 'ifaces' ]);
+
+    #we ignore the slave interfaces in the case of bonding
+    my @ifaces;
+    IFACE:
+    foreach my $iface (@{ $args{ifaces} }) {
+        if ($iface->{type} eq 'slave') {
+            next IFACE;
+        }
+        push @ifaces, $iface;
+    }
 
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
@@ -84,7 +94,7 @@ sub _writeNetConf {
         file          => '/etc/network/interfaces',
         template_dir  => '/templates/internal',
         template_file => 'network_interfaces.tt',
-        data          => { interfaces => $args{interfaces} }
+        data          => { interfaces => \@ifaces }
     );
 
     $args{econtext}->send(

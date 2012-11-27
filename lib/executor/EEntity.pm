@@ -126,8 +126,8 @@ sub generateNodeFile {
     my $config = Kanopya::Config::get('executor');
     my $econtext = $self->getExecutorEContext();
     my $path = $config->{clusters}->{directory};
-    $path .= '/' . $args{cluster}->getAttr(name => 'cluster_name');
-    $path .= '/' . $args{host}->getAttr(name => 'host_hostname');
+    $path .= '/' . $args{cluster}->cluster_name;
+    $path .= '/' . $args{host}->host_hostname;
     $path .= '/' . $args{file};
     my ($filename, $directories, $prefix) = fileparse($path);
     $econtext->execute(command => "mkdir -p $directories");
@@ -137,9 +137,9 @@ sub generateNodeFile {
         INTERPOLATE  => 0,               # expand "$var" in plain text
         POST_CHOMP   => 0,               # cleanup whitespace
         EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE => 1,                   # desactive par defaut
+        RELATIVE     => 1,               # desactive par defaut
     };
-    
+
     my $template = Template->new($template_conf);
     eval {
         $template->process($args{template_file}, $args{data}, $path);

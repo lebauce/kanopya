@@ -28,21 +28,33 @@ sub _writeNetConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host', 'mount_point', 'interfaces', 'econtext' ]);
+                         required => [ 'cluster', 'host', 'mount_point', 'ifaces', 'econtext' ]);
 
-    for my $interface (@{$args{interfaces}}) {
+    for my $iface (@{ $args{ifaces} }) {
+    
+        my $template_file;
+        if ($iface->{type} eq 'master') {
+            $template_file = 'ifcfg-bonded-master.tt';
+        }
+        elsif ($iface->{type} eq 'slave') {
+            $template_file = 'ifcfg-bonded-slave.tt';
+        }
+        else {
+            $template_file = 'ifcfg.tt';
+        }
+
         my $file = $self->generateNodeFile(
             cluster       => $args{cluster},
             host          => $args{host},
-            file          => '/etc/sysconfig/network/ifcfg-' . $interface->{name},
+            file          => '/etc/sysconfig/network/ifcfg-' . $iface->{name},
             template_dir  => '/templates/components/suse',
-            template_file => 'ifcfg.tt',
-            data          => { interface => $interface }
+            template_file => $template_file,
+            data          => { interface => $iface }
         );
 
         $args{econtext}->send(
             src  => $file,
-            dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $interface->{name}
+            dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $iface->{name}
         );
     }
 }

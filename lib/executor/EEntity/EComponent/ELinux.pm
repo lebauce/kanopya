@@ -383,6 +383,7 @@ sub _generateNetConf {
 
         # Only add non pxe iface to /etc/network/interfaces
         if (not $iface->iface_pxe) {
+
             my ($gateway, $netmask, $ip, $method);
 
             if ($iface->hasIp) {
@@ -391,7 +392,7 @@ sub _generateNetConf {
                 $ip         = $iface->getIPAddr;
 
                 if ($is_loadbalanced and not $is_masternode) {
-                    $gateway = $args{cluster}->getMasterNodeIp
+                    $gateway = $args{cluster}->getMasterNodeIp;
                 }
                 else {
                     $gateway = ($network->id == $args{cluster}->default_gateway->id) ? $network->network_gateway : undef;
@@ -402,17 +403,44 @@ sub _generateNetConf {
                 $method = "manual";
             }
 
-            push @net_ifaces, { method  => $method,
-                                name    => $iface->iface_name,
-                                address => $ip,
-                                netmask => $netmask,
-                                gateway => $gateway };
+            my $net_iface = { method  => $method,
+                              name    => $iface->iface_name,
+                              address => $ip,
+                              netmask => $netmask,
+                              gateway => $gateway, };
+
+            #check if iface has slaves (for bonding purposes)
+            if ($iface->slaves > 0) {
+                my @unsorted_slaves;
+                my @slaves;
+                my %sort;
+
+                foreach my $slave ($iface->slaves) {
+                    push @net_ifaces, { name => $slave->iface_name,
+                                        type => 'slave'};
+
+                    push @unsorted_slaves , $slave->iface_name;
+                }
+
+                foreach my $if (@unsorted_slaves) {
+                    my $if_copy = $if;
+                    $if_copy =~ s/[^0-9]//g;
+                    $sort{$if}  = $if_copy;
+                }
+
+                @slaves = sort { $sort{$a} <=> $sort{$b} } keys %sort;
+
+                $net_iface->{slaves} = \@slaves;
+                $net_iface->{type}   = 'master';
+            }
+
+            push @net_ifaces, $net_iface;
 
             $log->info("Iface " . $iface->iface_name . " configured via static file");
         }
     }
 
-    $self->_writeNetConf(interfaces => \@net_ifaces, %args);
+    $self->_writeNetConf(ifaces => \@net_ifaces, %args);
 }
 
 sub service {
