@@ -444,15 +444,18 @@ sub stopToBeNode{
     $self->setState(state => 'down');
 }
 
-sub isIfacesConfigured {
+sub configuredIfaces {
     my $self = shift;
     my %args = @_;
 
-    my $configured = 0;
+    my @configured;
     for my $iface ($self->ifaces) {
-        $configured = scalar $iface->netconfs;
+        if (scalar $iface->netconfs > 0) {
+            push @configured, $iface;
+        }
     }
-    return $configured;
+
+    return wantarray ? @configured : \@configured;
 }
 
 sub configureIfaces {
