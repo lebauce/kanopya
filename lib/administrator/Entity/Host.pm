@@ -113,6 +113,7 @@ use constant ATTR_DEF => {
     host_core => {
         label        => 'CPU capability',
         type         => 'integer',
+        unit         => 'core(s)',
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1,

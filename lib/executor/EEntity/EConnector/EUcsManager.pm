@@ -69,11 +69,6 @@ sub getFreeHost {
 
     General::checkParams(args => \%args, required => [ "service_profile_template_id", "ifaces" ]);
 
-    if ($args{ram_unit}) {
-        $args{ram} .= $args{ram_unit};
-        delete $args{ram_unit};
-    }
-
     my $ucs = $self->_getEntity();
     $ucs->init();
 

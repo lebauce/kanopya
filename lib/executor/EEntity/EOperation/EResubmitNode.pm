@@ -83,12 +83,7 @@ sub prepare {
 
     my $host_manager_params = $self->{context}->{vm_cluster}->getManagerParameters(manager_type => 'host_manager');
 
-    my $converted_ram = General::convertToBytes(
-                            value => $host_manager_params->{ram},
-                            units => $host_manager_params->{ram_unit},
-                        );
-
-    $self->{context}->{host}->updateMemory(memory => $converted_ram);
+    $self->{context}->{host}->updateMemory(memory => $host_manager_params->{ram});
     $self->{context}->{host}->updateCPU(cpu_number => $host_manager_params->{core});
 
     #TODO Factorize the following code which appears in prerequisites of EAddNode too

@@ -31,11 +31,6 @@ sub getFreeHost {
 
     General::checkParams(args => \%args, required => [ "ram", "core", "ifaces" ]);
 
-    if ($args{ram_unit}) {
-        $args{ram} = General::convertToBytes(value => $args{ram}, units => $args{ram_unit});
-        delete $args{ram_unit};
-    }
-
     $log->info("Looking for a virtual host");
     my $host = eval{
         return $self->createVirtualHost(

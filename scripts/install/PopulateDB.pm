@@ -1347,13 +1347,12 @@ sub populate_policies {
                          } );
 
     $policies{hosting} = Entity::Policy->new(
-        policy_name => 'Default physical host',
-        policy_desc => 'Hosting policy for default physical hosts',
-        policy_type => 'hosting',
-        host_manager_id     => $physicalhoster->id,
-        ram      => 1024,
-        ram_unit => 'M',
-        cpu      => 1,
+        policy_name     => 'Default physical host',
+        policy_desc     => 'Hosting policy for default physical hosts',
+        policy_type     => 'hosting',
+        host_manager_id => $physicalhoster->id,
+        ram             => 1024*1024*1024,
+        cpu             => 1,
     );
 
     # storage

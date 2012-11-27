@@ -150,12 +150,7 @@ sub getFreeHost {
 
     General::checkParams(args => \%args, required => [ "ram", "cpu", "ifaces" ]);
 
-    if ($args{ram_unit}) {
-        $args{ram} .= $args{ram_unit};
-        delete $args{ram_unit};
-    }
-
-    $args{host_manager_id} = $self->_getEntity->getAttr(name => 'entity_id');
+    $args{host_manager_id} = $self->id;
 
     return DecisionMaker::HostSelector->getHost(%args);
 }

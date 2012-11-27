@@ -953,9 +953,9 @@ sub generateKvmVmTemplate {
 
     # host_ram is stored in octect, so we convert it to megaoctect
     my $ram = General::convertFromBytes(
-        value => $args{host}->host_ram,
-        units => 'M'
-    );
+                  value => $args{host}->host_ram,
+                  units => 'M'
+              );
 
     my $tftp_conf = $self->{config}->{tftp}->{directory};
     my $cluster = Entity->get(id => $args{host}->getClusterId());
@@ -963,26 +963,21 @@ sub generateKvmVmTemplate {
     # get the maximum memory from the hosting policy
     my $host_params = $cluster->getManagerParameters(manager_type => 'host_manager');
     my $maxcpu = $host_params->{max_core} || $args{host}->host_core;
-
     my $maxram = General::convertFromBytes(
-        value => General::convertToBytes(
-                     value => $host_params->{max_ram} || 0,
-                     units => $host_params->{ram_unit}
-                 ) || $args{host}->host_ram,
-        units => 'M'
-    );
+                     value => $host_params->{max_ram}  || $args{host}->host_ram,
+                     units => 'M'
+                 );
 
     my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
     my $image = $args{host}->getNodeSystemimage();
-    my $image_name = $image->getAttr(name => 'systemimage_name');
-    my $hostname = $args{host}->getAttr(name => 'host_hostname');
+    my $image_name = $image->systemimage_name;
+    my $hostname = $args{host}->host_hostname;
 
-    my %repo = $self->_getEntity()->getImageRepository(
+    my %repo = $self->getImageRepository(
                    container_access_id => $disk_params->{container_access_id}
                );
 
-    my $repository_path = $self->_getEntity()->getAttr(name => 'image_repository_path') .
-                          '/' . $repo{repository_name};
+    my $repository_path = $self->image_repository_path . '/' . $repo{repository_name};
 
     my $interfaces = [];
     my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];

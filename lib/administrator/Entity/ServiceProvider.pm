@@ -362,10 +362,7 @@ sub getLimit {
 
         if ($args{type} eq 'ram') {
             if(defined $host_params->{max_ram}) {
-                $host_limit_value = General::convertToBytes(
-                                   value => $host_params->{max_ram},
-                                   units => $host_params->{ram_unit}
-                                );
+                $host_limit_value = $host_params->{max_ram};
             }
             else {
                 $log->info('host limit ram undef');
