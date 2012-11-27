@@ -73,9 +73,9 @@ sub prerequisites {
                                                data => $cluster->getManager(manager_type => 'host_manager'),
                                            );
 
-        my $hvs   = $self->{context}->{host_manager}->hypervisors();
+        my @hvs   = $self->{context}->{host_manager}->hypervisors;
         my @hv_in_ids;
-        for my $hv (@$hvs) {
+        for my $hv (@hvs) {
             my ($state,$time_stamp) = $hv->getNodeState();
             $log->info('hv <'.($hv->getId()).'>, state <'.($state).'>');
             if($state eq 'in') {
@@ -91,10 +91,11 @@ sub prerequisites {
                                 value => $host_manager_params->{ram},
                                 units => $host_manager_params->{ram_unit},
                             );
+
         my $cm = CapacityManagement->new(
-                     cluster_id    => $cluster->getId(),
                      cloud_manager => $self->{context}->{host_manager},
                  );
+
         my $hypervisor_id = $cm->getHypervisorIdForVM(
                                 # blacklisted_hv_ids => $self->{params}->{blacklisted_hv_ids},
                                 selected_hv_ids => \@hv_in_ids,
