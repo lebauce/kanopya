@@ -492,8 +492,7 @@ sub configureManagers {
 }
 
 sub configureInterfaces {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { 'interfaces' => undef });
 
@@ -505,7 +504,7 @@ sub configureInterfaces {
                 my $bonds_number = $interface_pattern->{bonds_number};
                 $bonds_number = defined $bonds_number ? $bonds_number : 0;
 
-                my @netconfs = values $interface_pattern->{interface_netconfs};
+                my @netconfs = values %{ $interface_pattern->{interface_netconfs} };
                 $self->addNetworkInterface(netconfs     => \@netconfs,
                                            bonds_number => $bonds_number);
             }

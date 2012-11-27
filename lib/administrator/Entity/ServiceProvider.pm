@@ -294,9 +294,13 @@ sub getManagerParameters {
     return $cluster_manager->getParams();
 }
 
-=head2 addNetworkInterface
+=pod
 
-    Desc: add a network interface on this service provider
+=begin classdoc
+
+Add a network interface on this service provider
+
+=end classdoc
 
 =cut
 

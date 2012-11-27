@@ -63,7 +63,7 @@ sub prepare {
     if (not ($self->{params}->{cluster_params}->{cluster_boot_policy} xor
              $self->{params}->{managers}->{export_manager}->{manager_id})) {
         throw Kanopya::Exception::Internal::WrongValue(
-                  error => "Can not specify boot_policy and export_manager_id at the same time."
+                  error => "One must specify either boot_policy or export_manager_id (but not both)."
               );
     }
 

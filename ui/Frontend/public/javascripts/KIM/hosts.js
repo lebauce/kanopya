@@ -55,7 +55,7 @@ function host_addbutton_action(e) {
                         is_editable  : true
                     },
                     slave_ifaces : {
-                        label        : 'Salve interfaces',
+                        label        : 'Slave interfaces',
                         type         : 'relation',
                         relation     : 'multi',
                         link_to      : 'iface',

@@ -26,6 +26,7 @@ use Entity::ServiceProvider::Inside::Cluster;
 use General;
 use Kanopya::Config;
 use EFactory;
+use EEntity;
 use Entity::NetconfRole;
 
 use Template;
@@ -84,7 +85,7 @@ sub create {
         }
     );
 
-    # Automatically add the admin interface if not exists
+    # Automatically add the admin interface if it does not exists
     my $adminrole = Entity::NetconfRole->find(hash => { netconf_role_name => 'admin' });
     eval {
         Entity::Interface->find(hash => {
@@ -113,10 +114,9 @@ sub addNode {
     my $host_manager = $self->getManager(manager_type => 'host_manager');
     my $host_manager_params = $self->getManagerParameters(manager_type => 'host_manager');
 
-    # Add the number of required ifaces to paramaters.
-    $host_manager_params->{ifaces} = scalar($self->interfaces);
+    $host_manager_params->{interfaces} = $self->interfaces;
 
-    my $ehost_manager = EFactory::newEEntity(data => $host_manager);
+    my $ehost_manager = EEntity->new(entity => $host_manager);
     my $host = $ehost_manager->getFreeHost(%$host_manager_params);
 
     $log->debug("Host manager <" . $host_manager->id . "> returned free host <$host>");

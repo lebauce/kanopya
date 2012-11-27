@@ -225,7 +225,7 @@ sub execute {
 
         # If the host ifaces are not configured to netconfs at resource declaration step,
         # associate them according to the cluster interfaces netconfs
-        if (not $self->{context}->{host}->isIfacesConfigured) {
+        if ($self->{context}->{host}->configuredIfaces == 0) {
             $self->{context}->{host}->configureIfaces(cluster => $self->{context}->{cluster});
         }
     }

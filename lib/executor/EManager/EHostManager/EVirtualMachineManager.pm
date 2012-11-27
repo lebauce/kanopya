@@ -29,14 +29,14 @@ my $errmsg;
 sub getFreeHost {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ "ram", "core", "ifaces" ]);
+    General::checkParams(args => \%args, required => [ "ram", "core", "interfaces" ]);
 
     $log->info("Looking for a virtual host");
     my $host = eval{
         return $self->createVirtualHost(
                    core   => $args{core},
                    ram    => $args{ram},
-                   ifaces => $args{ifaces},
+                   ifaces => $args{interfaces},
                );
     };
     if ($@) {
