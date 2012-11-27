@@ -20,17 +20,14 @@ $.getJSON("/api/cluster?cluster_name=Kanopya", function (data) {
 var mainmenu_def = {
     'Infrastructure' : {
         'Compute' : [
-            { label : 'Overview', id : 'compute_overview'},
             { label : 'Hosts', id : 'hosts', onLoad : function(cid) { require('KIM/hosts.js'); hosts_list(cid, physical_hoster); } },
             { label : 'UCS', id : 'ucs', onLoad : function(cid) { require('KIM/ucs.js'); ucs_list(cid); } }
         ],
         'Storage' : [
-            { label : 'Overview', id : 'storage_overview'},
             { label : 'NetApp', id : 'storage_netapp', onLoad : function(cid) { require('KIM/netapp.js'); netapp_list(cid); } }
         ],
         'IaaS'    : [ { label : 'IaaS', id : 'iaas', onLoad : load_iaas_content} ],
         'Network' : [
-            { label : 'Overview', id : 'network_overview' },
             { label : 'Networks', id : 'network_vlans', onLoad : function(cid) { require('KIM/networks.js'); networks_list(cid); } },
             { label : 'PoolIPs', id : 'network_poolips', onLoad : function(cid) { require('KIM/poolips.js'); poolips_list(cid); } }
         ],
@@ -84,7 +81,6 @@ var mainmenu_def = {
             { label : 'Groups', id : 'groups',onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); }},
             { label : 'Permissions', id : 'permissions', onLoad : function(cid, eid) { require('common/users.js'); permissions(cid, eid); }}
         ],
-        'Monitoring'       : [],
     },
 };
 
