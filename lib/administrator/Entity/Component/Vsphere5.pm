@@ -64,25 +64,39 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    vsphere5_pwd => {
-        pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
     vsphere5_login => {
+        label        => 'Login',
+        type         => 'string',
         pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    vsphere5_pwd => {
+        label        => 'Password',
+        type         => 'password',
+        pattern      => '^.+$',
+        is_mandatory => 1,
+        is_editable  => 1
     },
     vsphere5_url => {
-        pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        label        => 'URL',
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_editable  => 1,
+        is_mandatory => 1
     },
     overcommitment_memory_factor => {
+        label        => 'Overcommitment memory factor',
+        type         => 'string',
         pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
+        is_mandatory => 0
+    },
+    overcommitment_cpu_factor => {
+        label        => 'Overcommitment CPU factor',
+        type         => 'string',
+        pattern      => '^\d*$',
+        is_editable  => 1,
+        is_mandatory => 0
     },
     # TODO: move this virtual attr to HostManager attr def when supported
     host_type => {
@@ -143,6 +157,28 @@ sub checkHostManagerParams {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['ram', 'cpu']);
+}
+
+=pod
+
+=begin classdoc
+
+=head2 getBaseConfiguration
+
+Get the basic configuration of the component
+
+@return base_configuration
+
+=end classdoc
+
+=cut
+
+sub getBaseConfiguration {
+    return {
+        vsphere5_login      => 'login',
+        vsphere5_pwd        => 'password',
+        vsphere5_url        => '127.0.0.1'
+    };
 }
 
 =pod

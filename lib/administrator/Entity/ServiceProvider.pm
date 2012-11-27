@@ -417,16 +417,33 @@ sub addComponent {
     return $component;
 }
 
+=pod
+
+=begin classdoc
+
 =head2 addComponentFromType
 
-    Desc: create a new componant and link it to the cluster
+Create a new componant and link it to the cluster
+
+@param component_type_id ID of the component to be added
+@param default_configuration the defaut configuration to be setted to component
+
+@return component
+
+=end classdoc
 
 =cut
 
 sub addComponentFromType {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'component_type_id' ]);
+    General::checkParams(
+        args => \%args,
+        required => [ 'component_type_id' ],
+        optional => {
+            'component_configuration' => undef,
+        }
+    );
 
     my $comp_type = ComponentType->get(id => $args{component_type_id});
 
@@ -441,7 +458,14 @@ sub addComponentFromType {
     my $location = General::getLocFromClass(entityclass => $comp_class);
     require $location;
 
-    my $component = $comp_class->new();
+    # set component's configuration or use default
+    my $component;
+    if (defined $args{component_configuration}) {
+        $component = $comp_class->new(%{$args{component_configuration}});
+    }
+    else {
+        $component = $comp_class->new();
+    }
     return $self->addComponent(component => $component);
 }
 
