@@ -51,17 +51,9 @@ Final constraints are intersection of input constraints and cluster components c
 sub getHost {
     my ($self, %args) = @_;
 
-    my ($default_core, $default_ram) = (1, "512M");
-
-    General::checkParams(args => \%args, required => [ "host_manager_id" ]);
-
-    # Set default Ram and convert in B.
-    my $ram = defined $args{ram} ? $args{ram} : $default_ram;
-    my ($value, $unit) = General::convertSizeFormat(size => $ram);
-    $args{ram} = General::convertToBytes(value => $value, units => $unit);
-
-    # Set default core
-    $args{core} = $default_core if (not defined $args{core});
+    General::checkParams(args => \%args, required => [ "host_manager_id" ],
+                                         optional => { ram  => 512 * 1024 * 1024,
+                                                       core => 1 });
 
     $log->debug("Host selector search for a node with ram : <$args{ram}> and core : <$args{core}>");
 
@@ -69,7 +61,7 @@ sub getHost {
     my $host_manager = Entity->get(id => $args{host_manager_id});
     my @free_hosts = $host_manager->getFreeHosts();
 
-    # Keep only hosts matching constraints (cpu, mem)
+    # Keep only hosts matching constraints (cpu, mem, interfaces)
     my @valid_hosts = grep { $self->_matchHostConstraints(host => $_, %args) } @free_hosts;
 
     if (scalar @valid_hosts == 0) {
