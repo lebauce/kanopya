@@ -369,7 +369,7 @@ var KanopyaFormWizard = (function() {
             listing = listing.replace(/ /g, '_');
 
             if (input.attr('type') === 'checkbox') {
-                input.width(50);
+                input.width(110);
             } else {
                 input.width(input.width() - 50);
             }
@@ -382,7 +382,7 @@ var KanopyaFormWizard = (function() {
                 labelsline = $("<tr>").css('position', 'relative');
                 labelsline.addClass('labels_' + listing);
                 labelsline.appendTo(table);
-                // Ann another line for error messages
+                // Add another line for error messages
                 errorsline = $("<tr>").css('position', 'relative');
                 errorsline.addClass('errors_' + listing);
                 errorsline.appendTo(table);
@@ -432,8 +432,11 @@ var KanopyaFormWizard = (function() {
                     removeButton.addClass('wizard-ignore');
                     removeButton.bind('click', function () {
                         $(line).remove();
-                        if ($(table).find('tr').length <= 2) {
+                        console.log($(table).find('tr'));
+                        console.log($(table).find('tr').length);
+                        if ($(table).find('tr').length <= 3) {
                             $(labelsline).remove();
+                            $(errorsline).remove();
                         }
                     });
                     td.append(removeButton);
