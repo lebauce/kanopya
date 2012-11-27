@@ -21,6 +21,9 @@ use warnings;
 use General;
 use Entityright::User;
 use Entityright::System;
+use MonitorManager;
+
+use RulesManager;
 use AdministratorDB::Schema;
 use Kanopya::Exceptions;
 use Kanopya::Config;
@@ -254,6 +257,10 @@ sub new {
         db => $schema,
         manager => {}
     };
+
+    # Load Managers
+    $self->{manager}->{rules} = RulesManager->new( schemas => $schema );
+    $self->{manager}->{monitor} = MonitorManager->new( schemas=>$schema );
 
     bless $self, $class;
     $oneinstance = $self;
