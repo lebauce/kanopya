@@ -83,7 +83,7 @@ sub execute {
         my $workflow = $self->workflow;
         for my $operation (@{$flushRes->{operation_plan}}) {
             $log->info('Operation enqueuing host = '.$operation->{params}->{context}->{host}->id);
-            $workflow->enqueueNow(%$operation);
+            $workflow->enqueueNow(operation => $operation);
         }
     }
     else {

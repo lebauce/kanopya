@@ -132,13 +132,15 @@ sub enqueueNow {
             priority => 200,
             type     => $_->operationtype->operationtype_name,
         } } @steps;
+        # Put params (and context) on the first operation only
+        $operations_to_enqueue[0]->{params} = $args{workflow}->{params};
     }
     elsif (defined $args{operation}) {
         push @operations_to_enqueue, $args{operation};
+        $operations_to_enqueue[0]->{params} = $args{operation}->{params};
     }
 
-    # Put params (and context) on the first operation only
-    $operations_to_enqueue[0]->{params} = $args{workflow}->{params};
+
 
     my @sorted_operations = sort {
         $b->execution_rank <=> $a->execution_rank
