@@ -331,7 +331,6 @@ var KanopyaFormWizard = (function() {
 
             var current_unit;
             var unit_input = addFieldUnit(attr, unit_cont, unit_field_id);
-            unit_input.addClass('wizard-ignore');
             if ($(input).attr('disabled')) {
                 unit_input.attr('disabled', 'disabled');
             }
@@ -351,7 +350,12 @@ var KanopyaFormWizard = (function() {
             }
 
             // TODO: Get the real lenght of the unit select box.
-            $(input).width($(input).width() - 50);
+            if (unit_input) {
+                unit_input.addClass('wizard-ignore');
+                $(input).width($(input).width() - 50);
+            } else {
+                $(input).width($(input).width() - 45);
+            }
         }
     }
 

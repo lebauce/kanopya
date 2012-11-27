@@ -406,6 +406,7 @@ var PolicyForm = (function() {
             var unit_field_id ='unit_' + $(input).attr('id');
             $(input).parent().append(unit_cont);
 
+            var unit_input;
             var current_unit;
             if (typeof element.unit === 'object') {
                 // the unit depends on another field
@@ -414,11 +415,11 @@ var PolicyForm = (function() {
                 trigger_input.change( function() {
                     $(unit_cont).empty();
                     current_unit = element.unit.value[$(this).val()];
-                    var unit_input = addFieldUnit({ unit : current_unit }, unit_cont, unit_field_id);
+                    unit_input = addFieldUnit({ unit : current_unit }, unit_cont, unit_field_id);
                 });
                 trigger_input.change();
             } else {
-                var unit_input = addFieldUnit(element, unit_cont, unit_field_id);
+                unit_input = addFieldUnit(element, unit_cont, unit_field_id);
                 current_unit = element.unit;
             }
 
@@ -430,8 +431,8 @@ var PolicyForm = (function() {
 
             // If exist a value then convert it in human readable
             if (current_unit === 'byte' && $(input).val()) {
-                var readable_value = getReadableSize($(input).val());
-                $(input).val( readable_value.value );
+                var readable_value = getReadableSize($(input).val(), 1);
+                $(input).val(readable_value.value);
                 $(unit_cont).find('option:contains("' + readable_value.unit + '")').attr('selected', 'selected');
             }
 
@@ -439,8 +440,13 @@ var PolicyForm = (function() {
             if ($(input).attr('disabled') === 'disabled') {
                 $('#' + unit_field_id).attr('disabled', 'disabled');
             }
+
             // TODO: Get the real lenght of the unit select box.
-            $(input).width($(input).width() - 50);
+            if (unit_input) {
+                $(input).width($(input).width() - 50);
+            } else {
+                $(input).width($(input).width() - 45);
+            }
         }
 
         return tr;
@@ -948,6 +954,7 @@ var PolicyForm = (function() {
             this.fields[datavalues[value].name] = {
                 label   : datavalues[value].label,
                 pattern : datavalues[value].pattern,
+                unit    : datavalues[value].unit,
                 step    : this.fields[name].step,
                 policy  : this.fields[name].policy,
                 prefix  : this.fields[name].prefix,

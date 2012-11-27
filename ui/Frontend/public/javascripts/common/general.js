@@ -197,7 +197,7 @@ function addFieldUnit(field_info, cont, id, selected_unit) {
             }
             select_unit.addClass('wizard-ignore');
         } else {
-            $(cont).append('  ' + field_info.unit);
+            $(cont).append($("<label>", { text : ' ' + field_info.unit }));
         }
     }
     return select_unit;
@@ -238,7 +238,7 @@ function getRawValue(val, unit_field_id) {
         val = val.substr(1);
         return prefix + (val * getUnitMultiplicator(unit_field_id));
     }
-    return isNaN( parseInt(val)) ? val : val * getUnitMultiplicator(unit_field_id);
+    return isNaN(parseInt(val)) ? val : val * getUnitMultiplicator(unit_field_id);
 }
 
 function ajax(method, route, data, onsuccess, onerror) {
