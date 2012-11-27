@@ -216,8 +216,7 @@ eval {
                     manager_type   => "host_manager",
                     manager_params => {
                         cpu        => 1,
-                        ram        => 512,
-                        ram_unit   => 'M',
+                        ram        => 512*1024*1024,
                     }
                 },
                 disk_manager => {
