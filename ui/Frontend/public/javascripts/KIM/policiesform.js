@@ -195,12 +195,6 @@ var PolicyForm = (function() {
 
         // Use jQuery.mutiselect (after DOM loading)
         this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
-//        this.content.find('select[multiple!="multiple"]').not('.wizard-ignore').multiselect({
-//            multiple: false,
-//            header: "Select an option",
-//            noneSelectedText: "-",
-//            selectedList: 1
-//        });
 
         return added;
     }
@@ -935,6 +929,9 @@ var PolicyForm = (function() {
             }
         }
         element.change();
+
+        // Use jQuery.mutiselect (after DOM loading)
+        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
     }
 
     PolicyForm.prototype.updatePolicyParams = function (element, selected_id) {
