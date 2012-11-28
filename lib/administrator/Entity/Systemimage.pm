@@ -73,50 +73,6 @@ sub methods {
     };
 }
 
-=head2 getSystemimages
-
-    Class: public
-    desc: retrieve several Entity::Systemimage instances
-    args:
-        hash : hashref : where criteria
-    return: @ : array of Entity::Systemimage instances
-    
-=cut
-
-sub getSystemimages {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    return $class->search(%args);
-}
-
-sub getSystemimage {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    my @systemimages = $class->search(%args);
-    return pop @systemimages;
-}
-
-#=head2 create
-#
-#=cut
-#
-#sub create {
-#    my ($class, %params) = @_;
-#
-#    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
-#    Entity::Operation->enqueue(
-#        priority => 200,
-#        type     => 'AddSystemimage',
-#        params   => \%params,
-#    );
-#}
-
 =head2 installComponent
 
 =cut

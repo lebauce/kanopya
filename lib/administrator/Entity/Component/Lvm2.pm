@@ -264,7 +264,7 @@ sub getExportManagers {
     my $self = shift;
     my %args = @_;
 
-    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+    my $cluster = $self->service_provider;
 
     return [ $cluster->getComponent(name => "Iscsitarget", version => "1"),
              $cluster->getComponent(name => "Nfsd", version => "3") ];

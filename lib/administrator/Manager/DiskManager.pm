@@ -67,7 +67,23 @@ sub getFreeSpace {
 =cut
 
 sub createDisk {
-    throw Kanopya::Exception::NotImplemented();
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "name" ]);
+
+    $log->debug("New Operation CreateDisk with attrs : " . %args);
+    Entity::Operation->enqueue(
+        priority => 200,
+        type     => 'CreateDisk',
+        params   => {
+            name    => $args{name},
+            context => {
+                disk_manager => $self,
+            }
+        },
+    );
 }
 
 =head2 removeDisk

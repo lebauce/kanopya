@@ -69,7 +69,26 @@ sub getReadOnlyParameter {
 =cut
 
 sub createExport {
-    throw Kanopya::Exception::NotImplemented();
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "container", "export_name" ]);
+
+    $log->debug("New Operation CreateExport with attrs : " . %args);
+    Entity::Operation->enqueue(
+        priority => 200,
+        type     => 'CreateExport',
+        params   => {
+            context => {
+                export_manager => $self,
+                container      => $args{container},
+            },
+            manager_params => {
+                export_name => $args{export_name},
+            },
+        },
+    );
 }
 
 =head2 removeExport

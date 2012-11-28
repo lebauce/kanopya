@@ -1,5 +1,5 @@
-# linux.pm - linux component
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,42 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 4 sept 2010
-
-=head1 NAME
-
-<Entity::Component::linux> <linux component concret class>
-
-=head1 VERSION
-
-This documentation refers to <Entity::Component::linux> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Entity::Component::linux>;
-
-my $component_instance_id = 2; # component instance id
-
-Entity::Component::linux->get(id=>$component_instance_id);
-
-# Cluster id
-
-my $cluster_id = 3;
-
-# Component id are fixed, please refer to component id table
-
-my $component_id =2 
-
-Entity::Component::linux->new(component_id=>$component_id, cluster_id=>$cluster_id);
-
-=head1 DESCRIPTION
-
-Entity::Component::linux is class allowing to instantiate a linux component
-This Entity is empty but present methods to set configuration.
-
-=head1 METHODS
-
-=cut
 
 package Entity::Component::Linux;
 use base "Entity::Component";

@@ -33,19 +33,20 @@ my $log = get_logger("");
 
 use constant ATTR_DEF => {
     policy_name => {
+        label        => 'Policy name',
+        type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
     },
     policy_desc => {
+        label        => 'Description',
+        type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     policy_type => {
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
     },
     param_preset_id => {
         pattern      => '^\d*$',
