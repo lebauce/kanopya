@@ -724,15 +724,23 @@ CREATE TABLE `systemimage` (
   `systemimage_id` int(8) unsigned NOT NULL,
   `systemimage_name` char(32) NOT NULL,
   `systemimage_desc` char(255) DEFAULT NULL,
-  `container_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   PRIMARY KEY (`systemimage_id`),
   FOREIGN KEY (`systemimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`systemimage_name`),
-  KEY (`container_id`),
-  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+  UNIQUE KEY (`systemimage_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `systemimage_container_access`
+-- Entity::SystemimageContainerAccess link class
+
+CREATE TABLE `systemimage_container_access` (
+  `systemimage_id` int(8) unsigned NOT NULL,
+  `container_access_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`systemimage_id`, `container_access_id`),
+  FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- network tables
 
