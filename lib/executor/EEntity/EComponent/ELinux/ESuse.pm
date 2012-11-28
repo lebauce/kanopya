@@ -78,12 +78,28 @@ sub service {
 sub customizeInitramfs {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
-                         required => ['initrd_dir','cluster', 'host', 'mount_point']);
+                         required => ['initrd_dir','cluster', 'host']);
     
     my $econtext = $self->getExecutorEContext;
+    my $initrddir = $args{initrd_dir};
 
+    $log->info("customize initramfs $initrddir");
 
+    # TODO recup target et portals
+    my $target = 'iqn.blmablabla';
+    my $portals = [ { ip => '1.1.1.1', port => 3260 },
+                    { ip => '2.2.2.2', port => 3260 }, ];    
+    
+    $self->_initrd_iscsi(initrd_dir => $initrddir,
+                         initiatorname => $args{host}->getAttr(name => 'host_initiatorname'),
+                         target     => $target,
+                         portals    => $portals
+                         );
 
+    $self->_initrd_config(initrd_dir => $initrddir,
+                          ifaces     => $args{host}->getIfaces(),
+                          hostname   => $args{host}->getAttr(name => 'host_hostname')
+                          );
 }
 
 # build the open-iscsi part of the initrd
@@ -91,22 +107,21 @@ sub customizeInitramfs {
 sub _initrd_iscsi {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
-                         required => ['initrddir']);
+                         required => ['initrd_dir','target', 'portals', 'initiatorname']);
     my $econtext = $self->getExecutorEContext;
     my $cmd;
     
     # generate send_targets and nodes info
-    # TODO retrieve portals list
-    # TODO retrieve targetname
-    my $target = "iqn.blabalb";
-    my @portals = ();
+
+    my $target = $args{target};
+    my @portals = @{$args{portals}};
     
     for my $portal (@portals) {
-        my $st_dir = $args{initrddir}.'/etc/iscsi/send_targets/'.$portal->{ip}.",".$portal->{port};
+        my $st_dir = $args{initrd_dir}.'/etc/iscsi/send_targets/'.$portal->{ip}.",".$portal->{port};
         $cmd = 'mkdir -p '.$st_dir;
         $econtext->execute(command => $cmd);
         
-        my $target_dir = $args{initrddir}."/etc/iscsi/nodes/$target/".$portal->{ip}.",".$portal->{port}.',1';
+        my $target_dir = $args{initrd_dir}."/etc/iscsi/nodes/$target/".$portal->{ip}.",".$portal->{port}.',1';
         $cmd = 'mkdir -p '.$target_dir;
         $econtext->execute(command => $cmd);
         
@@ -123,43 +138,56 @@ sub _initrd_iscsi {
                             output      => '/default',
                             data        => { target => $target, ip => $portal->{ip}, port => $portal->{port} }
                             );
+                            
+        $cmd = "echo InitiatorName=$args{initiatorname} > $args{initrd_dir}/etc/iscsi/initiatorname.iscsi";
+        $econtext->execute(command => $cmd);
     }
 }
 
 sub _initrd_config {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
-                         required => ['initrddir']);
+                         required => ['initrd_dir', 'ifaces', 'hostname']);
                          
-    $self->generateFile(mount_point => $args{initrddir}.'/config',
+    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
                         input_file  => 'storage.sh.tt',
                         template_dir => '/opt/kanopya/templates/internal/initrd/sles',
                         output      => '/storage.sh',
                         data        => { rootdev => '/dev/dm-0' }
                         );
+    
+    my @macaddresses = ();
+    my @ips = ();
+    my $hostname = $args{hostname};
+    
+    for my $iface (@{$args{ifaces}}) {
+        my $name = $iface->getAttr(name => 'iface_name');
+        my $mac  = $iface->getAttr(name => 'iface_mac_addr');
+        my $ip   = $iface->getIPAddr;
+        my $netmask = $iface->getPoolip->network->network_netmask;
+        my $gateway = $iface->getPoolip->network->network_gateway;
+        push @macaddresses, "$name:$mac";
+        push @ips, "$ip::$gateway:$netmask:$hostname:$name:none";
+    }
                         
-    # TODO retrieve static ips, static mac
-    my $static_macaddress = "eth1:52:54:00:e9:62:58 eth0:52:54:00:77:fb:32";
-    my $static_ips = "10.20.0.100:::255.255.255.0:10.10.0.100:eth1:none 10.10.0.100:::255.255.255.0:10.10.0.100:eth0:none";                    
+    my $static_macaddress = join(' ', @macaddresses);
+    my $static_ips = join(' ', @ips);
                         
-    $self->generateFile(mount_point => $args{initrddir}.'/config',
-                    input_file  => 'network.sh.tt',
-                    template_dir => '/opt/kanopya/templates/internal/initrd/sles',
-                    output      => '/network.sh',
-                    data        => { static_macaddress => $static_macaddress,
-                                     static_ips =>  $static_ips }
-                    );
+    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
+                        input_file  => 'network.sh.tt',
+                        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                        output      => '/network.sh',
+                        data        => { static_macaddress => $static_macaddress,
+                                         static_ips =>  $static_ips }
+                       );
     
-    $self->generateFile(mount_point => $args{initrddir}.'/config',
-                    input_file  => 'mount.sh.tt',
-                    template_dir => '/opt/kanopya/templates/internal/initrd/sles',
-                    output      => '/mount.sh',
-                    data        => { rootdev => '/dev/dm-0',
-                                     rootfsck => '/sbin/fsck.ext3' }
-                    );
-
-    
-    
+    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
+                        input_file  => 'mount.sh.tt',
+                        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                        output      => '/mount.sh',
+                        data        => { rootdev => '/dev/dm-0',
+                                         rootfsck => '/sbin/fsck.ext3' }
+                       );
 }
 
 1;

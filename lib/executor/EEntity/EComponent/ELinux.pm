@@ -554,24 +554,13 @@ sub customizeInitramfs {
 
     my $tftpdir = $self->{config}->{tftp}->{directory};
 
+    $log->info("customize initramfs $initrddir");
+
     # append files to the archive directory
     my $sourcefile = $args{mount_point}.'/etc/udev/rules.d/70-persistent-net.rules';
     my $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
     $econtext->execute(command => $cmd);
 
-    # create the final storing directory
-    my $path = "$tftpdir/$clustername/$hostname";
-    $cmd = "mkdir -p $path";
-    $econtext->execute(command => $cmd);
-
-    # rebuild and compress the new initrd
-    my $newinitrd = $path."/initrd_$kernel_version";
-    $cmd = "(cd $initrddir && find . | cpio -H newc -o | bzip2 > $newinitrd)";
-    $econtext->execute(command => $cmd);
-
-    # finaly we remove the temporary directory
-    $cmd = "rm -r $initrddir";
-    $econtext->execute(command => $cmd);
 }
 
 =pod
