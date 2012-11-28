@@ -749,7 +749,9 @@ var PolicyForm = (function() {
                             var parent = that.form.find('#input_' + that.fields[select_name].parent);
                             parent.val(manager.service_provider_id);
                             parent.change();
-                            that.disableInput(parent);
+                            if (that.fields[select_name].disable_filled) {
+                                that.disableInput(parent);
+                            }
                         }
                     }
 
