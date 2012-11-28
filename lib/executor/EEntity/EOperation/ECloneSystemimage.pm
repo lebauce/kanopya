@@ -83,7 +83,7 @@ sub prepare {
     # Check if systemimage name does not already exist
     $log->debug('Checking unicity of systemimage_name <' . $self->{params}->{systemimage_name} . '>');
 
-    my $sysimg_exists = Entity::Systemimage->getSystemimage(
+    my $sysimg_exists = Entity::Systemimage->find(
                             hash => { systemimage_name => $self->{params}->{systemimage_name} }
                         );
 

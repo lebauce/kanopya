@@ -67,7 +67,7 @@ sub execute {
     }
 
     # Define a hostname
-    my $hostname = $self->{context}->{cluster}->getAttr(name => 'cluster_basehostname');
+    my $hostname = $self->{context}->{cluster}->cluster_basehostname;
     if ($self->{context}->{cluster}->cluster_max_node > 1) {
         $hostname .=  $self->{params}->{node_number};
     }

@@ -142,13 +142,14 @@ sub prepare {
     $self->{context}->{export_manager} = EFactory::newEEntity(data => $export_manager);
 
     # Get the masterimage for node systemimage creation.
-    my $masterimage =  Entity::Masterimage->get(id => $self->{context}->{cluster}->masterimage_id);
-    $self->{context}->{masterimage} = EFactory::newEEntity(data => $masterimage);
+    if ($self->{context}->{cluster}->masterimage) {
+        $self->{context}->{masterimage} = EEntity->new(entity => $self->{context}->{cluster}->masterimage);
+    }
 
     # Check if a host is specified.
     if (defined $self->{context}->{host}) {
         my $host_manager_id = $self->{context}->{host}->host_manager_id;
-        my $cluster_host_manager_id = $self->{context}->{cluster}->getManager(manager_type => 'host_manager')->getId;
+        my $cluster_host_manager_id = $self->{context}->{cluster}->getManager(manager_type => 'host_manager')->id;
 
         # Check if the specified host is managed by the cluster host manager
         if ($host_manager_id != $cluster_host_manager_id) {
@@ -252,12 +253,25 @@ sub execute {
     # Create system image for node if required.
     if ($self->{params}->{create_systemimage}) {
         $log->info("Beginning system image creation...");
-        $self->{context}->{systemimage}->createFromMasterimage(
-            masterimage    => $self->{context}->{masterimage},
-            disk_manager   => $self->{context}->{disk_manager},
-            manager_params => $self->{context}->{cluster}->getManagerParameters(manager_type => 'disk_manager'),
-            erollback      => $self->{erollback},
-        );
+        my $managerparams = $self->{context}->{cluster}->getManagerParameters(manager_type => 'disk_manager');
+
+        # If master image is defined, create a systemimage for it
+        if ($self->{context}->{masterimage}) {
+            $self->{context}->{systemimage}->createFromMasterimage(
+                masterimage    => $self->{context}->{masterimage},
+                disk_manager   => $self->{context}->{disk_manager},
+                manager_params => $managerparams,
+                erollback      => $self->{erollback},
+            );
+        }
+        # Else create a empty system image as the disk is not managed by us
+        else {
+            $self->{context}->{systemimage}->create(
+                disk_manager     => $self->{context}->{disk_manager},
+                erollback        => $self->{erollback},
+                %{ $managerparams }
+            );
+        }
     }
 
     # Export system image for node if required.
@@ -273,10 +287,10 @@ sub execute {
 sub finish {
     my $self = shift;
 
-    # Not not require masterimage in context any more.
+    # Do not require masterimage in context any more.
     delete $self->{context}->{masterimage};
 
-    # Not not require storage managers in context any more.
+    # Do not require storage managers in context any more.
     delete $self->{context}->{disk_manager};
     delete $self->{context}->{export_manager};
 }

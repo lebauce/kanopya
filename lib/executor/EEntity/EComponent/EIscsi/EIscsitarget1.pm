@@ -1,4 +1,5 @@
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,9 +13,8 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package EEntity::EComponent::EIscsitarget1;
-use base "EManager::EExportManager";
-use base "EEntity::EComponent";
+package EEntity::EComponent::EIscsi::EIscsitarget1;
+use base "EEntity::EComponent::EIscsi";
 
 use warnings;
 use strict;

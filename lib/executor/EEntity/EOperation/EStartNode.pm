@@ -92,14 +92,14 @@ sub prepare {
     # Warning:
     # 1. Systeme image should be activated, so at least one container access exists
     # 2. As systemimages always dedicated for instance, a system image container has
-    #    onlky one container access.
+    #    only one container access.
     my $container_access = pop @{ $self->{context}->{container}->getAccesses };
     $self->{context}->{container_access} = EFactory::newEEntity(data => $container_access);
 
     $self->{context}->{export_manager}
         = EFactory::newEEntity(data => $self->{context}->{container_access}->getExportManager);
 
-    $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->getAttr(name => 'cluster_domainname');
+    $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->cluster_domainname;
 
     $self->{cluster_components} = $self->{context}->{cluster}->getComponents(category => "all",
                                                                              order_by => "priority");
@@ -109,8 +109,7 @@ sub execute {
     my $self = shift;
 
     # Firstly compute the node configuration
-    
-    my $mount_options = $self->{context}->{cluster}->getAttr(name => 'cluster_si_shared')
+    my $mount_options = $self->{context}->{cluster}->cluster_si_shared
                             ? "ro,noatime,nodiratime" : "defaults";
 
     # Mount the containers on the executor.
@@ -211,7 +210,7 @@ sub _cancel {
     my $self = shift;
 
     $log->info("Cancel start node, we will try to remove node link for <" .
-               $self->{context}->{host}->getAttr(name => "entity_id") . ">");
+               $self->{context}->{host}->id . ">");
 
     $self->{context}->{host}->stopToBeNode();
 
@@ -256,7 +255,7 @@ sub _generateBootConf {
                                 mount_point => $args{mount_point});
 
         if ($boot_policy =~ m/ISCSI/) {
-            my $targetname = $self->{context}->{container_access}->getAttr(name => 'container_access_export');
+            my $targetname = $self->{context}->{container_access}->container_access_export;
             my $lun_number = $self->{context}->{container_access}->getLunId(host => $self->{context}->{host});
             my $rand = new String::Random;
             my $tmpfile = $rand->randpattern("cccccccc");
@@ -266,11 +265,11 @@ sub _generateBootConf {
             my $input = "bootconf.tt";
 
             my $vars = {
-                filesystem    => $self->{context}->{container}->getAttr(name => 'container_filesystem'),
+                filesystem    => $self->{context}->{container}->container_filesystem,
                 initiatorname => $self->{context}->{host}->host_initiatorname,
                 target        => $targetname,
-                ip            => $self->{context}->{container_access}->getAttr(name => 'container_access_ip'),
-                port          => $self->{context}->{container_access}->getAttr(name => 'container_access_port'),
+                ip            => $self->{context}->{container_access}->container_access_ip,
+                port          => $self->{context}->{container_access}->container_access_port,
                 lun           => "lun-" . $lun_number,
                 mount_opts    => $args{options},
                 mounts_iscsi  => [],
@@ -293,7 +292,7 @@ sub _generateBootConf {
                          );
 
             my $tftp_conf = $self->{config}->{tftp}->{directory};
-            my $dest = $tftp_conf . '/' . $self->{context}->{host}->getAttr(name => "host_hostname") . ".conf";
+            my $dest = $tftp_conf . '/' . $self->{context}->{host}->host_hostname . ".conf";
 
             $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
             unlink "/tmp/$tmpfile";
