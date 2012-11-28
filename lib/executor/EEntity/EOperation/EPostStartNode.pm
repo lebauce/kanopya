@@ -75,8 +75,7 @@ sub prerequisites {
     # Duration to wait for setting host broken
     my $broken_time = 240;
 
-    my $cluster_id = $self->{context}->{cluster}->getAttr(name => 'entity_id');
-    my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
+    my $host_id = $self->{context}->{host}->id;
 
     # Check how long the host is 'starting'
     my @state = $self->{context}->{host}->getState;
@@ -96,17 +95,8 @@ sub prerequisites {
     }
 
     # Check if all host components are up.
-    my @components = $self->{context}->{cluster}->getComponents(category => "all");
-    foreach my $component (@components) {
-        my $component_name = $component->component_type->component_name;
-        $log->debug("Browse component: " . $component_name);
-
-        my $ecomponent = EFactory::newEEntity(data => $component);
-
-        if (not $ecomponent->isUp(host => $self->{context}->{host}, cluster => $self->{context}->{cluster})) {
-            $log->info("Component <$component_name> not yet operational on host <$host_id>");
-            return $delay;
-        }
+    if (not $self->{context}->{cluster}->checkComponents(host => $self->{context}->{host})) {
+        return $delay;
     }
 
     # Node is up
@@ -118,12 +108,6 @@ sub prerequisites {
     return 0;
 }
 
-sub prepare {
-    my ($self, %args) = @_;
-
-    $self->SUPER::prepare();
-}
-
 sub execute {
     my ($self, %args) = @_;
 
@@ -133,16 +117,10 @@ sub execute {
         $self->{context}->{host}->becomeMasterNode();
     }
 
-    my @components = $self->{context}->{cluster}->getComponents(category => "all",
-                                                                order_by => "priority");
-    $log->info('Processing cluster components configuration for this node');
-    foreach my $component (@components) {
-        EFactory::newEEntity(data => $component)->postStartNode(
-            host      => $self->{context}->{host},
-            cluster   => $self->{context}->{cluster},
-            erollback => $self->{erollback}
-        );
-    }
+    $self->{context}->{cluster}->postStartNode(
+        host      => $self->{context}->{host},
+        erollback => $self->{erollback},
+    );
 
     $self->{context}->{host}->postStart();
 
@@ -190,7 +168,7 @@ sub _cancel {
     my $self = shift;
 
     $log->info("Cancel post start node, we will try to remove node link for <" .
-               $self->{context}->{host}->getAttr(name => "entity_id") . ">");
+               $self->{context}->{host} . ">");
 
     eval {
         $self->{context}->{host}->stopToBeNode();
@@ -206,12 +184,3 @@ sub _cancel {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

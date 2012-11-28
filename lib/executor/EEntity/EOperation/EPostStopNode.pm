@@ -1,6 +1,5 @@
-# EPostStopNode.pm - Operation class node removing from cluster operation
-
 #    Copyright © 2009-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,24 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
-
-EOperation::EPostStopNode - Operation class implementing node removing operation
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement node removing operation
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::EPostStopNode;
 use base "EEntity::EOperation";
 
@@ -46,17 +28,10 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EFactory;
 use String::Random;
+
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
 
-my $config = {
-    INCLUDE_PATH => '/templates/internal/',
-    INTERPOLATE  => 1,               # expand "$var" in plain text
-    POST_CHOMP   => 0,               # cleanup whitespace 
-    EVAL_PERL    => 1,               # evaluate Perl code blocks
-    RELATIVE     => 1,               # desactive par defaut
-};
 
 sub check {
     my $self = shift;
@@ -75,15 +50,15 @@ sub prerequisites {
     # Duration to wait for setting host broken
     my $broken_time = 240;
 
-    my $cluster_id = $self->{context}->{cluster}->getAttr(name => 'entity_id');
-    my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
+    my $cluster_id = $self->{context}->{cluster}->id;
+    my $host_id    = $self->{context}->{host}->id;
 
     # Check how long the host is 'stopping'
     my @state = $self->{context}->{host}->getState;
     my $stopping_time = time() - $state[1];
 
     if($stopping_time > $broken_time) {
-        $args{host}->setState(state => 'broken');
+        $self->{context}->{host}->setState(state => 'broken');
     }
 
     my $node_ip = $self->{context}->{host}->adminIp;
@@ -120,12 +95,6 @@ sub prerequisites {
     $log->info("Host <$host_id> in cluster <$cluster_id> is 'down', preparing PostStopNode.");
     return 0;
 }
-
-=head2 prepare
-
-    $op->prepare();
-
-=cut
 
 sub prepare {
     my $self = shift;
@@ -176,21 +145,12 @@ sub execute {
 
     # Component migration
     $log->info('Processing cluster components configuration for this node');
-    my $components = $self->{context}->{cluster}->getComponents(category => "all");
-    foreach my $i (keys %$components) {
-        my $comp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is ".ref($comp));
+    $self->{context}->{cluster}->postStopNode(host => $self->{context}->{host});
 
-        $comp->postStopNode(
-            host        => $self->{context}->{host},
-            cluster     => $self->{context}->{cluster},
-        );
-    }
-    
     $self->{context}->{host}->setAttr(name => "host_hostname", value => undef);
     $self->{context}->{host}->setAttr(name => "host_initiatorname", value => undef);
-    
-    my $systemimage_name = $self->{context}->{cluster}->getAttr(name => 'cluster_name');
+
+    my $systemimage_name = $self->{context}->{cluster}->cluster_name;
     $systemimage_name .= '_' . $self->{context}->{host}->getNodeNumber();
 
     # Finally save the host
@@ -209,7 +169,7 @@ sub execute {
     $self->{context}->{host}->stopToBeNode();
     
     # delete the image if persistent policy not set
-    if($self->{context}->{cluster}->getAttr(name => 'cluster_si_persistent') eq '0') {
+    if($self->{context}->{cluster}->cluster_si_persistent eq '0') {
         $log->info("cluster image persistence is not set, deleting $systemimage_name");
         eval {
             my $entity = Entity::Systemimage->find(hash => { systemimage_name => $systemimage_name });

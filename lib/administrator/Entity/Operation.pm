@@ -407,7 +407,7 @@ sub buildParams {
                 }
                 # If tag is 'preset', this is a composite param, we store it as a ParamPreset
                 elsif ($key eq 'presets') {
-                    my $preset = ParamPreset->new(name => $subkey, params => $subvalue);
+                    my $preset = ParamPreset->new(params => $subvalue);
                     $param_value = $preset->getAttr(name => 'param_preset_id');
                 }
                 else {

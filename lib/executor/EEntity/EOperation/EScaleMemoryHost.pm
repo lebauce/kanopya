@@ -90,14 +90,8 @@ sub prepare {
 
     # Check if the given ram amount is not bellow the initial ram.
     my $host_manager_params = $self->{context}->{host}->node->parent->service_provider->getManagerParameters(manager_type => 'host_manager');
-    my $initial_ram = $host_manager_params->{ram};
-
-    if ($host_manager_params->{ram_unit} eq 'G') {
-        $initial_ram *= 1024;
-    }
-
-    if ($initial_ram > $self->{params}->{memory}) {
-        $errmsg = "Could not scale memory bellow the initial ram amount ($initial_ram)";
+    if ($host_manager_params->{ram} > $self->{params}->{memory}) {
+        $errmsg = "Could not scale memory bellow the initial ram amount <" . $host_manager_params->{ram} . ">";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
@@ -108,8 +102,7 @@ sub execute {
     $self->{context}->{cloudmanager_comp}->scaleMemory(host   => $self->{context}->{host},
                                                        memory => $self->{params}->{memory});
 
-    $log->info("Host <" .  $self->{context}->{host}->getAttr(name => 'entity_id') .
-               "> scale in to <$self->{params}->{memory}> ram.");
+    $log->info("Host <" .  $self->{context}->{host}->id . "> scale in to <$self->{params}->{memory}> ram.");
 }
 
 

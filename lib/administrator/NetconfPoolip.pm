@@ -1,4 +1,5 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,25 +15,13 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package NetworkPoolip;
-use base "BaseDB";
+package NetconfPoolip;
+use base 'BaseDB';
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
+use strict;
+use warnings;
 
-my $log = get_logger("");
-my $errmsg;
-
-use constant ATTR_DEF => {
-    network_id => {
-        pattern      => '\d+$',
-        is_mandatory => 1,
-    },
-    poolip_id => {
-        pattern      => '\d+$',
-        is_mandatory => 1,
-    },
-};
+use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 

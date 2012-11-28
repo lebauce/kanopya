@@ -23,7 +23,7 @@ use Entity::Processormodel;
 use Entity::Host;
 use Entity::Hostmodel;
 use Entity::Network;
-use Entity::Network::Vlan;
+use Entity::Vlan;
 use Data::Dumper;
 
 use warnings;
@@ -251,22 +251,22 @@ sub synchronize {
     foreach my $ucsvlan (@ucsvlans) {
         # Get Vlans existing in Kanopya
         eval {
-            Entity::Network->find(hash => { network_name => $ucsvlan->{name} });
+            Entity::Vlan->find(hash => { vlan_name => $ucsvlan->{name} });
         };
         if ($@) {
             # If the vlan not exist in Kanopya, create it
-            Entity::Network::Vlan->new(
-                network_name => $ucsvlan->{name},
-                vlan_number  => $ucsvlan->{id},
+            Entity::Vlan->new(
+                vlan_name   => $ucsvlan->{name},
+                vlan_number => $ucsvlan->{id},
             );
         }
     }
 
     # Synchronize VLANs from Kanopya to UCS
     # Get all VLANs on Kanopya
-    my @vlans = Entity::Network::Vlan->search(hash => {});
+    my @vlans = Entity::Vlan->search(hash => {});
     foreach my $vlan (@vlans) {
-        my $vlan_id = $vlan->getAttr('name' => 'vlan_number');
+        my $vlan_id = $vlan->vlan_number;
 
         # We must ignore the VLAN 0 on Kanopya side, this is the default UCS Vlan too
         if ($vlan_id ne "0") {
@@ -277,7 +277,7 @@ sub synchronize {
                     ucs         => $self,
                     defaultNet  => "no",
                     id          => $vlan_id,
-                    name        => $vlan->getAttr('name' => 'network_name'),
+                    name        => $vlan->vlan_name,
                     pubNwName   => "",
                     sharing     => "none",
                     status      => "created",

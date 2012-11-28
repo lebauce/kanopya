@@ -1,6 +1,5 @@
-# Entity::ServiceProvider.pm
-
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,19 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 16 july 2010
-
-=head1 NAME
-
-Entity::ServiceProvider
-
-=head1 SYNOPSIS
-
-=head1 DESCRIPTION
-
-blablabla
-
-=cut
 
 package Entity::ServiceProvider;
 use base "Entity";
@@ -308,51 +294,29 @@ sub getManagerParameters {
     return $cluster_manager->getParams();
 }
 
-=head2 addNetworkInterface
+=pod
 
-    Desc: add a network interface on this service provider
+=begin classdoc
+
+Add a network interface on this service provider
+
+=end classdoc
 
 =cut
 
 sub addNetworkInterface {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'interface_role' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'netconfs' ],
+                         optional => { 'bonds_number' => 0 });
 
     my $params = {
-        interface_role_id   => $args{interface_role}->getAttr(name => 'entity_id'),
-        service_provider_id => $self->getAttr(name => 'entity_id')
+        service_provider_id => $self->id,
+        bonds_number        => $args{bonds_number},
+        netconf_interfaces  => $args{netconfs},
     };
-    if (defined $args{default_gateway}) {
-        $params->{default_gateway} = $args{default_gateway};
-    }
-    my $interface = Entity::Interface->new(%$params);
-
-    # Associate to networks if defined
-    if (defined $args{networks}) {
-        for my $network ($args{networks}) {
-            $interface->associateNetwork(network => $network);
-        }
-    }
-    return $interface;
-}
-
-=head2 getNetworkInterfaces
-
-    Desc : return a list of NetworkInterface
-
-=cut
-
-sub getNetworkInterfaces {
-    my ($self) = @_;
-
-    # TODO: use the new BaseDb feature,
-    # my @interfaces = $self->getRelated(name => 'interfaces');
-    my @interfaces = Entity::Interface->search(
-                         hash => { service_provider_id => $self->getAttr(name => 'entity_id') }
-                     );
-
-    return wantarray ? @interfaces : \@interfaces;
+    return Entity::Interface->new(%$params);
 }
 
 =head2 removeNetworkInterface
@@ -402,10 +366,7 @@ sub getLimit {
 
         if ($args{type} eq 'ram') {
             if(defined $host_params->{max_ram}) {
-                $host_limit_value = General::convertToBytes(
-                                   value => $host_params->{max_ram},
-                                   units => $host_params->{ram_unit}
-                                );
+                $host_limit_value = $host_params->{max_ram};
             }
             else {
                 $log->info('host limit ram undef');

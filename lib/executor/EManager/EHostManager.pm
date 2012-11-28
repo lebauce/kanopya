@@ -137,10 +137,18 @@ sub scaleHost {
     $log->debug("Scaling is not implemented by this host manager, doing nothing");
 }
 
-=head2 getFreeHost
+=pod
 
-    Desc : Return one free host that match the criterias
-    args : ram, cpu
+=begin classdoc
+
+Return one free host that match the criterias
+@param ram required ram amount
+@param cpu required cores number
+@optional ram_unit
+
+@return Entity::Host
+
+=end classdoc
 
 =cut
 
@@ -148,14 +156,9 @@ sub getFreeHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "ram", "cpu", "ifaces" ]);
+    General::checkParams(args => \%args, required => [ "ram", "cpu", "interfaces" ]);
 
-    if ($args{ram_unit}) {
-        $args{ram} .= $args{ram_unit};
-        delete $args{ram_unit};
-    }
-
-    $args{host_manager_id} = $self->_getEntity->getAttr(name => 'entity_id');
+    $args{host_manager_id} = $self->id;
 
     return DecisionMaker::HostSelector->getHost(%args);
 }

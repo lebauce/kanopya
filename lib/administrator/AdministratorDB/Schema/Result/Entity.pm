@@ -205,7 +205,7 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 collector_indicators
+=head2 collector_indicator_collector_managers
 
 Type: has_many
 
@@ -214,7 +214,7 @@ Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
 =cut
 
 __PACKAGE__->has_many(
-  "collector_indicators",
+  "collector_indicator_collector_managers",
   "AdministratorDB::Schema::Result::CollectorIndicator",
   { "foreign.collector_manager_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -480,21 +480,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 interface_role
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::InterfaceRole>
-
-=cut
-
-__PACKAGE__->might_have(
-  "interface_role",
-  "AdministratorDB::Schema::Result::InterfaceRole",
-  { "foreign.interface_role_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 kernel
 
 Type: might_have
@@ -537,6 +522,36 @@ __PACKAGE__->might_have(
   "netapp_aggregate",
   "AdministratorDB::Schema::Result::NetappAggregate",
   { "foreign.aggregate_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 netconf
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Netconf>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netconf",
+  "AdministratorDB::Schema::Result::Netconf",
+  { "foreign.netconf_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 netconf_role
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetconfRole>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netconf_role",
+  "AdministratorDB::Schema::Result::NetconfRole",
+  { "foreign.netconf_role_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -765,6 +780,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 vlan
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Vlan>
+
+=cut
+
+__PACKAGE__->might_have(
+  "vlan",
+  "AdministratorDB::Schema::Result::Vlan",
+  { "foreign.vlan_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 workflow_def
 
 Type: might_have
@@ -821,8 +851,8 @@ Composing rels: L</ingroups> -> gp
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-08 14:54:52
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uTu+fyc5jS4HCorythfIQg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-15 16:02:27
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UOPZo+azGTDFTeoIV2Vb3A
 
 __PACKAGE__->might_have(
   "workflow",
@@ -830,7 +860,7 @@ __PACKAGE__->might_have(
   { "foreign.workflow_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
-
+ 
 __PACKAGE__->might_have(
   "collector_indicator",
   "AdministratorDB::Schema::Result::CollectorIndicator",

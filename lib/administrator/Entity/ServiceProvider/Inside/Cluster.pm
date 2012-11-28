@@ -62,13 +62,11 @@ use constant ATTR_DEF => {
     cluster_name => {
         pattern      => '^[\w\d\.]+$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_desc => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 1
     },
     cluster_type => {
@@ -80,13 +78,11 @@ use constant ATTR_DEF => {
     cluster_boot_policy => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_si_shared => {
         pattern      => '^(0|1)$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_si_persistent => {
@@ -98,73 +94,66 @@ use constant ATTR_DEF => {
     cluster_min_node => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 1
     },
     cluster_max_node => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 1
     },
     cluster_priority => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 1
     },
     cluster_state => {
         pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*|warning:\d*',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_domainname => {
         pattern      => '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_nameserver1 => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_nameserver2 => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
     cluster_basehostname => {
         pattern      => '^[a-z_0-9-]+$',
         is_mandatory => 1,
-        is_extended  => 0,
+        is_editable  => 1
+    },
+    default_gateway_id => {
+        pattern      => '\d+',
+        is_mandatory => 0,
         is_editable  => 1
     },
     active => {
         pattern      => '^[01]$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 0
     },
     masterimage_id => {
         pattern      => '\d*',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 0
     },
     kernel_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0,
         is_editable  => 1
     },
 	user_id => {
         pattern      => '^\d+$',
         is_mandatory => 1,
-        is_extended  => 0,
         is_editable  => 0
     },
 };
@@ -259,7 +248,7 @@ sub label {
 sub create {
     my ($class, %params) = @_;
 
-    # Override params with poliies param presets
+    # Override params with policies param presets
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
     # Prepare the configuration pattern from the service template
@@ -273,10 +262,10 @@ sub create {
         $service_template = Entity::ServiceTemplate->get(id => $flatened_params{service_template_id});
         for my $policy (@{ $service_template->getPolicies }) {
             # Register policy ids in the params
-            push @{ $params{policies} }, $policy->getAttr(name => 'policy_id');
+            push @{ $params{policies} }, $policy->id;
 
             # Rebuild params as a configuration pattern
-            my $pattern = Entity::Policy->buildPatternFromHash(policy_type => $policy->getAttr(name => 'policy_type'), hash => \%flatened_params);
+            my $pattern = Entity::Policy->buildPatternFromHash(policy_type => $policy->policy_type, hash => \%flatened_params);
             %params = %{ $merge->merge(\%params, \%$pattern) };
         }
     }
@@ -284,12 +273,12 @@ sub create {
     General::checkParams(args => \%params, required => [ 'managers' ]);
     General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
-    # Firstly apply the policies presets on the cluster creation paramters.
+    # Firstly apply the policies presets on the cluster creation parameters.
     for my $policy_id (@{ $params{policies} }) {
         my $policy = Entity::Policy->get(id => $policy_id);
 
         # Load params preset into hash
-        my $policy_presets = $policy->getParamPreset->load();
+        my $policy_presets = $policy->param_preset->load();
 
         # Merge current polciy preset with others
         %params = %{ $merge->merge(\%params, \%$policy_presets) };
@@ -404,6 +393,8 @@ sub configureManagers {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, optional => { 'managers' => undef });
+
     # Workaround to handle connectors that have btoh category.
     # We need to fix this when we willmerge inside/outside.
     my ($wok_disk_manager, $wok_export_manager);
@@ -488,6 +479,7 @@ sub configureManagers {
     my $readonly_param = $export_manager->getReadOnlyParameter(
                              readonly => $self->getAttr(name => 'cluster_si_shared')
                          );
+
     # TODO: This will be usefull for the first call to applyPolicies at the cluster creation,
     #       but there will be export manager params consitency problem if policies are updated.
     if ($readonly_param) {
@@ -500,43 +492,21 @@ sub configureManagers {
 }
 
 sub configureInterfaces {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'interfaces' => undef });
 
     if (defined $args{interfaces}) {
         for my $interface_pattern (values %{ $args{interfaces} }) {
-            if ($interface_pattern->{interface_role}) {
-                my $role = Entity::InterfaceRole->get(id => $interface_pattern->{interface_role});
+            if ($interface_pattern->{interface_netconfs}) {
+                # TODO: Search among existing interfaces to avoid to re-create its.
 
-                # TODO: This mechanism do not allows to define many interfaces
-                #       with the same role within policies.
+                my $bonds_number = $interface_pattern->{bonds_number};
+                $bonds_number = defined $bonds_number ? $bonds_number : 0;
 
-                # Check if an interface with the same role already set, add it otherwise,
-                # Add networks to the interrface if not exists.
-                my $interface;
-                eval {
-                    $interface = Entity::Interface->find(
-                                     hash => { service_provider_id => $self->getAttr(name => 'entity_id'),
-                                               interface_role_id   => $role->getAttr(name => 'entity_id') }
-                                 );
-                };
-                if ($@) {
-                    my $default_gateway = (defined $interface_pattern->{default_gateway} && $interface_pattern->{default_gateway} == 1) ? 1 : 0;
-                    $interface = $self->addNetworkInterface(interface_role  => $role,
-                                                            default_gateway => $default_gateway);
-                }
-
-                if ($interface_pattern->{interface_networks}) {
-                    for my $network_id (@{ $interface_pattern->{interface_networks} }) {
-                        eval {
-                            $interface->associateNetwork(network => Entity::Network->get(id => $network_id));
-                        };
-                        if($@) {
-                            my $msg = 'Interface <' .$interface->id . '> already associated with network <' . $network_id . '>';
-                            $log->debug($msg);
-                        }
-                    }
-                }
+                my @netconfs = values %{ $interface_pattern->{interface_netconfs} };
+                $self->addNetworkInterface(netconfs     => \@netconfs,
+                                           bonds_number => $bonds_number);
             }
         }
     }
@@ -545,6 +515,8 @@ sub configureInterfaces {
 sub configureBillingLimits {
     my $self    = shift;
     my %args    = @_;
+
+    General::checkParams(args => \%args, optional => { 'billing_limits' => undef });
 
     if (defined($args{billing_limits})) {
         foreach my $name (keys %{$args{billing_limits}}) {

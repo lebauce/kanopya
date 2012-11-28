@@ -1,4 +1,5 @@
 #    Copyright © 2009-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -35,7 +36,6 @@ use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
 
 my $config = General::getTemplateConfiguration();
 
@@ -52,8 +52,8 @@ sub prerequisites {
     my %args  = @_;
     my $delay = 10;
 
-    my $cluster_id = $self->{context}->{cluster}->getAttr(name => 'entity_id');
-    my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
+    my $cluster_id = $self->{context}->{cluster}->id;
+    my $host_id    = $self->{context}->{host}->id;
 
     # Ask to all cluster component if they are ready for node addition.
     my @components = $self->{context}->{cluster}->getComponents(category => "all");
@@ -110,7 +110,7 @@ sub execute {
     # Firstly compute the node configuration
     
     my $mount_options = $self->{context}->{cluster}->getAttr(name => 'cluster_si_shared')
-                      ? "ro,noatime,nodiratime" : "defaults";
+                            ? "ro,noatime,nodiratime" : "defaults";
 
     # Mount the containers on the executor.
     my $mountpoint = $self->{context}->{container}->getMountPoint;
@@ -124,31 +124,26 @@ sub execute {
     my $is_masternode = $self->{context}->{cluster}->getCurrentNodesCount == 0;
 
     $log->info("Generate network configuration");
-    INTERFACES:
-    foreach my $interface (@{$self->{context}->{cluster}->getNetworkInterfaces}) {
+    IFACE:
+    foreach my $iface (@{ $self->{context}->{host}->getIfaces }) {
+        # Handle associated ifaces only
+        if ($iface->netconfs) {
+            # Public network on loadbalanced cluster must be configured only
+            # on the master node
+            if ($iface->hasRole(role => 'public') and $is_loadbalanced and not $is_masternode) {
+                next IFACE;
+            }
 
-        # public network on loadbalanced cluster must be configured only
-        # on the master node
-        my $interface_role_name = $interface->getRole->getAttr(name => 'interface_role_name');
-        if(( $interface_role_name eq 'public') and $is_loadbalanced
-            and not $is_masternode) {
-            next INTERFACES;
-        }
+            # Assign ip from the associated interface poolip
+            $iface->assignIp();
 
-        my $iface = $interface->getAssociatedIface(host => $self->{context}->{host});
-
-        # Assign ip from the associated interface poolip
-        $iface->assignIp();
-
-        # Apply VLAN's
-        for my $network ($interface->getNetworks) {
-            if ($network->isa("Entity::Network::Vlan")) {
-                $log->info("Apply VLAN on " . $iface->getAttr(name => 'iface_name'));
-                my $ehost_manager = EFactory::newEEntity(data => $self->{context}->{host}->getHostManager);
-                $ehost_manager->applyVLAN(
-                    iface => $iface,
-                    vlan  => $network
-                );
+            # Apply VLAN's
+            my $ehost_manager = EFactory::newEEntity(data => $self->{context}->{host}->getHostManager);
+            for my $netconf ($iface->netconfs) {
+                for my $vlan ($netconf->vlans) {
+                    $log->info("Apply VLAN on " . $iface->iface_name);
+                    $ehost_manager->applyVLAN(iface => $iface, vlan => $vlan);
+                }
             }
         }
     }
@@ -252,7 +247,7 @@ sub _generateBootConf {
                          required => [ 'mount_point', 'filesystem', 'options' ]);
 
     # Firstly create pxe config file if needed
-    my $boot_policy = $self->{context}->{cluster}->getAttr(name => 'cluster_boot_policy');
+    my $boot_policy = $self->{context}->{cluster}->cluster_boot_policy;
 
     if ($boot_policy =~ m/PXE/) {
         $self->_generatePXEConf(cluster     => $self->{context}->{cluster},
@@ -312,94 +307,55 @@ sub _generatePXEConf {
     General::checkParams(args     =>\%args,
                          required => ['cluster', 'host', 'mount_point']);
 
-    my $cluster_kernel_id = $args{cluster}->getAttr(name => "kernel_id");
-    my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->getAttr(name => "kernel_id");
+    my $cluster_kernel_id = $args{cluster}->kernel_id;
+    my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
 
-    my $clustername = $args{cluster}->getAttr(name => 'cluster_name');
-    my $hostname = $args{host}->getAttr(name => 'host_hostname');
+    my $clustername = $args{cluster}->cluster_name;
+    my $hostname = $args{host}->host_hostname;
 
-    my $kernel_version = Entity::Kernel->get(id => $kernel_id)->getAttr(name => 'kernel_version');
-    my $boot_policy    = $args{cluster}->getAttr(name => 'cluster_boot_policy');
+    my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+    my $boot_policy    = $args{cluster}->cluster_boot_policy;
 
     my $tftpdir = $self->{config}->{tftp}->{directory};
 
     my $nfsexport = "";
     if ($boot_policy =~ m/NFS/) {
-        $nfsexport = $self->{context}->{container_access}->getAttr(name => 'container_access_export');
+        $nfsexport = $self->{context}->{container_access}->container_access_export;
     }
 
     ## Here we create a dedicated initramfs for the node
-    # we create a temporary working directory for the initrd
+    my $linux_component = $args{cluster}->getComponent(category => "system");
+    $linux_component->buildInitramfs(cluster     => $args{cluster},
+                                     host        => $args{host},
+                                     mount_point => $args{host},
+                                    );
 
-    $log->info('Build dedicated initramfs');
-    my $initrddir = "/tmp/$clustername-$hostname";
-    my $cmd = "mkdir -p $initrddir";
-    $self->getEContext->execute(command => $cmd);
-
-    # check and retrieve compression type
-    my $initrd = "$tftpdir/initrd_$kernel_version";
-    $cmd = "file $initrd | grep -o -E '(gzip|bzip2)'";
-    my $result = $self->getEContext->execute(command => $cmd);
-    my $decompress;
-    chomp($result->{stdout});
-    if($result->{stdout} eq 'gzip') {
-        $decompress = 'zcat';
-    } elsif($result->{stdout} eq 'bzip2') {
-        $decompress = 'bzcat';
-    } else {
-        throw Kanopya::Exception::Internal(
-            error => "Invalid compress type for $initrd ; must be gzip or bzip2"
-        );
-    }
-
-    # we decompress and extract the original initrd to this directory
-    $cmd = "(cd $initrddir && $decompress $initrd | cpio -i)";
-    $self->getEContext->execute(command => $cmd);
-
-    # append files to the archive directory
-    my $sourcefile = $args{mount_point}.'/etc/udev/rules.d/70-persistent-net.rules';
-    $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
-    $self->getEContext->execute(command => $cmd);
-
-    # create the final storing directory
-    my $path = "$tftpdir/$clustername/$hostname";
-    $cmd = "mkdir -p $path";
-    $self->getEContext->execute(command => $cmd);
-
-    # rebuild and compress the new initrd
-    my $newinitrd = $path."/initrd_$kernel_version";
-    $cmd = "(cd $initrddir && find . | cpio -H newc -o | bzip2 > $newinitrd)";
-    $self->getEContext->execute(command => $cmd);
-
-    # finaly we remove the temporary directory
-    $cmd = "rm -r $initrddir";
-    $self->getEContext->execute(command => $cmd);
-
+    my $gateway  = undef;
     my $pxeiface = $args{host}->getPXEIface;
-    my $interface = $pxeiface->getInterface;
-    my $gateway = undef;
-    if ($interface->hasDefaultGateway) {
-        $gateway = $pxeiface->getPoolip()->getAttr(name => 'poolip_gateway');
+    if ($args{cluster}->default_gateway ne undef) {
+        if ($pxeiface->getPoolip->network->id == $args{cluster}->default_gateway->id) {
+            $gateway = $args{cluster}->default_gateway->network_gateway;
+        }
     }
 
     # Add host in the dhcp
     my $subnet = $self->{context}->{dhcpd_component}->getInternalSubNetId();
 
     # Set Hostname
-    my $host_hostname = $self->{context}->{host}->getAttr(name => "host_hostname");
+    my $host_hostname = $self->{context}->{host}->host_hostname;
 
     # Configure DHCP Component
-    my $tmp_kernel_id = $self->{context}->{cluster}->getAttr(name => "kernel_id");
-    my $host_kernel_id = $tmp_kernel_id ? $tmp_kernel_id : $self->{context}->{host}->getAttr(name => "kernel_id");
+    my $tmp_kernel_id = $self->{context}->{cluster}->kernel_id;
+    my $host_kernel_id = $tmp_kernel_id ? $tmp_kernel_id : $self->{context}->{host}->kernel_id;
 
     $self->{context}->{dhcpd_component}->addHost(
         dhcpd3_subnet_id                => $subnet,
         dhcpd3_hosts_ipaddr             => $pxeiface->getIPAddr,
-        dhcpd3_hosts_mac_address        => $pxeiface->getAttr(name => 'iface_mac_addr'),
+        dhcpd3_hosts_mac_address        => $pxeiface->iface_mac_addr,
         dhcpd3_hosts_hostname           => $host_hostname,
         dhcpd3_hosts_ntp_server         => $self->{context}->{bootserver}->getMasterNodeIp(),
-        dhcpd3_hosts_domain_name        => $self->{context}->{cluster}->getAttr(name => "cluster_domainname"),
-        dhcpd3_hosts_domain_name_server => $self->{context}->{cluster}->getAttr(name => "cluster_nameserver1"),
+        dhcpd3_hosts_domain_name        => $self->{context}->{cluster}->cluster_domainname,
+        dhcpd3_hosts_domain_name_server => $self->{context}->{cluster}->cluster_nameserver1,
         dhcpd3_hosts_gateway            => $gateway,
         kernel_id                       => $host_kernel_id,
         erollback                       => $self->{erollback}
@@ -440,7 +396,7 @@ sub _generatePXEConf {
                      error => "Error when processing template $input."
                  );
 
-    my $node_mac_addr = $pxeiface->getAttr(name => 'iface_mac_addr');
+    my $node_mac_addr = $pxeiface->iface_mac_addr;
     $node_mac_addr =~ s/:/-/g;
     my $dest = $tftpdir . '/pxelinux.cfg/01-' . lc $node_mac_addr ;
 
@@ -453,219 +409,3 @@ sub _generatePXEConf {
 }
 
 1;
-
-__END__
-
-=pod
-
-=head1 NAME
-
-EOperation::EStartNode - Operation class implementing Node starting operation
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement Node starting operation
-
-=head1 DESCRIPTION
-
-This operation is the second in node addition in cluster process.
-Cluster was prepare during PreStartNode, this operation :
-- create the node configuration
-- create export if node is diskless
-- configure dhcp and node network configuration
-- generate information used during node booting process (in the initramfs)
-- finally start the node (etherwake, psu or other)
-
-=head1 METHODS
-
-=head2 new
-
-my $op = EOperation::EStartNode->new();
-
-Operation::EStartNode->new creates a new AddMotheboardInCluster operation.
-return : EOperation::EStartNode : Operation add host in a cluster
-
-=head2 _init
-
-    $op->_init();
-    This private method is used to define some hash in Operation
-
-=head2 _cancel
-
-    Class : Private
-
-    Desc : This private method is used to rollback the operation
-
-=head2 prepare
-
-    Class : Private
-
-    Desc : This private method is used to prepare the operation execution
-
-=head2 _generateNodeConf
-
-    Class : Private
-
-    Desc : This is the method which call node configuration methods (udev, net...)
-
-    Args : root_dev : Hash ref : This value come from
-                                 $cluster->getSystemImage()->getDevices()->{root},
-                                 It represents information on root device of cluster's
-                                 system image
-           etc_targetname   : String : This is the targetname of etc export
-           mount_point      : String : This is the node etc disk mount point
-
-=head2 _generateHostnameConf
-
-    Class : Private
-
-    Desc : This file generate file /etc/hostname which contains node host name
-
-    Args : mount_point  : String : path to the directory where is mounted etc of node
-           hostname : String : it is the node host name
-
-=head2 _generateInitiatorConf
-
-    Class : Private
-
-    Desc : This file generate file /etc/iscsi/initiatorname.iscsi which contains node initiatorname
-
-    Args : mount_point  : String : path to the directory where is mounted etc of node
-           initatorname : String : it is the node initiator name
-
-=head2 _generateUdevConf
-
-    Class : Private
-
-    Desc : This method generates and copies /etc/udev/rules.d/70-persistent-net.rules
-           This file defines name of the network interface name with their MAC address
-
-    Args : mount_point  : String : path to the directory where is mounted etc of node
-
-=head2 _generateKanopyaHalt
-
-    Class : Private
-
-    Desc : This script generate and copy KanopyaHalt and iscsi_omitted script on /etc/init.d of node and add them into rc0.d
-
-    Args : mount_point      : String : path to the directory where is mounted etc of node
-           etc_targetname   : String : the tagetname of the etc device
-
-=head2 _generateHosts
-
-    Class : Private
-
-    Desc : This method generate and copy hosts file in /etc disk of the node
-
-    Args : mount_point      : String : path to the directory where is mounted etc of node
-
-=head2 _generateNetConf
-
-    Class : Private
-
-    Desc : This method generate and copy network configuration file
-           (man /etc/network/interface) file in /etc disk of the node
-           It disables iscsi unmount at halt time through deleting rc0.d/S35networking
-
-    Args : mount_point      : String : path to the directory where is mounted etc of node
-
-=head2 _generateBootConf
-
-    Class : Private
-
-    Desc : This method generate the boot configuration file.
-           This file contains disk connection specification and system image access method
-
-    Args : root_dev : Hash ref : This value come from
-                             $cluster->getSystemImage()->getDevices()->{root},
-                             It represents information on root device of cluster's system image
-       etc_targetname   : String : This is the targetname of etc export
-       initiatorname    : String : This is the node initiator name
-
-=head2 _generateResolvConf
-
-    Class : Private
-
-    Desc : This method generate the file /etc/resolv.conf which is the linux file to define dns server name.
-
-    Args : mount_point  : String : path to the directory where is mounted etc of node
-
-=head2 _generateNtpdateConf
-
-    Class : Private
-
-    Desc : This method generate the file /etc/default/ntpdate which is the config file of ntpdate.
-           It allows to synchronize host with time server.
-
-Args : mount_point  : String : path to the directory where is mounted etc of node
-
-
-=head2 finish
-
-    Class : Public
-
-    Desc : This method is the last execution operation method called.
-    It is used to clean and finalize operation execution
-
-    Args :
-        None
-
-    Return : Nothing
-
-    Throw
-
-=head1 DIAGNOSTICS
-
-Exceptions are thrown when mandatory arguments are missing.
-Exception : Kanopya::Exception::Internal::IncorrectParam
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
-
-=head1 DEPENDENCIES
-
-This module depends of
-
-=over
-
-=item KanopyaException module used to throw exceptions managed by handling programs
-
-=item Entity::Component module which is its mother class implementing global component method
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Copyright 2011 Hedera Technology SAS
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-

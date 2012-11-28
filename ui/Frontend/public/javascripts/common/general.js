@@ -187,7 +187,7 @@ function getReadableSize(sizeInBytes, exactValue) {
 function addFieldUnit(field_info, cont, id, selected_unit) {
     if (field_info && field_info.unit) {
         if (field_info.unit == 'byte') {
-            var select_unit     = $('<select>', {'id' : id});
+            var select_unit     = $('<select>', { id: id });//, width: 50 });
             //var unit_options    = {'B' : 1, 'KB' : 1024, 'MB' : 1024*1024, 'GB' : 1024*1024*1024};
             var unit_options    = {'MB' : 1024*1024, 'GB' : 1024*1024*1024};
             $.each(unit_options, function(label, byte) { select_unit.append($('<option>', { value: byte, html: label}))});
@@ -195,8 +195,9 @@ function addFieldUnit(field_info, cont, id, selected_unit) {
             if (selected_unit) {
                 select_unit.find('[value="'+ unit_options[selected_unit] +'"]').attr('selected', 'selected');
             }
+            select_unit.addClass('wizard-ignore');
         } else {
-            $(cont).append( field_info.unit );
+            $(cont).append($("<label>", { text : ' ' + field_info.unit }));
         }
     }
     return select_unit;
@@ -237,7 +238,7 @@ function getRawValue(val, unit_field_id) {
         val = val.substr(1);
         return prefix + (val * getUnitMultiplicator(unit_field_id));
     }
-    return isNaN( parseInt(val)) ? val : val * getUnitMultiplicator(unit_field_id);
+    return isNaN(parseInt(val)) ? val : val * getUnitMultiplicator(unit_field_id);
 }
 
 function ajax(method, route, data, onsuccess, onerror) {

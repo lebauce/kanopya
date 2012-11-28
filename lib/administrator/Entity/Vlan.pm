@@ -15,16 +15,23 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-
-package Entity::Network::Vlan;
-use base "Entity::Network";
+package Entity::Vlan;
+use base "Entity";
 
 use constant ATTR_DEF => {
+    vlan_name => {
+        label        => 'Name',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1,
+    },
     vlan_number => {
+        label        => 'Number',
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_extended  => 0,
-        is_editable  => 0,
+        is_editable  => 1,
     },
 };
 
@@ -51,13 +58,7 @@ sub new {
 
 sub toString {
     my $self = shift;
-    return "Vlan <" . $self->getAttr(name => 'network_name') .
-           ">, number <" . $self->getAttr(name => 'vlan_number') . ">.";
-}
-
-sub getNetworksPoolipsDbix {
-    my $self = shift;
-    return $self->{_dbix}->parent->network_poolips;
+    return "Vlan <" . $self->vlan_name . ">, number <" . $self->vlan_number . ">.";
 }
 
 1;

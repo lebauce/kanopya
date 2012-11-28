@@ -26,7 +26,8 @@ use Entity::ServiceProvider::Inside::Cluster;
 use General;
 use Kanopya::Config;
 use EFactory;
-use Entity::InterfaceRole;
+use EEntity;
+use Entity::NetconfRole;
 
 use Template;
 use String::Random;
@@ -84,28 +85,25 @@ sub create {
         }
     );
 
-    # Automatically add the admin interface if not exists
-    my $adminrole = Entity::InterfaceRole->find(hash => { interface_role_name => 'admin' });
+    # Automatically add the admin interface if it does not exists
+    my $adminrole = Entity::NetconfRole->find(hash => { netconf_role_name => 'admin' });
     eval {
-        Entity::Interface->find(
-            hash => { service_provider_id => $self->getAttr(name => 'entity_id'),
-                      interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
-        );
+        Entity::Interface->find(hash => {
+            service_provider_id => $self->id,
+            'netconf_interfaces.netconf.netconf_role.netconf_role_id' => $adminrole->id
+        });
     };
     if ($@) {
         $log->debug("Automatically add the admin interface as it is not defined.");
 
         my $kanopya   = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
-        my $interface = Entity::Interface->find(
-                            hash => { service_provider_id => $kanopya->getAttr(name => 'entity_id'),
-                                      interface_role_id   => $adminrole->getAttr(name => 'entity_id') }
-                        );
+        my $interface = Entity::Interface->find(hash => {
+                            service_provider_id => $kanopya->id,
+                            'netconf_interfaces.netconf.netconf_role.netconf_role_id' => $adminrole->id
+                        });
 
-        $self->addNetworkInterface(
-            interface_role  => $adminrole,
-            networks        => $interface->getNetworks,
-            default_gateway => 1
-        );
+        my @netconfs = $interface->netconfs;
+        $self->addNetworkInterface(netconfs => \@netconfs);
     }
 }
 
@@ -115,16 +113,14 @@ sub addNode {
 
     my $host_manager = $self->getManager(manager_type => 'host_manager');
     my $host_manager_params = $self->getManagerParameters(manager_type => 'host_manager');
+   
+    my @interfaces = $self->interfaces;
+    $host_manager_params->{interfaces} = \@interfaces;
 
-    # Add the number of required ifaces to paramaters.
-    my @interfaces = $self->getNetworkInterfaces;
-    $host_manager_params->{ifaces} = scalar(@interfaces);
-
-    my $ehost_manager = EFactory::newEEntity(data => $host_manager);
+    my $ehost_manager = EEntity->new(entity => $host_manager);
     my $host = $ehost_manager->getFreeHost(%$host_manager_params);
 
-    $log->debug("Host manager <" . $host_manager->id .
-                "> returned free host " . (ref $host));
+    $log->debug("Host manager <" . $host_manager->id . "> returned free host <$host>");
 
     return $host;
 }
@@ -291,6 +287,90 @@ sub updateHostsFile {
     $self->getExecutorEContext->send(src => $kanopya_hostfile, dest => "/etc/hosts");
 }
 
+sub checkComponents {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my @components = $self->getComponents(category => "all");
+    foreach my $component (@components) {
+        my $component_name = $component->component_type->component_name;
+        $log->debug("Browsing component: " . $component_name);
+
+        my $ecomponent = EFactory::newEEntity(data => $component);
+
+        if (not $ecomponent->isUp(host => $args{host}, cluster => $self)) {
+            $log->info("Component <$component_name> not yet operational on host <" . $args{host}->id .  ">");
+            return 0;
+        }
+    }
+    return 1;
+}
+
+sub postStartNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my @components = $self->getComponents(category => "all", order_by => "priority");
+
+    $log->info('Processing cluster components configuration for this node');
+    foreach my $component (@components) {
+        EFactory::newEEntity(data => $component)->postStartNode(
+            cluster   => $self,
+            host      => $args{host},
+            erollback => $args{erollback}
+        );
+    }
+}
+
+sub stopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my @components = $self->getComponents(category => "all");
+    $log->info('Processing cluster components configuration for this node');
+
+    foreach my $component (@components) {
+        EFactory::newEEntity(data => $component)->stopNode(
+            host    => $args{host},
+            cluster => $self
+        );
+    }
+}
+
+sub readyNodeRemoving {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    # Ask to all cluster component if they are ready for node addition.
+    my @components = $self->getComponents(category => "all");
+    foreach my $component (@components) {
+        if (not $component->readyNodeRemoving(host_id => $args{host}->id)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+sub postStopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my @components = $self->getComponents(category => "all");
+
+    # Ask to all cluster component if they are ready for node addition.
+    foreach my $component (@components) {
+        EFactory::newEEntity(data => $component)->postStopNode(
+            host    => $args{host},
+            cluster => $self
+        );
+    }
+}
+
 sub getEContext {
     my $self = shift;
 
@@ -299,12 +379,3 @@ sub getEContext {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

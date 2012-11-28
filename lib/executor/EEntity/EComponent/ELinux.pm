@@ -1,16 +1,31 @@
-#    Copyright © 2011 Hedera Technology SAS
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
+# Copyright © 2011 Hedera Technology SAS
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
 #
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+
+=begin classdoc
+
+Linux component base class to generate system configuration files.
+
+@since    2012-Jun-10
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package EEntity::EComponent::ELinux;
 use base 'EEntity::EComponent';
 
@@ -101,7 +116,7 @@ sub generateConfiguration {
 sub preconfigureSystemimage {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
-                         required => ['files','cluster','host','mount_point']);
+                         required => [ 'files', 'cluster', 'host', 'mount_point' ]);
 
     my $econtext = $self->getExecutorEContext;
     
@@ -124,6 +139,20 @@ sub preconfigureSystemimage {
 }
 
 # individual file generation
+
+=pod
+
+=begin classdoc
+
+Generate the hostname configuration file
+
+@param host Entity::Host instance
+@param cluster Entity::ServiceProvider::Inside::Cluster instance
+@return hashref with src as full path of the generated file, dest as the full path destination
+
+=end classdoc
+
+=cut
 
 sub _generateHostname {
     my ($self, %args) = @_;
@@ -358,7 +387,7 @@ sub _generateNetConf {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'mount_point', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
 
     # search for an potential 'loadbalanced' component
     my $cluster_components = $args{cluster}->getComponents(category => "all");
@@ -374,47 +403,138 @@ sub _generateNetConf {
 
     # Pop an IP adress for all host iface,
     my @net_ifaces;
-    INTERFACES:
-    foreach my $interface (@{$args{cluster}->getNetworkInterfaces}) {
-        my $iface;
-        eval {
-            $iface = $interface->getAssociatedIface(host => $args{host});
-        };
-        if ($@) {
-            $log->debug("Skipping configuration for interface " . $interface->getRole->interface_role_name);
-            next INTERFACES;
+    IFACES:
+    foreach my $iface (@{ $args{host}->getIfaces }) {
+        if (not $iface->netconfs) {
+            $log->debug("Skipping configuration for non associated iface " . $iface->iface_name);
+            next IFACES;
         }
 
         # Only add non pxe iface to /etc/network/interfaces
-        if (not $iface->getAttr(name => 'iface_pxe')) {
+        if (not $iface->iface_pxe) {
+
             my ($gateway, $netmask, $ip, $method);
 
             if ($iface->hasIp) {
-                my $pool = $iface->getPoolip;
-                $netmask = $pool->poolip_netmask;
-                $ip = $iface->getIPAddr;
-                $gateway = $interface->hasDefaultGateway() ? $pool->poolip_gateway : undef;
-                $method = "static";
+                my $network = $iface->getPoolip->network;
+                $netmask    = $network->network_netmask;
+                $ip         = $iface->getIPAddr;
+
                 if ($is_loadbalanced and not $is_masternode) {
-                    $gateway = $args{cluster}->getMasterNodeIp
+                    $gateway = $args{cluster}->getMasterNodeIp;
                 }
+                else {
+                    $gateway = ($network->id == $args{cluster}->default_gateway->id) ? $network->network_gateway : undef;
+                }
+                $method = "static";
             }
             else {
                 $method = "manual";
             }
 
-            push @net_ifaces, { method  => $method,
-                                name    => $iface->iface_name,
-                                address => $ip,
-                                netmask => $netmask,
-                                gateway => $gateway,
-                                role    => $interface->getRole->interface_role_name };
+            my $net_iface = { method  => $method,
+                              name    => $iface->iface_name,
+                              address => $ip,
+                              netmask => $netmask,
+                              gateway => $gateway, };
 
-            $log->info("Iface " .$iface->iface_name . " configured via static file");
+            #check if iface has slaves (for bonding purposes)
+            if ($iface->slaves > 0) {
+                my @unsorted_slaves;
+                my @slaves;
+                my %sort;
+
+                foreach my $slave ($iface->slaves) {
+                    push @net_ifaces, { name => $slave->iface_name,
+                                        type => 'slave'};
+
+                    push @unsorted_slaves , $slave->iface_name;
+                }
+
+                foreach my $if (@unsorted_slaves) {
+                    my $if_copy = $if;
+                    $if_copy =~ s/[^0-9]//g;
+                    $sort{$if}  = $if_copy;
+                }
+
+                @slaves = sort { $sort{$a} <=> $sort{$b} } keys %sort;
+
+                $net_iface->{slaves} = \@slaves;
+                $net_iface->{type}   = 'master';
+            }
+
+            push @net_ifaces, $net_iface;
+
+            $log->info("Iface " . $iface->iface_name . " configured via static file");
         }
     }
 
-    $self->_writeNetConf(interfaces => \@net_ifaces, %args);
+    $self->_writeNetConf(ifaces => \@net_ifaces, %args);
+}
+
+sub buildInitramfs {
+    my ($self, %args) = @_;
+    General::checkParams(args     =>\%args,
+                         required => ['cluster', 'host', 'mount_point']);
+    
+    my $econtext = $self->getExecutorEContext;
+    
+    my $cluster_kernel_id = $args{cluster}->kernel_id;
+    my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
+
+    my $clustername = $args{cluster}->cluster_name;
+    my $hostname = $args{host}->host_hostname;
+
+    my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+
+    my $tftpdir = $self->{config}->{tftp}->{directory};
+
+    ## Here we create a dedicated initramfs for the node
+    # we create a temporary working directory for the initrd
+
+    $log->info('Build dedicated initramfs');
+    my $initrddir = "/tmp/$clustername-$hostname";
+    my $cmd = "mkdir -p $initrddir";
+    $econtext->execute(command => $cmd);
+
+    # check and retrieve compression type
+    my $initrd = "$tftpdir/initrd_$kernel_version";
+    $cmd = "file $initrd | grep -o -E '(gzip|bzip2)'";
+    my $result = $econtext->execute(command => $cmd);
+    my $decompress;
+    chomp($result->{stdout});
+    if($result->{stdout} eq 'gzip') {
+        $decompress = 'zcat';
+    } elsif($result->{stdout} eq 'bzip2') {
+        $decompress = 'bzcat';
+    } else {
+        throw Kanopya::Exception::Internal(
+            error => "Invalid compress type for $initrd ; must be gzip or bzip2"
+        );
+    }
+
+    # we decompress and extract the original initrd to this directory
+    $cmd = "(cd $initrddir && $decompress $initrd | cpio -i)";
+    $econtext->execute(command => $cmd);
+
+    # append files to the archive directory
+    my $sourcefile = $args{mount_point}.'/etc/udev/rules.d/70-persistent-net.rules';
+    $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
+    $econtext->execute(command => $cmd);
+
+    # create the final storing directory
+    my $path = "$tftpdir/$clustername/$hostname";
+    $cmd = "mkdir -p $path";
+    $econtext->execute(command => $cmd);
+
+    # rebuild and compress the new initrd
+    my $newinitrd = $path."/initrd_$kernel_version";
+    $cmd = "(cd $initrddir && find . | cpio -H newc -o | bzip2 > $newinitrd)";
+    $econtext->execute(command => $cmd);
+
+    # finaly we remove the temporary directory
+    $cmd = "rm -r $initrddir";
+    $econtext->execute(command => $cmd);
 }
 
 sub service {
@@ -435,5 +555,7 @@ sub _writeNetConf {
 
     $log->info("Skipping configuration of network for cluster " . $args{cluster}->cluster_name);
 }
+
+
 
 1;

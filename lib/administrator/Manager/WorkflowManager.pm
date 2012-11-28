@@ -249,8 +249,8 @@ sub cloneWorkflow {
     my $rule_id = $args{rule_id};
 
     # Get original workflow def and params
-    my $wf_def      = WorkflowDef->get( id => $args{workflow_def_id});
-    my $wf_params   = $wf_def->getParamPreset();
+    my $wf_def      = WorkflowDef->get(id => $args{workflow_def_id});
+    my $wf_params   = $wf_def->paramPresets;
     my $wf_name     = $wf_def->workflow_def_name;
 
     # Replacing in workflow name the id of original rule with id of this rule

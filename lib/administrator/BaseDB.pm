@@ -1518,6 +1518,11 @@ sub populateRelations {
                 }
             }
             elsif ($attrdef->{relation} eq 'multi') {
+                # If instances are given in parameters instead of ids, use the ids
+                if (ref($entry)) {
+                    $entry = $entry->id;
+                }
+
                 my $exists = delete $exsting->{$entry};
                 if (not $exists) {
                     # Create entries in the link table

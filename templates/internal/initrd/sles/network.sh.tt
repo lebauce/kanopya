@@ -1,0 +1,3 @@
+[ "$static_macaddresses" ] || static_macaddresses='[% static_macaddress %]'
+[ "$static_ips" ] || static_ips='[% static_ips %]'
+[ "$drvlink" ] || drvlink=''

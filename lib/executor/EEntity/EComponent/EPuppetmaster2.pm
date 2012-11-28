@@ -15,6 +15,8 @@ package EEntity::EComponent::EPuppetmaster2;
 use base 'EEntity::EComponent';
 
 use strict;
+use warnings;
+
 use Template;
 use Log::Log4perl 'get_logger';
 

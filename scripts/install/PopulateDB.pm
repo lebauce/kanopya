@@ -11,10 +11,10 @@ use ComponentType;
 use Entity::Component;
 use Entity::WorkflowDef;
 use Operationtype;
-use NetworkPoolip;
 use Entity::Policy;
 use Entity::ServiceTemplate;
-use Entity::InterfaceRole;
+use Entity::Netconf;
+use Entity::NetconfRole;
 use Entity::Network;
 use Entity::Kernel;
 use Entity::Host;
@@ -41,7 +41,6 @@ use Entity::Poolip;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Network;
 use Entity::Interface;
-use NetworkPoolip;
 use Entity::Iface;
 use Ip;
 use Externalnode::Node;
@@ -66,6 +65,9 @@ use Entity::Component::Linux::Debian;
 use Entity::Component::Linux::Redhat;
 use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
+use NetconfInterface;
+use NetconfPoolip;
+use NetconfIface;
 
 # Catch warnings to clean the setup output (this warnings are not kanopya code related)
 $SIG{__WARN__} = sub {
@@ -114,7 +116,7 @@ my @classes = (
     'Entity::ServiceProvider::Outside::Externalcluster',
     'Entity::Component::Physicalhoster0',
     'Entity::Poolip',
-    'Entity::Network::Vlan',
+    'Entity::Vlan',
     'Entity::Masterimage',
     'Entity::Connector',
     'Entity::Connector::UcsManager',
@@ -128,7 +130,8 @@ my @classes = (
     'Entity::ContainerAccess::FileContainerAccess',
     'Entity::NfsContainerAccessClient',
     'Entity::Network',
-    'Entity::InterfaceRole',
+    'Entity::Netconf',
+    'Entity::NetconfRole',
     'Entity::Interface',
     'Entity::Iface',
     'Entity::NetappAggregate',
@@ -706,7 +709,7 @@ sub registerComponents {
     }
 }
 
-sub registerInterfaceRoles {
+sub registerNetconfRoles {
     my %args = @_;
 
     my @roles = ( [ 'admin', 'Network used for system administration' ],
@@ -715,8 +718,8 @@ sub registerInterfaceRoles {
                   [ 'private', 'Private network' ] );
 
     for my $role (@roles) {
-        Entity::InterfaceRole->new(
-            interface_role_name => $role->[0]
+        Entity::NetconfRole->new(
+            netconf_role_name => $role->[0]
         )->setComment(comment => $role->[1]);
     }
 }
@@ -901,6 +904,13 @@ sub registerIndicators {
 sub registerKanopyaMaster {
     my %args = @_;
 
+    my $admin_network = Entity::Network->new(
+                            network_name    => "admin",
+                            network_addr    => $args{ipv4_internal_network_ip},
+                            network_netmask => $args{poolip_netmask},
+                            network_gateway => $args{poolip_gateway}
+                        );
+
     my $admin = Entity::User->find(hash => { user_login => "admin" });
 
     my $master_kernel = Entity::Kernel->find(hash => { });
@@ -920,6 +930,7 @@ sub registerKanopyaMaster {
                             cluster_nameserver2   => '127.0.0.1',
                             cluster_state         => 'up:' . time(),
                             cluster_basehostname  => 'kanopya_',
+                            default_gateway_id    => $admin_network->id,
                             active                => 1,
                             user_id               => $admin->id,
                             kernel_id             => $master_kernel->id
@@ -1087,31 +1098,15 @@ sub registerKanopyaMaster {
         . join('.', reverse split(/\./, $domain)) . ':' . time();
 
     my $poolip = Entity::Poolip->new(
-                     poolip_name    => "kanopya_admin",
-                     poolip_addr    => $args{poolip_addr},
-                     poolip_mask    => $args{poolip_mask},
-                     poolip_netmask => $args{poolip_netmask},
-                     poolip_gateway => $args{poolip_gateway}
+                     poolip_name       => "kanopya_admin",
+                     poolip_first_addr => $args{poolip_addr},
+                     poolip_size       => $args{poolip_mask},
+                     network_id        => $admin_network->id,
                  );
 
-    my $admin_network = Entity::Network->new(
-                            network_name => "admin"
-                        );
-
-    my $admin_role = Entity::InterfaceRole->find(hash => { interface_role_name => "admin" });
-
     my $admin_interface = Entity::Interface->new(
-                              interface_role_id   => $admin_role->id,
                               service_provider_id => $admin_cluster->id,
-                              default_gateway  => 1
                           );
-
-    $admin_interface->associateNetwork(network => $admin_network);
-
-    NetworkPoolip->new(
-        network_id => $admin_network->id,
-        poolip_id  => $poolip->id
-    );
 
     my $physical_hoster = Entity::Component::Physicalhoster0->find(hash => { });
 
@@ -1134,7 +1129,6 @@ sub registerKanopyaMaster {
                           iface_mac_addr => $args{mb_hw_address},
                           iface_pxe      => 0,
                           host_id        => $admin_host->id,
-                          interface_id   => $admin_interface->id
                       );
 
     Ip->new(
@@ -1142,6 +1136,16 @@ sub registerKanopyaMaster {
         poolip_id => $poolip->id,
         iface_id  => $admin_iface->id
     );
+
+    my $admin_role = Entity::NetconfRole->find(hash => { netconf_role_name => "admin" });
+
+    my $netconf = Entity::Netconf->new(netconf_name => "Kanopya admin",);
+    $netconf->setAttr(name => 'netconf_role_id', value => $admin_role->id);
+    $netconf->save();
+
+    NetconfInterface->new(netconf_id => $netconf->id, interface_id => $admin_interface->id);
+    NetconfPoolip->new(netconf_id => $netconf->id, poolip_id => $poolip->id);
+    NetconfIface->new(netconf_id => $netconf->id, iface_id => $admin_iface->id);
 
     Externalnode::Node->new(
         externalnode_hostname => $hostname,
@@ -1196,17 +1200,17 @@ sub registerScopes {
 }
 
 sub populate_workflow_def {
-    my $wf_manager_component_type_id = ComponentType->find( hash => {
+    my $wf_manager_component_type_id = ComponentType->find(hash => {
                                            component_category => 'Workflowmanager'
-                                       } )->id;
+                                       })->id;
 
-    my $kanopya_wf_manager           = Entity::Component->find( hash => {
-                                           component_type_id => $wf_manager_component_type_id,
-                                           service_provider_id => Kanopya::Config::get('executor')->{cluster}->{executor}
-                                       } );
+    my $kanopya_wf_manager = Entity::Component->find(hash => {
+                                 component_type_id   => $wf_manager_component_type_id,
+                                 service_provider_id => Kanopya::Config::get('executor')->{cluster}->{executor}
+                             });
 
-    my $scale_op_id                  = Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
-    my $scale_amount_desc            = "Format:\n - '+value' to increase\n - '-value' to decrease\n - 'value' to set";
+    my $scale_op_id       = Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
+    my $scale_amount_desc = "Format:\n - '+value' to increase\n - '-value' to decrease\n - 'value' to set";
 
     # ScaleIn cpu workflow def
     my $scale_cpu_wf = $kanopya_wf_manager->createWorkflow(
@@ -1343,13 +1347,12 @@ sub populate_policies {
                          } );
 
     $policies{hosting} = Entity::Policy->new(
-        policy_name => 'Default physical host',
-        policy_desc => 'Hosting policy for default physical hosts',
-        policy_type => 'hosting',
-        host_manager_id     => $physicalhoster->id,
-        ram      => 1024,
-        ram_unit => 'M',
-        cpu      => 1,
+        policy_name     => 'Default physical host',
+        policy_desc     => 'Hosting policy for default physical hosts',
+        policy_type     => 'hosting',
+        host_manager_id => $physicalhoster->id,
+        ram             => 1024*1024*1024,
+        cpu             => 1,
     );
 
     # storage
@@ -1367,18 +1370,17 @@ sub populate_policies {
     );
 
     # network
-    my $interfacerole = Entity::InterfaceRole->find(hash => {interface_role_name => 'admin'});
-    my $network = Entity::Network->find(hash => {network_name => 'admin'});
+    my $netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
+    my $network = Entity::Network->find(hash => { network_name => 'admin' });
     $policies{network} = Entity::Policy->new(
         policy_name => 'Default network configuration',
         policy_desc => 'Default network configuration, with admin and public interfaces',
         policy_type => 'network',
-        cluster_nameserver1 => '127.0.0.1',
-        cluster_nameserver2 => '127.0.0.1',
-        cluster_domainname  => 'hedera-technology.com',
-        interface_role_0    => $interfacerole->id,
-        interface_networks_0 => $network->id,
-        default_gateway_0    => 1
+        cluster_nameserver1  => '127.0.0.1',
+        cluster_nameserver2  => '127.0.0.1',
+        cluster_domainname   => 'hedera-technology.com',
+        default_gateway_id   => $network->id,
+        interface_netconfs_0 => [ $netconf->id ],
     );
 
     # scalability
@@ -1476,7 +1478,7 @@ sub populateDB {
     registerProcessorModels(%args);
     registerOperations(%args);
     registerComponents(%args);
-    registerInterfaceRoles(%args);
+    registerNetconfRoles(%args);
     registerIndicators(%args);
     registerKanopyaMaster(%args);
     registerScopes(%args);

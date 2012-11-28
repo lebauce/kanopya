@@ -30,36 +30,30 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 
-=head2 getHost
+=pod
 
-    Class : Public
+=begin classdoc
 
-    Desc :  Select and return the more suitable host according to constraints
+Select and return the more suitable host according to constraints
 
-    Args :  core : min number of desired core
-            ram  : min amount of desired ram  # TODO manage unit (M,G,..)
+All constraints args are optional, not defined means no constraint for this arg
+Final constraints are intersection of input constraints and cluster components contraints.
 
-            All constraints args are optional, not defined means no constraint for this arg
-            Final constraints are intersection of input constraints and cluster components contraints.
+@optional core min number of desired core
+@optional ram  min amount of desired ram  # TODO manage unit (M,G,..)
 
-    Return : Entity::Host
+@return Entity::Host
+
+=end classdoc
 
 =cut
 
 sub getHost {
-    my $self = shift;
-    my %args = @_;
-    my ($default_core, $default_ram) = (1, "512M");
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ "host_manager_id" ]);
-
-    # Set default Ram and convert in B.
-    my $ram = defined $args{ram} ? $args{ram} : $default_ram;
-    my ($value, $unit) = General::convertSizeFormat(size => $ram);
-    $args{ram} = General::convertToBytes(value => $value, units => $unit);
-
-    # Set default core
-    $args{core} = $default_core if (not defined $args{core});
+    General::checkParams(args => \%args, required => [ "host_manager_id" ],
+                                         optional => { ram  => 512 * 1024 * 1024,
+                                                       core => 1 });
 
     $log->debug("Host selector search for a node with ram : <$args{ram}> and core : <$args{core}>");
 
@@ -67,7 +61,7 @@ sub getHost {
     my $host_manager = Entity->get(id => $args{host_manager_id});
     my @free_hosts = $host_manager->getFreeHosts();
 
-    # Keep only hosts matching constraints (cpu, mem)
+    # Keep only hosts matching constraints (cpu, mem, interfaces)
     my @valid_hosts = grep { $self->_matchHostConstraints(host => $_, %args) } @free_hosts;
 
     if (scalar @valid_hosts == 0) {
@@ -83,9 +77,25 @@ sub getHost {
     return $host;
 }
 
+=pod
+
+=begin classdoc
+
+Filter the hosts with the given contraints
+
+@param host
+@optional ram
+@optional cpu
+@optional ifaces a number of interfaces
+
+@return boolean
+
+=end classdoc
+
+=cut
+
 sub _matchHostConstraints {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args)  = @_;
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
@@ -101,12 +111,59 @@ sub _matchHostConstraints {
         }
     }
 
-    if (defined $args{ifaces}) {
-        my @ifaces = $host->getIfaces();
+    if (defined $args{interfaces}) {
+        my @ifaces = $host->ifaces;
         my $nb_ifaces = scalar(@ifaces);
-        if ($args{ifaces} > $nb_ifaces) {
-            $log->info("constraint 'ifaces' ($nb_ifaces) >= $args{ifaces}");
+
+        #We gather the number of interfaces that has to be available from the host
+        #Plus we check if the bonded iface meet the bonded interfaces slaves requirements
+        my $nb_common_interfaces;
+        my @copy_ifaces = @ifaces;
+        my @common_ifaces = grep {!$_->master && scalar @{$_->slaves} == 0} @ifaces;
+
+        foreach my $interface (@{ $args{interfaces} }) {
+            if ($interface->bonds_number > 0) {
+                my @matchs = grep {scalar @{$_->slaves} == $interface->bonds_number} @copy_ifaces;
+                if (scalar @matchs != 0) {
+                    #retain one of the match to delete it from the parsed ifaces
+                    my %retained;
+                    $retained{$matchs[0]} = 1;
+                    @copy_ifaces = grep {!$retained{$_}} @copy_ifaces;
+                }
+                else {
+                    $log->info('host ' .$host->id. ' cannot meet the cluster bond requirements');
+                    return 0;
+                }
+            }
+            else {
+                $nb_common_interfaces++;
+            }
+        }
+
+        if ($nb_common_interfaces > scalar @common_ifaces) {
+            my $msg = 'host ' .$host->id. ' does not have enough common ifaces (' . scalar @common_ifaces;
+            $msg   .= ' ) to meet the cluster common interface requirements (' .$nb_common_interfaces. ')';
+            $log->info($msg);
             return 0;
+        }
+
+        #Does any of the host's iface has a netconf?
+        #At least one of the cluster's interface must have the same netconf
+        my @configured_ifaces = $host->configuredIfaces;
+        if (scalar @configured_ifaces > 0) {
+            foreach my $configured_iface (@configured_ifaces) {
+                my $configured_interface_netconfs = $configured_iface->netconfs;
+                my @matchs;
+                foreach my $netconf (@$configured_interface_netconfs) {
+                    push @matchs, grep {$netconf->id == $_->netconf->id} @{ $args{interface} };
+                }
+                if (scalar @matchs == 0) {
+                    my $msg = 'There is no cluster interface sharing any of iface ';
+                    $msg   .= $configured_iface->id . ' netconf';
+                    $log->info($msg);
+                    return 0;
+                }
+            }
         }
     }
 

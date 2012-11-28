@@ -178,7 +178,7 @@ sub getFreeHosts {
     my $where = {
         active          => 1,
         host_state      => {-like => 'down:%'},
-        host_manager_id => $self->getAttr(name => 'entity_id')
+        host_manager_id => $self->id
     };
 
     my @hosts = Entity::Host->getHosts(hash => $where);

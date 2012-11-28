@@ -123,7 +123,7 @@ use constant ATTR_DEF => {
         link_to      => 'profile',
         is_mandatory => 0,
         is_editable  => 1,
-    }
+    },
 };
 
 sub getAttrDef{ return ATTR_DEF; }

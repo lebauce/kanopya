@@ -1,0 +1,2 @@
+[ "$rootdev" ] || rootdev='[% rootdev %]'
+[ "$rootfsck" ] || rootfsck='[% rootfsck %]'

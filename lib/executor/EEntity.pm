@@ -52,13 +52,8 @@ my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-=head2 new
 
-    my $mb = Entity->new();
-
-Entity>new($data : hash EntityData) creates a new entity execution object.
-
-=cut
+my $mocks_classes = {};
 
 sub new {
     my ($class, %args) = @_;
@@ -71,6 +66,9 @@ sub new {
         my $entityclass = ref($args{entity});
         $entityclass =~s/\:\:/\:\:E/g;
         $class = "E".$entityclass;
+        
+        # Use a possibly defined mock for this execution class
+        $class = $mocks_classes->{$class} ? $class . '::' . $mocks_classes->{$class} : $class;
 
         while ($class ne "EEntity") {
             my $location = General::getLocFromClass(entityclass => $class);
@@ -88,7 +86,6 @@ sub new {
         }
     }
 
-    
     my $config = Kanopya::Config::get('executor');
 
     my $self = {
@@ -129,8 +126,8 @@ sub generateNodeFile {
     my $config = Kanopya::Config::get('executor');
     my $econtext = $self->getExecutorEContext();
     my $path = $config->{clusters}->{directory};
-    $path .= '/' . $args{cluster}->getAttr(name => 'cluster_name');
-    $path .= '/' . $args{host}->getAttr(name => 'host_hostname');
+    $path .= '/' . $args{cluster}->cluster_name;
+    $path .= '/' . $args{host}->host_hostname;
     $path .= '/' . $args{file};
     my ($filename, $directories, $prefix) = fileparse($path);
     $econtext->execute(command => "mkdir -p $directories");
@@ -140,9 +137,9 @@ sub generateNodeFile {
         INTERPOLATE  => 0,               # expand "$var" in plain text
         POST_CHOMP   => 0,               # cleanup whitespace
         EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE => 1,                   # desactive par defaut
+        RELATIVE     => 1,               # desactive par defaut
     };
-    
+
     my $template = Template->new($template_conf);
     eval {
         $template->process($args{template_file}, $args{data}, $path);
@@ -153,6 +150,15 @@ sub generateNodeFile {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
     return $path;
+}
+
+sub setMock {
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, optional => { 'mock' => undef });
+
+    $mocks_classes->{$class} = $args{mock};
 }
 
 sub AUTOLOAD {
@@ -171,12 +177,3 @@ sub DESTROY {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
