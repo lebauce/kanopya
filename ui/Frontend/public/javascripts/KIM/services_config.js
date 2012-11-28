@@ -23,6 +23,11 @@ function loadServicesConfig(cid, eid) {
 
                     // Find the component class, use generix component instead.
                     var componentClass;
+
+                    // Work around to handle components without version number
+                    if (window[componentName.ucfirst()] == undefined) {
+                        componentName = componentName.substring(0, componentName.length - 1);
+                    }
                     if (componentClass = window[componentName.ucfirst()]) {
                         // Open the configuration modal
                         (new componentClass(e.pk)).configure();
