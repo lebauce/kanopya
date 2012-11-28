@@ -131,7 +131,10 @@ var KanopyaFormWizard = (function() {
             delete attributes[displayed[name]];
         }
         for (hidden in attributes) {
-            attributes[hidden].hidden = true;
+            // An attr can be forced to be not hidden
+            if (attributes[hidden].hidden !== false) {
+                attributes[hidden].hidden = true;
+            }
             ordered_attributes[hidden] = attributes[hidden];
         }
 
@@ -432,8 +435,6 @@ var KanopyaFormWizard = (function() {
                     removeButton.addClass('wizard-ignore');
                     removeButton.bind('click', function () {
                         $(line).remove();
-                        console.log($(table).find('tr'));
-                        console.log($(table).find('tr').length);
                         if ($(table).find('tr').length <= 3) {
                             $(labelsline).remove();
                             $(errorsline).remove();

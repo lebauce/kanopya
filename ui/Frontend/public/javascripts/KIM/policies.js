@@ -27,7 +27,23 @@ function load_policy_content (container_id) {
                 addOrchestrationPolicy(policy_opts, grid);
             }
         });
+
+        // Add another button to try the experimental mode
+        var buttonexp = $("<button>", {html : 'Add a ' + policy_type + ' policy (experimental)'}).button({
+            icons   : { primary : 'ui-icon-plusthick' }
+        });
+
+        buttonexp.bind('click', function() {
+            // Use the kanopyaformwizard for policies (experimental)
+            (new KanopyaFormWizard({
+                title          : 'Add a ' + policy_type + ' policy (experimental)',
+                type           : 'policy',
+                displayed      : [ 'policy_name', 'policy_desc' ]
+        })).start();
+        });
+
         $('#' + cid).append(button);
+        $('#' + cid).append(buttonexp);
     };
 
     var container = $('#' + container_id);
