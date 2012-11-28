@@ -324,10 +324,27 @@ sub _generatePXEConf {
     }
 
     ## Here we create a dedicated initramfs for the node
+    
     my $linux_component = $args{cluster}->getComponent(category => "system");
-    $linux_component->buildInitramfs(cluster     => $args{cluster},
-                                     host        => $args{host},
-                                     mount_point => $args{host},
+    
+    my $src_file = "$tftpdir/initrd_$kernel_version";
+    my $initrd_dir = $linux_component->extractInitramfs(src_file => $src_file); 
+    
+    $linux_component->customizeInitramfs(initrd_dir  => $initrd_dir,
+                                         cluster     => $args{cluster},
+                                         host        => $args{host},
+                                         mount_point => $args{host},
+                                        );
+                                        
+    # create the final storing directory
+    my $path = "$tftpdir/$clustername/$hostname";
+    my $cmd = "mkdir -p $path";
+    my $econtext->execute(command => $cmd);
+    my $newinitrd = $path."/initrd_$kernel_version";
+
+    $linux_component->buildInitramfs(initrd_dir      => $initrd_dir,
+                                     compress_type   => 'gzip',
+                                     new_initrd_file => $newinitrd
                                     );
 
     my $gateway  = undef;

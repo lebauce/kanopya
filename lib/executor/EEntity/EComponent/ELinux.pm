@@ -31,6 +31,7 @@ use base 'EEntity::EComponent';
 
 use strict;
 use warnings;
+use String::Random;
 use Log::Log4perl 'get_logger';
 use Data::Dumper;
 use Message;
@@ -472,33 +473,35 @@ sub _generateNetConf {
     $self->_writeNetConf(ifaces => \@net_ifaces, %args);
 }
 
-sub buildInitramfs {
+=pod
+
+=begin classdoc
+
+extract an existing initrd
+
+@param src_file full path to the initrd file to extract
+@return string path to the directory
+
+=end classdoc
+
+=cut
+
+sub extractInitramfs {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
-                         required => ['cluster', 'host', 'mount_point']);
+                         required => ['src_file']);
     
     my $econtext = $self->getExecutorEContext;
+    my $initrd = $args{src_file};
+    my $rand = new String::Random;
     
-    my $cluster_kernel_id = $args{cluster}->kernel_id;
-    my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
-
-    my $clustername = $args{cluster}->cluster_name;
-    my $hostname = $args{host}->host_hostname;
-
-    my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
-
-    my $tftpdir = $self->{config}->{tftp}->{directory};
-
-    ## Here we create a dedicated initramfs for the node
-    # we create a temporary working directory for the initrd
-
-    $log->info('Build dedicated initramfs');
-    my $initrddir = "/tmp/$clustername-$hostname";
+    # create working directory
+    my $initrddir = '/tmp/'.$rand->randpattern("cccccccc");
+    $log->info("extract initramfs $initrd to temporary directory $initrddir");
     my $cmd = "mkdir -p $initrddir";
     $econtext->execute(command => $cmd);
 
     # check and retrieve compression type
-    my $initrd = "$tftpdir/initrd_$kernel_version";
     $cmd = "file $initrd | grep -o -E '(gzip|bzip2)'";
     my $result = $econtext->execute(command => $cmd);
     my $decompress;
@@ -516,10 +519,44 @@ sub buildInitramfs {
     # we decompress and extract the original initrd to this directory
     $cmd = "(cd $initrddir && $decompress $initrd | cpio -i)";
     $econtext->execute(command => $cmd);
+    return $initrddir;
+}
+
+=pod
+
+=begin classdoc
+
+update initrd directory content
+
+@param initrd_dir directory path
+@param host Entity::Host instance
+@param cluster Entity::ServiceProvider::Inside::Cluster instance
+
+=end classdoc
+
+=cut
+
+sub customizeInitramfs {
+    my ($self, %args) = @_;
+    General::checkParams(args     =>\%args,
+                         required => ['initrd_dir','cluster', 'host', 'mount_point']);
+    
+    my $econtext = $self->getExecutorEContext;
+    my $initrddir = $args{initrd_dir};
+    
+    my $cluster_kernel_id = $args{cluster}->kernel_id;
+    my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
+
+    my $clustername = $args{cluster}->cluster_name;
+    my $hostname = $args{host}->host_hostname;
+
+    my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+
+    my $tftpdir = $self->{config}->{tftp}->{directory};
 
     # append files to the archive directory
     my $sourcefile = $args{mount_point}.'/etc/udev/rules.d/70-persistent-net.rules';
-    $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
+    my $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
     $econtext->execute(command => $cmd);
 
     # create the final storing directory
@@ -530,6 +567,40 @@ sub buildInitramfs {
     # rebuild and compress the new initrd
     my $newinitrd = $path."/initrd_$kernel_version";
     $cmd = "(cd $initrddir && find . | cpio -H newc -o | bzip2 > $newinitrd)";
+    $econtext->execute(command => $cmd);
+
+    # finaly we remove the temporary directory
+    $cmd = "rm -r $initrddir";
+    $econtext->execute(command => $cmd);
+}
+
+=pod
+
+=begin classdoc
+
+create the cpio file and compress it
+
+@param initrd_dir initrd directory path
+@param compress_type comression algo to use (must be 'gzip' or 'bzip2') 
+@param new_initrd_file full path of the new initrd to create (directory must exists)
+
+=end classdoc
+
+=cut
+
+sub buildInitramfs {
+    my ($self, %args) = @_;
+    General::checkParams(args     =>\%args,
+                         required => ['initrd_dir','compress_type', 'new_initrd_file']);
+    
+    my $econtext = $self->getExecutorEContext;
+    my $initrddir = $args{initrd_dir};
+    my $newinitrd = $args{new_initrd_file};
+    my $compress = $args{compress_type};
+    
+    # rebuild and compress the new initrd
+    
+    my $cmd = "(cd $initrddir && find . | cpio -H newc -o | $compress > $newinitrd)";
     $econtext->execute(command => $cmd);
 
     # finaly we remove the temporary directory
