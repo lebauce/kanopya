@@ -21,54 +21,9 @@ use strict;
 use warnings;
 
 use Log::Log4perl "get_logger";
-use Operation;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 use Data::Dumper;
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'econtainer' ]);
-
-    $args{data} = {
-        econtainer          => $args{econtainer},
-        device_connected    => '',
-        partition_connected => '',
-    };
-
-    bless $args{data}, $class;
-
-    my $self = $class->SUPER::new(%args);
-
-    bless $self, $class;
-    return $self;
-}
-
-sub getContainer {
-    my $self = shift;
-
-    return $self->{econtainer}->_getEntity;
-}
-
-sub getAttr {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'name' ]);
-
-    return $self->{$args{name}};
-}
-
-sub setAttr {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'name', 'value' ]);
-
-    $self->{$args{name}} = $args{value};
-}
 
 =head2 connect
 
@@ -81,32 +36,19 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $file = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_device');
+    my $file = $self->getContainer->container_device;
 
-    my $device;
-    if (-b $file) {
-        $device = $file;
-    }
-    else {
-        # Get a free loop device
-        $command = "losetup -f";
-        $result = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
-        }
-        chomp($result->{stdout});
-        $device = $result->{stdout};
+    $log->debug("Return file loop dev (<$file>).");
+    $self->setAttr(name  => 'device_connected', value => $file);
 
-        $command = "losetup $device $file";
-        $result = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
-        }
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('disconnect'),
+            parameters => [ $self, "econtext", $args{econtext} ]
+        );
     }
-    $log->info("Return file loop dev (<$device>).");
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => $device);
-    return $device;
+
+    return $file;
 }
 
 =head2 disconnect
@@ -120,51 +62,10 @@ sub disconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $file = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_device');
+    my $file = $self->getContainer->container_device;
 
-    if (! -b $file) {
-        my $device = $self->_getEntity->getAttr(name => 'device_connected');
-
-        $command = "losetup -d $device";
-        $result  = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
-        }
-    }
-
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => '');
-}
-
-sub tryDisconnectPartition {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    #my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
-    #if (! $partition) {
-    #    $log->debug('Partition seems to be not connected, doing nothing.');
-    #    return;
-    #}
-
-    # Manualy check if the device is connected, as we do not have this info in database.
-    my $device = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_name');
-
-    my $check_cmd = "losetup -a | grep $device";
-    my $result    = $args{econtext}->execute(command => $check_cmd);
-
-    if (not $result->{stdout}) {
-        return;
-    }
-    chomp($result->{stdout});
-    my $partition = $result->{stdout};
-    $partition =~ s/\: .*$//g;
-    chomp($partition);
-
-    $self->_getEntity->setAttr(name  => 'partition_connected',
-                               value => $partition);
-    $self->disconnectPartition(%args);
+    $self->setAttr(name  => 'device_connected',
+                   value => '');
 }
 
 1;

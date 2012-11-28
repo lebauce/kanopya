@@ -40,13 +40,6 @@ __PACKAGE__->table("component");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 tier_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
 =head2 component_template_id
 
   data_type: 'integer'
@@ -77,13 +70,6 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
-  },
-  "tier_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
   },
   "component_template_id",
   {
@@ -139,22 +125,27 @@ __PACKAGE__->belongs_to(
   "component",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "component_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 service_provider
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Inside>
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "service_provider",
-  "AdministratorDB::Schema::Result::Inside",
-  { inside_id => "service_provider_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 component_template
@@ -169,7 +160,12 @@ __PACKAGE__->belongs_to(
   "component_template",
   "AdministratorDB::Schema::Result::ComponentTemplate",
   { component_template_id => "component_template_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 component_type
@@ -184,22 +180,7 @@ __PACKAGE__->belongs_to(
   "component_type",
   "AdministratorDB::Schema::Result::ComponentType",
   { component_type_id => "component_type_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 tier
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Tier>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "tier",
-  "AdministratorDB::Schema::Result::Tier",
-  { tier_id => "tier_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 dhcpd3
@@ -262,6 +243,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kanopyacollector1
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Kanopyacollector1>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopyacollector1",
+  "AdministratorDB::Schema::Result::Kanopyacollector1",
+  { "foreign.kanopyacollector1_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopyaworkflow0
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Kanopyaworkflow0>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopyaworkflow0",
+  "AdministratorDB::Schema::Result::Kanopyaworkflow0",
+  { "foreign.kanopyaworkflow_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 keepalived1
 
 Type: might_have
@@ -274,6 +285,21 @@ __PACKAGE__->might_have(
   "keepalived1",
   "AdministratorDB::Schema::Result::Keepalived1",
   { "foreign.keepalived_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 linux
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Linux>
+
+=cut
+
+__PACKAGE__->might_have(
+  "linux",
+  "AdministratorDB::Schema::Result::Linux",
+  { "foreign.linux_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -292,6 +318,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 mailnotifier0
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Mailnotifier0>
+
+=cut
+
+__PACKAGE__->might_have(
+  "mailnotifier0",
+  "AdministratorDB::Schema::Result::Mailnotifier0",
+  { "foreign.mailnotifier0_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 memcached1
 
 Type: might_have
@@ -304,21 +345,6 @@ __PACKAGE__->might_have(
   "memcached1",
   "AdministratorDB::Schema::Result::Memcached1",
   { "foreign.memcached1_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 mounttable1
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Mounttable1>
-
-=cut
-
-__PACKAGE__->might_have(
-  "mounttable1",
-  "AdministratorDB::Schema::Result::Mounttable1",
-  { "foreign.mounttable1_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -427,6 +453,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 puppetagent2
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Puppetagent2>
+
+=cut
+
+__PACKAGE__->might_have(
+  "puppetagent2",
+  "AdministratorDB::Schema::Result::Puppetagent2",
+  { "foreign.puppetagent2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 puppetmaster2
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Puppetmaster2>
+
+=cut
+
+__PACKAGE__->might_have(
+  "puppetmaster2",
+  "AdministratorDB::Schema::Result::Puppetmaster2",
+  { "foreign.puppetmaster2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 snmpd5
 
 Type: might_have
@@ -457,30 +513,30 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 vsphere5
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-03 12:59:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6rbNwlQoEfc1M6go3Aa/zQ
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
-__PACKAGE__->belongs_to(
-  "parent",
-  "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.component_id" },
-    { cascade_copy => 0, cascade_delete => 1 }
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Vsphere5>
+
+=cut
+
+__PACKAGE__->might_have(
+  "vsphere5",
+  "AdministratorDB::Schema::Result::Vsphere5",
+  { "foreign.vsphere5_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-#########################################
-# Load components relationship
-#########################################
-## Get list of component instance relathionship files
-#opendir(DIR, "/opt/kanopya/lib/administrator/AdministratorDB/ComponentRelationship");
-#my @comp_files = readdir(DIR);
-#closedir(DIR);
-## Load components relationship
-#for my $comp_file (@comp_files) {
-#    if ($comp_file =~ /(.*)\.pm/) {
-#        __PACKAGE__->load_components("+AdministratorDB::ComponentRelationship::$1");
-#    }
-#}
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-10-22 11:12:10
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tasSNXzxBTwoNPcRBVTWtA
+
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "component_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 1;

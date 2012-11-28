@@ -31,14 +31,25 @@ sub new {
 
     if ($classId eq "lsServer") {
         if ($hash->{type} eq "updating-template") {
+            use Cisco::UCS::ServiceProfileTemplate;
             bless $hash, "Cisco::UCS::ServiceProfileTemplate";
         }
         else {
+            use Cisco::UCS::ServiceProfile;
             bless $hash, "Cisco::UCS::ServiceProfile";
         }
     }
     elsif ($classId eq "fabricVlan") {
+        use Cisco::UCS::VLAN;
         bless $hash, "Cisco::UCS::VLAN";
+    }
+    elsif ($classId eq "computeBlade") {
+        use Cisco::UCS::Blade;
+        bless $hash, "Cisco::UCS::Blade";
+    }
+    elsif ($classId eq "vnicEther") {
+        use Cisco::UCS::Ethernet;
+        bless $hash, "Cisco::UCS::Ethernet";
     }
     else {
         bless $hash;
@@ -57,6 +68,12 @@ sub children {
                                      classId => $classId);
 }
 
+sub child {
+    my ($self, $name) = @_;
+
+    return $self->{ucs}->get(dn => $self->{dn} . "/" . $name);
+}
+
 sub delete {
     my $self = shift;
 
@@ -72,8 +89,8 @@ sub update {
     my %updated = ();
 
     foreach my $key (keys %{$self}) {
-        if (($key ne "old") and
-            (not defined $self->{old}{$key}) or
+        next if $key eq "old";
+        if ((not defined $self->{old}{$key}) or
             (not ($self->{$key} eq $self->{old}{$key}))) {
             $updated{$key} = $self->{$key};
         }

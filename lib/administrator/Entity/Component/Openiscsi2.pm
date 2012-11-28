@@ -59,7 +59,7 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {};
@@ -84,8 +84,11 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-    
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     $self->{_dbix}->openiscsi2_targets->delete_all();
     
     for my $import ( @{ $conf->{imports} } ) {

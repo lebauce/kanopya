@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Connector;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Connector
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<connector>
 
 =cut
 
@@ -65,6 +85,17 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</connector_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("connector_id");
 
 =head1 RELATIONS
@@ -99,26 +130,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Outside>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::Outside",
-  { outside_id => "service_provider_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
 =head2 connector_type
 
 Type: belongs_to
@@ -132,6 +143,21 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::ConnectorType",
   { connector_type_id => "connector_type_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 mock_monitor
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::MockMonitor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "mock_monitor",
+  "AdministratorDB::Schema::Result::MockMonitor",
+  { "foreign.mock_monitor_id" => "self.connector_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 netapp_lun_manager
@@ -164,6 +190,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 sco
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Sco>
+
+=cut
+
+__PACKAGE__->might_have(
+  "sco",
+  "AdministratorDB::Schema::Result::Sco",
+  { "foreign.sco_id" => "self.connector_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 scom
 
 Type: might_have
@@ -177,6 +218,26 @@ __PACKAGE__->might_have(
   "AdministratorDB::Schema::Result::Scom",
   { "foreign.scom_id" => "self.connector_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 ucs_manager
@@ -194,13 +255,15 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-20 16:41:59
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HvyVFwqWOFlj4OsHXKpeXQ
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-08 19:38:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mkqBFtzGPJxNU7GdLiKqPg
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.connector_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+  { entity_id => "connector_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 1;

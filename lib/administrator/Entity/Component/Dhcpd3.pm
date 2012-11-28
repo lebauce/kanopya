@@ -60,7 +60,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use General;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {};
@@ -120,37 +120,36 @@ B<throws>  : None
 # return a data structure to pass to the template processor 
 sub getConf {
     my $self = shift;
-    my $cluster = $self->{_dbix}->parent->service_provider->cluster;
-    my $dhcpd3 =  $self->{_dbix};
-    my $data = {};
-    my $adm = Administrator->new();
-    $data->{domain_name} = $dhcpd3->get_column('dhcpd3_domain_name');
+
+    my $dhcpd3 = $self->{_dbix};
+    my $data   = {};
+
+    $data->{domain_name}        = $dhcpd3->get_column('dhcpd3_domain_name');
     $data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
-    $data->{server_name} =  $dhcpd3->get_column('dhcpd3_servername');
-    my $ipv4_internal_id = $cluster->parent->search_related("nodes", { master_node => 1 })->single->host->get_column('host_ipv4_internal_id');
-    $data->{server_ip}= $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $ipv4_internal_id)->{ipv4_internal_address};
-    
+    $data->{server_name}        = $dhcpd3->get_column('dhcpd3_servername');
+    $data->{server_ip}          = $self->getServiceProvider->getMasterNodeIp;
+
     my $subnets = $dhcpd3->dhcpd3_subnets;
     my @data_subnets = ();
     while(my $subnet = $subnets->next) {
         my $hosts = $subnet->dhcpd3_hosts;
         my @data_hosts = ();
         while(my $host = $hosts->next) {
-        #my $host = Host::getHostFromIP(ipv4_internal_ip => $host->get_column('dhcpd3_hosts_ipaddr'));
             push @data_hosts, {
-                domain_name =>$host->get_column('dhcpd3_hosts_domain_name'),
+                domain_name        => $host->get_column('dhcpd3_hosts_domain_name'),
                 domain_name_server => $host->get_column('dhcpd3_hosts_domain_name_server'),
-                ip_address => $host->get_column('dhcpd3_hosts_ipaddr'),
-                ntp_server => $host->get_column('dhcpd3_hosts_ntp_server'),
-                mac_address => $host->get_column('dhcpd3_hosts_mac_address'), 
-                hostname => $host->get_column('dhcpd3_hosts_hostname'), 
-                #kernel_version => $host->kernel->get_column('kernel_version')
+                ip_address         => $host->get_column('dhcpd3_hosts_ipaddr'),
+                ntp_server         => $host->get_column('dhcpd3_hosts_ntp_server'),
+                mac_address        => $host->get_column('dhcpd3_hosts_mac_address'),
+                hostname           => $host->get_column('dhcpd3_hosts_hostname'),
+                gateway            => $host->get_column('dhcpd3_hosts_gateway'),
             };
         }
         push @data_subnets, {
-            net => $subnet->get_column('dhcpd3_subnet_net'),
-            mask => $subnet->get_column('dhcpd3_subnet_mask'),
-            nodes => \@data_hosts
+            net     => $subnet->get_column('dhcpd3_subnet_net'),
+            mask    => $subnet->get_column('dhcpd3_subnet_mask'),
+            gateway => $subnet->get_column('dhcpd3_subnet_gateway'),
+            nodes   => \@data_hosts
         };
     }
 
@@ -177,14 +176,21 @@ sub addHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args,
-                         required => ['dhcpd3_subnet_id','dhcpd3_hosts_ipaddr',
-                                      'dhcpd3_hosts_mac_address', 'dhcpd3_hosts_hostname',
-                                      'kernel_id', "dhcpd3_hosts_ntp_server",
-                                      'dhcpd3_hosts_domain_name', 'dhcpd3_hosts_domain_name_server']);
+    General::checkParams(
+        args => \%args,
+        required => [   'dhcpd3_subnet_id',
+                        'dhcpd3_hosts_ipaddr',
+                        'dhcpd3_hosts_mac_address', 
+                        'dhcpd3_hosts_hostname',
+                        'kernel_id', 
+                        'dhcpd3_hosts_ntp_server',
+                        'dhcpd3_hosts_domain_name', 
+                        'dhcpd3_hosts_domain_name_server',
+                    ]
+    );
 
     my $dhcpd3_hosts_rs = $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts;
-    my $res = $dhcpd3_hosts_rs->create(\%args);
+    my $res = $dhcpd3_hosts_rs->update_or_create(\%args);
     return $res->get_column('dhcpd3_hosts_id');
 }
 

@@ -22,8 +22,9 @@ __PACKAGE__->table("interface");
 =head2 interface_id
 
   data_type: 'integer'
+  default_value: 0
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 interface_role_id
@@ -40,14 +41,22 @@ __PACKAGE__->table("interface");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 default_gateway
+
+  data_type: 'integer'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
   "interface_id",
   {
     data_type => "integer",
+    default_value => 0,
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "interface_role_id",
@@ -64,10 +73,47 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "default_gateway",
+  {
+    data_type => "integer",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
 );
 __PACKAGE__->set_primary_key("interface_id");
 
 =head1 RELATIONS
+
+=head2 ifaces
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Iface>
+
+=cut
+
+__PACKAGE__->has_many(
+  "ifaces",
+  "AdministratorDB::Schema::Result::Iface",
+  { "foreign.interface_id" => "self.interface_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 interface
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "interface",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "interface_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 =head2 interface_role
 
@@ -99,25 +145,30 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 interface_vlans
+=head2 interface_networks
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::InterfaceVlan>
+Related object: L<AdministratorDB::Schema::Result::InterfaceNetwork>
 
 =cut
 
 __PACKAGE__->has_many(
-  "interface_vlans",
-  "AdministratorDB::Schema::Result::InterfaceVlan",
+  "interface_networks",
+  "AdministratorDB::Schema::Result::InterfaceNetwork",
   { "foreign.interface_id" => "self.interface_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-14 18:09:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:d7XhKQ0SlqtzHErHXYAWaw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-02 17:46:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:aSZ49tq8SNRVJ2xqjCggLw
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { "foreign.entity_id" => "self.interface_id" },
+  { cascade_copy => 0, cascade_delete => 1 }
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

@@ -36,10 +36,18 @@ package EEntity;
 
 use strict;
 use warnings;
+
+use Entity;
+use Kanopya::Exceptions;
+use Kanopya::Config;
+use File::Basename;
+use Template;
+use vars qw ( $AUTOLOAD );
+
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
@@ -53,14 +61,42 @@ Entity>new($data : hash EntityData) creates a new entity execution object.
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['data']);
-        
-    # $log->debug("Class is : $class");
+    $args{entity} = $args{entity} || $args{data};
 
-    my $self = { _entity => $args{data}};
+    General::checkParams(args => \%args, required => ['entity']);
+
+    if ($args{entity}->isa('Entity') && !$args{entity}->isa('Entity::Operation')) {
+        my $entityclass = ref($args{entity});
+        $entityclass =~s/\:\:/\:\:E/g;
+        $class = "E".$entityclass;
+
+        while ($class ne "EEntity") {
+            my $location = General::getLocFromClass(entityclass => $class);
+
+            eval {
+                require $location;
+            };
+            if ($@){
+                # Try to use the parent package
+                $class =~ s/\:\:[a-zA-Z0-9]+$//g;
+            }
+            else {
+                last;
+            }
+        }
+    }
+
+    
+    my $config = Kanopya::Config::get('executor');
+
+    my $self = {
+        _entity   => $args{entity},
+        _executor => Entity->get(id => $config->{cluster}->{executor}),
+        config    => $config
+    };
+
     bless $self, $class;
     return $self;
 }
@@ -68,6 +104,70 @@ sub new {
 sub _getEntity{
     my $self = shift;
     return $self->{_entity};
+}
+
+sub getEContext {
+    my $self = shift;
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
+sub getExecutorEContext {
+    my $self = shift;
+
+    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
+                                 ip_destination => $self->{_executor}->getMasterNodeIp());
+}
+
+sub generateNodeFile {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args,
+        required => ['cluster','host','file','template_dir','template_file','data']
+    );
+    
+    my $config = Kanopya::Config::get('executor');
+    my $econtext = $self->getExecutorEContext();
+    my $path = $config->{clusters}->{directory};
+    $path .= '/' . $args{cluster}->getAttr(name => 'cluster_name');
+    $path .= '/' . $args{host}->getAttr(name => 'host_hostname');
+    $path .= '/' . $args{file};
+    my ($filename, $directories, $prefix) = fileparse($path);
+    $econtext->execute(command => "mkdir -p $directories");
+    
+    my $template_conf = {
+        INCLUDE_PATH => $args{template_dir},
+        INTERPOLATE  => 0,               # expand "$var" in plain text
+        POST_CHOMP   => 0,               # cleanup whitespace
+        EVAL_PERL    => 1,               # evaluate Perl code blocks
+        RELATIVE => 1,                   # desactive par defaut
+    };
+    
+    my $template = Template->new($template_conf);
+    eval {
+        $template->process($args{template_file}, $args{data}, $path);
+    };
+    if($@) {
+        $errmsg = "error during generation from '$args{template}':" .  $template->error;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    return $path;
+}
+
+sub AUTOLOAD {
+    my $self = shift;
+    my %args = @_;
+
+    my @autoload = split(/::/, $AUTOLOAD);
+    my $method = $autoload[-1];
+
+    return $self->_getEntity->$method(%args);
+}
+
+sub DESTROY {
+    my $self = shift;
+    my %args = @_;
 }
 
 1;

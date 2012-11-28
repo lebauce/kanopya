@@ -12,216 +12,141 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Kanopya::Exceptions;
+=pod
 
-use Data::Dumper;
+=begin classdoc
 
-=head1 NAME
+Kanopya Exceptions declaration
 
-<KanopyaExceptions> – <General class containing Kanopya exceptions>
+@since    2011-Jan-13
 
-=head1 VERSION
-
-This documentation refers to <KanopyaExceptions> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <KanopyaExceptions>;
-
-throw Kanopya::Exception(error => $errmsg);
-
-throw Kanopya::Exception::DB(error => $errmsg);
-
-throw Kanopya::Exception::Network(error => $errmsg);
-
-throw Kanopya::Exception::Internal(error => $errmsg);
-
-throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-
-throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-
-throw Kanopya::Exception::Execution(error => $errmsg);
-
-throw Kanopya::Exception::Execution::OperationReported(error => $errmsg);
-
-throw Kanopya::Exception::AuthentificationRequired(error => $errmsg);
-
-throw Kanopya::Exception::LoginFailed(error => $errmsg);
-
-throw Kanopya::Exception::Permission(error => $errmsg);
-
-throw Kanopya::Exception::Permission::Denied(error => $errmsg);
-
-=head1 DESCRIPTION
-
-This is Kanopya Exceptions package documentation.
-Kanopya has it own exception to manage internal error and show to user comprehensive error message.
+=end classdoc
 
 =cut
 
-
-
+package Kanopya::Exceptions;
 
 use Exception::Class (
     Kanopya::Exception => {
-    description => "Kanopya General Exception",
-    fields => [ 'level', 'request', 'hidden' ],
+        description => "Kanopya General Exception",
+        fields      => [ 'level', 'request', 'hidden' ],
     },
     Kanopya::Exception::DB => {
-    isa => 'Kanopya::Exception',
-    description => 'Kanopya Database exception',
+        isa         => 'Kanopya::Exception',
+        description => 'Kanopya Database exception',
     },
     Kanopya::Exception::Network => {
-    isa => 'Kanopya::Exception',
-    description => 'SSH communication exception',
+        isa         => 'Kanopya::Exception',
+        description => 'SSH communication exception',
+    },
+    Kanopya::Exception::Quota => {
+        isa         => 'Kanopya::Exception',
+        description => 'Quota exceeded',
     },
     Kanopya::Exception::Internal => {
-    isa => 'Kanopya::Exception',
-    description => 'Kanopya Internal exception',
+        isa         => 'Kanopya::Exception',
+        description => 'Kanopya Internal exception',
     },
     Kanopya::Exception::Internal::WrongValue => {
-    isa => 'Kanopya::Exception::Internal',
-    description => 'Wrong Value',
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Wrong Value',
     },
     Kanopya::Exception::Internal::WrongType => {
-    isa => 'Kanopya::Exception::Internal',
-    description => 'Wrong Type',
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Wrong Type',
     },
     Kanopya::Exception::Internal::NotFound => {
-    isa => 'Kanopya::Exception::Internal',
-    description => 'Not found',
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Not found',
     },
     Kanopya::Exception::Internal::IncorrectParam => {
-    isa => 'Kanopya::Exception::Internal',
-    description => 'Wrong attribute or parameter',
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Wrong attribute or parameter',
     },
     Kanopya::Exception::Internal::MissingParam => {
-    isa => 'Kanopya::Exception::Internal',
-    description => 'Parameter missing or undefined',
-    fields => [ 'sub_name', 'param_name' ],
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Parameter missing or undefined',
+        fields      => [ 'sub_name', 'param_name' ],
     },
     Kanopya::Exception::Internal::UnknownCategory => {
-    isa => 'Kanopya::Exception::Internal',
-    description => 'Unknown category type',
-    fields => [ 'sub_name', 'param_name' ],
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Unknown category type',
+        fields      => [ 'sub_name', 'param_name' ],
     },
     Kanopya::Exception::Internal::UnknownClass => {
-    isa => 'Kanopya::Exception::Internal',
-    description => 'Unknown class',
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Unknown class',
+    },
+    Kanopya::Exception::Internal::UnknownResource => {
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Unknown resource',
+    },
+    Kanopya::Exception::Internal::Inconsistency => {
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Not consistent',
     },
     Kanopya::Exception::Execution => {
-    isa => 'Kanopya::Exception',
-    description => 'Command execution failed',
+        isa         => 'Kanopya::Exception',
+        description => 'Command execution failed',
     },
     Kanopya::Exception::Execution::Rollbacked => {
-    isa => 'Kanopya::Exception::Execution',
-    description => 'Operation execution rollbacked',
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Operation execution rollbacked',
     },
     Kanopya::Exception::Execution::OperationReported => {
-    isa => 'Kanopya::Exception::Execution',
-    description => 'Operation execution reported',
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Operation execution reported',
+    },
+    Kanopya::Exception::Execution::Locked => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Entity already locked',
+    },
+    Kanopya::Exception::Execution::ResourceBusy => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Resource busy',
     },
     Kanopya::Exception::AuthenticationRequired => {
-    isa => 'Kanopya::Exception',
-    description => 'Authentication required',
+        isa         => 'Kanopya::Exception',
+        description => 'Authentication required',
     },
     Kanopya::Exception::AuthenticationFailed => {
-    isa => 'Kanopya::Exception',
-    description => 'Incorrect Login/Password values pair',
+        isa         => 'Kanopya::Exception',
+        description => 'Incorrect Login/Password values pair',
     },
     Kanopya::Exception::Permission => {
-    isa => 'Kanopya::Exception',
-    description => 'Kanopya Permission Exception'
+        isa         => 'Kanopya::Exception',
+        description => 'Kanopya Permission Exception'
     },
     Kanopya::Exception::Permission::Denied => {
-    isa => 'Kanopya::Exception::Permission',
-    description => 'Permission denied'
+        isa         => 'Kanopya::Exception::Permission',
+        description => 'Permission denied'
     },
     Kanopya::Exception::OperationAlreadyEnqueued => {
-    isa => 'Kanopya::Exception',
-    description => 'Operation already enqueued'
+        isa         => 'Kanopya::Exception',
+        description => 'Operation already enqueued'
     },
     Kanopya::Exception::NotImplemented => {
-    isa => 'Kanopya::Exception',
-    description => 'Method not implemented'
+        isa         => 'Kanopya::Exception',
+        description => 'Method not implemented'
     },
 );
 
 # Force print trace when exception is stringified
 # For Kanopya::Exception and all its subclasses
-Kanopya::Exception->Trace(1);
+Kanopya::Exception->Trace(0);
 
 # Override method called when exception is stringified
 sub Kanopya::Exception::full_message {
-     my $self = shift;
-    
-    my $except_string = "## EXCEPTION : " . $self->description . " ##";
-    $except_string .= "\n" . $self->message if ($self->message ne "");
+    my $self = shift;
+    my $except_string = $self->description . ": ";
+    $except_string .= $self->message if ($self->message ne "");
 
-    # Show fields    
+    # Show fields
     for my $field ( $self->Fields ) {
         $except_string .= ("\n=> " . $field . ": '" . $self->$field . "'") if (defined $self->$field);
     }
 
      return $except_string;
-
 }
-
-
-=head1 DIAGNOSTICS
-
-No exception
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
-
-=head1 DEPENDENCIES
-
-This module depends of 
-
-=over
-
-=item Exception::Class module perl implementing exceptions
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
-
-=cut
 
 1;

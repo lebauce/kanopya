@@ -60,25 +60,31 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	mysql5_port        => { pattern        => '^\d*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-    mysql5_datadir     => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-    mysql5_bindaddress => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
+	mysql5_port        => { 
+        label          => 'Port',
+        type           => 'string',
+        pattern        => '^\d*$',
+        is_mandatory   => 1,
+        is_editable    => 1
+    },
+    mysql5_datadir     => { 
+        label          => 'Data directory',
+        type           => 'string',
+        pattern        => '^.*$',
+        is_mandatory   => 1,
+        is_editable    => 1
+    },
+    mysql5_bindaddress => { 
+        label          => 'Bind address',
+        type           => 'string',
+        pattern        => '^.*$',
+        is_mandatory   => 1,
+        is_editable    => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -114,8 +120,11 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-        
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     if(not $conf->{mysql5_id}) {
         # new configuration -> create
         $self->{_dbix}->create($conf);

@@ -1,0 +1,15 @@
+{
+"result" :
+  {
+  "layout": "layout2",
+  "data" : [
+    {
+      "title" : "Dashboard howto",
+      "id" : "1",
+      "column" : "first",
+      "open" : true,
+      "url" : "widgets/widget_dash_info.html"
+    }
+  ]
+  }
+}

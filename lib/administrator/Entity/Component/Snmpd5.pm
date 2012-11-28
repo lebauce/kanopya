@@ -57,25 +57,29 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Kanopya::Config;
 use Kanopya::Exceptions;
+use Entity;
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	monitor_server_ip   => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-
-    snmpd_options => { pattern        => '^.*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                           },
+	monitor_server_ip => { 
+        label        => 'SNMP Server IP',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    snmpd_options => { 
+        label        => 'SNMP agent options',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
 };
 
 
@@ -83,29 +87,29 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
-    my $self = shift;
-    #TODO Load from file of default values ?
-    my $snmpd5_conf = {
-        snmpd5_id => undef,
-        monitor_server_ip => "10.0.0.1",
-        snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
-    };
-    
+    my ($self) = @_;
+
+    my $snmpd5_conf;
     my $confindb = $self->{_dbix};
     if($confindb) {
        $snmpd5_conf = {
         snmpd5_id => $confindb->get_column('snmpd5_id'),
         monitor_server_ip => $confindb->get_column('monitor_server_ip'),
         snmpd_options => $confindb->get_column('snmpd_options')};
+    } else {
+        $snmpd5_conf = $self->getBaseConfiguration();
     }
     return $snmpd5_conf; 
 }
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-        
-    if(not $conf->{snmpd5_id}) {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
+    if (not $conf->{snmpd5_id}) {
         # new configuration -> create
         $self->{_dbix}->create($conf);
     } else {
@@ -128,8 +132,11 @@ sub getNetConf {
 }
 
 sub getBaseConfiguration {
-	return {
-        monitor_server_ip => '127.0.0.1',
+	my $config = Kanopya::Config::get('executor');
+    my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
+    my $ip = $kanopya_cluster->getMasterNodeIp();
+    return {
+        monitor_server_ip => $ip,
         snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
     };
 }

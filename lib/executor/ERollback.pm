@@ -34,8 +34,7 @@ use Data::Dumper;
 use General;
 use Log::Log4perl "get_logger";
 
-
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 use Kanopya::Exceptions;
@@ -49,8 +48,7 @@ my $VERSION = "1.00";
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class) = @_;
         
     my $self = {
         function    => undef,
@@ -63,9 +61,7 @@ sub new {
     return $self;
 }
 
-sub print {
-    
-}
+sub print {}
 
 =head2 add
 
@@ -74,67 +70,64 @@ sub print {
 =cut
 
 sub add {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
     General::checkParams(args => \%args,
                          required => ['function', 'parameters']);
 
-#    $self->{last_inserted} = undef;
-    $log->debug("add rollback func $args{function}");
-    if(not defined $self->{function}) {
+    if (not defined $self->{function}) {
         $self->{function} = $args{function};
         $self->{parameters} = $args{parameters};
         $self->{last_inserted} = $self;
-        $log->debug("insert first rollback <".$self->{function}.">");
-    } else {
+    }
+    else {
         if ($self->{before}){
             my $eroll = $self->find(erollback => $self->{before});
-            my $tmp = $eroll->{prev_item};
+            my $previous = $eroll->{prev_item};
+
             $eroll->{prev_item} = ERollback->new();
-            $eroll->{prev_item}->{function} = $args{function};
+            $eroll->{prev_item}->{function}   = $args{function};
             $eroll->{prev_item}->{parameters} = $args{parameters};
-            $eroll->{prev_item}->{prev_item} = $tmp;
-            $eroll->{prev_item}->{next_item} =$eroll;
-            if($tmp) {
-                $tmp->{next_item} = $eroll->{prev_item};
-            } else{
-                $self=$eroll->{prev_item};
+            $eroll->{prev_item}->{prev_item}  = $previous;
+            $eroll->{prev_item}->{next_item}  = $eroll;
+
+            if ($previous) {
+                $previous->{next_item} = $eroll->{prev_item};
             }
-            $log->debug("Insert rollback <" . $eroll->{prev_item}->{function}. "> before <".
-                        ($self->{before}->{function} ? $self->{before}->{function} : "undef" ) . ">");
             $self->{last_inserted} = $eroll->{prev_item};
             $self->{before} = undef;
-            $log->debug($self->print());
-        }elsif ($self->{after}){
+        }
+        elsif ($self->{after}){
             my $eroll = $self->find(erollback => $self->{after});
-            my $tmp = $eroll->{next_item};
+            my $next  = $eroll->{next_item};
+
             $eroll->{next_item} = ERollback->new();
-            $eroll->{next_item}->{function} = $args{function};
+            $eroll->{next_item}->{function}   = $args{function};
             $eroll->{next_item}->{parameters} = $args{parameters};
-            $eroll->{next_item}->{prev_item} = $eroll;
-            $eroll->{next_item}->{next_item} =$tmp;
-            if($tmp) {
-                $tmp->{prev_item} = $eroll->{next_item};
+            $eroll->{next_item}->{prev_item}  = $eroll;
+            $eroll->{next_item}->{next_item}  = $next;
+            if($next) {
+                $next->{prev_item} = $eroll->{next_item};
             }
             $self->{last_inserted} = $eroll->{next_item};
-            $log->debug("Insert rollback <".$eroll->{next_item}->{function}. "> before <" .
-                        $self->{after}->{function} . ">");
             $self->{after} = undef;
-        }else {
+        }
+        else {
             my $last = $self->_last();
             $last->{next_item} = ERollback->new();
-            $last->{next_item}->{function} = $args{function};
+            $last->{next_item}->{function}   = $args{function};
             $last->{next_item}->{parameters} = $args{parameters};
-            $last->{next_item}->{prev_item} = $last;
+            $last->{next_item}->{prev_item}  = $last;
+
             $self->{last_inserted} = $last->{next_item};
         }
     }
+    $log->debug('One function added to rollback');
 }
 
 sub find {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+
     General::checkParams(args => \%args,
                          required => ['erollback']);
     my $tmp = $self;
@@ -147,33 +140,36 @@ sub find {
     }
     return $tmp;
 }
+
 sub insertNextErollBefore{
-    my $self = shift;
-    my %args = @_;
-    General::checkParams(args => \%args,
-                         required => ['erollback']);
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['erollback']);
+
     $self->{before} = $args{erollback};
+
+    $log->debug("Insert next rollback before <" . $self->{before}->{function} . ">");
 }
 
 sub insertNextErollAfter{
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+
     General::checkParams(args => \%args,
                          required => ['erollback']);
     $self->{after} = $args{erollback};
 }
 
 sub getLastInserted{
-    my $self = shift;
-    $log->debug("Get last inserted in rollback <".$self->{last_inserted}->{function}.">");
+    my ($self) = @_;
     return $self->{last_inserted};
 }
+
 =head2 _last
 
 =cut
 
 sub _last {
-    my $self = shift;
+    my ($self) = @_;
     my $tmp = $self;
 
     while ($tmp->{'next_item'}) {
@@ -182,16 +178,15 @@ sub _last {
     return $tmp;
 }
 
-=head2 recursive_del
+=head2 _recursive_del
 
 =cut
 
-sub recursive_del {
-    my $self = shift;
-    if ($self->{'next_item'}) {
-        $self->{'next_item'}->recursive_del();
+sub _recursive_del {
+    my ($self) = @_;
+    if ($self->{next_item}) {
+        $self->{next_item}->_recursive_del();
     }
-    $self->DESTROY();
 }
 
 =head2 undo
@@ -199,24 +194,33 @@ sub recursive_del {
 =cut
 
 sub undo {
-    my $self = shift;
-    my $tmp = $self->_last;
+    my ($self) = @_;
+    my $current = $self->_last;
 
-    while ($tmp && $tmp->{function}) {
-        my $fn = $tmp->{function};
-        my $args = $tmp->{parameters};
-        $log->info("undo $fn ");
-    $fn->(@$args);
-        $tmp = $tmp->{prev_item};
+    while ($current && $current->{function}) {
+        my $func = $current->{function};
+        my $args = $current->{parameters};
+
+        $log->info("Undo <$func>.");
+
+        eval {
+            $func->(@$args);
+        };
+        if ($@) {
+            # Here we do not display the rollback errors, 
+            # as some rollbacks could be inserted many times, and do the same job.
+            
+            # TODO: We need to remove inserted callback when we detect that it is useless.
+            #$log->error("Rollback <$func> falled:\n$@");
+            $log->error("Rollback <$func> falled.");
+        }
+
+        $current = $current->{prev_item};
     }
-    $self->recursive_del;
+    $self->_recursive_del;
 }
 
-=head2 DESTROY
 
-=cut
-
-sub DESTROY {}
 
 1;
 

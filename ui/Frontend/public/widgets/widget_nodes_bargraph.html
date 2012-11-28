@@ -1,0 +1,23 @@
+<script>
+    require('widgets/widget_nodes_bargraph.js');
+</script>
+
+<div class="nodes_overview">
+    <div class="nmBarGraph">
+        <div class="indicator_dropdown" style='float:left'>
+            <select class='nmBargraph_list'>
+                <option selected="selected" id="default">Select an indicator</option>
+            </select>
+        </div>
+        <div class="nodes_order_selection" style='float:right'>
+            <select class='order_type'>
+                <option selected="selected" id="top">Top</option>
+                <option id="bottom">Bottom</option>
+            </select>
+            <select class='display_count'>
+            </select>
+        </div>
+        <br />
+        <div class='nodes_bargraph'></div>
+    </div>
+</div>

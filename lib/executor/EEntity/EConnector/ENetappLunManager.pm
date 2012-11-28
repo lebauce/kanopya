@@ -19,25 +19,24 @@ use warnings;
 use strict;
 
 use General;
-use EContext::Local;
 use Kanopya::Exceptions;
 use Entity::Container::NetappLun;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 =head2 createDisk
 
-createDisk ( name, size, filesystem, econtext )
+createDisk ( name, size, filesystem)
     desc: This function creates a new volume on NetApp.
     args:
         name : string : new volume name
         size : String : disk size finishing by unit (M : Mega, K : kilo, G : Giga)
         filesystem : String : filesystem type
-        econtext : Econtext : execution context on the storage server
+
     return:
         1 if an error occurred, 0 otherwise
     
@@ -48,10 +47,10 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "volume_id", "name", "size", "filesystem", "econtext" ]);
+                         required => [ "volume_id", "name", "size", "filesystem" ]);
 
     my $volume = Entity::Container::NetappVolume->get(id => $args{volume_id});
-    my $volume_name = "/vol/" . $volume->getAttr(name => "name") . "/" . $args{name};
+    my $volume_name = "/vol/" . $volume->getAttr(name => "container_name") . "/" . $args{name};
 
     # Make the XML RPC call
     my $api = $self->_getEntity();
@@ -60,48 +59,42 @@ sub createDisk {
                              type => "linux");
 
     my $noformat = $args{"noformat"};
-    my $econtext = $args{econtext};
     delete $args{noformat};
-    delete $args{econtext};
 
     # Insert the container into the database
-    my $container = Entity::Container::NetappLun->new(
-                        disk_manager_id      => $self->_getEntity->getAttr(name => 'entity_id'),
-                        container_name       => $args{name},
-                        container_size       => $args{size},
-                        container_filesystem => $args{filesystem},
-                        container_freespace  => 0,
-                        container_device     => $args{name},
-                        volume_id            => $args{volume_id}
-                    );
+    my $entity = Entity::Container::NetappLun->new(
+                     disk_manager_id      => $self->_getEntity->getAttr(name => 'entity_id'),
+                     container_name       => $args{name},
+                     container_size       => $args{size},
+                     container_filesystem => $args{filesystem},
+                     container_freespace  => 0,
+                     container_device     => $args{name},
+                     volume_id            => $args{volume_id}
+                 );
+    my $container = EFactory::newEEntity(data => $entity);
 
     if (! defined $noformat) {
         # Connect to the iSCSI target and format it locally
 
-        my $export = $self->createExport(container   => $container,
-                                         export_name => $args{name},
-                                         econtext    => $econtext,
-                                         erollback   => $args{erollback});
+        my $container_access = $self->createExport(container   => $container,
+                                                   export_name => $args{name},
+                                                   erollback   => $args{erollback});
 
-        my $container_access = EFactory::newEEntity(data => $export);
-        my $local_context    = EContext::Local->new(local => '127.0.0.1');
-
-        my $newdevice = $container_access->connect(econtext => $local_context);
+        my $newdevice = $container_access->connect(econtext => $self->getExecutorEContext);
 
         $self->mkfs(device   => $newdevice,
                     fstype   => $args{filesystem},
-                    econtext => $local_context);
+                    econtext => $self->getExecutorEContext);
 
-        $container_access->disconnect(econtext => $local_context);
+        $container_access->disconnect(econtext => $self->getExecutorEContext);
 
-        $self->removeExport(container_access => $export,
-                            econtext         => $local_context);
+        $self->removeExport(container_access => $container_access);
     }
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
             function   => $self->can('removeDisk'),
-            parameters => [ $self, "container", $container, "econtext", $args{econtext} ]
+            parameters => [ $self, "container", $container ]
         );
     }
 
@@ -116,58 +109,23 @@ sub removeDisk {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args=>\%args, required=>[ "container", "econtext" ]);
+    General::checkParams(args => \%args, required => [ "container" ]);
 
-    if (! $args{container}->isa("Entity::Container::NetappLun")) {
+    if (! $args{container}->isa("EEntity::EContainer::ENetappLun")) {
         throw Kanopya::Exception::Execution(
-                  error => "Container must be a Entity::Container::NetappLun"
+                  error => "Container must be a EEntity::EContainer::ENetappLun, not " . 
+                           ref($args{container})
               );
     }
 
-    my $container = $args{container};
-    my $volume = Entity::Container::NetappVolume->get(
-                     id => $container->getAttr(name => "volume_id")
-                 );
+    # Check if the disk is removable
+    $self->SUPER::removeDisk(%args);
 
-    my $lun_path = "/vol/" . $volume->getAttr(name => "name") .
-                   "/" . $container->getAttr(name => "name");
-    $self->_getEntity()->lun_destroy(path => $lun_path);
+    $self->lun_destroy(path => $args{container}->getPath());
 
     $args{container}->delete();
 
     #TODO: insert erollback ?
-}
-
-=head2 mkfs
-
-_mkfs ( device, fstype, fsoptions, econtext)
-    desc: This function create a filesystem on a device.
-    args:
-        device : string: device full path (like /dev/sda2 or /dev/vg/lv)
-        fstype : string: name of filesystem (ext2, ext3, ext4)
-        fsoptions : string: filesystem options to use during creation (optional) 
-        econtext : Econtext : execution context on the storage server
-=cut
-
-sub mkfs {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "device", "fstype", "econtext" ]);
-    
-    my $command = "mkfs -F -t $args{fstype} ";
-    if($args{fsoptions}) {
-        $command .= "$args{fsoptions} ";
-    }
-
-    $command .= " $args{device}";
-    my $ret = $args{econtext}->execute(command => $command);
-    if($ret->{exitcode} != 0) {
-        my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Execution(error => $errmsg);
-    }
 }
 
 =head2 createExport
@@ -181,15 +139,15 @@ sub createExport {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'container', 'export_name', 'econtext' ]);
-
-    my $typeio = General::checkParam(args => \%args, name => 'typeio', default => 'fileio');
-    my $iomode = General::checkParam(args => \%args, name => 'iomode', default => 'wb');
+                         required => [ 'container', 'export_name' ],
+                         optional => { 'typeio' => 'fileio',
+                                       'iomode' => 'wb' });
+    # Check if the disk is not already exported
+    $self->SUPER::createExport(%args);
 
     my $api = $self->_getEntity();
-    my $volume = Entity::Container::NetappVolume->get(id => $args{container}->getAttr(name => "volume_id"));
-    my $lun_path = '/vol/' . $volume->getAttr(name => "name") .
-                   '/' . $args{container}->getAttr(name => "name");
+    my $volume = $args{container}->getVolume();
+    my $lun_path = $args{container}->getPath();
 
     my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
                              hash => {
@@ -200,57 +158,45 @@ sub createExport {
     my $master = $kanopya_cluster->getMasterNode();
 
     eval {
-        $self->_getEntity()->igroup_create(initiator_group_name => "igroup_kanopya_master",
-                                           initiator_group_type => "iscsi");
+        $self->_getEntity()->igroup_create('initiator-group-name' => "igroup_kanopya_master",
+                                           'initiator-group-type' => "iscsi");
     };
 
     eval {
-        $self->_getEntity()->igroup_add(initiator            => $master->getAttr(name => "host_initiatorname"),
-                                        initiator_group_name => "igroup_kanopya_master");
+        $self->_getEntity()->igroup_add('initiator'            => $master->getAttr(name => "host_initiatorname"),
+                                        'initiator-group-name' => "igroup_kanopya_master");
     };
 
     my $lun_id;
     eval {
-        $lun_id = $api->lun_map(path            => $lun_path,
-                                initiator_group => 'igroup_kanopya_master')->child_get_string("lun-id-assigned");
+        $lun_id = $api->lun_map('path'            => $lun_path,
+                                'initiator-group' => 'igroup_kanopya_master')->child_get_string("lun-id-assigned");
     };
     if ($@) {
         # The LUN is already mapped, get its lun ID
-        my @mappings = $api->lun_initiator_list_map_info(
-                           initiator => $master->getAttr(name => "host_initiatorname")
-                       )->child_get("lun-maps")->children_get;
-
-        for my $mapping (@mappings) {
-            bless $mapping, "NaObject";
-            if ($mapping->path eq $lun_path) {
-                $lun_id = $mapping->lun_id;
-            }
-        }
+        $lun_id = $self->getLunId(lun  => $args{container},
+                                  host => $master);
     }
 
-    my $container_access = Entity::ContainerAccess::IscsiContainerAccess->new(
-                               container_id            => $args{container}->getAttr(name => 'container_id'),
-                               export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
-                               container_access_export => $args{export_name},
-                               container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
-                               container_access_port   => 3260,
-                               typeio                  => $typeio,
-                               iomode                  => $iomode,
-                               lun_name                => "lun-" . $lun_id
-                           );
+    my $entity = Entity::ContainerAccess::IscsiContainerAccess->new(
+                     container_id            => $args{container}->getAttr(name => 'container_id'),
+                     export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
+                     container_access_export => $self->_getEntity->iscsi_node_get_name->node_name,
+                     container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
+                     container_access_port   => 3260,
+                     typeio                  => $args{typeio},
+                     iomode                  => $args{iomode},
+                     lun_name                => "lun-" . $lun_id
+                 );
+    my $container_access = EFactory::newEEntity(data => $entity);
 
     $log->info("Added iSCSI export for lun " .
                $args{container}->getAttr(name => "container_name"));
 
     if (defined $args{erollback}) {
-        my $eroll_add_export = $args{erollback}->getLastInserted();
-        $args{erollback}->insertNextErollBefore(erollback => $eroll_add_export);
-
         $args{erollback}->add(
             function   => $self->can('removeExport'),
-            parameters => [ $self,
-                            "container_access", $container_access,
-                            "econtext", $args{econtext} ]
+            parameters => [ $self, "container_access", $container_access, ]
         );
     }
 
@@ -267,36 +213,16 @@ sub removeExport {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'container_access', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'container_access' ]);
 
-    if (! $args{container_access}->isa("Entity::ContainerAccess::IscsiContainerAccess")) {
-        throw Kanopya::Exception::Execution::WrongType(
-                  error => "ContainerAccess must be a Entity::ContainerAccess::IscsiContainerAccess"
+    if (! $args{container_access}->isa("EEntity::EContainerAccess::EIscsiContainerAccess")) {
+        throw Kanopya::Exception::Internal::WrongType(
+                  error => "ContainerAccess must be a EEntity::EContainerAccess::EIscsiContainerAccess, not " .
+                           ref($args{container_access})
               );
     }
 
-    my $log_content      = "";
-    my $container_access = $args{container_access};
-    my $container        = $container_access->getContainer();
-    my $export_name      = $container_access->getAttr(name => "container_access_id");
-
     $args{container_access}->delete();
-
-    $log_content = "Remove export with export name <" . $export_name . ">";
-    if(exists $args{erollback} and defined $args{erollback}) {
-        $args{erollback}->add(
-            function   => $self->can('createExport'),
-            parameters => [ $self,
-                            "container", $container,
-                            "export_name", $export_name,
-                            "econtext", $args{econtext} ]);
-
-       $log_content .= " and will be rollbacked with add export of disk <" .
-                       $container->getAttr(name => 'container_device') . ">";
-    }
-
-    $log->debug($log_content);
 }
 
 =head2 addExportClient
@@ -314,28 +240,26 @@ sub addExportClient {
 
     my $host = $args{host};
     my $lun = $args{export}->getContainer;
-    my $volume = Entity->get(id => $lun->getAttr(name => "volume_id"));
     my $cluster = Entity->get(id => $host->getClusterId());
-    my $path = '/vol/' . $volume->getAttr(name => "name") .
-               '/' . $lun->getAttr(name => "name");
+    my $path = $lun->getPath();
     my $initiator_group = 'igroup_kanopya_' . $cluster->getAttr(name => "cluster_name");
 
     eval {
-        $self->_getEntity()->igroup_create(initiator_group_name => $initiator_group,
-                                           initiator_group_type => "iscsi");
+        $self->_getEntity()->igroup_create('initiator-group-name' => $initiator_group,
+                                           'initiator-group-type' => "iscsi");
     };
 
     eval {
         $log->info("Adding node " . $host->getAttr(name => "host_initiatorname") .
                    " to initiator group " . $initiator_group);
-        $self->_getEntity()->igroup_add(initiator            => $host->getAttr(name => "host_initiatorname"),
-                                        initiator_group_name => $initiator_group);
+        $self->_getEntity()->igroup_add('initiator'            => $host->getAttr(name => "host_initiatorname"),
+                                        'initiator-group-name' => $initiator_group);
     };
 
     $log->info("Mapping LUN $path to $initiator_group");
     eval {
-        my $lun_id = $self->_getEntity()->lun_map(path            => $path,
-                                                  initiator_group => $initiator_group);
+        my $lun_id = $self->_getEntity()->lun_map('path'            => $path,
+                                                  'initiator-group' => $initiator_group);
 
         $args{export}->setAttr(name  => "number",
                                value => $lun_id->child_get_string("lun-id-assigned"));
@@ -345,6 +269,42 @@ sub addExportClient {
 
 sub removeExportClient {
     # TODO: implement removeExportClient
+}
+
+=head2
+
+    Desc : Get the LUN id assigned for a client
+    args:
+        lun : the LUN to get the id from
+        host : host to autorize
+
+=cut
+
+sub getLunId {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'lun', 'host' ]);
+
+    $log->debug("Looking for the id of LUN " . $args{lun}->id . " for host " . $args{host}->id);
+
+    # Accept both Container and ContainerAccess
+    if ($args{lun}->isa("EEntity::EContainerAccess::EIscsiContainerAccess") ||
+        $args{lun}->isa("Entity:ContainerAccess::IscsiContainerAccess")) {
+        $args{lun} = $args{lun}->getContainer;
+    }
+
+    my $api = $self->_getEntity();
+    my @mappings = $api->lun_initiator_list_map_info(
+                       'initiator' => lc($args{host}->host_initiatorname)
+                   )->child_get("lun-maps")->children_get;
+
+    for my $mapping (@mappings) {
+        bless $mapping, "NaObject";
+        if ($mapping->path eq $args{lun}->getPath) {
+            return $mapping->lun_id;
+        }
+    }
 }
 
 1;

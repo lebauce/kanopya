@@ -1,0 +1,41 @@
+NAME = [% name %]
+MEMORY = [% maxmem %]
+CPU = 1
+
+[% IF hypervisor_name %]
+REQUIREMENTS = "NAME = \"[% hypervisor_name %]\""
+[% END %]
+
+RAW = [
+    TYPE = "kvm",
+    DATA = "<vcpu current='[% cpu %]'>[% maxcpu %]</vcpu>"
+]
+
+RAW = [
+    TYPE = "kvm",
+    DATA = "<currentMemory unit='MiB'>[% memory %]</currentMemory>"
+]
+
+OS = [
+    ARCH = x86_64,
+    ROOT = sda1,
+    BOOT = hd
+]
+
+DISK = [ IMAGE = "[% image_name %]", cache = "none", BUS="ide" ]
+	
+[% FOREACH iface IN interfaces %]
+NIC = [
+    MAC = [% iface.mac %],
+    NETWORK = "[% iface.network %]",
+    MODEL = virtio
+]
+[% END %]
+
+GRAPHICS = [
+	TYPE = vnc,
+	LISTEN = 0.0.0.0
+]
+
+
+

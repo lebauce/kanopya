@@ -44,18 +44,23 @@ package Executor;
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-our $VERSION = '1.00';
 use General;
+use Kanopya::Config;
 use Kanopya::Exceptions;
 use Administrator;
-use XML::Simple;
-use Data::Dumper;
 use EFactory;
-use Operation;
+use Entity::Operation;
 use Message;
 
-my $log = get_logger("executor");
+use XML::Simple;
+
+use Data::Dumper;
+use Log::Log4perl "get_logger";
+use Log::Log4perl::Layout;
+use Log::Log4perl::Appender;
+my $log = get_logger("");
+
+our $VERSION = '1.00';
 
 =head2 new
 
@@ -66,35 +71,24 @@ Executor::new creates a new executor object.
 =cut
 
 sub new {
-    my $class = shift;
+    my ($class) = @_;
     my $self = {};
 
     bless $self, $class;
-        
-   $self->_init();
-    
-    # Plus tard rajouter autre chose
-    return $self;
-}
 
-=head2 _init
+    $self->{config} = Kanopya::Config::get('executor');
 
-Executor::_init is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-    
-    $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
-
-    General::checkParams(args => $self->{config}->{user}, required => [ "name","password" ]);
+    General::checkParams(args => $self->{config}->{user}, required => [ "name", "password" ]);
 
     my $adm = Administrator::authenticate(
                   login    => $self->{config}->{user}->{name},
                   password => $self->{config}->{user}->{password}
               );
-    return;
+
+    $self->{include_blocked} = 1;
+    $self->{last_workflow_id} = -1;
+
+    return $self;
 }
 
 =head2 run
@@ -104,9 +98,8 @@ Executor->run() run the executor server.
 =cut
 
 sub run {
-    my $self = shift;
-    my $running = shift;
-    
+    my ($self, $running) = @_;
+
     Message->send(
         from    => 'Executor',
         level   => 'info',
@@ -114,7 +107,7 @@ sub run {
     );
 
     while ($$running) {
-       $self->execnround(run => 1);
+        $self->execnround(run => 1);
     }
 
     Message->send(
@@ -125,100 +118,240 @@ sub run {
 }
 
 sub oneRun {
-    my $self = shift;
-
+    my ($self) = @_;
     my $adm = Administrator->new();
-    my $errors;
-    my $opdata = Operation::getNextOp();
-    
-    if ($opdata){
-        # start transaction
-        $opdata->setProcessing();
-        my $op = EFactory::newEOperation(op => $opdata);
-        my $opclass = ref($op);
-        
-        $log->info("---- [$opclass] retrieved ; execution processing ----");
-        Message->send(
-            from    => 'Executor',
-            level   => 'info',
-            content => "Operation Processing [$opclass]..."
-        );
-        
-        $adm->{db}->txn_begin;
+
+    my $operation = Entity::Operation->getNextOp(include_blocked => $self->{include_blocked});
+
+    my ($op, $workflow, $delay, $logprefix);
+    if ($operation){
+        $log->info("\n\n");
+
+        $workflow = EFactory::newEEntity(data => $operation->getWorkflow);
+
+        # init log appender for this workflow if this one is not the same as the last executed
+        if($workflow->id != $self->{last_workflow_id}) {
+            my $appenders = Log::Log4perl->appenders();
+
+            if(exists $appenders->{'WORKFLOW'}) {
+                $log->eradicate_appender('WORKFLOW');
+            }
+            my $layout = Log::Log4perl::Layout::PatternLayout->new("%d %c %p> %M - %m%n");
+            my $file_appender = Log::Log4perl::Appender->new(
+                                    "Log::Dispatch::File",
+                                    name      => "WORKFLOW",
+                                    filename  => $self->{config}->{logdir} . "workflows/" . $workflow->id . ".log"
+                                );
+
+            $file_appender->layout($layout);
+            $log->add_appender($file_appender);
+            $self->{last_workflow_id} = $workflow->id;
+        }
+
+        # Initialize EOperation and context
         eval {
-            $op->prepare(internal_cluster => $self->{config}->{cluster});
-            $op->process();
-        };
-        if ($@) {
-            my $err_exec = $@;
-            if($err_exec->isa('Kanopya::Exception::Execution::OperationReported')) {
-                $op->report();
-                # commit transaction
-                $adm->{db}->txn_commit;
-                #Message->send(
-                #    from    => 'Executor',
-                #    level   => 'info',
-                #    content => "Operation Execution Reported [$opclass]"
-                #);
-                $log->debug("Operation $opclass reported");
-            }
-            else {
-                # rollback transaction
-                $adm->{db}->txn_rollback;
-                $log->info("Rollback, Cancel operation will be call");
-                eval {
-                    $adm->{db}->txn_begin;
-                    $op->cancel();
-                    $adm->{db}->txn_commit;
-                };
-                if ($@){
-                    my $err_rollback = $@;
-                    $log->error("Error during operation cancel :\n$err_rollback");
+            $op = EFactory::newEOperation(op => $operation);
+            $logprefix = "[" . $workflow->workflow_name . " workflow <" . $workflow->id .
+                         "> - Operation " . $op->type  . " <" . $op->id . ">]";
 
-                    $errors .= $err_rollback;
-                }
-                if (!($err_exec =~ /HASH/) or !$err_exec->{hidden}){
-                    Message->send(
-                        from    => 'Executor',
-                        level   => 'error',
-                        content => "[$opclass] Execution Aborted : $err_exec"
-                    );
-                    $log->error("Error during execution : $err_exec");
-                }
-                else {
-                    $log->info("Warning : $err_exec");}
-            }
-
-            $errors .= $err_exec;
-        } else {
-            # commit transaction
-            $op->finish();
-            $adm->{db}->txn_commit;
-            $log->info("---- [$opclass] Execution succeed ----");
+            $log->info("---- $logprefix ----");
             Message->send(
                 from    => 'Executor',
                 level   => 'info',
-                content => "[$opclass] Execution Success"
+                content => "Operation Processing [$op]..."
             );
-        }
-        eval { $op->delete(); };
+
+            $log->info("Check step");
+            $op->check();
+        };
         if ($@) {
-            my $err_delop = $@;
-            $log->error("Error during operation deletion : $err_delop");
+            $log->error("$op context initilisation failed:$@");
+
+            # Probably a compilation error on the operation class.
+            $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
+            $workflow->cancel(config => $self->{config}, state => 'failed');
+            return;
+        }
+
+        # Try to lock the context to check if entities are locked by others workflow
+        if ($op->state eq 'validated') {
+            $op->setState(state => 'ready');
+        }
+        else {
+            $log->debug("Calling validation of operation $op.");
+
+            if (not $op->validation()) {
+                $op->setState(state => 'waiting_validation');
+
+                $log->info("---- [$op] Operation waiting validation. ----");
+                return;
+            }
+        }
+
+        # Try to lock the context to check if entities are locked by others workflow
+        eval {
+            $log->debug("Locking context for $op");
+            $operation->lockContext();
+
+            if ($op->state eq 'blocked') {
+                $op->setState(state => 'ready');
+            }
+        };
+        if ($@) {
+            $op->setState(state => 'blocked');
+
+            $log->info("---- [$op] Unable to get locks, skip. ----");
+
+            # Unset the option include_blocked, to avoid
+            # fetching this operation at the next loop.
+            $self->{include_blocked} = 0;
+            return;
+        }
+
+        # Process the operation
+        eval {
+            # Start transaction for prerequisite/postrequisite
+            $adm->beginTransaction;
+
+            # If the operation never been processed, check its prerequisite
+            if ($op->state eq 'ready' or $op->state eq 'prereported') {
+
+                $log->info("Prerequisites step");
+                $delay = $op->prerequisites();
+
+                # If the prerequisite are validated, process the operation
+                if (not $delay) {
+                    $op->setState(state => 'processing');
+
+                    $adm->commitTransaction;
+
+                    # Start transaction for processing
+                    $adm->beginTransaction;
+
+                    $log->info("Prepare step");
+                    $op->prepare();
+
+                    $log->info("Process step");
+                    $op->process();
+                }
+            }
+
+            # If the operation has been processed, check its postrequisite
+            if ($op->state eq 'processing' or $op->state eq 'postreported') {
+
+                $log->info("Postrequisites step");
+                $delay = $op->postrequisites();
+            }
+
+            # Report the operation if required
+            if ($delay) {
+                # Update the context with possibles newly set params
+                $op->{params}->{context} = $op->{context};
+                $op->setParams(params => $op->{params});
+
+                $op->report(duration => $delay);
+
+                if ($op->state eq 'ready') {
+                    $op->setState(state => 'prereported');
+                }
+                elsif ($op->state eq 'processing') {
+                    $op->setState(state => 'postreported');
+                }
+
+                $adm->commitTransaction;
+
+                throw Kanopya::Exception::Execution::OperationReported(error => 'Operation reported');
+            }
+        };
+        if ($@) {
+            my $err_exec = $@;
+
+            if ($err_exec->isa('Kanopya::Exception::Execution::OperationReported')) {
+                $log->info("--- $logprefix Processing REPORTED ($delay s.)");
+                return;
+            } else {
+                $log->error("--- $logprefix Processing FAILED : $err_exec");
+            }
+
+            $log->info("$op rollback processing");
+            if(defined $op->{erollback}) {
+                $op->{erollback}->undo();
+            }
+            # Rollback transaction
+            $adm->rollbackTransaction;
+
+            # Cancelling the workflow
+            eval {
+                # Try to cancel all workflow operations, and delete them.
+                # Context entities will be unlocked by this call
+                $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
+                $workflow->cancel(config => $self->{config}, state => 'failed');
+            };
+            if ($@){
+                my $err_rollback = $@;
+                $log->error("Workflow cancel failed:$err_rollback");
+            }
+
+            if (!(ref($err_exec) eq "HASH") or !$err_exec->{hidden}){
+                Message->send(
+                    from    => 'Executor',
+                    level   => 'error',
+                    content => "[$op] Execution Aborted : $err_exec"
+                );
+            }
+            else {
+                $log->info("Warning : $err_exec");
+            }
+
+        }
+        else {
+            # Finishing the operation.
+            eval {
+                $log->info("Finish step");
+                $op->finish();
+            };
+            if ($@) {
+                my $err_finish = $@;
+                $log->error("Finish failed :$err_finish");
+            }
+
+            # Commit transaction
+            $adm->commitTransaction;
+
+            $log->info("---- $logprefix Processing SUCCEED ----");
             Message->send(
                 from    => 'Executor',
-                level   => 'error',
-                content => "[$opclass] Deletion Error : $err_delop"
+                level   => 'info',
+                content => "[$op] Execution Success"
             );
 
-            $errors .= $err_delop;
-        }
-    }
-    else { sleep 5; }
+            # Unlock the context to update it.
+            eval {
+                $log->debug("Unlocking context for $op");
+                $operation->unlockContext();
+            };
+            if ($@) {
+                my $err_unlock = $@;
+                $log->error("Context unlock failed:$err_unlock");
+            }
 
-    if (defined $errors) {
-        throw Kanopya::Exception::Execution(error => $errors);
-    };
+            eval {
+                # Update the workflow context
+                $workflow->pepareNextOp(context => $op->{context}, params => $op->{params});
+            };
+            if ($@) {
+                my $err_prepare = $@;
+                $log->error("Error during workflow prepare :\n$err_prepare");
+            }
+        }
+
+        # Set the option include_blocked, to check if blocked operation can get locks
+        # as the just finished operation probably free some locks.
+        $self->{include_blocked} = 1;
+    }
+    else {
+        sleep 5;
+    }
 }
 
 =head2 execnrun
@@ -228,8 +361,7 @@ Executor->execnround((run => $nbrun)) run the executor server for only one round
 =cut
 
 sub execnround {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     while ($args{run}) {
         $args{run} -= 1;
@@ -241,10 +373,6 @@ sub execnround {
         }
     }
 }
-
-
-
-
 
 1;
 

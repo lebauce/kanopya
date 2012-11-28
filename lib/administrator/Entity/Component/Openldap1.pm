@@ -56,13 +56,12 @@ use base "Entity::Component";
 
 use strict;
 use warnings;
-
 use Kanopya::Exceptions;
+use General;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use Crypt::SaltedHash;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
@@ -105,16 +104,6 @@ sub getBaseConfiguration {
     };
 }
 
-#sub getConf {
-#    my $self = shift;
-#    my $conf = {};
-#    my $confindb = $self->{_dbix};
-#    if($confindb) {   
-#        #TODO build conf hash with db data    
-#    }
-#   return $conf;
-#}
-
 sub getConf {
     my $self = shift;
     my $slapd_conf = {
@@ -137,25 +126,19 @@ sub getConf {
          openldap1_rootpw  => $confindb->get_column('openldap1_rootpw')           
        };    
     }
-    $log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper $slapd_conf);
+
     return $slapd_conf; 
 }
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;   
-   
-    $log->debug(">>>>>>>>>>>>>>>>>>>>>>" . Dumper  $conf);  
-    my $csh = Crypt::SaltedHash->new(algorithm => 'SHA-1');
+    my %args = @_;
 
-    #$conf->{openldap1_rootpw}='splendid';
-    my $a = $conf->{openldap1_rootpw}; 
-    $csh->add($a);
+    General::checkParams(args => \%args, required => ['conf']);
 
-    my $salted = $csh->generate;
-    print $salted;
-    $conf->{openldap1_rootpw} = $salted;
-
+    my $conf = $args{conf};
+    
+    $conf->{openldap1_rootpw} = General::cryptPassword(password => $conf->{openldap1_rootpw});
     $self->{_dbix}->update($conf);
 }    
 

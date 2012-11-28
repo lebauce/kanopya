@@ -19,7 +19,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 
-my $log = get_logger("orchestrator");
+my $log = get_logger("");
 
 sub new {
     my $class = shift;

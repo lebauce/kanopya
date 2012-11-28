@@ -56,21 +56,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 components
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Component>
-
-=cut
-
-__PACKAGE__->has_many(
-  "components",
-  "AdministratorDB::Schema::Result::Component",
-  { "foreign.service_provider_id" => "self.inside_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 inside
 
 Type: belongs_to
@@ -101,29 +86,14 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 server
 
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Server>
-
-=cut
-
-__PACKAGE__->might_have(
-  "server",
-  "AdministratorDB::Schema::Result::Server",
-  { "foreign.server_id" => "self.inside_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:c71o52AbnH1FnaDPOn3bCg
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-10-22 09:48:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5P097uT9GbZ1QcJV0UP/Hw
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::ServiceProvider",
-    { "foreign.service_provider_id" => "self.inside_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+  { "foreign.service_provider_id" => "self.inside_id" },
+  { cascade_copy => 0, cascade_delete => 1 });
 
 1;

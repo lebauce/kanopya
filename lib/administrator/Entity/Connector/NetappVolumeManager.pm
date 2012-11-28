@@ -16,23 +16,72 @@
 
 package Entity::Connector::NetappVolumeManager;
 use base "Entity::Connector::NetappManager";
+use base "Manager::ExportManager";
+use base "Manager::DiskManager";
 
 use warnings;
 use strict;
 
-use Entity::HostManager;
+use Manager::HostManager;
+use Entity::Operation;
 use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::NfsContainerAccess;
+use Entity::NetappAggregate;
 
 use Data::Dumper;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("administrator");
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    disk_type => {
+        is_virtual => 1
+    },
+    export_type => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub exportType {
+    return "NFS export";
+}
+
+sub diskType {
+    return "NetApp volume";
+}
+
+=head2 checkDiskManagerParams
+
+=cut
+
+sub checkDiskManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "aggregate_id", "systemimage_size" ]);
+}
+
+=head2 getPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    my $aggregates = {};
+    if ($args{policy_type} eq 'storage') {
+        for my $aggr (@{ $self->getConf->{aggregates} }) {
+            $aggregates->{$aggr->{aggregate_id}} = $aggr->{aggregate_name};
+        }
+        return [ { name => 'aggregate_id', label => 'Aggregate to use', values => $aggregates } ];
+    }
+    return [];
+}
 
 sub getExportManagerFromBootPolicy {
     my $self = shift;
@@ -40,13 +89,37 @@ sub getExportManagerFromBootPolicy {
 
     General::checkParams(args => \%args, required => [ "boot_policy" ]);
 
-    if ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_nfs}) {
+    if ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{pxe_nfs}) {
         return $self;
     }
 
     throw Kanopya::Exception::Internal::UnknownCategory(
               error => "Unsupported boot policy: $args{boot_policy}"
           );
+}
+
+sub getBootPolicyFromExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "export_manager" ]);
+
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+
+    if ($args{export_manager}->getId == $self->getId) {
+        return Manager::HostManager->BOOT_POLICIES->{pxe_nfs};
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported export manager:" . $args{export_manager}
+          );
+}
+
+sub getExportManagers {
+    my $self = shift;
+    my %args = @_;
+
+    return [ $self ];
 }
 
 sub getReadOnlyParameter {
@@ -71,42 +144,20 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "name", "size", "filesystem" ]);
+                         required => [ "name", "size", "filesystem", "aggregate_id" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'CreateDisk',
         params   => {
-            disk_manager_id     => $self->getAttr(name => 'connector_id'),
-            name                => $args{name},
-            size                => $args{size},
-            filesystem          => $args{filesystem},
-            volume_id           => $args{volume_id}
-        },
-    );
-}
-
-=head2 removeDisk
-
-    Desc : Implement removeDisk from DiskManager interface.
-           This function enqueue a ERemoveDisk operation.
-    args :
-
-=cut
-
-sub removeDisk {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    $log->debug("New Operation RemoveDisk with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveDisk',
-        params   => {
-            container_id => $args{container}->getAttr(name => 'container_id'),
+            name         => $args{name},
+            size         => $args{size},
+            filesystem   => $args{filesystem},
+            aggregate_id => $args{aggregate_id},
+            context      => {
+                disk_manager => $self,
+            }
         },
     );
 }
@@ -127,37 +178,17 @@ sub createExport {
                          required => [ "container", "export_name" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            export_manager_id   => $self->getAttr(name => 'connector_id'),
-            container_id        => $args{container}->getAttr(name => 'container_id'),
-            export_name         => $args{export_name},
-        },
-    );
-}
-
-=head2 removeExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ERemoveExport operation.
-    args : export_name
-
-=cut
-
-sub removeExport {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $log->debug("New Operation RemoveExport with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveExport',
-        params   => {
-            container_access_id => $args{container_access}->getAttr(name => 'container_access_id'),
+            context => {
+                export_manager => $self,
+                container      => $args{container},
+            },
+            manager_params => {
+                export_name => $args{export_name},
+            },
         },
     );
 }
@@ -171,77 +202,118 @@ sub removeExport {
 sub synchronize {
     my $self = shift;
     my %args = @_;
-    # Get list of volumes exists on NetApp :
-    my @volumesList = $self->volumes;
-    my $manager_ip  = $self->getServiceProvider->getMasterNodeIp;
+    my $aggregates = {};
+    my $manager_ip = $self->getServiceProvider->getMasterNodeIp;
+    my $netapp_id = $self->getAttr(name => "service_provider_id");
 
-    foreach my $vol (@volumesList) {
-        # Get list of volumes exists on Kanopya :
-        my $existing_volumes = Entity::Container::NetappVolume->search(hash => { name => $vol->name });
-        my $existing_volume = scalar($existing_volumes);
-        if ($existing_volume eq "0") {
+    foreach my $aggregate ($self->aggregates) {
+        my $aggr;
+        eval {
+            $aggr = Entity::NetappAggregate->find(
+                        hash => {
+                            name      => $aggregate->name,
+                            netapp_id => $netapp_id
+                        }
+                    );
+        };
+        if ($@) {
+            $aggr = Entity::NetappAggregate->new(
+                        name      => $aggregate->name,
+                        netapp_id => $netapp_id
+                    );
+            $aggr->setComment(comment => "Default comment for " . $aggregate->name);
+        }
+        $aggregates->{$aggregate->name} = $aggr;
+    }
+
+    foreach my $volume ($self->volumes) {
+        eval {
+            Entity::Container->find(hash => { container_name => $volume->name });
+        };
+        if ($@) {
+            my $aggregate = $aggregates->{$volume->containing_aggregate};
             my $container = Entity::Container::NetappVolume->new(
                                 disk_manager_id      => $self->getAttr(name => 'entity_id'),
-                                container_name       => $vol->name,
-                                container_size       => $vol->size_used,
-                                container_filesystem => "ext3",
+                                container_name       => $volume->name,
+                                container_size       => $volume->size_used,
+                                container_filesystem => "wafl",
                                 container_freespace  => 0,
-                                container_device     => $vol->name,
-                                aggregate_id         => "aggr0"
+                                container_device     => $volume->name,
+                                aggregate_id         => $aggregate->getAttr(name => "aggregate_id"),
                             );
+            $container->setComment(comment => "Default comment for " . $volume->name);
 
             my $container_access = Entity::ContainerAccess::NfsContainerAccess->new(
-                               container_id            => $container->getAttr(name => 'container_id'),
-                               export_manager_id       => $self->getAttr(name => 'entity_id'),
-                               container_access_export => $manager_ip . ':/vol/' . $vol->name,
-                               container_access_ip     => $manager_ip,
-                               container_access_port   => 2049,
-                               options                 => 'rw,sync,no_root_squash',
-                           );
+                                       container_id            => $container->getAttr(name => 'container_id'),
+                                       export_manager_id       => $self->getAttr(name => 'entity_id'),
+                                       container_access_export => $manager_ip . ':/vol/' . $volume->name,
+                                       container_access_ip     => $manager_ip,
+                                       container_access_port   => 2049,
+                                       options                 => 'rw,sync,no_root_squash',
+                                   );
         }
     }
 }
 
-=head2 getConf 
-
-    Desc: return hash structure containing aggregates and volumes  
-
-=cut
-
 sub getConf {
-    my ($self) = @_;
-    my $config = {};
-    $config->{aggregates} = [];
-    $config->{volumes} = [];
-    my @aggregates = $self->aggregates;
-    my @volumes = $self->volumes;
-    
-    foreach my $aggr (@aggregates) {
-        my $tmp = {
-            aggregate_name      => $aggr->name,
-            aggregate_state     => $aggr->state,
-            aggregate_totalsize => $aggr->size_total,
-            aggregate_sizeused  => $aggr->size_used,
-            aggregate_volumes   => []
-        };
-        foreach my $volume (@volumes) {
-            if($volume->containing_aggregate eq $aggr->name) {
-                my $tmp2 = {
-                    volume_name      => $volume->name,
-                    volume_state     => $volume->state,
-                    volume_totalsize => $volume->size_total,
-                    volume_sizeused  => $volume->size_used,
-                    volume_luns      => []
-                };
-            
-                push @{$tmp->{aggregates_volumes}}, $tmp2;
-            }    
-        }
-        
-        push @{$config->{aggregates}}, $tmp;
+    my $self = shift;
+
+    my $aggregates = [];
+    my $volumes = [];
+    my $netapp_volumes = {};
+
+    for my $vol ($self->volumes) {
+        $netapp_volumes->{$vol->name} = $vol;
     }
-     
-    return $config;
+
+    # Only display the aggregates that are both on NetApp and in our DB
+    foreach my $netapp_aggr ($self->aggregates) {
+        my $aggr;
+        eval {
+            $aggr = Entity::NetappAggregate->find(hash => { name => $netapp_aggr->name });
+        };
+
+        if ($@) {
+            $log->debug("Aggregate " . $netapp_aggr->name . " has been removed on NetApp " .
+                        "but still exists in our DB, skipping it ...");
+            next;
+        }
+
+        my $aggregate = {
+            aggregate_name      => $netapp_aggr->name,
+            aggregate_id        => $aggr->getId,
+            aggregate_state     => $netapp_aggr->state,
+            aggregate_totalsize => General::bytesToHuman(value => $netapp_aggr->size_total, precision => 5),
+            aggregate_sizeused  => General::bytesToHuman(value => $netapp_aggr->size_used, precision => 5),
+            entity_comment      => $aggr->comment,
+        };
+
+        my @contained_volumes = $netapp_aggr->child_get("volumes")->children_get;
+        foreach my $vol (@contained_volumes) {
+            $vol = $netapp_volumes->{$vol->child_get("name")->{content}};
+            bless $vol, "NaObject";
+            my $volume =  Entity::Container->find(hash => { container_name => $vol->name });
+
+            push @$volumes, {
+                container_id            => $volume->getId,
+                container_name          => $vol->name,
+                container_state         => $vol->state,
+                container_size          => General::bytesToHuman(value => $volume->container_size, precision => 5),
+                container_device        => $volume->container_device,
+                container_filesystem    => $volume->container_filesystem,
+                container_freespace     => General::bytesToHuman(value => $volume->container_freespace, precision => 5),
+                disk_manager_id         => $volume->disk_manager_id,
+                entity_comment          => $volume->comment,
+            };
+        }
+
+        $aggregate->{netapp_volumes} = $volumes;
+        push @$aggregates, $aggregate;
+    }
+    
+    return {
+        "aggregates" => $aggregates,
+    };
 }
 
 1;

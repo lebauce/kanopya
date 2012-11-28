@@ -13,7 +13,6 @@ conf/monitor.conf
 conf/nodes.conf
 conf/orchestrator-log.conf
 conf/orchestrator.conf
-conf/state-manager-log.conf
 conf/webui-log.conf
 doc/benchmark/Clients/initial_configuration/del_ClientBench_etc_disk.sh
 doc/benchmark/Clients/initial_configuration/InitialiseBenchCluster.t
@@ -257,7 +256,6 @@ lib/executor/EOperation/EStopCluster.pm
 lib/executor/EOperation/EStopNode.pm
 lib/executor/ERollback.pm
 lib/executor/Executor.pm
-lib/executor/StateManager.pm
 lib/monitor/AdminWrapper.pm
 lib/monitor/AdminWrapper/CustomAdmin.pm
 lib/monitor/AdminWrapper/MCSAdmin.pm
@@ -279,7 +277,6 @@ sbin/kanopya-collector
 sbin/kanopya-executor
 sbin/kanopya-grapher
 sbin/kanopya-orchestrator
-sbin/kanopya-state-manager
 sbin/README
 scripts/database/mysql/bck/bck_20100812.sql
 scripts/database/mysql/data-sample/initialize_for_Bench_client.sql

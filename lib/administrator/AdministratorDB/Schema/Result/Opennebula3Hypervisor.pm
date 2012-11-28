@@ -23,7 +23,7 @@ __PACKAGE__->table("opennebula3_hypervisor");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 opennebula3_id
@@ -33,14 +33,7 @@ __PACKAGE__->table("opennebula3_hypervisor");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 hypervisor_host_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
-=head2 hypervisor_id
+=head2 onehost_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -53,7 +46,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "opennebula3_id",
@@ -63,19 +56,27 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "hypervisor_host_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "hypervisor_id",
+  "onehost_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
 __PACKAGE__->set_primary_key("opennebula3_hypervisor_id");
 
 =head1 RELATIONS
+
+=head2 opennebula3_hypervisor
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Hypervisor>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "opennebula3_hypervisor",
+  "AdministratorDB::Schema::Result::Hypervisor",
+  { hypervisor_id => "opennebula3_hypervisor_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 =head2 opennebula3
 
@@ -92,42 +93,49 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 hypervisor_host
+=head2 opennebula3_kvm_hypervisor
 
-Type: belongs_to
+Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Host>
+Related object: L<AdministratorDB::Schema::Result::Opennebula3KvmHypervisor>
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "hypervisor_host",
-  "AdministratorDB::Schema::Result::Host",
-  { host_id => "hypervisor_host_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+__PACKAGE__->might_have(
+  "opennebula3_kvm_hypervisor",
+  "AdministratorDB::Schema::Result::Opennebula3KvmHypervisor",
+  {
+    "foreign.opennebula3_kvm_hypervisor_id" => "self.opennebula3_hypervisor_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 opennebula3_vms
+=head2 opennebula3_xen_hypervisor
 
-Type: has_many
+Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Opennebula3Vm>
+Related object: L<AdministratorDB::Schema::Result::Opennebula3XenHypervisor>
 
 =cut
 
-__PACKAGE__->has_many(
-  "opennebula3_vms",
-  "AdministratorDB::Schema::Result::Opennebula3Vm",
+__PACKAGE__->might_have(
+  "opennebula3_xen_hypervisor",
+  "AdministratorDB::Schema::Result::Opennebula3XenHypervisor",
   {
-    "foreign.opennebula3_hypervisor_id" => "self.opennebula3_hypervisor_id",
+    "foreign.opennebula3_xen_hypervisor_id" => "self.opennebula3_hypervisor_id",
   },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-12-26 10:20:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YcA6aV+a4S5fMg9Ju8JHsQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-06 17:35:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0IyDdCOONg0FRWqDUEg+lg
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Hypervisor",
+  { hypervisor_id => "opennebula3_hypervisor_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

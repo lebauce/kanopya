@@ -17,45 +17,66 @@
 
 package Entity::Component::Physicalhoster0;
 use base "Entity::Component";
-use base "Entity::HostManager";
+use base "Manager::HostManager";
 
 use strict;
 use warnings;
 
-use Entity::Powersupplycard;
-use Entity::HostManager;
+use Manager::HostManager;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use IO::Socket;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    # TODO: move this virtual attr to HostManager attr def when supported
+    host_type => {
+        is_virtual => 1
+    }
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
 sub getBootPolicies {
-    return (Entity::HostManager->BOOT_POLICIES->{pxe_iscsi},
-            Entity::HostManager->BOOT_POLICIES->{pxe_nfs});
+    return (Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
+            Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
 }
 
-sub getHostType {
+sub hostType {
     return "Physical host";
 }
 
-sub getConf {
-    my $self = shift;
-    my $conf = {};
+=head2 getPolicyParams
 
-    return $conf;
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    if ($args{policy_type} eq 'hosting') {
+        return [ { name => 'cpu', label => 'Required CPU number', pattern => '^[0-9]+$' },
+                 { name => 'ram', label => 'Required RAM amount', pattern => '^[0-9]+$' },
+                 { name => 'ram_unit', label => 'RAM unit', values => [ 'M', 'G' ] } ];
+    }
+    return [];
+}
+
+sub getConf {
+    return {};
 }
 
 sub setConf {
-    my $self = shift;
-    my ($conf) = @_;
+}
+
+sub getRemoteSessionURL {
+    return "";
 }
 
 1;

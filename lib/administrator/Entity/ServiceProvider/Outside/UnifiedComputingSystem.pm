@@ -24,11 +24,11 @@ use Entity::Connector::UcsManager;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	ucs_name            => { pattern      => '.*',
+    ucs_name            => { pattern      => '.*',
 							 is_mandatory => 1,
                            },
     ucs_desc            => { pattern      => '.*',
@@ -43,15 +43,21 @@ use constant ATTR_DEF => {
     ucs_passwd          => { pattern    => '.*',
                              is_mandatory => 1,
                            },
-    ucs_dataprovider    =>  { pattern   => '.*',
-                             is_mandatory => 0,
-                            },
     ucs_ou              =>  { pattern => '.*',
                              is_mandatory => 0,
                             },
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        synchronize => {
+            description => 'synchronize width UCS',
+            perm_holder => 'entity'
+        }
+    };
+}
 
 sub getUcs {
     my $class = shift;
@@ -61,32 +67,16 @@ sub getUcs {
     return $class->search(%args);
 }
 
-sub create {
-    my $self = shift;
+sub new {
+    my $class = shift;
     my %args = @_;
 
-    my $addrip = new NetAddr::IP($args{ucs_addr});
-    if(not defined $addrip) {
-        $errmsg = "Ucs->create : wrong value for ip address!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    my $ucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->new(
-        ucs_name            => $args{ucs_name},
-        ucs_desc            => $args{ucs_desc},
-        ucs_addr            => $args{ucs_addr},
-        ucs_login           => $args{ucs_login},
-        ucs_passwd          => $args{ucs_passwd},
-        ucs_dataprovider    => $args{ucs_dataprovider},
-        ucs_ou              => $args{ucs_ou},
-    );
+    my $self = $class->SUPER::new(%args);
 
     my $connector = Entity::Connector::UcsManager->new();
-    $ucs->addConnector('connector' => $connector);
+    $self->addConnector('connector' => $connector);
 
-    return $ucs;
-
+    return $self;
 }
 
 sub remove {

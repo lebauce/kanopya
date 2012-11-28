@@ -54,7 +54,7 @@ chomp $db_pwd;
 # Define globals
 my $schema_class_name = 'AdministratorDB::Schema';
 
-my $connect_info = [ 'dbi:mysql:kanopya:localhost:3306', $db_user, $db_pwd];
+my $connect_info = [ 'dbi:mysql:kanopya:localhost:3306', $db_user, $db_pwd ];
 
 my $dump_dir = '/opt/kanopya/lib/administrator';
 
@@ -64,6 +64,8 @@ if ($table eq 'all') {  # Update all existing schema and create schema for new t
         { debug => 1,
           dump_directory => $dump_dir,
           overwrite_modifications => 1,
+          result_base_class => "DBIx::Class::IntrospectableM2M",
+          left_base_classes => [ "DBIx::Class::Core" ],
         },
         $connect_info,
     );
@@ -76,6 +78,8 @@ if ($table eq 'all') {  # Update all existing schema and create schema for new t
           dump_directory => $tmp_dump_dir,
           overwrite_modifications => 1,
           skip_load_external => 1,
+          result_base_class => "DBIx::Class::IntrospectableM2M",
+          left_base_classes => [ "DBIx::Class::Core" ],
         },
       $connect_info,
     );
@@ -91,7 +95,7 @@ if ($table eq 'all') {  # Update all existing schema and create schema for new t
         print "You may lose custom content. Please check manually.\n";
         print "\t[generated] $tmp_dir/$schema_name.pm\n\t[existing] $target_dir/$schema_name.pm\n[press enter to display diff]";
         my $in = <STDIN>;
-        exec("diff $tmp_dir/$schema_name.pm $target_dir/$schema_name.pm");
+        exec("diff -u $target_dir/$schema_name.pm $tmp_dir/$schema_name.pm");
     }
     print "Move schema $schema_name.pm in $target_dir...\n";
     `mv $tmp_dir/$schema_name.pm $target_dir/`;

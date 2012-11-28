@@ -1,196 +1,215 @@
-# StateManager.pm - Object class of State Manager server
-
-#    Copyright 2011 Hedera Technology SAS
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
+# Copyright 2011 Hedera Technology SAS
 #
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
 #
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
-
-
-=head1 NAME
-
-<StateManager>  <StateManager main class>
-
-=head1 VERSION
-
-This documentation refers to <StateManager> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Executor>;
-
-
-=head1 DESCRIPTION
-
-StateManager is the main module to manage state
-
-=head1 METHODS
-
-=cut
 
 package StateManager;
 
 use strict;
 use warnings;
 
-
-use General;
+use Kanopya::Config;
 use Kanopya::Exceptions;
-use Operation;
-use EFactory;
-use Administrator;
 use Entity::ServiceProvider::Inside::Cluster;
-use Entity::Host;
-use Message;
 
-use StateManager::Host;
-use StateManager::Cluster;
-use StateManager::Node;
+use Message;
+use Alert;
+use EFactory;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 use XML::Simple;
-use Data::Dumper;
-use Log::Log4perl "get_logger";
-our $VERSION = '1.00';
-
 use Net::Ping;
 use IO::Socket;
 
 my $errmsg;
-my $log = get_logger("statemanager");
-
-
-=head2 new
-
-    my $executor = Executor->new();
-
-Executor::new creates a new executor object.
-
-=cut
+my $log = get_logger("");
 
 sub new {
-    my $class = shift;
+    my ($class) = @_;
     my $self = {};
 
     bless $self, $class;
-        
-    $self->_init();
-    
-    # Plus tard rajouter autre chose
+
+    $self->{config} = Kanopya::Config::get('executor');
+
+    if ((! exists $self->{config}->{user}->{name}     || ! defined exists $self->{config}->{user}->{name}) &&
+        (! exists $self->{config}->{user}->{password} || ! defined exists $self->{config}->{user}->{password})) {
+        throw Kanopya::Exception::Internal::IncorrectParam(error => "StateManager->new need user definition in config file!");
+    }
+
+    my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name}, password => $self->{config}->{user}->{password});
+
     return $self;
 }
 
-=head2 _init
-
-Executor::_init is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-    
-    $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
-    if ((! exists $self->{config}->{user}->{name} ||
-         ! defined exists $self->{config}->{user}->{name}) &&
-        (! exists $self->{config}->{user}->{password} ||
-         ! defined exists $self->{config}->{user}->{password})){ 
-        throw Kanopya::Exception::Internal::IncorrectParam(error => "StateManager->new need user definition in config file!"); }
-    my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name},
-                                 password => $self->{config}->{user}->{password});
-    return;
-}
-
-
 =head2 run
 
-Executor->run() run the executor server.
+StateManager->run() run the state manager server.
 
 =cut
 
 sub run {
-    my $self = shift;
-    my $running = shift;
-    
-    my $adm = Administrator->new();
-    Message->send(from => 'StateManager', level => 'info', content => "Kanopya State Manager started.");
-    
-    # main loop
-    while ($$running) {
-        # First Check Host status
-        
-        $log->debug("<<< Hosts status changes >>>");
-        my @hosts = Entity::Host->getHosts(hash => {-not => {host_state => {'like','down%'}}});
-        @hosts = grep {$_->getState() !~ /^locked:/} @hosts;
-        foreach my $mb (@hosts) {
-            $adm->{db}->txn_begin;
-            eval {
-                  
-                    print "loop on not down host <" .$mb->getAttr(name=>"host_mac_address").">\n";
-                  my $ehost = EFactory::newEEntity(data => $mb);
-                  my $is_up = $ehost->checkUp();
-                  StateManager::Host::updateHostStatus(pingable => $is_up, host=>$mb);
-            };
-            if($@) {
-                my $exception = $@;
-                $adm->{db}->txn_rollback;
-                Message->send(from => 'StateManager', level => 'error', content => $exception);
-                $log->error($exception);
-            } else {
-                $adm->{db}->txn_commit; 
-            }
-        }
+    my ($self, $running) = @_;
 
-        # Second Check clusters's nodes status
-        $log->debug("<<< Clusters'nodes status changes >>>");
-        my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters(hash=>{-not => {cluster_state => {'like','down%'}}});
+    my $adm = Administrator->new();
+
+    Message->send(from => 'StateManager', level => 'info', content => "Kanopya State Manager started.");
+
+    # Main loop
+    while ($$running) {
+        # Check all nodes services availability
+        my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
+        CLUSTER:
         foreach my $cluster (@clusters) {
-                        
-            $log->debug("On cluster " . $cluster->getAttr(name=>'cluster_name')." ...");
-            my $hosts = $cluster->getHosts();
-            my @moth_index = keys %$hosts;
-            foreach my $mb (@moth_index) {
-                $adm->{db}->txn_begin;
-                eval {
-                    my $srv_available = StateManager::Node::checkNodeUp(host=>$hosts->{$mb}, 
-                                                    cluster=>$cluster,
-                                                    executor_ip=>Entity::ServiceProvider::Inside::Cluster->get(id => $self->{config}->{cluster}->{executor})->getMasterNodeIp());
-                    StateManager::Node::updateNodeStatus(host=>$hosts->{$mb}, services_available => $srv_available, cluster => $cluster);
-                };
-                if($@) {
-                    my $exception = $@;
-                    $adm->{db}->txn_rollback;
-                    Message->send(from => 'StateManager', level => 'error', content => $exception);
-                    $log->error($exception);
-                } else {
-                 $adm->{db}->txn_commit; 
+
+            my $nodes = $cluster->getHosts();
+            my $services_available = 1;
+            if(!scalar(values %$nodes)) {
+                # we deactive all alerts for this cluster
+                my @alerts = Alert->search(hash => { alert_active => 1, entity_id => $cluster->id });
+                for my $alert(@alerts) {
+                    $alert->mark_resolved;
                 }
+
+                next CLUSTER;
             }
-            
-            $adm->{db}->txn_begin;
-            eval {
-                StateManager::Cluster::updateClusterStatus(hosts=>$hosts,cluster=>$cluster);
-            };
-            if($@) {
-                my $exception = $@;
-                $adm->{db}->txn_rollback;
-                Message->send(from => 'StateManager', level => 'error', content => $exception);
-                $log->error($exception);
-            } else {
-              $adm->{db}->txn_commit; 
+            $log->info('---------------------------------------------');
+            $log->info('***** Check ['.$cluster->cluster_name.'] service availability on '.scalar(values %$nodes).' nodes *****');
+            foreach my $node (values %$nodes) {
+                my $ehost = EFactory::newEEntity(data => $node);
+
+                $adm->beginTransaction;
+
+                # Firstly try to ping the node
+                my $pingable;
+                my $hostname = $ehost->getAttr(name => 'host_hostname');
+                my $hostmsg = "Host $hostname not reachable";
+                # search if an alert exists
+                my $hostalert =  eval { Alert->find(hash => {
+                                                          alert_active => 1,
+                                                          alert_message => $hostmsg,
+                                                          entity_id => $cluster->id })
+                            };
+
+                eval {
+                   $pingable = $ehost->checkUp();
+                };
+
+                my ($hoststate, $hosttimestamp) = $ehost->getState;
+
+                if (! $pingable and $hoststate eq 'up') {
+                    my $msg = "Node " . $node->host_hostname . " unreachable in cluster :" . $cluster->cluster_name;
+                    $log->warn($msg);
+                    Message->send(from => 'StateManager', level => 'info', content => $msg);
+
+                    # create an alert if not already created
+                    if(not $hostalert) {
+                        Alert->new(entity_id => $cluster->id, alert_message => $hostmsg, alert_signature => $hostmsg);
+                        $log->warn($msg);
+                    }
+
+                    # Set the host and node states to broken
+                    $ehost->setState(state => 'broken');
+                    $ehost->setNodeState(state => 'broken');
+                    $cluster->setState(state => 'warning');
+
+                    $adm->commitTransaction;
+                    next;
+                }
+                elsif ($pingable and $hoststate eq 'broken') {
+                    # Host has been repaired
+                    my ($prevstate, $prevtimestamp) = $ehost->getPrevState;
+                    $ehost->setState(state => $prevstate);
+                    
+                    # disable the alert if it exists
+                    if($hostalert) {
+                        $hostalert->mark_resolved;
+                    }
+                }
+
+                # Then check the node component availability
+                my $node_available = 1;
+                my @components = $cluster->getComponents(category => "all");
+                foreach my $component (@components) {
+                    my $ecomponent = EFactory::newEEntity(data => $component);
+                    my $component_name = $component->component_type->component_name;
+
+                    $log->debug("Check component availability : " . $component_name);
+
+                    # search if an alert exists
+                    my $compmsg = "Component $component_name unreachable on Host $hostname";
+                    my $compalert =  eval { Alert->find(hash => { 
+                                                          alert_active => 1, 
+                                                          alert_message => $compmsg,
+                                                          entity_id => $cluster->id }) 
+                            };
+
+                    if (! $ecomponent->isUp(host => $ehost, cluster => $cluster)) {
+                        my $msg = $component_name .
+                                  " not available on node (" . $node->host_hostname .
+                                  ") in cluster (" . $cluster->cluster_name . ")";
+                        #$log->warn($msg);
+
+                        #Message->send(from => 'StateManager', level => 'info', content => $msg);
+
+                        # create an alert if not already created
+                        if(not $compalert) {
+                            Alert->new(entity_id => $cluster->id, alert_message => $compmsg, alert_signature => $compmsg);
+                            $log->warn($msg);
+                        }
+
+                        $node_available = 0;
+                        $services_available = 0;
+                        last;
+                    } else {
+                        # disable the alert if it exists
+                        if($compalert) {
+                            $compalert->mark_resolved;
+                        }
+                    }
+                }
+                my ($nodestate, $nodetimestamp) = $ehost->getNodeState;
+                if (! $node_available and $nodestate eq 'in') {
+                    # Set the node state to broken
+                    $ehost->setNodeState(state => 'broken');
+                    $cluster->setState(state => 'warning');
+                    $adm->commitTransaction;
+                    next;
+                }
+                elsif ($node_available and $nodestate eq 'broken') {
+                    # Set the node is repaired
+                    $ehost->setNodeState(state => 'in');
+
+                }
+
+                $adm->commitTransaction;
             }
+
+            $adm->beginTransaction;
+
+            my ($clusterstate, $clustertimestamp) = $cluster->getState;
+            if ($services_available and $clusterstate eq 'warning') {
+                # Set the cluster as repaired
+                $cluster->setState(state => 'up');
+            }
+
+            $adm->commitTransaction;
        }
-           
-       sleep 10;
+       sleep 20;
    }
 
    Message->send(from => 'StateManager', level => 'warning', content => "Kanopya State Manager stopped");

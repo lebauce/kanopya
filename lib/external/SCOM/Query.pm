@@ -39,6 +39,8 @@ SCOM::Query - get performance counters values from a remote management server
 Retrieve in one request all wanted counters (only one remote connection).
 Output hash is fashionable.
 
+Powershell script execution must be allowed (> set-executionPolicy unrestricted)
+
 =head1 METHODS
 
 =cut
@@ -58,12 +60,20 @@ sub new {
     bless $self, $class;
     
     $self->{_management_server_name} = $args{server_name};
-    #$self->{_set_execution_policy_cmd} = 'set-executionPolicy unrestricted'; ## WARNING to study
-    $self->{_scom_modules} = [
-        'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.dll',
-        'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.Functions.ps1',
+
+    # Connection to scom shell using import module
+#    $self->{_scom_modules} = [
+#        'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.dll',
+#        'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.Functions.ps1',
+#    ];
+#    $self->{_scom_shell_cmd} = 'Start-OperationsManagerClientShell -managementServerName: ' . $self->{_management_server_name} . ' -persistConnection: $false -interactive: $false';
+    
+    # Connection to scom shell using pssnapin
+    $self->{_scom_shell_init} = [
+        'Add-PSSnapin Microsoft.EnterpriseManagement.OperationsManager.Client',
+        'New-ManagementGroupConnection -ConnectionString:localhost',
+        'Set-Location \'OperationsManagerMonitoring::\'',
     ];
-    $self->{_scom_shell_cmd} = 'Start-OperationsManagerClientShell -managementServerName: ' . $self->{_management_server_name} . ' -persistConnection: $false -interactive: $false';
     
     $self->{_remote_invocation_options} = $args{use_ssl} ? "-UseSSL" : "";
     
@@ -78,35 +88,62 @@ sub getPerformance {
                                                  : ['$pc.MonitoringObjectPath','$pc.ObjectName','$pc.CounterName','$pv.TimeSampled','$pv.SampleValue'];
     my ($line_sep, $item_sep) = ('DATARAW', '###');
     
-    my $cmd = $self->_buildGetPerformanceCmd(
-                counters            => $args{counters},
-                monitoring_object   => $args{monitoring_object}, # optional
-                start_time          => $args{start_time},
-                end_time            => $args{end_time},
-                want_attrs          => $wanted_attrs,
-                line_sep            => $line_sep,
-                item_sep            => $item_sep,
-    );
+    my @monit_object_slice = ($args{monitoring_object });
+    my @res_slice;
+    my %h_res;
 
-    # Execute command
-    my $cmd_res = $self->_execCmd(cmd => $cmd);
+    # We loop over slice to handle command is too long issue
+    # If can't exec a slice we split it in sub-slice
+    # Split only monitoring object list and not counters (TODO)
+    OBJECT_SLICE:
+    foreach my $monit_objects (@monit_object_slice) {
+        my $cmd = $self->_buildGetPerformanceCmd(
+                    counters            => $args{counters},
+                    monitoring_object   => $monit_objects, # optional
+                    start_time          => $args{start_time},
+                    end_time            => $args{end_time},
+                    want_attrs          => $wanted_attrs,
+                    line_sep            => $line_sep,
+                    item_sep            => $item_sep,
+        );
 
-    # remove all \n (end of line and inserted \n due to console output)
-    $cmd_res =~ s/\n//g; 
+        # Execute command
+        my $cmd_res = $self->_execCmd(cmd => $cmd);
+        
+        
+        # remove all \n (end of line and inserted \n due to console output)
+        $cmd_res =~ s/\n//g; 
 
-    # Die if something wrong
-    die $cmd_res if ($cmd_res !~ 'DATASTART');
+        # If can't execute command (too long) we split it
+        if ($cmd_res eq '') {
+            #$log->debug("command too long, we split it");
+            my @objects = @{$monit_objects};
+            my $last_idx = $#objects;
+            my @left  = @objects[0..int($last_idx/2)];
+            my @right = @objects[(int($last_idx/2)+1)..$last_idx];
+            push @monit_object_slice, (\@left, \@right);
+            next OBJECT_SLICE;
+        }
 
-    # Build resulting data hash from cmd output
-    my $h_res    = $self->_formatToHash( 
-                                input           => $cmd_res,
-                                line_sep        => $line_sep,
-                                item_sep        => $item_sep,
-                                items_per_line  => scalar(@$wanted_attrs),
-                                #index_order    => [0,1,2,3,4],
-    );
-    
-    return $h_res;
+        # Die if something wrong
+        if ($cmd_res !~ '^PSComputerName' || $cmd_res !~ 'DATASTART') {
+            $cmd_res =~ s/DATASTART//g;
+            die 'SCOM request fails : ' . $cmd_res;
+        }
+
+        # Build resulting data hash from cmd output
+        my $h_res_slice    = $self->_formatToHash( 
+                                    input           => $cmd_res,
+                                    line_sep        => $line_sep,
+                                    item_sep        => $item_sep,
+                                    items_per_line  => scalar(@$wanted_attrs),
+                                    #index_order    => [0,1,2,3,4],
+        );
+        
+        %h_res = (%h_res, %$h_res_slice);
+    }
+
+    return \%h_res;
 }
 
 sub getcounters {
@@ -119,9 +156,9 @@ sub _execCmd {
     my %args = @_;
     
     my @cmd_list = (
-        #$self->{_set_execution_policy_cmd},                                            # allow script execution
-        map({ "import-module '$_' -DisableNameChecking" } @{$self->{_scom_modules}}),   # import modules without verb warning
-        $self->{_scom_shell_cmd},                                                       # connect to scom shell on management server
+        #map({ "import-module '$_' -DisableNameChecking" } @{$self->{_scom_modules}}),   # import modules without verb warning
+        #$self->{_scom_shell_cmd},                                                       # connect to scom shell on management server
+        @{ $self->{_scom_shell_init} },                                                 # connect to scom shell
         $args{cmd},                                                                     # SCOM cmd to execute (double quote must be escaped)
     );
     
@@ -131,7 +168,7 @@ sub _execCmd {
     #my $cmd_res = `powershell $full_cmd`;
     
     # Else use remote snap-in
-    my $cmd_res = `powershell invoke-command {$full_cmd} -ComputerName $self->{_management_server_name} $self->{_remote_invocation_options}`;
+    my $cmd_res = `powershell invoke-command {$full_cmd} -ComputerName $self->{_management_server_name} $self->{_remote_invocation_options} 2>&1`;
     
     return $cmd_res;
 }

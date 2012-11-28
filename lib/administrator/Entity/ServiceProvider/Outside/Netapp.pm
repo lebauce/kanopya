@@ -23,7 +23,7 @@ use Entity::Connector::NetappVolumeManager;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
@@ -46,40 +46,32 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getNetapp {
-    my $class = shift;
-    my %args = @_;
-    General::checkParams(args => \%args, required => ['hash']);
-
-    return $class->search(%args);
+sub methods {
+    return {
+        getState    => {
+            description => 'get the state',
+            perm_holder => 'entity'
+        },
+        synchronize => {
+            description => 'synchronize',
+            perm_holder => 'entity'
+        }
+    };
 }
 
-sub create {
-    my $self = shift;
+sub new {
+    my $class = shift;
     my %args = @_;
 
-    my $addrip = new NetAddr::IP($args{netapp_addr});
-    if (not defined $addrip) {
-        $errmsg = "Netapp->create : wrong value for ip address!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    my $netapp = Entity::ServiceProvider::Outside::Netapp->new(
-        netapp_name            => $args{netapp_name},
-        netapp_desc            => $args{netapp_desc},
-        netapp_addr            => $args{netapp_addr},
-        netapp_login           => $args{netapp_login},
-        netapp_passwd          => $args{netapp_passwd},
-    );
+    my $self = $class->SUPER::new(%args);
 
     my $connector = Entity::Connector::NetappLunManager->new();
-    $netapp->addConnector('connector' => $connector);
+    $self->addConnector('connector' => $connector);
+
     $connector = Entity::Connector::NetappVolumeManager->new();
-    $netapp->addConnector('connector' => $connector);
+    $self->addConnector('connector' => $connector);
 
-    return $netapp;
-
+    return $self;
 }
 
 sub remove {

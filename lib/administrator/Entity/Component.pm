@@ -26,27 +26,11 @@ use Kanopya::Exceptions;
 use Data::Dumper;
 use Administrator;
 use General;
+use ComponentType;
 use Log::Log4perl "get_logger";
-my $log = get_logger("administrator");
+
+my $log = get_logger("");
 my $errmsg;
-
-=head2 new
-
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of component entity.
-          This is an abstract class, DO NOT instantiate it.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component from parameters.
-B<Comment>  : 
-To save data in DB call save() on returned obj (after modification)
-Like all component, instantiate it creates a new empty component instance.
-You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
 
 use constant ATTR_DEF => {
     service_provider_id => {
@@ -61,28 +45,40 @@ use constant ATTR_DEF => {
         is_extended    => 0,
         is_editable    => 0
     },
-    tier_id => {
-        pattern        => '^\d*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 0
-    },
     component_template_id => {
         pattern        => '^\d*$',
         is_mandatory   => 0,
         is_extended    => 0,
         is_editable    => 0
     },
+    priority => {
+        is_virtual => 1
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        getConf   => {
+            description => 'get configuration',
+        },
+        setConf   => {
+            description => 'set configuration',
+        },
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
+        getPolicyParams => {
+            description => 'get the parameters required for policies definition.',
+        },
+    }
+};
 
 sub new {
     my $class = shift;
     my %args = @_;
 
-    # avoid abstract Entity::Component instanciation
-    if ($class !~ /Entity::Component::(.+)(\d+)/) {
+    # Avoid abstract Entity::Component instanciation
+    if ($class !~ /Entity::Component.*::(\D+)(\d*)/) {
         $errmsg = "Entity::Component->new : Entity::Component must not " .
                   "be instanciated without a concret component class";
         $log->error($errmsg);
@@ -92,106 +88,82 @@ sub new {
     my $component_name    = $1;
     my $component_version = $2;
 
-    # set base configuration if not passed to this constructor
+    # Set base configuration if not passed to this constructor
     my $config = (%args) ? \%args : $class->getBaseConfiguration();
     my $template_id = undef;
     if (exists $args{component_template_id} and defined $args{component_template_id}) {
         $template_id = $args{component_template_id};
     }
 
-    # we set the corresponding component_type
-    my $admin = Administrator->new();
-    my $component_type_id = $admin->{db}->resultset('ComponentType')->search( {
-                                component_name    => $component_name,
-		                component_version => $component_version
-                            })->single->id;
+    # We set the corresponding component_type
+    my $hash = { component_name => $component_name };
+    if (defined ($component_version) && $component_version) {
+        $hash->{component_version} = $component_version;
+    }
 
-    $config->{component_type_id} = $component_type_id;
-    my $self = $class->SUPER::new(%$config);
+    my $self = $class->SUPER::new(component_type_id => ComponentType->find(hash => $hash)->id,
+                                  %$config);
+
     bless $self, $class;
+
+    # Add the component to the Component group
+    Entity::Component->getMasterGroup->appendEntity(entity => $self);
+
     return $self;
 }
 
-sub getComponentId {
-    my $class = shift;
-    my %args = @_;
+=head2 getConf
 
-    General::checkParams(args => \%args, required => ['component_name','component_version']);
-    
-    my $adm = Administrator->new();
-
-    $log->error(Dumper %args);
-    my $component = $adm->{db}->resultset('ComponentType')->search(\%args)->single();
-
-    return $component->get_column("component_id");
-}
-
-=head2 getInstance
+    Generic method for getting simple component configuration
 
 =cut
 
-sub getInstance {
-    my $class = shift;
+sub getConf {
+    my $self = shift;
+    my $conf = {};
+
+    return $self->toJSON(raw => 1);
+}
+
+=head2 setConf
+
+    Generic method for setting simple component configuration.
+    If a value differs from db contents, the attr is set, and
+    the object saved.
+
+=cut
+
+sub setConf {
+    my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['id']);
+    General::checkParams(args => \%args, required => ['conf']);
 
-    my $adm = Administrator->new();
+    my $current_conf = $self->getConf;
 
-    # Retrieve the component type.
-    my $component = $adm->{db}->resultset('Component')->find($args{id});
-    my $comp_name = $component->component_type->get_column('component_name');
-    my $comp_version = $component->component_type->get_column('component_version'); 
-    my $comp_class = $class .'::'. $comp_name.$comp_version;
-    my $location = General::getLocFromClass(entityclass => $comp_class);
-    eval { require $location; };
-
-    return $comp_class->get(id => $args{id});
-}
-
-sub getComponents {
-    my $class = shift;
-    my $adm = Administrator->new();
-    my $components = $adm->{db}->resultset('ComponentType')->search();
-    my $list = [];
-
-    while(my $c = $components->next) {
-        my $tmp = {};
-        $tmp->{component_type_id}  = $c->get_column('component_type_id');
-        $tmp->{component_name}     = $c->get_column('component_name');
-        $tmp->{component_version}  = $c->get_column('component_version');
-        $tmp->{component_category} = $c->get_column('component_category');
-        push(@$list, $tmp);
-    }
-
-    return $list;
-}
-
-sub getComponentsByCategory {
-    my $class = shift;
-    my $adm = Administrator->new();
-    my $list = [];
-    my $currentindex = -1;
-    my $currentcategory = '';
-    my $components = $adm->{db}->resultset('ComponentType')->search({ }, {
-                         order_by => {
-                                 -asc => [qw/component_category component_name component_version/]
-                         } });
-
-    while(my $c = $components->next) {
-        my $category = $c->get_column('component_category');
-        my $tmp = { name => $c->get_column('component_name'),
-                    version => $c->get_column('component_version') };
-        if ($currentcategory ne $category) {
-            $currentcategory = $category;
-            $currentindex++;
-            $list->[$currentindex] = { category => "$category",
-                                       components => [] };
+    my $updated = 0;
+    for my $attr (keys %{$args{conf}}) {
+        if ($current_conf->{$attr} ne $args{conf}->{$attr}) {
+            $self->setAttr(name => $attr, value => $args{conf}->{$attr});
+            $updated = 1;
         }
-        push @{$list->[$currentindex]->{components}}, $tmp;
     }
+    if ($updated) {
+        $self->save();
+    }
+}
 
-    return $list;
+=head2 getPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    return [];
 }
 
 =head2 getTemplateDirectory
@@ -214,34 +186,6 @@ sub getTemplateDirectory {
     }
 }
 
-=head2 getComponenAttr
-
-B<Class>   : Public
-B<Desc>    : This method return component information like name, version, ...
-B<args>    : None
-B<Return>  : Hash ref :
-    B<component_name> : Component name
-    B<component_version> : Component version
-    B<component_id> : Component id. Could be use to instanciate a new cluster.
-            Ref Component table id
-    B<component_category> : Component category. Its a specific category classification be
-B<Comment>  : Return information about component, not about $self (which is a component instance)
-B<throws>  : None
-
-=cut
-
-sub getComponentAttr {
-    my $self = shift;
-    my $componentAttr = {};
-
-    $componentAttr->{component_name}     = $self->{_dbix}->parent->component_type->get_column('component_name');
-    $componentAttr->{component_type_id}  = $self->{_dbix}->parent->component_type->get_column('component_type_id');
-    $componentAttr->{component_version}  = $self->{_dbix}->parent->component_type->get_column('component_version');
-    $componentAttr->{component_category} = $self->{_dbix}->parent->component_type->get_column('component_category');
-
-    return $componentAttr;
-}
-
 =head2 getServiceProvider
 
     Desc: Returns the service provider the component is on
@@ -252,6 +196,26 @@ sub getServiceProvider {
     my $self = shift;
 
     return Entity->get(id => $self->getAttr(name => "service_provider_id"));
+}
+
+=head2 remove
+
+    Desc: Overrided to remove associated service_provider_manager
+          Managers can't be cascade deleted because they are linked either to a a connector or a component.
+
+    TODO : merge connector and component or make them inerit from a parent class
+
+=cut
+
+sub remove {
+    my $self = shift;
+
+    my @managers = ServiceProviderManager->search( hash => {manager_id => $self->id} );
+    for my $manager (@managers) {
+        $manager->delete();
+    }
+
+    $self->delete();
 }
 
 =head2 toString
@@ -274,7 +238,16 @@ sub toString {
     return $component_name . " " . $component_version;
 }
 
+sub supportHotConfiguration {
+    return 0;
+}
+
+sub priority {
+    return 50;
+}
+
 sub readyNodeAddition { return 1; }
+
 sub readyNodeRemoving { return 1; }
 
 # Method to override to insert in db component default configuration
@@ -284,64 +257,8 @@ sub getClusterizationType {}
 sub getExecToTest {}
 sub getNetConf {}
 sub needBridge { return 0; }
-sub getHostConstraints { return; }
-=head1 DIAGNOSTICS
+sub getHostsEntries { return; }
+sub getPuppetDefinition { return ""; }
 
-Exceptions are thrown when mandatory arguments are missing.
-Exception : Kanopya::Exception::Internal::IncorrectParam
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
-
-=head1 DEPENDENCIES
-
-This module depends of 
-
-=over
-
-=item KanopyaException module used to throw exceptions managed by handling programs
-
-=item Entity module which is its mother class implementing global entity method
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
-
-=cut
 
 1;

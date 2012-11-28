@@ -24,6 +24,7 @@ CREATE TABLE `dhcpd3_subnet` (
   `dhcpd3_id` int(8) unsigned NOT NULL,
   `dhcpd3_subnet_net` char(40) NOT NULL,
   `dhcpd3_subnet_mask` char(40) NOT NULL,
+  `dhcpd3_subnet_gateway` char(40),
   PRIMARY KEY (`dhcpd3_subnet_id`),
   KEY `fk_dhcpd3_subnet_1` (`dhcpd3_id`),
   CONSTRAINT `fk_dhcpd3_subnet_1` FOREIGN KEY (`dhcpd3_id`) REFERENCES `dhcpd3` (`dhcpd3_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -42,6 +43,7 @@ CREATE TABLE `dhcpd3_hosts` (
   `dhcpd3_hosts_domain_name` char(64) NOT NULL,
   `dhcpd3_hosts_domain_name_server` char(15) NOT NULL,
   `dhcpd3_hosts_ntp_server` char(15) NOT NULL,
+  `dhcpd3_hosts_gateway` char(15) NULL DEFAULT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`dhcpd3_hosts_id`),
   UNIQUE KEY `ukey_dhcp3_host_mac` (`dhcpd3_hosts_mac_address`),

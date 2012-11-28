@@ -61,7 +61,7 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {};
@@ -83,9 +83,12 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-    
-    if(not $conf->{haproxy1_id}) {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
+    if (not $conf->{haproxy1_id}) {
         # new configuration -> create
         $self->{_dbix}->create($conf);
     } else {
@@ -122,9 +125,6 @@ sub insertDefaultConfiguration {
 
     # Retrieve admin ip
     my $admin_ip = "0.0.0.0";
-    if(defined $args{internal_cluster}) {
-        $admin_ip = $args{internal_cluster}->getMasterNodeIp(),
-    }
 
     $self->setAttr(name => "haproxy1_log_server_address", value => "$admin_ip:514");
     $self->save();

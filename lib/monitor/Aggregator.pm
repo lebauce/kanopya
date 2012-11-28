@@ -13,153 +13,157 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package Aggregator;
 
+use base 'BaseDB';
+
 use strict;
 use warnings;
 use General;
 use Data::Dumper;
-use BaseDB;
-#use Entity::ServiceProvider::Inside::Cluster;
 use XML::Simple;
-use Entity::ServiceProvider::Outside::Externalcluster;
-use Indicator;
+use Entity::ServiceProvider;
+use Entity::Indicator;
 use TimeData::RRDTimeData;
-use Clustermetric;
-# logger
+use Entity::Clustermetric;
+use Kanopya::Config;
+use Message;
+use Alert;
+
 use Log::Log4perl "get_logger";
-my $log = get_logger("aggregator");
+my $log = get_logger("");
+
+use constant ATTR_DEF => {};
+
+sub getAttrDef { return ATTR_DEF; }
+
+sub getMethods {
+  return {
+    'updateAggregatorConf'  => {
+      'description' => 'Update aggregator conf',
+      'perm_holder' => 'entity'
+    },
+    'getAggregatorConf'  => {
+      'description' => 'Get aggregator conf',
+      'perm_holder' => 'entity'
+    }
+  }
+}
 
 # Constructor
-
 sub new {
     my $class = shift;
-    my %args = @_;
     my $self = {};
     bless $self, $class;
-    
-    # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/monitor.conf");
-    $self->{_time_step} = $conf->{time_step};
-        # Get Administrator
-    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
+
+    # Get Administrator
+    my $conf               = getAggregatorConf();
+    my ($login, $password) = ($conf->{user_name}, $conf->{user_password});
     Administrator::authenticate( login => $login, password => $password );
     $self->{_admin} = Administrator->new();
-    
+
     return $self;
 };
 
-# 
+=head2 _contructRetrieverOutput
 
+    Desc : This function build the variable to be given to a Data Collector
+    args: cluster_id,
+    return : \%rep (containing the indicator list and the timespan requested)
 
-
+=cut
 
 sub _contructRetrieverOutput {
     my $self = shift;
     my %args = @_;
-    
-    
-    #my @clustermetrics = Clustermetric->search(hash => {clustermetrics_clustermetrics_cluster_id => });
-    
-    my $cluster_id                 = $args{cluster_id};
-    my $clustermetric_cluster_id   = 0;
-    my $clustermetric_indicator_id = 0;
-    
-    my $cluster                = undef;
-    my $hosts                  = undef;
-    my $rep                    = undef;
-    my $host_id                = undef;
-    my $indicator              = undef; 
-    my $indicators_name        = undef;
-    my @indicators_array       = undef;
-    my $clustermetric_time_span    = undef;
-    my $time_span              = undef;
 
-    
-    
-        
-        my @clustermetrics = Clustermetric->search(
-            hash => {
-                clustermetric_service_provider_id => $cluster_id
+    my $indicators = { };
+    my $time_span = 0;
+
+    my $service_provider = Entity::ServiceProvider->get(id => $args{service_provider_id});
+    my @clustermetrics = $service_provider->clustermetrics;
+
+    for my $clustermetric (@clustermetrics) {
+        my $clustermetric_time_span = $clustermetric->clustermetric_window_time;
+        my $indicator = $clustermetric->getIndicator();
+        $indicators->{$indicator->indicator_oid} = $indicator;
+        if (! defined $time_span) {
+            $time_span = $clustermetric_time_span;
+        } else {
+            if ($time_span != $clustermetric_time_span) {
+                #$log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
             }
-        );
-        
-        for my $clustermetric (@clustermetrics){
-        
-            $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
-            $clustermetric_time_span    = $clustermetric->getAttr(name => 'clustermetric_window_time');
-            
-            $indicator = Indicator->get('id' => $clustermetric_indicator_id);
-            
-            $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
-            
-            
-            if(! defined $time_span)
-            {
-                $time_span = $clustermetric_time_span
-            } else
-            {
-                if($time_span != $clustermetric_time_span)
-                {
-                    $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
-                    print("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION ($time_span vs $clustermetric_time_span)\n");
-                }
-            }
-            $time_span = ($clustermetric_time_span > $time_span)?$clustermetric_time_span:$time_span;
-        
+        }
+
+        $time_span = ($clustermetric_time_span > $time_span) ?
+                         $clustermetric_time_span : $time_span;
     }
-    @indicators_array = keys(%$indicators_name);
-    $rep->{indicators} = \@indicators_array;
-    $rep->{time_span}  = $time_span;
-    return $rep;
+
+    return {
+        indicators => $indicators,
+        time_span  => $time_span
+    };
 };
 
+=head2 update
 
+    Desc : This function containt the main aggregator loop. For every service
+           provider that has a collector manager,  it build a valid input,
+           retrieve the data, check them, and then store them in a TimeDB after
+           having compute the clustermetric combinations.
+    args: service_provider_id,
+    return : \%rep (containing the indicator list and the timespan requested)
 
-
-
+=cut
 
 sub update() {
     my $self = shift;
-    
-    my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
-    
+
+    my @service_providers = Entity::ServiceProvider->search(hash => { });
+
     CLUSTER:
-    for my $externalCluster (@externalClusters){
-        eval{
-            my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-            
-            #FILTER CLUSTERS WITH MONITORING PROVIDER
-            eval{
-                $externalCluster->getConnector(category => 'MonitoringService');
+    for my $service_provider (@service_providers) {
+        eval {
+            my $service_provider_id = $service_provider->id;
+
+            eval {
+                $service_provider->getManager(manager_type => "collector_manager");
             };
-            if($@){
-                print '*** Aggregator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
-            }else{
-                print '*** Aggregator collecting for cluster '.$cluster_id.' ***'."\n";
-                my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-                
-                # Construct input of the SCOM retriever
-                my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
-                print Dumper $host_indicator_for_retriever;
-                
-                # Call the retriever to get SCOM data
-                my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
-                print Dumper $monitored_values; 
-                    
+
+            if (not $@){
+                $log->info('Aggregator collecting for service provider '. $service_provider_id);
+
+                # Construct input of the collector retriever
+                my $host_indicator_for_retriever = $self->_contructRetrieverOutput(
+                                                       service_provider_id => $service_provider_id
+                                                   );
+
+                # Call the retriever to get monitoring data
+                my $monitored_values = $service_provider->getNodesMetrics(
+                                           indicators => $host_indicator_for_retriever->{indicators},
+                                           time_span  => $host_indicator_for_retriever->{time_span}
+                                       );
+
                 # Verify answers received from SCOM to detect metrics anomalies
-                my $checker = $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
-                
+                my $checker = $self->_checkNodesMetrics(
+                                  service_provider_id => $service_provider->id,
+                                  asked_indicators => $host_indicator_for_retriever->{indicators},
+                                  received => $monitored_values
+                              );
+
                 # Parse retriever return, compute clustermetric values and store in DB
-                if($checker == 1){
-                    $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values, cluster_id => $cluster_id);
-                } 
-            } #END EVAL
-        1;
-        } or do{
-            print "Skip to next cluster due to error $@\n";
-            $log->error($@);
+                if ($checker == 1) {
+                    $self->_computeCombinationAndFeedTimeDB(
+                        values     => $monitored_values,
+                        cluster_id => $service_provider_id
+                    );
+                }
+                1;
+            }
+        };
+        if($@) {
+            $log->error("An error occurred : " . $@);
             next CLUSTER;
         }
-    } #end for $externalCluster
+    }
 }
 
 sub _checkNodesMetrics{
@@ -169,217 +173,198 @@ sub _checkNodesMetrics{
     General::checkParams(args => \%args, required => [
         'asked_indicators',
         'received',
+        'service_provider_id',
     ]);
+
     my $asked_indicators = $args{asked_indicators};
     my $received         = $args{received};
-    
-    my $num_of_nodes     = scalar (keys %$received);
-    
-    foreach my $indicator_name (@$asked_indicators) {
-        my $count = 0;
-            while( my ($node_name,$metrics) = each(%$received) ) {
-                if(defined $metrics->{$indicator_name}) {
-                $count++;
-            } else {
-                $log->debug("Metric $indicator_name undefined from node $node_name");
+    my $service_provider_id = $args{service_provider_id};
+
+    foreach my $indicator (values %$asked_indicators) {
+        while ( my ($node_name, $metrics) = each(%$received) ) {
+            my $msg = "Indicator " . $indicator->indicator_name . '(' . $indicator->indicator_oid . ')' .
+                        " was not retrieved by collector for node $node_name";
+
+            my $alert =  eval { Alert->find( hash => {
+                                          alert_message => $msg,
+                                          entity_id => $service_provider_id })
+            };
+
+
+            if (! defined $metrics->{$indicator->indicator_oid}) {
+                $log->debug($msg);
+
+                if ((! defined $alert) || ($alert->alert_active == 0) ) {
+                    Alert->new (
+                        entity_id       => $service_provider_id,
+                        alert_message   => $msg,
+                        alert_signature => $msg.' '.time()
+                    );
+                }
+            }
+            elsif (defined $alert && $alert->alert_active == 1) {
+                $alert->mark_resolved;
             }
         }
-        if($count eq 0){
-            return 0;
-            $log->info("*** [WARNING] $indicator_name given by no node !");
-        } elsif(($count / $num_of_nodes) le 0.75) {
-            $log->info("*** [WARNING] $indicator_name given by less than 75% of nodes ($count / $num_of_nodes)!");
-            return 1;
-        } else {
-            return 1;
-        }
     }
+
+    return 1;
 }
 
-=head2 run
-    
+=head2 _computeCombinationAndFeedTimeDB
+
     Class : Public
-    
-    Desc : Parse the hash table received from Retriever (input), compute 
+
+    Desc : Parse the hash table received from Retriever (input), compute
     clustermetric values and store them in DB
-    
+
     Args : values : hash table from the Retriever
+
 =cut
 
-sub _computeAggregateValuesAndUpdateTimeDB{
+sub _computeCombinationAndFeedTimeDB {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['values']);
     my $values     = $args{values};
     my $cluster_id = $args{cluster_id};
-    
-    # Array of all clustermetrics
-    my @clustermetrics = Clustermetric->search(            hash => {
-                clustermetric_service_provider_id => $cluster_id
-            });
-    
-    my $clustermetric_indicator_id;
-    my $indicator;
-    my $indicators_name; 
-    
+
+    my $service_provider = Entity::ServiceProvider->get('id' => $cluster_id);
+    my @clustermetrics   = $service_provider->clustermetrics;
+
     # Loop on all the clustermetrics
-    for my $clustermetric (@clustermetrics){
-        
-        #TODO : To be modified when using ServerSets
-        
+    for my $clustermetric (@clustermetrics) {
+        my $indicator_oid = $clustermetric->getIndicator()->indicator_oid;
         # Array that will store all the values needed to compute $clustermetric val
-        my @dataStored = (); 
+        my @dataStored = ();
 
         # Loop on all the host_name of the $clustermetric
-        
-        for my $host_name (keys %$values){
-            
-            $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
-            $indicator = Indicator->get('id' => $clustermetric_indicator_id);
-
-            # Parse $values to store needed value in @dataStored 
-            my $the_value = $values->{$host_name}
-                                   ->{$indicator->getAttr(name=>'indicator_oid')};
-            if(defined $the_value){
-                push(@dataStored,$the_value);
-            }
-            else {
-                $log->debug("Missing Value of indicator ".($indicator->getAttr(name=>'indicator_oid'))." for host $host_name");
-            }
-                 
-        }
-        
-        #Compute the $clustermetric value from all @dataStored values
-        if(0 < (scalar @dataStored)){
-            my $statValue = $clustermetric->compute(values => \@dataStored);
-            
-            if(defined $statValue){
-                #Store in DB and time stamp
-                my $time = time();
-                RRDTimeData::updateTimeDataStore(
-                    clustermetric_id => $clustermetric->getAttr(name=>'clustermetric_id'), 
-                    time          => $time, 
-                    value         => $statValue,
-                    );
+        for my $host_name (keys %$values) {
+            #if indicator value is undef, do not store it in the array
+            if (defined $values->{$host_name}->{$indicator_oid}) {
+                push @dataStored, $values->{$host_name}->{$indicator_oid};
             } else {
-                
-                $log->info("*** [WARNING] No statvalue computed for clustermetric ".($clustermetric->getAttr(name=>'clustermetric_id')));
+                $log->debug("Missing Value of indicator $indicator_oid for host $host_name");
+            }
+        }
+
+        my $clustermetric_id = $clustermetric->id;
+        # Compute the $clustermetric value from all @dataStored values
+        if (0 < (scalar @dataStored)) {
+            my $statValue = $clustermetric->compute(values => \@dataStored);
+
+            # Store in DB and time stamp
+            RRDTimeData::updateTimeDataStore(
+                clustermetric_id => $clustermetric_id,
+                time             => time(),
+                value            => $statValue,
+            );
+            if (!defined $statValue) {
+                $log->info("*** [WARNING] No statvalue computed for clustermetric " . $clustermetric_id);
             }
         } else {
-             $log->info("*** [WARNING] No datas received for clustermetric ".($clustermetric->getAttr(name=>'clustermetric_id')));
+            # This case is current and produce lot of log
+            # TODO better handling (and user feedback) of missing data
+            $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric_id);
+            RRDTimeData::updateTimeDataStore(
+                clustermetric_id => $clustermetric_id,
+                time             => time(),
+                value            => undef,
+            );
         }
     }
 }
 
 
 =head2 run
-    
+
     Class : Public
-    
-    Desc : Retrieve indicator values for all the clustermetrics, compute the 
-    aggregation statistics function and store them in TimeDb 
+
+    Desc : Retrieve indicator values for all the clustermetrics, compute the
+    aggregation statistics function and store them in TimeDb
     every time_step (configuration)
-    
+
 =cut
 
 sub run {
     my $self = shift;
     my $running = shift;
-    
-    $self->{_admin}->addMessage(from    => 'Aggregator', 
-                                level   => 'info', 
-                                content => "Kanopya Aggregator started."
-                                );
-    
-    while ( $$running ) {
 
+    Message->send(
+        from    => 'Aggregator',
+        level   => 'info',
+        content => "Kanopya Aggregator started."
+    );
+
+    while ($$running) {
         my $start_time = time();
-
         $self->update();
-
         my $update_duration = time() - $start_time;
         $log->info( "Manage duration : $update_duration seconds" );
-        if ( $update_duration > $self->{_time_step} ) {
+
+        my $conf      = getAggregatorConf();
+        my $time_step = $conf->{time_step};
+
+        if ($update_duration > $time_step) {
             $log->warn("aggregator duration > aggregator time step (conf)");
         } else {
-            sleep( $self->{_time_step} - $update_duration );
+            sleep($time_step - $update_duration);
         }
-
     }
-    
-    $self->{_admin}->addMessage(
-        from    => 'Aggregator', 
-        level   => 'warning', 
+
+    Message->send(
+        from    => 'Aggregator',
+        level   => 'warning',
         content => "Kanopya Aggregator stopped"
-        );
+    );
 }
 
-#=head2 run
-#    
-#    Class : Public
-#    
-#    Desc : Recreate all the DB for all the existing clustermetric
-#    
-#=cut
-#
-#sub create_clustermetrics_db{
-#    my $self = shift;
-#    my @clustermetrics = Clustermetric->search(hash => {});
-#    for my $clustermetric (@clustermetrics){
-#        my $clustermetric_id = $clustermetric->getAttr(name=>'clustermetric_id');        
-#        RRDTimeData::createTimeDataStore(name => $clustermetric_id);
-#    }
-#}
+=head2 updateAggregatorConf
 
+    Class : Public
+    Desc : update values in the aggregator.conf file
+    Args: $collect_frequency and/or $storage_duration
 
-#=head2 computeAggregates
-#    
-#    Class : Public
-#    
-#    Desc : [DEPRECTATED] Compute all the clustermetrics according to the retrieved values received from Retriever
-#    
-#=cut
-#
-# 
-#sub _computeAggregates{
-#    my $self = shift;
-#    my %args = @_;
-#
-#    print "THIS METHOD SEEMS DEPRECATED, please use _computeAggregateValuesAndUpdateTimeDB";
-#    $log->info("THIS METHOD SEEMS DEPRECATED, please use _computeAggregateValuesAndUpdateTimeDB"); 
-#    General::checkParams(args => \%args, required => ['indicators']);
-#    my $indicators = $args{indicators};
-#    my $rep = {};
-#    my $clustermetric_cluster_id   = 0;
-#    my $clustermetric_indicator_id = 0;
-#    my $cluster                = undef;
-#    my $hosts                  = undef;
-#    my $host_id                = undef;
-#    my $indicator_value        = undef;
-#    my @values                 = ();
-#
-#    # Array to loop on all the clustermetrics
-#    my @clustermetrics = Clustermetric->search(hash => {});
-#    for my $clustermetric (@clustermetrics){
-#        
-#        @values = ();
-#        
-#        
-#        $clustermetric_cluster_id   = $clustermetric->getAttr(name => 'clustermetric_service_provider_id');
-#        $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
-#        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $clustermetric_cluster_id);
-#        $hosts   = $cluster->getHosts();
-#        
-#        for my $host (values(%$hosts)){
-#            $host_id = $host->getAttr(name => 'host_id');
-#            $indicator_value = $indicators->{$host_id}->{$clustermetric_indicator_id};
-#            
-#            push(@values,$indicator_value);
-#        }
-#        $rep->{$clustermetric->getAttr(name => 'clustermetric_id')} = $clustermetric->compute(values => \@values);
-#    }
-#    return $rep;
-#};
+=cut
+
+sub updateAggregatorConf {
+    my ($class, %args) = @_;
+
+    if ((not defined $args{collect_frequency}) && (not defined $args{storage_duration})) {
+        throw Kanopya::Exception::Internal(
+            error => 'A collect frequency and/or a storage duration must be provided for update'
+        );
+    }
+
+    #get aggregator configuration
+    my $configuration = Kanopya::Config::get('aggregator');
+
+    if (defined $args{collect_frequency}) {
+        $configuration->{time_step} = $args{collect_frequency};
+        Kanopya::Config::set(subsystem => 'aggregator', config => $configuration);
+    }
+    if (defined $args{storage_duration}) {
+        $configuration->{storage_duration}->{duration} = $args{storage_duration};
+        Kanopya::Config::set(subsystem => 'aggregator', config => $configuration);
+    }
+}
+
+=head2 getAggregatorConf
+
+    Class : Public
+    Desc : get public values from aggregator.conf file
+
+=cut
+
+sub getAggregatorConf {
+    my $conf = Kanopya::Config::get('aggregator');
+    return {
+        time_step           => $conf->{time_step},
+        storage_duration    => $conf->{storage_duration}{duration},
+        user_name           => $conf->{user}{name},
+        user_password       => $conf->{user}{password},
+    }
+}
 
 1;

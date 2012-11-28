@@ -25,7 +25,7 @@ use Kanopya::Exceptions;
 use Administrator;
 use General;
 use Log::Log4perl "get_logger";
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
@@ -34,17 +34,6 @@ use constant ATTR_DEF => {
     kernel_desc => { pattern => '^[\w\s]*$', is_mandatory => 0, is_extended => 0 },
 
 };
-
-sub methods {    
-    return {
-        'get'        => {'description' => 'view this kernel', 
-                        'perm_holder' => 'entity',
-        },
-        'setperm'    => {'description' => 'set permissions on this kernel', 
-                        'perm_holder' => 'entity',
-        },
-    };
-}
 
 =head2 getKernels
 

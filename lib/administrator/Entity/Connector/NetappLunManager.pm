@@ -16,24 +16,75 @@
 
 package Entity::Connector::NetappLunManager;
 use base 'Entity::Connector::NetappManager';
+use base "Manager::ExportManager";
+use base "Manager::DiskManager";
 
 use warnings;
 use strict;
 
-use Entity::HostManager;
+use Manager::HostManager;
+use Entity::Operation;
 use Entity::Container::NetappLun;
 use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::IscsiContainerAccess;
 
+use General;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    disk_type => {
+        is_virtual => 1
+    },
+    export_type => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub exportType {
+    return "ISCSI target";
+}
+
+sub diskType {
+    return "NetApp lun";
+}
+
+=head2 checkDiskManagerParams
+
+=cut
+
+sub checkDiskManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "volume_id", "systemimage_size" ]);
+}
+
+=head2 getPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    my $volumes = {};
+    if ($args{policy_type} eq 'storage') {
+        for my $aggr (@{ $self->getConf->{aggregates} }) {
+            for my $volume (@{ $aggr->{aggregates_volumes} }) {
+                $volumes->{$volume->{volume_id}} = '(' . $aggr->{aggregate_name} . ') ' . $volume->{volume_name};
+            }
+        }
+        return [ { name => 'volume_id', label => 'Volume to use', values => $volumes } ];
+    }
+    return [];
+}
 
 sub getExportManagerFromBootPolicy {
     my $self = shift;
@@ -41,13 +92,37 @@ sub getExportManagerFromBootPolicy {
 
     General::checkParams(args => \%args, required => [ "boot_policy" ]);
 
-    if ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
+    if ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
         return $self;
     }
 
     throw Kanopya::Exception::Internal::UnknownCategory(
               error => "Unsupported boot policy: $args{boot_policy}"
           );
+}
+
+sub getBootPolicyFromExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "export_manager" ]);
+
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+
+    if ($args{export_manager}->getId == $self->getId) {
+        return Manager::HostManager->BOOT_POLICIES->{pxe_iscsi};
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported export manager:" . $args{export_manager}
+          );
+}
+
+sub getExportManagers {
+    my $self = shift;
+    my %args = @_;
+
+    return [ $self ];
 }
 
 sub getReadOnlyParameter {
@@ -81,40 +156,18 @@ sub createDisk {
                          required => [ "volume_id", "disk_name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'CreateDisk',
         params   => {
-            disk_manager_id     => $self->getAttr(name => 'connector_id'),
-            disk_name           => $args{disk_name},
-            size                => $args{size},
-            noformat            => defined $args{noformat} ? $args{noformat} : 0,
-            filesystem          => $args{filesystem},
-            volume_id           => $args{volume_id}
-        },
-    );
-}
-
-=head2 removeDisk
-
-    Desc : Implement removeDisk from DiskManager interface.
-           This function enqueue a ERemoveDisk operation.
-    args :
-
-=cut
-
-sub removeDisk {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    $log->debug("New Operation RemoveDisk with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveDisk',
-        params   => {
-            container_id => $args{container}->getAttr(name => 'container_id'),
+            name       => $args{disk_name},
+            size       => $args{size},
+            filesystem => $args{filesystem},
+            noformat   => defined $args{noformat} ? $args{noformat} : 0,
+            volume_id  => $args{volume_id},
+            context    => {
+                disk_manager => $self,
+            }
         },
     );
 }
@@ -135,39 +188,19 @@ sub createExport {
                          required => [ "container", "export_name", "typeio", "iomode" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            export_manager_id   => $self->getAttr(name => 'connector_id'),
-            container_id => $args{container}->getAttr(name => 'container_id'),
-            export_name  => $args{export_name},
-            typeio       => $args{typeio},
-            iomode       => $args{iomode}
-        },
-    );
-}
-
-=head2 removeExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ERemoveExport operation.
-    args : export_name
-
-=cut
-
-sub removeExport {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $log->debug("New Operation RemoveExport with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveExport',
-        params   => {
-            container_access_id => $args{container_access}->getAttr(name => 'container_access_id'),
+            context => {
+                export_manager => $self,
+                container      => $args{container},
+            },
+            manager_params => {
+                export_name  => $args{export_name},
+                typeio       => $args{typeio},
+                iomode       => $args{iomode}
+            },
         },
     );
 }
@@ -182,24 +215,20 @@ sub synchronize {
     my $self = shift;
     my %args = @_;
 
-    # Get list of luns exists on NetApp :
+    # Get list of luns exists on NetApp
     foreach my $lun ($self->luns) {
-        # Get the path where is stocked the lun
-        my $lun_volume_path = $lun->path;
-
-        # Split the path to grab volume name
-        my @array_lun_volume_name = split(/\//, $lun_volume_path);
+        my @array_lun_volume_name = split(/\//, $lun->path);
         my $lun_volume_name = $array_lun_volume_name[2];
         my $lun_name = $array_lun_volume_name[3];
 
         # Search in database if the volume is stored
-        my $lun_volume_obj = Entity::Container::NetappVolume->find( hash=>{name=>$lun_volume_name});
+        my $lun_volume_obj = Entity::Container->find( hash => { container_name => $lun_volume_name });
         my $lun_volume_id = $lun_volume_obj->getAttr(name => "volume_id");
 
-        # Search in Kanopya to see if LUN already exists
-        my $existingluns = Entity::Container::NetappLun->search(hash => { name => $lun_name });
-        my $existinglun = scalar($existingluns);
-        if ($existinglun eq "0") {
+        # Is the LUN already in database :
+        my $existing_luns = Entity::Container->search(hash => { container_name => $lun->name });
+        my $existing_lun = scalar($existing_luns);
+        if ($existing_lun eq "0") {
             Entity::Container::NetappLun->new(
                 disk_manager_id      => $self->getAttr(name => 'entity_id'),
                 container_name       => $lun_name,
@@ -213,93 +242,86 @@ sub synchronize {
     }
 }
 
-sub getConf {
-    my $self = shift;
-
-    my $conf = {};
-    my @tab_volumes = ();
-
-    my @volumes = Entity::Container::NetappVolume->search(hash => {});
-
-    for my $volume (@volumes) {
-        my $netapp_volume = {
-            volume_id   => $volume->getAttr(name => 'volume_id'),
-            volume_name => $volume->getAttr(name => 'container_name'),
-        };
-        $netapp_volume->{luns} = ();
-        my $luns = Entity::Container::NetappLun->search(
-                       hash => {
-                           volume_id => $netapp_volume->{volume_id}
-                        }
-                   );
-
-        for my $lun (@{$luns}) {
-            my $lun_hash = {
-                lun_id     => $lun->getAttr(name => 'lun_id'),
-                name       => $lun->getAttr(name => 'container_name'),
-                size       => $lun->getAttr(name => 'container_size'),
-                filesystem => $lun->getAttr(name => 'container_filesystem'),
-            };
-            push @{$netapp_volume->{luns}}, $lun_hash;
-        }
-        push @tab_volumes, $netapp_volume;
-    }
-    $conf->{netapp_volumes} = \@tab_volumes;
-    return $conf;
-}
-
 
 =head2 getConf 
 
-    Desc: return hash structure containing luns  
+    Desc: return hash structure containing luns
+    
+    Return: Scalar $config
+    
+    Info: ReWrited on April 20 2012 by jlevasseur
 
 =cut
 
-sub getConf2 {
+sub getConf {
     my ($self) = @_;
     my $config = {};
     $config->{aggregates} = [];
     $config->{volumes} = [];
-    my @aggregates = $self->aggregates;
-    my @volumes = $self->volumes;
-    my @luns = $self->luns;
+    $config->{luns} = [];
+    my @aggr_object = $self->aggregates;
+    my @vol_object = $self->volumes;
+    my @lun_object = $self->luns;
+    my @luns = Entity::Container::NetappLun->search(hash => {});
+    my $aggregates = [];
+    my $volumes = [];
+    my $lun = [];
     
-    foreach my $aggr (@aggregates) {
+    # run through each aggr on xml/rpc fill and get comment from db
+    foreach my $aggr (@aggr_object) {
+        # get the identical info shared by aggr object and database :
+        my $aggr_key = $aggr->name;
+        my $aggr_id = Entity::NetappAggregate->find( hash => { name => $aggr_key } )->getAttr(name => 'aggregate_id');
+        my $entity_id = Entity->find( hash => { entity_id => $aggr_id })->getAttr(name => 'entity_comment_id');
         my $tmp = {
+            aggregate_id        => $aggr_id,
             aggregate_name      => $aggr->name,
             aggregate_state     => $aggr->state,
-            aggregate_totalsize => $aggr->size_total,
-            aggregate_sizeused  => $aggr->size_used,
-            aggregate_volumes   => []
+            aggregate_totalsize => General::bytesToHuman(value => $aggr->size_total, precision => 5),
+            aggregate_sizeused  => General::bytesToHuman(value => $aggr->size_used, precision => 5),
+            aggregate_volumes   => [],
+            entity_comment      => "",
         };
-        foreach my $volume (@volumes) {
-            if($volume->containing_aggregate eq $aggr->name) {
+        # run through each vol on xml/rpc fill and get comment from db
+        foreach my $volume (@vol_object) {
+            my $vol_key = $volume->name;
+            my $volume_id = Entity::Container->find( hash => { container_name => $vol_key } )->getAttr(name => 'container_id');
+            my $entity_id = Entity->find( hash => { entity_id => $volume_id })->getAttr(name => 'entity_comment_id');
                 my $tmp2 = {
-                    volume_name      => $volume->name,
+                    volume_id       => $volume_id,
+                    volume_name      => $vol_key,
                     volume_state     => $volume->state,
-                    volume_totalsize => $volume->size_total,
-                    volume_sizeused  => $volume->size_used,
-                    volume_luns      => []
+                    volume_totalsize => General::bytesToHuman(value => $volume->size_total, precision => 5),
+                    volume_sizeused  => General::bytesToHuman(value => $volume->size_used, precision => 5),
+                    volume_luns      => [],
+                    entity_comment   => "",
                 };
-                foreach my $lun (@luns) {
-                    my $name = $volume->name;
+                foreach my $lun (@lun_object) {
+                    my $name = $vol_key;
+                    my $lun_id = Entity::Container->find( hash => { container_name => $name } )->getAttr(name => 'container_id');
+                    my $entity_id = Entity->find( hash => { entity_id => $lun_id })->getAttr(name => 'entity_comment_id');
                     if($lun->path =~ /$name/) {
                         my $tmp3 = {
-                            lun_path      => $lun->path,
-                            lun_state     => $lun->state,
-                            lun_totalsize => $lun->size,
-                            lun_sizeused => $lun->size_used,
+                            lun_id          => $lun_id,
+                            lun_path        => $lun->path,
+                            lun_state       => $lun->state,
+                            lun_totalsize   => General::bytesToHuman(value => $lun->size, precision => 5),
+                            lun_sizeused    => General::bytesToHuman(value => $lun->size_used, precision => 5),
+                            entity_comment   => "",
                         };
                         push @{$tmp2->{volume_luns}}, $tmp3;
                     }
                 }    
                 push @{$tmp->{aggregates_volumes}}, $tmp2;
-            }    
+            #}    
         }
-        
-        push @{$config->{aggregates}}, $tmp;
+        push @$aggregates, $tmp;
     }
-     
+    # Must be remove :
+    #$log->info(Dumper($aggregates));
+    return {
+            "aggregates"=>$aggregates,
+    };
     return $config;
 }
 

@@ -28,9 +28,8 @@ package EContext;
 
 use strict;
 use warnings;
-use vars qw(@ISA $VERSION);
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = "1.00";
 
 =head2 new
 
@@ -39,8 +38,7 @@ Keep the source ip whatever the the conrete type of EContext.
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'local' ]);
 
@@ -53,7 +51,7 @@ sub new {
 }
 
 sub getLocalIp {
-    my $self = shift;
+    my ($self) = @_;
     return $self->{local_ip};
 }
 

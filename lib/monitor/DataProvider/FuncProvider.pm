@@ -73,7 +73,7 @@ use General;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-my $log = get_logger("collector");
+my $log = get_logger("");
 
 my %funcs = (     
                 "const"         => \&const,
@@ -92,7 +92,7 @@ my $timeref;
     Desc : Instanciate FuncProvider instance to provide Func stat from a specific host
     
     Args :
-        host: string: ip of host
+        host: Entity::Host: host
     
     Return : FuncProvider instance
     
@@ -105,38 +105,20 @@ sub new {
     my $self = {};
     bless $self, $class;
 
-
     my $host = $args{host};
-
     $self->{_host} = $host;
-    #$self->{_start_time} = time();
-    
-#    my $file = "/tmp/funcprovider.timeref";
-#    my $timeref;
-#    if ( -e $file ) {
-#        open FILE, "<$file";
-#        $timeref = <FILE>;
-#        close FILE;
-#    } else {
-#        $timeref = time();
-#        open FILE, ">$file";
-#        print FILE $timeref;
-#        close FILE;
-#    }
-#    $self->{_timeref} = $timeref;
-#    
+    $self->{_ip} = $host->adminIp;
+
     $timeref = time() if (not defined $timeref);
     $self->{_timeref} = $timeref;
-    
     
     # Load conf
     my $conf = XMLin("/opt/kanopya/conf/funcprovider.conf");
     my $nodes = General::getAsArrayRef( data => $conf, tag => 'node' );
-    my @node_conf = grep { $_->{ip} eq $host } @{ $nodes };
+    my @node_conf = grep { $_->{ip} eq $self->{_ip} } @{ $nodes };
     my $node_conf = shift @node_conf;
     
-    die "No host defined : '$host'" if ( not defined $node_conf ); 
-    
+    die "No host defined : '$self->{_ip}'" if ( not defined $node_conf ); 
     
     $self->{_vars} = General::getAsArrayRef( data => $node_conf, tag => 'var' );
         
@@ -241,7 +223,7 @@ sub retrieveData {
     
         my @var = grep { $_->{label} eq $var_name } @{ $self->{_vars} };
         my $var = shift @var;
-        die "var not found for '$self->{_host} : '$var_name'" if (not defined $var);
+        die "var not found for '$self->{_ip} : '$var_name'" if (not defined $var);
 
         my $func_name = $var->{func};
         my $func = $funcs{$func_name};

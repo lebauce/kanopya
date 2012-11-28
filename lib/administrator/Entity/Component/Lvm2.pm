@@ -1,5 +1,5 @@
-# Lvm2.pm Logical volume manager component (Adminstrator side)
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,62 +14,79 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 22 august 2010
-=head1 NAME
-
-<Entity::Component::Lvm2> <Lvm2 component concret class>
-
-=head1 VERSION
-
-This documentation refers to <Entity::Component::Lvm2> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Entity::Component::Lvm2>;
-
-my $component_instance_id = 2; # component instance id
-
-Entity::Component::Lvm2->get(id=>$component_instance_id);
-
-# Cluster id
-
-my $cluster_id = 3;
-
-# Component id are fixed, please refer to component id table
-
-my $component_id =2 
-
-Entity::Component::Lvm2->new(component_id=>$component_id, cluster_id=>$cluster_id);
-
-=head1 DESCRIPTION
-
-Entity::Component::Lvm2 is class allowing to instantiate an Lvm2 component
-This Entity is empty but present methods to set configuration.
-
-=head1 METHODS
-
-=cut
 
 package Entity::Component::Lvm2;
 use base "Entity::Component";
+use base "Manager::DiskManager";
 
 use strict;
 use warnings;
 
 use General;
-use Kanopya::Exceptions;
-use Entity::HostManager;
+use Entity::Operation;
+use Manager::HostManager;
 use Entity::ServiceProvider;
 use Entity::Container::LvmContainer;
+
+use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    lvm2_vgs => {
+        label        => 'Volume groups',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_mandatory => 0,
+        is_editable  => 0,
+    },
+    disk_type => {
+        is_virtual => 1
+    }
+};
+
 sub getAttrDef { return ATTR_DEF; }
+
+sub diskType {
+    return "LVM logical volume";
+}
+
+=head2 checkDiskManagerParams
+
+=cut
+
+sub checkDiskManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "vg_id", "systemimage_size" ]);
+}
+
+=head2 getPolicyParams
+
+=cut
+
+sub getPolicyParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+
+    my @vg_list = map { $_->{lvm2_vg_name} } @{ $self->getConf->{lvm2_vgs} };
+
+    my $vgs = {};
+    if ($args{policy_type} eq 'storage') {
+        for my $vg (@{ $self->getConf->{lvm2_vgs} }) {
+            $vgs->{$vg->{lvm2_vg_id}} = $vg->{lvm2_vg_name};
+        }
+        return [ { name => 'vg_id', label => 'Volume group to use', values => $vgs } ];
+    }
+    return [];
+}
 
 sub getMainVg {
     my $self = shift;
@@ -103,7 +120,7 @@ sub lvCreate{
         $args{lvm2_lv_size} = General::convertToBytes(value => $value, units => $unit);
     };
     if ($@) {
-        $log->info("Given size $args{lvm2_lv_size} is already in bytes.");
+        $log->debug("Given size $args{lvm2_lv_size} is already in bytes.");
     }
 
     $log->debug("lvm2_lv_name is $args{lvm2_lv_name}, " .
@@ -114,7 +131,7 @@ sub lvCreate{
     my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $args{lvm2_vg_id} });
     my $res   = $vg_rs->lvm2_lvs->create(\%args);
 
-    $log->info("lvm2 logical volume $args{lvm2_lv_name} saved to database");
+    $log->debug("lvm2 logical volume $args{lvm2_lv_name} saved to database");
 
     $res->discard_changes;
     my $container = Entity::Container::LvmContainer->new(
@@ -184,12 +201,14 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
+    my %args = @_;
 
-    # TODO input validation
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     for my $vg ( @{ $conf->{vgs} }) {
         for my $new_lv ( @{ $vg->{lvs} }) {
-            if (keys %$new_lv) {
+            if (keys %$new_lv and not $new_lv->{lvm2_lv_id}) {
                 $self->createDisk(
                     name       => $new_lv->{lvm2_lv_name},
                     size       => $new_lv->{lvm2_lv_size},
@@ -209,16 +228,46 @@ sub getExportManagerFromBootPolicy {
 
     my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
 
-    if ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
+    if ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
         return $cluster->getComponent(name => "Iscsitarget", version => "1");
     }
-    elsif ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_nfs}) {
+    elsif ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{pxe_nfs}) {
         return $cluster->getComponent(name => "Nfsd", version => "3");
     }
     
     throw Kanopya::Exception::Internal::UnknownCategory(
               error => "Unsupported boot policy: $args{boot_policy}"
           );
+}
+
+sub getBootPolicyFromExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "export_manager" ]);
+
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+
+    if ($args{export_manager}->getId == $cluster->getComponent(name => "Iscsitarget", version => "1")->getId) {
+        return Manager::HostManager->BOOT_POLICIES->{pxe_iscsi};
+    }
+    elsif ($args{export_manager}->getId == $cluster->getComponent(name => "Nfsd", version => "3")->getId) {
+        return Manager::HostManager->BOOT_POLICIES->{pxe_nfs};
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported export manager:" . $args{export_manager}
+          );
+}
+
+sub getExportManagers {
+    my $self = shift;
+    my %args = @_;
+
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+
+    return [ $cluster->getComponent(name => "Iscsitarget", version => "1"),
+             $cluster->getComponent(name => "Nfsd", version => "3") ];
 }
 
 =head2 createDisk
@@ -237,39 +286,17 @@ sub createDisk {
                          required => [ "vg_id", "name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'CreateDisk',
         params   => {
-            disk_manager_id     => $self->getAttr(name => 'component_id'),
-            name                => $args{name},
-            size                => $args{size},
-            filesystem          => $args{filesystem},
-            vg_id               => $args{vg_id},
-        },
-    );
-}
-
-=head2 removeDisk
-
-    Desc : Implement removeDisk from DiskManager interface.
-           This function enqueue a ERemoveDisk operation.
-    args :
-
-=cut
-
-sub removeDisk {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    $log->debug("New Operation RemoveDisk with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveDisk',
-        params   => {
-            container_id => $args{container}->getAttr(name => 'container_id'),
+            name       => $args{name},
+            size       => $args{size},
+            filesystem => $args{filesystem},
+            vg_id      => $args{vg_id},
+            context    => {
+                disk_manager => $self,
+            }
         },
     );
 }
@@ -286,11 +313,9 @@ sub getFreeSpace {
     my $self = shift;
     my %args = @_;
 
-    my $vg_id = General::checkParam(args    => \%args,
-                                    name    => 'vg_id',
-                                    default => $self->getMainVg->{vgid});
+    General::checkParams(args => \%args, optional => { 'vg_id' => $self->getMainVg->{vgid} });
 
-    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $vg_id });
+    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $args{vg_id} });
 
     return $vg_rs->get_column('lvm2_vg_freespace');
 }

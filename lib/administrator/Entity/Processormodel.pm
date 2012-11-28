@@ -25,7 +25,7 @@ use Kanopya::Exceptions;
 use Administrator;
 use General;
 use Log::Log4perl "get_logger";
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
@@ -39,27 +39,6 @@ use constant ATTR_DEF => {
     processormodel_virtsupport     => { pattern => '(0|1)', is_mandatory => 1, is_extended => 0},        
 };
 
-
-sub methods {
-    return {
-        'create'    => {'description' => 'create a new processor model', 
-                        'perm_holder' => 'mastergroup',
-        },
-        'get'        => {'description' => 'view this processor model', 
-                        'perm_holder' => 'entity',
-        },
-        'update'    => {'description' => 'save changes applied on this processor model', 
-                        'perm_holder' => 'entity',
-        },
-        'remove'    => {'description' => 'delete this processor model', 
-                        'perm_holder' => 'entity',
-        },
-        'setperm'    => {'description' => 'set permissions on this processor model', 
-                        'perm_holder' => 'entity',
-        },
-    }; 
-}
-
 sub getProcessormodels {
     my $class = shift;
     my %args = @_;
@@ -67,43 +46,6 @@ sub getProcessormodels {
     General::checkParams(args => \%args, required => ['hash']);
 
     return $class->search(%args);
-}
-
-=head2 create
-
-=cut
-
-sub create {
-    my $self = shift;
-    my $adm = Administrator->new();
-    my $mastergroup_eid = $self->getMasterGroupEid();
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new processor model");
-    }
-       
-    $self->save();
-}
-
-=head2 update
-
-=cut
-
-sub update {}
-
-=head2 remove
-
-=cut 
-
-sub remove {
-    my $self = shift;
-    my $adm = Administrator->new();
-    # delete method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this processor model");
-    }
-    $self->SUPER::delete();
 }
 
 sub getAttrDef{

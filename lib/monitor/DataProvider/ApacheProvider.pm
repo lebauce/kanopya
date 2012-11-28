@@ -41,7 +41,7 @@ package ApacheProvider;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-my $log = get_logger("monitor");
+my $log = get_logger("");
 
 =head2 new
     
@@ -63,8 +63,8 @@ sub new {
     my $self = {};
     bless $self, $class;
 
-
     my $host = $args{host};
+    my $ip = $host->adminIp();
     my $component = $args{component};
     
     # Retrieve the apache port which doesn't use ssl
@@ -79,10 +79,11 @@ sub new {
     $cmd .=        ' -c /tmp/bbapache_cookiejar.curl';
     $cmd .=        ' -H "Pragma: no-cache" -H "Cache-control: no-cache"';
     $cmd .=        ' -H "Connection: close"';
-    $cmd .=        " $host:$port/server-status?auto";
+    $cmd .=        " $ip:$port/server-status?auto";
     
     $self->{_cmd} = $cmd;
     $self->{_host} = $host;
+    $self->{_ip} = $ip;
     
     return $self;
 }
@@ -115,10 +116,10 @@ sub retrieveData {
     my $server_status = qx( $self->{_cmd} );
     
     if ( $server_status eq "" ) {
-        die "No response from remote host : '$self->{_host}' ";
+        die "No response from remote host : '$self->{_ip}' ";
     }
     if ( $server_status =~ "403 Forbidden" ) {
-        die "You don't have permission to access $self->{_host}/server_status";
+        die "You don't have permission to access $self->{_ip}/server_status";
     }
     
 

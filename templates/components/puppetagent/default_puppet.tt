@@ -1,0 +1,7 @@
+# Defaults for puppet - sourced by /etc/init.d/puppet
+
+# Start puppet on boot?
+START=[% puppetagent2_bootstart %]
+
+# Startup options
+DAEMON_OPTS="[% puppetagent2_options %]"

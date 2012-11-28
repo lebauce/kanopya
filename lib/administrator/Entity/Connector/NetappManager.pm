@@ -15,11 +15,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Entity::Connector::NetappManager;
-use lib "/opt/kanopya/lib/external/NetApp";
-use base "Entity::Connector";
+use base 'Entity::Connector';
 
 use Entity::ServiceProvider::Outside::Netapp;
-
 use warnings;
 use NetApp::API;
 
@@ -32,8 +30,6 @@ sub get {
     my %args = @_;
 
     my $self = $class->SUPER::get(%args);
-
-    $self->init();
 
     return $self;
 }
@@ -95,7 +91,7 @@ sub DESTROY {
 
 sub getFreeSpace {
     my $self = shift;
-	my $total_spare_cap = 0;
+    my $total_spare_cap = 0;
     my @disks = $self->disks;
 
     for my $disk (@disks) {

@@ -38,10 +38,12 @@ Orchestrator detect valid conditions and apply associated action.
 use strict;
 use warnings;
 use Orchestrator;
+use Kanopya::Config;
 use Log::Log4perl "get_logger";
 
-Log::Log4perl->init('/opt/kanopya/conf/orchestrator-log.conf');
-my $log = get_logger("orchestrator");
+my $dir = Kanopya::Config::getKanopyaDir();
+Log::Log4perl->init($dir.'/kanopya/conf/orchestrator-log.conf');
+my $log = get_logger("");
 
 
 my $running = 1;

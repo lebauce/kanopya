@@ -74,6 +74,13 @@ __PACKAGE__->table("cluster");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 cluster_si_persistent
+
+  data_type: 'integer'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =head2 cluster_domainname
 
   data_type: 'char'
@@ -95,7 +102,7 @@ __PACKAGE__->table("cluster");
 =head2 cluster_state
 
   data_type: 'char'
-  default_value: 'down'
+  default_value: 'down:0'
   is_nullable: 0
   size: 32
 
@@ -138,22 +145,11 @@ __PACKAGE__->table("cluster");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 host_manager_id
+=head2 service_template_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_nullable: 0
-
-=head2 disk_manager_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
-
-=head2 export_manager_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 1
 
 =cut
@@ -182,6 +178,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "cluster_si_shared",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "cluster_si_persistent",
+  {
+    data_type => "integer",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
   "cluster_domainname",
   { data_type => "char", is_nullable => 0, size => 64 },
   "cluster_nameserver1",
@@ -189,7 +192,12 @@ __PACKAGE__->add_columns(
   "cluster_nameserver2",
   { data_type => "char", is_nullable => 0, size => 15 },
   "cluster_state",
-  { data_type => "char", default_value => "down", is_nullable => 0, size => 32 },
+  {
+    data_type => "char",
+    default_value => "down:0",
+    is_nullable => 0,
+    size => 32,
+  },
   "cluster_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
   "cluster_basehostname",
@@ -217,14 +225,16 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
-  "host_manager_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "disk_manager_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
-  "export_manager_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "service_template_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 __PACKAGE__->set_primary_key("cluster_id");
+__PACKAGE__->add_unique_constraint("cluster_basehostname", ["cluster_basehostname"]);
 __PACKAGE__->add_unique_constraint("cluster_name", ["cluster_name"]);
 
 =head1 RELATIONS
@@ -299,19 +309,24 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 cluster_ipv4_routes
+=head2 service_template
 
-Type: has_many
+Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ClusterIpv4Route>
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
 
 =cut
 
-__PACKAGE__->has_many(
-  "cluster_ipv4_routes",
-  "AdministratorDB::Schema::Result::ClusterIpv4Route",
-  { "foreign.cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+__PACKAGE__->belongs_to(
+  "service_template",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
+  { service_template_id => "service_template_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 collects
@@ -325,51 +340,6 @@ Related object: L<AdministratorDB::Schema::Result::Collect>
 __PACKAGE__->has_many(
   "collects",
   "AdministratorDB::Schema::Result::Collect",
-  { "foreign.cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 graphs
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Graph>
-
-=cut
-
-__PACKAGE__->has_many(
-  "graphs",
-  "AdministratorDB::Schema::Result::Graph",
-  { "foreign.cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 ipv4_publics
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Ipv4Public>
-
-=cut
-
-__PACKAGE__->has_many(
-  "ipv4_publics",
-  "AdministratorDB::Schema::Result::Ipv4Public",
-  { "foreign.cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 manager_parameters
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::ManagerParameter>
-
-=cut
-
-__PACKAGE__->has_many(
-  "manager_parameters",
-  "AdministratorDB::Schema::Result::ManagerParameter",
   { "foreign.cluster_id" => "self.cluster_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -404,21 +374,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 tiers
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Tier>
-
-=cut
-
-__PACKAGE__->has_many(
-  "tiers",
-  "AdministratorDB::Schema::Result::Tier",
-  { "foreign.cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 workload_characteristics
 
 Type: has_many
@@ -435,14 +390,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-28 16:32:30
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2Za7AR3ptvmxjYZK4FvKUg
-__PACKAGE__->belongs_to(
-  "parent",
-  "AdministratorDB::Schema::Result::Inside",
-        { "foreign.inside_id" => "self.cluster_id" },
-        { cascade_copy => 0, cascade_delete => 1 }
-    );
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-10-22 09:48:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9q98+/reJcfJaKH2t6w6cg
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+   "parent",
+   "AdministratorDB::Schema::Result::Inside",
+      { "foreign.inside_id" => "self.cluster_id" },
+      { cascade_copy => 0, cascade_delete => 1 }
+);
+
 1;

@@ -1,5 +1,3 @@
-# Host.pm - Object class of Ḿotherboard (Administrator side)
-
 #    Copyright © 2011-2012 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -24,132 +22,129 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Operation;
+use Entity::Operation;
 use General;
+use Externalnode::Node;
 
+use Entity::ServiceProvider;
 use Entity::Container;
+use Entity::Interface;
+use Entity::Iface;
+use Entity::Operation;
+use Entity::Workflow;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-my $log = get_logger("administrator");
+
+my $log = get_logger("");
 my $errmsg;
 
-=head2 Host Attributes
-
-hostmodel_id : Int : Identifier of host model.
-processormodel_id : Int : Identifier of host processor model
-kernel_id : Int : kernel identifier which will be used by host if non specified by cluster
-host_serial_number : String : This is the serial number attributed to host
-host_mac_address : String : This is the main network interface mac address of the host
-
-host_powersupply_id : Int : Facultative identifier to know which powersupplycard and port is used.
-Powersupplyid is created during host creation.
-host_desc :  String : This is a free field to enter a description of host. It is generally used to
-specify owner, team, ...
-
-active : Int : This is an internal parameter used to activate or deactivate resources on Kanopya System
-host_internal_ip : String : This another internally manage attribute, it allow to save internal ip of
-a host when it is in a cluster
-host_hostname : Hostname is also internally managed. Host hostname will be generated from the mac address
-It is generated when a host is added into a cluster
-host_initiatorname : This attributes is generated when a host is added in a cluster and allow to connect
-to internal storage to get the systemimage
-host_state : String : This parameter is internally managed, it allows to follow migration step.
-It could be :
-- WaitingStart
-- Starting
-- ReadyStart
-- Up
-
-- WaitingStop
-- ReadyStop
-- Stopping
-- Down
-=cut
 
 use constant ATTR_DEF => {
     host_manager_id => {
-        pattern => '^[0-9\.]*$',
+        label        => 'Host manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
         is_mandatory => 1,
-        is_extended => 0
+        is_editable  => 0,
     },
     hostmodel_id => {
+        label        => 'Board model',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     processormodel_id => {
+        label        => 'Processor model',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     kernel_id => {
+        label        => 'Specific kernel',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1,
     },
     host_serial_number => {
+        label        => 'Serial number',
+        type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
-    },
-    host_powersupply_id => {
-        pattern      => '^\w*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     host_desc => {
+        label        => 'Description',
+        type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     active => {
+        label        => 'Active',
+        type         => 'boolean',
         pattern      => '^[01]$',
         is_mandatory => 0,
-        is_extended  => 0
-    },
-    host_mac_address => {
-        # mac address format must be lower case
-        pattern      => '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:' .
-                        '[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',
-        # to have udev persistent net rules work
-        is_mandatory => 1,
-        is_extended  => 0
-    },
-    host_internal_ip => {
-        pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 0,
     },
     host_hostname => {
-        pattern      => '^\w*$',
+        label        => 'Hostname',
+        type         => 'string',
+        pattern      => '^[\w\d\-\.]*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 0,
     },
     host_ram => {
-        pattern      => '^\w*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        label        => 'RAM capability',
+        description  => 'Memory capability of the physical host',
+        type         => 'integer',
+        unit         => 'byte',
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_editable  => 1,
     },
     host_core => {
-        pattern      => '^\w*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        label        => 'CPU capability',
+        type         => 'integer',
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_editable  => 1,
     },
     host_initiatorname => {
+        label        => 'Iscsi initiator name',
+        type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     host_state => {
-        pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
+        label        => 'Host state',
+        type         => 'string',
+        pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*|locked:\d*|broken:\d*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 0,
     },
-    host_ipv4_internal_id => {
-        pattern      => '^\d*$',
+    ifaces => {
+        label        => 'Network interfaces',
+        type         => 'relation',
+        relation     => 'single_multi',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
+    },
+    admin_ip => {
+        label        => 'Administration ip',
+        is_virtual   => 1,
+    },
+    remote_session_url => {
+        label        => 'Remote session url',
+        is_virtual   => 1,
     },
 };
 
@@ -157,42 +152,51 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new host',
-                        'perm_holder' => 'mastergroup',
+        activate => {
+            description => 'activate this host',
+            perm_holder => 'entity',
         },
-        'get'        => {'description' => 'view this host',
-                        'perm_holder' => 'entity',
+        deactivate => {
+            description => 'deactivate this host',
+            perm_holder => 'entity',
         },
-        'update'    => {'description' => 'save changes applied on this host',
-                        'perm_holder' => 'entity',
+        resubmit => {
+            description => 'resubmit the corresponding node',
+            perm_holder => 'entity',
         },
-        'remove'    => {'description' => 'delete this host',
-                        'perm_holder' => 'entity',
+        removeIface => {
+            description => 'remove an interface from this host',
+            perm_holder => 'entity',
         },
-        'activate'=> {'description' => 'activate this host',
-                        'perm_holder' => 'entity',
-        },
-        'deactivate'=> {'description' => 'deactivate this host',
-                        'perm_holder' => 'entity',
-        },
-        'addHarddisk'=> {'description' => 'add a hard disk to this host',
-                        'perm_holder' => 'entity',
-        },
-        'removeHarddisk'=> {'description' => 'remove a hard disk from this host',
-                        'perm_holder' => 'entity',
-        },
-        'removeInterface'=> {'description' => 'remove an interface from this host',
-                        'perm_holder' => 'entity',
-        },
-        'addIface'=> {'description' => 'add one or more interface to  this host',
-                        'perm_holder' => 'entity',
-        },
-
-        'setperm'    => {'description' => 'set permissions on this host',
-                        'perm_holder' => 'entity',
+        addIface => {
+            description => 'add one or more interface to  this host',
+            perm_holder => 'entity',
         },
     };
 }
+
+=head2 create
+
+=cut
+
+sub create {
+    my $class = shift;
+    my %args  = @_;
+
+    General::checkParams(args   => \%args,
+                         required => ['host_manager_id', 'host_core', 'kernel_id',
+                                      'host_ram', 'host_serial_number' ]);
+
+    Entity->get(id => $args{host_manager_id})->createHost(%args);
+}
+
+sub resubmit() {
+    my $self = shift;
+
+    Entity::Workflow->run(name => 'ResubmitNode', params => { context => { host => $self } });
+}
+
+
 
 =head2 getServiceProvider
 
@@ -226,13 +230,13 @@ sub getHostManager {
 
 sub getState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('host_state');
+    my $state = $self->host_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
 sub getPrevState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('host_prev_state');
+    my $state = $self->host_prev_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -247,8 +251,10 @@ sub setState {
     General::checkParams(args => \%args, required => ['state']);
     my $new_state = $args{state};
     my $current_state = $self->getState();
-    $self->{_dbix}->update({'host_prev_state' => $current_state,
-                            'host_state' => $new_state.":".time})->discard_changes();;
+
+    $self->setAttr(name => 'host_prev_state', value => $current_state);
+    $self->setAttr(name => 'host_state', value => $new_state.":".time);
+    $self->save();
 }
 
 =head2 getNodeState
@@ -257,7 +263,7 @@ sub setState {
 
 sub getNodeState {
     my $self = shift;
-    my $state = $self->{_dbix}->node->get_column('node_state');
+    my $state = $self->node->node_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -266,7 +272,7 @@ sub getNodeState {
 =cut
 sub getNodeNumber {
     my $self = shift;
-    my $node_number = $self->{_dbix}->node->get_column('node_number');
+    my $node_number = $self->node->node_number;
     return $node_number;
 }
 
@@ -276,39 +282,17 @@ sub getNodeNumber {
 
 sub getNodeSystemimage {
     my $self = shift;
-
-    my $systemimage_id = $self->{_dbix}->node->get_column('systemimage_id');
-    return Entity::Systemimage->get(id => $systemimage_id);
+    return $self->node->systemimage;
 }
 
-=head2 getHostRAM
-=cut
-sub getHostRAM {
+sub getNode {
     my $self = shift;
-    my $host_ram = $self->{_dbix}->get_column('host_ram');
-    return $host_ram;
-}
-
-=head2 getHostCore
-=cut
-sub getHostCORE {
-    my $self = shift;
-    my $host_core = $self->{_dbix}->get_column('host_core');
-    return $host_core;
-}
-
-sub setNodeNumber {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['node_number']);
-    my $best_node_number = $args{'node_number'};
-    $self->{_dbix}->node->update({'node_number' => $best_node_number});
+    return $self->node;
 }
 
 sub getPrevNodeState {
     my $self = shift;
-    my $state = $self->{_dbix}->node->get_column('node_prev_state');
+    my $state = $self->node->node_prev_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -324,10 +308,65 @@ sub setNodeState {
 
     my $new_state = $args{state};
     my $current_state = $self->getNodeState();
-    $self->{_dbix}->node->update({
-        node_prev_state => $current_state,
-        node_state      => $new_state . ":" . time
-    })->discard_changes();
+
+    my $node = $self->node;
+    $node->setAttr(name => 'node_prev_state', value => $current_state || "");
+    $node->setAttr(name => 'node_state', value => $new_state . ":" . time);
+    $node->save();
+}
+
+=head2 updateCPU
+
+=cut
+
+sub updateCPU {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cpu_number' ]);
+
+    # If the host is a node, then it is used in a cluster
+    # belonging to a user, so update quota
+    if ($self->node) {
+        my $user = $self->node->inside->user;
+
+        if ($args{cpu_number} < $self->host_core) {
+            $user->releaseQuota(resource => 'cpu',
+                                amount   => $self->host_core - $args{cpu_number});
+        } else {
+            $user->consumeQuota(resource => 'cpu',
+                                amount   => $args{cpu_number} - $self->host_core);
+        }
+    }
+
+    $self->setAttr(name => "host_core", value => $args{cpu_number});
+    $self->save();
+}
+
+=head2 updateMemory
+
+=cut
+
+sub updateMemory {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'memory' ]);
+
+    # If the host is a node, then it is used in a cluster
+    # belonging to a user, so update quota
+    if ($self->node) {
+        my $user = $self->node->inside->user;
+
+        if ($args{memory} < $self->host_ram) {
+            $user->releaseQuota(resource => 'ram',
+                                amount   => $self->host_ram - $args{memory});
+        } else {
+            $user->consumeQuota(resource => 'ram',
+                                amount   => $args{memory} - $self->host_ram);
+        }
+    }
+
+    $self->setAttr(name => "host_ram", value => $args{memory});
+    $self->save();
 }
 
 =head2 Entity::Host->becomeNode (%args)
@@ -352,103 +391,33 @@ sub becomeNode {
                                        'node_number', 'systemimage_id' ]);
 
     my $adm = Administrator->new();
-    my $res = $adm->{db}->resultset('Node')->create({
-                  inside_id      => $args{inside_id},
-                  host_id        => $self->getAttr(name => 'host_id'),
-                  master_node    => $args{master_node},
-                  node_number    => $args{node_number},
-                  systemimage_id => $args{systemimage_id},
-              });
+    my $node = Externalnode::Node->new(
+                   inside_id           => $args{inside_id},
+                   host_id             => $self->getAttr(name => 'host_id'),
+                   master_node         => $args{master_node},
+                   node_number         => $args{node_number},
+                   systemimage_id      => $args{systemimage_id},
+               );
 
-    return $res->get_column("node_id");
+    my $cluster = Entity::ServiceProvider->get(id => $args{inside_id});
+    $log->info("Associate host ifaces with service network interfaces");
+    $self->associateInterfaces(cluster => $cluster);
+
+    return $node->id;
 }
 
-=head2 Entity::Host->addIface (%args)
-
-    Class : Public
-
-    Desc : Create a new iface instance in db.
-
-    args:
-        iface_name : Char : interface identifier
-        iface_mac_addr : Char : the mac address linked to iface
-        iface_pxe:Int :0 or 1 
-        host_id: Int 
-        
-    return: iface identifier
-
-=cut
-
-sub addIface {
+sub becomeMasterNode {
     my $self = shift;
-    my %args = @_;
+    my $node = $self->node;
 
-    General::checkParams(args => \%args, required => [ 'iface_name', 'iface_mac_addr', 'iface_pxe' ]);
-
-    my $adm = Administrator->new();
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id},
-                                                   method    => 'addIface');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(
-                  error => "Permission denied to add an interface to this host"
-              );
-    }
-    my $res = $adm->{db}->resultset('Iface')->create(
-                  { iface_name     => $args{iface_name},
-                    iface_mac_addr => $args{iface_mac_addr},
-                    iface_pxe      => $args{iface_pxe},
-                    host_id        => $self->getAttr(name => 'host_id') }
-              );
-
-    return $res->get_column("iface_id");
-}
-
-=head2 getIfaces
-
-=cut
-
-sub getIfaces {
-    my $self = shift;
-    my $ifcs = [];
-    my $interfaces = $self->{_dbix}->ifaces;
-    while(my $ifc = $interfaces->next) {
-        my $tmp = {};
-        $tmp->{iface_id}       = $ifc->get_column('iface_id');
-        $tmp->{iface_name}     = $ifc->get_column('iface_name');
-        $tmp->{iface_mac_addr} = $ifc->get_column('iface_mac_addr');
-        $tmp->{iface_pxe}      = $ifc->get_column('iface_pxe');
-        
-        push @$ifcs, $tmp;
-    }
-    return wantarray ? @$ifcs : $ifcs;
-}
-
-sub removeInterface {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['iface_id']);
-
-    my $adm = Administrator->new();
-    # removeInterface method concerns an existing entity so we use his entity_id
-   my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeInterface');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove an interface from this host");
-    }
-
-    my $ifc = $self->{_dbix}->ifaces->find($args{iface_id});
-    $ifc->delete();
-}
-sub becomeMasterNode{
-    my $self = shift;
-
-    my $row = $self->{_dbix}->node;
-    if(not defined $row) {
-        $errmsg = "Entity::Host->becomeMasterNode :Host ".$self->getAttr(name=>"host_mac_address")." is not a node!";
+    if (not defined $node) {
+        $errmsg = "Entity::Host->becomeMasterNode :Host " . $self->id . " is not a node!";
         $log->error($errmsg);
         throw Kanopya::Exception::DB(error => $errmsg);
     }
-    $row->update({master_node => 1});
+
+    $node->setAttr(name => 'master_node', value => 1);
+    $node->save();
 }
 
 =head2 Entity::Host->stopToBeNode (%args)
@@ -465,15 +434,182 @@ sub becomeMasterNode{
 sub stopToBeNode{
     my $self = shift;
 
-    my $row = $self->{_dbix}->node;
-    $log->debug("node <" . $self->getAttr(name => "host_mac_address") . "> stop to be node");
-    if(not defined $row) {
-        $errmsg = "Entity::Host->stopToBeNode : node representing host " .
-                  $self->getAttr(name=>"host_mac_address") . " not found!";
+    if (not defined $self->node) {
+        $errmsg = "Host " . $self->id . " is not a node!";
         $log->error($errmsg);
-        throw Kanopya::Exception::DB(error => $errmsg);
+        #throw Kanopya::Exception::DB(error => $errmsg);
     }
-    $row->delete;
+    else {
+        $self->node->delete();
+    }
+
+    # Dissociate iface from cluster interfaces
+    $self->dissociateInterfaces();
+
+    # Remove node entry
+    $self->setState(state => 'down');
+}
+
+sub associateInterfaces {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster' ]);
+
+    my @ifaces = $self->getIfaces;
+
+    # Try to find a proper iface to assign to each interfaces.
+    foreach my $interface (@{$args{cluster}->getNetworkInterfaces}) {
+        my $assigned = 0;
+        for my $iface (@ifaces) {
+            if (not $iface->isAssociated) {
+                eval {
+                    $iface->associateInterface(interface => $interface);
+                    $assigned = 1;
+                };
+                if ($@) { $log->debug($@); }
+                if ($assigned) { last; }
+            }
+        }
+        if (not $assigned) {
+            throw Kanopya::Exception::Internal(
+                      error => "Unable to associate interface <" . $interface->getAttr(name => 'entity_id') .
+                               "> to any iface of the host <" . $self->getAttr(name => 'entity_id') . ">"
+                  );
+        }
+    }
+}
+
+sub dissociateInterfaces {
+    my $self = shift;
+    my %args = @_;
+
+    for my $iface (@{$self->getIfaces}) {
+        if ($iface->isAssociated) {
+            $iface->dissociateInterface();
+        }
+    }
+}
+
+=head2 Entity::Host->addIface (%args)
+
+    Class : Public
+
+    Desc : Create a new iface instance in db.
+
+    args:
+        iface_name : Char : interface identifier
+        iface_mac_addr : Char : the mac address linked to iface
+        iface_pxe:Int :0 or 1
+        host_id: Int
+
+    return: iface identifier
+
+=cut
+
+sub addIface {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'iface_name', 'iface_mac_addr', 'iface_pxe' ]);
+
+    my $iface = Entity::Iface->new(iface_name     => $args{iface_name},
+                                   iface_mac_addr => $args{iface_mac_addr},
+                                   iface_pxe      => $args{iface_pxe},
+                                   host_id        => $self->getAttr(name => 'host_id'));
+
+    return $iface->getAttr(name => 'entity_id');
+}
+
+=head2 getIfaces
+
+=cut
+
+sub getIfaces {
+    my $self = shift;
+    my %args = @_;
+    my @ifaces = ();
+
+    # Make sure to have all pxe ifaces before non pxe ones within the resulting array
+    foreach my $pxe (1, 0) {
+        my @ifcs = Entity::Iface->search(hash => { host_id   => $self->getAttr(name => 'host_id'),
+                                                   iface_pxe => $pxe });
+        for my $iface (@ifcs) {
+            if (defined ($args{role})) {
+                if (my $interface_id = $iface->isAssociated) {
+                    my $interface = Entity::Interface->get(id => $iface->getAttr(name => 'interface_id'));
+                    if ($interface->getRole->getAttr(name => 'interface_role_name') ne $args{role}) {
+                        next;
+                    }
+                }
+            }
+
+            push @ifaces, $iface;
+        }
+    }
+
+    return wantarray ? @ifaces : \@ifaces;
+}
+
+=head2 getPXEIface
+
+=cut
+
+sub getPXEIface {
+    my $self = shift;
+
+    my @pxe_ifaces = Entity::Iface->search(hash => {
+                         host_id   => $self->getAttr(name => 'host_id'),
+                         iface_pxe => 1,
+                     });
+
+    for my $iface (@pxe_ifaces) {
+        # An iface not associated to any cluster interface
+        # will not be assigned to an ip.
+        if ($iface->getAttr(name => 'interface_id')) {
+            return $iface;
+        }
+    }
+    throw Kanopya::Exception::Internal::NotFound(
+              error => "No pxe iface associated to a cluster interface found."
+          );
+}
+
+sub removeIface {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['iface_id']);
+
+    my $ifc = Entity::Iface->find(hash => { host_id => $self->id, iface_id => $args{iface_id} });
+    $ifc->delete();
+}
+
+sub getAdminIface {
+    my $self = shift;
+    my %args = @_;
+
+    # Can we make it smarter ?
+    my @ifaces = $self->getIfaces(role => "admin");
+    if (scalar (@ifaces) == 0 and defined $args{throw}) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "Host <" . $self->getAttr(name => 'entity_id') .
+                           "> Could not find any iface associate to a admin interface."
+              );
+    }
+    return $ifaces[0];
+}
+
+sub adminIp {
+    my $self = shift;
+    my %args = @_;
+
+    my $iface = $self->getAdminIface();
+    if ($iface and $iface->hasIp) {
+        if (defined ($iface) and $iface->hasIp) {
+            return $iface->getIPAddr;
+        }
+    }
 }
 
 =head2 getHosts
@@ -503,18 +639,14 @@ sub getHostFromIP {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['ipv4_internal_ip']);
-
-    my $adm = Administrator->new();
-    my $net_id = $adm->{manager}->{network}->getInternalIPId( ipv4_internal_address => $args{ipv4_internal_ip} );
-    return $class->SUPER::getEntities( hash=>{host_ipv4_internal_id => $net_id},  type => "Host");
+    throw Kanopya::Exception::NotImplemented();
 }
 
 sub getFreeHosts {
     my $class = shift;
     my %args = @_;
 
-    my $hash = {active => 1, host_state => {-like => 'down:%'}};
+    my $hash = { active => 1, host_state => {-like => 'down:%'} };
 
     if (defined $args{host_manager_id}) {
         $hash->{host_manager_id} = $args{host_manager_id}
@@ -523,18 +655,12 @@ sub getFreeHosts {
     my @hosts = $class->getHosts(hash => $hash);
     my @free;
     foreach my $m (@hosts) {
-        if(not $m->{_dbix}->node) {
+        if(not $m->node) {
             push @free, $m;
         }
     }
     return @free;
 }
-
-=head2 update
-
-=cut
-
-sub update {}
 
 =head2 remove
 
@@ -543,14 +669,15 @@ sub update {}
 sub remove {
     my $self = shift;
 
-    $log->debug("New Operation RemoveHost with host_id : <" .
-                $self->getAttr(name => "host_id") . ">");
+    $log->debug("New Operation RemoveHost with host_id : <" . $self->getAttr(name => "host_id") . ">");
 
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveHost',
         params   => {
-            host_id => $self->getAttr(name => "host_id")
+            context  => {
+                host => $self,
+            },
         },
     );
 }
@@ -579,13 +706,6 @@ sub addHarddisk {
 
     General::checkParams(args => \%args, required => ['device']);
 
-    my $adm = Administrator->new();
-    # addHarddisk method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addHarddisk');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a hard disk to this host");
-    }
-
     $self->{_dbix}->harddisks->create({
         harddisk_device => $args{device},
         host_id => $self->getAttr(name => 'host_id'),
@@ -598,13 +718,6 @@ sub removeHarddisk {
 
     General::checkParams(args => \%args, required => ['harddisk_id']);
 
-    my $adm = Administrator->new();
-    # removeHarddisk method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeHarddisk');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a hard disk from this host");
-    }
-
     my $hd = $self->{_dbix}->harddisks->find($args{harddisk_id});
     $hd->delete();
 }
@@ -613,18 +726,30 @@ sub activate{
     my $self = shift;
 
     $log->debug("New Operation ActivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'ActivateHost',
-                   params   => {host_id => $self->getAttr(name=>'host_id')});
+    Entity::Operation->enqueue(
+        priority => 200,
+        type     => 'ActivateHost',
+        params   => {
+            context => {
+                host => $self
+           }
+       }
+   );
 }
 
 sub deactivate{
     my $self = shift;
 
     $log->debug("New Operation EDeactivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'DeactivateHost',
-                   params   => {host_id => $self->getAttr(name=>'host_id')});
+    Entity::Operation->enqueue(
+        priority => 200,
+        type     => 'DeactivateHost',
+        params   => {
+            context => {
+                host => $self
+           }
+       }
+   );
 }
 
 =head2 toString
@@ -635,82 +760,39 @@ sub deactivate{
 
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('host_mac_address');
-    $string =~ s/\://g;
-    return $string;
-}
 
-=head2 getMacName
-
-return Mac address with separator : replaced by _
-
-=cut
-
-sub getMacName {
-    my $self = shift;
-    my $mac = $self->getAttr(name => "host_mac_address");
-    $mac =~ s/\:/\_/mg;
-    return $mac;
-}
-
-sub getInternalIP {
-    my $self = shift;
-    my $adm = Administrator->new();
-    if ($self->getAttr(name=>"host_ipv4_internal_id")) {
-        return $adm->{manager}->{network}->getInternalIP(
-                   ipv4_internal_id => $self->getAttr(name=>"host_ipv4_internal_id")
-               );
-    }
-    return {};
-
-}
-
-sub setInternalIP {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['ipv4_address','ipv4_mask']);
-
-    my $adm = Administrator->new();
-    my $net_id = $adm->{manager}->{network}->newInternalIP(%args);
-    $self->setAttr(name => "host_ipv4_internal_id", value => $net_id);
-    return $net_id;
-}
-
-sub removeInternalIP {
-    my $self = shift;
-
-    my $internal_net_id = $self->getAttr(name => "host_ipv4_internal_id");
-
-    if (defined $internal_net_id) {
-        $self->{_dbix}->update({'host_ipv4_internal_id' => undef});
-        my $adm = Administrator->new();
-        my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_id => $internal_net_id);
-    }
+    return 'Entity::Host <' . $self->getAttr(name => "entity_id") .'>';
 }
 
 sub getClusterId {
     my $self = shift;
-    return $self->{_dbix}->node->inside->get_column('inside_id');
+    return $self->node->service_provider->id;
 }
 
-sub getPowerSupplyCardId {
+sub getCluster {
     my $self = shift;
-    my $row = $self->{_dbix}->host_powersupply;
-    if (defined $row) {
-        return $row->get_column('powersupplycard_id');}
-    else {
-        return;
-    }
+    return $self->node->service_provider;
 }
 
 sub getModel {
     my $self = shift;
-    my $model_row = $self->{_dbix}->hostmodel;
-    if ( defined $model_row ) {
-        return $model_row->get_columns();
-    }
-    return;
+    return $self->hostmodel;
+}
+
+sub remoteSessionUrl {
+    my $self = shift;
+
+   return $self->getHostManager->getRemoteSessionURL(host => $self);
+}
+
+=head2
+
+    Check if the host can be stopped, raise an exception otherwise
+
+=cut
+
+sub checkStoppable {
+    return {};
 }
 
 1;

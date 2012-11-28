@@ -39,10 +39,12 @@ controller is part of kanopya orchestration.
 use strict;
 use warnings;
 use Controller;
+use Kanopya::Config;
 use Log::Log4perl "get_logger";
 
-Log::Log4perl->init('/opt/kanopya/conf/orchestrator-log.conf');
-my $log = get_logger("controller");
+my $dir = Kanopya::Config::getKanopyaDir();
+Log::Log4perl->init($dir.'/kanopya/conf/orchestrator-log.conf');
+my $log = get_logger("");
 
 
 my $running = 1;

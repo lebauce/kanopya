@@ -22,10 +22,10 @@ EFactory - Module which instanciate EEntity and EContext
 =head1 SYNOPSIS
 
     use EFactory;
-    
+
     # Creates an EEntity
     my $eentity = EFactory::newEEntity();
-    
+
     # Create an EContext
     my $econtext = EFactory::newEContext
 
@@ -44,11 +44,12 @@ use vars qw(@ISA $VERSION);
 
 use General;
 use Entity;
+use EEntity;
+
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
 use Net::IP qw(:PROC);
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
@@ -56,21 +57,22 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 sub newEOperation{
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['op']);
+    General::checkParams(args => \%args, required => [ 'op' ]);
+
     my $data = $args{op};
-    my $class = "EOperation::E". $args{op}->getType();
-#    $log->debug("EOperation class is $class"); 
+    my $class = "EEntity::EOperation::E". $args{op}->getAttr(name => 'type');
+#    $log->debug("EOperation class is $class");
     my $location = General::getLocFromClass(entityclass => $class);
-    
+
     eval { require $location; };
     if ($@){
         $errmsg = "EFactory->newEOperation : require '$location' failed : $@";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
+
 #    $log->info("$class instanciated");
-    return $class->new(data => $args{op});
+    return $class->new(data => $args{op}, context => $args{context});
 }
 
 =head2 newEEntity
@@ -81,26 +83,10 @@ EFactory::newEEntity($objdata) instanciates a new object EEntity from Entity.
 
 sub newEEntity {
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['data']);
 
-    my $data = $args{data};
-    my %params = (data => $args{data});
-
-    my $class = General::getClassEEntityFromEntity(entity => $data);
-    $log->debug("GetClassEEntityFromEntity return $class");
-
-    my $location = General::getLocFromClass(entityclass => $class);
-
-    eval { require $location; };
-    if ($@){
-        $errmsg = "EFactory->newEEntity : require locaction failed (location is $location) : $@";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    
-#    $log->info("$class instanciated");
-    return $class->new(%params);
+    return EEntity->new(entity => $args{data});
 }
 
 =head2 newEContext
@@ -115,19 +101,18 @@ sub newEContext {
     General::checkParams(args => \%args, required => ['ip_source', 'ip_destination']);
 
     if (!ip_is_ipv4($args{ip_source})){
-        $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";    
+        $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     if (!ip_is_ipv4($args{ip_destination})){
-        $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";    
+        $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     #Create EContext::Local or EContext::SSH
     if($args{ip_source} eq $args{ip_destination}) {
         # EContext::Local
-        $log->debug("ip_source & ip_destination are the same, using EContext::Local");
         use EContext::Local;
         return EContext::Local->new(local => $args{ip_source});
     } else {

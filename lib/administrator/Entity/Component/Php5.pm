@@ -61,10 +61,27 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    php5_session_handler => {
+        label => 'Session handler',
+        type => 'enum',
+        options => ['files','memcache'],
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1,
+    },
+    php5_session_path => {
+        label => 'Session path for files handler',
+        type => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1,
+    }
+};
+
 sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
@@ -83,9 +100,12 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-    
-    if(not $conf->{php5_id}) {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
+    if (not $conf->{php5_id}) {
         # new configuration -> create
         $self->{_dbix}->create($conf);
     } else {
@@ -98,6 +118,7 @@ sub setConf {
 sub getBaseConfiguration {
     return {
         php5_session_path => "/var/lib/php5",
+        php5_session_handler => 'files'
     };
 }
 

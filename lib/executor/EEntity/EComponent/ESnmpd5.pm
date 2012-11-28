@@ -12,67 +12,73 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::ESnmpd5;
+use base 'EEntity::EComponent';
 
 use strict;
-use Template;
-use String::Random;
-use base "EEntity::EComponent";
+use warnings;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 # generate snmpd configuration files on node
 sub addNode {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ "econtext", "host", "mount_point" ]);
+                         required => ['cluster','host','mount_point']);
 
     my $conf = $self->_getEntity()->getConf();
 
     # generation of /etc/default/snmpd 
     my $data = {};
-    $data->{node_ip_address} = $args{host}->getInternalIP()->{ipv4_internal_address};
+    $data->{node_ip_address} = $args{host}->adminIp;
     $data->{options} = $conf->{snmpd_options};       
     
-    $self->generateFile(econtext     => $args{econtext},
-                        mount_point  => $args{mount_point}.'/etc',
-                        template_dir => "/templates/components/snmpd",
-                        input_file   => "default_snmpd.tt",
-                        output       => "/default/snmpd",
-                        data         => $data);
-                         
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/default/snmpd',
+        template_dir  => '/templates/components/snmpd',
+        template_file => 'default_snmpd.tt',
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/default',
+    );
+    
     # generation of /etc/snmpd/snmpd.conf 
     $data = {};
     $data->{monitor_server_ip} = $conf->{monitor_server_ip};
 
-    $self->generateFile(econtext     => $args{econtext},
-                        mount_point  => $args{mount_point}.'/etc',
-                        template_dir => "/templates/components/snmpd",
-                        input_file   => "snmpd.conf.tt",
-                        output       => "/snmp/snmpd.conf",
-                        data         => $data);
+    $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/snmp/snmpd.conf',
+        template_dir  => '/templates/components/snmpd',
+        template_file => 'snmpd.conf.tt',
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/snmp',
+    );
 
     # add snmpd init scripts
     $self->addInitScripts(
         mountpoint => $args{mount_point},
-        econtext   => $args{econtext},
         scriptname => 'snmpd',
     );
-          
 }
 
 # Reload snmp process
 sub reload {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => [ "econtext" ]);
-
+    my ($self, %args) = @_;
     my $command = "invoke-rc.d snmpd restart";
-    my $result = $args{econtext}->execute(command => $command);
+    my $result = $self->getEContext->execute(command => $command);
     return undef;
 }
 

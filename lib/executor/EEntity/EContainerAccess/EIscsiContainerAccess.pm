@@ -36,9 +36,8 @@ use strict;
 use warnings;
 
 use Log::Log4perl "get_logger";
-use Operation;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 
 =head2 connect
 
@@ -52,40 +51,70 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $target = $self->_getEntity->getAttr(name => 'container_access_export');
-    my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
-    my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
-    my $lun    = $self->_getEntity->getAttr(name => 'lun_name');
+    my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
+                                 hash => { cluster_name => 'Kanopya' }
+                          );
+    my $executor = Entity->get(id => $kanopya_cluster->getMasterNode->host->id);
 
-    $log->info("Creating open iscsi node <$target> from <$ip:$port>.");
+    my $target = $self->getAttr(name => 'container_access_export');
+    my $ip     = $self->getAttr(name => 'container_access_ip');
+    my $port   = $self->getAttr(name => 'container_access_port');
+    my $lun    = $self->getLunId(host => $executor);
 
+    $log->debug("Creating open iscsi node <$target> from <$ip:$port>.");
+
+    my $result;
     my $create_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o new";
-    $args{econtext}->execute(command => $create_node_cmd);
+    $result = $args{econtext}->execute(command => $create_node_cmd);
 
-    $log->info("Loging in node <$target> (<$ip:$port>).");
-
-    my $login_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -l";
-    $args{econtext}->execute(command => $login_node_cmd);
-
-    my $device = '/dev/disk/by-path/ip-' . $ip . ':' . $port . '-iscsi-' . $target . '-' . $lun;
-
-    my $retry = 20;
-    while (! -e $device) {
-        if ($retry <= 0) {
-            my $errmsg = "IsciContainer->mount: unable to find waited device<$device>";
-            $log->error($errmsg);
-
-            throw Kanopya::Exception::Execution($errmsg);
-        }
-        $retry -= 1;
-
-        $log->info("Device not found yet (<$device>), sleeping 1s and retry.");
-        sleep 1;
+    if($result->{exitcode} != 0) {
+        my $logger = get_logger("command");
+        $logger->error($result->{stderr});
+        throw Kanopya::Exception::Execution(error => $result->{stderr});
     }
 
-    $log->info("Device found (<$device>).");
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => $device);
+    $log->debug("Loging in node <$target> (<$ip:$port>).");
+
+    my $login_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -l";
+    $result = $args{econtext}->execute(command => $login_node_cmd);
+
+     if($result->{exitcode} != 0) {
+        my $logger = get_logger("command");
+        $logger->error($result->{stderr});
+        throw Kanopya::Exception::Execution(error => $result->{stderr});
+    }
+
+    my $device = '/dev/disk/by-path/ip-' . $ip . ':' . $port . '-iscsi-' . $target . '-lun-' . $lun;
+
+    my $retry = 20;
+    do {
+        $result = $args{econtext}->execute(command => "file $device");
+
+        if ($result->{exitcode} != 0) {
+            if ($retry <= 0) {
+                my $errmsg = "IsciContainer->mount: unable to find waited device<$device>";
+                $log->error($errmsg);
+
+                throw Kanopya::Exception::Execution($errmsg);
+            }
+            $retry -= 1;
+
+            $log->debug("Device not found yet (<$device>), sleeping 1s and retry.");
+            sleep 1;
+        }
+    } while ($result->{exitcode} != 0);
+
+    $log->debug("Device found (<$device>).");
+    $self->setAttr(name => 'device_connected', value => $device);
+    $self->save();
+
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('disconnect'),
+            parameters => [ $self, "econtext", $args{econtext} ]
+        );
+    }
+
     return $device;
 }
 
@@ -101,24 +130,45 @@ sub disconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $target = $self->_getEntity->getAttr(name => 'container_access_export');
-    my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
-    my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
+    my $target = $self->getAttr(name => 'container_access_export');
+    my $ip     = $self->getAttr(name => 'container_access_ip');
+    my $port   = $self->getAttr(name => 'container_access_port');
 
-    $log->info("Logout from node <$target>");
+    $log->debug("Logout from node <$target>");
 
     my $logout_cmd = "iscsiadm -m node -U manual";
     $args{econtext}->execute(command => $logout_cmd);
 
-    $log->info("Deleting node <$target> (<$ip:$port>).");
+    $log->debug("Deleting node <$target> (<$ip:$port>).");
 
     my $delete_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o delete";
     $args{econtext}->execute(command => $delete_node_cmd);
 
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => '');
+    $self->setAttr(name  => 'device_connected',
+                   value => '');
+    $self->save();
 
     # TODO: insert an eroolback with mount method ?
+}
+
+=head2 getLunId
+
+    desc: Get the LUN id for a host
+
+=cut
+
+sub getLunId {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $emanager = EFactory::newEEntity(data => $self->getExportManager);
+
+    return $emanager->getLunId(
+        lun  => $self,
+        host => $args{host}
+    );
 }
 
 1;

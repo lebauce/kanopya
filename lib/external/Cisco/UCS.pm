@@ -17,7 +17,7 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 @ISA               	= qw(Exporter);
 our $VERSION		= '0.031';
 
-my $debug_xmlrpc = 1;
+my $debug_xmlrpc = 0;
 
 =head1 NAME
 
@@ -262,7 +262,7 @@ sub _ucsm_request {
 		$xml	= $self->{parser}->XMLin($res->content(), KeyAttr => $class_id);
 	}
 	else {
-		$xml	= $self->{parser}->XMLin($res->content);
+		$xml	= $self->{parser}->XMLin($res->content, KeyAttr => []);
 	}
 
 	if (defined $xml->{errorCode}) {
@@ -893,7 +893,7 @@ sub map_objects {
 		                                    classId => $classId);
 	}
 
-	return @objs;
+	return wantarray ? @objs : \@objs;
 }
 
 sub get_ethernets {

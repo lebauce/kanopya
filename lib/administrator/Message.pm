@@ -1,5 +1,5 @@
-# Message.pm - This object allows to manipulate Message with user interface
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,35 +14,58 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 3 sept 2010
-package Message;
 
+package Message;
+use base 'BaseDB';
 
 use strict;
 use warnings;
-use DateTime;
 
 use Administrator;
 use Kanopya::Exceptions;
 use General;
+use DateTime;
+
 use Data::Dumper;
 use Log::Log4perl "get_logger";
-my $log = get_logger("administrator");
+
+my $log = get_logger("");
 my $errmsg;
 
+use constant ATTR_DEF => {
+    user_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    message_from => {
+        pattern      => '^.{32}$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    message_creationdate => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    message_creationtime => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    message_level => {
+        pattern      => '^.{32}$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    message_content => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+};
 
-sub get {
-    my $class = shift;
-    my %args = @_;
-    my $self = {};
-    
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $adm = Administrator->new();
-    $self->{_dbix} = $adm->{db}->resultset( "Message" )->find(  $args{id});
-    bless $self, $class;
-    return $self;
-}
+sub getAttrDef { return ATTR_DEF; }
 
 sub getMessages {
     my $class = shift;
@@ -100,30 +123,6 @@ sub send {
 
     my $msg = Message->new(%args);
     $msg->save();
-}
-
-sub delete {
-    my $self = shift;
-    
-    $self->{_dbix}->delete();
-}
-
-sub getAttr {
-    my $self = shift;
-    my %args = @_;
-    my $value;
-
-    General::checkParams(args => \%args, required => ['attr_name']);
-
-    if ( $self->{_dbix}->has_column( $args{attr_name} ) ) {
-        $value = $self->{_dbix}->get_column( $args{attr_name} );
-        $log->debug(ref($self) . " getAttr of $args{attr_name} : $value");
-    } else {
-        $errmsg = "Operation->getAttr : Wrong value asked!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    return $value;
 }
 
 sub save {

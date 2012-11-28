@@ -37,10 +37,12 @@ Aggregator is the main script to run indicator aggregation over group of hosts.
 use strict;
 use warnings;
 use Aggregator;
+use Kanopya::Config;
 use Log::Log4perl "get_logger";
 
-Log::Log4perl->init('/opt/kanopya/conf/monitor-log.conf');
-my $log = get_logger("aggregator");
+my $dir = Kanopya::Config::getKanopyaDir();
+Log::Log4perl->init($dir.'/kanopya/conf/aggregator-log.conf');
+my $log = get_logger("");
 
 
 my $running = 1;

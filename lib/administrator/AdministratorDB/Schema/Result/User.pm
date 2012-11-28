@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::User;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::User
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<user>
 
 =cut
 
@@ -43,7 +63,7 @@ __PACKAGE__->table("user");
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 255
 
 =head2 user_firstname
 
@@ -82,6 +102,11 @@ __PACKAGE__->table("user");
   is_nullable: 1
   size: 255
 
+=head2 user_sshkey
+
+  data_type: 'text'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -102,7 +127,7 @@ __PACKAGE__->add_columns(
   "user_login",
   { data_type => "char", is_nullable => 0, size => 32 },
   "user_password",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 255 },
   "user_firstname",
   { data_type => "char", is_nullable => 1, size => 64 },
   "user_lastname",
@@ -124,11 +149,67 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
     size => 255,
   },
+  "user_sshkey",
+  { data_type => "text", is_nullable => 1 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</user_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("user_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<user_login>
+
+=over 4
+
+=item * L</user_login>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("user_login", ["user_login"]);
 
 =head1 RELATIONS
+
+=head2 clusters
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Cluster>
+
+=cut
+
+__PACKAGE__->has_many(
+  "clusters",
+  "AdministratorDB::Schema::Result::Cluster",
+  { "foreign.user_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 customer
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Customer>
+
+=cut
+
+__PACKAGE__->might_have(
+  "customer",
+  "AdministratorDB::Schema::Result::Customer",
+  { "foreign.customer_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 messages
 
@@ -175,6 +256,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 quotas
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Quota>
+
+=cut
+
+__PACKAGE__->has_many(
+  "quotas",
+  "AdministratorDB::Schema::Result::Quota",
+  { "foreign.user_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 user
 
 Type: belongs_to
@@ -190,16 +286,55 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 user_extensions
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:B7rCXxr6F2uRZ3QK0fKVSQ
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::UserExtension>
+
+=cut
+
+__PACKAGE__->has_many(
+  "user_extensions",
+  "AdministratorDB::Schema::Result::UserExtension",
+  { "foreign.user_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 user_profiles
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::UserProfile>
+
+=cut
+
+__PACKAGE__->has_many(
+  "user_profiles",
+  "AdministratorDB::Schema::Result::UserProfile",
+  { "foreign.user_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 profiles
+
+Type: many_to_many
+
+Composing rels: L</user_profiles> -> profile
+
+=cut
+
+__PACKAGE__->many_to_many("profiles", "user_profiles", "profile");
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-12 10:43:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1mETdwK3Jzv1HFAbEedQ9w
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.user_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+  { entity_id => "user_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 1;

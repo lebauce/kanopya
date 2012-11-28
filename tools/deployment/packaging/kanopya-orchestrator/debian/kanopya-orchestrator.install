@@ -1,4 +1,0 @@
-sbin/* opt/kanopya/sbin
-lib/orchestrator/* opt/kanopya/lib/orchestrator
-t/orchestrator/* opt/kanopya/t/orchestrator
-scripts/init/* etc/init.d

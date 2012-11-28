@@ -15,6 +15,23 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+Execution class for ContainerAccess. Provides methods for copy,
+connect and mount container accesses. Some container access support connection,
+i.e. we can access it as a device on the client host like Iscsi lun, and others
+support the mount only like Nfs export.
+
+@since    2012-Feb-29
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package EEntity::EContainerAccess;
 use base "EEntity";
 
@@ -23,29 +40,38 @@ use warnings;
 
 use General;
 use EFactory;
-
-use Data::Dumper;
-
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
-our $VERSION = '1.00';
 
-=head2 copy
+=pod
 
-    desc: Copy content of a source container access to dest.
-          Try to copy at the device level, mount the both container and copy
-          files instead.
+=begin classdoc
+
+Copy contents of the source container access ($self) to destination container access.
+Try to copy at the device level by connecting both access as device on the executor,
+mount the both container accesses and copy files instead if one the both do not 
+support the device level.
+After the copy, if the destionation container access is larger than the source one,
+resizing the filesystem to fit to the total container length.
+
+@param dest the destination container access
+@param econtext the econtext object to execute commands
+
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
 sub copy {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
@@ -53,16 +79,19 @@ sub copy {
     my $source_access = $self;
     my $dest_access   = $args{dest};
 
-    $log->info('Try to connect to the source container...');
-    my $source_device = $source_access->tryConnect(econtext => $args{econtext});
-    $log->info('Try to connect to the destination container...');
-    my $dest_device = $dest_access->tryConnect(econtext => $args{econtext});
+    $log->debug('Try to connect to the source container...');
+    my $source_device = $source_access->tryConnect(econtext  => $args{econtext},
+                                                   erollback => $args{erollback});
+    $log->debug('Try to connect to the destination container...');
+    my $dest_device = $dest_access->tryConnect(econtext  => $args{econtext},
+                                               erollback => $args{erollback});
 
-    # If devices exists, copy contents with 'dd'
+    # If devices exists, clone and resize the source disk using virt-resize
     if (defined $source_device and defined $dest_device) {
-        my $blocksize = $dest_access->getPreferredBlockSize;
+        my $source_size = $source_access->getContainer->getAttr(name => 'container_size');
+        my $dest_size   = $dest_access->getContainer->getAttr(name => 'container_size');
 
-        $command = "dd conv=notrunc if=$source_device of=$dest_device bs=$blocksize";
+        $command = "virt-resize --expand /dev/sda1 " . $source_device . " " . $dest_device;
         $result  = $args{econtext}->execute(command => $command);
 
         if ($result->{stderr} and ($result->{exitcode} != 0)) {
@@ -74,49 +103,30 @@ sub copy {
         $command = "sync";
         $args{econtext}->execute(command => $command);
 
-        my $source_size = $source_access->_getEntity->getContainer->getAttr(name => 'container_size');
-        my $dest_size   = $dest_access->_getEntity->getContainer->getAttr(name => 'container_size');
-
-        # Check if the destination container is higher thant the source one,
-        # resize it to maximum.
-        if ($dest_size > $source_size) {
-            my $part_start = $dest_access->getPartitionStart(econtext => $args{econtext});
-            if ($part_start and $part_start > 0) {
-                $command = "parted -s $dest_device rm 1";
-                $result  = $args{econtext}->execute(command => $command);
-
-                $command = "parted -s -- $dest_device mkpart primary " . $part_start . "B -1s";
-                $result  = $args{econtext}->execute(command => $command);
-            }
-
-            my $part_device = $dest_access->tryConnectPartition(econtext => $args{econtext});
-
-            # Finally resize2fs the partition
-            $command = "e2fsck -y -f $part_device";
-            $args{econtext}->execute(command => $command);
-            $command = "resize2fs -F $part_device";
-            $args{econtext}->execute(command => $command);
-
-            $dest_access->tryDisconnectPartition(econtext => $args{econtext});
-        }
-
         # Disconnect the containers.
-        $log->info('Try to disconnect from the source container...');
-        $source_access->tryDisconnect(econtext => $args{econtext});
-        $log->info('Try to disconnect from the destination container...');
-        $dest_access->tryDisconnect(econtext => $args{econtext});
+        $log->debug('Try to disconnect from the source container...');
+        $source_access->tryDisconnect(econtext  => $args{econtext},
+                                      erollback => $args{erollback});
+
+        $log->debug('Try to disconnect from the destination container...');
+        $dest_access->tryDisconnect(econtext  => $args{econtext},
+                                    erollback => $args{erollback});
     }
     # One or both container access do not support device level (e.g. Nfs)
     else {
         # Mount the containers on the executor.
-        my $source_mountpoint = $source_access->_getEntity->getContainer->getMountPoint;
-        my $dest_mountpoint   = $dest_access->_getEntity->getContainer->getMountPoint;
+        my $source_mountpoint = $source_access->getContainer->getMountPoint;
+        my $dest_mountpoint   = $dest_access->getContainer->getMountPoint;
 
-        $log->info('Mounting source container <' . $source_mountpoint . '>');
-        $source_access->mount(mountpoint => $source_mountpoint, econtext => $args{econtext});
+        $log->debug('Mounting source container <' . $source_mountpoint . '>');
+        $source_access->mount(mountpoint => $source_mountpoint,
+                              econtext   => $args{econtext},
+                              erollback  => $args{erollback});
 
-        $log->info('Mounting destination container <' . $dest_mountpoint . '>');
-        $dest_access->mount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
+        $log->debug('Mounting destination container <' . $dest_mountpoint . '>');
+        $dest_access->mount(mountpoint => $dest_mountpoint,
+                            econtext   => $args{econtext},
+                            erollback  => $args{erollback});
 
         # Copy the filesystem.
         $command = "cp -R --preserve=all $source_mountpoint/. $dest_mountpoint/";
@@ -131,63 +141,98 @@ sub copy {
 
         # Unmount the containers.
         
-        $source_access->umount(mountpoint => $source_mountpoint, econtext => $args{econtext});
-        $dest_access->umount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
+        $source_access->umount(mountpoint => $source_mountpoint,
+                               econtext   => $args{econtext},
+                               erollback  => $args{erollback});
+        $dest_access->umount(mountpoint => $dest_mountpoint,
+                             econtext   => $args{econtext},
+                             erollback  => $args{erollback});
     }
 }
 
-=head2 mount
+=pod
 
-    desc: Generic mount method. Connect to the container_access,
-          and mount the corresponding device on givven mountpoint.
+=begin classdoc
+
+Generic mount method. Connect to the container access, and mount the 
+corresponding device on the given mountpoint.
+
+@param mountpoint the path to use xhen monting the container access
+@param econtext the econtext object to execute commands
+
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
 sub mount {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
     # Connecting to the container access.
-    my $device = $self->tryConnectPartition(econtext => $args{econtext});
+    my $device = $self->tryConnect(econtext  => $args{econtext},  
+                                   erollback => $args{erollback});
 
     $command = "mkdir -p $args{mountpoint}";
     $args{econtext}->execute(command => $command);
 
-    $log->info("Mounting <$device> on <$args{mountpoint}>.");
+    $log->debug("Mounting <$device> on <$args{mountpoint}>.");
 
-    $command = "mount $device $args{mountpoint}";
+    $command = "guestmount -a " . $device . " -m /dev/sda1 " . $args{mountpoint};
     $result  = $args{econtext}->execute(command => $command);
-    if($result->{stderr}){
+
+    if ($result->{exitcode} != 0) {
         throw Kanopya::Exception::Execution(
                   error => "Unable to mount $device on $args{mountpoint}: " .
                            $result->{stderr}
               );
     }
 
-    $log->info("Device <$device> mounted on <$args{mountpoint}>.");
+    $log->debug("File <$device> mounted on <$args{mountpoint}>.");
+
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('umount'),
+            parameters => [ $self, "mountpoint", $args{mountpoint}, "econtext", $args{econtext} ]
+        );
+    }
 }
 
-=head2 umount
+=pod
 
-    desc: Generic umount method. Umount, disconnect from the container access,
-          and remove the mountpoint.
+=begin classdoc
+
+Generic umount method. Umount, disconnect from the container access, 
+and remove the mountpoint.
+
+@param mountpoint the path to use xhen monting the container access
+@param econtext the econtext object to execute commands
+
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
 sub umount {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
-    $log->info("Unmonting (<$args{mountpoint}>)");
+    $log->debug("Unmonting (<$args{mountpoint}>)");
 
-    $command = "sync";
+    $command = "sync; echo 3 > /proc/sys/vm/drop_caches";
     $args{econtext}->execute(command => $command);
+
+    # For some reason (a bug in libguestfs ?), some data are not 
+    # written to disk when unmounting, so we wait a bit...
+    sleep 5;
 
     my $counter = 5;
     while($counter != 0) {
@@ -199,7 +244,7 @@ sub umount {
         $counter--;
         sleep(1);
     }
-    
+
     if ($result->{exitcode} != 0 ) {
         throw Kanopya::Exception::Execution(
                   error => "Unable to umount $args{mountpoint}: " .
@@ -208,8 +253,8 @@ sub umount {
     }
 
     # Disconnecting from container access.
-    $self->tryDisconnectPartition(econtext => $args{econtext});
-    $self->tryDisconnect(econtext => $args{econtext});
+    $self->tryDisconnect(econtext  => $args{econtext},
+                         erollback => $args{erollback});
 
     $command = "rm -R $args{mountpoint}";
     $args{econtext}->execute(command => $command);
@@ -217,123 +262,70 @@ sub umount {
     # TODO: insert an eroolback with mount method ?
 }
 
-=head2 connect
 
-    desc: Abstract method.
+=pod
+
+=begin classdoc
+
+Abstract method for container access connection.
+
+@param econtext the econtext object to execute commands
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
 sub connect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 disconnect
 
-    desc: Abstract method.
+=pod
+
+=begin classdoc
+
+Abstract method for container access disconnection.
+
+@param econtext the econtext object to execute commands
+@optional erollback the rollback object to register errors callback
+
+=end classdoc
 
 =cut
 
 sub disconnect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
     throw Kanopya::Exception::NotImplemented();
 }
 
-sub getPartitionStart {
-    my $self = shift;
-    my %args = @_;
-    my ($command, $result);
+=pod
 
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
+=begin classdoc
 
-    my $device = $self->_getEntity->getAttr(name => 'device_connected');
-    if (! $device) {
-        my $msg = "A container access must be connected before getting partition start.";
-        throw Kanopya::Exception::Execution(error => $msg);
-    }
+Check if the container is already connected, connect it instead.
 
-    $command = "parted -m -s $device u B print";
-    $result = $args{econtext}->execute(command => $command);
+@param econtext the econtext object to execute commands
 
-    # Parse the parted output to get partition start.
-    my $part_start = $result->{stdout};
-    $part_start =~ s/.*\n.*\n1://g;
-    $part_start =~ s/B.*$//g;
-    chomp($part_start);
+@return the device
 
-    return $part_start;
-}
+=end classdoc
 
-sub connectPartition {
-    my $self = shift;
-    my %args = @_;
-    my ($command, $result);
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    my $device = $self->tryConnect(econtext => $args{econtext});
-    my $part_start = $self->getPartitionStart(econtext => $args{econtext});
-
-    if ($part_start and $part_start > 0) {
-        # Get a free loop device
-        $command = "losetup -f";
-        $result  = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
-        }
-        chomp($result->{stdout});
-        my $loop = $result->{stdout};
-
-        $command = "losetup $loop $device -o $part_start";
-        $result  = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            throw Kanopya::Exception::Execution(error => $result->{stderr});
-        }
-
-        $self->_getEntity->setAttr(name  => 'partition_connected',
-                                   value => $loop);
-        return $loop;
-    }
-    else {
-        return $device;
-    }
-}
-
-sub disconnectPartition {
-    my $self = shift;
-    my %args = @_;
-    my ($command, $result);
-
-    my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
-
-    $command = "sync";
-    $args{econtext}->execute(command => $command);
-
-    $command = "losetup -d $partition";
-    $result = $args{econtext}->execute(command => $command);
-    if ($result->{exitcode} != 0) {
-        throw Kanopya::Exception::Execution(error => $result->{stderr});
-    }
-
-    $self->_getEntity->setAttr(name  => 'partition_connected',
-                               value => '');
-}
+=cut
 
 sub tryConnect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    my $device = $self->getAttr(name => 'device_connected');
     if ($device) {
         $log->debug("Device already connected <$device>.");
         return $device;
@@ -341,13 +333,25 @@ sub tryConnect {
     return $self->connect(%args);
 }
 
+
+=pod
+
+=begin classdoc
+
+Disconnect the container if connected, doing nothing instead.
+
+@param econtext the econtext object to execute commands
+
+=end classdoc
+
+=cut
+
 sub tryDisconnect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    my $device = $self->getAttr(name => 'device_connected');
     if (! $device) {
         $log->debug('Device seems to be not connected, doing nothing.');
         return;
@@ -355,48 +359,4 @@ sub tryDisconnect {
     $self->disconnect(%args);
 }
 
-sub tryConnectPartition {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
-    if ($partition) {
-        $log->debug("Partition already connected <$partition>.");
-        return $partition;
-    }
-    return $self->connectPartition(%args);
-}
-
-sub tryDisconnectPartition {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'econtext' ]);
-
-    my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
-    if (! $partition) {
-        $log->debug('Partition seems to be not connected, doing nothing.');
-        return;
-    }
-    $self->disconnectPartition(%args);
-}
-
-sub getPreferredBlockSize {
-    my $self = shift;
-    my %args = @_;
-
-    return '1M';
-}
-
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

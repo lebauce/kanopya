@@ -17,23 +17,32 @@
 
 package Entity::Component::Nfsd3;
 use base "Entity::Component";
- 
+use base "Manager::ExportManager";
+
 use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Log::Log4perl "get_logger";
-use Data::Dumper;
-use Administrator;
-
+use Entity::Operation;
 use Entity::Container;
 use Entity::NfsContainerAccessClient;
+use Log::Log4perl "get_logger";
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    export_type => {
+        is_virtual => 1
+    }
+};
+
 sub getAttrDef { return ATTR_DEF; }
+
+
+sub exportType {
+    return "NFS export";
+}
 
 sub getExports {
     my $self = shift;
@@ -53,7 +62,9 @@ sub getExports {
                 };
             }
             push @result, {
-                nfsd3_export_path => $export->getAttr(name => 'export_path'),
+                container_access_export => $export->getAttr(name => 'container_access_export'),
+                nfsd3_export_path       => $export->getContainer->container_device,
+                nfsd3_export_id         => $export->getContainer->id,
                 clients     => \@clients,
             };
         }
@@ -95,11 +106,19 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my($conf) = @_;
+    my %args = @_;
 
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
+    my @containers = Entity::Container->search(hash => {});
+    EXPORT:
     for my $export (@{ $conf->{exports} }) {
-        my @containers = Entity::Container->search(hash => {});
-
+        
+        if($export->{nfsd3_export_id}) {
+            next EXPORT;
+        }
+        
         # Check if specified device match to a registred container.
         my $container;
         my $device;
@@ -117,12 +136,13 @@ sub setConf {
             throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
         }
 
+        CLIENT:
         for my $client ( @{ $export->{clients} } ) {
             $self->createExport(export_name    => $export->{nfsd3_export_path},
                                 container      => $container,
                                 client_name    => $client->{nfsd3_exportclient_name},
                                 client_options => $client->{nfsd3_exportclient_options});
-            last;
+            last CLIENT;
         }
     }
 }
@@ -179,8 +199,8 @@ sub getTemplateDataExports {
     my $self = shift;
     my $nfsd3_exports = [];
 
-    my @exports = Entity::ContainerAccess->search(
-                      hash => { export_manager_id => $self->getAttr(name => "component_id") }
+    my @exports = Entity::ContainerAccess::NfsContainerAccess->search(
+                      hash => { export_manager_id => $self->id }
                   );
 
     for my $export (@exports) {
@@ -270,39 +290,19 @@ sub createExport {
 
     my %params = $self->getAttrs();
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            export_manager_id   => $self->getAttr(name => 'component_id'),
-            container_id   => $args{container}->getAttr(name => 'container_id'),
-            export_name    => $args{export_name},
-            client_name    => $args{client_name},
-            client_options => $args{client_options},
-        },
-    );
-}
-
-=head2 removeExport
-
-    Desc : Implement removeExport from ExportManager interface.
-           This function enqueue a ERemoveExport operation.
-    args : export_name
-
-=cut
-
-sub removeExport {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $log->debug("New Operation RemoveExport with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveExport',
-        params   => {
-            container_access_id => $args{container_access}->getAttr(name => 'container_id'),
+            context => {
+                export_manager => $self,
+                container      => $args{container},
+            },
+            manager_params => {
+                export_name    => $args{export_name},
+                client_name    => $args{client_name},
+                client_options => $args{client_options},
+            },
         },
     );
 }

@@ -1,0 +1,17 @@
+NAME    = [% vnet_name %]
+TYPE    = [% vnet_type %]
+
+[% IF vnet_vlanid %]
+VLAN    = YES
+VLAN_ID = [% vnet_vlanid %]
+[% IF vnet_bridge %]
+BRIDGE  = [% vnet_bridge %]
+[% END %]
+[% IF vnet_phydev %]
+PHYDEV  = [% vnet_phydev %]
+[% END %] 
+[% ELSE %]
+VLAN    = NO
+BRIDGE  = virbr0
+[% END %]
+LEASES  = [IP=[% vnet_netaddress %], MAC=[% vnet_mac %]]

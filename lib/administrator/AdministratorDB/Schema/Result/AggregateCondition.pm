@@ -1,17 +1,21 @@
+use utf8;
 package AdministratorDB::Schema::Result::AggregateCondition;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+AdministratorDB::Schema::Result::AggregateCondition
+
+=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-
-=head1 NAME
-
-AdministratorDB::Schema::Result::AggregateCondition
+=head1 TABLE: C<aggregate_condition>
 
 =cut
 
@@ -23,8 +27,14 @@ __PACKAGE__->table("aggregate_condition");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
+
+=head2 aggregate_condition_label
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 255
 
 =head2 aggregate_condition_service_provider_id
 
@@ -33,7 +43,14 @@ __PACKAGE__->table("aggregate_condition");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 aggregate_combination_id
+=head2 left_combination_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
+=head2 right_combination_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -46,16 +63,10 @@ __PACKAGE__->table("aggregate_condition");
   is_nullable: 0
   size: 32
 
-=head2 threshold
+=head2 aggregate_condition_formula_string
 
-  data_type: 'double precision'
+  data_type: 'text'
   is_nullable: 0
-
-=head2 state
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 32
 
 =head2 time_limit
 
@@ -68,13 +79,6 @@ __PACKAGE__->table("aggregate_condition");
   data_type: 'tinyint'
   is_nullable: 1
 
-=head2 class_type_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -82,10 +86,10 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
-    "aggregate_condition_label",
+  "aggregate_condition_label",
   { data_type => "char", is_nullable => 1, size => 255 },
   "aggregate_condition_service_provider_id",
   {
@@ -94,7 +98,14 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "aggregate_combination_id",
+  "left_combination_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
+  "right_combination_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -103,25 +114,42 @@ __PACKAGE__->add_columns(
   },
   "comparator",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "threshold",
-  { data_type => "double precision", is_nullable => 0 },
-  "state",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  "aggregate_condition_formula_string",
+  { data_type => "text", is_nullable => 0 },
   "time_limit",
   { data_type => "char", is_nullable => 1, size => 32 },
   "last_eval",
   { data_type => "tinyint", is_nullable => 1 },
-  "class_type_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</aggregate_condition_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("aggregate_condition_id");
 
 =head1 RELATIONS
+
+=head2 aggregate_condition
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "aggregate_condition",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "aggregate_condition_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 =head2 aggregate_condition_service_provider
 
@@ -140,40 +168,47 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 class_type
+=head2 left_combination
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ClassType>
+Related object: L<AdministratorDB::Schema::Result::Combination>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "class_type",
-  "AdministratorDB::Schema::Result::ClassType",
-  { class_type_id => "class_type_id" },
+  "left_combination",
+  "AdministratorDB::Schema::Result::Combination",
+  { combination_id => "left_combination_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 aggregate_combination
+=head2 right_combination
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::AggregateCombination>
+Related object: L<AdministratorDB::Schema::Result::Combination>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "aggregate_combination",
-  "AdministratorDB::Schema::Result::AggregateCombination",
-  { aggregate_combination_id => "aggregate_combination_id" },
+  "right_combination",
+  "AdministratorDB::Schema::Result::Combination",
+  { combination_id => "right_combination_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-03-08 10:27:11
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:km5gKiW4cOvUddLpUdoMMQ
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-31 16:06:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+bAOoyzxl26S8wnuEoTkRg
+
+ __PACKAGE__->belongs_to(
+   "parent",
+     "AdministratorDB::Schema::Result::Entity",
+         { "foreign.entity_id" => "self.aggregate_condition_id" },
+             { cascade_copy => 0, cascade_delete => 1 }
+ );
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

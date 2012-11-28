@@ -1,44 +1,79 @@
 <init_struct  nb="10">
   <general_conf
     kanopya_dir="/opt/kanopya"
-     install_template_dir="/opt/kanopya/scripts/install/templates/"
-     conf_dir="/opt/kanopya/conf/"
-     comp_conf="/opt/kanopya/conf/components.conf"
-     database_dir="/opt/kanopya/scripts/database/mysql/"
+    install_template_dir="/opt/kanopya/scripts/install/templates/"
+    conf_dir="/opt/kanopya/conf/"
+    comp_conf="/opt/kanopya/conf/components.conf"
+    database_dir="/opt/kanopya/scripts/database/mysql/"
     comp_schemas_dir="/opt/kanopya/scripts/database/mysql/schemas/components/"
     schemas_dir="/opt/kanopya/scripts/database/mysql/schemas"
     data_dir="/opt/kanopya/scripts/database/mysql/data/"
     data_sql="/opt/kanopya/scripts/database/mysql/data/Data.sql"
-    schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"/>
+    schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"
+    populate_db_script="/opt/kanopya/scripts/database/mysql/sbin/populate_db.pl"/>
+  <default_conf
+    product="KIM"/>
   <genfiles>
     <executor.conf template="executor.conf.tt">
-      <datas logdir="log_directory" masterimages_dir="masterimages_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>
+      <datas logdir="log_directory" 
+             masterimages_dir="masterimages_directory" 
+             tftp_dir="tftp_directory" 
+             clusters_dir="clusters_directory" 
+             internal_net_add="internal_net_add" 
+             internal_net_mask="internal_net_mask" 
+             admin_password="dbpassword1"/>
     </executor.conf>
-    <executor-log.conf template="executor-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </executor-log.conf>
+
+    <aggregator.conf template="aggregator.conf.tt">
+    </aggregator.conf>
+    
     <libkanopya.conf template="libkanopya.conf.tt">
-        <datas db_user="dbuser" admin_password="dbpassword1" logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" dbport="dbport" dbip="dbip" dmz_net_add="dmz_net_add" dmz_net_mask="dmz_net_mask"/>
+        <datas db_user="dbuser" 
+               admin_password="dbpassword1" 
+               logdir="log_directory" 
+               internal_net_add="internal_net_add" 
+               internal_net_mask="internal_net_mask" 
+               dbport="dbport" 
+               dbip="dbip" 
+               dmz_net_add="dmz_net_add" 
+               dmz_net_mask="dmz_net_mask"
+               crypt_salt="crypt_salt"/>
     </libkanopya.conf>
+    
     <monitor.conf template="monitor.conf.tt">
-        <datas admin_password="dbpassword1" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask"/>
+        <datas admin_password="dbpassword1" 
+               internal_net_add="internal_net_add" 
+               internal_net_mask="internal_net_mask"/>
     </monitor.conf>
-    <monitor-log.conf template="monitor-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </monitor-log.conf>
+    
     <orchestrator.conf template="orchestrator.conf.tt">
         <datas admin_password="dbpassword1"/>
     </orchestrator.conf>
-    <orchestrator-log.conf template="orchestrator-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </orchestrator-log.conf>
-    <state-manager-log.conf template="state-manager-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </state-manager-log.conf>
-
+    
     <components.conf template="components.conf.tt">
         <datas />
     </components.conf>
+    
+    
+    <executor-log.conf template="executor-log.conf.tt">
+        <datas logdir="log_directory"/>
+    </executor-log.conf>
+    
+    <state-manager-log.conf template="state-manager-log.conf.tt">
+        <datas logdir="log_directory"/>
+    </state-manager-log.conf>
+        
+    <collector-log.conf template="collector-log.conf.tt">
+        <datas logdir="log_directory"/>
+    </collector-log.conf>
+    
+    <aggregator-log.conf template="aggregator-log.conf.tt">
+        <datas logdir="log_directory"/>
+    </aggregator-log.conf>
+    
+    <orchestrator-log.conf template="orchestrator-log.conf.tt">
+        <datas logdir="log_directory"/>
+    </orchestrator-log.conf>
 
     <webui-log.conf template="webui-log.conf.tt">
         <datas logdir="log_directory"/>
@@ -77,9 +112,9 @@
     <!-- Kanopya server conf -->
     <kanopya_server_domain_name
        question="What is your Kanopya-server domain name"
-       default=""
-       is_searchable="1"
-       search_command="domainname"
+       default="kanopya.localdomain"
+       is_searchable="0"
+       search_command=""
        pattern="^[a-z0-9-]+(\.[a-z0-9-]+)+$"/>
     <internal_net_interface
        question="Which Kanopya server network interface will be used to administrate infrastructure"
@@ -93,8 +128,24 @@
        is_searchable="0"
        search_command=""/>
     <internal_net_mask
-       question="which mask is associated to this network"
+       question="Which mask is associated to this network"
        default="255.255.255.0"
+       is_searchable="0"
+       search_command=""/>
+    <internal_net_pool_range
+       question="How many ip address to use in this network"
+       default="256"
+       is_searchable="0"
+       pattern="^\d+$"
+       search_command=""/>
+    <internal_net_pool_first
+       question="Which is the first ip address to use in this network"
+       default="10.0.0.1"
+       is_searchable="0"
+       search_command=""/>
+    <internal_net_pool_gateway
+       question="Which is the address of the gateway to use in this pool"
+       default="0.0.0.0"
        is_searchable="0"
        search_command=""/>
     <dmz_net_add
@@ -117,7 +168,19 @@
     <!-- Penser a checker avec plusieurs vg -->
     <masterimages_directory
 		question="Where will be stored master images"
-		default="/masterimages/"
+		default="/var/lib/kanopya/masterimages"
+		is_searchable="0"
+		search_command=""
+		pattern="^.*\/$"/>
+    <clusters_directory
+		question="Where will be stored clusters and nodes files"
+		default="/var/lib/kanopya/clusters"
+		is_searchable="0"
+		search_command=""
+		pattern="^.*\/$"/>
+    <tftp_directory
+		question="Where will be stored pxe boot files"
+		default="/var/lib/kanopya/tftp"
 		is_searchable="0"
 		search_command=""
 		pattern="^.*\/$"/>

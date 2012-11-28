@@ -41,13 +41,12 @@ use Data::Dumper;
 use String::Random;
 use Template;
 use Log::Log4perl "get_logger";
-#use Nmap::Scanner;
 use General;
 use EFactory;
 
 our $VERSION = '1.00';
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 =head2 addInitScripts
@@ -59,12 +58,10 @@ add start and stop rc init scripts
 sub addInitScripts {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'mountpoint',
-                                                       'econtext',
-                                                       'scriptname' ]);
+    General::checkParams(args => \%args, required => [ 'mountpoint', 'scriptname' ]);
 
     my $cmd = "chroot $args{mountpoint} /sbin/insserv -d $args{scriptname}";
-    $args{econtext}->execute(command => $cmd);
+    $self->getExecutorEContext->execute(command => $cmd);
 }
 
 =head2 generateFile
@@ -79,7 +76,11 @@ sub generateFile {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams( args => \%args, required => ['econtext', 'mount_point','input_file','data','output'] );
+    General::checkParams( args => \%args, required => ['mount_point','input_file','data','output'] );
+
+    if (not defined $args{econtext}) {
+        $args{econtext} = $self->getExecutorEContext;
+    }
 
     my $template_dir = defined $args{template_dir} ? $args{template_dir}
                                                    : $self->_getEntity()->getTemplateDirectory();
@@ -105,57 +106,48 @@ sub generateFile {
     };
     $args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point} . $args{output});
     unlink "/tmp/$tmpfile";
-
 }
 
 sub addNode {}
-sub removeNode {}
 sub stopNode {}
 sub postStartNode {}
 sub preStartNode{}
 sub preStopNode{return 0;}
 sub postStopNode{}
-sub cleanNode {
-#    my $class = shift;
-#    my %args = @_;
-#
-#    General::checkParams(args => \%args,
-#                         required => ['host', ]);
 
+sub cleanNode {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args,
+                         required => [ 'host' ]);
+
+    eval { $self->preStopNode(%args); };
+    eval { $self->stopNode(%args); };
+    eval { $self->postStopNode(%args); };
 }
 
 sub isUp {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+    General::checkParams( args => \%args, required => ['cluster', 'host' ] );
+    
     my $availability = 1;
-
-    General::checkParams( args => \%args, required => ['cluster', 'host', 'host_econtext'] );
-
     my $execution_list = $self->{_entity}->getExecToTest();
     my $net_conf = $self->{_entity}->getNetConf();
 
     # Test executable
-    $log->info("Test component " . ref $self);
     foreach my $i (keys %$execution_list) {
         my $ret;
         eval {
-        $ret = $args{host_econtext}->execute(command=>$execution_list->{$i}->{cmd});
-        $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");
-        $log->debug("Value returned are <$ret->{stdout}> and has to match $execution_list->{$i}->{answer}")
+            $ret = $args{host}->getEContext->execute(command => $execution_list->{$i}->{cmd});
         };
-        if ((not defined $ret->{stdout}) || $ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
+        if ($@ || (not defined $ret->{stdout}) || $ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
             return 0;
         }
-        if ($@) {
-            return 0;
-                   }
-
     }
-#    my $scanner = new Nmap::Scanner;
-#    $scanner->max_rtt_timeout(200);
-    my $ip = $args{host}->getInternalIP()->{ipv4_internal_address};
-#    $scanner->add_target($ip);
-#        $scanner->fast_scan();
+
+    my $ip = $args{host}->adminIp;
+    my $econtext = $self->getExecutorEContext;
 
     # Test Services
     while(my ($port, $protocols) = each %$net_conf) {
@@ -169,40 +161,30 @@ sub isUp {
             else {
                 $cmd .= "-sT ";
             }
-            $cmd .= "-p $port $ip | grep $port | cut -d\" \" -f1";
-            my $port_state = `$cmd`;
-                $log->debug("Check host <$ip> on port $port ($proto) is <$port_state>");
+            $cmd .= "-p $port $ip | grep $port | cut -d\" \" -f2";
+            my $result = $econtext->execute(command => $cmd);
+            my $port_state = $result->{stdout};
+            chomp($port_state);
             if ($port_state eq "closed"){
                 return 0;
-               }
+            }
         }
     }
     return 1;
 }
-    # Test Services
-#    foreach my $j (keys %$net_conf) {
-#        my $cmd = "nmap ";
-#        if ($net_conf->{$j} eq "udp") {
-#            $cmd .= "-sU ";
-##            $scanner->udp_scan();
-#        }
-#        else {
-#            $cmd .= "-sT ";
-##            $scanner->tcp_connect_scan();
-#        }
-#        $cmd .= "-p $j $ip | grep $j | cut -d\" \" -f1";
-##        $scanner->add_scan_port($j);
-##        my $results = $scanner->scan();
-##        my $port_state = $results->get_host_list()->get_next()->get_port_list()->get_next()->state();
-#        my $port_state = `$cmd`;
-#        $log->debug("Check host <$ip> on port $j ($net_conf->{$j}) is <$port_state>");
-#        if ($port_state eq "closed"){
-#            return 0;
-#        }
-##        $scanner->reset_scan_ports();
-#     }
-#    return 1;
 
+
+=head2 getEContext
+
+=cut
+
+sub getEContext {
+    my ($self) = @_;
+
+    my $service_provider = $self->getServiceProvider;
+    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
+                                 ip_destination => $service_provider->getMasterNodeIp());
+}
 
 1;
 

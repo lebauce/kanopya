@@ -15,17 +15,16 @@
 
 package EEntity::EComponent::EPhysicalhoster0;
 use base "EEntity::EComponent";
-use base "EEntity::EHostManager";
+use base "EManager::EHostManager";
 
 use strict;
 use warnings;
 
 use General;
-use Entity::Powersupplycard;
 use DecisionMaker::HostSelector;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 
@@ -37,43 +36,21 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "host", "econtext" ]);
+    General::checkParams(args => \%args, required => [ "host" ]);
 
     my $host = $args{host};
-    my $powersupplycard_id = $host->getPowerSupplyCardId();
-    if (!$powersupplycard_id) {
-        if (not -e '/usr/sbin/etherwake') {
-            $errmsg = "EOperation::EStartNode->startNode : /usr/sbin/etherwake not found";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Execution(error => $errmsg);
-        }
-        my $command = "/usr/sbin/etherwake " . $host->getAttr(name => 'host_mac_address');
-        my $result = $args{econtext}->execute(command => $command);
+    
+    
+    if (not -e '/usr/sbin/etherwake') {
+        $errmsg = "EOperation::EStartNode->startNode : /usr/sbin/etherwake not found";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Execution(error => $errmsg);
     }
-    else {
-        my $powersupplycard = Entity::Powersupplycard->get(id => $powersupplycard_id);
-        my $powersupply_ip = $powersupplycard->getAttr(name => "powersupplycard_ip");
-
-        $log->debug("Start host with power supply whose ip is : <$powersupply_ip>");
-        my $sock = new IO::Socket::INET (
-                       PeerAddr => $powersupply_ip,
-                       PeerPort => '1470',
-                       Proto    => 'tcp',
-                   );
-        $sock->autoflush(1);
-        die "Could not create socket: $!\n" unless $sock;
-
-        my $port = $powersupplycard->getHostPort(
-                       host_powersupply_id => $host->getAttr(name => "host_powersupply_id")
-                   );
-
-        my $s = "R";
-        $s .= pack "B16", ('0' x ($port - 1)) . '1' . ('0' x (16 - $port));
-        $s .= pack "B16", "000000000000000";
-        printf $sock $s;
-        close($sock);
-    }
-
+    my $iface = $self->getServiceProvider->getMasterNode->getAdminIface->iface_name;
+    my $command = "/usr/sbin/etherwake -i " . $iface . " " .
+                  $host->getPXEIface->getAttr(name => 'iface_mac_addr');
+    my $result = $self->getExecutorEContext->execute(command => $command);
+    
     my $current_state = $host->getState();
 
     if (exists $args{erollback}) {
@@ -92,35 +69,6 @@ sub startHost {
 
 =cut
 
-sub stopHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "host" ]);
-
-    my $host = $args{host};
-    my $powersupply_id = $host->getAttr(name => "host_powersupply_id");
-    if ($powersupply_id) {
-        my $powersupplycard = Entity::Powersupplycard->get(
-                                  id => $host->getPowerSupplyCardId()
-                              );
-
-        my $sock = new IO::Socket::INET (
-                       PeerAddr => $powersupplycard->getAttr(name => "powersupplycard_ip"),
-                       PeerPort => '1470',
-                       Proto    => 'tcp',
-                   );
-
-        $sock->autoflush(1);
-        die "Could not create socket: $!\n" unless $sock;
-
-        my $port = $powersupplycard->getHostPort(host_powersupply_id => $powersupply_id);
-        my $s = "R";
-        $s .= pack "B16", "000000000000000";
-        $s .= pack "B16", ('0' x ($port - 1)) . '1' . ('0' x (16 - $port));
-        printf $sock $s;
-        close($sock);
-    }
-}
+sub stopHost {}
 
 1;

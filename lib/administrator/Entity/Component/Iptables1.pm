@@ -61,7 +61,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {};
@@ -77,8 +77,11 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-   #$log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper $conf);
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     my $iptables1_components= $self->{_dbix}->iptables1_sec_rule->iptables1_components;
     $iptables1_components->delete();
     my $components = $conf->{iptables1_components};
@@ -144,9 +147,9 @@ sub getComponentInstance{
    #my $var;
    my $cluster_id = $self->{_dbix}->get_column('cluster_id');
    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
-   my $components = $cluster->getComponents(category => "all");  
+   my @components = $cluster->getComponents(category => "all");  
    my $data_components = [];
-    foreach my $element (values %$components) {
+    foreach my $element (@components) {
         my $netconf = $element->getNetConf();
         if(!defined($netconf)){
             next;

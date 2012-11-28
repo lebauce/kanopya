@@ -56,11 +56,12 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Kanopya::Config;
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {};
@@ -114,9 +115,12 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    my ($conf) = @_;
-    
-    # delete old conf        
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    # delete old conf
+    my $conf = $args{conf};
     my $conf_row = $self->{_dbix};
     $conf_row->syslogng3_entries->delete_all;
     $conf_row->syslogng3_logs->delete_all;
@@ -160,11 +164,10 @@ sub insertDefaultConfiguration {
     my %args = @_;
     
     # Retrieve admin ip
-    my $admin_ip = "0.0.0.0";
-    if(defined $args{internal_cluster}) {    
-        $admin_ip = $args{internal_cluster}->getMasterNodeIp(),
-    } 
-    
+    my $config = Kanopya::Config::get('executor');
+    my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
+    my $admin_ip = $kanopya_cluster->getMasterNodeIp();
+
     # Conf to send all node logs to admin
     $self->{_dbix}->syslogng3_logs->populate([ 
 		{ syslogng3_log_params => [

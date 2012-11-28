@@ -24,19 +24,21 @@ Orchestrator - Orchestrator object
 =head1 SYNOPSIS
 
     use Orchestrator;
-    
+
     # Creates orchestrator
     my $orchestrator = Orchestrator->new();
 
 =head1 DESCRIPTION
 
-Orchestrator is the main object for mc management politic. 
+Orchestrator is the main object for mc management politic.
 
 =head1 METHODS
 
 =cut
 
 package Orchestrator;
+
+use base 'BaseDB';
 
 ###############################################################################################################
 #WARN l'orchestrator considère actuellement que les noeuds sont homogènes et ne prend pas en compte les spécificités de chaque carte
@@ -47,574 +49,557 @@ package Orchestrator;
 
 use strict;
 use warnings;
-#use Monitor::Retriever;
 use XML::Simple;
 use General;
 use Administrator;
+use Kanopya::Config;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
-use AggregateRule;
-use NodemetricRule;
-use NodemetricCondition;
-use NodemetricCombination;
+use Entity::AggregateRule;
+use Entity::NodemetricRule;
+use Entity::NodemetricCondition;
+use Entity::Combination::NodemetricCombination;
+use Entity::WorkflowDef;
+use WorkflowNoderule;
+use Entity::Workflow;
+use Message;
+use Alert;
+
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("orchestrator");
+my $log = get_logger("");
 
-                
+use constant ATTR_DEF => {};
+
+sub getAttrDef { return ATTR_DEF; }
+
+sub getMethods {
+  return {
+    'updateOrchestratorConf'  => {
+      'description' => 'Update orchestrator conf',
+      'perm_holder' => 'entity'
+    },
+    'getOrchestratorConf'  => {
+      'description' => 'Get orchestrator conf',
+      'perm_holder' => 'entity'
+    }
+  }
+}
+
 =head2 new
-    
-    Class : Public
-    
+
+    Class : Publiu
+
     Desc : Instanciate Orchestrator object
-    
+
     Return : Orchestrator instance
-    
+
 =cut
 
 sub new {
     my $class = shift;
-    my %args = @_;
 
     my $self = {};
     bless $self, $class;
 
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    my $conf = Kanopya::Config::get('orchestrator');
    # Get Administrator
     my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
     Administrator::authenticate( login => $login, password => $password );
     $self->{_admin} = Administrator->new();
     #$self->{_monitor} = Monitor::Retriever->new( );
-    
+
     return $self;
 }
 
-
 =head2 manage_aggregate
-    
+
     Class : Public
-    
+
     Desc :     New manager for aggregates
-    
+
 =cut
 
 sub manage_aggregates {
     my $self = shift;
-    
-    print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
-    eval{
-        # FOR EACH EXT CLUSTERS
-        my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
-        
-       
-        CLUSTER:
-        for my $externalCluster (@externalClusters){
-            my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-            eval{   
-                print "<CM $cluster_id>\n";
-                $self->clustermetricManagement(externalCluster => $externalCluster);
-                print "</CM $cluster_id>\n";
-                1;
-            }or do {
-                print "Error in clustermetricManagement of cluster $cluster_id : $@\n";
-                $log->error($@);
+
+    if (defined $self->{_time_step}) {
+        $log->info("## UPDATE ALL $self->{_time_step} SECONDS##");
+    }
+
+    my @service_providers = Entity::ServiceProvider->search(hash => {});
+
+    CLUSTER:
+    for my $service_provider (@service_providers){
+        eval{
+
+            my $service_provider_id = $service_provider->getAttr(name => 'service_provider_id');
+
+            eval {
+                $service_provider->getManager(manager_type => "collector_manager");
             };
-            
-            eval{
-                print "<CN $cluster_id>\n";
-                $self->nodemetricManagement(externalCluster => $externalCluster);
-                print "</CN $cluster_id>\n";
-                1;
-            }or do{
-                print "Error in nodemetricManagement of cluster $cluster_id  $@\n";
-                $log->error($@);
-            };
-            
-            my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id, extcluster => $externalCluster);
-        }
-    1;
-    }or do {
-        print "Skip all orchestration service due to error $@\n";
-        $log->error($@);
-    }
-}
-
-
-sub evalExtCluster{
-    my %args = @_;
-    
-    my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $args{extcluster_id});
-    my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster => $args{extcluster}, extcluster_id => $args{extcluster_id});
-    
-    my $cluster_eval = {%$cr_eval,%$nr_eval};
-    
-    #print Dumper $cluster_eval;
-    
-    if((scalar $cluster_eval->{nm_rule_nodes}) == 0) { # no nodes
-         $args{extcluster}->setAttr(
-            name => 'externalcluster_state',
-            value => 'down',
-        );
-    }
-    elsif ($cluster_eval->{nm_rule_enabled} == 0 && $cluster_eval->{cm_rule_enabled} == 0) { # no rules 
-         $args{extcluster}->setAttr(
-            name => 'externalcluster_state',
-            value => 'up',
-        );
-    }
-#    elsif ($cluster_eval->{nm_rule_enabled} == 0) { # cm_rule_enabled > 0 
-#        if($cluster_eval->{cm_rule_undef} == 0 && $cluster_eval->{cm_rule_nok} == 0){
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'up',
-#            );
-#        }elsif($cluster_eval->{cm_rule_nok} > 0){
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'warning',
-#            );
-#        }else{
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'down',
-#            );
-#        }
-#    }
-#    elsif ($cluster_eval->{cm_rule_enabled} == 0) { # nm_rule_enabled > 0
-#        if($cluster_eval->{nm_rule_nodes_nok} == 0 && $cluster_eval->{nm_rule_nodes_down} == 0){
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'up',
-#            );
-#        }
-#        elsif($cluster_eval->{nm_rule_nodes_nok} > 0) {
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'warning',
-#            );
-#        }else{
-#            $args{extcluster}->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'down',
-#            );
-#        }
-#    }
-    else { # nm_rule_enabled > 0 AND cm_rule_enabled > 0 
-        if($cluster_eval->{nm_rule_nodes_nok} == 0 && $cluster_eval->{nm_rule_nodes_down} == 0
-        && $cluster_eval->{cm_rule_undef} == 0 && $cluster_eval->{cm_rule_nok} == 0)
-        {
-            $args{extcluster}->setAttr(
-                name => 'externalcluster_state',
-                value => 'up',
-            );
-        }elsif(
-            $cluster_eval->{cm_rule_undef} == $cluster_eval->{cm_rule_enabled} &&
-            $cluster_eval->{nm_rule_nodes_down} == (scalar $cluster_eval->{nm_rule_nodes}) 
-        ){
-            $args{extcluster}->setAttr(
-                name => 'externalcluster_state',
-                value => 'down',
-            );
-        } else {
-            $args{extcluster}->setAttr(
-                name => 'externalcluster_state',
-                value => 'warning',
-            );
-        }
-    }
-
-#
-#    ){
-#    }
-#    if($cluster_eval->{} + $cluster_eval->{}  >0){
-#         $externalCluster->setAttr(
-#                name => 'externalcluster_state',
-#                value => 'warning',
-#            );
-#    }else{
-#        $externalCluster->setAttr(
-#            name => 'externalcluster_state',
-#            value => 'up',
-#        );
-#    }
-    $args{extcluster}->save();
-    return $cluster_eval;
-}
-
-sub evalExtClusterNodeRuleState {
-    my %args = @_;
-    my $extcluster     = $args{extcluster};
-    my $extcluster_id  = $args{extcluster_id};
-    
-    my $externalClusterState = {};
-    
-    my $nodes = $extcluster->getNodes();
-    
-    $externalClusterState->{nm_rule_nodes}   = scalar (@$nodes);    
-    $externalClusterState->{nm_rule_enabled} = my $num_node_rule_total = scalar NodemetricRule->searchLight(
-                                    hash=>{
-                                        'nodemetric_rule_service_provider_id' => $extcluster_id,
-                                        'nodemetric_rule_state' => 'enabled',
-                                    }
-                                 );
-    
-    $externalClusterState->{nm_rule_nodes_ok}    = 0;
-    $externalClusterState->{nm_rule_nodes_nok}   = 0;
-    $externalClusterState->{nm_rule_nodes_down}  = 0;
-    $externalClusterState->{nm_rule_nok}         = 0;
-    $externalClusterState->{nm_rule_ok}          = 0;
-    $externalClusterState->{nm_rule_undef}       = 0;
-    
-
-    
-    foreach my $node (@$nodes) {
-        $externalClusterState->{nm_rule_nok}   += $node->{num_verified_rules};
-        $externalClusterState->{nm_rule_undef} += $node->{num_undef_rules};
-
-        if($externalClusterState->{nm_rule_enabled} > 0){ # TEST IF THERE ARE ENABLED RULES 
-            if($node->{num_undef_rules} == $externalClusterState->{nm_rule_enabled}){ # TEST IF THERE ARE DATA
-                $node->{state} = 'down';
-                $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'down');
-                $externalClusterState->{nm_rule_nodes_down}++;
-            } else {
-                if($node->{num_verified_rules} > 0 || $node->{num_undef_rules} > 0){
-                    $externalClusterState->{nm_rule_nodes_nok}++;
-                    $node->{state} = 'warning';
-                    $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'warning');
-                }else{
-                    $externalClusterState->{nm_rule_nodes_ok}++;
-                    $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'up');
-                    $node->{state} = 'up';
-                }
+            if ($@){
+                $log->info('Orchestrator skip service provider '.$service_provider_id.' because it has no collector manager');
             }
-        }else{ #NO RULES ENABLED, NODE OK!
-            $node->{state} = 'up';
-            $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'up');
-        } 
-        
+            else{
+                $log->info('Orchestrator running for service provider '.$service_provider_id);
+                eval{
+                    $log->info( '<CM '.$service_provider_id.'>');
+                    $self->clustermetricManagement(service_provider => $service_provider);
+                    $log->info( '</CM '.$service_provider_id.'>');
+                    1;
+                }or do {
+                    print "Error in clustermetricManagement of cluster $service_provider->getId : $@\n";
+                    $log->error($@);
+                };
+
+                eval {
+                    $log->info( '<CN '.$service_provider.'>');
+                    $self->nodemetricManagement(service_provider => $service_provider);
+                    $log->info( '</CN '.$service_provider.'>');
+                    1;
+                } or do {
+                    print "Error in nodemetricManagement of cluster $service_provider  $@\n";
+                    $log->error($@);
+                };
+            }
+        1;
+        }or do {
+            print "Skip all orchestration service due to error $@\n";
+            $log->error($@);
+        }
     }
-    $externalClusterState->{nm_rule_nodes} = $nodes;
-    return $externalClusterState;
+
 }
 
-
-sub evalExtClusterClusterRuleState {
-    my %args = @_;
-    my $extcluster_id = $args{extcluster_id};
-    my $externalClusterState = {};
-    
-    
-    my @rules = AggregateRule->search(
-        hash => {
-                    aggregate_rule_service_provider_id => $extcluster_id,
-                }
-        );
-        
-    my @enabled_rules = AggregateRule->search(
-        hash => {
-                    aggregate_rule_service_provider_id => $extcluster_id,
-                    aggregate_rule_state               => 'enabled',
-                }
-        );
-        
-    my @verif_rules = AggregateRule->search(
-        hash => {
-                    aggregate_rule_service_provider_id => $extcluster_id,
-                    aggregate_rule_state               => 'enabled',
-                    aggregate_rule_last_eval           => 1,
-                }
-        );
-
-    my @ok_rules = AggregateRule->search(
-        hash => {
-                    aggregate_rule_service_provider_id => $extcluster_id,
-                    aggregate_rule_state               => 'enabled',
-                    aggregate_rule_last_eval           => 0,
-                }
-        );
-
-    my @undef_rules = AggregateRule->search(
-        hash => {
-                    aggregate_rule_service_provider_id => $extcluster_id,
-                    aggregate_rule_state               => 'enabled',
-                    aggregate_rule_last_eval           => undef,
-                }
-        );
-    $externalClusterState->{cm_rule_total}   = scalar @rules;
-    $externalClusterState->{cm_rule_enabled} = scalar @enabled_rules;
-    $externalClusterState->{cm_rule_nok}     = scalar @verif_rules;
-    $externalClusterState->{cm_rule_ok}      = scalar @ok_rules;
-    $externalClusterState->{cm_rule_undef}   = scalar @undef_rules;
-
-    return $externalClusterState;
-}
-sub nodemetricManagement{
+sub nodemetricManagement {
     my ($self, %args) = @_;
-    my $externalCluster = $args{externalCluster};
-    
-    
+    my $service_provider = $args{service_provider};
+
     # Merge all needed indicators to consctruc only one SCOM request
-    
-    my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-    
-    eval{
-        $externalCluster->getConnector(category => 'MonitoringService');
-    };
-    if($@){
-        print '*** Orchestrator skip cluster '.$cluster_id.' for NM Management because it has no MonitoringService Connector ***'."\n";
-    }else{
-    
-        print 'Cluster NM management'.$cluster_id."\n";
-        
-        my @rules = NodemetricRule->search(
-                hash => {
-                    nodemetric_rule_service_provider_id => $cluster_id,
-                    nodemetric_rule_state               => 'enabled',
-                }
-        );
-        
-        my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules );
-        
-        
-        # Call the retriever to get SCOM data
-        my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
-        $log->info(Dumper $monitored_values);
-        
-        # Eval the rules
-        my $rep = $self->_evalAllRules(
-            'monitored_values'  => $monitored_values,
-            'rules'             => \@rules,
-            'cluster'           => $externalCluster,
-        );
-        
-#            if(0 < $rep){
-#                
-#                $externalCluster->setAttr(
-#                    name => 'externalcluster_state',
-#                    value => 'warning',
-#                );
-#            }else{
-#                $externalCluster->setAttr(
-#                    name => 'externalcluster_state',
-#                    value => 'up',
-#                );
-#            }
-#            $externalCluster->save();
-    }
+
+    my $service_provider_id = $service_provider->id;
+
+    $log->info('Cluster NM management'.$service_provider_id);
+
+    my @rules = Entity::NodemetricRule->search (
+                    hash => {
+                        nodemetric_rule_service_provider_id => $service_provider_id,
+                        nodemetric_rule_state               => 'enabled',
+                    }
+                );
+
+    my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules, service_provider_id => $service_provider_id);
+
+    # Call the retriever to get SCOM data
+    $log->info('Requested indicators'.(Dumper keys %{$host_indicator_for_retriever->{indicators}}));
+
+    my $monitored_values = $service_provider->getNodesMetrics(
+                               indicators => $host_indicator_for_retriever->{indicators},
+                               time_span  => $host_indicator_for_retriever->{time_span}
+                           );
+
+    $log->info('Received values'.(Dumper $monitored_values));
+
+    # Eval the rules
+    return $self->_evalAllRules(
+        'monitored_values'  => $monitored_values,
+        'rules'             => \@rules,
+        'service_provider'  => $service_provider,
+    );
 }
+
 
 sub _evalAllRules {
-   my $self = shift;
-   my %args = @_;
-   
+   my ($self,%args) = @_;
+
    my $monitored_values = $args{monitored_values};
    my $rules            = $args{rules};
-   my $cluster          = $args{cluster};
+   my $service_provider = $args{service_provider};
    my $rep = 0;
-   
-   RULE:   
+
+   RULE:
    foreach my $rule (@$rules){
+       $log->info('Eval NM rule '.$rule->getAttr(name=>'nodemetric_rule_id'));
        eval{
            $rep += $self->_evalRule(
                'rule'             =>$rule,
                'monitored_values' => $monitored_values,
-               'cluster'          => $cluster,
+               'service_provider' => $service_provider,
            );
            1;
        } or do {
             print 'Error in evaluation of rule'.($rule->getAttr(name=>'nodemetric_rule_id')).' of cluster '.($rule->getAttr(name=>'nodemetric_rule_service_provider_id')).": $@\n";
             $log->error($@);
+            next RULE;
        }
    }
    return $rep;
 }
 
+sub throwAlertOnUndefMonitoredValues{
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [
+        'host_name',
+        'monitored_values_for_one_node',
+        'service_provider_id',
+    ]);
+
+    while (my ($oid,$value) = each %{$args{monitored_values_for_one_node}}) {
+
+        my $indicator = Entity::Indicator->find (hash => {indicator_oid => $oid});
+
+        my $msg = "Indicator " . $indicator->indicator_name . ' (' . $oid . ')' .
+                  ' was not retrieved by collector for node '.$args{host_name};
+
+        my $alert = eval { Alert->find( hash => {
+                                            alert_message => $msg,
+                                            entity_id => $args{service_provider_id} }
+                                      )
+                    };
+
+        if (! defined $value) {
+            if ( (! defined $alert) || ($alert->alert_active == 0) ) {
+                Alert->new (
+                    entity_id       => $args{service_provider_id},
+                    alert_message   => $msg,
+                    alert_signature => $msg.' '.time(),
+                );
+            }
+        }
+        elsif (defined $alert && $alert->alert_active == 1) {
+            $alert->mark_resolved;
+        }
+    }
+}
+
 sub _evalRule {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
 
     my $monitored_values = $args{monitored_values};
     my $rule             = $args{rule};
-    my $cluster          = $args{cluster};
+    my $service_provider = $args{service_provider};
 
-    my $cluster_id = $cluster->getAttr(name => 'externalcluster_id');
+    my $service_provider_id = $service_provider->id;
+    my $rule_id             = $rule->nodemetric_rule_id;
+    my $workflow_def_id     = $rule->workflow_def_id;
+
+    my $workflow_manager;
+
+    eval{ # Avoid the reinstantiation for each node
+        $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+    };
+    if($@){
+        $log->info('No workflow manager in service provider <'.($service_provider_id).'>')
+    }
+
     my $rep = 0;
+
     #Eval the rule for each node
     NODE:
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
-        # Warning, not all the monitored values are required but we transmit 
-        # all of them
-        
-#        if (0 ==  keys %$monitored_values_for_one_node) {
-#            $cluster->updateNodeState( hostname => $host_name, state => 'down' );
-#            next NODE;
-#        }
-#        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
-        my $node_state = $cluster->getNodeState(hostname => $host_name);
-        my $nodeEval;
-        if($node_state eq 'disabled'){
-            print "Node $host_name has just been disabled, rule not evaluated\n"; 
-            next NODE;
-        } else {
-            $nodeEval = $rule->evalOnOneNode(
-                monitored_values_for_one_node => $monitored_values_for_one_node
-            );
-            
-        }
-        
+
+        $self->throwAlertOnUndefMonitoredValues(
+            host_name                     => $host_name,
+            monitored_values_for_one_node => $monitored_values_for_one_node,
+            service_provider_id           => $service_provider_id,
+        );
+
+        $log->info('Eval rule id <'.($rule_id).'> on node hostname <'.$host_name.'>');
+        my $nodeEval = $rule->evalOnOneNode(
+            monitored_values_for_one_node => $monitored_values_for_one_node
+        );
+
+        my $externalnode_id = Externalnode->find(hash => {
+            externalnode_hostname => $host_name,
+            service_provider_id   => $service_provider->id,
+        })->getId();
+
+        # Manage Workflow
+        my $workflowState = WorkflowNoderule->workflowState(
+            externalnode_id    => $externalnode_id,
+            nodemetric_rule_id => $rule_id,
+        );
+
         if(defined $nodeEval){
-            #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name;
-            
             if($nodeEval eq 0){
-                #print ' WARNING'."\n";
-                $rule->deleteVerifiedRule(
-                    hostname   => $host_name,
-                    cluster_id => $cluster_id,
-                );
-            }else {
-                #print ' OK'."\n";
+                $log->info('Rule not verified for node <'.($host_name).'>');
+                $rule->deleteVerifiedRule(externalnode_id => $externalnode_id);
+            }
+            else {
                 $rep++;
                 $rule->setVerifiedRule(
-                    hostname => $host_name,
-                    cluster_id => $cluster_id,
-                    state      => 'verified'
+                    externalnode_id     => $externalnode_id,
+                    state               => 'verified',
                 );
-                $rule->triggerAction(
-                    node_hostname => $host_name
-                );
-                
+
+                my $wf_def_id = $rule->getAttr(name => 'workflow_def_id');
+
+                if (defined $wf_def_id) {
+                    if ($workflowState->{state} eq 'ready_to_launch') {
+                        $log->info("Trigger Workflow <$wf_def_id>");
+
+                        my $workflow = $workflow_manager->runWorkflow(
+                            workflow_def_id     => $workflow_def_id,
+                            host_name           => $host_name,
+                            service_provider_id => $service_provider_id,
+                            rule_id             => $rule_id
+                        );
+
+                        WorkflowNoderule->new(
+                            externalnode_id    => $externalnode_id,
+                            nodemetric_rule_id => $rule_id,
+                            workflow_id        => $workflow->id,
+                        );
+                    }
+                    elsif ($workflowState->{state} eq 'delayed') {
+                       $log->info("Not trigger workflow <$wf_def_id> : delayed");
+                    }
+                    elsif ($workflowState->{state} eq 'running') {
+                       $log->info("Not trigger workflow <$wf_def_id> : a workflow is still running");
+                    }
+                    else {
+                        throw Kanopya::Exception(error => 'unkown case');
+                    }
+                }
+                else {
+                    $log->info("No workflow to trigger");
+                }
             }
-        }else{
-            #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
+        }
+        else { #value undef
+            $log->info('Rule '.$rule->getAttr(name => 'nodemetric_rule_id').' on host '.$host_name.' is undef');
             $rule->setVerifiedRule(
-                hostname => $host_name,
-                cluster_id => $cluster_id,
-                state      => 'undef'
+                externalnode_id     => $externalnode_id,
+                state               => 'undef',
             );
         }
-    }
+    } #End node loop while
     return $rep;
 }
+
 # Construct hash table for the service provider.
-# Inspired by eponyme aggregator method 
+# Inspired by eponyme aggregator method
 
 sub _contructRetrieverOutput {
-    my $self = shift;
-    my %args = @_;
-    
-    #my $cluster_id                 = $args{cluster_id};
-    my $rules = $args{rules};
-    my $indicators_name = undef;
-    
-    #Get all the rules relative to the cluster_id 
+    my ($self,%args) = @_;
 
+    my $rules               = $args{rules};
+    my $indicators          = {};
 
-    
+    #Get all the rules relative to the cluster_id
+
     for my $rule (@$rules){
-        my @conditions = $rule->getDependantConditionIds();
+        my @conditions = $rule->getDependentConditionIds();
         #Check each conditions (i.e. each Combination
         for my $condition_id (@conditions) {
-            
-            my $condition = NodemetricCondition->get('id' => $condition_id);
-             
-            # Get the related combination id (in order to parse its formula)            
-            my $combination_id = $condition->getAttr(name => 'nodemetric_condition_combination_id');
-            
-            my $combination = NodemetricCombination->get('id' => $combination_id);
+
+            my $condition = Entity::NodemetricCondition->get ('id' => $condition_id);
+
+            # Get the related combination id (in order to parse its formula)
+
             # get the indicator ids used in combination formula
-            my @indicator_ids = $combination->getDependantIndicatorIds();
-            
-            for my $indicator_id (@indicator_ids){
-                my $indicator = Indicator->get('id' => $indicator_id);
-                $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
+            # my @indicator_ids = $combination->getDependentIndicatorIds();
+
+            my @indicator_ids = $condition->getDependentIndicatorIds();
+
+            for my $indicator_id (@indicator_ids) {
+                my $indicator = Entity::Indicator->get(id => $indicator_id);
+                $indicators->{$indicator->indicator_oid} = $indicator;
             }
         }
     }
-    my @indicators_array = keys(%$indicators_name);
-    
     my $rep = {
-        indicators => \@indicators_array,
+        indicators => $indicators,
         time_span  => 1200,
     };
-    #print Dumper $rep;
+
     return $rep;
 };
 
 sub clustermetricManagement{
     my ($self, %args) = @_;
-    my $externalCluster = $args{externalCluster};
-    
-    my $cluster_evaluation = {};
-    my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
+    my $service_provider = $args{service_provider};
+    my $service_provider_id = $service_provider->getId();
 
-    #FILTER CLUSTERS WITH MONITORING PROVIDER
-    eval{
-        $externalCluster->getConnector(category => 'MonitoringService');
-    };
-    if($@){
-        print '*** Orchestrator skip cluster '.$cluster_id.' for CM Management because it has no MonitoringService Connector ***'."\n";
-        $cluster_evaluation->{state} = 'no_data';
-    }else{
-        #GET RULES RELATIVE TO A CLUSTER
-        my @rules = AggregateRule->search(hash=>{
-            aggregate_rule_service_provider_id => $externalCluster->getAttr(name => 'externalcluster_id'),
-            aggregate_rule_state               => 'enabled'
-        });
-        for my $aggregate_rule (@rules){
-            
-            print '<CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').">\n"; 
-            #print $aggregate_rule->toString().' ';
-            
-            $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
-            
-            my $result = $aggregate_rule->eval();
-            
-             # LOOP USED TO TRIGGER ACTIONS
-             
-            if(defined $result){
-                if($result == 1){
-                    $aggregate_rule->triggerAction(
-                        trigger_rule_id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
-                    );
+    # Get rules relative to a cluster
+    my @rules_enabled   = Entity::AggregateRule->search(
+                            hash => {
+                                aggregate_rule_service_provider_id => $service_provider_id,
+                                aggregate_rule_state               => 'enabled',
+                            }
+                        );
+
+    my @rules_triggered = Entity::AggregateRule->search(
+                              hash => {
+                                  aggregate_rule_service_provider_id => $service_provider_id,
+                                  aggregate_rule_state               => 'triggered'
+                              }
+                          );
+    my @rules_delayed   = Entity::AggregateRule->search(
+                              hash => {
+                                  aggregate_rule_service_provider_id => $service_provider_id,
+                                  aggregate_rule_state               => 'delayed'
+                              }
+                          );
+
+    my @rules = (@rules_enabled, @rules_triggered, @rules_delayed);
+
+    for my $aggregate_rule (@rules) {
+
+        my $rule_id = $aggregate_rule->getAttr(name => 'aggregate_rule_id');
+        $log->info('CM Rule <'.$rule_id.'> '.$aggregate_rule->toString());
+
+        my $workflow_manager;
+        my $workflow_def_id;
+        my $workflow_id;
+
+        eval {
+
+            eval{ # Avoid the reinstantiation for each node
+                $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+            };
+            if($@){
+                $log->info('No workflow manager in service provider <'.($service_provider->getId()).'>')
+            }
+
+            $workflow_def_id  = $aggregate_rule->getAttr(name => 'workflow_def_id');
+            $workflow_id      = $aggregate_rule->getAttr(name => 'workflow_id');
+
+            if (defined $workflow_id) {
+                $log->info('linked workflow state <'.(Entity::Workflow->get(id => $workflow_id)->state).'>');
+                if ( Entity::Workflow->get(id => $workflow_id)->state eq 'running' ) {
+                    $log->info('Workflow <'.$workflow_id.'> still running');
+                }
+                elsif ( Entity::Workflow->get(id => $workflow_id)->state eq 'cancelled' ) {
+
+                    $log->info('Workflow <'.$workflow_id.'> cancelled, re-enable rule');
+                    $aggregate_rule->setAttr(name  => 'aggregate_rule_state', value => 'enabled' );
+                    $aggregate_rule->setAttr(name  => 'workflow_id',  value => undef );
+                    $aggregate_rule->save();
+                }
+                elsif ( Entity::Workflow->get(id => $workflow_id)->state eq 'done' ) {
+                    $log->info('Workflow <'.$workflow_id.'> done');
+
+                    if ( $aggregate_rule->aggregate_rule_state eq 'delayed') {
+                        my $delta = $aggregate_rule->workflow_untriggerable_timestamp - time();
+                        if( 0 >= $delta ) {
+                            $log->info('Workflow <'.$workflow_id.'> done, end of delay time, re-enable rule');
+                            $aggregate_rule->setAttr(name  => 'aggregate_rule_state',
+                                                     value => 'enabled' );
+                            $aggregate_rule->setAttr(name  => 'workflow_id',
+                                                     value => undef );
+                            $aggregate_rule->setAttr(name  => 'workflow_untriggerable_timestamp',
+                                                     value => undef );
+                            $aggregate_rule->save();
+                        }
+                        else {
+                            $log->info('Workflow <'.$workflow_id.'> done, still delaying time for <'.($delta).'> sec');
+                        }
+                    }
+                    elsif ( $aggregate_rule->aggregate_rule_state eq 'triggered' ) {
+                        my $wf_def_id = $aggregate_rule->getAttr(name => 'workflow_def_id');
+                        my $wf_def    = Entity::WorkflowDef->get(id => $wf_def_id);
+                        my $wf_params = $wf_def->paramPresets;
+                        my $delay = $wf_params->{specific}->{delay};
+                        $log->info('wf_params = '.(Dumper $wf_params));
+
+                        if ((not defined $delay) || $delay <= 0) {
+                            $log->info('Workflow <'.$workflow_id.'> done, no delay or delay <= 0, re-enable rule');
+                            $aggregate_rule->setAttr(name  => 'aggregate_rule_state', value => 'enabled' );
+                            $aggregate_rule->setAttr(name  => 'workflow_id',  value => undef );
+                            $aggregate_rule->save();
+                        }
+                        else {
+                            $log->info('Workflow <'.$workflow_id.'> done, delay new workflow launch');
+                            $aggregate_rule->setAttr(name  => 'aggregate_rule_state',
+                                                     value => 'delayed' );
+                            $aggregate_rule->setAttr(name  => 'workflow_untriggerable_timestamp',
+                                                     value => time() + $delay);
+                            $aggregate_rule->save();
+                         }
+                    }
+                    else {
+                      $log->info('unknown case <'.($aggregate_rule->aggregate_rule_state).'>');
+                    }
+                }
+                else {
+                    $log->info('Workflow <'.$workflow_id.'> unknown state');
                 }
             }
-#                   print 'Rule false => take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
-#                   $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
-#                   $aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
-#                }else{
-#                    print "Rule false => no action \n";
-#                    #$log->info("Rule false, no action");
-#                }                        
-#            } else{
-#                print "Rule undef\n";
-#            }
-        } # for my $aggregate_rule 
-    } #end eval
+        };
+        if ($@) {
+            my $error = $@;
+            throw Kanopya::Exception(error => $error);
+        }
 
-#return $clusters_state_cm;
+        my $result = $aggregate_rule->eval();
+        my $rule_state = $aggregate_rule->getAttr (name => 'aggregate_rule_state');
+
+        if (defined $result) {
+            if ($result == 1){
+                $log->info('Rule <'. $rule_id. '> is verified');
+                if ($rule_state eq 'enabled') {
+                    if((defined $workflow_manager) && (defined $workflow_def_id)) {
+
+                        $log->info('Rule <'. $rule_id. '> has launched a new workflow (' . $workflow_def_id . ') and was defined as triggered');
+
+                        my $workflow = $workflow_manager->runWorkflow(
+                            workflow_def_id     => $workflow_def_id,
+                            rule_id             => $rule_id,
+                            service_provider_id => $service_provider_id
+                        );
+
+                        $aggregate_rule->setAttr(name => 'aggregate_rule_state', value => 'triggered');
+                        $aggregate_rule->setAttr(name => 'workflow_id', value => $workflow->getId());
+                        $aggregate_rule->save();
+                    }
+                    else {
+                        $log->info('Rule: '. $rule_id. ' was verified but has no workflow associated');
+                    }
+                }
+                elsif ($rule_state eq 'triggered') {
+                    $log->info('Rule: '. $rule_id. ' is verified but a workflow is already triggered');
+                }
+                elsif ($rule_state eq 'delayed') {
+                    $log->info('Rule: '. $rule_id. ' is verified but workflow launching is delayed');
+                }
+                else {
+                    throw Kanopya::Exception(error => 'unkown case');
+                }
+            }
+            elsif ($result == 0) {
+                $log->info('Rule <'. $rule_id. '> is not verified');
+            }
+        }
+        else {
+            $log->info('Rule <'. $rule_id. '> result undefined');
+        }
+    }
 }
 
 =head2 manage
-    
+
     Class : Public
-    
+
     Desc :     Check mc state and manage clusters.
             For each cluster, detect traps (for adding node) and check conditions for removing node
-    
+
 =cut
 
 sub manage {
     my $self = shift;
-    
+
     my $monitor = $self->{_monitor};
-    
+
     my @skip_clusters = (); #('adm');
-    
+
     my @all_clusters_name = $monitor->getClustersName();
-    
+
     CLUSTER:
     for my $cluster (@all_clusters_name) {
         if ( scalar grep { $_ eq $cluster } @skip_clusters ) {
@@ -624,18 +609,18 @@ sub manage {
 
         eval {
             #TODO keep cluster id from the beginning (get by name is not really good)
-            my $cluster_id = Entity::ServiceProvider::Inside::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
-        
+            my $cluster_id = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => $cluster })->id;
+
             my $rules_manager = $self->{_admin}->{manager}{rules};
-            
+
             # Solve rules
             my $rules = $rules_manager->getClusterRules( cluster_id => $cluster_id );
             $self->solve( rules => $rules, cluster_name => $cluster );
-            
+
             # Try to optimize
             my $optim_conditions = $rules_manager->getClusterOptimConditions( cluster_id => $cluster_id );
             $self->optimize( condition_tree => $optim_conditions, cluster_name => $cluster );
-            
+
             # Update graph for this cluster
             $self->updateGraph( cluster => $cluster );
         };
@@ -652,13 +637,13 @@ sub manage {
 }
 
 =head2
-    
+
     Class : Public
-    
+
     Desc : Retrieve the mean value of a monitored var on a defined time laps, for the cluster
-    
+
     Args : same as Monitor::getClusterData()
-        
+
     Return :
         undef is the required var is not found
         else the value
@@ -667,7 +652,7 @@ sub manage {
 sub getValue {
     my $self = shift;
     my %args = @_;
-    
+
 
     my $cluster_data_aggreg;
     eval {
@@ -688,21 +673,21 @@ sub getValue {
         $log->warn("No value of '$args{set}:$args{ds}' for cluster '$args{cluster}' (for last $args{time_laps}sec, maybe time step is too small).  considered as undef.");
         return;
     }
-    
+
     return $value;
 }
 
 =head2 evaluate
-    
+
     Class : Public
-    
-    Desc : evaluate a 
-    
+
+    Desc : evaluate a
+
     Args :
         lval: scalar
         rval: scalar
         op: the comp operator string ( 'inf', 'sup' )
-    
+
     Return :
         0 (false or one value undef) or 1 (true)
 =cut
@@ -710,24 +695,24 @@ sub getValue {
 sub evaluate {
     my $self = shift;
     my %args = @_;
-    
+
     return 0 if ( not defined $args{lval} || not defined $args{rval} );
-    
+
     return 1 if (($args{op} eq 'inf' &&  ($args{lval} < $args{rval})) ||
-                ($args{op} eq 'sup' &&  ($args{lval} > $args{rval})) ); 
-    
+                ($args{op} eq 'sup' &&  ($args{lval} > $args{rval})) );
+
     return 0;
 }
 
 =head2 checkCondition
-    
+
     Class : Public
-    
+
     Desc : retrieve value of condition var and evaluate condition
-    
+
     Args :
         condition: hash ref representing a condition
-    
+
     Return :
         0 if condition is false
         1 if condition is true
@@ -737,33 +722,35 @@ sub checkCondition {
     my $self = shift;
     my %args = @_;
     my $condition = $args{condition};
-    
+
     #$log->debug( join ", ", map { "$_: $condition->{$_}" } keys %$condition );
-    
+
     my ($set, $ds) = split ':', $condition->{var};
-    my $var_value = $self->getValue(
-                                        cluster => $args{cluster_name},
-                                        set => $set,
-                                        ds => $ds,
-                                        time_laps => $condition->{time_laps},
-                                        percent => $condition->{percent},
-                                        aggregate => "mean");
+    my $var_value = $self->getValue(cluster   => $args{cluster_name},
+                                    set       => $set,
+                                    ds        => $ds,
+                                    time_laps => $condition->{time_laps},
+                                    percent   => $condition->{percent},
+                                    aggregate => "mean");
     my $res = $self->evaluate( lval => $var_value, rval => $condition->{value}, op => $condition->{operator} );
-     $log->debug("# eval " . $condition->{var} . "($condition->{time_laps})" . " = " . (defined $var_value ? $var_value : "undef") . " ". $condition->{operator} . " " . $condition->{value} .
-                 " ==> " . ($res > 0 ? "ok" : "fail"));    
-    
+
+    $log->debug("# eval " . $condition->{var} . "($condition->{time_laps})" .
+                " = " . (defined $var_value ? $var_value : "undef") . " " .
+                $condition->{operator} . " " . $condition->{value} .
+                 " ==> " . ($res > 0 ? "ok" : "fail"));
+
     return $res;
 }
 
 =head2 checkOptimCondition
-    
+
     Class : Public
-    
+
     Desc : retrieve value of condition var, compute prevision for this value if a node is removed, and evaluate condition
-    
+
     Args :
         condition: hash ref representing a condition
-    
+
     Return :
         0 if condition is false
         1 if condition is true
@@ -773,9 +760,7 @@ sub checkOptimCondition {
     my $self = shift;
     my %args = @_;
     my $condition = $args{condition};
-    
-    #$log->debug( join ", ", map { "$_: $condition->{$_}" } keys %$condition );
-    
+
     my ($set, $ds) = split ':', $condition->{var};
     my $var_value = $self->getValue(
                                         cluster => $args{cluster_name},
@@ -784,27 +769,27 @@ sub checkOptimCondition {
                                         time_laps => $condition->{time_laps},
                                         percent => $condition->{percent},
                                         aggregate => "mean");
-    
+
     my $prevision = (defined $var_value && $args{upnode_count} > 1) ? ($var_value + ( $var_value / ( $args{upnode_count} - 1 ))) : undef;
     my $res = $self->evaluate( lval => $prevision, rval => $condition->{value}, op => $condition->{operator} );
      $log->debug("# eval " . $condition->{var} . " = " . (defined $var_value ? $var_value : "undef") . " ".
                  "prevision after optim = " . $prevision . " " . $condition->{operator} . " " . $condition->{value} .
-                 " ==> " . ($res > 0 ? "ok" : "fail"));    
-    
+                 " ==> " . ($res > 0 ? "ok" : "fail"));
+
     return $res;
 }
 
 =head2 solve
-    
+
     Class : Public
-    
+
     Desc : Solve each rules (by checking conditions of tree) and call the associated action if the rule is activated
-    
-    
+
+
     Args :
         cluster_name
         rules: array ref of rules. A rule is { condition_tree => [...], action => 'action_name' }
-    
+
 =cut
 
 sub solve {
@@ -830,46 +815,46 @@ sub solve {
         }
     }
 
-    
+
 }
 
 =head2 doAction
-    
+
     Class : Public
-    
+
     Desc : call the action function according to action name
-    
+
     Args :
         action: string: name of a defined action
         cluster_name: the cluster targetted by the action
-        
+
 =cut
 
 sub doAction {
     my $self = shift;
     my %args = @_;
-    
+
     my %actions = ( "add_node" => \&requireAddNode, "remove_node" => \&requireRemoveNode );
     my $action_sub = $actions{$args{action}};
-    
+
     if (not defined $action_sub) {
         $log->warn("Required action is undefined : '$args{action}'");
         return;
     }
-    
+
     $action_sub->( $self, cluster => $args{cluster_name} );
 }
 
 =head2 optimize
-    
+
     Class : Public
-    
+
     Desc : Try to optimize cluster node count by removing node according to optimize conditions
-    
+
     Args :
         cluster_name
         condition_tree : array ref representing a tree of conditions with separator '|' or '&'
-    
+
 =cut
 
 sub optimize {
@@ -880,12 +865,12 @@ sub optimize {
 
     my $cluster_info = $self->{_monitor}->getClusterHostsInfo( cluster => $cluster_name );
     my $upnode_count = grep { $_->{state} =~ 'up' } values %$cluster_info;
-    
+
     if ( $upnode_count <= 1 ) {
         $log->info("No node to eventually remove in '$cluster_name' => don't try to optimize node count");
         return;
     }
-    
+
     my $parser = Parse::BooleanLogic->new( operators => [qw(& |)] );
     my $solver = sub {
         my ($condition, $ctx) = @_;
@@ -910,28 +895,28 @@ sub updateGraph {
 
 
 =head2 _isNodeInState
-    
+
     Class : Private
-    
+
     Desc : Check if there is a least one node in the specificied state in the cluster
-    
+
     Args :
         cluster: name of the cluster
         state: state name
-    
+
     Return :
         0 : not found
-        1 : there is a node with this state in the cluster  
-    
+        1 : there is a node with this state in the cluster
+
 =cut
 
 sub _isNodeInState {
     my $self = shift;
     my %args = @_;
-    
-    my $cluster = $args{cluster};    
+
+    my $cluster = $args{cluster};
     my $state = $args{state};
-    
+
     my $monitor = $self->{_monitor};
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster );
     foreach my $host (values %$cluster_info) {
@@ -945,113 +930,60 @@ sub _isNodeInState {
 sub _isNodeMigrating {
     my $self = shift;
     my %args = @_;
-    
+
     my $cluster_name = $args{cluster_name};
-    
+
     my $cluster = $self->getClusterByName( cluster_name => $cluster_name );
     my $hosts = $cluster->getHosts();
     for my $mb (values %$hosts) {
         if (not $mb->getNodeState() eq "in") {
             return 1;
         }
-    }    
-    
-    return 0;
-}
-
-=head2 _isOpInQueue
-    
-    Class : Private
-    
-    Desc : Check if there is an operation of the specified type associated to the cluster
-    
-    Args :
-        cluster: name of the cluster
-        type: operation type name (corresponding to operation class name)
-    
-    Return :
-        0 : not found
-        1 : there is a operation of this type for this cluster
-    
-=cut
-
-sub _isOpInQueue {
-    my $self = shift;
-    my %args = @_;
-    
-    my $cluster = $args{cluster};
-    my $type = $args{type};
-    
-    my $adm = $self->{_admin};
-
-    #TODO keep cluster id from the beginning (get by name is not really good)
-    my $cluster_id = Entity::ServiceProvider::Inside::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
-    
-    
-    foreach my $op ( @{ $adm->getOperations() } ) {
-        if ($op->{'TYPE'} eq $type) {
-            foreach my $param ( @{ $op->{'PARAMETERS'} } ) {
-                if ( ($param->{'PARAMNAME'} eq 'cluster_id') && ($param->{'VAL'} eq $cluster_id) ) {
-                    return 1;
-                }
-            }    
-        }
     }
-    
+
     return 0;
 }
+
+
 
 =head2 _canAddNode
-    
+
     Class : Private
-    
+
     Desc : Check if all conditions to add a node in the cluster are met.
-    
+
     Args :
         cluster : name of the cluster in which we want add a node
-    
+
     Return :
         0 : one condition failed
-        1 : ok 
-    
+        1 : ok
+
 =cut
 
 sub _canAddNode {
     my $self = shift;
     my %args = @_;
-    
+
     my $cluster_name = $args{cluster};
-    
-    # Check if no node of the cluster is migrating  
+
+    # Check if no node of the cluster is migrating
     if ( $self->_isNodeMigrating( cluster_name => $cluster_name ) ) {
         $log->info(" => A node in this cluster is currently migrating");
         return 0;
-    } 
-    
-#    # Check if there is already a node starting in the cluster #
-#    if (     $self->_isNodeInState( cluster => $cluster_name, state => 'starting' ) ||
-#            $self->_isNodeInState( cluster => $cluster_name, state => 'locked' ) ) {
-#        $log->info(" => A node is already starting or locked in cluster '$cluster_name'");
-#        return 0;
-#    }
-#    
-#    # Check if there is a corresponding add node operation in operation queue #
-#    if ( $self->_isOpInQueue( cluster => $cluster_name, type => 'AddHostInCluster' ) ) {
-#        $log->info(" => An operation to add node in cluster '$cluster_name' is already in queue");
-#        return 0;
-#    }
-    
+    }
+
     return 1;
 }
 
-sub requireAddNode { 
+sub requireAddNode {
     my $self = shift;
     my %args = @_;
-    
+
     my $cluster = $args{cluster};
-    
+
     $log->info("Node required in cluster '$cluster'");
-    
+
     eval {
            if ( $self->_canAddNode( cluster => $cluster ) ) {
             $self->addNode( cluster_name => $cluster );
@@ -1067,64 +999,55 @@ sub requireAddNode {
 }
 
 =head2 _canRemoveNode
-    
+
     Class : Private
-    
+
     Desc : Check if all conditions to remove a node from the cluster are met.
-    
+
     Args :
         cluster : name of the cluster in which we want remove a node
-    
+
     Return :
         0 : one condition failed
-        1 : ok 
-    
+        1 : ok
+
 =cut
 
 sub _canRemoveNode {
     my $self = shift;
     my %args = @_;
-    
+
     my $cluster_name = $args{cluster};
-    
-    # Check if no node of the cluster is migrating  
+
+    # Check if no node of the cluster is migrating
     if ( $self->_isNodeMigrating( cluster_name => $cluster_name ) ) {
         $log->info(" => A node in this cluster is currently migrating");
         return 0;
     }
-    
-#    # Check if there is a corresponding remove node operation in operation queue #
-#    if (     $self->_isOpInQueue( cluster => $cluster, type => 'RemoveHostFromCluster' ) || 
-#            $self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
-#    {
-#        $log->info(" => An operation to remove node from cluster '$cluster' is already in queue");
-#        return 0;
-#    }
-    
+
     return 1;
 }
 
-sub requireRemoveNode { 
+sub requireRemoveNode {
     my $self = shift;
     my %args = @_;
-    
+
     my $cluster = $args{cluster};
-    
+
     $log->info("Want remove node in cluster '$cluster'");
-    
+
     eval {
-           if ( $self->_canRemoveNode( cluster => $cluster ) ) {
+        if ( $self->_canRemoveNode( cluster => $cluster ) ) {
             $self->removeNode( cluster_name => $cluster );
             $self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "ok");
-           } else {
+        } else {
                $self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "req");
-           }
+        }
     };
-       if ($@) {
+    if ($@) {
         my $error = $@;
         $log->error("=> Error while removing node in cluster '$cluster' : $error");
     }
-    
 }
 
 
@@ -1132,7 +1055,7 @@ sub getClusterByName {
     my $self = shift;
     my %args = @_;
 
-       my @cluster = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { cluster_name => $args{cluster_name} } );
+       my @cluster = Entity::ServiceProvider::Inside::Cluster->search(hash => { cluster_name => $args{cluster_name} });
        die "More than one cluster with the name '$args{cluster_name}'" if ( 1 < @cluster);
        die "Cluster with name '$args{cluster_name}' no longer exists" if ( 0 == @cluster);
        return pop @cluster;
@@ -1141,52 +1064,37 @@ sub getClusterByName {
 sub addNode {
     my $self = shift;
     my %args = @_;
-    
-    $log->info("====> add node in $args{cluster_name}");
-    
-#    #my @free_hosts = Entity::Host->getHosts( hash => { active => 1, host_state => 'down'} );
-#    my @free_hosts = Entity::Host->getFreeHosts();
-#    
-#    die "No free host to add in cluster '$args{cluster_name}'" if ( scalar @free_hosts == 0 );
-#    
-#    #TODO  Select the best node ?
-#    my $host = pop @free_hosts;
-    
-    my $cluster = $self->getClusterByName( cluster_name => $args{cluster_name} );
-    
-    ############################################
-    # Enqueue the add host operation
-    ############################################
-    $cluster->addNode( );
 
+    my $cluster = $self->getClusterByName( cluster_name => $args{cluster_name} );
+    $cluster->addNode();
 }
 
 sub removeNode {
     my $self = shift;
     my %args = @_;
-    
+
     $log->info("====> remove node from $args{cluster_name}");
-    
+
     my $cluster_name = $args{cluster_name};
-    
+
     #TODO Find the best node to remove (notation system)
     my $monitor = $self->{_monitor};
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster_name );
     my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;
-  
+
     my $cluster = $self->getClusterByName( cluster_name => $cluster_name );
     my $master_node_ip = $cluster->getMasterNodeIp();
-    
+
     my $node_to_remove = shift @up_nodes;
     ($node_to_remove = shift @up_nodes) if ($node_to_remove->{ip} eq $master_node_ip);
     die "No up node to remove in cluster '$cluster_name'." if ( not defined $node_to_remove );
-    
+
     # TODO keep the host ID and get it with this id! (ip can be not unique)
     my @mb_res = Entity::Host->getHostFromIP( ipv4_internal_ip => $node_to_remove->{ip} );
     die "Several hosts with ip '$node_to_remove->{ip}', can not determine the wanted one" if (1 < @mb_res); # this die must desappear when we'll get mb by id
     my $mb_to_remove = shift @mb_res;
     die "host '$node_to_remove->{ip}' no more in DB" if (not defined $mb_to_remove);
-    
+
     ############################################
     # Enqueue the remove host operation
     ############################################
@@ -1194,30 +1102,30 @@ sub removeNode {
 }
 
 =head2 _storeTime
-    
+
     Class : Private
-    
+
     Desc :     Store in a file the date (in seconds) of an operation (add/remove node) on a cluster.
             Keep only the last $NUMBER_TO_KEEP values.
             Use _getTimes() to retrieve stored times.
-    
+
     Args :
         time: time in second (since epoch) to store
         cluster: name of the cluster concerned by the operation
         op_type: operation type
-    
+
 =cut
 
 sub _storeTime {
     my $self = shift;
     my %args = @_;
-    
+
     my $NUMBER_TO_KEEP = 100;
-    
-    my $file = $self->_timeFile( cluster => $args{cluster} );  
-    
+
+    my $file = $self->_timeFile( cluster => $args{cluster} );
+
     my $info = $args{op_info} || "";
-    
+
     my $times = "";
     if ( open FILE, "<$file" ) {
         $times = <FILE>;
@@ -1232,17 +1140,17 @@ sub _storeTime {
 }
 
 =head2 _getTimes
-    
+
     Class : Private
-    
+
     Desc : Retrieve times corresponding to op_type for the cluster
-    
+
     Args :
         cluster: name of the cluster concerned by the operation
         op_type: operation type
-    
+
     Return : Array of times
-    
+
 =cut
 
 sub _getTimes {
@@ -1250,9 +1158,9 @@ sub _getTimes {
     my %args = @_;
 
     my $file = $self->_timeFile( cluster => $args{cluster} );
-    
+
     my %times = ();
-       if ( open FILE, "<$file" ) {
+    if ( open FILE, "<$file" ) {
         my $times = <FILE>;
         close FILE;
         my @alltimes = split( /,/, $times );
@@ -1262,12 +1170,8 @@ sub _getTimes {
                 $times{ $2 } = $1;
             }
         }
-       }
-#       else
-#       {
-#           print "Can't open orchestrator time file for cluster '$args{cluster}'\n";
-#       }
-    
+    }
+
     return %times;
 }
 
@@ -1281,7 +1185,7 @@ sub _timeFile  {
 sub updateRRD {
     my $self = shift;
     my %args = @_;
-    
+
     my $rrd = $self->getRRD( cluster => $args{cluster}, op => $args{op} );
     eval {
         $rrd->update( time => $args{time}, values => $args{values} );
@@ -1297,10 +1201,10 @@ sub updateRRD {
 sub getRRD {
     my $self = shift;
     my %args = @_;
-    
+
     my $cluster = $args{cluster};
     my $rrd_file = "$self->{_rrd_base_dir}/orchestrator_$cluster" . "_$args{op}" . ".rrd";
-    
+
     my $rrd;
     if ( -e $rrd_file && not defined $args{force_create} ) {
         $rrd = RRDTool::OO->new( file =>  $rrd_file );
@@ -1317,7 +1221,7 @@ sub createRRD {
 
     # Build list of var to store (all traps or conditions var)
     my ($rules, $tag) = $args{op} eq "add" ? ($self->{_traps}, 'threshold') : ($self->{_conditions}, 'required');
-    
+
     my @var_list = ();
     for my $rule ( @{ $rules } ) {
         foreach my $cond ( @{ General::getAsArrayRef( data => $rule, tag => $tag ) }) {
@@ -1326,24 +1230,24 @@ sub createRRD {
     }
 
     my $rrd = RRDTool::OO->new( file =>  $args{file} );
-
-    #my $raws = $self->{_period} / $self->{_time_step};
     my $raws = 3000;
+    my @rrd_params = (
+        'step', $self->{_time_step},
+        'archive', { rows    => $raws }
+    );
 
-    my @rrd_params = (     'step', $self->{_time_step},
-                        'archive', { rows    => $raws }
-                     );
-                     
     for my $name ( @var_list ) {
-        push @rrd_params,     (
-                                'data_source' => {     name      => $name,
-                                                      type      => 'GAUGE' },            
-                            );
+        push @rrd_params, (
+            data_source => {
+                name => $name,
+                type => 'GAUGE'
+            },
+        );
     }
 
     # Create a round-robin database
-    $rrd->create( @rrd_params );
-    
+    $rrd->create(@rrd_params);
+
     return $rrd;
 }
 
@@ -1352,44 +1256,31 @@ sub graph {
     my $self = shift;
     my %args = @_;
 
-#    use Log::Log4perl qw(:easy);
-#    Log::Log4perl->easy_init({
-#        level    => $DEBUG
-#    }); 
-    
     my $cluster = $args{cluster};
     my $op = $args{op};
-    
+
     my $time_laps = 3600;
-    
+
     my $graph_dir = $self->{_graph_dir};
     my $graph_filename = "graph_orchestrator_$cluster" . "_$op" . ".png";
-
-    #my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
-    #my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
 
     my $rrd_file = "$self->{_rrd_base_dir}/orchestrator_$cluster" . "_$op" . ".rrd";
 
     return if ( not -e $rrd_file );
 
-    # get rrd     
+    # get rrd
     my $rrd = RRDTool::OO->new( file => $rrd_file );
 
     my @graph_params = (
-                            'image' => "$graph_dir/$graph_filename",
-                            #'vertical_label', 'ticks',
-                            'start' => time() - $time_laps,
-                            color => { back => "#69B033" },
-                            
-                            title => ($args{op} eq "add" ? "Add" : "Remove") . " rules analysis",
-                            
-                            lower_limit => 0,
-                            #upper_limit => 100,
-                            
-                            #width => 500,
-                            #height => 500,
-
-                        );
+        image => "$graph_dir/$graph_filename",
+        start => time() - $time_laps,
+        color => { back => "#69B033" },
+        title => ($args{op} eq "add" ? "Add" : "Remove") . " rules analysis",
+        lower_limit => 0,
+        # upper_limit => 100,
+        # width => 500,
+        # height => 500,
+    );
 
     # Add vertical red lines corresponding to add times
     my %add_times = $self->_getTimes( cluster => $cluster, op_type => "add" );
@@ -1404,61 +1295,59 @@ sub graph {
         my $color = (defined $remove_info && $remove_info eq "ok") ? "#00FF00" : "#BBFFBB";
         push @graph_params, ( vrule => { time => $remove_time, color => $color } );
     }
-    
+
     # Graph data and add horizontal lines corresponding to thresholds for this op
     my ($rules, $tag) = $args{op} eq "add" ? ($self->{_traps}, 'threshold') : ($self->{_conditions}, 'required');
-    my @var_list = ();
     for my $rule ( @{ $rules } ) {
         foreach my $cond ( @{ General::getAsArrayRef( data => $rule, tag => $tag ) }) {
-
             push @graph_params, (
-                                    draw   => {
-                                        type => 'line',
-                                        dsname => $cond->{var} . "_" . $rule->{time_laps},
-                                        color => $cond->{color},
-                                        legend => sprintf( "%-25s", $cond->{var} . ($rule->{percent} ? " (%)" : "") .
-                                                                    ( $args{op} eq "remove" ? " prevision" : "" ).
-                                                                    " (mean on " . $rule->{time_laps} . "s)" ),
-                                      },
-          
-                                      hrule => {
-                                           value => $cond->{min} || $cond->{max},
-                                         color => '#' . $cond->{color},
-                                        #legend => $cond->{var}
-                                       },
-                                      
-                                );
+                draw => {
+                    type   => 'line',
+                    dsname => $cond->{var} . "_" . $rule->{time_laps},
+                    color  => $cond->{color},
+                    legend => sprintf("%-25s", $cond->{var} . ($rule->{percent} ? " (%)" : "") .
+                                               ($args{op} eq "remove" ? " prevision" : "") .
+                                               " (mean on " . $rule->{time_laps} . "s)"),
+                },
+                hrule => {
+                    value => $cond->{min} || $cond->{max},
+                    color => '#' . $cond->{color},
+                },
+            );
         }
     }
 
     # Draw the graph in a PNG image
     $rrd->graph( @graph_params );
-    
+
     return "$graph_dir/$graph_filename";
 }
 
 
 =head2 run
-    
+
     Class : Public
-    
+
     Desc : Do the job (check mc state and manage clusters) every time_step (configuration)
-    
+
 =cut
 
 sub run {
     my $self = shift;
     my $running = shift;
-    # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
-    $self->{_time_step} = $conf->{time_step};
-        
-    $self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
-    
+
+    Message->send(
+        from    => 'Orchestrator',
+        level   => 'info',
+        content => "Kanopya Orchestrator started."
+    );
+
     while ( $$running ) {
+        # Load conf
+        my $conf = Kanopya::Config::get('orchestrator');
+        $self->{_time_step} = $conf->{time_step};
 
         my $start_time = time();
-
         $self->manage_aggregates();
 
         my $update_duration = time() - $start_time;
@@ -1468,45 +1357,56 @@ sub run {
         } else {
             sleep( $self->{_time_step} - $update_duration );
         }
-
     }
-    
-    $self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
+
+    Message->send(
+        from    => 'Orchestrator',
+        level   => 'warning',
+        content => "Kanopya Orchestrator stopped"
+    );
 }
 
-sub new_old {
-    my $class = shift;
-    my %args = @_;
+=head2 updateOrchestratorConf
 
-    my $self = {};
-    bless $self, $class;
+    Class : Public
+    Desc  : update values in the orchestrator.conf file
+    Args  : $time_step
 
-    # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
-    $self->{_time_step} = $conf->{time_step};
-    $self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
-    $self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
-    
-    $self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/orchestrator';
-    $self->{_graph_dir} = $conf->{graph_dir} || '/tmp/orchestrator';
-    
-    # Create orchestrator dirs if needed
-    for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
-        my @dir_path = split '/', $dir_path;
-        my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
-        while (scalar @dir_path) {
-            $dir .= (shift @dir_path) . "/";
-            mkdir $dir;
-        }
+=cut
+
+sub updateOrchestratorConf {
+    my ($class, %args) = @_;
+
+    if ((not defined $args{time_step})) {
+        throw Kanopya::Exception::Internal(
+            error => 'An orchestration frequency must be provided for update'
+        );
     }
-    
-    # Get Administrator
-    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
-    Administrator::authenticate( login => $login, password => $password );
-    $self->{_admin} = Administrator->new();
-    $self->{_monitor} = Monitor::Retriever->new( );
-    
-    return $self;
+
+    #get orchestrator configuration
+    my $configuration = Kanopya::Config::get('orchestrator');
+
+    if (defined $args{time_step}) {
+        $configuration->{time_step} = $args{time_step};
+        Kanopya::Config::set(subsystem => 'orchestrator', config => $configuration);
+    }
+
+}
+
+=head2 getOrchestratorConf
+
+    Class : Public
+    Desc  : get public values from orchestrator.conf file
+
+=cut
+
+sub getOrchestratorConf {
+
+    my $conf = Kanopya::Config::get('orchestrator');
+    return {
+        time_step           => $conf->{time_step},
+    }
+
 }
 
 1;

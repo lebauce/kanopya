@@ -15,29 +15,42 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
+
+=pod
+
+=begin classdoc
+
+Specific Service Provider representing a cluster not directly managed by Kanopya
+
+=end classdoc
+
+=cut
+
 package Entity::ServiceProvider::Outside::Externalcluster;
 use base 'Entity::ServiceProvider::Outside';
 
 use strict;
 use warnings;
-
 use Kanopya::Exceptions;
 use Administrator;
 use General;
 
-use AggregateCombination;
-use AggregateCondition;
-use AggregateRule;
-use Clustermetric;
-
-
+use Entity::Combination::NodemetricCombination;
+use Entity::NodemetricCondition;
+use Entity::NodemetricRule;
+use Entity::Combination::AggregateCombination;
+use Entity::AggregateCondition;
+use Entity::AggregateRule;
+use Entity::Clustermetric;
+use Entity::CollectorIndicator;
+use Externalnode;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 our $VERSION = "1.00";
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 use constant ATTR_DEF => {
     externalcluster_name    =>  {pattern        => '^.*$',
@@ -58,27 +71,65 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new cluster',
-                        'perm_holder' => 'mastergroup',
-        },
-        'get'        => {'description' => 'view this cluster',
-                        'perm_holder' => 'entity',
-        },
-        'update'    => {'description' => 'save changes applied on this cluster',
-                        'perm_holder' => 'entity',
-        },
-        'remove'    => {'description' => 'delete this cluster',
-                        'perm_holder' => 'entity',
-        },
-        'setperm'    => {'description' => 'set permissions on this cluster',
-                        'perm_holder' => 'entity',
-        },
+        'updateNodes'=> {
+            'description'   => 'update nodes',
+            'entity'        => 'perm_holder'
+        }
     };
 }
+
+sub getLabelAttr { return 'externalcluster_name'; }
 
 sub toString() {
     my $self = shift;
     return 'External Cluster ' . $self->getAttr( name => 'externalcluster_name');
+}
+
+=head2
+
+    BaseDB label virtual attribute getter
+
+=cut
+sub label {
+    my $self = shift;
+    return $self->externalcluster_name;
+}
+
+=head2 new
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = $class->SUPER::new( %args );
+
+    # Add the external cluster to the ServiceProvider group
+    Entity::ServiceProvider->getMasterGroup->appendEntity(entity => $self);
+
+    return $self;
+}
+
+=head2 addManager
+
+    overload ServiceProvider::addManager to insert initial monitoring configuration when adding a collector manager
+
+    Args: (optionnal) no_default_conf : do not insert default monitoring configuration (link only to indicators. no metrics, no rules)
+
+=cut
+
+sub addManager {
+    my $self = shift;
+    my %args = @_;
+
+    my $manager = $self->SUPER::addManager( %args );
+
+    if ($args{"manager_type"} eq 'collector_manager') {
+        $self->monitoringDefaultInit( no_default_conf => $args{no_default_conf} );
+    }
+
+    return $manager;
 }
 
 =head2 getState
@@ -140,50 +191,62 @@ sub getNode {
     return $repNode;
 }
 
-sub getNodeState {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hostname']);
-    my $repNode;
-    my $node = $self->{_dbix}->parent->externalnodes->find({
-        externalnode_hostname   => $args{hostname},
-    });
-    
-    return $node->get_column('externalnode_state');
-}
-
 sub getNodeId {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['hostname']);
-    my $repNode;
     my $node = $self->{_dbix}->parent->externalnodes->find({
         externalnode_hostname   => $args{hostname},
     });
-    
+
     return $node->get_column('externalnode_id');
+}
+
+
+=head2 getNodeState
+
+
+=cut
+
+sub getNodeState {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['hostname']);
+
+    my $node       = Externalnode->find(hash => {externalnode_hostname => $args{hostname}});
+    my $node_state = $node->getAttr(name => 'externalnode_state');
+
+    return $node_state;
 }
 
 sub updateNodeState {
     my $self = shift;
     my %args = @_;
-    
-     $self->{_dbix}->parent->externalnodes->update_or_create({
-                externalnode_hostname   => $args{hostname},
-                externalnode_state      => $args{state},
+
+    my $hostname = $args{hostname};
+    my $state    = $args{state};
+    my $host;
+
+    $host = Externalnode->find(hash => {
+                externalnode_hostname => $hostname,
+                service_provider_id   => $self->getId,
             });
+
+    if (defined $host) {
+        $host->setAttr(name => 'externalnode_state', value => $state);
+        $host->save();
+    }
 }
 
 
 sub getDisabledNodes {
     my ($self, %args) = @_;
-    
+
     my $shortname = defined $args{shortname};
-    
+
     my $node_rs = $self->{_dbix}->parent->externalnodes;
-    
+
     my $domain_name;
     my @nodes;
     while (my $node_row = $node_rs->next) {
@@ -208,81 +271,88 @@ sub getDisabledNodes {
 
     return \@nodes;
 }
-sub getNodes {
-    my ($self, %args) = @_;
-    
-    my $shortname = defined $args{shortname};
-    
-    my $node_rs = $self->{_dbix}->parent->externalnodes;
-    
-    my $domain_name;
-    my @nodes;
-    while (my $node_row = $node_rs->next) {
-        if($node_row->get_column('externalnode_state') ne 'disabled'){
-            my $hostname = $node_row->get_column('externalnode_hostname');
-            $hostname =~ s/\..*// if ($shortname);
-            push @nodes, {
-                hostname           => $hostname,
-                state              => $node_row->get_column('externalnode_state'),
-                id                 => $node_row->get_column('externalnode_id'),
-                num_verified_rules => $node_row->verified_noderules
-                                               ->search({
-                                                 verified_noderule_state => 'verified'})
-                                               ->count(),
-                num_undef_rules    => $node_row->verified_noderules
-                                               ->search({
-                                                 verified_noderule_state => 'undef'})
-                                               ->count(),
-            };
-        }
-    }
 
-    return \@nodes;
-}
+=pod
 
-=head2 updateNodes
+=begin classdoc
 
-    Update external nodes list using the linked DirectoryService connector
+Updates nodes list using the linked DirectoryService connector.
+If a node is already in cluster then do nothing for it.
+Every extra parameter will be transmitted to the DirectoryService connector (e.g password used)
+
+@optional synchro if defined then removes nodes that are no longer present in retrieved nodes list,
+                    else keeps all nodes. Default is undef.
+
+@return hashref with 3 keys:
+    retrieved_node_count    => total number of nodes retrieved (== total nodes count),
+    added_node_count        => number of newly added nodes,
+    removed_node_count      => number of removed nodes
+
+=end classdoc
 
 =cut
 
 sub updateNodes {
      my $self = shift;
      my %args = @_;
-     
-     my $ds_connector = $self->getConnector( category => 'DirectoryService' );
-     my $nodes = $ds_connector->getNodes(%args);
-     
-     my @created_nodes;
-     
-     my $new_node_count = 0;
-     for my $node (@$nodes) {
-         if (defined $node->{hostname}) {
-            $new_node_count++;
-            
-            my $row = $self->{_dbix}->parent->externalnodes->find({
-                externalnode_hostname   => $node->{hostname},
-            });
-            
-            if(! defined $row){
-                my $node_row = $self->{_dbix}->parent->externalnodes->create({
-                    externalnode_hostname   => $node->{hostname},
-                    externalnode_state      => 'down',
-                });
-                $node->{id} =  $node_row->id;
-                push @created_nodes, $node;
-            }
-         }
-     }
-     
-     return {created_nodes => \@created_nodes, node_count => $new_node_count};
-     # TODO remove dead nodes from db
+
+    General::checkParams(args => \%args, optional => {'synchro' => undef});
+
+     my $ds_manager = $self->getManager( manager_type => 'directory_service_manager' );
+     my $mparams    = $self->getManagerParameters( manager_type => 'directory_service_manager' );
+     $args{ad_nodes_base_dn}    = $mparams->{ad_nodes_base_dn};
+
+     my $nodes;
+     eval {
+        $nodes = $ds_manager->getNodes(%args);
+     } or do {
+        return {error => "$@"};
+     };
+
+    # We hashify nodes list for search and delete convenience
+    my %nodes_to_add = map { $_->{hostname} => 1 } @$nodes;
+
+    # Differences between current nodes and retrieved nodes
+    my @nodes_to_remove;
+    for my $node ($self->externalnodes) {
+        if (exists $nodes_to_add{$node->externalnode_hostname}) {
+            # node already in cluster, do not add it
+            delete $nodes_to_add{$node->externalnode_hostname};
+        } else {
+            # node not in retrieved list, we delete it (delayed because it's current loop item)
+            push @nodes_to_remove, $node;
+        }
+    }
+
+    # Remove obsolet nodes (mode synchro)
+    if (defined $args{synchro}) {
+        for my $node (@nodes_to_remove) {
+            $node->remove();
+        }
+    }
+
+    # Add new nodes
+    my $added_node_count = 0;
+    for my $node_name (keys %nodes_to_add) {
+        Externalnode->new(
+            externalnode_hostname   => $node_name,
+            externalnode_state      => 'down',
+            service_provider_id     => $self->id,
+        );
+        $added_node_count++;
+    }
+
+    return {
+        retrieved_node_count    => scalar @$nodes,
+        added_node_count        => $added_node_count,
+        removed_node_count      => $args{synchro} ? scalar @nodes_to_remove : 0
+    };
 }
 
 =head2 getNodesMetrics
 
     Retrieve cluster nodes metrics values using the linked MonitoringService connector
-    
+
     Params:
         indicators : array ref of indicator name (eg 'ObjectName/CounterName')
         time_span  : number of last seconds to consider when compute average on metric values
@@ -290,22 +360,28 @@ sub updateNodes {
 =cut
 
 sub getNodesMetrics {
-     my $self = shift;
-     my %args = @_;
+    my ($self, %args) = @_;
 
-     General::checkParams(args => \%args, required => ['indicators', 'time_span']);
-     
-     my $shortname = defined $args{shortname};
-     
-     my $ms_connector = $self->getConnector( category => 'MonitoringService' );
-     my $nodes = $self->getNodes();
-     
-     my @hostnames = map { $_->{hostname} } @$nodes;
-     
-     my $data = $ms_connector->retrieveData(
-        nodes => \@hostnames,
+    General::checkParams(args => \%args, required => ['indicators', 'time_span']);
+
+    my $shortname = defined $args{shortname};
+    my $ms_connector    = $self->getManager(manager_type => 'collector_manager');
+    my $mparams         = $self->getManagerParameters( manager_type => 'collector_manager' );
+
+    my @hostnames = ();
+    my @nodes = $self->externalnodes;
+
+    for my $node (@nodes) {
+        if( ! ($node->externalnode_state eq 'disabled')) {
+            push @hostnames, $node->externalnode_hostname
+        }
+    }
+
+    my $data = $ms_connector->retrieveData(
+        nodelist => \@hostnames,
         %args,
-     );
+        %$mparams
+    );
 
     if ($shortname) {
         my %data_shortnodename;
@@ -315,36 +391,35 @@ sub getNodesMetrics {
         }
         return \%data_shortnodename;
     }
+
     return $data;
 }
 
-
 sub generateClustermetricAndCombination{
-    my ($self,%args) = @_;
+    my ($self,%args)  = @_;
     my $extcluster_id = $args{extcluster_id};
-    my $indicator     = $args{indicator};
+    my $indicator_id  = $args{indicator};
     my $func          = $args{func};
-    
+
     my $cm_params = {
         clustermetric_service_provider_id      => $extcluster_id,
-        clustermetric_indicator_id             => $indicator->{id},
+        clustermetric_indicator_id             => $indicator_id,
         clustermetric_statistics_function_name => $func,
         clustermetric_window_time              => '1200',
     };
-    my $cm = Clustermetric->new(%$cm_params);
-   
+    my $cm = Entity::Clustermetric->new(%$cm_params);
+
     my $acf_params = {
-        aggregate_combination_service_provider_id   => $extcluster_id,
-        aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
     };
-    my $aggregate_combination = AggregateCombination->new(%$acf_params);
+    my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
     my $rep = {
         cm_id => $cm->getAttr(name => 'clustermetric_id'),
-        comb_id => $aggregate_combination->getAttr(name => 'aggregate_combination_id'),
+        comb_id => $aggregate_combination->id,
     };
     return $rep;
 }
-
 
 =head2 monitoringDefaultInit
 
@@ -352,324 +427,259 @@ sub generateClustermetricAndCombination{
 
     Use SCOM indicators by default
     TODO : more generic (unhardcode SCOM, metrics depend on monitoring service)
+    TODO : default init must be done when instanciating data collector.
+
+    Args: (optionnal) no_default_conf : do not insert default monitoring configuration (link only to indicators. no metrics, no rules)
 
 =cut
 
 sub monitoringDefaultInit {
-    my $self = shift;
+    my ($self, %args) = @_;
 
     my $adm = Administrator->new();
-    
-    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
-    my $active_session_indicator_id; 
-    my @indicators;
-    
-    my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
-    
-    my @funcs = qw(mean max min std dataOut);
-    
-    foreach my $indicator (@{$scom_indicatorset->{ds}}){
-        if($indicator->{oid} eq 'Terminal Services/Active Sessions'){
-            $active_session_indicator_id = $indicator->{id};
-        }
-        push @indicators, $indicator->{id};
-    }
 
-    my $extcluster_id = $self->getAttr( name => 'outside_id' );
-    
-    foreach my $indicator (@{$scom_indicatorset->{ds}}) {
+    return if ($args{no_default_conf});
+
+    my $service_provider_id = $self->id;
+    my @collector_indicators = $self->getManager(manager_type => "collector_manager")->collector_indicators;
+
+    my $active_session_indicator_id;
+    my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
+    my @funcs = qw(mean max min std dataOut);
+
+    foreach my $collector_indicator (@collector_indicators) {
+        my $indicator_id  = $collector_indicator->id;
+        my $indicator_oid = $collector_indicator->indicator->indicator_oid;
+
+        if ($indicator_oid eq 'Terminal Services/Active Sessions') {
+            $active_session_indicator_id = $indicator_id;
+        }
+
         $self->generateNodeMetricRules(
-            indicator_id  => $indicator->{id},
-            indicator_oid => $indicator->{oid},
-            extcluster_id => $extcluster_id,
+            indicator_id  => $indicator_id,
+            indicator_oid => $indicator_oid,
+            extcluster_id => $service_provider_id,
         );
-        
+
      if (
-        0 == grep {$indicator->{oid} eq $_} ('Memory/PercentMemoryUsed','Processor/% Processor Time','Network Adapter/PercentBandwidthUsedTotal','LogicalDisk/% Free Space')
+        0 == grep {$indicator_oid eq $_} ('Memory/PercentMemoryUsed','Processor/% Processor Time','Network Adapter/PercentBandwidthUsedTotal','LogicalDisk/% Free Space')
         ){
             foreach my $func (@funcs) {
-                    my $ids = $self->generateClustermetricAndCombination(
-                        extcluster_id => $extcluster_id,
-                        indicator     => $indicator,
-                        func          => $func,
-                    );
+                $self->generateClustermetricAndCombination(
+                    extcluster_id => $service_provider_id,
+                    indicator     => $indicator_id,
+                    func          => $func,
+                );
             }
-        }elsif($indicator->{oid} eq 'Memory/PercentMemoryUsed'){
-            $low_mean_cond_mem_id = $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Memory');
-        }elsif($indicator->{oid} eq 'Processor/% Processor Time'){
-            $low_mean_cond_cpu_id = $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Processor');
-        }elsif($indicator->{oid} eq 'Network Adapter/PercentBandwidthUsedTotal'){
-            $low_mean_cond_net_id = $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Network');
+        }
+        elsif($indicator_oid eq 'Memory/PercentMemoryUsed'){
+            $low_mean_cond_mem_id = $self->ruleGeneration(indicator_id => $indicator_id, extcluster_id => $service_provider_id, label => 'Memory');
+        }
+        elsif($indicator_oid eq 'Processor/% Processor Time'){
+            $low_mean_cond_cpu_id = $self->ruleGeneration(indicator_id => $indicator_id, extcluster_id => $service_provider_id, label => 'Processor');
+        }
+        elsif($indicator_oid eq 'Network Adapter/PercentBandwidthUsedTotal'){
+            $low_mean_cond_net_id = $self->ruleGeneration(indicator_id => $indicator_id, extcluster_id => $service_provider_id, label => 'Network');
         }
     }
-    
-    
-   my $params_rule = {
-        aggregate_rule_service_provider_id  => $extcluster_id,
-        aggregate_rule_formula              => 'id'.$low_mean_cond_mem_id.'&&'.'id'.$low_mean_cond_cpu_id.'&&'.'id'.$low_mean_cond_net_id,
-        aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => 0,
-        aggregate_rule_label                => 'Cluster load',
-        aggregate_rule_description          => 'Mem, cpu and network usages are low, your cluster may be oversized',
-    };
-    my $combo_rule = AggregateRule->new(%$params_rule);
-    
+
+    if(defined $low_mean_cond_mem_id && $low_mean_cond_cpu_id && $low_mean_cond_net_id) {
+        my $params_rule = {
+            aggregate_rule_service_provider_id  => $service_provider_id,
+            aggregate_rule_formula              => 'id'.$low_mean_cond_mem_id.'&&'.'id'.$low_mean_cond_cpu_id.'&&'.'id'.$low_mean_cond_net_id,
+            aggregate_rule_state                => 'enabled',
+            aggregate_rule_label                => 'Cluster load',
+            aggregate_rule_description          => 'Mem, cpu and network usages are low, your cluster may be oversized',
+        };
+        Entity::AggregateRule->new(%$params_rule);
+    }
+
+    if(defined $active_session_indicator_id) {
         #SPECIAL TAKE SUM OF SESSION ID
-    my $cm_params = {
-        clustermetric_service_provider_id      => $extcluster_id,
-        clustermetric_indicator_id             => $active_session_indicator_id,
-        clustermetric_statistics_function_name => 'sum',
-        clustermetric_window_time              => '1200',
-    };
-    my $cm = Clustermetric->new(%$cm_params);
-    
-    my $acf_params = {
-        aggregate_combination_service_provider_id   => $extcluster_id,
-        aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
-    };
-    my $aggregate_combination = AggregateCombination->new(%$acf_params);
+        my $cm_params = {
+            clustermetric_service_provider_id      => $service_provider_id,
+            clustermetric_indicator_id             => $active_session_indicator_id,
+            clustermetric_statistics_function_name => 'sum',
+            clustermetric_window_time              => '1200',
+        };
+        my $cm = Entity::Clustermetric->new(%$cm_params);
+
+        my $acf_params = {
+            service_provider_id             => $service_provider_id,
+            aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+        };
+        Entity::Combination::AggregateCombination->new(%$acf_params);
+    }
 }
 
 sub ruleGeneration{
     my ($self,%args) = @_;
-    my $indicator = $args{indicator};
+    my $indicator_id     = $args{indicator_id};
     my $extcluster_id = $args{extcluster_id};
     my $label         = $args{label};
-    my $inverse       = $args{inverse};
-    
+
     my @funcs = qw(max min);
     foreach my $func (@funcs) {
-            my $ids = $self->generateClustermetricAndCombination(
+        $self->generateClustermetricAndCombination(
                 extcluster_id => $extcluster_id,
-                indicator     => $indicator,
+                indicator     => $indicator_id,
                 func          => $func,
             );
     }
-    
+
     my $mean_ids = $self->generateClustermetricAndCombination(
         extcluster_id => $extcluster_id,
-        indicator     => $indicator,
+        indicator     => $indicator_id,
         func          => 'mean',
     );
     my $std_ids = $self->generateClustermetricAndCombination(
         extcluster_id => $extcluster_id,
-        indicator     => $indicator,
+        indicator     => $indicator_id,
         func          => 'std',
     );
-    
+
     my $out_ids = $self->generateClustermetricAndCombination(
         extcluster_id => $extcluster_id,
-        indicator     => $indicator,
+        indicator     => $indicator_id,
         func          => 'dataOut',
     );
-    
+
     my $combination_params = {
-        aggregate_combination_service_provider_id => $extcluster_id,
-        aggregate_combination_formula             => 'id'.($std_ids->{cm_id}).'/ id'.($mean_ids->{cm_id}),
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($std_ids->{cm_id}).'/ id'.($mean_ids->{cm_id}),
     };
-    
-    my $coef_comb = AggregateCombination->new(%$combination_params);
-    
+
+    my $coef_comb = Entity::Combination::AggregateCombination->new(%$combination_params);
+
    my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $coef_comb->getAttr(name=>'aggregate_combination_id'),
+        left_combination_id                => $coef_comb->id,
         comparator                              => '>',
         threshold                               => 0.2,
-        state                                   => 'enabled',
     };
-     
-   my $coef_cond = AggregateCondition->new(%$condition_params);
+
+   my $coef_cond = Entity::AggregateCondition->new(%$condition_params);
    my $coef_cond_id = $coef_cond->getAttr(name => 'aggregate_condition_id');
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $std_ids->{comb_id},
+        left_combination_id                => $std_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 10,
-        state                                   => 'enabled',
     };
-     
-   my $std_cond = AggregateCondition->new(%$condition_params);
-   my $std_cond_id = $std_cond->getAttr(name => 'aggregate_condition_id'); 
+
+   my $std_cond = Entity::AggregateCondition->new(%$condition_params);
+   my $std_cond_id = $std_cond->getAttr(name => 'aggregate_condition_id');
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $out_ids->{comb_id},
+        left_combination_id                     => $out_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 0,
-        state                                   => 'enabled',
     };
-     
-   my $out_cond = AggregateCondition->new(%$condition_params);
+
+   my $out_cond = Entity::AggregateCondition->new(%$condition_params);
    my $out_cond_id = $out_cond->getAttr(name => 'aggregate_condition_id');
-   
+
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.$coef_cond_id.' && '.'id'.$std_cond_id,
         aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => 0,
         aggregate_rule_label                => 'Cluster '.$label.' homogeneity',
         aggregate_rule_description          => $label.' is not well balanced across the cluster',
     };
-    my $homo_rule = AggregateRule->new(%$params_rule);
-    
+    Entity::AggregateRule->new(%$params_rule);
+
    $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.$out_cond_id,
         aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => 0,
         aggregate_rule_label                => 'Cluster '.$label.' consistency',
         aggregate_rule_description          => 'The '.$label.' usage of some nodes of the cluster is far from the average behavior',
     };
-    my $out_rule = AggregateRule->new(%$params_rule);
-    
+    Entity::AggregateRule->new(%$params_rule);
+
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_ids->{comb_id},
+        left_combination_id                     => $mean_ids->{comb_id},
         comparator                              => '>',
         threshold                               => 80,
-        state                                   => 'enabled',
     };
-     
-   my $mean_cond = AggregateCondition->new(%$condition_params);
+
+   my $mean_cond = Entity::AggregateCondition->new(%$condition_params);
    my $mean_cond_id = $mean_cond->getAttr(name => 'aggregate_condition_id');
    $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.$mean_cond_id,
         aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => 0,
         aggregate_rule_label                => 'Cluster '.$label.' overload',
         aggregate_rule_description          => 'Average '.$label.' is too high, your cluster may be undersized',
     };
-    my $mean_rule = AggregateRule->new(%$params_rule);
-    
+    Entity::AggregateRule->new(%$params_rule);
+
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_ids->{comb_id},
+        left_combination_id                     => $mean_ids->{comb_id},
         comparator                              => '<',
         threshold                               => 10,
-        state                                   => 'enabled',
     };
-     
-   my $low_mean_cond = AggregateCondition->new(%$condition_params);
-    
+
+   my $low_mean_cond = Entity::AggregateCondition->new(%$condition_params);
+
    return $low_mean_cond->getAttr(name => 'aggregate_condition_id');
 }
-#        
-#
-#            if (
-#               ($indicator->{oid} eq 'Memory/PercentMemoryUsed')   || 
-#               ($indicator->{oid} eq 'Processor/% Processor Time') ||
-#               ($indicator->{oid} eq 'Network Adapter/PercentBandwidthUsedTotal')
-#            ){
-#
-#             }elsif($indicator->{oid} eq 'LogicalDisk/% Free Space'){
-#                my $ids = $self->generateClustermetricAndCombination(
-#                    extcluster_id => $extcluster_id,
-#                    indicator     => $indicator,
-#                    func          => $func,
-#                );
-#            }
-#            else{
-#                $self->generateClustermetricAndCombination(
-#                    extcluster_id => $extcluster_id,
-#                    indicator     => $indicator,
-#                    func          => $func,
-#                );
-#            }
-#        }
-#        
-
-#    } #ALL CLUSTERMETRIC AND THEIR CORRESPONDING IDENTITY ARE NOW CREATED
-#    
-#    
-#    #THEN CREATE CONDITIONS AND RULES
-#    foreach my $ndoor_comb_id (@ndoor_comb_ids){
-#        $self->generateAOutOfRangeRule(
-#            ndoor_comb_id => $ndoor_comb_id,
-#            extcluster_id => $extcluster_id,
-#        )
-#    }
-#    foreach my $i (0..(scalar @std_cm_ids)-1){
-#        $self->generateCoefficientOfVariationRules(
-#            id_std        => $std_cm_ids[$i],
-#            id_mean       => $mean_cm_ids[$i],
-#            extcluster_id => $extcluster_id,
-#        )
-#    }
-#    
-#    foreach my $mean_percent_comb_id (@mean_over_comb_ids){
-#        $self->generateOverRules(
-#            mean_percent_comb_id => $mean_percent_comb_id,
-#            extcluster_id        => $extcluster_id,
-#        )
-#    }
-#    
-#    foreach my $mean_percent_comb_id (@mean_under_comb_ids){
-#        $self->generateUnderRules(
-#            mean_percent_comb_id => $mean_percent_comb_id,
-#            extcluster_id        => $extcluster_id,
-#        )
-#    }
-#}
-
-
 
 # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
 sub generateAOutOfRangeRule {
     my ($self,%args) = @_;
     my $ndoor_comb_id            = $args{ndoor_comb_id};
     my $extcluster_id            = $args{extcluster_id};
-        
+
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $ndoor_comb_id,
+        left_combination_id                     => $ndoor_comb_id,
         comparator                              => '>',
         threshold                               => 0,
-        state                                   => 'enabled',
     };
-     
-    my $aggregate_condition = AggregateCondition->new(%$condition_params);
-    my $label = 'Isolated data - '.$aggregate_condition->getCombination()->toString();
-   
+
+    my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
+    my $label = 'Isolated data - '.$aggregate_condition->left_combination->toString();
+
     my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => 0,
         aggregate_rule_label                => $label,
         aggregate_rule_description          => 'Check the indicators of the nodes generating isolated datas',
     };
-    my $aggregate_rule = AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 };
 
 sub generateOverRules {
     my ($self,%args) = @_;
     my $mean_percent_comb_id     = $args{mean_percent_comb_id};
     my $extcluster_id            = $args{extcluster_id};
-        
+
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_percent_comb_id,
-        state                                   => 'enabled',
+        left_combination_id                     => $mean_percent_comb_id,
     };
-   
+
    $condition_params->{comparator} = '>';
    $condition_params->{threshold}  = 70;
-   
-   my $aggregate_condition = AggregateCondition->new(%$condition_params);
-    
+
+   my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
+
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => 0,
     };
-    
-    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' overloaded';
+
+    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->left_combination->toString().' overloaded';
     $params_rule->{aggregate_rule_description} = 'You may add a node';
-    
-    my $aggregate_rule = AggregateRule->new(%$params_rule);
+
+    Entity::AggregateRule->new(%$params_rule);
 };
 
 
@@ -677,29 +687,27 @@ sub generateUnderRules {
     my ($self,%args) = @_;
     my $mean_percent_comb_id     = $args{mean_percent_comb_id};
     my $extcluster_id            = $args{extcluster_id};
-        
+
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $mean_percent_comb_id,
-        state                                   => 'enabled',
+        left_combination_id                     => $mean_percent_comb_id,
     };
-   
+
    $condition_params->{comparator} = '<';
    $condition_params->{threshold}  = 10;
-   
-   my $aggregate_condition = AggregateCondition->new(%$condition_params);
-    
+
+   my $aggregate_condition = Enity::AggregateCondition->new(%$condition_params);
+
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => 0,
     };
-    
-    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' underloaded';
+
+    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->left_combination->toString().' underloaded';
     $params_rule->{aggregate_rule_description} = 'You may add a node';
-    
-    my $aggregate_rule = AggregateRule->new(%$params_rule);
+
+    Entity::AggregateRule->new(%$params_rule);
 };
 
 # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
@@ -708,33 +716,31 @@ sub generateCoefficientOfVariationRules {
     my $id_mean        = $args{id_mean},
     my $id_std         = $args{id_std},
     my $extcluster_id  = $args{extcluster_id};
-    
+
     my $combination_params = {
-        aggregate_combination_service_provider_id => $extcluster_id,
-        aggregate_combination_formula             => 'id'.($id_std).'/ id'.($id_mean),
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($id_std).'/ id'.($id_mean),
     };
-    
-    my $aggregate_combination = AggregateCombination->new(%$combination_params);
-    
+
+    my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$combination_params);
+
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+        left_combination_id                     => $aggregate_combination->id,
         comparator                              => '>',
         threshold                               => 0.2,
-        state                                   => 'enabled',
     };
-     
-   my $aggregate_condition = AggregateCondition->new(%$condition_params);
-    
+
+   my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
+
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
         aggregate_rule_label                => 'Heterogeneity detected with '.$aggregate_combination->toString(),
         aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
-    my $aggregate_rule = AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 };
 
 # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
@@ -742,50 +748,48 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
     my ($self,%args) = @_;
     my $id_std         = $args{id_std},
     my $extcluster_id  = $args{extcluster_id};
-    
+
     my $combination_params = {
-        aggregate_combination_service_provider_id => $extcluster_id,
-        aggregate_combination_formula             => 'id'.($id_std),
+        service_provider_id             => $extcluster_id,
+        aggregate_combination_formula   => 'id'.($id_std),
     };
-    
-    my $aggregate_combination = AggregateCombination->new(%$combination_params);
-    
+
+    my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$combination_params);
+
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
-        aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+        left_combination_id                => $aggregate_combination->id,
         comparator                              => '>',
         threshold                               => 0.15,
-        state                                   => 'enabled',
     };
-     
-   my $aggregate_condition = AggregateCondition->new(%$condition_params);
-    
+
+   my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
+
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-#        aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
         aggregate_rule_label                => 'Data homogeneity',
         aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
-    my $aggregate_rule = AggregateRule->new(%$params_rule);
+    Entity::AggregateRule->new(%$params_rule);
 };
 
 
 sub generateNodeMetricRules{
     my ($self,%args) = @_;
-    
+
     my $indicator_id   = $args{indicator_id};
     my $extcluster_id  = $args{extcluster_id};
     my $indicator_oid  = $args{indicator_oid};
-    
+
     #CREATE A COMBINATION FOR EACH INDICATOR
     my $combination_param = {
-        nodemetric_combination_formula => 'id'.$indicator_id,
-        nodemetric_combination_service_provider_id => $extcluster_id,
+        nodemetric_combination_formula  => 'id'.$indicator_id,
+        service_provider_id             => $extcluster_id,
     };
-    
-    my $comb = NodemetricCombination->new(%$combination_param);
+
+    my $comb = Entity::Combination::NodemetricCombination->new(%$combination_param);
 
     my $creation_conf = {
         'Memory/PercentMemoryUsed' => {
@@ -813,68 +817,47 @@ sub generateNodeMetricRules{
              rule_description => 'Percentage bandwith used is too high, please check this node',
         },
     };
-    
-    my $condition_param;
+
     if (defined $creation_conf->{$indicator_oid}){
         my $condition_param = {
-            nodemetric_condition_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
+            left_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
             nodemetric_condition_comparator     => $creation_conf->{$indicator_oid}->{comparator},
             nodemetric_condition_threshold      => $creation_conf->{$indicator_oid}->{threshold},
             nodemetric_condition_service_provider_id => $extcluster_id,
         };
-        my $condition = NodemetricCondition->new(%$condition_param);
+        my $condition = Entity::NodemetricCondition->new(%$condition_param);
         my $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
         my $prule = {
             nodemetric_rule_formula             => 'id'.$conditionid,
             nodemetric_rule_label               => $creation_conf->{$indicator_oid}->{rule_label},
             nodemetric_rule_description         => $creation_conf->{$indicator_oid}->{rule_description},
             nodemetric_rule_state               => 'enabled',
-#            nodemetric_rule_action_id           => undef,
             nodemetric_rule_service_provider_id => $extcluster_id,
         };
-        my $rule = NodemetricRule->new(%$prule);
+        Entity::NodemetricRule->new(%$prule);
     }
 }
 
+
+=head2 remove
+
+    Desc: manually remove associated connectors (don't use cascade delete)
+          so each one can manually remove associated service_provider_manager
+          Managers can't be cascade deleted because they are linked either to a a connector or a component.
+
+    TODO : merge connector and component or make them inerit from a parent class
+
+=cut
+
+sub remove {
+    my $self = shift;
+
+    my @connectors = $self->connectors;
+    for my $connector (@connectors) {
+        $connector->remove();
+    }
+
+    $self->delete();
+}
+
 1;
-
-
-#    foreach my $indicator (@indicators) {
-#        #For each indicator id get the mean aggregate and the standartdev aggregate to compute mean / standard_dev
-#        
-#        my @cm_mean = Clustermetric->search(hash => {
-#            clustermetric_service_provider_id      => $extcluster_id, 
-#            clustermetric_indicator_id             => $indicator,
-#            clustermetric_statistics_function_name => 'mean',
-#        });
-#        
-#        my @cm_std = Clustermetric->search(hash => {
-#            clustermetric_service_provider_id      => $extcluster_id, 
-#            clustermetric_indicator_id             => $indicator,
-#            clustermetric_statistics_function_name => 'standard_deviation',
-#        });
-#        
-#        my @cm_ooa = Clustermetric->search(hash => { 
-#            clustermetric_service_provider_id      => $extcluster_id, 
-#            clustermetric_indicator_id             => $indicator,
-#            clustermetric_statistics_function_name => 'numOfDataOutOfRange',
-#        });
-#        
-#        my $id_mean = $cm_mean[0]->getAttr(name=>'clustermetric_id');
-#        my $id_std  = $cm_std[0]->getAttr(name=>'clustermetric_id');
-#        my $id_ooa  = $cm_ooa[0]->getAttr(name=>'clustermetric_id');
-#        
-#        $self->generateOutOfRangeRules(
-#            id_ooa        => $id_ooa,
-#            extcluster_id => $extcluster_id,
-#        );
-#        $self->generateCoefficientOfVariationRules(
-#            id_mean       => $id_mean,
-#            id_std        => $id_std,
-#            extcluster_id => $extcluster_id,
-#        );
-#        $self->generateStandardDevRuleForNormalizedIndicatorsRules(
-#            id_std        => $id_std,
-#            extcluster_id => $extcluster_id,
-#        );
-#    } #END FOR

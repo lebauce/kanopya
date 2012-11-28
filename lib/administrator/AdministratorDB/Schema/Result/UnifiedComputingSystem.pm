@@ -66,8 +66,6 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "ucs_passwd",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "ucs_dataprovider",
-  { data_type => "char", is_nullable => 1, size => 32 },
   "ucs_ou",
   { data_type => "char", is_nullable => 1, size => 32 },
 );

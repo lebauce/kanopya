@@ -24,7 +24,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Administrator;
-use Operation;
+use Entity::Operation;
 use General;
 
 use Entity::Container;
@@ -32,7 +32,7 @@ use Entity::Container;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
@@ -58,33 +58,17 @@ use constant ATTR_DEF => {
     },
 };
 
-sub primarykey { return 'systemimage_id'; }
+sub getAttrDef{ return ATTR_DEF; }
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new system image', 
-                        'perm_holder' => 'mastergroup',
+        activate => {
+            description => 'activate this system image', 
+            perm_holder => 'entity',
         },
-        'get'        => {'description' => 'view this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'update'    => {'description' => 'save changes applied on this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'remove'    => {'description' => 'delete this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'activate'=> {'description' => 'activate this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'deactivate'=> {'description' => 'deactivate this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'setperm'    => {'description' => 'set permissions on this system image', 
-                        'perm_holder' => 'entity',
-        },
-        'installcomponent' => {'description' => 'install components on this system image', 
-                        'perm_holder' => 'entity',
+        deactivate => {
+            description => 'deactivate this system image', 
+            perm_holder => 'entity',
         },
     };
 }
@@ -118,27 +102,20 @@ sub getSystemimage {
     return pop @systemimages;
 }
 
-=head2 create
-
-=cut
-
-sub create {
-    my ($class, %params) = @_;
-    
-    my $admin = Administrator->new();
-    my $mastergroup_eid = $class->getMasterGroupEid();
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new system image");
-       }
-
-    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
-    Operation->enqueue(
-        priority => 200,
-        type     => 'AddSystemimage',
-        params   => \%params,
-    );
-}
+#=head2 create
+#
+#=cut
+#
+#sub create {
+#    my ($class, %params) = @_;
+#
+#    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
+#    Entity::Operation->enqueue(
+#        priority => 200,
+#        type     => 'AddSystemimage',
+#        params   => \%params,
+#    );
+#}
 
 =head2 installComponent
 
@@ -150,15 +127,16 @@ sub installComponent {
     
     General::checkParams(args=>\%args,required=>["component_type_id"]);
     
-    my %params = ();
-    $params{systemimage_id} = $self->getAttr(name => 'systemimage_id');
-    $params{component_type_id} = $args{component_type_id};
-    
-    $log->debug("New Operation InstallComponentOnSystemImage with attrs : " . Dumper(%params));
-    Operation->enqueue(
+    $log->debug("New Operation InstallComponentOnSystemImage");
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'InstallComponentOnSystemImage',
-        params   => \%params,
+        params   => {
+            context => {
+                systemimage => $self,
+            },
+            component_type_id => $args{component_type_id},
+        }
     );
 }
 
@@ -172,21 +150,6 @@ sub installedComponentLinkCreation {
     $self->{_dbix}->components_installed->create(\%args);
 }
 
-=head2 update
-
-=cut
-
-sub update {
-    my $self = shift;
-    my $adm = Administrator->new();
-    # update method concerns an existing entity so we use his entity_id
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
-    }
-    # TODO update implementation
-}
-
 =head2 remove
 
 =cut
@@ -195,55 +158,15 @@ sub remove {
     my $self = shift;
     
     $log->debug("New Operation RemoveSystemimage with systemimage_id : <".$self->getAttr(name=>"systemimage_id").">");
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveSystemimage',
-        params   => {systemimage_id => $self->getAttr(name=>"systemimage_id")},
+        params   => {
+            context => {
+                systemimage => $self,
+            }
+        }
     );
-}
-
-sub getAttrDef{
-    return ATTR_DEF;
-}
-
-sub clone {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required=>[ "systemimage_name", "systemimage_desc" ]);
-
-    my $sysimg_id = $self->getAttr(name => 'systemimage_id');
-    if (! defined $sysimg_id) {
-        $errmsg = "Entity::Systemimage->clone needs a systemimage_id parameter!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    $args{systemimage_id} = $sysimg_id;
-    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%args));
-    Operation->enqueue(priority => 200,
-                       type     => 'CloneSystemimage',
-                       params   => \%args);
-       
-}
-
-sub activate{
-    my $self = shift;
-    
-    my  $adm = Administrator->new();
-    $log->debug("New Operation ActivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'ActivateSystemimage',
-                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
-}
-
-sub deactivate{
-    my $self = shift;
-    
-    my  $adm = Administrator->new();
-    $log->debug("New Operation DeactivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
-    Operation->enqueue(priority => 200,
-                   type     => 'DeactivateSystemimage',
-                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
 }
 
 =head2 toString
@@ -272,10 +195,10 @@ sub getDevice {
         throw Kanopya::Exception(error => $errmsg);
     }
 
-    $log->info("Retrieve container");
+    $log->debug("Retrieve container");
     my $device = Entity::Container->get(id => $self->getAttr(name => 'container_id'));
 
-    $log->info("Systemimage container retrieved from database");
+    $log->debug("Systemimage container retrieved from database");
     return $device;
 }
 
@@ -289,7 +212,7 @@ return array ref containing hash ref
 sub getInstalledComponents {
     my $self = shift;
     if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Systemimage->getComponents must be called on an already save instance";
+        $errmsg = "Entity::Systemimage->getInstalledComponents must be called on an already save instance";
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }

@@ -25,12 +25,12 @@ use CapacityPlanning::IncrementalSearch;
 use Model::MVAModel;
 use MultiTuning;
 use Actuator;
-
-
+use Kanopya::Config;
+use Message;
 
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("orchestrator");
+my $log = get_logger("");
 my $results_log = get_logger("results");
 
 sub new {
@@ -52,7 +52,7 @@ sub new {
 sub _authenticate {
     my $self = shift;
     
-    $self->{config} = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    $self->{config} = Kanopya::Config::get('orchestrator');
     if ( (! defined $self->{config}{user}{name}) ||
          (! defined $self->{config}{user}{password}) ) { 
         throw Kanopya::Exception::Internal::IncorrectParam(error => "needs user definition in config file!");
@@ -1063,7 +1063,7 @@ sub update {
     my $self = shift;
     my %args = @_;
 
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => { cluster_state => {-like => 'up:%'} });
     
     
     for my $cluster (@clusters) {        
@@ -1267,7 +1267,7 @@ sub run {
     my $self = shift;
     my $running = shift;
     
-    #$self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
+    #Message->send(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
     
     while ( $$running ) {
 
@@ -1285,7 +1285,7 @@ sub run {
 
     }
     
-    #$self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
+    #Message->send(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
 }
 
 

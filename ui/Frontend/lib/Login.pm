@@ -2,11 +2,11 @@ package Login;
 
 use Dancer ':syntax';
 use Dancer::Plugin::FormValidator;
-
+use Dancer::Plugin::EscapeHTML;
 use Log::Log4perl "get_logger";
 use Administrator;
 
-my $log = get_logger('webui');
+my $log = get_logger("");
 
 get qr(/.*) => sub {
     my $eid  = session('EID');
@@ -16,7 +16,9 @@ get qr(/.*) => sub {
         return pass;
     }
     elsif ( ! $eid  ) {
-        session login_redirect_url => $path;
+        if (not $path =~ /^\/api/) {
+            session login_redirect_url => $path;
+        }
         return redirect '/login';
     }
     else {
@@ -25,15 +27,15 @@ get qr(/.*) => sub {
 };
 
 get '/login' => sub {
-    redirect '/dashboard/status' if ( session('EID') );
+    redirect '/' if ( session('EID') );
     template 'login', {},{ layout=>'login' };
 };
 
 post '/login' => sub {
-    my $user     = param('login');
+    my $user     = escape_html( param('login') );
     my $password = param('password');
-    my $redirect = session->{login_redirect_url} || '/dashboard/status';
-    $redirect = '/dashboard/status' if $redirect eq '/';
+    my $redirect = session->{login_redirect_url} || '/';
+    #$redirect = '/dashboard/status' if $redirect eq '/';
 
     my $input_hash = {
         login    => $user,
@@ -42,7 +44,11 @@ post '/login' => sub {
 
     my $error = form_validator_error('login', $input_hash);
     if ( $error ) {
-        return template 'login', { errors => $error }, { layout => 'login' };
+        if (request->is_ajax) {
+            return to_json({ status => 'error', 'reason' => $error }, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
+        } else {
+            return template 'login', { errors => $error }, { layout => 'login' };
+        }
     }
 
     eval {
@@ -57,14 +63,22 @@ post '/login' => sub {
             user => "Authentication failed for login $user"
         };
         $log->error('Authentication failed for login ', $user);
-        return template 'login', { fail => $fail }, { layout => 'login' }
+        if (request->is_ajax) {
+            return to_json({ status => 'error', 'reason' => $fail }, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
+        } else {
+            return template 'login', { fail => $fail }, { layout => 'login' };
+        }
     }
     else {
         session EID      => $ENV{EID};
         session username => $user;
         $log->info('Authentication succeed for login ', $user);
         delete session->{login_redirect_url};
-        redirect $redirect;
+        if (request->is_ajax) {
+            return to_json({ status => 'success' }, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
+        } else {
+            redirect $redirect;
+        }
     }
 };
 
@@ -74,6 +88,15 @@ get '/logout' => sub {
     session->destroy;
     $log->info('Logout and session delete for login ', $user);
     redirect '/login';
+};
+
+# /me is a route that return the username for current user.
+
+get '/me' => sub {
+    content_type 'application/json';
+    my $username = session('username');
+    my $jsonUsername = '{"username" : "'.$username.'"}';
+    return $jsonUsername;
 };
 
 1;

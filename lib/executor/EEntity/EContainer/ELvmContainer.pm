@@ -24,15 +24,14 @@ use warnings;
 use Entity;
 
 use Log::Log4perl "get_logger";
-use Operation;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 
 sub getDefaultExportManager {
     my $self = shift;
     my %args = @_;
 
-    my $manager = $self->_getEntity->getDiskManager();
+    my $manager = $self->getDiskManager();
     my $cluster = Entity->get(id => $manager->getAttr(name => 'service_provider_id'));
 
     return $cluster->getComponent(name => "Iscsitarget", version => "1");

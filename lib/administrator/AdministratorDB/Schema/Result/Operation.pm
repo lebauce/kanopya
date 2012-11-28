@@ -23,7 +23,7 @@ __PACKAGE__->table("operation");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 type
@@ -32,6 +32,20 @@ __PACKAGE__->table("operation");
   is_foreign_key: 1
   is_nullable: 0
   size: 64
+
+=head2 workflow_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
+=head2 state
+
+  data_type: 'char'
+  default_value: 'pending'
+  is_nullable: 0
+  size: 32
 
 =head2 user_id
 
@@ -76,11 +90,25 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "type",
   { data_type => "char", is_foreign_key => 1, is_nullable => 0, size => 64 },
+  "workflow_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
+  "state",
+  {
+    data_type => "char",
+    default_value => "pending",
+    is_nullable => 0,
+    size => 32,
+  },
   "user_id",
   {
     data_type => "integer",
@@ -100,9 +128,24 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("operation_id");
-__PACKAGE__->add_unique_constraint("execution_rank", ["execution_rank"]);
+__PACKAGE__->add_unique_constraint("execution_rank", ["execution_rank", "workflow_id"]);
 
 =head1 RELATIONS
+
+=head2 operation
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "operation",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "operation_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 =head2 user
 
@@ -116,6 +159,21 @@ __PACKAGE__->belongs_to(
   "user",
   "AdministratorDB::Schema::Result::User",
   { user_id => "user_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 workflow
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Workflow>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "workflow",
+  "AdministratorDB::Schema::Result::Workflow",
+  { workflow_id => "workflow_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -150,14 +208,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wqindFglX/ivjG+UUL61Lg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-20 12:11:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:yBuosjbxROgDig3x7l/0zQ
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "operation_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
-# You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->has_one(
-  "entitylink",
-  "AdministratorDB::Schema::Result::OperationEntity",
-    { "foreign.operation_id" => "self.operation_id" },
-    { cascade_copy => 0, cascade_delete => 0 });
 1;

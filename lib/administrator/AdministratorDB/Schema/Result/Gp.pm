@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Gp;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Gp
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<gp>
 
 =cut
 
@@ -44,12 +64,6 @@ __PACKAGE__->table("gp");
   is_nullable: 1
   size: 255
 
-=head2 gp_system
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -66,10 +80,32 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "gp_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
-  "gp_system",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</gp_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("gp_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<gp_name>
+
+=over 4
+
+=item * L</gp_name>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("gp_name", ["gp_name"]);
 
 =head1 RELATIONS
@@ -104,15 +140,50 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 profile_gps
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jMYbXt/0v14tkAZ5edGTlA
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ProfileGp>
+
+=cut
+
+__PACKAGE__->has_many(
+  "profile_gps",
+  "AdministratorDB::Schema::Result::ProfileGp",
+  { "foreign.gp_id" => "self.gp_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 entities
+
+Type: many_to_many
+
+Composing rels: L</ingroups> -> entity
+
+=cut
+
+__PACKAGE__->many_to_many("entities", "ingroups", "entity");
+
+=head2 profiles
+
+Type: many_to_many
+
+Composing rels: L</profile_gps> -> profile
+
+=cut
+
+__PACKAGE__->many_to_many("profiles", "profile_gps", "profile");
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-09 17:14:39
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:O26rqz/JqUFbubAjc/9HWQ
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.gp_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+  { entity_id => "gp_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 1;

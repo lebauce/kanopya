@@ -36,10 +36,9 @@ use strict;
 use warnings;
 
 use Log::Log4perl "get_logger";
-use Operation;
 use Data::Dumper;
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 
 =head2 mount
 
@@ -60,7 +59,7 @@ sub mount {
     my $mkdir_cmd = "mkdir -p $args{mountpoint}; chmod 777 $args{mountpoint}";
     $args{econtext}->execute(command => $mkdir_cmd);
 
-    my $mount_cmd = "mount.nfs $target $args{mountpoint} -o vers=3,noac,sync";
+    my $mount_cmd = "mount.nfs $target $args{mountpoint} -o vers=3";
     my $cmd_res   = $args{econtext}->execute(command => $mount_cmd);
 
     # exitcode 8192: mount.nfs: mountpoint is busy or already mounted
@@ -70,9 +69,14 @@ sub mount {
                            $cmd_res->{'stderr'}
               );
     }
-    $log->info("NFS export $target mounted on <$args{mountpoint}>.");
+    $log->debug("NFS export $target mounted on <$args{mountpoint}>.");
 
-    # TODO: insert an erollback to umount nfs volume
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('umount'),
+            parameters => [ $self, "mountpoint", $args{mountpoint}, "econtext", $args{econtext} ]
+        );
+    }
 }
 
 =head2 connect

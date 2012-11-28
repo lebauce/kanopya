@@ -28,7 +28,7 @@ use Kanopya::Exceptions;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 
 =head2 getHost
 
@@ -72,6 +72,7 @@ sub getHost {
 
     if (scalar @valid_hosts == 0) {
         my $errmsg = "no free host respecting constraints";
+        $log->warn($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -86,15 +87,26 @@ sub _matchHostConstraints {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, required => [ "host" ]);
+
     my $host = $args{host};
 
     for my $constraint ('core', 'ram') {
         if (defined $args{$constraint}) {
             my $host_value = $host->getAttr(name => "host_$constraint");
-            $log->info("constraint '$constraint' ($host_value) >= $args{$constraint}");
+            $log->debug("constraint '$constraint' ($host_value) >= $args{$constraint}");
             if ($host_value < $args{$constraint}) {
                 return 0;
             }
+        }
+    }
+
+    if (defined $args{ifaces}) {
+        my @ifaces = $host->getIfaces();
+        my $nb_ifaces = scalar(@ifaces);
+        if ($args{ifaces} > $nb_ifaces) {
+            $log->info("constraint 'ifaces' ($nb_ifaces) >= $args{ifaces}");
+            return 0;
         }
     }
 

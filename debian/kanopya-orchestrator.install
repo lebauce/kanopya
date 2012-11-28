@@ -1,0 +1,6 @@
+sbin/kanopya-controller opt/kanopya/sbin
+sbin/kanopya-orchestrator opt/kanopya/sbin
+lib/orchestrator/* opt/kanopya/lib/orchestrator
+t/orchestrator/* opt/kanopya/t/orchestrator
+scripts/init/kanopya-controller etc/init.d
+scripts/init/kanopya-orchestrator etc/init.d

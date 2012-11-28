@@ -38,43 +38,44 @@ use base "EContext";
 use strict;
 use warnings;
 use Net::Ping;
-use Net::OpenSSH;
-
+if ($^O eq 'linux') {
+    require Net::OpenSSH;
+} elsif ( $^O eq 'MSWin32') {
+    require Net::SSH::Perl;
+}
 use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
 
 use General;
 use Kanopya::Exceptions;
 
-my $log = get_logger("executor");
+my $log = get_logger("command");
 my $errmsg;
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = "1.00";
 
 
 =head2 new
 
 constructor
-    
+
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
-    my $self = $class->SUPER::new(%args);
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'ip' ]);
 
+    my $self = $class->SUPER::new(%args);
     $self->{ip} = $args{ip};
-    
+
     # is the host available on ssh port 22
     my $p = Net::Ping->new();
     $p->port_number(22);
     if(not $p->ping($args{ip}, 2)) {
         $p->close();
         $errmsg = "EContext::SSH->new : can't contact $args{ip} on port 22";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Network(error => $errmsg);    
+        $log->debug($errmsg);
+        throw Kanopya::Exception::Network(error => $errmsg);
     }
     $p->close();
     $log->debug("Remote econtext ssh instanciate");
@@ -84,12 +85,12 @@ sub new {
 
 =head2 _init
 
-    _init initialise ssh connection to the host 
+    _init initialise ssh connection to the host
 
 =cut
 
 sub _init {
-    my $self = shift;
+    my ($self) = @_;
     $log->debug("Initialise ssh connection to $self->{ip}");
     my %opts = (
         user        => 'root',                   # user login
@@ -98,18 +99,18 @@ sub _init {
         ssh_cmd     => '/usr/bin/ssh',           # full path to OpenSSH ssh binary
         scp_cmd     => '/usr/bin/scp',           # full path to OpenSSH scp binary
         master_opts => [
-         -o => "StrictHostKeyChecking=no" 
+         -o => "StrictHostKeyChecking=no"
         ],
-        timeout => 10,
+        timeout => 30,
         #kill_ssh_on_timeout => 1
     );
-    
+
     my $ssh = Net::OpenSSH->new($self->{ip}, %opts);
     if($ssh->error) {
-        my $errmsg = "SSH connection failed: " . $ssh->error;  
+        my $errmsg = "SSH connection failed: " . $ssh->error;
         $log->error($errmsg);
         throw Kanopya::Exception::Network(error => $errmsg);
-    } 
+    }
     $self->{ssh} = $ssh;
 }
 
@@ -122,51 +123,52 @@ execute ( command )
         command : string: command to execute
     return:
         result ref hash containing stdout, stderr and exit code of execution
-    
+
     WARNING: in your command, don't use stderr redirection ( 2> )
-    
+
 =cut
 
 sub execute {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     
-    General::checkParams(args => %args, required => ['command']);
+    General::checkParams(args => \%args, required => ['command']);
     
     if($args{command} =~ m/2>/) {
         $errmsg = "EContext::SSH->execute : command must not contain stderr redirection (2>)!";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-        
+
     if(not exists $self->{ssh}) {
-        $log->debug("Initialize ssh connection on $self->{ip}");
         $self->_init();
-    }    
-        
+    }
+
     my $result = {};
     my $command = $args{command};
-    $log->debug("Command execute is : <$command>");
+    $log->info("Running command on $self->{ip}: $command");
     my ($stdout, $stderr) = $self->{ssh}->capture2($command);
-        
+
     $result->{stdout} = $stdout;
     $result->{stderr} = $stderr;
     $result->{exitcode} = 0;
-    $log->debug("Command stdout is : '$result->{stdout}'");
-    $log->debug("Command stderr is : '$result->{stderr}'");
-    my $error = $self->{ssh}->error; 
+    chop($stdout);
+    chop($stderr);
+    my $error = $self->{ssh}->error;
     if($error) {
          if($error =~ /child exited with code (\d)/) {
              $result->{exitcode} = $1;
-             
+
          } else {
              $errmsg = "EContext::SSH->execute : error occured during execution: ".$error;
              $log->error($errmsg);
-             throw Kanopya::Exception::Execution(error => $errmsg); 
+             throw Kanopya::Exception::Execution(error => $errmsg);
          }
+    } else {
+        $log->debug("Command stdout is : '$stdout'");
+        $log->debug("Command stderr: $stderr");
+        $log->debug("Command exitcode: $result->{exitcode}");        
     }
-    $log->debug("Command exitcode is : '$result->{exitcode}'"); 
-    return $result;    
+    return $result;
 }
 
 =head2 send
@@ -177,14 +179,13 @@ send(src => $srcfullpath, dest => $destfullpath)
         src : string: complete path to the file to send
         dest : string: complete path to the destination directory/file
     return:
-        result ref hash containing resulting stdout and stderr  
-    
+        result ref hash containing resulting stdout and stderr
+
 =cut
 
 sub send {
-    my $self = shift;
-    my %args = @_;
-    
+    my ($self, %args) = @_;
+
     General::checkParams(args => %args, required => ['src', 'dest']);
     #TODO check to be sure src and dest are full path to files
 
@@ -193,21 +194,20 @@ sub send {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    
+
     if(not exists $self->{ssh}) {
-        $log->debug("Initialize ssh connection on $self->{ip}");
         $self->_init();
     }
-    
+
     my $success = $self->{ssh}->scp_put({}, $args{src}, $args{dest});
     # return TRUE if success
     if(not $success) {
         $errmsg = "EContext::SSH->send failed while putting $args{src} to $args{dest}!";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 }
-    
+
 
 
 

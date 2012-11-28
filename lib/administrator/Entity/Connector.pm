@@ -25,23 +25,40 @@ use warnings;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("administrator");
+my $log = get_logger("");
 
 
 use constant ATTR_DEF => {
-    connector_type_id => {  pattern        => '\d*',
-                            is_mandatory   => 1,
-                            is_extended    => 0,
-                            is_editable    => 0
-                         },
+    service_provider_id => {
+      pattern       => '^\d*$',
+      is_mandatory  => 0,
+      is_extended   => 0,
+      is_editable   => 0
+    },
+    connector_type_id => {
+        pattern        => '\d*',
+        is_mandatory   => 1,
+        is_extended    => 0,
+        is_editable    => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
+        getPolicyParams => {
+            description => 'Return the params required for policies definition.',
+            perm_holder => 'entity',
+        },
+    }
+};
+
 sub new {
     my $class = shift;
     my %args = @_;
-    
+
     # avoid abstract Entity::Connector instanciation
     if($class !~ /Entity::Connector::(.+)/) {
         my $errmsg = "Entity::Connector must not be instanciated without a concret connector class";
@@ -54,14 +71,18 @@ sub new {
     my $admin = Administrator->new();
     my $connector_type = $admin->{db}->resultset('ConnectorType')->search(
         { connector_name    => $connector_name }
-    )->single;
-    
+    )->first;
+
     if (not defined $connector_type) {
         throw Kanopya::Exception::Internal(error => "Connector type $connector_name not found in DB");
     }
-    my $connector_type_id = $connector_type->id;
-    
-    return $class->SUPER::new(%args, connector_type_id => $connector_type_id );
+
+    my $self = $class->SUPER::new(%args, connector_type_id => $connector_type->id);
+
+    # Add the component to the Component group
+    Entity::Connector->getMasterGroup->appendEntity(entity => $self);
+
+    return $self;
 }
 
 sub getConnectorTypes {
@@ -81,19 +102,29 @@ sub getConnectorTypes {
     return \@connector_types;
 }
 
-sub getConnectorType {
+=head2 getHostingPolicyParams
+
+=cut
+
+sub getPolicyParams {
     my $self = shift;
-    
-    my $admin = Administrator->new();
-    my $connector_type = $admin->{db}->resultset('ConnectorType')->search(
-        { connector_type_id  => $self->getAttr( name => 'connector_type_id') }
-    )->single;
+    my %args = @_;
 
-    return {
-        connector_name => $connector_type->connector_name,
-        connector_category => $connector_type->connector_category,
-    };
+    General::checkParams(args => \%args, required => [ 'policy_type' ]);
 
+    return [];
+}
+
+=head2 getServiceProvider
+
+    Desc: Returns the service provider the component is on
+
+=cut
+
+sub getServiceProvider {
+    my $self = shift;
+
+    return Entity->get(id => $self->getAttr(name => "service_provider_id"));
 }
 
 sub getConf {
@@ -124,6 +155,26 @@ sub checkConf {
     my $self = shift;
     
     throw Kanopya::Exception::Internal(error => "Check not implemented for " . (ref $self));
+}
+
+=head2 remove
+
+    Desc: Overrided to remove associated service_provider_manager
+          Managers can't be cascade deleted because they are linked either to a a connector or a component.
+
+    TODO : merge connector and component or make them inerit from a parent class
+
+=cut
+
+sub remove {
+    my $self = shift;
+
+    my @managers = ServiceProviderManager->search( hash => {manager_id => $self->id} );
+    for my $manager (@managers) {
+        $manager->delete();
+    }
+
+    $self->delete();
 }
 
 1;

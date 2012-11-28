@@ -1,0 +1,35 @@
+{
+"result" :
+  {
+  "data" : [
+     {
+      "id" : "widget_historical_service_metric",
+      "title" : "Historical Service metric",
+      "description" : "Historical service metric combination widget",
+      "creator" : "Hedera",
+      "url" : "widgets/widget_historical_service_metric.html",
+      "image": "widgets/widget_historical_service_metric.jpg",
+      "metadata" : {}
+    },
+    {
+      "id" : "widget_nodes_bargraph",
+      "title" : "Nodes overview",
+      "description" : "Show value of a selected metric for each nodes",
+      "creator" : "Hedera",
+      "url" : "widgets/widget_nodes_bargraph.html",
+      "editurl" : "widgets/editwidget2.html",
+      "image": "widgets/widget_nodes_bargraph.png",
+      "metadata" : {}
+    },
+    {
+      "id" : "widget_nodes_histo",
+      "title" : "Nodes histogram",
+      "description" : "Nodes histogram widget",
+      "creator" : "Hedera",
+      "url" : "widgets/widget_nodes_histogram.html",
+      "image": "widgets/widget_nodes_histo.png",
+      "metadata" : {}
+    }
+  ]
+  }
+}

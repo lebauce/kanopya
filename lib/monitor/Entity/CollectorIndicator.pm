@@ -1,0 +1,57 @@
+#    Copyright © 2012 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+
+=begin classdoc
+
+Link indicators with collector managers.
+Represents base monitoring object manipulated by services.
+A service can only use indicators linked with its collector manager.
+
+@see <package>Entity::Indicator</package>
+
+=end classdoc
+
+=cut
+
+package Entity::CollectorIndicator;
+
+use strict;
+use warnings;
+use base 'Entity';
+use constant ATTR_DEF => {
+    collector_indicator_id => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    indicator_id => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    collector_manager_id => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+};
+
+sub getAttrDef { return ATTR_DEF; }
+
+1;

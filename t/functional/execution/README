@@ -1,0 +1,7 @@
+Requirements to run these tests :
+- kanopya perl modules
+- perl modules dependancies
+- first initialization (setup.pl)
+- mysql running
+
+

@@ -1,5 +1,5 @@
-# Iscsitarget1.pm -Ietd (iscsi target) 1 server component (Adminstrator side)
 #    Copyright 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,45 +12,13 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 5 august 2010
 
-=head1 NAME
 
-<Entity::Component::Iscsitarget1> <Iscsitarget component concret class>
-
-=head1 VERSION
-
-This documentation refers to <Entity::Component::Iscsitarget1> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Entity::Component::Iscsitarget1>;
-
-my $component_instance_id = 2; # component instance id
-
-Entity::Component::Iscsitarget1->get(id=>$component_instance_id);
-
-# Cluster id
-
-my $cluster_id = 3;
-
-# Component id are fixed, please refer to component id table
-
-my $component_id =2 
-
-Entity::Component::Iscsitarget1->new(component_id=>$component_id, cluster_id=>$cluster_id);
-
-=head1 DESCRIPTION
-
-Entity::Component::Iscsitarget1 is class allowing to instantiate an Mysql5 component
-This Entity is empty but present methods to set configuration.
-
-=head1 METHODS
-
-=cut
 package Entity::Component::Iscsitarget1;
 use base "Entity::Component";
+use base "Manager::ExportManager";
 
 use strict;
 use warnings;
@@ -59,6 +27,7 @@ use General;
 use Administrator;
 use Kanopya::Exceptions;
 
+use Entity::Operation;
 use Entity::Container;
 use Entity::ContainerAccess::IscsiContainerAccess;
 
@@ -66,156 +35,95 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 
-my $log = get_logger("administrator");
+my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    export_type => {
+        is_virtual => 1
+    }
+};
+
 sub getAttrDef { return ATTR_DEF; }
+
+sub exportType {
+    return "ISCSI target";
+}
 
 use constant ACCESS_MODE => {
     READ_WRITE => 'wb',
     READ_ONLY  => 'ro',
 };
 
-sub getLun {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'iscsitarget1_lun_id', 'iscsitarget1_target_id' ]);
-
-    my $target_row = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
-    my $lun_row = $target_row->iscsitarget1_luns->find($args{iscsitarget1_lun_id});
-    return {
-            iscsitarget1_lun_number => $lun_row->get_column('iscsitarget1_lun_number'),
-            iscsitarget1_lun_device => $lun_row->get_column('iscsitarget1_lun_device'),
-            iscsitarget1_lun_typeio => $lun_row->get_column('iscsitarget1_lun_typeio'),
-            iscsitarget1_lun_iomode => $lun_row->get_column('iscsitarget1_lun_iomode'),
-    };
-}
-
 sub getConf {
     my $self = shift;
-    my %conf = ( );
-    
-    my $conf_rs = $self->{_dbix}->iscsitarget1_targets;
+    my %conf    = ();
     my @targets = ();
-    while (my $conf_row = $conf_rs->next) {
-        my $lun_rs = $conf_row->iscsitarget1_luns;
+
+    my @accesses = Entity::ContainerAccess->search(
+                       hash => { export_manager_id => $self->getAttr(name => 'entity_id') }
+                   );
+
+    for my $access (@accesses) {
         my @luns = ();
-        while (my $lun_row = $lun_rs->next) {
-            push @luns, {
-                iscsitarget1_lun_number => $lun_row->get_column('iscsitarget1_lun_number'),
-                iscsitarget1_lun_device => $lun_row->get_column('iscsitarget1_lun_device'),
-                iscsitarget1_lun_typeio => $lun_row->get_column('iscsitarget1_lun_typeio'),
-                iscsitarget1_lun_iomode => $lun_row->get_column('iscsitarget1_lun_iomode'),
-            }
-        }
+        push @luns, {
+            iscsitarget1_lun_id     => $access->getContainer->id,
+            iscsitarget1_lun_number => $access->getAttr(name => 'lun_name'),
+            iscsitarget1_lun_device => $access->getContainer->getAttr(name => 'container_device'),
+            iscsitarget1_lun_typeio => $access->getAttr(name => 'typeio'),
+            iscsitarget1_lun_iomode => $access->getAttr(name => 'iomode'),
+        };
         push @targets, {
-            iscsitarget1_target_name => $conf_row->get_column('iscsitarget1_target_name'),
-            iscsitarget1_target_id   => $conf_row->get_column('iscsitarget1_target_id'),
+            iscsitarget1_target_name => $access->getAttr(name => 'container_access_export'),
+            iscsitarget1_target_id   => $access->getAttr(name => 'entity_id'),
             luns => \@luns
         };
     }
-    
+
     $conf{targets} = \@targets;
-    
     return \%conf;
 }
 
 sub setConf {
     my $self = shift;
-    my($conf) = @_;
-    
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['conf']);
+
+    my $conf = $args{conf};
     for my $target ( @{ $conf->{targets} } ) {
         LUN:
         for my $lun ( @{ $target->{luns} } ) {
-            my @containers = Entity::Container->search(hash => {});
+            # Create the export if not already exists
+            if (not $lun->{iscsitarget1_lun_id}) {
+                my @containers = Entity::Container->search(hash => {});
 
-            # Check if specified device match to a registred container.
-            my $container;
-            foreach my $cont (@containers) {
-                my $device = $cont->getAttr(name => 'container_device');
-                if ("$device" eq "$lun->{iscsitarget1_lun_device}") {
-                    $container = $cont;
-                    last;
+                # Check if specified device match to a registred container.
+                my $container;
+                foreach my $cont (@containers) {
+                    my $device = $cont->getAttr(name => 'container_device');
+                    if ("$device" eq "$lun->{iscsitarget1_lun_device}") {
+                        $container = $cont;
+                        last;
+                    }
                 }
-            }
-            if (! defined $container) {
-                $errmsg = "Specified device <$lun->{iscsitarget1_lun_device}> " .
-                          "does not match to an existing container.";
-                $log->error($errmsg);
-                throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-            }
+                if (! defined $container) {
+                    $errmsg = "Specified device <$lun->{iscsitarget1_lun_device}> " .
+                              "does not match to an existing container.";
+                    $log->error($errmsg);
+                    throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+                }
 
-            $self->createExport(container   => $container,
-                                export_name => $target->{iscsitarget1_target_name},
-                                typeio      => $lun->{iscsitarget1_lun_typeio},
-                                iomode      => $lun->{iscsitarget1_lun_iomode});
+                $self->createExport(container   => $container,
+                                    export_name => $container->container_name,
+                                    typeio      => $lun->{iscsitarget1_lun_typeio},
+                                    iomode      => $lun->{iscsitarget1_lun_iomode});
+            }
 
             # Temporary: we can create only one lun with one target
             last LUN;
         }        
     }
-}
-
-sub getTargetIdLike {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_target_name" ]);
-
-    return $self->{_dbix}->iscsitarget1_targets->search(
-               { iscsitarget1_target_name => { -like => $args{iscsitarget1_target_name} } }
-           )->first()->get_column('iscsitarget1_target_id');
-}
-
-sub getFullTargetName {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "lv_name" ]);
-
-    return $self->{_dbix}->iscsitarget1_targets->search(
-               { iscsitarget1_target_name => { -like => '%'.$args{lv_name} } }
-           )->first()->get_column('iscsitarget1_target_name');
-}
-
-sub getLunId {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_target_id", "iscsitarget1_lun_device" ]);
-
-    my $target_row = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
-    return $target_row->iscsitarget1_luns->first(
-               { iscsitarget1_lun_device=> $args{iscsitarget1_lun_device} }
-           )->get_column('iscsitarget1_lun_id');
-}
-
-sub removeLun {
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_target_id", "iscsitarget1_lun_id" ]);
-
-    my $target_rs = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
-    return $target_rs->iscsitarget1_luns->find($args{iscsitarget1_lun_id})->delete();
-}
-
-sub getTargetName {
-    my $self = shift;
-    my %args  = @_;    
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_target_id" ]);
-    
-    my $target_raw = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
-    return $target_raw->get_column('iscsitarget1_target_name');
 }
 
 # return a data structure to pass to the template processor 
@@ -272,14 +180,6 @@ sub getNetConf {
     return { 3260 => ['tcp'] };
 }
 
-=head2 createExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ECreateExport operation.
-    args : export_name, device, typeio, iomode
-
-=cut
-
 sub getReadOnlyParameter {
     my $self = shift;
     my %args = @_;
@@ -295,6 +195,14 @@ sub getReadOnlyParameter {
     }
 }
 
+=head2 createExport
+
+    Desc : Implement createExport from ExportManager interface.
+           This function enqueue a ECreateExport operation.
+    args : export_name, device, typeio, iomode
+
+=cut
+
 sub createExport {
     my $self = shift;
     my %args = @_;
@@ -303,39 +211,19 @@ sub createExport {
                          required => [ "container", "export_name", "typeio", "iomode" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Operation->enqueue(
+    Entity::Operation->enqueue(
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            export_manager_id   => $self->getAttr(name => 'component_id'),
-            container_id        => $args{container}->getAttr(name => 'container_id'),
-            export_name         => $args{export_name},
-            typeio              => $args{typeio},
-            iomode              => $args{iomode}
-        },
-    );
-}
-
-=head2 removeExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ERemoveExport operation.
-    args : export_name
-
-=cut
-
-sub removeExport {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $log->debug("New Operation RemoveExport with attrs : " . %args);
-    Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveExport',
-        params   => {
-            container_access_id => $args{container_access}->getAttr(name => 'container_access_id'),
+            context => {
+                export_manager => $self,
+                container      => $args{container},
+            },
+            manager_params => {
+                export_name => $args{export_name},
+                typeio      => $args{typeio},
+                iomode      => $args{iomode},
+            },
         },
     );
 }

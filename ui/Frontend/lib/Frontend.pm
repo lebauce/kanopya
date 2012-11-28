@@ -1,39 +1,30 @@
 package Frontend;
 
-use Dancer;
-use Dancer::Plugin::Preprocess::Sass;
-use Dancer::Plugin::Ajax;
-use Login;
-use Dashboard;
-use Components;
-use Clusters;
-use Masterimages;
-use Hosts;
-use Vms;
-use Images;
-use Kernels;
-use Images;
-use Models;
-use Users;
-use Networks;
-use Groups;
-use Monitoring;
-use Orchestration;
-use Permissions;
-use Messager;
-use Vlans;
-use Poolip;
-use UnifiedComputingSystem;
-use Connectors;
-use Netapp;
+use strict;
+use warnings;
 
-use Log::Log4perl;
+use Dancer ':syntax';
+#use Dancer::Plugin::Preprocess::Sass;
+use Dancer::Plugin::Ajax;
+
+use Login;
+use KIO::Services;
+use Monitoring;
+use Validation;
+use REST::api;
+use Kanopya::Config;
+use KIM::Consommation;
+use KIM::MasterImage;
+use KIM::WorkflowLogs;
 
 our $VERSION = '0.1';
 
-Log::Log4perl->init('/opt/kanopya/conf/webui-log.conf');
-
 prefix undef;
+
+my $dir = Kanopya::Config::getKanopyaDir();
+
+Log::Log4perl->init($dir.'/kanopya/conf/webui-log.conf');
+
 
 hook 'before' => sub {
     $ENV{EID} = session('EID');
@@ -42,60 +33,81 @@ hook 'before' => sub {
 hook 'before_template' => sub {
     my $tokens = shift;
 
-    $tokens->{css_head}  = [];
-    $tokens->{js_head}   = [];
     $tokens->{username}  = session('username');
-    $tokens->{menu_selection} = sub {
-    my $url = shift;
-
-        return 'class="selected"' if ( $url eq (split '/', request->path())[1] );
-    };
-    $tokens->{is_menu_selected} = sub {
-        my $url = shift;
-
-        return ( $url eq (split '/', request->path())[1] );
-    };
-    $tokens->{submenu_selection} = sub {
-        my $url = shift;
-        
-        # Doing this we can't have submenu with the same name in different menu
-        return 'class="selected"' if ( $url eq (split '/', request->path())[2] );
-    };
-    $tokens->{is_menu_visible} = sub {
-        my $url = shift;
-
-        # Display not all the menu when we are in hell
-        # TODO manage menu visibility using ui conf
-
-        return 1 if ($^O ne 'MSWin32');
-
-        my @hidden_menu = ('infrastructures', 'networks', 'equipments');
-
-        return (0 == grep { $_ eq $url} @hidden_menu);
-    };
 };
 
 get '/' => sub {
-    if ( session('username') ) {
-        redirect '/dashboard/status';
+    my $product = config->{kanopya_product};
+    template $product . '/index';
+};
+
+get '/kim' => sub {
+    my $product = 'KIM';
+    template $product . '/index';
+};
+
+get '/kio' => sub {
+    my $product = 'KIO';
+    template $product . '/index';
+};
+
+get '/conf' => sub {
+    content_type "application/json";
+    return to_json {
+        'messages_update'   => defined config->{'messages_update'}  ? int(config->{'messages_update'})  : 10,
+        'show_gritters'     => defined config->{'show_gritters'}    ? int(config->{'show_gritters'})    : 1,
+    };
+};
+
+get '/sandbox' => sub {
+    template 'sandbox', {}, {layout => ''};
+};
+
+get '/dashboard' => sub {
+    template 'dashboard', {}, {layout => ''};
+};
+
+sub exception_to_status {
+    my $exception = shift;
+    my $status;
+
+    return "error" if not defined $exception;
+
+    if ($exception->isa("Kanopya::Exception::Permission::Denied")) {
+        $status = 'forbidden';
+    }
+    elsif ($exception->isa("Kanopya::Exception::Internal::NotFound")) {
+        $status = 'not_found';
+    }
+    elsif ($exception->isa("Kanopya::Exception::NotImplemented")) {
+        $status = "method_not_allowed";
     }
     else {
-        redirect '/login';
+        $status = 'error';
+    }
+
+    # Really tricky : we store the status code in the request
+    # as the exception is not available in the 'after_error_render' hook
+    request->{status} = $status;
+
+    return $status;
+}
+
+hook 'before_error_init' => sub {
+    my $exception = shift;
+    my $status = exception_to_status($exception->exception);
+
+    if (defined $status && request->is_ajax) {
+        content_type "application/json";
+        set error_template => '/json_error.tt';
+    }
+    else {
+        set error_template => '';
     }
 };
 
-get '/permission_denied' => sub {
-    template 'permission_denied';
-};
-
-hook 'before_error_init' => sub {  
-    set error_template => '/layouts/main.tt';
-};
-
-any qr{.*} => sub {
-    status 'not_found';
-    template 'special_404', { path => request->path };
+hook 'after_error_render' => sub {
+    status request->{status};
 };
 
 true;
-

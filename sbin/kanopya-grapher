@@ -38,11 +38,13 @@ Grapher allow graphing data for nodes and for cluster, with options defined in c
 use strict;
 use warnings;
 use Monitor::Grapher;
+use Kanopya::Config;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
 
-Log::Log4perl->init('/opt/kanopya/conf/monitor-log.conf');
-my $log = get_logger("grapher");
+my $dir = Kanopya::Config::getKanopyaDir();
+Log::Log4perl->init($dir.'/kanopya/conf/monitor-log.conf');
+my $log = get_logger("");
 
 
 my $running = 1;

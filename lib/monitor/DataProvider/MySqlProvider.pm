@@ -45,7 +45,7 @@ use warnings;
 use DBI;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("monitor");
+my $log = get_logger("");
 
 =head2 new
     
@@ -67,11 +67,11 @@ sub new {
     my $self = {};
     bless $self, $class;
 
-
     my $host = $args{host};
     
     # TODO user/pwd management to connect to a component providing informations
-    my $dbh = DBI->connect("dbi:mysql:mysql:$host:3306", 'root', 'Hedera@123') or die DBI::errstr();
+    my $dbh = DBI->connect("dbi:mysql:mysql:" . $host->adminIp . ":3306",
+                           'root', 'Hedera@123') or die DBI::errstr();
             
     $self->{_dbh} = $dbh;
     $self->{_host} = $host;

@@ -1,0 +1,37 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          ntpdate
+# Required-Start:    networking
+# Required-Stop:
+# Should-Start:      
+# Default-Start:     S
+# Default-Stop:
+# Short-Description: ask ntp server to set host datetime
+# Description:
+### END INIT INFO
+
+PATH=/sbin:/bin:/usr/sbin
+
+. /lib/lsb/init-functions
+
+do_start () {
+	/usr/sbin/ntpdate-debian
+}
+
+case "\$1" in
+  start|"")
+	do_start
+	;;
+  restart|reload|force-reload)
+	do_start
+	;;
+  stop)
+	# No-op
+	;;
+  *)
+	echo "Usage: ntpdate [start|stop]" >&2
+	exit 3
+	;;
+esac
+
+

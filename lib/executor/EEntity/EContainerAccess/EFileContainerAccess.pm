@@ -35,21 +35,20 @@ use base "EEntity::EContainerAccess";
 use strict;
 use warnings;
 
-use Operation;
 use EFactory;
 use Entity::ContainerAccess;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("executor");
+my $log = get_logger("");
 
 sub connect {
-    my $self = shift;
-    my %args = @_;
+    my ($self,%args) = @_;
+
     my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $underlying_access_id = $self->_getEntity->getContainer->getAttr(
+    my $underlying_access_id = $self->getContainer->getAttr(
                                    name => 'container_access_id'
                                );
 
@@ -61,28 +60,22 @@ sub connect {
     $eunderlying_access->mount(mountpoint => $mountpoint,
                                econtext   => $args{econtext});
 
-    # Get a free loop device
-    $command = "losetup -f";
-    $result = $args{econtext}->execute(command => $command);
-    if ($result->{exitcode} != 0) {
-        throw Kanopya::Exception::Execution(error => $result->{stderr});
-    }
-    chomp($result->{stdout});
-    my $loop = $result->{stdout};
-
-    my $file = $mountpoint . '/' . $self->_getEntity->getContainer->getAttr(
+    my $file = $mountpoint . '/' . $self->getContainer->getAttr(
                                        name => 'container_device'
                                    );
 
-    $command = "losetup $loop $file";
-    $result = $args{econtext}->execute(command => $command);
-    if ($result->{exitcode} != 0) {
-        throw Kanopya::Exception::Execution(error => $result->{stderr});
+    $self->setAttr(name  => 'device_connected',
+                   value => $file);
+    $self->save();
+    
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('disconnect'),
+            parameters => [ $self, "econtext", $args{econtext} ]
+        );
     }
 
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => $loop);
-    return $loop;
+    return $file;
 }
 
 sub disconnect {
@@ -92,24 +85,7 @@ sub disconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->_getEntity->getAttr(name => 'device_connected');
-
-    my $counter = 5;
-    while($counter != 0) {
-        $command = "losetup -d $device";
-        $result  = $args{econtext}->execute(command => $command);
-        if($result->{exitcode} == 0) {
-            last;
-        }
-        $counter--;
-        sleep(1);
-    }
-
-    if ($result->{exitcode} != 0) {
-        throw Kanopya::Exception::Execution(error => $result->{stderr});
-    }
-
-    my $underlying_access_id = $self->_getEntity->getContainer->getAttr(
+    my $underlying_access_id = $self->getContainer->getAttr(
                                    name => 'container_access_id'
                                );
 
@@ -121,8 +97,9 @@ sub disconnect {
     $eunderlying_access->umount(mountpoint => $mountpoint,
                                 econtext   => $args{econtext});
 
-    $self->_getEntity->setAttr(name  => 'device_connected',
-                               value => '');
+    $self->setAttr(name  => 'device_connected',
+                   value => '');
+    $self->save();
 }
 
 sub buildMountpoint {

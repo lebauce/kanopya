@@ -12,48 +12,52 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EPhp5;
+use base 'EEntity::EComponent';
 
 use strict;
-use Template;
-use String::Random;
-use base "EEntity::EComponent";
+use warnings;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("executor");
+my $log = get_logger("");
 my $errmsg;
 
 # generate configuration files on node
-sub configureNode {
-    my $self = shift;
-    my %args = @_;
+sub addNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['cluster','host','mount_point']);
 
     my $conf = $self->_getEntity()->getConf();
 
     # Generation of php.ini
-    my $data = { 
-                session_handler => $conf->{php5_session_handler},
-                session_path => $conf->{php5_session_path},
-                };
-    if ( $data->{session_handler} eq "memcache" ) { # This handler needs specific configuration (depending on master node)
-        my $masternodeip =     $args{cluster}->getMasterNodeIp() ||
-                            $args{host}->getInternalIP()->{ipv4_internal_address}; # current node is the master node
-        my $port = '11211'; # default port of memcached TODO: retrieve memcached port using component
+    my $data = { session_handler => $conf->{php5_session_handler},
+                 session_path    => $conf->{php5_session_path} };
+
+    # This handler needs specific configuration (depending on master node)
+    if ( $data->{session_handler} eq "memcache" ) {
+        # current node is the master node
+        my $masternodeip = $args{cluster}->getMasterNodeIp() || $args{host}->adminIp;
+
+        # default port of memcached TODO: retrieve memcached port using component
+        my $port = '11211';
         $data->{session_path} = "tcp://$masternodeip:$port";
     }
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/php5",
-                         input_file => "php.ini.tt", output => "/php5/apache2/php.ini", data => $data);
-}
+    
+    my $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/php5/apache2/php.ini',
+        template_dir  => '/templates/components/php5',
+        template_file => 'php.ini.tt',
+        data          => $data
+    );
+    
+    $self->getExecutorEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/php5/apache2',
+    );
 
-sub addNode {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
-
-    $args{mount_point} .= '/etc';
-
-    $self->configureNode(%args);
 }
 
 
