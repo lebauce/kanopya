@@ -1,4 +1,6 @@
+storage
 lvm2
+iscsi
 iscsitarget1
 openiscsi2
 apache2

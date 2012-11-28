@@ -49,7 +49,7 @@ use Entity::Component::Lvm2::Lvm2Vg;
 use Scope;
 use ScopeParameter;
 use Entity::Component::Lvm2;
-use Entity::Component::Iscsitarget1;
+use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Component::Dhcpd3;
 use Entity::Component::Atftpd0;
 use Entity::Component::Snmpd5;
@@ -59,6 +59,7 @@ use Entity::Component::Puppetmaster2;
 use Entity::Component::Openiscsi2;
 use Entity::Component::Physicalhoster0;
 use Entity::Component::Fileimagemanager0;
+use Entity::Component::Storage;
 use Entity::Component::Kanopyacollector1;
 use Entity::Component::Kanopyaworkflow0;
 use Entity::Component::Linux::Debian;
@@ -93,7 +94,8 @@ my @classes = (
     'Entity::Container::LocalContainer',
     'Entity::Component',
     'Entity::Component::Lvm2',
-    'Entity::Component::Iscsitarget1',
+    'Entity::Component::Iscsi',
+    'Entity::Component::Iscsi::Iscsitarget1',
     'Entity::Component::Apache2',
     'Entity::Component::Atftpd0',
     'Entity::Component::Dhcpd3',
@@ -111,6 +113,7 @@ my @classes = (
     'Entity::Component::Snmpd5',
     'Entity::Component::Syslogng3',
     'Entity::Component::Nfsd3',
+    'Entity::Component::Storage',
     'Entity::Connector::ActiveDirectory',
     'Entity::Connector::Scom',
     'Entity::ServiceProvider::Outside::Externalcluster',
@@ -625,8 +628,10 @@ sub registerComponents {
     my %args = @_;
 
     my $components = [
+        [ 'Storage', '0', 'Storage', undef ],
         [ 'Lvm', '2', 'Storage', undef ],
         [ 'Apache', '2', 'Webserver', '/templates/components/apache2' ],
+        [ 'Iscsi', '0', 'Export', '/templates/components/ietd' ],
         [ 'Iscsitarget', '1', 'Export', '/templates/components/ietd' ],
         [ 'Openiscsi', '2', 'Exportclient', undef ],
         [ 'Dhcpd', '3', 'Dhcpserver', '/templates/components/dhcpd' ],
@@ -957,7 +962,13 @@ sub registerKanopyaMaster {
             name => 'Lvm'
         },
         {
+            name => 'Storage'
+        },
+        {
             name => 'Iscsitarget'
+        },
+        {
+            name => 'Iscsi'
         },
         {
             name => 'Fileimagemanager'
@@ -1049,6 +1060,7 @@ sub registerKanopyaMaster {
             component_template_id => $component_template,
             defined ($component->{conf}) ? %{$component->{conf}} : ()
         );
+
         if (defined $component->{manager}) {
             ServiceProviderManager->new(
                 service_provider_id => $admin_cluster->id,
@@ -1167,6 +1179,15 @@ sub registerKanopyaMaster {
                          value => $ehost->getTotalMemory);
 
     $admin_host->save();
+
+    # Insert components default configuration
+    for my $component_name (keys $installed) {
+
+        # TODO: Make sur we can do this fall all
+        if ($component_name eq 'Iscsitarget') {
+            $installed->{$component_name}->insertDefaultConfiguration();
+        }
+    }
 }
 
 sub registerScopes {
