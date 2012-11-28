@@ -113,7 +113,7 @@ var policies = {
             depends      : [ 'export_manager_id' ]
         },
         export_manager_id : {
-            label        : "Export protocol",
+            label        : "Access protocol",
             type         : 'select',
             is_mandatory : 1,
             pattern      : '^[1-9][0-9]*$',
@@ -121,6 +121,10 @@ var policies = {
             parent       : 'disk_manager_id',
             filters      : {
                 func : 'getExportManagers'
+            },
+            params       : {
+                func : 'getPolicyParams',
+                args : { policy_type: 'storage' }
             },
             display      : 'export_type'
         }
