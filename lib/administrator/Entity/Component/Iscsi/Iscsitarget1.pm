@@ -192,34 +192,6 @@ sub getTemplateData {
     return { targets => \@values };
 }
 
-=head2 getNetConf
-B<Class>   : Public
-B<Desc>    : This method return component network configuration in a hash ref, it's indexed by port and value is the port
-B<args>    : None
-B<Return>  : hash ref containing network configuration with following format : {port => protocol}
-B<Comment>  : None
-B<throws>  : Nothing
-=cut
-
-sub getNetConf {
-    return { 3260 => ['tcp'] };
-}
-
-sub getReadOnlyParameter {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'readonly' ]);
-
-    my $value;
-    if ($args{readonly}) { $value = 'ro'; }
-    else                 { $value = 'wb'; }
-    return {
-        name  => 'iomode',
-        value => $value,
-    }
-}
-
 =head2 createExport
 
     Desc : Implement createExport from ExportManager interface.

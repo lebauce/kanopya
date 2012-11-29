@@ -55,7 +55,7 @@ sub exportType {
 sub checkExportManagerParams {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => [ "iscsi_portals", "target", "lun" ]);
 }
 
@@ -119,28 +119,6 @@ sub setConf {
     }
 }
 
-sub getExportManagerFromBootPolicy {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "boot_policy" ]);
-
-    throw Kanopya::Exception::Internal::UnknownCategory(
-              error => "Unsupported boot policy: $args{boot_policy}"
-          );
-}
-
-sub getBootPolicyFromExportManager {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "export_manager" ]);
-
-    throw Kanopya::Exception::Internal::UnknownCategory(
-              error => "Unsupported export manager:" . $args{export_manager}
-          );
-}
-
 # Insert default configuration in db for this component 
 sub insertDefaultConfiguration {
     my $self = shift;
@@ -158,6 +136,25 @@ sub insertDefaultConfiguration {
         iscsi_portal_ip   => $ip,
         iscsi_portal_port => 3261
     );
+}
+
+sub getNetConf {
+    return { 3260 => ['tcp'] };
+}
+
+sub getReadOnlyParameter {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'readonly' ]);
+
+    my $value;
+    if ($args{readonly}) { $value = 'ro'; }
+    else                 { $value = 'wb'; }
+    return {
+        name  => 'iomode',
+        value => $value,
+    }
 }
 
 1;
