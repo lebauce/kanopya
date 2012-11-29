@@ -1181,7 +1181,7 @@ sub registerKanopyaMaster {
     $admin_host->save();
 
     # Insert components default configuration
-    for my $component_name (keys $installed) {
+    for my $component_name (keys %$installed) {
 
         # TODO: Make sur we can do this fall all
         if ($component_name eq 'Iscsitarget') {
