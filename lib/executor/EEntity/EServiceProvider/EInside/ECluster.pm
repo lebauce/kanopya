@@ -63,10 +63,12 @@ sub create {
     $self->save();
 
     # Add all the components provided by the master image
-    foreach my $component ($self->masterimage->components_provided) {
-        $args{components}->{$component->component_type->component_name} = {
-            component_type => $component->component_type_id
-        };
+    if ($self->masterimage) {
+        foreach my $component ($self->masterimage->components_provided) {
+            $args{components}->{$component->component_type->component_name} = {
+                component_type => $component->component_type_id
+            };
+        }
     }
 
     # Set default permissions on this cluster for the related customer
