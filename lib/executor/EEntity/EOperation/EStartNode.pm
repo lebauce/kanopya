@@ -152,7 +152,7 @@ sub execute {
                                  container_access   => $self->{context}->{container_access},
                                  erollback          => $self->{erollback});
         }
-    
+
         # Authorize the Kanopya master to connect to the node using SSH
         my $mntpoint = $self->{params}->{mountpoint};
         my $rsapubkey_cmd = "mkdir -p $mntpoint/root/.ssh ; " .
