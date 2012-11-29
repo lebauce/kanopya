@@ -24,6 +24,7 @@ use Date::Simple (':all');
 
 use Kanopya::Exceptions;
 use EFactory;
+use EEntity;
 use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
@@ -325,10 +326,8 @@ sub _generatePXEConf {
 
     ## Here we create a dedicated initramfs for the node
     
-    my $linux_component = $args{cluster}->getComponent(category => "system");
-    
-    my $src_file = "$tftpdir/initrd_$kernel_version";
-    my $initrd_dir = $linux_component->extractInitramfs(src_file => $src_file); 
+    my $linux_component = EEntity->new(entity => $args{cluster}->getComponent(category => "system"));
+    my $initrd_dir = $linux_component->extractInitramfs(src_file => "$tftpdir/initrd_$kernel_version"); 
     
     $linux_component->customizeInitramfs(initrd_dir  => $initrd_dir,
                                          cluster     => $args{cluster},
