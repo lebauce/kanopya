@@ -130,4 +130,20 @@ sub diskType {
     return '';
 }
 
+=head2 getExportManagerFromBootPolicy
+
+=cut
+
+sub getExportManagerFromBootPolicy {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+=head2 getBootPolicyFromExportManager
+
+=cut
+
+sub getBootPolicyFromExportManager {
+    throw Kanopya::Exception::NotImplemented();
+}
+
 1;

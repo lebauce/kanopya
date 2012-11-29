@@ -40,22 +40,6 @@ sub exportType {
 
 sub checkExportManagerParams {}
 
-=head2 getExportManagerFromBootPolicy
-
-=cut
-
-sub getExportManagerFromBootPolicy {
-    throw Kanopya::Exception::NotImplemented();
-}
-
-=head2 getBootPolicyFromExportManager
-
-=cut
-
-sub getBootPolicyFromExportManager {
-    throw Kanopya::Exception::NotImplemented();
-}
-
 =head2 getReadOnlyParameter
 
 =cut
