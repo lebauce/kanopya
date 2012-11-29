@@ -29,43 +29,4 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-=head2 createDisk
-
-=cut
-
-sub createDisk {
-    my $self = shift;
-    my %args = @_;
-
-}
-
-=head2 removeDisk
-
-=cut
-
-sub removeDisk{
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args=>\%args, required => [ "container" ]);
-
-}
-
-
-sub createExport {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'container' ]);
-
-}
-
-sub removeExport {
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args => \%args, required => [ 'container_access' ]);
-
-}
-
 1;
