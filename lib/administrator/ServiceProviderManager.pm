@@ -74,14 +74,7 @@ sub addParams {
 
     my $preset;
     eval {
-        $preset = $self->param_preset;
-
-        if ($args{override}) {
-            $preset->update(params => $args{params});
-        }
-        else {
-            $preset->store(params => $args{params});
-        }
+        $self->param_preset->update(params => $args{params}, override => $args{override});
     };
     if ($@) {
         $preset = ParamPreset->new(params => $args{params});
