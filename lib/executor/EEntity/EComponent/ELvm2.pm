@@ -134,7 +134,7 @@ createDisk ( lvm2_lv_name, lvm2_lv_size, lvm2_lv_filesystem, lvm2_vg_id, lvm2_vg
     
 =cut
 
-sub lvCreate{
+sub lvCreate {
     my $self = shift;
     my %args = @_;
     
@@ -197,6 +197,7 @@ vgSizeUpdate ( lvm2_vg_id, lvm2_vg_name)
         code returned by Entity::Component::Lvm2->vgSpaceUpdate
     
 =cut
+
 sub vgSpaceUpdate {
     my $self = shift;
     my %args = @_;

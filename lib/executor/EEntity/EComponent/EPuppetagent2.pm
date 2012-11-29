@@ -69,7 +69,6 @@ sub configureNode {
         src  => $file,
         dest => $args{mount_point}.'/etc/puppet'
     );
-
 }
 
 sub addNode {

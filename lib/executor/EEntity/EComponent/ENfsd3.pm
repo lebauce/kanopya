@@ -104,7 +104,6 @@ sub createExport {
                      options                 =>  $args{client_options},
                  );
 
-
     my $container_access = EFactory::newEEntity(data => $entity);
     my $client = $self->addExportClient(export  => $container_access,
                                         host    => $args{client_name},
