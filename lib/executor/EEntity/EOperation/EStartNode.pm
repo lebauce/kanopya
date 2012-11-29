@@ -324,8 +324,7 @@ sub _generatePXEConf {
     $linux_component->customizeInitramfs(initrd_dir  => $initrd_dir,
                                          cluster     => $args{cluster},
                                          host        => $args{host},
-                                         mount_point => $args{host});
-                                        
+                                       
     # create the final storing directory
     my $path = "$tftpdir/$clustername/$hostname";
     my $cmd = "mkdir -p $path";

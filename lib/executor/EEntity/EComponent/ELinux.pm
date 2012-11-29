@@ -32,6 +32,7 @@ use base 'EEntity::EComponent';
 use strict;
 use warnings;
 use String::Random;
+use Kanopya::Config;
 use Log::Log4perl 'get_logger';
 use Data::Dumper;
 use Message;
@@ -539,7 +540,7 @@ update initrd directory content
 sub customizeInitramfs {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
-                         required => ['initrd_dir','cluster', 'host', 'mount_point']);
+                         required => ['initrd_dir','cluster', 'host']);
     
     my $econtext = $self->getExecutorEContext;
     my $initrddir = $args{initrd_dir};
@@ -552,12 +553,13 @@ sub customizeInitramfs {
 
     my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
 
-    my $tftpdir = $self->{config}->{tftp}->{directory};
+    my $tftpdir = Kanopya::Config::get('executor')->{tftp}->{directory};
+    my $nodedir = Kanopya::Config::get('executor')->{clusters}->{directory}."/$clustername/$hostname";
 
     $log->info("customize initramfs $initrddir");
 
     # append files to the archive directory
-    my $sourcefile = $args{mount_point}.'/etc/udev/rules.d/70-persistent-net.rules';
+    my $sourcefile = $nodedir.'/etc/udev/rules.d/70-persistent-net.rules';
     my $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
     $econtext->execute(command => $cmd);
 

@@ -91,14 +91,14 @@ sub customizeInitramfs {
                     { ip => '2.2.2.2', port => 3260 }, ];    
     
     $self->_initrd_iscsi(initrd_dir => $initrddir,
-                         initiatorname => $args{host}->getAttr(name => 'host_initiatorname'),
+                         initiatorname => $args{host}->host_initiatorname,
                          target     => $target,
                          portals    => $portals
                          );
 
     $self->_initrd_config(initrd_dir => $initrddir,
                           ifaces     => $args{host}->getIfaces(),
-                          hostname   => $args{host}->getAttr(name => 'host_hostname')
+                          hostname   => $args{host}->host_hostname
                           );
 }
 
