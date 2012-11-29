@@ -365,11 +365,12 @@ sub applyPolicies {
         if ($name eq 'components') {
             for my $component (values %$value) {
                 # TODO: Check if the component is already installed
-                my $instance = $self->addComponentFromType(component_type_id => $component->{component_type});
-                $instance->insertDefaultConfiguration();
-                if (defined $component->{component_configuration}) {
-                    $instance->setConf(conf => $component->{component_configuration});
-                }
+                my $instance = $self->addComponentFromType(
+                    component_type_id       => $component->{component_type},
+                    component_configuration => $component->{component_configuration}
+                );
+                # Insert default configuration for tables linked to component (when exists)
+                $instance->insertDefaultExtendedConfiguration();
             }
         }
         # Handle network interfaces cluster config

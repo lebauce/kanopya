@@ -250,14 +250,46 @@ sub readyNodeAddition { return 1; }
 
 sub readyNodeRemoving { return 1; }
 
-# Method to override to insert in db component default configuration
+=pod
+
+=begin classdoc
+
+=head2 getBaseConfiguration
+
+Method to be overrided to get component basic configuration
+
+@return %base_configuration
+
+=end classdoc
+
+=cut
+
 sub getBaseConfiguration { return {}; }
-sub insertDefaultConfiguration {}
+
+=pod
+
+=begin classdoc
+
+=head2 insertDefaultExtendedConfiguration
+
+Method to be overrided to insert in db default configuration for tables linked to component
+
+=end classdoc
+
+=cut
+
+sub insertDefaultExtendedConfiguration {}
+
 sub getClusterizationType {}
+
 sub getExecToTest {}
+
 sub getNetConf {}
+
 sub needBridge { return 0; }
+
 sub getHostsEntries { return; }
+
 sub getPuppetDefinition { return ""; }
 
 

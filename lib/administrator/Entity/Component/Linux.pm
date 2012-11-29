@@ -92,7 +92,7 @@ sub setConf {
 }
 
 # Insert default configuration in db for this component 
-sub insertDefaultConfiguration {
+sub insertDefaultExtendedConfiguration {
     my $self = shift;
     
     my @default_conf = (

@@ -159,7 +159,7 @@ sub getNetConf {
 	
 =cut
 
-sub insertDefaultConfiguration {
+sub insertDefaultExtendedConfiguration {
     my $self = shift;
     my %args = @_;
     

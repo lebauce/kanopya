@@ -107,7 +107,7 @@ sub getNetConf {
     #TODO return { port => [protocol] }
 }
 
-sub insertDefaultConfiguration {
+sub insertDefaultExtendedConfiguration {
     my $self = shift;
     my %args = @_;
     my $iptables1_sec_rule_conf = { 

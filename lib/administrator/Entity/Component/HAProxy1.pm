@@ -119,7 +119,7 @@ sub getBaseConfiguration {
     };
 }
 
-sub insertDefaultConfiguration {
+sub insertDefaultExtendedConfiguration {
     my $self = shift;
     my %args = @_;
 
