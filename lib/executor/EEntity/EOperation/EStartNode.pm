@@ -338,8 +338,8 @@ sub _generatePXEConf {
     # create the final storing directory
     my $path = "$tftpdir/$clustername/$hostname";
     my $cmd = "mkdir -p $path";
-    my $econtext->execute(command => $cmd);
-    my $newinitrd = $path."/initrd_$kernel_version";
+    $self->getExecutorEContext->execute(command => $cmd);
+    my $newinitrd = $path . "/initrd_$kernel_version";
 
     $linux_component->buildInitramfs(initrd_dir      => $initrd_dir,
                                      compress_type   => 'gzip',
