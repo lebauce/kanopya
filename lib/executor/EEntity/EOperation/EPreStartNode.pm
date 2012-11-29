@@ -108,15 +108,18 @@ sub execute {
                                       value => $initiatorname);
     $self->{context}->{host}->save();
 
-    my $container_access = pop @{ $self->{context}->{systemimage}->container->getAccesses };
-    my $export_manager = EFactory::newEEntity(data => $container_access->getExportManager);
-    my $export = EFactory::newEEntity(data => $container_access);
+    # For each container accesses of the system image, add an export client
     my $options = $self->{context}->{cluster}->cluster_si_shared ? "ro" : "rw";
-    $export_manager->addExportClient(
-        export  => $export,
-        host    => $self->{context}->{host},
-        options => $options
-    );
+    for my $container_access ($self->{context}->{systemimage}->container_accesses) {
+        my $export_manager = EFactory::newEEntity(data => $container_access->getExportManager);
+        my $export         = EFactory::newEEntity(data => $container_access);
+
+        $export_manager->addExportClient(
+            export  => $export,
+            host    => $self->{context}->{host},
+            options => $options
+        );
+    }
 
     $self->{context}->{host}->setNodeState(state => "pregoingin");
 }
