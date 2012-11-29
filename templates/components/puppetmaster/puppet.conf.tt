@@ -16,3 +16,6 @@ postrun_command=/etc/puppet/etckeeper-commit-post
 ssl_client_header = SSL_CLIENT_S_DN 
 ssl_client_verify_header = SSL_CLIENT_VERIFY
 
+[agent]
+server = [% kanopya_hostname %].[% admin_domainname %]
+
