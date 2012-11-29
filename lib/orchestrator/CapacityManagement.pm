@@ -77,9 +77,7 @@ sub new {
         $self->{_infra} = $args{infra};
     }
     else {
-        General::checkParams(args => \%args, optional => { cluster_id            => undef,
-                                                           hypervisor_cluster_id => undef,
-                                                           cloud_manager         => undef });
+        General::checkParams(args => \%args, optional => { cloud_manager         => undef });
 
         if (defined $args{cloud_manager}) {
             $self->{_cloud_manager} = $args{cloud_manager};
