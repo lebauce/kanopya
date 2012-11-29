@@ -108,8 +108,8 @@ sub buildMountpoint {
 
     General::checkParams(args => \%args, required => [ 'eunderlying_access' ]);
 
-    my $underlying = $args{eunderlying_access}->_getEntity->getContainer->getAttr(name => 'container_id');
-    my $file_mountpoint = $self->_getEntity->getContainer->getMountPoint;
+    my $underlying = $args{eunderlying_access}->getContainer->id;
+    my $file_mountpoint = $self->getMountPoint;
 
     return $file_mountpoint . "_on_" . $underlying;
 }

@@ -913,7 +913,7 @@ sub generateXenVmTemplate {
 
     my $container_access = Entity->get(id => $disk_params->{container_access_id});
     my $econtainer_access = EFactory::newEEntity(data => $container_access);
-    my $mountpoint = $container_access->getContainer->getMountPoint . "_copy_kernel_$kernel_version";
+    my $mountpoint = $container_access->getMountPoint . "_copy_kernel_$kernel_version";
 
     $econtainer_access->mount(mountpoint => $mountpoint,
                               econtext    => $self->getExecutorEContext);

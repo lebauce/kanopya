@@ -115,8 +115,8 @@ sub copy {
     # One or both container access do not support device level (e.g. Nfs)
     else {
         # Mount the containers on the executor.
-        my $source_mountpoint = $source_access->getContainer->getMountPoint;
-        my $dest_mountpoint   = $dest_access->getContainer->getMountPoint;
+        my $source_mountpoint = $source_access->getMountPoint;
+        my $dest_mountpoint   = $dest_access->getMountPoint;
 
         $log->debug('Mounting source container <' . $source_mountpoint . '>');
         $source_access->mount(mountpoint => $source_mountpoint,
@@ -171,7 +171,9 @@ sub mount {
 
     my ($command, $result);
 
-    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'econtext' ],
+                         optional => { 'mountpoint' => $self->getMountPoint } );
 
     # Connecting to the container access.
     my $device = $self->tryConnect(econtext  => $args{econtext},  
@@ -200,6 +202,7 @@ sub mount {
             parameters => [ $self, "mountpoint", $args{mountpoint}, "econtext", $args{econtext} ]
         );
     }
+    return $args{mountpoint};
 }
 
 =pod
@@ -223,7 +226,9 @@ sub umount {
 
     my ($command, $result);
 
-    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'econtext' ],
+                         optional => { 'mountpoint' => $self->getMountPoint } );
 
     $log->debug("Unmonting (<$args{mountpoint}>)");
 

@@ -188,8 +188,7 @@ sub fileCreate {
                                        'file_size', 'file_type' ]);
 
     # Firstly mount the container access on the executor.
-    my $mountpoint = $args{container_access}->getContainer->getMountPoint .
-                     "_filecreate_" . $args{file_name};
+    my $mountpoint = $args{container_access}->getMountPoint . "_filecreate_" . $args{file_name};
     my $econtainer_access = EFactory::newEEntity(data => $args{container_access});
     
     $econtainer_access->mount(mountpoint => $mountpoint,
@@ -241,16 +240,15 @@ sub fileRemove{
 
     # Firstly mount the container access on the executor.
     my $container_access = Entity::ContainerAccess->get(
-                               id => $args{container}->getAttr(name => 'container_access_id')
+                               id => $args{container}->container_access_id
                            );
 
-    my $mountpoint = $container_access->getContainer->getMountPoint .
-                     "_fileremove_" . $args{container}->getAttr(name => 'container_device');
+    my $mountpoint = $container_access->getMountPoint . "_fileremove_" . $args{container}->container_device;
 
     my $econtainer_access = EFactory::newEEntity(data => $container_access);
     $econtainer_access->mount(mountpoint => $mountpoint, econtext => $self->getEContext);
 
-    my $file_image_path = "$mountpoint/" . $args{container}->getAttr(name => 'container_device');
+    my $file_image_path = "$mountpoint/" . $args{container}->container_device;
 
     $log->debug("Container access mounted, trying to remove $file_image_path");
 

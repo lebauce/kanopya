@@ -1,6 +1,5 @@
-# EPostStartNode.pm - Operation class implementing Cluster creation operation
-
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,24 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
-
-EEntity::Operation::EAddHost - Operation class implementing Host creation operation
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement Host creation operation
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::EPostStartNode;
 use base "EEntity::EOperation";
 
@@ -60,10 +42,6 @@ sub check {
 
     General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
 }
-
-=head2 prepare
-
-=cut
 
 sub prerequisites {
     my $self  = shift;
@@ -141,7 +119,7 @@ sub finish {
     my $cluster_nodes = $self->{context}->{cluster}->getHosts();
 
     # Add another node if required
-    if ((scalar keys %$cluster_nodes) < $self->{context}->{cluster}->getAttr(name => "cluster_min_node")) {
+    if ((scalar keys %$cluster_nodes) < $self->{context}->{cluster}->cluster_min_node) {
         # _getEntity is important here, cause we want to enqueue AddNode operation.
         $self->{context}->{cluster}->_getEntity->addNode();
     }
