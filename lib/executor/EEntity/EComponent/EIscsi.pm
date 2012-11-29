@@ -22,6 +22,8 @@ use warnings;
 
 use General;
 use EFactory;
+use Entity::ContainerAccess::IscsiContainerAccess;
+use Entity::Component::Iscsi::IscsiPortal;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -33,8 +35,21 @@ sub createExport {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'container' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'export_name', 'iscsi_portal', 'target', 'lun' ],
+                         optional => { 'typeio' => 'fileio', 'iomode' => 'wb' });
 
+    my $portal = Entity::Component::Iscsi::IscsiPortal->get(id => $args{iscsi_portal});
+    my $access = Entity::ContainerAccess::IscsiContainerAccess->new(
+                     export_manager_id       => $self->id,
+                     container_access_export => $args{target},
+                     lun_name                => $args{lun},
+                     container_access_ip     => $portal->iscsi_portal_ip,
+                     container_access_port   => $portal->iscsi_portal_port,
+                     typeio                  => $args{typeio},
+                     iomode                  => $args{iomode},
+                 );
+    return EFactory::newEEntity(data => $access);
 }
 
 sub removeExport {
@@ -43,14 +58,14 @@ sub removeExport {
 
     General::checkParams(args => \%args, required => [ 'container_access' ]);
 
-    if (! $args{container_access}->isa("EEntity::EContainerAccess::EIscsiContainerAccess")) {
+    if (not $args{container_access}->isa("EEntity::EContainerAccess::EIscsiContainerAccess")) {
         throw Kanopya::Exception::Execution(
                   error => "ContainerAccess must be a EEntity::EContainerAccess::EIscsiContainerAccess, not " .
                            ref($args{container_access})
               );
     }
 
-    $args{container_access}->delete();
+    $args{container_access}->remove();
 }
 
 1;
