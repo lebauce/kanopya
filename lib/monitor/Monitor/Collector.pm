@@ -119,8 +119,12 @@ sub updateHostData {
                                               );
                 } else {
                     ($time, $update_values->{"0"}) = $data_provider->retrieveData(
-                                                         var_map => \%var_map
+                                                         var_map => \%var_map,
                                                      );
+                    if ($data_provider->isDiscrete()) {
+                        my $mod_time = $time % $self->{_time_step};
+                        $time += ($mod_time > $self->{_time_step} / 2) ? $self->{_time_step} - $mod_time : -$mod_time;
+                    }
                 }
 
                 $retrieve_set_time = time() - $retrieve_set_start_time;
