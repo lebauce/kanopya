@@ -147,26 +147,65 @@ sub _matchHostConstraints {
             return 0;
         }
 
-        #Does any of the host's iface has a netconf?
+        #Does any of the host's ifaces has a netconf?
         #At least one of the cluster's interface must have the same netconf
         my @configured_ifaces = $host->configuredIfaces;
         if (scalar @configured_ifaces > 0) {
-            foreach my $configured_iface (@configured_ifaces) {
-                my $configured_interface_netconfs = $configured_iface->netconfs;
-                my @matchs;
-                foreach my $netconf (@$configured_interface_netconfs) {
-                    push @matchs, grep {$netconf->id == $_->netconf->id} @{ $args{interface} };
+            my @configured_bonded_ifaces = grep {scalar @{$_->slaves} > 0} @configured_ifaces;
+            my @configured_common_ifaces =
+                grep {scalar @{$_->slaves} == 0 && !$_->master } @configured_ifaces;
+            my @configured_common_interfaces =
+                grep {scalar $_->netconfs > 0 && $_->bonds_number == 0} @{ $args{interfaces} };
+            my @configured_bonded_interfaces =
+                grep {scalar $_->netconfs > 0 && $_->bonds_number > 0} @{ $args{interfaces} };
+            my @iface_netconfs;
+            my @interface_netconfs;
+            my @matching_netconfs;
+
+            if (scalar @configured_bonded_ifaces > 0) {
+                foreach my $configured_bonded_iface (@configured_bonded_ifaces) {
+                    @iface_netconfs = $configured_bonded_iface->netconfs;
+                    my @matchs;
+                    foreach my $netconf (@iface_netconfs) {
+                        foreach my $configured_bonded_interface (@configured_bonded_interfaces) {
+                            @interface_netconfs = $configured_bonded_interface->netconfs;
+                            @matching_netconfs  = grep {$netconf->id == $_->id} @interface_netconfs;
+                            if (scalar @matching_netconfs > 0) {
+                                push @matchs, $configured_bonded_interface;
+                            }
+                        }
+                    }
+                    if (scalar @matchs == 0) {
+                        my $msg = 'There is no cluster interface sharing any of iface ';
+                        $msg   .= $configured_bonded_iface->id . ' netconf';
+                        $log->info($msg);
+                        return 0;
+                    }
                 }
-                if (scalar @matchs == 0) {
-                    my $msg = 'There is no cluster interface sharing any of iface ';
-                    $msg   .= $configured_iface->id . ' netconf';
-                    $log->info($msg);
-                    return 0;
+            }
+            if (scalar @configured_common_ifaces > 0) {
+                foreach my $configured_common_iface (@configured_common_ifaces) {
+                    @iface_netconfs = $configured_common_iface->netconfs;
+                    my @matchs;
+                    foreach my $netconf (@iface_netconfs) {
+                        foreach my $configured_common_interface (@configured_common_interfaces) {
+                            @interface_netconfs = $configured_common_interface->netconfs;
+                            @matching_netconfs  = grep {$netconf->id == $_->id} @interface_netconfs;
+                            if (scalar @matching_netconfs > 0) {
+                                push @matchs, $configured_common_interface;
+                            }
+                        }
+                    }
+                    if (scalar @matchs == 0) {
+                        my $msg = 'There is no cluster interface sharing any of iface ';
+                        $msg   .= $configured_common_iface->id . ' netconf';
+                        $log->info($msg);
+                        return 0;
+                    }
                 }
             }
         }
     }
-
     return 1;
 }
 
