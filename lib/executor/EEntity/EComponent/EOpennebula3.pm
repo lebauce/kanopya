@@ -74,12 +74,6 @@ sub configureNode {
                 mountpoint => $args{mount_point},
                 scriptname => 'nfs-kernel-server',
         );
-
-        my $admin = $args{host}->getAdminIface();
-        my $network = NetAddr::IP->new(
-            $admin->getIPAddr(),
-            $admin->getPoolip()->network->network_netmask,
-        )->network();
     }
 
     # configure kvm hypervisor
