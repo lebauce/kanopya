@@ -39,20 +39,25 @@ sub createExport {
                          required => [ 'export_name', 'iscsi_portal', 'target', 'lun' ],
                          optional => { 'typeio' => 'fileio', 'iomode' => 'wb' });
 
-    # Check if the disk is not already exported
-    $self->SUPER::createExport(%args);
-
     my $portal = Entity::Component::Iscsi::IscsiPortal->get(id => $args{iscsi_portal});
-    my $access = Entity::ContainerAccess::IscsiContainerAccess->new(
-                     export_manager_id       => $self->id,
-                     container_access_export => $args{target},
-                     lun_name                => $args{lun},
-                     container_access_ip     => $portal->iscsi_portal_ip,
-                     container_access_port   => $portal->iscsi_portal_port,
-                     typeio                  => $args{typeio},
-                     iomode                  => $args{iomode},
-                 );
-    return EFactory::newEEntity(data => $access);
+    my $params = {
+         export_manager_id       => $self->id,
+         container_access_export => $args{target},
+         lun_name                => $args{lun},
+         container_access_ip     => $portal->iscsi_portal_ip,
+         container_access_port   => $portal->iscsi_portal_port,
+         typeio                  => $args{typeio},
+         iomode                  => $args{iomode},
+    };
+
+    # If container given in paramater, check if the disk is not already exported
+    if ($args{container}) {
+        $self->SUPER::createExport(%args);
+
+        $params->{container} = $args{container};
+    }
+
+    return EFactory::newEEntity(data => Entity::ContainerAccess::IscsiContainerAccess->new(%$params));
 }
 
 sub removeExport {
