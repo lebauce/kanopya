@@ -635,7 +635,7 @@ sub remove {
     my $self = shift;
     my $adm = Administrator->new();
 
-    $log->debug("New Operation Remove Cluster with cluster id : " .  $self->getAttr(name => 'cluster_id'));
+    $log->debug("New Operation Remove Cluster with cluster id : " .  $self->id);
     Entity::Operation->enqueue(
         priority => 200,
         type     => 'RemoveCluster',
@@ -650,7 +650,7 @@ sub remove {
 sub forceStop {
     my $self = shift;
 
-    $log->debug("New Operation Force Stop Cluster with cluster: " . $self->getAttr(name => "cluster_id"));
+    $log->debug("New Operation Force Stop Cluster with cluster: " . $self->id);
     Entity::Operation->enqueue(
         priority => 200,
         type     => 'ForceStopCluster',
@@ -665,7 +665,7 @@ sub forceStop {
 sub activate {
     my $self = shift;
 
-    $log->debug("New Operation ActivateCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
+    $log->debug("New Operation ActivateCluster with cluster_id : " . $self->id);
     Entity::Operation->enqueue(
         priority => 200,
         type     => 'ActivateCluster',
@@ -680,7 +680,7 @@ sub activate {
 sub deactivate {
     my $self = shift;
 
-    $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
+    $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->id);
     Entity::Operation->enqueue(
         priority => 200,
         type     => 'DeactivateCluster',
@@ -1007,7 +1007,7 @@ sub start {
 sub stop {
     my $self = shift;
 
-    $log->debug("New Operation StopCluster with cluster_id : " . $self->getAttr(name => 'cluster_id'));
+    $log->debug("New Operation StopCluster with cluster_id : " . $self->id);
     return Entity::Operation->enqueue(
         priority => 200,
         type     => 'StopCluster',
