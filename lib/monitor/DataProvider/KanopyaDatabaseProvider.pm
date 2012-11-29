@@ -37,10 +37,11 @@ of memory dedicated to a service.
 
 =cut
 
-package KanopyaDatabaseProvider;
+package DataProvider::KanopyaDatabaseProvider;
 
 use strict;
 use warnings;
+use base 'DataProvider';
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -112,6 +113,10 @@ sub compute {
     my $load = $args{load};
 
     die "Error: no definition to compute virtual var '$args{var}'";
+}
+
+sub isDiscrete {
+    return 1;
 }
 
 # destructor

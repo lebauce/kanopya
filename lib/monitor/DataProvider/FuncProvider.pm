@@ -63,10 +63,11 @@ FuncProvider - FuncProvider object
 
 =cut
 
-package FuncProvider;
+package DataProvider::FuncProvider;
 
-#use strict;
+use strict;
 use warnings;
+use base 'DataProvider';
 use XML::Simple;
 use General;
 #use Data::Dumper;
