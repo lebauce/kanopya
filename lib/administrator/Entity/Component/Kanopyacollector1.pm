@@ -107,19 +107,28 @@ sub retrieveData {
     # Arrange indicators name by set_name
     foreach my $indicator (values %$indicators) {
         # We fetch the indicator set related to the indicator
-        my $set_name = $indicator->indicatorset->indicatorset_name;
-        push @{$sets_to_fetch{$set_name}}, $indicator->indicator_name;
+        # my $set_name = $indicator->indicatorset->indicatorset_name;
+        my $set_id = $indicator->indicatorset->id;
+        push @{$sets_to_fetch{$set_id}}, $indicator->indicator_name;
     }
 
     # Now we fetch the requested data
     my $retriever = Monitor::Retriever->new();
     my %monitored_values;
 
-    while (my ($set_name, $indic_names) = each %sets_to_fetch) {
+    while (my ($set_id, $indic_names) = each %sets_to_fetch) {
+
         foreach my $node (@$nodelist) {
             eval {
+                #TODO avoir this useless reinstanciation with a hashtable
+                my $indicator_set = Indicatorset->get(id => $set_id);
+                #TODO Improve lastValue / average management
+                my $last_value = ($indicator_set->indicatorset_provider eq 'KanopyaDatabaseProvider') ?
+                                 1 : undef;
+
+                
                 my $data = $retriever->getHostData(
-                                                set         => $set_name,
+                                                set         => $indicator_set->indicatorset_name,
                                                 host        => $node,
                                                 required_ds => $indic_names,
                                                 time_laps   => $time_span,
@@ -127,7 +136,8 @@ sub retrieveData {
                                                 end         => $args{end},
                                                 historical  => $args{historical},
                                                 raw         => $args{raw},
-                                                );
+                                                last_value  => $args{last_value} || $last_value,
+                            );
                 $monitored_values{$node} = $monitored_values{$node} ? { %{$monitored_values{$node}}, %{$data} } :  $data;
             };
             if ($@) {
