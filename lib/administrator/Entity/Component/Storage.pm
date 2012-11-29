@@ -57,9 +57,7 @@ sub getExportManagers {
     my $self = shift;
     my %args = @_;
 
-    my $cluster = $self->service_provider;
-
-    return [ $cluster->getComponent(name => "Iscsi") ];
+    return [ $self->service_provider->getComponent(name => "Iscsi") ];
 }
 
 sub getReadOnlyParameter {
@@ -76,6 +74,36 @@ sub getFreeSpace {
     my %args = @_;
 
     return 0;
+}
+
+sub getExportManagerFromBootPolicy {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "boot_policy" ]);
+
+    if ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{root_iscsi}) {
+        return $self->service_provider->getComponent(name => "Iscsi");
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported boot policy: $args{boot_policy}"
+          );
+}
+
+sub getBootPolicyFromExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "export_manager" ]);
+
+    if ($args{export_manager}->id == $self->service_provider->getComponent(name => "Iscsi")->id) {
+        return Manager::HostManager->BOOT_POLICIES->{root_iscsi};
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported export manager:" . $args{export_manager}
+          );
 }
 
 1;
