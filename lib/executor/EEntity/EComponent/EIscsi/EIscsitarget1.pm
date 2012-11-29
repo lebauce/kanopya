@@ -45,8 +45,9 @@ sub createExport {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'container', 'export_name', 'iscsi_portal' ],
-                         optional => { 'typeio' => 'fileio', 'iomode' => 'wb' });
+                         required => [ 'container', 'export_name' ],
+                         optional => { 'typeio' => 'fileio', 'iomode' => 'wb',
+                                       'iscsi_portal' => ($self->iscsi_portals)[0] });
 
     # Check if the disk is not already exported
     my $container_access = $self->SUPER::createExport(%args);
