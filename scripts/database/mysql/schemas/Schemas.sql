@@ -862,9 +862,9 @@ CREATE TABLE `netconf_interface` (
   `interface_id`   int(8) unsigned NOT NULL,
   PRIMARY KEY (`netconf_id`, `interface_id`),
   KEY (`netconf_id`),
-  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`interface_id`),
-  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -875,9 +875,9 @@ CREATE TABLE `netconf_iface` (
   `iface_id`   int(8) unsigned NOT NULL,
   PRIMARY KEY (`netconf_id`, `iface_id`),
   KEY (`netconf_id`),
-  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`iface_id`),
-  FOREIGN KEY (`iface_id`) REFERENCES `iface` (`iface_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`iface_id`) REFERENCES `iface` (`iface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -887,7 +887,7 @@ CREATE TABLE `netconf_role` (
   `netconf_role_id`   int(8) unsigned,
   `netconf_role_name` char(32) NOT NULL,
   PRIMARY KEY (`netconf_role_id`),
-  FOREIGN KEY (`netconf_role_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`netconf_role_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   UNIQUE KEY (`netconf_role_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
