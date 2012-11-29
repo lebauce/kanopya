@@ -365,7 +365,7 @@ CREATE TABLE `netapp_lun` (
 
 CREATE TABLE `container_access` (
   `container_access_id` int(8) unsigned NOT NULL,
-  `container_id` int(8) unsigned NOT NULL,
+  `container_id` int(8) unsigned DEFAULT NULL,
   `container_access_export` char(255) NOT NULL,
   `container_access_ip` char(15) NOT NULL,
   `container_access_port` int(8) NOT NULL,
