@@ -51,122 +51,6 @@ my $errmsg;
 
 =begin classdoc
 
-Get the container corresponding to the masterimage given in parameter, then
-call the system image creation method with this container as source container.
-This also install component of the masterimage in the created systemimage.
-
-@param masterimage the masterimage to use for system image contents
-@param disk_manager the disk manager to use for system image container creation
-@param manager_params the parameters to give to the disk manager for disk creation
-
-@optional erollback the erollback object
-
-=end classdoc
-
-=cut
-
-sub createFromMasterimage {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "masterimage", "disk_manager", "manager_params" ],
-                         optional => { "erollback" => undef });
-
-    # Create a temporary local container to access to the masterimage file.
-    my $master_container = EEntity->new(entity => Entity::Container::LocalContainer->new(
-                               container_name       => $args{masterimage}->masterimage_name,
-                               container_size       => $args{masterimage}->masterimage_size,
-                               # TODO: get this value from masterimage attrs.
-                               container_filesystem => 'ext3',
-                               container_device     => $args{masterimage}->masterimage_file,
-                           ));
-
-    $self->create(src_container => $master_container,
-                  disk_manager  => $args{disk_manager},
-                  erollback     => $args{erollback},
-                  %{ $args{manager_params} });
-
-    # Remove the temporary container
-    $master_container->remove();
-
-    foreach my $comp ($args{masterimage}->component_types) {
-        $self->_getEntity->installedComponentLinkCreation(component_type_id => $comp->id);
-    }
-}
-
-
-=pod
-
-=begin classdoc
-
-Create a systemimage object. Create the disk corresponding to the systemimage with
-the given disk manager, could also fill the created disk with an optional source
-container contents.
-
-@param disk_manager the disk manager to use for system image container creation
-
-@optional src_container the source container to use for filling created container
-@optional systemimage_size the size of the new systemimage if source container not defined
-@optional filesystem the filesystem of the new systemimage if source container not defined
-@optional erollback the erollback object
-
-=end classdoc
-
-=cut
-
-sub create {
-    my $self = shift;
-    my %args = @_;
-    my $cmd_res;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'disk_manager' ],
-                         optional => { 'erollback'        => undef,
-                                       'src_container'    => undef,
-                                       'systemimage_size' => undef,
-                                       'filesystem'       => undef, });
-
-    # If the system image is created from a source container, use its
-    # container infos to create the new container.
-    if (defined $args{src_container}) {
-        $args{systemimage_size} = $args{src_container}->container_size;
-        $args{filesystem}       = $args{src_container}->container_filesystem;
-    }
-
-    $log->debug('Container creation for new systemimage');
-
-    # Creation of the device based on distribution device
-    my $container = $args{disk_manager}->createDisk(
-                        name       => $self->systemimage_name,
-                        size       => $args{systemimage_size},
-                        filesystem => $args{filesystem},
-                        erollback  => $args{erollback},
-                        %args
-                    );
-
-    # Copy of distribution data to systemimage devices
-    $log->debug('Fill the container with source data for new systemimage');
-    if ($args{src_container}) {
-        $args{src_container}->copy(dest      => $container,
-                                   econtext  => $self->getExecutorEContext,
-                                   erollback => $args{erollback});
-    }
-
-    $self->setAttr(name => "container_id", value => $container->id);
-    $self->setAttr(name => "active", value => 0);
-    $self->save();
-
-    $log->info('System image <' . $self->systemimage_name . '> creation complete');
-
-    return $self->id;
-}
-
-
-=pod
-
-=begin classdoc
-
 Export the system image with the export manager given in paramaters.
 
 @param export_manager the export manager to use for exporting the system image container
@@ -184,16 +68,14 @@ sub activate {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "export_manager", "manager_params", "erollback" ]);
+                         required => [ "container_accesses", "erollback" ]);
 
-    my $container = EFactory::newEEntity(data => $self->getDevice());
+    # TODO: Check if the container of each container accesses is the same.
 
-    $args{export_manager}->createExport(container   => $container,
-                                        export_name => self->systemimage_name,
-                                        erollback   => $args{erollback},
-                                        %{$args{manager_params}});
+    # Link the systemimage with its accesses
+    $self->update(systemimage_container_accesses => $args{container_accesses});
 
-    # Set system image active in db
+    # Set system image active
     $self->setAttr(name => 'active', value => 1);
     $self->save();
 
