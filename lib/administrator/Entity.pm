@@ -8,6 +8,7 @@ use EntityLock;
 use EntityComment;
 use Entity::Workflow;
 use Message;
+use ClassType;
 use Entity::Gp;
 use OperationParameter;
 use Operationtype;
@@ -75,11 +76,7 @@ sub new {
     my %args = @_;
 
     # Get the class_type_id for class name
-    my $adm = Administrator->new();
-    my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                    hash  => { class_type => $class })->single;
-
-    $args{class_type_id} = $rs->get_column('class_type_id');
+    $args{class_type_id} = ClassType->find(hash => { class_type => $class })->id;
 
     my $self = $class->SUPER::new(%args);
 
