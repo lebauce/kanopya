@@ -176,8 +176,9 @@ sub associateWorkflow {
 
     General::checkParams(args => \%args, required => [ 'new_workflow_name',
                                                        'origin_workflow_def_id',
-                                                       'specific_params',
-                                                       'rule_id', ]);
+                                                       'rule_id', ],
+                                         optional => { 'specific_params' => {} },
+    );
 
     my $workflow_def_id      = $args{origin_workflow_def_id};
     my $origin_workflow_name = $self->getWorkflowDef (workflow_def_id => $workflow_def_id)
