@@ -45,11 +45,11 @@ sub createExport {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'container', 'export_name' ],
+                         required => [ 'container', 'export_name', 'iscsi_portal' ],
                          optional => { 'typeio' => 'fileio', 'iomode' => 'wb' });
 
     # Check if the disk is not already exported
-    $self->SUPER::createExport(%args);
+    my $container_access = $self->SUPER::createExport(%args);
 
     # TODO: Check if the given container is provided by the same
     #       storage provider than the iscsi storage provider.
@@ -66,18 +66,6 @@ sub createExport {
                      iomode      => $args{iomode},
                      target_name => $disk_targetname,
                  );
-
-    my $entity = Entity::ContainerAccess::IscsiContainerAccess->new(
-                     container_id            => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
-                     container_access_export => $disk_targetname,
-                     container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
-                     container_access_port   => 3260,
-                     typeio                  => $args{typeio},
-                     iomode                  => $args{iomode},
-                     lun_name                => "0"
-                 );
-    my $container_access = EFactory::newEEntity(data => $entity);
 
     $self->generate();
 

@@ -39,6 +39,9 @@ sub createExport {
                          required => [ 'export_name', 'iscsi_portal', 'target', 'lun' ],
                          optional => { 'typeio' => 'fileio', 'iomode' => 'wb' });
 
+    # Check if the disk is not already exported
+    $self->SUPER::createExport(%args);
+
     my $portal = Entity::Component::Iscsi::IscsiPortal->get(id => $args{iscsi_portal});
     my $access = Entity::ContainerAccess::IscsiContainerAccess->new(
                      export_manager_id       => $self->id,
