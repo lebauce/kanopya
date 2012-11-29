@@ -181,7 +181,8 @@ my @classes = (
     'Entity::Component::Lvm2::Lvm2Vg',
     'Entity::Component::Opennebula3::Opennebula3Repository',
     'Entity::Component::Vsphere5::Vsphere5Datacenter',
-    'Entity::Component::Vsphere5::Vsphere5Repository'
+    'Entity::Component::Vsphere5::Vsphere5Repository',
+    'Entity::Component::Iscsi::IscsiPortal'
 );
 
 sub registerClassTypes {
