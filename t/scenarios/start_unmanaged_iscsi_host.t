@@ -28,6 +28,9 @@ use_ok ('ComponentType');
 
 # Set a mock for startHost
 #use EEntity::EComponent::EPhysicalhoster0;
+#use EEntity::EHost;
+#
+#EEntity::EHost->setMock(mock => 'EHostMock');
 #EEntity::EComponent::EPhysicalhoster0->setMock(mock => 'EPhysicalhoster0Mock');
 
 my $testing = 1;
@@ -196,18 +199,9 @@ eval {
                     }
                 },
             },
-            components             => {
-                fileimagemanager => {
-                    component_type => ComponentType->find(hash => { component_name => 'Fileimagemanager' })->id,
-                },
-                opennebula => {
-                    component_type => ComponentType->find(hash => { component_name => 'Opennebula' })->id,
-                }
-            },
         );
     } 'AddCluster operation enqueue';
 
-    lives_ok { $executor->oneRun; } 'AddCluster operation execution succeed';
     lives_ok { $executor->oneRun; } 'AddCluster operation execution succeed';
 
     my ($cluster, $cluster_id);
@@ -224,49 +218,90 @@ eval {
     } 'Start cluster, PreStartNode operation enqueue.';
 
     lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
+
+    my ($state, $timestemp) = $cluster->getState;
+    cmp_ok ($state, 'eq', 'starting', "Cluster is 'starting'");
+
+    lives_ok {
+        my $timeout = 300;
+        my $operation;
+        while ($timeout > 0) {
+            eval {
+                $operation = Entity::Operation->find(hash => {});
+            };
+            if ($@) {
+                last;
+            }
+            else {
+                sleep 5;
+                $timeout -= 5;
+                $executor->oneRun;
+            }
+        }
+    } 'Waiting maximum 300 seconds for the host to start';
+
+    lives_ok {
+        $cluster = Entity::ServiceProvider::Inside::Cluster->find(
+                       hash => { cluster_name => 'UnmanagedStorageCluster'}
+                   );
+    } 'retrieve Cluster via name';
+
+    my ($state, $timestemp) = $cluster->getState;
+    cmp_ok ($state, 'eq', 'up', "Cluster is 'up'");
+
+    lives_ok {
+        $cluster->stop;
+    } 'force stop cluster, ForceStopCluster operation enqueue';
+
     lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-#
-#    my ($state, $timestemp) = $cluster->getState;
-#    cmp_ok ($state, 'eq', 'starting', "Cluster is 'starting'");
-#
-#    lives_ok {
-#        my $timeout = 300;
-#        my $operation;
-#        while ($timeout > 0) {
-#            eval {
-#                $operation = Entity::Operation->find(hash => {});
-#            };
-#            if ($@) {
-#                last;
-#            }
-#            else {
-#                sleep 5;
-#                $timeout -= 5;
-#                $executor->oneRun;
-#            }
-#        }
-#    } 'Waiting maximum 300 seconds for the host to start';
 
-    # lives_ok {
-    #     $cluster->forceStop;
-    # } 'force stop cluster, ForceStopCluster operation enqueue';
+    lives_ok {
+        $cluster = Entity::ServiceProvider::Inside::Cluster->find(
+                       hash => { cluster_name => 'UnmanagedStorageCluster'}
+                   );
+    } 'retrieve Cluster via name';
 
-    # lives_ok { $executor->oneRun; } 'ForceStopCluster operation execution succeed';
+    my ($state, $timestemp) = $cluster->getState;
+    cmp_ok ($state, 'eq', 'stopping', "Cluster is 'stopping'");
 
-    # ($state, $timestemp) = $cluster->getState;
-    # cmp_ok ($state, 'eq', 'down', "Cluster is 'down'");
+    lives_ok {
+        my $timeout = 300;
+        my $operation;
+        while ($timeout > 0) {
+            eval {
+                $operation = Entity::Operation->find(hash => {});
+            };
+            if ($@) {
+                last;
+            }
+            else {
+                sleep 5;
+                $timeout -= 5;
+                $executor->oneRun;
+            }
+        }
+    } 'Waiting maximum 300 seconds for the host to start';
 
-    # lives_ok { $cluster->remove; } 'RemoveCluster operation enqueue';
-    # lives_ok { $executor->oneRun; } 'RemoveCluster operation execution succeed';
+    lives_ok {
+        $cluster = Entity::ServiceProvider::Inside::Cluster->find(
+                       hash => { cluster_name => 'UnmanagedStorageCluster'}
+                   );
+    } 'retrieve Cluster via name';
 
-    # throws_ok {
-    #     $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster->getId);
-    # } 
-    # 'Kanopya::Exception::DB',
-    # "Cluster with id $cluster_id does not exist anymore";
+    ($state, $timestemp) = $cluster->getState;
+    cmp_ok ($state, 'eq', 'down', "Cluster is 'down'");
+
+    lives_ok { $cluster->deactivate; } 'DeactivateCluster operation enqueue';
+    lives_ok { $executor->oneRun; } 'DeactivateCluster operation execution succeed';
+
+    lives_ok { $cluster->remove; } 'RemoveCluster operation enqueue';
+    lives_ok { $executor->oneRun; } 'RemoveCluster operation execution succeed';
+
+    throws_ok {
+        $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster->getId);
+    }
+    'Kanopya::Exception::Internal::NotFound',
+    "Cluster with id $cluster_id does not exist anymore";
 
     if ($testing) {
         $adm->rollbackTransaction;
