@@ -36,6 +36,7 @@ eval {
     use_ok ('Entity::ServiceTemplate');
     use_ok ('Entity::Iface');
     use_ok ('NetconfInterface');
+    use_ok ('NetconfIface');
     use_ok ('EEntity');
     use_ok ('Executor');
     use_ok ('Administrator');
@@ -64,27 +65,72 @@ eval {
         $kernel = Entity::Kernel->find(hash => {});
     } 'Get first kernel found';
 
-    my ($sp,@interfaces,@ifaces,$host_manager,$ehost_manager,$host_manager_params,$host);
+    my ($sp,$c_host,@interfaces,@ifaces,$host_manager,$ehost_manager,$host_manager_params,$host,@c_interfaces);
 
-
-    @interfaces = ({name => 'c_one', bond_nb => 0}, {name =>'b_one', bond_nb => 1});
-    @ifaces     = ({bond_nb => 0, name => 'eth0'}, {bond_nb => 1, name => 'bond0', slaves => 1});
     diag('-= Create cluster with 1 common interface and one bonded interface (1) =-');
-    $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'bonding1');
+    @interfaces = ({name => 'c_one', bond_nb => 0}, {name =>'b_one', bond_nb => 1});
+    $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'bonding1', hn =>'a');
+
     diag('-= Create host with 1 common interface and one bonded interface (1) =-');
-    _createHost(ifaces => \@ifaces, executor => $executor);
+    @ifaces = ({bond_nb => 0, name => 'eth0'}, {bond_nb => 1, name => 'bond0', slaves => 1});
+    $c_host = _createHost(ifaces => \@ifaces, executor => $executor);
 
     $host_manager  = $sp->getHostManager();
     $ehost_manager = EEntity->new(entity => $host_manager);
     $host_manager_params = $sp->getManagerParameters(manager_type => 'host_manager');
-    $host_manager_params->{interfaces} = $sp->interfaces;
+    @c_interfaces = $sp->interfaces;
+    $host_manager_params->{interfaces} = \@c_interfaces;
 
-    lives_ok { 
+    lives_ok {
         $host = $ehost_manager->getFreeHost(%$host_manager_params);
     } 'Successfully get free host';
 
-    
+    $c_host->delete();
 
+    diag('-= Create cluster with 1 common interface and one bonded interface (1) =-');
+    @interfaces = ({name => 'c_two', bond_nb => 0}, {name =>'b_two', bond_nb => 1});
+    $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'bonding2', hn => 'b');
+
+    diag('-= Create host without any iface =-');
+    @ifaces = ();
+    $c_host = _createHost(ifaces => \@ifaces, executor => $executor);
+
+    $host_manager  = $sp->getHostManager();
+    $ehost_manager = EEntity->new(entity => $host_manager);
+    $host_manager_params = $sp->getManagerParameters(manager_type => 'host_manager');
+    @c_interfaces = $sp->interfaces;
+    $host_manager_params->{interfaces} = \@c_interfaces;
+
+    dies_ok {
+        $host = $ehost_manager->getFreeHost(%$host_manager_params);
+    } 'Successfully dies on get free host!';
+
+    $c_host->delete();
+
+    diag('-= Create cluster with 1 common interface =-');
+    @interfaces = ({name => 'n_one', bond_nb => 0});
+    $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'netconf', hn => 'c');
+
+    diag('-= Create host with one iface and associate if to the same netconf than cluster interface =-');
+    @ifaces = ({bond_nb => 0, name => 'eth0'});
+    $c_host = _createHost(ifaces => \@ifaces, executor => $executor);
+
+    #set the first iface with the netconfs of the first interface
+    @c_interfaces = $sp->interfaces;
+    my @c_netconfs = $c_interfaces[0]->netconfs;
+    my @if = $c_host->ifaces;
+    $if[0]->update('netconf_ifaces' => \@c_netconfs);
+
+    $host_manager  = $sp->getHostManager();
+    $ehost_manager = EEntity->new(entity => $host_manager);
+    $host_manager_params = $sp->getManagerParameters(manager_type => 'host_manager');
+    $host_manager_params->{interfaces} = \@c_interfaces;
+
+    lives_ok {
+        $host = $ehost_manager->getFreeHost(%$host_manager_params);
+    } 'Successfully get free host';
+
+    $c_host->delete();
 
 };
 if($@) {
@@ -108,96 +154,42 @@ sub _createCluster {
                                                                                version => 2));
     } 'Get kanopya cluster\'s disk manager';
 
-    my $masterimage;
-    eval {
-        $masterimage = Entity::Masterimage->find(hash => {
-                           masterimage_name => { like => "%squeeze%" }
-                       });
-    };
-    if ($@) {
-    	lives_ok {
-          Entity::Masterimage->new(
-                masterimage_name => 'squeeze',
-                masterimage_file => '/vagrant/squeeze-amd64-xenvm.tar.bz2',
-                masterimage_desc => '',
-                masterimage_os   => 'tortue',
-                masterimage_size => '666',
-        	);
-    	} 'Deploy master image';
-
-        lives_ok { $executor->oneRun; } 'Deploy masterimage operation execution succeed';
-        lives_ok { $executor->oneRun; } 'Deploy masterimage operation execution succeed';
-
-        $masterimage = Entity::Masterimage->find(hash => {
-                           masterimage_name => { like => "%squeeze%" }
-                       });
-	}
-
     my $admin_user;
     lives_ok {
         $admin_user = Entity::User->find(hash => { user_login => 'admin' });
     } 'Get admin user';
 
     my $cluster_name = $args{name};
+    my $cluster;
     lives_ok {
-        Entity::ServiceProvider::Inside::Cluster->create(
-            active                 => 1,
-            cluster_name           => $cluster_name,
-            cluster_min_node       => "1",
-            cluster_max_node       => "30",
-            cluster_priority       => "100",
-            cluster_si_shared      => 0,
-            cluster_si_persistent  => 1,
-            cluster_domainname     => 'my.domain',
-            cluster_basehostname   => 'vm',
-            cluster_nameserver1    => '192.168.0.31',
-            cluster_nameserver2    => '127.0.0.1',
-            cluster_boot_policy    => 'PXE Boot via ISCSI',
-            kernel_id              => $kernel->id,
-            masterimage_id         => $masterimage->id,
-            user_id                => $admin_user->id,
-            managers               => {
-                host_manager => {
-                    manager_id     => $physical_hoster->id,
-                    manager_type   => "host_manager",
-                    manager_params => {
-                        cpu      => 1,
-                        ram      => 512,
-                        ram_unit => 'M',
-                    }
-                },
-                disk_manager => {
-                    manager_id     => $disk_manager->id,
-                    manager_type   => 'disk_manager',
-                    manager_params => {
-                        vg_id => 1,
-                        systemimage_size => 4 * 1024 * 1024 * 1024,
-                    },
-                }
-            },
-        );
+        $cluster = Entity::ServiceProvider::Inside::Cluster->new(
+                       active                 => 1,
+                       cluster_name           => $cluster_name,
+                       cluster_min_node       => "1",
+                       cluster_max_node       => "30",
+                       cluster_priority       => "100",
+                       cluster_si_shared      => 0,
+                       cluster_si_persistent  => 1,
+                       cluster_domainname     => 'my.domain',
+                       cluster_basehostname   => $args{hn},
+                       cluster_nameserver1    => '192.168.0.31',
+                       cluster_nameserver2    => '127.0.0.1',
+                       user_id                => $admin_user->id,
+                   );
     } 'AddCluster operation enqueue';
 
-    lives_ok { $executor->oneRun; } 'AddCluster operation execution succeed';
-    lives_ok { $executor->oneRun; } 'AddCluster operation execution succeed';
-
-    my $b_cluster;
     lives_ok {
-        $b_cluster = Entity::ServiceProvider::Inside::Cluster->find(hash => {
-                         cluster_name => $cluster_name});
-    } 'Get bonding cluster';
-
-    lives_ok {
-        my $adm_netconf = Entity::Netconf->find(hash => {netconf_name => 'Kanopya admin'}); 
-        $adm_netconf->delete();
-
-        my $interface = Entity::Interface->find(hash => {service_provider_id => $b_cluster->id});
-        $interface->delete();
-    } 'delete admin netconf, related netconf_interface, and automatically generated cluster interface';
+        $cluster->addManager(manager_type   => 'host_manager',
+                             manager_id     => $physical_hoster->id,
+                             manager_params => {
+                                 cpu => 1,
+                                 ram => 536870912, 
+                             });
+    } 'Attach host manager to cluster ';
 
     foreach my $interface (@{ $args{interfaces} }) {
         #we create a netconf for the interface
-        my $name = 'netconf' . $interface->{name};  
+        my $name = 'netconf' . $interface->{name};
         my $netconf = Entity::Netconf->create(netconf_name => $name , netconf_role_id => $admin_role);
 
         my %interface;
@@ -206,11 +198,11 @@ sub _createCluster {
         $interface{bonds_number}      = $interface->{bond_nb};
 
         #we attach the interface to the cluster
-        $b_cluster->addNetworkInterface(netconfs     => [ $interface{interface_netconf} ],
-                                        bonds_number => $interface{bonds_number});
+        $cluster->addNetworkInterface(netconfs     => [ $interface{interface_netconf} ],
+                                      bonds_number => $interface{bonds_number});
     }
 
-    return $b_cluster;
+    return $cluster;
 }
 
 sub _createHost {
@@ -227,7 +219,7 @@ sub _createHost {
                    host_manager_id    => $physical_hoster->id,
                    kernel_id          => $kernel->id,
                    host_serial_number => "123",
-                   host_ram           => 4 * 1024 * 1024,
+                   host_ram           => 4 * 1024 * 1024 * 1024,
                    host_core          => 2
                 );
     } 'create new host';
@@ -262,6 +254,8 @@ sub _createHost {
             }
         }
     }
+    
+    return $host;
 }
 
 1;
