@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Systemimage;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Systemimage
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<systemimage>
 
 =cut
 
@@ -38,13 +58,6 @@ __PACKAGE__->table("systemimage");
   is_nullable: 1
   size: 255
 
-=head2 container_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
 =head2 active
 
   data_type: 'integer'
@@ -65,17 +78,34 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "systemimage_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
-  "container_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
   "active",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</systemimage_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("systemimage_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<systemimage_name>
+
+=over 4
+
+=item * L</systemimage_name>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("systemimage_name", ["systemimage_name"]);
 
 =head1 RELATIONS
@@ -122,33 +152,57 @@ __PACKAGE__->belongs_to(
   "systemimage",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "systemimage_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 container
+=head2 systemimage_container_accesses
 
-Type: belongs_to
+Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Container>
+Related object: L<AdministratorDB::Schema::Result::SystemimageContainerAccess>
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "container",
-  "AdministratorDB::Schema::Result::Container",
-  { container_id => "container_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+__PACKAGE__->has_many(
+  "systemimage_container_accesses",
+  "AdministratorDB::Schema::Result::SystemimageContainerAccess",
+  { "foreign.systemimage_id" => "self.systemimage_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 component_types
+
+Type: many_to_many
+
+Composing rels: L</components_installed> -> component_type
+
+=cut
+
+__PACKAGE__->many_to_many("component_types", "components_installed", "component_type");
+
+=head2 container_accesses
+
+Type: many_to_many
+
+Composing rels: L</systemimage_container_accesses> -> container_access
+
+=cut
+
+__PACKAGE__->many_to_many(
+  "container_accesses",
+  "systemimage_container_accesses",
+  "container_access",
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-21 22:25:15
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7O7nWkC6XAyK+Gqtr9DyEg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-27 16:08:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cS4AC84bVhDfh2Er1Ifb4w
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-  { "foreign.entity_id" => "self.systemimage_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+  { entity_id => "systemimage_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;
