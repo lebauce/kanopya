@@ -350,7 +350,8 @@ sub optimIaas{
     } while ($optim == 1);
 
     $self->_applyMigrationPlan(
-        plan => $current_plan
+        plan                    => $current_plan,
+        empty_master_allowed    => 0,
     );
     $log->debug(Dumper $self->{_infra}->{hvs});
     return $self->{_operationPlan};
@@ -374,29 +375,35 @@ sub _applyMigrationPlan{
     # Keep only one migration per VM
 
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => ['plan']);
+    General::checkParams(
+        args => \%args,
+            required => ['plan', 'empty_master_allowed'],
+    );
 
     my $plan = $args{plan};
 
     # Trick to avoid empty master node (useless)
     # TODO refactoring a better algorithm to avoid this configuration
-
     my $replace_master_id;
     my $master_hv_id = $self->{_infra}->{master_hv};
-    $log->info(Dumper $self->{_infra});
 
-    if( scalar (@{$self->{_infra}->{hvs}->{$master_hv_id}->{vm_ids}} ) == 0 ) {
+    if ($args{empty_master_allowed} == 0) {
 
-        $log->info('Master node seems empty, try to empty another HV');
+        $log->info(Dumper $self->{_infra});
 
-        my $hv_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
+        if( scalar (@{$self->{_infra}->{hvs}->{$master_hv_id}->{vm_ids}} ) == 0 ) {
 
-        my $hvs = $self->{_infra}->{hvs};
-        for my $hv_id (@{$hv_ids}) {
-            if ($hvs->{$hv_id}->{hv_capa}->{cpu} <= $hvs->{$master_hv_id}->{hv_capa}->{cpu}
-                && $hvs->{$hv_id}->{hv_capa}->{ram} <= $hvs->{$master_hv_id}->{hv_capa}->{ram}) {
+            $log->info('Master node seems empty, try to empty another HV');
 
-                $replace_master_id = $hv_id;
+            my $hv_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
+
+            my $hvs = $self->{_infra}->{hvs};
+            for my $hv_id (@{$hv_ids}) {
+                if ($hvs->{$hv_id}->{hv_capa}->{cpu} <= $hvs->{$master_hv_id}->{hv_capa}->{cpu}
+                    && $hvs->{$hv_id}->{hv_capa}->{ram} <= $hvs->{$master_hv_id}->{hv_capa}->{ram}) {
+
+                    $replace_master_id = $hv_id;
+                }
             }
         }
     }
@@ -1725,7 +1732,8 @@ sub flushHypervisor {
     my $flush_results = $self->_getFlushHypervisorPlan(hv_id => $args{hv_id});
 
     $self->_applyMigrationPlan(
-        plan => $flush_results->{operation_plan}
+        plan                    => $flush_results->{operation_plan},
+        empty_master_allowed    => 1,
     );
 
     return { num_failed     => $flush_results->{num_failed},
