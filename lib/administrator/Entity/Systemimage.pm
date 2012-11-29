@@ -56,6 +56,14 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    systemimage_container_accesses => {
+        label        => 'Container accesses',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'container_access',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
 };
 
 sub getAttrDef{ return ATTR_DEF; }
@@ -135,27 +143,6 @@ sub toString {
     my $self = shift;
     my $string = $self->{_dbix}->get_column('systemimage_name');
     return $string;
-}
-
-=head2 getDevice
-
-get container for this systemimage
-
-=cut
-
-sub getDevice {
-    my $self = shift;
-    if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Systemimage->getDevice must be called on an already save instance";
-        $log->error($errmsg);
-        throw Kanopya::Exception(error => $errmsg);
-    }
-
-    $log->debug("Retrieve container");
-    my $device = Entity::Container->get(id => $self->getAttr(name => 'container_id'));
-
-    $log->debug("Systemimage container retrieved from database");
-    return $device;
 }
 
 =head2 getInstalledComponents
