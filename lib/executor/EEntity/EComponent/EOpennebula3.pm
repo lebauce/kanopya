@@ -940,10 +940,9 @@ sub generateXenVmTemplate {
 # generate kvm vm template and push it on opennebula master node
 sub generateKvmVmTemplate {
     my ($self, %args) = @_;
-    General::checkParams(
-        args     => \%args,
-        required => [ 'hypervisor','host']
-    );
+
+    General::checkParams(args     => \%args,
+                         required => [ 'hypervisor','host']);
 
     # host_ram is stored in octect, so we convert it to megaoctect
     my $ram = General::convertFromBytes(
