@@ -29,7 +29,8 @@ var Component = (function() {
             submitCallback : $.proxy(this.submitCallback, this),
             attrsCallback  : $.proxy(this.attrsCallback, this),
             displayed      : this.displayed,
-            relations      : this.relations
+            relations      : this.relations,
+            actionsCallback: $.proxy(this.actionsCallback, this)
         })).start();
     };
 

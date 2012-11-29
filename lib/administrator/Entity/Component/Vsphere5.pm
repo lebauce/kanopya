@@ -98,6 +98,12 @@ use constant ATTR_DEF => {
         is_editable  => 1,
         is_mandatory => 0
     },
+    vsphere5_repositories => {
+        label       => 'Virtual machine images repositories',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1,
+    },
     # TODO: move this virtual attr to HostManager attr def when supported
     host_type => {
         is_virtual => 1
@@ -165,9 +171,9 @@ sub checkHostManagerParams {
 
 =head2 getBaseConfiguration
 
-Get the basic configuration of the component
+Get the basic configuration of the Vsphere component
 
-@return base_configuration
+@return %base_configuration
 
 =end classdoc
 
@@ -1418,12 +1424,12 @@ sub getConf {
     my ($self,%args) = @_;
 
     my %conf;
-    my @repos = Vsphere5Repository->search(hash => { vsphere5_id => $self->id });
+    my @repos = Entity::Component::Vsphere5::Vsphere5Repository->search(hash => { vsphere5_id => $self->id });
 
-    $conf{login}        = $self->vsphere5_login;
-    $conf{password}     = $self->vsphere5_pwd;
-    $conf{url}          = $self->vsphere5_url;
-    $conf{repositories} = \@repos;
+    $conf{vsphere5_login}         = $self->vsphere5_login;
+    $conf{vsphere5_pwd}           = $self->vsphere5_pwd;
+    $conf{vsphere5_url}           = $self->vsphere5_url;
+    $conf{vsphere5_repositories}  = \@repos;
 
     return \%conf;
 }
@@ -1469,7 +1475,7 @@ sub addRepository {
 
     General::checkParams(args => \%args, required => ['repository_name', 'container_access_id']);
 
-    my $repository = Vsphere5Repository->new(vsphere5_id         => $self->id,
+    my $repository = Entity::Component::Vsphere5::Vsphere5Repository->new(vsphere5_id         => $self->id,
                                              repository_name     => $args{repository_name},
                                              container_access_id => $args{container_access_id},
                      );
@@ -1532,7 +1538,7 @@ sub getRepository {
 
     General::checkParams(args => \%args, required => ['container_access_id']);
 
-    my $repository = Vsphere5Repository->find(hash => {
+    my $repository = Entity::Component::Vsphere5::Vsphere5Repository->find(hash => {
                          container_access_id => $args{container_access_id} }
                      );
 
