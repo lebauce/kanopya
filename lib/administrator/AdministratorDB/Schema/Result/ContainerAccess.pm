@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::ContainerAccess
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<container_access>
 
@@ -35,7 +51,7 @@ __PACKAGE__->table("container_access");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 container_access_export
 
@@ -89,7 +105,7 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
   "container_access_export",
   { data_type => "char", is_nullable => 0, size => 255 },
@@ -131,7 +147,12 @@ __PACKAGE__->belongs_to(
   "container",
   "AdministratorDB::Schema::Result::Container",
   { container_id => "container_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 container_access
@@ -245,6 +266,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 systemimage_container_accesses
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::SystemimageContainerAccess>
+
+=cut
+
+__PACKAGE__->has_many(
+  "systemimage_container_accesses",
+  "AdministratorDB::Schema::Result::SystemimageContainerAccess",
+  { "foreign.container_access_id" => "self.container_access_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 vsphere5_repositories
 
 Type: has_many
@@ -260,9 +296,23 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 systemimages
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-20 17:02:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:i94NymfudxVX/o+JzMgDjw
+Type: many_to_many
+
+Composing rels: L</systemimage_container_accesses> -> systemimage
+
+=cut
+
+__PACKAGE__->many_to_many(
+  "systemimages",
+  "systemimage_container_accesses",
+  "systemimage",
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-29 10:51:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UmK3sjp6awlrXCDLeFBErQ
 
 __PACKAGE__->belongs_to(
   "parent",
@@ -270,6 +320,5 @@ __PACKAGE__->belongs_to(
   { entity_id => "container_access_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
-
 
 1;
