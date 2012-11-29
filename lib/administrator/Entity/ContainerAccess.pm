@@ -43,7 +43,7 @@ my $log = get_logger("");
 use constant ATTR_DEF => {
     container_id => {
         pattern      => '^[0-9\.]*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     export_manager_id => {
@@ -176,6 +176,24 @@ sub toString {
                  ", export_manager_id: $manager_id";
 
     return $string;
+}
+
+=pod
+
+=begin classdoc
+
+Build the mountpoint path on wich can be mounted the container access.
+
+@return a mountpoint for the container device
+
+=end classdoc
+
+=cut
+
+sub getMountPoint {
+    my $self = shift;
+
+    return "/mnt/" . $self->id;
 }
 
 1;

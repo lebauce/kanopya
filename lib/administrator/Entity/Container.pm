@@ -166,25 +166,6 @@ sub getDiskManager {
 
 =begin classdoc
 
-Build the mountpoint path on wich can be mounted the container device. 
-
-@return a mountpoint for the container device
-
-=end classdoc
-
-=cut
-
-sub getMountPoint {
-    my $self = shift;
-
-    return "/mnt/" . $self->id;
-}
-
-
-=pod
-
-=begin classdoc
-
 @return a generic string representation of the container
 
 =end classdoc
