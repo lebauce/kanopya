@@ -395,17 +395,15 @@ sub configureManagers {
 
     General::checkParams(args => \%args, optional => { 'managers' => undef });
 
-    # Workaround to handle connectors that have btoh category.
-    # We need to fix this when we willmerge inside/outside.
-    my ($wok_disk_manager, $wok_export_manager);
     my $kanopya = Entity->get(id => Kanopya::Config::get("executor")->{cluster}->{executor});
-    eval {
-        $wok_disk_manager   = $args{managers}->{disk_manager}->{manager_id};
-        $wok_export_manager = $args{managers}->{export_manager}->{manager_id};
-    };
+
+    # Workaround to handle connectors that have both category.
+    # We need to fix this when we will merge inside/outside.
+    my $wok_disk_manager   = $args{managers}->{disk_manager}->{manager_id};
+    my $wok_export_manager = $args{managers}->{export_manager}->{manager_id};
     if ($wok_disk_manager and $wok_export_manager) {
-        # FileImagaemanager0 -> FileImagaemanager0
-        if ($wok_disk_manager != $kanopya->getComponent(name => "Lvm", version => "2")->getAttr(name => 'component_id')) {
+        if ($wok_disk_manager != $kanopya->getComponent(name => "Lvm", version => "2")->id and
+            $wok_disk_manager != $kanopya->getComponent(name => "Storage")->id) {
             $args{managers}->{export_manager}->{manager_id} = $wok_disk_manager;
         }
     }
@@ -415,14 +413,14 @@ sub configureManagers {
         # Add default workflow manager
         my $workflow_manager = $kanopya->getComponent(name => "Kanopyaworkflow", version => "0");
         $args{managers}->{workflow_manager} = {
-            manager_id   => $workflow_manager->getId,
+            manager_id   => $workflow_manager->id,
             manager_type => "workflow_manager"
         };
 
         # Add default collector manager
         my $collector_manager = $kanopya->getComponent(name => "Kanopyacollector", version => "1");
         $args{managers}->{collector_manager} = {
-            manager_id   => $collector_manager->getId,
+            manager_id   => $collector_manager->id,
             manager_type => "collector_manager"
         };
 
@@ -431,7 +429,7 @@ sub configureManagers {
             # and set manager parameters if defined.
             eval {
                 ServiceProviderManager->find(hash => { manager_type        => $manager->{manager_type},
-                                                       service_provider_id => $self->getId });
+                                                       service_provider_id => $self->id });
             };
             if ($@) {
                 next if not $manager->{manager_id};
@@ -463,10 +461,10 @@ sub configureManagers {
     # Else use the boot policy to deduce the export manager to use
     else {
         $export_manager = $disk_manager->getExportManagerFromBootPolicy(
-                              boot_policy => $self->getAttr(name => 'cluster_boot_policy')
+                              boot_policy => $self->cluster_boot_policy
                           );
 
-        $self->addManager(manager_id => $export_manager->getId, manager_type => "export_manager");
+        $self->addManager(manager_id => $export_manager->id, manager_type => "export_manager");
     }
 
     if ($self->cluster_boot_policy eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
@@ -477,7 +475,7 @@ sub configureManagers {
 
     # Get export manager parameter related to si shared value.
     my $readonly_param = $export_manager->getReadOnlyParameter(
-                             readonly => $self->getAttr(name => 'cluster_si_shared')
+                             readonly => $self->cluster_si_shared
                          );
 
     # TODO: This will be usefull for the first call to applyPolicies at the cluster creation,
