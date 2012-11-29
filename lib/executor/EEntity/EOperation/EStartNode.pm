@@ -76,33 +76,22 @@ sub prepare {
     $self->SUPER::prepare();
 
     # Instanciate the bootserver Cluster
-    $self->{context}->{bootserver}
-        = EFactory::newEEntity(
-              data => Entity->get(id => $self->{config}->{cluster}->{bootserver})
-          );
+    $self->{context}->{bootserver} = EFactory::newEEntity(
+                                         data => Entity->get(id => $self->{config}->{cluster}->{bootserver})
+                                     );
 
     # Instanciate dhcpd
     my $dhcpd = $self->{context}->{bootserver}->getComponent(name => "Dhcpd", version => 3);
     $self->{context}->{dhcpd_component} = EFactory::newEEntity(data => $dhcpd);
 
-    # Get container of the system image, get the container access of the container
-    my $container = $self->{context}->{host}->getNodeSystemimage->getDevice;
-    $self->{context}->{container} = EFactory::newEEntity(data => $container);
-
-    # Warning:
-    # 1. Systeme image should be activated, so at least one container access exists
-    # 2. As systemimages always dedicated for instance, a system image container has
-    #    only one container access.
-    my $container_access = pop @{ $self->{context}->{container}->getAccesses };
-    $self->{context}->{container_access} = EFactory::newEEntity(data => $container_access);
-
-    $self->{context}->{export_manager}
-        = EFactory::newEEntity(data => $self->{context}->{container_access}->getExportManager);
 
     $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->cluster_domainname;
-
     $self->{cluster_components} = $self->{context}->{cluster}->getComponents(category => "all",
                                                                              order_by => "priority");
+
+    # Use the first systemimage container access found, as all should access to the same container.
+    my @accesses = $self->{context}->{host}->getNodeSystemimage->container_accesses;
+    $self->{context}->{container_access} = EFactory::newEEntity(data => pop @accesses);
 }
 
 sub execute {
@@ -113,12 +102,16 @@ sub execute {
                             ? "ro,noatime,nodiratime" : "defaults";
 
     # Mount the containers on the executor.
-    my $mountpoint = $self->{context}->{container}->getMountPoint;
-
-    $log->debug('Mounting the container <' . $mountpoint . '>');
-    $self->{context}->{container_access}->mount(mountpoint => $mountpoint,
-                                                econtext   => $self->getEContext,
-                                                erollback  => $self->{erollback});
+    eval {
+        $log->debug("Mounting the container access <$self->{context}->{container_access}>");
+        $self->{params}->{mountpoint} = $self->{context}->{container_access}->mount(
+                                            econtext  => $self->getEContext,
+                                            erollback => $self->{erollback}
+                                        );
+    };
+    if ($@) {
+        $log->warn("Unable to mount the container access, continue in configuration less mode.");
+    }
 
     my $is_loadbalanced = $self->{context}->{cluster}->isLoadBalanced;
     my $is_masternode = $self->{context}->{cluster}->getCurrentNodesCount == 0;
@@ -148,25 +141,28 @@ sub execute {
         }
     }
 
-    $log->info("Operate components configuration");
-    foreach my $component (@{ $self->{cluster_components} }) {
-        my $ecomponent = EFactory::newEEntity(data => $component);
-        $ecomponent->addNode(host               => $self->{context}->{host},
-                             mount_point        => $mountpoint,
-                             cluster            => $self->{context}->{cluster},
-                             container_access   => $self->{context}->{container_access},
-                             erollback          => $self->{erollback});
+    # If the system image is configurable, configure the components
+    if ($self->{params}->{mountpoint}) {
+        $log->info("Operate components configuration");
+        foreach my $component (@{ $self->{cluster_components} }) {
+            my $ecomponent = EFactory::newEEntity(data => $component);
+            $ecomponent->addNode(host               => $self->{context}->{host},
+                                 mount_point        => $self->{params}->{mountpoint},
+                                 cluster            => $self->{context}->{cluster},
+                                 container_access   => $self->{context}->{container_access},
+                                 erollback          => $self->{erollback});
+        }
+    
+        # Authorize the Kanopya master to connect to the node using SSH
+        my $mntpoint = $self->{params}->{mountpoint};
+        my $rsapubkey_cmd = "mkdir -p $mntpoint/root/.ssh ; " .
+                            "cat /root/.ssh/kanopya_rsa.pub > $mntpoint/root/.ssh/authorized_keys";
+        $self->getExecutorEContext->execute(command => $rsapubkey_cmd);
     }
 
     $log->info("Operate Boot Configuration");
-    $self->_generateBootConf(mount_point => $mountpoint,
-                             filesystem => $self->{context}->{container}->container_filesystem,
-                             options    => $mount_options);
-
-    # Authorize the Kanopya master to connect to the node using SSH
-    my $rsapubkey_cmd = "mkdir -p $mountpoint/root/.ssh ; " .
-                        "cat /root/.ssh/kanopya_rsa.pub > $mountpoint/root/.ssh/authorized_keys";
-    $self->getExecutorEContext->execute(command => $rsapubkey_cmd);
+    $self->_generateBootConf(mount_point => $self->{params}->{mountpoint},
+                             options     => $mount_options);
 
     # Update kanopya etc hosts
     my @data = ();
@@ -191,9 +187,10 @@ sub execute {
     $template->process('hosts.tt', { hosts => \@data }, '/etc/hosts');
 
     # Umount system image container
-    $self->{context}->{container_access}->umount(mountpoint => $mountpoint,
-                                                 econtext   => $self->getEContext,
-                                                 erollback  => $self->{erollback});
+    if ($self->{params}->{mountpoint}) {
+        $self->{context}->{container_access}->umount(econtext   => $self->getEContext,
+                                                     erollback  => $self->{erollback});
+    }
 
     # Create node instance
     $self->{context}->{host}->setNodeState(state => "goingin");
@@ -220,11 +217,10 @@ sub _cancel {
     }
 
     # Try to umount the container.
-    eval {
-        my $mountpoint = $self->{context}->{container}->getMountPoint;
-        $self->{context}->{container_access}->umount(mountpoint => $mountpoint,
-                                                     econtext   => $self->getEContext);
-    };
+    if ($self->{params}->{mountpoint}) {
+        $self->{context}->{container_access}->umount(econtext   => $self->getEContext,
+                                                     erollback  => $self->{erollback});
+    }
 }
 
 sub finish {
@@ -233,9 +229,7 @@ sub finish {
     # No need to lock the bootserver
     delete $self->{context}->{bootserver};
     delete $self->{context}->{dhcpd_component};
-    delete $self->{context}->{container};
     delete $self->{context}->{container_access};
-    delete $self->{context}->{export_manager};
     delete $self->{context}->{systemimage};
 }
 
@@ -243,8 +237,9 @@ sub _generateBootConf {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     =>\%args,
-                         required => [ 'mount_point', 'filesystem', 'options' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'options' ],
+                         optional => { 'mount_point' => undef });
 
     # Firstly create pxe config file if needed
     my $boot_policy = $self->{context}->{cluster}->cluster_boot_policy;
@@ -265,7 +260,6 @@ sub _generateBootConf {
             my $input = "bootconf.tt";
 
             my $vars = {
-                filesystem    => $self->{context}->{container}->container_filesystem,
                 initiatorname => $self->{context}->{host}->host_initiatorname,
                 target        => $targetname,
                 ip            => $self->{context}->{container_access}->container_access_ip,
@@ -283,7 +277,6 @@ sub _generateBootConf {
                     foreach my $j (@$tmp){
                         $vars->{additional_devices} .= " ". $j->{name};
                     }
-                
             };
 
             $template->process($input, $vars, "/tmp/$tmpfile")
@@ -305,7 +298,8 @@ sub _generatePXEConf {
     my %args = @_;
 
     General::checkParams(args     =>\%args,
-                         required => ['cluster', 'host', 'mount_point']);
+                         required => ['cluster', 'host' ],
+                         optional => { 'mount_point' => undef });
 
     my $cluster_kernel_id = $args{cluster}->kernel_id;
     my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
@@ -324,15 +318,13 @@ sub _generatePXEConf {
     }
 
     ## Here we create a dedicated initramfs for the node
-    
     my $linux_component = EEntity->new(entity => $args{cluster}->getComponent(category => "system"));
     my $initrd_dir = $linux_component->extractInitramfs(src_file => "$tftpdir/initrd_$kernel_version"); 
     
     $linux_component->customizeInitramfs(initrd_dir  => $initrd_dir,
                                          cluster     => $args{cluster},
                                          host        => $args{host},
-                                         mount_point => $args{host},
-                                        );
+                                         mount_point => $args{host});
                                         
     # create the final storing directory
     my $path = "$tftpdir/$clustername/$hostname";
@@ -342,8 +334,7 @@ sub _generatePXEConf {
 
     $linux_component->buildInitramfs(initrd_dir      => $initrd_dir,
                                      compress_type   => 'gzip',
-                                     new_initrd_file => $newinitrd
-                                    );
+                                     new_initrd_file => $newinitrd);
 
     my $gateway  = undef;
     my $pxeiface = $args{host}->getPXEIface;
