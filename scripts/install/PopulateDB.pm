@@ -1016,6 +1016,12 @@ sub registerKanopyaMaster {
             }
         },
         {
+            name => "Puppetagent",
+            conf => {
+                puppetagent2_mode => "kanopya"
+            }
+        },
+        {
             name => "Openiscsi"
         },
         {

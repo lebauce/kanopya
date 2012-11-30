@@ -406,30 +406,7 @@ useTemplate(
 );
 
 # Puppetmaster configuration
-useTemplate(
-    include  => '/opt/kanopya/templates/components/puppetmaster',
-    template => 'puppet.conf.tt',
-    conf     => '/etc/puppet/puppet.conf',
-    datas    => {kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules'}
-);
-
-my $path = $answers->{clusters_directory};
-if($path =~ /\/$/) {
-    chop($path);
-}
-
-useTemplate(
-    include  => '/opt/kanopya/templates/components/puppetmaster',
-    template => 'fileserver.conf.tt',
-    conf     => '/etc/puppet/fileserver.conf',
-    datas    => {
-        domainname         => $answers->{kanopya_server_domain_name},
-        clusters_directory => $path,
-    }
-);
-
-system('invoke-rc.d puppetmaster restart');
-
+generatePuppetConfiguration(%datas);
 
 # Configure log rotate
 copy("$conf_vars->{install_template_dir}/logrotate-kanopya", '/etc/logrotate.d') || die "Copy failed $!";
@@ -705,6 +682,75 @@ sub tftpPopulation {
     system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* '.$answers->{tftp_directory});
 }
 
+sub generatePuppetConfiguration {
+    my %args = @_;
+
+    useTemplate(
+        include  => '/opt/kanopya/templates/components/puppetmaster',
+        template => 'puppet.conf.tt',
+        conf     => '/etc/puppet/puppet.conf',
+        datas    => {
+            kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules',
+            admin_domainname       => $args{admin_domainname},
+            kanopya_hostname       => $args{kanopya_hostname}
+        }
+    );
+
+    my $path = $answers->{clusters_directory};
+    if($path =~ /\/$/) {
+        chop($path);
+    }
+
+    useTemplate(
+        include  => '/opt/kanopya/templates/components/puppetmaster',
+        template => 'fileserver.conf.tt',
+        conf     => '/etc/puppet/fileserver.conf',
+        datas    => {
+            domainname         => $args{admin_domainname},
+            clusters_directory => $path,
+        }
+    );
+
+    useTemplate(
+        include  => '/opt/kanopya/templates/components/puppetagent',
+        template => 'default_puppet.tt',
+        conf     => '/etc/default/puppet',
+        datas    => {
+            puppetagent2_bootstart => "yes"
+        }
+    );
+
+    writeFile('/etc/puppet/manifests/site.pp', "import \"nodes/*.pp\"\n");
+
+    use Kanopya::Config;
+    use EEntity;
+
+    my $config = Kanopya::Config::get('executor');
+    my $kanopya = Entity->get(id => $config->{cluster}->{executor});
+    my $linux = $kanopya->getComponent(category => "System");
+    my $kanopya_master = (values %{$kanopya->getHosts()})[0];
+    my $puppetmaster = $kanopya->getComponent(name => "Puppetmaster");
+    my $fstab_puppet_definitions = $linux->getPuppetDefinition(
+                                       host    => $kanopya_master,
+                                       cluster => $kanopya,
+                                   );
+
+    my $epuppetmaster = EEntity->new(entity => $puppetmaster);
+    my $fqdn = $kanopya_master->host_hostname . "." . $kanopya->cluster_domainname;
+
+    $epuppetmaster->createHostCertificate(
+        mount_point => "/tmp",
+        host_fqdn   => $fqdn
+    );
+
+    $epuppetmaster->createHostManifest(
+        host_fqdn          => $fqdn,
+        puppet_definitions => $fstab_puppet_definitions
+    );
+
+    system([ 'puppet' ], 'restart');
+    system([ 'puppetmaster' ], 'restart');
+}
 
 
 ###################################################### Following functions generates conf files for Kanopya

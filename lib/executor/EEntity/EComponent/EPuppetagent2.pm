@@ -69,23 +69,12 @@ sub configureNode {
         src  => $file,
         dest => $args{mount_point}.'/etc/puppet'
     );
-
 }
 
 sub addNode {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'cluster','mount_point', 'host' ]);
-
-    my $puppet_definitions = "";
-    my $cluster_components = $args{cluster}->getComponents(category => "all");
-    foreach my $component (@{ $cluster_components }) {
-        # retrieve puppet definition to create manifest
-        $puppet_definitions .= $component->getPuppetDefinition(
-            host    => $args{host},
-            cluster => $args{cluster},
-        );
-    }
 
     if ($self->puppetagent2_mode eq 'kanopya') {
         # create, sign and push a puppet certificate on the image
@@ -96,11 +85,6 @@ sub addNode {
         $puppetmaster->createHostCertificate(
             mount_point => $args{mount_point},
             host_fqdn   => $fqdn
-        );
-
-        $puppetmaster->createHostManifest(
-            host_fqdn          => $fqdn,
-            puppet_definitions => $puppet_definitions
         );
     }
 
@@ -116,22 +100,67 @@ sub addNode {
     );    
 }
 
+sub generatePuppetDefinitions {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
+    my $fqdn = $args{host}->host_hostname . "." . $self->{_executor}->cluster_domainname;
+    my $puppet_definitions = "";
+    my $cluster_components = $args{cluster}->getComponents(category => "all");
+    foreach my $component (@{ $cluster_components }) {
+        # retrieve puppet definition to create manifest
+        $puppet_definitions .= $component->getPuppetDefinition(
+            host    => $args{host},
+            cluster => $args{cluster},
+        );
+    }
+
+    if ($self->puppetagent2_mode eq 'kanopya') {
+        # create, sign and push a puppet certificate on the image
+        $log->info('Puppent agent component configured with kanopya puppet master');
+        my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
+        my $fqdn = $args{host}->host_hostname . "." . $self->{_executor}->cluster_domainname;
+
+        $puppetmaster->createHostManifest(
+            host_fqdn          => $fqdn,
+            puppet_definitions => $puppet_definitions
+        );
+    }
+}
+
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster' ]);
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
-    EEntity->new(entity => $self->getPuppetMaster)->updateSite();
-    $self->applyAllManifests(%args);
+    $self->applyConfiguration(%args);
 }
 
 sub postStopNode {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    $self->applyConfiguration(%args);
+}
+
+sub applyConfiguration {
+    my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => [ 'cluster' ]);
 
     EEntity->new(entity => $self->getPuppetMaster)->updateSite();
-    $self->applyAllManifests(%args);
+
+    my $hosts = $args{cluster}->getHosts();
+    my @ehosts = map { EEntity->new(entity => $_) } values %$hosts;
+    for my $ehost (@ehosts) {
+        $self->generatePuppetDefinitions(host => $ehost,
+                                         %args);
+        $self->applyManifest(host => $ehost,
+                             %args);
+    }
 }
 
 sub applyAllManifests {

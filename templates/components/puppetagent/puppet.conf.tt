@@ -8,3 +8,4 @@ ssldir=/var/lib/puppet/ssl
 rundir=/var/run/puppet
 factpath=$vardir/lib/facter
 templatedir=$confdir/templates
+filetimeout=0
