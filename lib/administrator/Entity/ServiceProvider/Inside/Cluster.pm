@@ -836,7 +836,7 @@ sub getMasterNodeId {
     my $host = $self->getMasterNode;
 
     if (defined ($host)) {
-        return $host->getAttr(name => "host_id");
+        return $host->id;
     }
 
     return;
