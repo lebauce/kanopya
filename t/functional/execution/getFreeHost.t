@@ -57,7 +57,7 @@ eval {
 
     lives_ok {
         $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
-                               hash => { cluster_name => 'kanopya' });
+                               hash => { cluster_name => 'Kanopya' });
         $physical_hoster = $kanopya_cluster->getHostManager();
     } 'Retrieve Kanopya cluster';
 
@@ -65,79 +65,199 @@ eval {
         $kernel = Entity::Kernel->find(hash => {});
     } 'Get first kernel found';
 
-    my ($sp,$c_host,@interfaces,@ifaces,$host_manager,$ehost_manager,$host_manager_params,$host,@c_interfaces);
+    my ($sp,$c_host,$d_host,@interfaces,@ifaces,$host_manager,$host_manager_params,$host,@c_interfaces,@if,$netconf,@c_netconfs);
+
+    diag('-= Create cluster with 2 common interface =-');
+    @interfaces = ({name => 'c_one', bond_nb => 0}, {name =>'c_two', bond_nb => 0});
+    $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'bonding00', hn =>'t');
+
+    diag('-= Create host with 2 common ifaces =-');
+    @ifaces = ({bond_nb => 0, name => 'eth0'}, {bond_nb => 0, name => 'eth1'});
+    $c_host = _createHost(ifaces => \@ifaces, executor => $executor);
+
+    diag('-= Create host with 1 common ifaces =-');
+    @ifaces = ({bond_nb => 0, name => 'eth0'});
+    $d_host = _createHost(ifaces => \@ifaces, executor => $executor);
+
+    $host_manager = _getHostManagerParams(sp => $sp);
+
+    lives_ok {
+        $host = $host_manager->{ehost_manager}->getFreeHost(%{ $host_manager->{params} });
+    } 'Successfully get free host';
+
+    $c_host->delete();
+    $d_host->delete();
+    $sp->delete();
+
+    diag('-= Create cluster with 2 common interface =-');
+    @interfaces = ({name => 'c_oone', bond_nb => 0}, {name =>'c_twoo', bond_nb => 0});
+    $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'bonding0', hn =>'a');
+
+    diag('-= Create host with 2 common ifaces =-');
+    @ifaces = ({bond_nb => 0, name => 'eth0'}, {bond_nb => 0, name => 'eth1'});
+    $c_host = _createHost(ifaces => \@ifaces, executor => $executor);
+
+    $host_manager = _getHostManagerParams(sp => $sp);
+
+    lives_ok {
+        $host = $host_manager->{ehost_manager}->getFreeHost(%{ $host_manager->{params} });
+    } 'Successfully get free host';
+
+    $c_host->delete();
+    $sp->delete();
 
     diag('-= Create cluster with 1 common interface and one bonded interface (1) =-');
-    @interfaces = ({name => 'c_one', bond_nb => 0}, {name =>'b_one', bond_nb => 1});
+    @interfaces = ({name => 'c_onee', bond_nb => 0}, {name =>'b_one', bond_nb => 1});
     $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'bonding1', hn =>'a');
 
     diag('-= Create host with 1 common interface and one bonded interface (1) =-');
     @ifaces = ({bond_nb => 0, name => 'eth0'}, {bond_nb => 1, name => 'bond0', slaves => 1});
     $c_host = _createHost(ifaces => \@ifaces, executor => $executor);
 
-    $host_manager  = $sp->getHostManager();
-    $ehost_manager = EEntity->new(entity => $host_manager);
-    $host_manager_params = $sp->getManagerParameters(manager_type => 'host_manager');
-    @c_interfaces = $sp->interfaces;
-    $host_manager_params->{interfaces} = \@c_interfaces;
+    $host_manager = _getHostManagerParams(sp => $sp);
 
     lives_ok {
-        $host = $ehost_manager->getFreeHost(%$host_manager_params);
+        $host = $host_manager->{ehost_manager}->getFreeHost(%{ $host_manager->{params} });
     } 'Successfully get free host';
 
     $c_host->delete();
+    $sp->delete();
 
     diag('-= Create cluster with 1 common interface and one bonded interface (1) =-');
-    @interfaces = ({name => 'c_two', bond_nb => 0}, {name =>'b_two', bond_nb => 1});
+    @interfaces = ({name => 'c_twwwo', bond_nb => 0}, {name =>'b_two', bond_nb => 1});
     $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'bonding2', hn => 'b');
 
     diag('-= Create host without any iface =-');
     @ifaces = ();
     $c_host = _createHost(ifaces => \@ifaces, executor => $executor);
 
-    $host_manager  = $sp->getHostManager();
-    $ehost_manager = EEntity->new(entity => $host_manager);
-    $host_manager_params = $sp->getManagerParameters(manager_type => 'host_manager');
-    @c_interfaces = $sp->interfaces;
-    $host_manager_params->{interfaces} = \@c_interfaces;
+    $host_manager = _getHostManagerParams(sp => $sp);
 
     dies_ok {
-        $host = $ehost_manager->getFreeHost(%$host_manager_params);
+        $host = $host_manager->{ehost_manager}->getFreeHost(%{ $host_manager->{params} });
     } 'Successfully dies on get free host!';
 
     $c_host->delete();
+    $sp->delete();
 
-    diag('-= Create cluster with 1 common interface =-');
+    ################################NETCONF TESTING####################################
+    diag('-= Create cluster with 1 common interface (1 netconf) =-');
     @interfaces = ({name => 'n_one', bond_nb => 0});
-    $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'netconf', hn => 'c');
+    $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'netconf0', hn => 'c');
 
-    diag('-= Create host with one iface and associate if to the same netconf than cluster interface =-');
-    @ifaces = ({bond_nb => 0, name => 'eth0'});
+    diag('-= Create host with 2 common iface and associate only 1 to the same netconf =-');
+    @ifaces = ({bond_nb => 0, name => 'eth0'}, {bond_nb => 0, name => 'eth1'});
     $c_host = _createHost(ifaces => \@ifaces, executor => $executor);
 
     #set the first iface with the netconfs of the first interface
-    @c_interfaces = $sp->interfaces;
-    my @c_netconfs = $c_interfaces[0]->netconfs;
-    my @if = $c_host->ifaces;
-    $if[0]->update('netconf_ifaces' => \@c_netconfs);
+    @c_interfaces  = $sp->interfaces;
+    @c_netconfs = $c_interfaces[0]->netconfs;
+    @if = $c_host->ifaces;
+    my @tmp;
+    push @tmp, $if[0];
+    _associateNetconfIface(ifaces => \@tmp, netconfs => \@c_netconfs);
+    $netconf = _createDummyNetconf(name => 'dummy00', role => 'admin');
+    my (@tmp, @ntmp);
+    push @tmp, $if[1];
+    push @ntmp, $netconf;
+    _associateNetconfIface(ifaces => \@tmp, netconfs => \@ntmp);
 
-    $host_manager  = $sp->getHostManager();
-    $ehost_manager = EEntity->new(entity => $host_manager);
-    $host_manager_params = $sp->getManagerParameters(manager_type => 'host_manager');
-    $host_manager_params->{interfaces} = \@c_interfaces;
+    $host_manager = _getHostManagerParams(sp => $sp);
 
     lives_ok {
-        $host = $ehost_manager->getFreeHost(%$host_manager_params);
+        $host = $host_manager->{ehost_manager}->getFreeHost(%{ $host_manager->{params} });
     } 'Successfully get free host';
 
     $c_host->delete();
+    $sp->delete();
 
+    diag('-= Create cluster with 1 common interface =-');
+    @interfaces = ({name => 'n_two', bond_nb => 0});
+    $sp = _createCluster(interfaces => \@interfaces, executor => $executor, name => 'netconf1', hn => 'd');
+
+    diag('-= Create host with one common iface associated to a different netconf =-');
+    @ifaces = ({bond_nb => 0, name => 'eth0'});
+    $c_host = _createHost(ifaces => \@ifaces, executor => $executor);
+
+    #set the iface with a dummy netconf
+    $netconf = _createDummyNetconf(name => 'dummy0', role => 'admin');
+    @if = $c_host->ifaces;
+    my @tmp;
+    push @tmp, $if[0];
+    _associateNetconfIface(ifaces => \@tmp, netconfs => ($netconf));
+
+    $host_manager = _getHostManagerParams(sp => $sp);
+
+    dies_ok {
+        $host = $host_manager->{ehost_manager}->getFreeHost(%{ $host_manager->{params} });
+    } 'Successfully dies on get free host';
+
+    $c_host->delete();
+    $sp->delete();
 };
 if($@) {
-    my $error = $@; 
+    my $error = $@;
     print $error."\n";
 };
 
+sub _associateNetconfIface {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['ifaces', 'netconfs']);
+
+    my $ifaces   = $args{ifaces};
+    my $netconfs = $args{netconfs};
+
+    foreach my $iface (@$ifaces) {
+        $iface->update('netconf_ifaces' => $netconfs);
+    }
+}
+
+sub _associateNetconfInterface {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['interfaces', 'netconfs']);
+
+    my $interfaces = $args{interfaces};
+    my $netconfs   = $args{netconfs};
+
+    foreach my $interface (@$interfaces) {
+        foreach my $netconf (@$netconfs) {
+            NetconfInterface->new(netconf_id   => $netconf->id,
+                                  interface_id => $interface->id,);
+        }
+    }
+}
+
+sub _getHostManagerParams {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['sp']);
+
+    my $sp = $args{sp};
+
+    my $host_manager  = $sp->getHostManager();
+    my @c_interfaces  = $sp->interfaces;
+    my $ehost_manager = EEntity->new(entity => $host_manager);
+    my $host_manager_params = $sp->getManagerParameters(manager_type => 'host_manager');
+    $host_manager_params->{interfaces} = \@c_interfaces;
+
+    return { params => $host_manager_params, ehost_manager => $ehost_manager };
+}
+
+sub _createDummyNetconf {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['name', 'role']);
+
+    my $name = $args{name};
+    my $role = $args{role};
+
+    my $role_id = Entity::NetconfRole->find(hash => {netconf_role_name => $role})->id;
+    my $netconf = Entity::Netconf->create(netconf_name => $name, netconf_role_id => $role_id);
+
+    return $netconf;
+}
 
 sub _createCluster {
     my %args = @_;

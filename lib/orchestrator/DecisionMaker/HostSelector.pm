@@ -151,7 +151,6 @@ sub _matchHostConstraints {
         #if no cluster's interface matches this netconf, the iface isn't taken in count
         my @configured_ifaces = $host->configuredIfaces;
         if (scalar @configured_ifaces > 0) {
-          $DB::single = 1;
             my @configured_bonded_ifaces = grep {scalar @{$_->slaves} > 0} @configured_ifaces;
             my @configured_common_ifaces =
                 grep {scalar @{$_->slaves} == 0 && !$_->master } @configured_ifaces;
