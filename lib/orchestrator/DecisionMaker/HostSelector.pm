@@ -100,14 +100,14 @@ sub _matchHostConstraints {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     if (defined $args{ram}) {
-        $self->_matchRam(host => $host, ram => $args{ram});
+        $self->_matchRam(host => $args{host}, ram => $args{ram});
     }
     if (defined $args{core}) {
-        $self->_matchCore(host => $host, core => $args{core});
+        $self->_matchCore(host => $args{host}, core => $args{core});
     }
     if (defined $args{interfaces}) {
-        $self->_matchIfaceNumber(host => $host, interfaces => $args{interfaces});
-        $self->_matchIfaceNetconf(host => $host, interfaces => $args{interfaces}); 
+        $self->_matchIfaceNumber(host => $args{host}, interfaces => $args{interfaces});
+        $self->_matchIfaceNetconf(host => $args{host}, interfaces => $args{interfaces}); 
     }
 
     return 1;
