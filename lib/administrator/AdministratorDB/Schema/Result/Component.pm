@@ -559,6 +559,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 vmms
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Vmm>
+
+=cut
+
+__PACKAGE__->has_many(
+  "vmms",
+  "AdministratorDB::Schema::Result::Vmm",
+  { "foreign.iaas_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 vmm
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Vmm>
+
+=cut
+
+__PACKAGE__->might_have(
+  "vmm",
+  "AdministratorDB::Schema::Result::Vmm",
+  { "foreign.vmm_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 vsphere5
 
 Type: might_have
@@ -584,5 +614,5 @@ __PACKAGE__->belongs_to(
   { entity_id => "component_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
-
+ 
 1;

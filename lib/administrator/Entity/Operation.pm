@@ -483,8 +483,9 @@ sub lockContext {
         }
     };
     if ($@) {
+        my $exception = $@;
         $adm->rollbackTransaction;
-        throw $@;
+        $exception->rethrow;
     }
     $adm->commitTransaction;
 }

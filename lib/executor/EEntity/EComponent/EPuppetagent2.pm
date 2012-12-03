@@ -80,7 +80,7 @@ sub addNode {
         # create, sign and push a puppet certificate on the image
         $log->info('Puppent agent component configured with kanopya puppet master');
         my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
-        my $fqdn = $args{host}->host_hostname . $self->{_executor}->cluster_domainname;
+        my $fqdn = $args{host}->host_hostname . "." . $self->{_executor}->cluster_domainname;
 
         $puppetmaster->createHostCertificate(
             mount_point => $args{mount_point},

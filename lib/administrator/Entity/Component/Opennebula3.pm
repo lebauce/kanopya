@@ -29,8 +29,6 @@ use Entity::Operation;
 use Entity::ContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::Host::Hypervisor::Opennebula3Hypervisor;
-use Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3XenHypervisor;
-use Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3KvmHypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Host::VirtualMachine::Opennebula3Vm;
 use Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm;
@@ -348,6 +346,23 @@ sub needBridge {
     return 1;
 }
 
+sub getHostsEntries {
+    my $self = shift;
+    my @hosts_entries = ();
+
+    for my $vmm ($self->vmms) {
+        foreach my $node (values %{$vmm->getServiceProvider->getHosts()}) {
+            push @hosts_entries, {
+                hostname   => $node->host_hostname,
+                domainname => $self->getServiceProvider->cluster_domainname,
+                ip         => $node->adminIp
+            };
+        }
+    }
+
+    return \@hosts_entries;
+}
+
 sub getTemplateDataOned {
     my $self = shift;
     my %data = $self->{_dbix}->get_columns();
@@ -379,14 +394,7 @@ sub addHypervisor {
 
     General::checkParams(args => \%args, required => [ 'host', 'onehost_id' ]);
 
-    my $hypervisor_type = 'Entity::Host::Hypervisor::Opennebula3Hypervisor::';
-    if ($self->hypervisor eq 'xen') {
-        $hypervisor_type .= 'Opennebula3XenHypervisor';
-    } else {
-        $hypervisor_type .= 'Opennebula3KvmHypervisor';
-    }
-
-    return $hypervisor_type->promote(
+    return Entity::Host::Hypervisor::Opennebula3Hypervisor->promote(
                promoted       => $args{host},
                opennebula3_id => $self->id,
                onehost_id     => $args{onehost_id}
@@ -504,7 +512,7 @@ sub getRemoteSessionURL {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['host']);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     return "vnc://" . $args{host}->hypervisor->adminIp() . ":" . $args{host}->vnc_port;
 }

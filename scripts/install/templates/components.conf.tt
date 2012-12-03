@@ -30,3 +30,6 @@ vsphere5
 debian
 redhat
 suse
+vmm
+kvm
+xen
