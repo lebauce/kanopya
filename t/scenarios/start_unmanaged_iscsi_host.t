@@ -54,7 +54,7 @@ my $boards = [
 ];
 
 eval {
-    Administrator::authenticate( login =>'admin', password => '_tamere23' );
+    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
     my $adm = Administrator->new;
     my $db = $adm->{db};
     
