@@ -97,141 +97,251 @@ Filter the hosts with the given contraints
 sub _matchHostConstraints {
     my ($self,%args)  = @_;
 
-    General::checkParams(args => \%args, required => [ "host" ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
+    if (defined $args{ram}) {
+        $self->_matchRam(host => $host, ram => $args{ram});
+    }
+    if (defined $args{core}) {
+        $self->_matchCore(host => $host, core => $args{core});
+    }
+    if (defined $args{interfaces}) {
+        $self->_matchIfaceNumber(host => $host, interfaces => $args{interfaces});
+        $self->_matchIfaceNetconf(host => $host, interfaces => $args{interfaces}); 
+    }
+
+    return 1;
+}
+
+=pod
+
+=begin classdoc
+
+check iface netconf constraint
+If any of the host iface is configured, all the cluster interface must be matched by
+at least one of the host iface
+
+@param host
+@param interfaces
+
+@return boolean
+
+=end classdoc
+
+=cut
+
+sub _matchIfaceNetconf {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'interfaces' ]);
+
+    my @interfaces = @{ $args{interfaces} };
     my $host = $args{host};
 
-    for my $constraint ('core', 'ram') {
-        if (defined $args{$constraint}) {
-            my $host_value = $host->getAttr(name => "host_$constraint");
-            $log->debug("constraint '$constraint' ($host_value) >= $args{$constraint}");
-            if ($host_value < $args{$constraint}) {
+    my @configured_ifaces = $host->configuredIfaces;
+
+    if (scalar @configured_ifaces > 0) {
+        my @configured_bonded_ifaces = grep {scalar @{$_->slaves} > 0} @configured_ifaces;
+        my @configured_simple_ifaces =
+            grep {scalar @{ $_->slaves } == 0 && !$_->master} @configured_ifaces;
+        my @configured_simple_interfaces =
+            grep {scalar $_->netconfs > 0 && $_->bonds_number == 0} @{ $args{interfaces} };
+        my @configured_bonded_interfaces =
+            grep {scalar $_->netconfs > 0 && $_->bonds_number > 0} @{ $args{interfaces} };
+        my @iface_netconfs;
+        my @interface_netconfs;
+        my @matching_netconfs;
+
+        #First the bonded interfaces
+        if (scalar @configured_bonded_interfaces > 0) {
+
+            BONDED_INTERFACES:
+            foreach my $configured_bonded_interface (@configured_bonded_interfaces) {
+                my @matchs;
+                @interface_netconfs = $configured_bonded_interface->netconfs;
+                my @same_bond_nb =
+                    grep {$configured_bonded_interface->bonds_number == scalar @{ $_->slaves }}
+                    @configured_bonded_ifaces;
+                if (!scalar @same_bond_nb) {
+                    my $msg = 'The bonded cluster interface <' .$configured_bonded_interface->id;
+                    $msg   .= '> does not have any matching iface on host <' . $host->id . '>';
+                    $log->debug($msg);
+                    return 0;
+                }
+                foreach my $netconf (@interface_netconfs) {
+                    foreach my $configured_bonded_iface (@same_bond_nb) {
+                        @iface_netconfs = $configured_bonded_iface->netconfs;
+                        @matching_netconfs  = grep {$netconf->id == $_->id} @iface_netconfs;
+                        if (scalar @matching_netconfs > 0) {
+                            push @matchs, $configured_bonded_iface;
+                        }
+                    }
+                    if (scalar @matchs > 0) {
+                        my %retained;
+                        $retained{$matchs[0]} = 1;
+                        @configured_bonded_ifaces = grep {!$retained{$_}} @configured_bonded_ifaces;
+                        next BONDED_INTERFACES;
+                    }
+                }
+                if (!scalar @matchs) {
+                    my $msg = 'There is no iface on host <' . $host->id . '> that can match ';
+                    $msg   .= ' the configuration of cluster interface <' . $configured_bonded_interface->id;
+                    $msg   .= '>';
+                    $log->debug($msg);
+                    return 0;
+                }
+            }
+        }
+
+        #Then the simple ones
+        if (scalar @configured_simple_interfaces > 0) {
+
+            SIMPLE_INTERFACES:
+            foreach my $configured_simple_interface (@configured_simple_interfaces) {
+                my @matchs;
+                @interface_netconfs = $configured_simple_interface->netconfs;
+                foreach my $netconf (@interface_netconfs) {
+                    foreach my $configured_simple_iface (@configured_simple_ifaces) {
+                        @iface_netconfs = $configured_simple_iface->netconfs;
+                        @matching_netconfs  = grep {$netconf->id == $_->id} @iface_netconfs;
+                        if (scalar @matching_netconfs > 0) {
+                            push @matchs, $configured_simple_iface;
+                        }
+                    }
+                    if (scalar @matchs > 0) {
+                        my %retained;
+                        $retained{$matchs[0]} = 1;
+                        @configured_simple_ifaces = grep {!$retained{$_}} @configured_simple_ifaces;
+                        next SIMPLE_INTERFACES;
+                    }
+                }
+                if (!scalar @matchs) {
+                    my $msg = 'There is no iface on host <' . $host->id . '> that can match ';
+                    $msg   .= ' the configuration of cluster interface <' . $configured_simple_interface->id;
+                    $msg   .= '>';
+                    $log->debug($msg);
+                    return 0;
+                }
+            }
+        }
+    }
+}
+
+=pod
+
+=begin classdoc
+
+check iface number constraint
+
+@param host
+@param interfaces
+
+@return boolean
+
+=end classdoc
+
+=cut
+
+sub _matchIfaceNumber {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'interfaces' ]);
+
+    my $host = $args{host};
+    my @interfaces = @{ $args{interfaces} };
+    my @ifaces = $host->ifaces;
+
+    my $nb_simple_interfaces;
+    my @copy_ifaces = @ifaces;
+    my @simple_ifaces = grep {!$_->master && scalar @{$_->slaves} == 0} @ifaces;
+
+    foreach my $interface (@interfaces) {
+        if ($interface->bonds_number > 0) {
+            my @matchs = grep {scalar @{$_->slaves} == $interface->bonds_number} @copy_ifaces;
+            if (scalar @matchs != 0) {
+                #retain one of the match to delete it from the parsed ifaces
+                my %retained;
+                $retained{$matchs[0]} = 1;
+                @copy_ifaces = grep {!$retained{$_}} @copy_ifaces;
+            }
+            else {
+                $log->info('host ' . $host->id . ' cannot meet the cluster bond requirements');
                 return 0;
             }
         }
-    }
-
-    if (defined $args{interfaces}) {
-        my @ifaces = $host->ifaces;
-        my $nb_ifaces = scalar(@ifaces);
-
-        #We gather the number of interfaces that has to be available from the host
-        #Plus we check if the bonded iface meet the bonded interfaces slaves requirements
-        my $nb_common_interfaces;
-        my @copy_ifaces = @ifaces;
-        my @common_ifaces = grep {!$_->master && scalar @{$_->slaves} == 0} @ifaces;
-
-        foreach my $interface (@{ $args{interfaces} }) {
-            if ($interface->bonds_number > 0) {
-                my @matchs = grep {scalar @{$_->slaves} == $interface->bonds_number} @copy_ifaces;
-                if (scalar @matchs != 0) {
-                    #retain one of the match to delete it from the parsed ifaces
-                    my %retained;
-                    $retained{$matchs[0]} = 1;
-                    @copy_ifaces = grep {!$retained{$_}} @copy_ifaces;
-                }
-                else {
-                    $log->info('host ' .$host->id. ' cannot meet the cluster bond requirements');
-                    return 0;
-                }
-            }
-            else {
-                $nb_common_interfaces++;
-            }
-        }
-
-        if ($nb_common_interfaces > scalar @common_ifaces) {
-            my $msg = 'host ' .$host->id. ' does not have enough common ifaces (' . scalar @common_ifaces;
-            $msg   .= ' ) to meet the cluster common interface requirements (' .$nb_common_interfaces. ')';
-            $log->info($msg);
-            return 0;
-        }
-
-        #Does any of the host's ifaces has a netconf?
-        #if no cluster's interface matches this netconf, the iface isn't taken in count
-        my @configured_ifaces = $host->configuredIfaces;
-        if (scalar @configured_ifaces > 0) {
-            my @configured_bonded_ifaces = grep {scalar @{$_->slaves} > 0} @configured_ifaces;
-            my @configured_common_ifaces =
-                grep {scalar @{$_->slaves} == 0 && !$_->master } @configured_ifaces;
-            my @configured_common_interfaces =
-                grep {scalar $_->netconfs > 0 && $_->bonds_number == 0} @{ $args{interfaces} };
-            my @configured_bonded_interfaces =
-                grep {scalar $_->netconfs > 0 && $_->bonds_number > 0} @{ $args{interfaces} };
-            my $configured_common_interfaces_nb = scalar @configured_common_interfaces;
-            my $configured_bonded_interfaces_nb = scalar @configured_bonded_interfaces;
-            my @iface_netconfs;
-            my @interface_netconfs;
-            my @matching_netconfs;
-
-            if (scalar @configured_bonded_ifaces > 0) {
-                my @exploitable_ifaces;
-                BONDED_IFACES:
-                foreach my $configured_bonded_iface (@configured_bonded_ifaces) {
-                    my @matchs;
-                    @iface_netconfs = $configured_bonded_iface->netconfs;
-                    my @same_bond_nb =
-                        grep {scalar $configured_bonded_iface->slaves == $_->bonds_number }
-                        @configured_bonded_interfaces;
-                    foreach my $netconf (@iface_netconfs) {
-                        foreach my $configured_bonded_interface (@same_bond_nb) {
-                            @interface_netconfs = $configured_bonded_interface->netconfs;
-                            @matching_netconfs  = grep {$netconf->id == $_->id} @interface_netconfs;
-                            if (scalar @matching_netconfs > 0) {
-                                push @matchs, $configured_bonded_interface;
-                            }
-                        }
-                        if (scalar @matchs > 0) {                    
-                            my %retained;
-                            $retained{$matchs[0]} = 1;
-                            push @exploitable_ifaces, $configured_bonded_iface;
-                            @configured_bonded_interfaces = grep {!$retained{$_}} @configured_bonded_interfaces;
-                            next BONDED_IFACE;
-                        }
-                    }
-                }
-                if ($configured_bonded_interfaces_nb > scalar @exploitable_ifaces) {
-                    my $msg = 'There is only' . scalar @exploitable_ifaces . ' configured ifaces available';
-                    $msg   .= ' for the cluster when ' . $configured_bonded_interfaces_nb;
-                    $msg   .= ' are required';
-                    $log->info($msg);
-                    return 0;
-                }
-            }
-            if (scalar @configured_common_ifaces > 0) {
-                my @exploitable_ifaces;
-                COMMON_IFACES:
-                foreach my $configured_common_iface (@configured_common_ifaces) {
-                    my @matchs;
-                    @iface_netconfs = $configured_common_iface->netconfs;
-                    foreach my $netconf (@iface_netconfs) {
-                        foreach my $configured_common_interface (@configured_common_interfaces) {
-                            @interface_netconfs = $configured_common_interface->netconfs;
-                            @matching_netconfs  = grep {$netconf->id == $_->id} @interface_netconfs;
-                            if (scalar @matching_netconfs > 0) {
-                                push @matchs, $configured_common_interface;
-                            }
-                        }
-                        if (scalar @matchs > 0) {
-                            my %retained;
-                            $retained{$matchs[0]} = 1;
-                            push @exploitable_ifaces, $configured_common_iface;
-                            @configured_common_interfaces = grep {!$retained{$_}} @configured_common_interfaces;
-                            next COMMON_IFACES;
-                        }
-                    }
-                }
-                if ($configured_common_interfaces_nb > scalar @exploitable_ifaces) {
-                    my $msg = 'There is only' . scalar @exploitable_ifaces . ' configured common ifaces available';
-                    $msg   .= ' for the cluster when ' . $configured_common_interfaces_nb;
-                    $msg   .= ' are required';
-                    $log->info($msg);
-                    return 0;
-                }
-            }
+        else {
+            $nb_simple_interfaces++;
         }
     }
-    return 1;
+
+    if ($nb_simple_interfaces > scalar @simple_ifaces) {
+        my $msg = 'host ' . $host->id . ' does not have enough simple ifaces (';
+        $msg   .= scalar @simple_ifaces . ' ) to meet the cluster common interface requirements (';
+        $msg   .= $nb_simple_interfaces . ')';
+        $log->info($msg);
+        return 0;
+    }
+
+}
+
+=pod
+
+=begin classdoc
+
+check ram constraint
+
+@param host
+@param ram
+
+@return boolean
+
+=end classdoc
+
+=cut
+
+sub _matchRam {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'ram' ]);
+
+    if ($args{host}->host_ram >= $args{ram}) {
+        $log->debug("Cluster ram constraint ($args{ram}) <= host ram amount ($args{host}->host_ram)");
+        return 1;
+    }
+    else {
+        $log->debug("Cluster ram constraint ($args{ram}) >= host ram amount ($args{host}->host_ram)");
+        return 0;
+    }
+}
+
+=pod
+
+=begin classdoc
+
+check cores constraint
+
+@param host
+@param core
+
+@return boolean
+
+=end classdoc
+
+=cut
+
+sub _matchCore {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'core' ]);
+
+    if ($args{host}->host_core >= $args{core}) {
+        $log->debug("Cluster core constraint ($args{core}) =< host cores number ($args{host}->host_core)");
+        return 1;
+    }
+    else {
+        $log->debug("Cluster core constraint ($args{core}) >= host cores number ($args{host}->host_core)");
+        return 0;
+    }
 }
 
 1;
