@@ -54,7 +54,7 @@ sub createExport {
     if ($args{container}) {
         $self->SUPER::createExport(%args);
 
-        $params->{container} = $args{container};
+        $params->{container_id} = $args{container}->id;
     }
 
     return EFactory::newEEntity(data => Entity::ContainerAccess::IscsiContainerAccess->new(%$params));

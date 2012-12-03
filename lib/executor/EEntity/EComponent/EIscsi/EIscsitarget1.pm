@@ -47,10 +47,7 @@ sub createExport {
     General::checkParams(args     => \%args,
                          required => [ 'container', 'export_name' ],
                          optional => { 'typeio' => 'fileio', 'iomode' => 'wb',
-                                       'iscsi_portal' => ($self->iscsi_portals)[0] });
-
-    # Check if the disk is not already exported
-    my $container_access = $self->SUPER::createExport(%args);
+                                       'iscsi_portal' => ($self->iscsi_portals)[0]->id });
 
     # TODO: Check if the given container is provided by the same
     #       storage provider than the iscsi storage provider.
@@ -67,6 +64,11 @@ sub createExport {
                      iomode      => $args{iomode},
                      target_name => $disk_targetname,
                  );
+
+    # Check if the disk is not already exported
+    my $container_access = $self->SUPER::createExport(target => $disk_targetname,
+                                                      lun    => 0,
+                                                      %args);
 
     $self->generate();
 
