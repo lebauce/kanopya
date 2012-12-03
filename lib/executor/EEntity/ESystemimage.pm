@@ -73,7 +73,9 @@ sub activate {
     # TODO: Check if the container of each container accesses is the same.
 
     # Link the systemimage with its accesses
-    $self->update(systemimage_container_accesses => $args{container_accesses});
+    $self->populateRelations(relations => {
+        systemimage_container_accesses => $args{container_accesses}
+    });
 
     # Set system image active
     $self->setAttr(name => 'active', value => 1);
