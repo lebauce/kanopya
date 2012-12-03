@@ -134,7 +134,7 @@ sub insertDefaultConfiguration {
     Entity::Component::Iscsi::IscsiPortal->new(
         iscsi_id          => $self->id,
         iscsi_portal_ip   => $ip,
-        iscsi_portal_port => 3261
+        iscsi_portal_port => 3260
     );
 }
 
