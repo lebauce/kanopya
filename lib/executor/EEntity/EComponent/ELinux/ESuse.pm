@@ -82,7 +82,24 @@ sub customizeInitramfs {
     
     my $econtext = $self->getExecutorEContext;
     my $initrddir = $args{initrd_dir};
+    my $systemimage = $args{host}->getNodeSystemimage;
+    my $ifaces = $args{host}->getIfaces;
+    my $hostname = $args{host}->host_hostname;
 
+    my $file = $self->_generateUdevPersistentNetRules(host => $args{host}, cluster => $args{cluster});
+    my $cmd = 'cp '.$file->{src}.' '.$initrddir.$file->{dest};
+    $econtext->execute(command => $cmd);
+
+    # TODO check targetname is the same for each container access
+    my $portals = [];
+    my $target = "";
+    for my $container_access ($systemimage->container_accesses) {
+        push @$portals, { ip   => $container_access->container_access_ip,
+                          port => $container_access->container_access_port };
+        $target = $container_access->container_access_export;
+    }
+
+<<<<<<< Updated upstream
     $log->info("customize initramfs $initrddir");
 
     # TODO recup target et portals
@@ -91,14 +108,24 @@ sub customizeInitramfs {
                     { ip => '2.2.2.2', port => 3260 }, ];    
     
     $self->_initrd_iscsi(initrd_dir    => $initrddir,
+=======
+    my $rootdev = $self->_initrd_iscsi(initrd_dir => $initrddir,
+>>>>>>> Stashed changes
                          initiatorname => $args{host}->host_initiatorname,
                          target        => $target,
                          portals       => $portals);
 
     my @ifaces = $args{host}->getIfaces();
     $self->_initrd_config(initrd_dir => $initrddir,
+<<<<<<< Updated upstream
                           ifaces     => \@ifaces,
                           hostname   => $args{host}->host_hostname);
+=======
+                          hostname   => $hostname,
+                          ifaces     => $ifaces,
+                          rootdev    => $rootdev
+                          );
+>>>>>>> Stashed changes
 }
 
 # build the open-iscsi part of the initrd
@@ -141,18 +168,28 @@ sub _initrd_iscsi {
         $cmd = "echo InitiatorName=$args{initiatorname} > $args{initrd_dir}/etc/iscsi/initiatorname.iscsi";
         $econtext->execute(command => $cmd);
     }
+    
+    # if you have only one portal, remove multipath capability and use iscsi dev instead of device mapper device
+    my $rootdev = '/dev/dm-1';
+    if(scalar(@portals) == 1) {
+        $log->debug("removing multipath capability");
+        $cmd = 'rm '.$args{initrd_dir}.'/boot/04-multipathd.sh '.$args{initrd_dir}.'/boot/21-multipath.sh';
+        $econtext->execute(command => $cmd);
+        $rootdev = '/dev/disk/by-path/ip-'.$portals[0]->{ip}.':'.$portals[0]->{port}.'-iscsi-'.$target.'-lun-0';
+    }
+    return $rootdev;
 }
 
 sub _initrd_config {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
-                         required => ['initrd_dir', 'ifaces', 'hostname']);
+                         required => ['initrd_dir', 'ifaces', 'hostname', 'rootdev']);
                          
     $self->generateFile(mount_point => $args{initrd_dir}.'/config',
                         input_file  => 'storage.sh.tt',
                         template_dir => '/opt/kanopya/templates/internal/initrd/sles',
                         output      => '/storage.sh',
-                        data        => { rootdev => '/dev/dm-0' }
+                        data        => { rootdev => $args{rootdev} }
                         );
     
     my @macaddresses = ();
@@ -190,7 +227,7 @@ sub _initrd_config {
                         input_file  => 'mount.sh.tt',
                         template_dir => '/opt/kanopya/templates/internal/initrd/sles',
                         output      => '/mount.sh',
-                        data        => { rootdev => '/dev/dm-0',
+                        data        => { rootdev => $args{rootdev},
                                          rootfsck => '/sbin/fsck.ext3' }
                        );
 }

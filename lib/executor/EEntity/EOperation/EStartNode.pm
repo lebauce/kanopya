@@ -234,20 +234,58 @@ sub finish {
 }
 
 sub _generateBootConf {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => [ 'options' ],
                          optional => { 'mount_point' => undef });
 
-    # Firstly create pxe config file if needed
-    my $boot_policy = $self->{context}->{cluster}->cluster_boot_policy;
+    my $cluster = $self->{context}->{cluster};
+    my $host = $self->{context}->{host};
+    my $boot_policy = $cluster->cluster_boot_policy;
+    my $tftpdir = $self->{config}->{tftp}->{directory};
+
+    # is dedicated initramfs needed for remote root ?
+    if ($boot_policy =~ m/(ISCSI|NFS)/) {
+        $log->info("Boot policy $boot_policy requires a dedicated initramfs");
+        
+        my $cluster_kernel_id = $cluster->kernel_id;
+        my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $host->kernel_id;
+        my $clustername = $cluster->cluster_name;
+        my $hostname = $host->host_hostname;
+
+        my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+        my $linux_component = EEntity->new(entity => $cluster->getComponent(category => "system"));
+        
+        $log->info("Extract initramfs $tftpdir/initrd_$kernel_version");
+        
+        my $initrd_dir = $linux_component->extractInitramfs(src_file => "$tftpdir/initrd_$kernel_version"); 
+        $log->info("Customize initramfs in $initrd_dir");
+        $linux_component->customizeInitramfs(initrd_dir => $initrd_dir,
+                                             cluster    => $cluster,
+                                             host       => $host
+                                            );
+                                       
+        # create the final storing directory
+        my $path = "$tftpdir/$clustername/$hostname";
+        my $cmd = "mkdir -p $path";
+        $self->getExecutorEContext->execute(command => $cmd);
+        my $newinitrd = $path . "/initrd_$kernel_version";
+
+        $log->info("Build initramfs $newinitrd");
+        $linux_component->buildInitramfs(initrd_dir      => $initrd_dir,
+                                         compress_type   => 'gzip',
+                                         new_initrd_file => $newinitrd
+                                         );
+    }
 
     if ($boot_policy =~ m/PXE/) {
         $self->_generatePXEConf(cluster     => $self->{context}->{cluster},
                                 host        => $self->{context}->{host},
                                 mount_point => $args{mount_point});
+
+
+
 
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{context}->{container_access}->container_access_export;
@@ -270,15 +308,6 @@ sub _generateBootConf {
                 additional_devices => "",
             };
 
-            eval {
-                my $openiscsi = $self->{context}->{cluster}->getComponent(name => "Openiscsi2");
-                $vars->{mounts_iscsi} = $openiscsi->getExports();
-                    my $tmp = $vars->{mounts_iscsi};
-                    foreach my $j (@$tmp){
-                        $vars->{additional_devices} .= " ". $j->{name};
-                    }
-            };
-
             $template->process($input, $vars, "/tmp/$tmpfile")
                 or throw Kanopya::Exception::Internal(
                              error => "Error when processing template $input."
@@ -294,8 +323,7 @@ sub _generateBootConf {
 }
 
 sub _generatePXEConf {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args     =>\%args,
                          required => ['cluster', 'host' ],
@@ -316,24 +344,6 @@ sub _generatePXEConf {
     if ($boot_policy =~ m/NFS/) {
         $nfsexport = $self->{context}->{container_access}->container_access_export;
     }
-
-    ## Here we create a dedicated initramfs for the node
-    my $linux_component = EEntity->new(entity => $args{cluster}->getComponent(category => "system"));
-    my $initrd_dir = $linux_component->extractInitramfs(src_file => "$tftpdir/initrd_$kernel_version"); 
-    
-    $linux_component->customizeInitramfs(initrd_dir  => $initrd_dir,
-                                         cluster     => $args{cluster},
-                                         host        => $args{host});
-                                       
-    # create the final storing directory
-    my $path = "$tftpdir/$clustername/$hostname";
-    my $cmd = "mkdir -p $path";
-    $self->getExecutorEContext->execute(command => $cmd);
-    my $newinitrd = $path . "/initrd_$kernel_version";
-
-    $linux_component->buildInitramfs(initrd_dir      => $initrd_dir,
-                                     compress_type   => 'gzip',
-                                     new_initrd_file => $newinitrd);
 
     my $gateway  = undef;
     my $pxeiface = $args{host}->getPXEIface;

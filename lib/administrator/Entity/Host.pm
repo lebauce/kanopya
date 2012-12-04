@@ -529,6 +529,9 @@ sub getIfaces {
 
                 NETCONFROLE:
                 for my $netconf ($iface->netconfs) {
+                    if(! $netconf->netconf_role) {
+                        last NETCONFROLE;
+                    }
                     if ($netconf->netconf_role->netconf_role_name eq $args{role}) {
                         $hasrole = 1;
                         last NETCONFROLE;

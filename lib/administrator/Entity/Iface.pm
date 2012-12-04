@@ -186,7 +186,7 @@ sub hasRole {
 
     General::checkParams(args => \%args, required => [ 'role' ]);
 
-    my @roles = map { $_->netconf_role->netconf_role_name } $self->netconfs;
+    my @roles = map { $_->netconf_role ? $_->netconf_role->netconf_role_name : '' } $self->netconfs;
 
     return scalar grep { $_ eq $args{role} } @roles;
 }

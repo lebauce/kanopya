@@ -462,10 +462,10 @@ sub registerKernels {
     my %args = @_;
 
     my @kernels = (
-        [ '2.6.32.33', '2.6.32.33', 'Debian generic kernel' ],
         [ '2.6.32-5-xen-amd64' , '2.6.32-5-xen-amd64', 'Kernel for Xen hypervisors' ],
         [ '3.2.6-xenvm', '3.2.6-xenvm', 'Kernel for xen virtual machines' ],
-        [ '2.6.32-279.5.1.el6.x86_64', '2.6.32-279.5.1.el6.x86_64', 'Kernel for KVM hypervisors' ]
+        [ '2.6.32-279.5.1.el6.x86_64', '2.6.32-279.5.1.el6.x86_64', 'Kernel for KVM hypervisors' ],
+        [ '3.0.13-0.27-default', '3.0.13-0.27-default', 'Kernel for SLES' ]
     );
 
     for my $kernel (@kernels) {

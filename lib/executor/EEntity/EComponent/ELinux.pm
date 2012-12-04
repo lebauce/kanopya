@@ -492,17 +492,26 @@ sub extractInitramfs {
     
     my $econtext = $self->getExecutorEContext;
     my $initrd = $args{src_file};
+    
+    my $cmd = "[ -f $args{src_file} ] && echo -n found";
+    my $result = $econtext->execute(command => $cmd);
+    if($result->{stdout} ne 'found') {
+        throw Kanopya::Exception::Internal(
+            error => "$initrd not found"
+        );
+    }
+    
     my $rand = new String::Random;
     
     # create working directory
     my $initrddir = '/tmp/'.$rand->randpattern("cccccccc");
     $log->info("extract initramfs $initrd to temporary directory $initrddir");
-    my $cmd = "mkdir -p $initrddir";
+    $cmd = "mkdir -p $initrddir";
     $econtext->execute(command => $cmd);
 
     # check and retrieve compression type
     $cmd = "file $initrd | grep -o -E '(gzip|bzip2)'";
-    my $result = $econtext->execute(command => $cmd);
+    $result = $econtext->execute(command => $cmd);
     my $decompress;
     chomp($result->{stdout});
     if($result->{stdout} eq 'gzip') {
