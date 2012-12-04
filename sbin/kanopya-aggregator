@@ -41,9 +41,8 @@ use Kanopya::Config;
 use Log::Log4perl "get_logger";
 
 my $dir = Kanopya::Config::getKanopyaDir();
-Log::Log4perl->init($dir.'/kanopya/conf/aggregator-log.conf');
+Log::Log4perl->init($dir . '/conf/aggregator-log.conf');
 my $log = get_logger("");
-
 
 my $running = 1;
 

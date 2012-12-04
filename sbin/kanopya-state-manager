@@ -40,7 +40,7 @@ use StateManager;
 use Log::Log4perl "get_logger";
 
 my $dir = Kanopya::Config::getKanopyaDir();
-Log::Log4perl->init($dir.'/kanopya/conf/state-manager-log.conf');
+Log::Log4perl->init($dir . '/conf/state-manager-log.conf');
 my $log = get_logger("");
 
 

@@ -43,7 +43,7 @@ use Log::Log4perl "get_logger";
 use Error qw(:try);
 
 my $dir = Kanopya::Config::getKanopyaDir();
-Log::Log4perl->init($dir.'/kanopya/conf/collector-log.conf');
+Log::Log4perl->init($dir . '/conf/collector-log.conf');
 my $log = get_logger("");
 
 

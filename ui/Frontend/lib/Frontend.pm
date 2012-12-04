@@ -22,9 +22,7 @@ our $VERSION = '0.1';
 prefix undef;
 
 my $dir = Kanopya::Config::getKanopyaDir();
-
-Log::Log4perl->init($dir.'/kanopya/conf/webui-log.conf');
-
+Log::Log4perl->init($dir . '/conf/webui-log.conf');
 
 hook 'before' => sub {
     $ENV{EID} = session('EID');

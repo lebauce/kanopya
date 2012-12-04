@@ -122,7 +122,7 @@ sub execute{
         next if (not defined $files);
         for my $file (@$files) {
             $self->{context}->{$srv}->getEContext->send(src  => "/tmp/$root_dir_name/" . $file->{src},
-                                                        dest => "$dir/kanopya/" . $file->{dest});    
+                                                        dest => "$dir/" . $file->{dest});
         }
     }
 
@@ -130,7 +130,7 @@ sub execute{
     if (defined $package_info->{templates_dir}) {
         $package_info->{templates_dir} =~ /(.*)\/([^\/]*)$/;
         my $path = $1; 
-        $cmd = "cp -r /tmp/$root_dir_name/$package_info->{templates_dir} $dir/kanopya/$path";
+        $cmd = "cp -r /tmp/$root_dir_name/$package_info->{templates_dir} $dir/$path";
         $cmd_res = $self->getEContext->execute(command => $cmd);
     }
     
