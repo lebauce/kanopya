@@ -74,8 +74,8 @@ do_mount()
     fi
 
     DEVICE=`cat /tmp/${1}`
+    DEV_FS_TYPE=`blkid -o value -s TYPE ${DEVICE}`
     echo "mount -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}"
-    mount -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}
-
+    mount -t ${DEV_FS_TYPE} -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}
 }
 
