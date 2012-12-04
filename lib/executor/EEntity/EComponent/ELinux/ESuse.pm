@@ -90,16 +90,15 @@ sub customizeInitramfs {
     my $portals = [ { ip => '1.1.1.1', port => 3260 },
                     { ip => '2.2.2.2', port => 3260 }, ];    
     
-    $self->_initrd_iscsi(initrd_dir => $initrddir,
+    $self->_initrd_iscsi(initrd_dir    => $initrddir,
                          initiatorname => $args{host}->host_initiatorname,
-                         target     => $target,
-                         portals    => $portals
-                         );
+                         target        => $target,
+                         portals       => $portals);
 
+    my @ifaces = $args{host}->getIfaces();
     $self->_initrd_config(initrd_dir => $initrddir,
-                          ifaces     => $args{host}->getIfaces(),
-                          hostname   => $args{host}->host_hostname
-                          );
+                          ifaces     => \@ifaces,
+                          hostname   => $args{host}->host_hostname);
 }
 
 # build the open-iscsi part of the initrd
