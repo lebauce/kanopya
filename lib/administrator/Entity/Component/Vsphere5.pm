@@ -280,7 +280,11 @@ sub negociateConnection {
 
 =begin classdoc
 
+=head2 retrieveDatacenters
+
 Retrieve a list of all datacenters
+
+@param id_request ID of request
 
 @return: \@datacenter_infos
 
@@ -289,9 +293,12 @@ Retrieve a list of all datacenters
 =cut
 
 sub retrieveDatacenters {
-    my ($self) = @_;
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['id_request']);
 
     my @datacenters_infos;
+    my $id_response = $args{id_request};
 
     my $datacenter_views = $self->findEntityViews(
                                view_type      => 'Datacenter',
@@ -306,17 +313,25 @@ sub retrieveDatacenters {
         push @datacenters_infos, \%datacenter_infos;
     }
 
-    return \@datacenters_infos;
+    my $response = {
+        id_response => $id_response,
+        items_list  => \@datacenters_infos,
+    };
+
+    return $response;
 }
 
 =pod
 
 =begin classdoc
 
+=head2 retrieveClustersAndHypervisors
+
 Retrieve a list of Clusters and Hypervisors (that are not in a cluster)
 hosted in a given Datacenter
 
 @param datacenter_name the datacenter name
+@param id_request ID of request
 
 @return \@clusters_and_hypervisors_infos
 
@@ -327,9 +342,10 @@ hosted in a given Datacenter
 sub retrieveClustersAndHypervisors {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['datacenter_name']);
+    General::checkParams(args => \%args, required => ['datacenter_name', 'id_request']);
 
     my @clusters_hypervisors_infos;
+    my $id_response = $args{id_request};
     my $datacenter_name = $args{datacenter_name};
 
     #Find datacenter view
@@ -370,17 +386,25 @@ sub retrieveClustersAndHypervisors {
         push @clusters_hypervisors_infos, $compute_resource_infos;
     }
 
-    return \@clusters_hypervisors_infos;
+    my $response = {
+        id_response => $id_response,
+        items_list  => \@clusters_hypervisors_infos,
+    };
+
+    return $response;
 }
 
 =pod
 
 =begin classdoc
 
+=head2 retrieveClusterHypervisors
+
 Retrieve a cluster's hypervisors
 
 @param cluster_name the name of the target cluster
 @param datacenter_name the name of the cluster's datacenter
+@param id_request ID of request
 
 @return \@hypervisors_infos
 
@@ -391,7 +415,9 @@ Retrieve a cluster's hypervisors
 sub retrieveClusterHypervisors {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['cluster_name', 'datacenter_name']);
+    General::checkParams(args => \%args, required => ['cluster_name', 'datacenter_name', 'id_request']);
+
+    my $id_response = $args{id_request};
 
     #retrieve datacenter and cluster views
     my $datacenter_view = $self->findEntityView(
@@ -421,18 +447,26 @@ sub retrieveClusterHypervisors {
         push @hypervisors_infos, \%hypervisor_infos;
     }
 
-    return \@hypervisors_infos;
+    my $response = {
+        id_response => $id_response,
+        items_list  => \@hypervisors_infos,
+    };
+
+    return $response;
 }
 
 =pod 
 
 =begin classdoc
 
+=head2 retrieveHypervisorVms
+
 Retrieve all the VM from a vsphere hypervisor
 
 @param datacenter_name the name of the hypervisor's datacenter
 @param hypervisor_name the name of the target hypervisor
- 
+@param id_request ID of request
+
 @return \@vms_infos
 
 =end classdoc
@@ -442,7 +476,9 @@ Retrieve all the VM from a vsphere hypervisor
 sub retrieveHypervisorVms {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['datacenter_name', 'hypervisor_name']);
+    General::checkParams(args => \%args, required => ['datacenter_name', 'hypervisor_name', 'id_request']);
+
+    my $id_response = $args{id_request};
 
     #retrieve views
     my $datacenter_view = $self->findEntityView(
@@ -472,7 +508,12 @@ sub retrieveHypervisorVms {
         push @vms_infos, $vm_infos;
     }
 
-    return \@vms_infos;
+    my $response = {
+        id_response => $id_response,
+        items_list  => \@vms_infos,
+    };
+
+    return $response;
 }
 
 =pod 

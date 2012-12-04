@@ -136,7 +136,7 @@ var KanopyaFormWizard = (function() {
             }
             actionsTable.append(tr);
             var fieldset = $("<fieldset>").appendTo(this.form);
-            var legend   = $("<legend>", { text : 'Actions buttons' }).css('font-weight', 'bold');
+            var legend   = $("<legend>", { text : 'Actions' }).css('font-weight', 'bold');
             fieldset.append(legend);
             fieldset.append(actionsTable);
             this.form.appendTo(this.content).append(fieldset);
