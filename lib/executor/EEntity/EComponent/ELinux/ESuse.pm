@@ -31,13 +31,21 @@ sub _writeNetConf {
                          required => [ 'cluster', 'host', 'mount_point', 'ifaces', 'econtext' ]);
 
     for my $iface (@{ $args{ifaces} }) {
-    
+
         my $template_file;
+
         if ($iface->{type} eq 'master') {
             $template_file = 'ifcfg-bonded-master.tt';
-        }
-        elsif ($iface->{type} eq 'slave') {
-            $template_file = 'ifcfg-bonded-slave.tt';
+            foreach my $slave (@{ $iface->{slaves} }) {
+                my $file = $self->generateNodeFile(
+                    cluster       => $args{cluster},
+                    host          => $args{host},
+                    file          => '/etc/sysconfig/network/ifcfg-' . $slave->iface_name,
+                    template_dir  => '/templates/components/suse',
+                    template_file => $template_file,
+                    data          => { interface => ''}
+                );
+            }
         }
         else {
             $template_file = 'ifcfg.tt';
@@ -99,33 +107,17 @@ sub customizeInitramfs {
         $target = $container_access->container_access_export;
     }
 
-<<<<<<< Updated upstream
     $log->info("customize initramfs $initrddir");
 
-    # TODO recup target et portals
-    my $target = 'iqn.blmablabla';
-    my $portals = [ { ip => '1.1.1.1', port => 3260 },
-                    { ip => '2.2.2.2', port => 3260 }, ];    
-    
     $self->_initrd_iscsi(initrd_dir    => $initrddir,
-=======
-    my $rootdev = $self->_initrd_iscsi(initrd_dir => $initrddir,
->>>>>>> Stashed changes
                          initiatorname => $args{host}->host_initiatorname,
                          target        => $target,
                          portals       => $portals);
 
     my @ifaces = $args{host}->getIfaces();
     $self->_initrd_config(initrd_dir => $initrddir,
-<<<<<<< Updated upstream
                           ifaces     => \@ifaces,
                           hostname   => $args{host}->host_hostname);
-=======
-                          hostname   => $hostname,
-                          ifaces     => $ifaces,
-                          rootdev    => $rootdev
-                          );
->>>>>>> Stashed changes
 }
 
 # build the open-iscsi part of the initrd

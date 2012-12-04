@@ -1,1 +1,1 @@
-up /sbin/ifenslave [% interface.name %] [% FOREACH slave=interface.slaves %][% slave.name %] [% END %]
+up /sbin/ifenslave [% interface.name %] [% FOREACH slave=interface.slaves %][% slave.iface_name() %] [% END %]

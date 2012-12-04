@@ -76,14 +76,13 @@ sub prepare {
     $self->SUPER::prepare();
 
     # Instanciate the bootserver Cluster
-    $self->{context}->{bootserver} = EFactory::newEEntity(
-                                         data => Entity->get(id => $self->{config}->{cluster}->{bootserver})
+    $self->{context}->{bootserver} = EEntity->new(
+                                         entity => Entity->get(id => $self->{config}->{cluster}->{bootserver})
                                      );
 
     # Instanciate dhcpd
     my $dhcpd = $self->{context}->{bootserver}->getComponent(name => "Dhcpd", version => 3);
-    $self->{context}->{dhcpd_component} = EFactory::newEEntity(data => $dhcpd);
-
+    $self->{context}->{dhcpd_component} = EEntity->new(entity => $dhcpd);
 
     $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->cluster_domainname;
     $self->{cluster_components} = $self->{context}->{cluster}->getComponents(category => "all",
@@ -91,7 +90,7 @@ sub prepare {
 
     # Use the first systemimage container access found, as all should access to the same container.
     my @accesses = $self->{context}->{host}->getNodeSystemimage->container_accesses;
-    $self->{context}->{container_access} = EFactory::newEEntity(data => pop @accesses);
+    $self->{context}->{container_access} = EEntity->new(entity => pop @accesses);
 }
 
 sub execute {
@@ -131,7 +130,7 @@ sub execute {
             $iface->assignIp();
 
             # Apply VLAN's
-            my $ehost_manager = EFactory::newEEntity(data => $self->{context}->{host}->getHostManager);
+            my $ehost_manager = EEntity->new(entity => $self->{context}->{host}->getHostManager);
             for my $netconf ($iface->netconfs) {
                 for my $vlan ($netconf->vlans) {
                     $log->info("Apply VLAN on " . $iface->iface_name);
@@ -145,7 +144,7 @@ sub execute {
     if ($self->{params}->{mountpoint}) {
         $log->info("Operate components configuration");
         foreach my $component (@{ $self->{cluster_components} }) {
-            my $ecomponent = EFactory::newEEntity(data => $component);
+            my $ecomponent = EEntity->new(entity => $component);
             $ecomponent->addNode(host               => $self->{context}->{host},
                                  mount_point        => $self->{params}->{mountpoint},
                                  cluster            => $self->{context}->{cluster},

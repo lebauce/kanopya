@@ -79,14 +79,7 @@ sub _writeNetConf {
                          required => [ 'cluster', 'host', 'mount_point', 'ifaces' ]);
 
     #we ignore the slave interfaces in the case of bonding
-    my @ifaces;
-    IFACE:
-    foreach my $iface (@{ $args{ifaces} }) {
-        if ($iface->{type} eq 'slave') {
-            next IFACE;
-        }
-        push @ifaces, $iface;
-    }
+    my @ifaces = @{ $args{ifaces} };
 
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},

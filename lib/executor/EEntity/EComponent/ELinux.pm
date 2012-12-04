@@ -424,7 +424,7 @@ sub _generateNetConf {
                     $gateway = $args{cluster}->getMasterNodeIp;
                 }
                 else {
-                    $gateway = ($network->id == $args{cluster}->default_gateway->id) ? $network->network_gateway : undef;
+                    $gateway = ($network->id == $args{cluster}->default_gateway_id) ? $network->network_gateway : undef;
                 }
                 $method = "static";
             }
@@ -441,20 +441,13 @@ sub _generateNetConf {
             #check if iface has slaves (for bonding purposes)
             if ($iface->slaves > 0) {
                 my @unsorted_slaves;
-                my @slaves;
+                my @slaves = $iface->slaves;
                 my %sort;
 
-                foreach my $slave ($iface->slaves) {
-                    push @net_ifaces, { name => $slave->iface_name,
-                                        type => 'slave'};
-
-                    push @unsorted_slaves , $slave->iface_name;
-                }
-
-                foreach my $if (@unsorted_slaves) {
-                    my $if_copy = $if;
-                    $if_copy =~ s/[^0-9]//g;
-                    $sort{$if}  = $if_copy;
+                foreach my $slave (@slaves) {
+                    my $copy = $slave;
+                    $copy->iface_name =~ s/[^0-9]//g;
+                    $sort{$slave} = $copy->iface_name;
                 }
 
                 @slaves = sort { $sort{$a} <=> $sort{$b} } keys %sort;
