@@ -99,6 +99,8 @@ sub _matchHostConstraints {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
+    my $host = $args{host};
+
     if (defined $args{ram}) {
         $self->_matchRam(host => $args{host}, ram => $args{ram});
     }
