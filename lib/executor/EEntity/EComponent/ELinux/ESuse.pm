@@ -159,10 +159,16 @@ sub _initrd_config {
     my @ips = ();
     my $hostname = $args{hostname};
     
+    IFACE:
     for my $iface (@{$args{ifaces}}) {
         my $name = $iface->getAttr(name => 'iface_name');
         my $mac  = $iface->getAttr(name => 'iface_mac_addr');
-        my $ip   = $iface->getIPAddr;
+        eval {
+            my $ip   = $iface->getIPAddr;
+        };
+        if ($@) {
+          next IFACE;
+        }
         my $netmask = $iface->getPoolip->network->network_netmask;
         my $gateway = $iface->getPoolip->network->network_gateway;
         push @macaddresses, "$name:$mac";
