@@ -72,7 +72,10 @@ sub run {
     delete $args{name};
     delete $args{related_id};
 
-    my @steps = WorkflowStep->search(hash => { workflow_def_id => $def->id });
+    my @steps = WorkflowStep->search(
+                    hash        => { workflow_def_id => $def->id },
+                    order_by    => 'workflow_step_id asc'
+                );
 
     my @operationtypes;
     for my $step (@steps) {
@@ -107,10 +110,72 @@ sub enqueue {
     my $self = shift;
     my %args = @_;
 
-    Entity::Operation->enqueue(
+    return Entity::Operation->enqueue(
         workflow_id => $self->getAttr(name => 'workflow_id'),
         %args,
     );
+}
+
+sub enqueueNow {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, optional => { 'operation' => undef, 'workflow' => undef});
+
+    my @operations_to_enqueue = ();
+
+    if (defined $args{workflow}) {
+        my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => $args{workflow}->{name} });
+        my @steps = WorkflowStep->search(
+                        hash        => { workflow_def_id => $def->id },
+                        order_by    => 'workflow_step_id asc'
+        );
+        @operations_to_enqueue = map { {
+            priority => 200,
+            type     => $_->operationtype->operationtype_name,
+        } } @steps;
+        # Put params (and context) on the first operation only
+        $operations_to_enqueue[0]->{params} = $args{workflow}->{params};
+    }
+    elsif (defined $args{operation}) {
+        push @operations_to_enqueue, $args{operation};
+        $operations_to_enqueue[0]->{params} = $args{operation}->{params};
+    }
+
+
+
+    my @sorted_operations = sort {
+        $b->execution_rank <=> $a->execution_rank
+    } $self->operations;
+
+    my $incr_num = 0; # num of operations to slide
+    for my $operation (@sorted_operations) {
+        if ($operation->state eq 'pending') {
+            # offset all pending operation to insert new ones
+            my $execution_rank = $operation->execution_rank;
+            $execution_rank += scalar (@operations_to_enqueue);
+            $operation->setAttr(name => 'execution_rank', value => $execution_rank);
+            $operation->save();
+            $incr_num++;
+        }
+    }
+
+    my $rank_offset = 0;
+
+    for my $operation_to_enqueue (@operations_to_enqueue) {
+
+        my $operation = Entity::Operation->enqueueNow(
+            workflow_id => $self->getAttr(name => 'workflow_id'),
+            %$operation_to_enqueue,
+        );
+
+        if ($incr_num > 0) {
+            # Ajust execution rank
+            my $current_rank = $operation->execution_rank;
+            $operation->setAttr(name => 'execution_rank', value => $current_rank - $incr_num - scalar(@operations_to_enqueue) + $rank_offset);
+            $operation->save();
+            $rank_offset++;
+        }
+    }
+    map {$log->info($_->execution_rank.' '.$_->type)} $self->operations;
 }
 
 sub getCurrentOperation {

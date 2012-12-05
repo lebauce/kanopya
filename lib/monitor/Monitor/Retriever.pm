@@ -60,6 +60,8 @@ sub new {
         (optionnal) max_def     : array : list of ds name to add to obtain max value (used to compute percent). If not defined, use all ds.
         (optionnal) raw         : if defined return raw data (no aggregation of data (percent, mean) during time step).
         (optionnal) historical  : if defined return timestamped raw data. Win on options raw and percent.
+        (optionnal) last_value  : if defined return last_value.
+        
 
     Return : A hash, according to args, either:
          -default   : ( ds_name => computed_value, ... )
@@ -162,6 +164,9 @@ sub getData {
             }
             elsif (defined $args{raw}) {
                 $res{ $ds_name } = $values;
+            }
+            elsif (defined $args{last_value}) {
+                $res{ $ds_name } = pop @{$values};
             }
             else { # mean
                 $res{ $ds_name } = $sum / scalar @$values;

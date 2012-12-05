@@ -42,9 +42,6 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use EFactory;
-
-use Entity::ServiceProvider::Inside::Cluster;
 
 my $log = get_logger("");
 my $errmsg;
@@ -59,11 +56,11 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => $self->{context}, required => [ "host" ]);
+    General::checkParams(args => $self->{context}, required => [ "host_to_deactivate" ]);
 
     # check if host is not active
-    if (not $self->{context}->{host}->getAttr(name => 'active')) {
-        $errmsg = "Host <" . $self->{context}->{host}->getAttr(name => 'entity_id') . "> is not active";
+    if (not $self->{context}->{host_to_deactivate}->getAttr(name => 'active')) {
+        $errmsg = "Host <" . $self->{context}->{host_to_deactivate}->id . "> is not active";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -74,9 +71,9 @@ sub execute{
     my $self = shift;
 
     # set host active in db
-    $self->{context}->{host}->setAttr(name => 'active', value => 0);
-    $self->{context}->{host}->_getEntity->save();
-    $log->info("Host <" . $self->{context}->{host}->getAttr(name => 'entity_id') . "> deactivated");
+    $self->{context}->{host_to_deactivate}->setAttr(name => 'active', value => 0);
+    $self->{context}->{host_to_deactivate}->_getEntity->save();
+    $log->info("Host <" . $self->{context}->{host_to_deactivate}->id . "> deactivated");
 }
 
 

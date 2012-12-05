@@ -26,6 +26,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Monitor::Retriever;
 use Entity::Indicator;
+use Entity::CollectorIndicator;
 use Indicatorset;
 use Collect;
 use Log::Log4perl "get_logger";
@@ -63,6 +64,28 @@ sub getAttrDef { return ATTR_DEF; }
 
 =cut
 
+sub new {
+    my ($class, %args) = @_;
+    my $self = $class->SUPER::new(%args);
+
+    my @indicator_sets = (
+        Indicatorset->search(
+            hash => {
+                indicatorset_name => [
+                    'mem', 'cpu', 'apache_stats', 'apache_workers', 'billing',
+                    'diskIOTable', 'interfaces', 'vsphere_vm', 'vsphere_host',
+                    'state',
+                ]
+            }
+        )
+    );
+
+    $self->createCollectorIndicators(
+        indicator_sets => \@indicator_sets,
+    );
+
+    return $self;
+}
 sub retrieveData {
     my ($self, %args) = @_;
 
@@ -84,19 +107,28 @@ sub retrieveData {
     # Arrange indicators name by set_name
     foreach my $indicator (values %$indicators) {
         # We fetch the indicator set related to the indicator
-        my $set_name = $indicator->indicatorset->indicatorset_name;
-        push @{$sets_to_fetch{$set_name}}, $indicator->indicator_name;
+        # my $set_name = $indicator->indicatorset->indicatorset_name;
+        my $set_id = $indicator->indicatorset->id;
+        push @{$sets_to_fetch{$set_id}}, $indicator->indicator_name;
     }
 
     # Now we fetch the requested data
     my $retriever = Monitor::Retriever->new();
     my %monitored_values;
 
-    while (my ($set_name, $indic_names) = each %sets_to_fetch) {
+    while (my ($set_id, $indic_names) = each %sets_to_fetch) {
+
         foreach my $node (@$nodelist) {
             eval {
+                #TODO avoir this useless reinstanciation with a hashtable
+                my $indicator_set = Indicatorset->get(id => $set_id);
+                #TODO Improve lastValue / average management
+                my $last_value = ($indicator_set->indicatorset_provider eq 'KanopyaDatabaseProvider') ?
+                                 1 : undef;
+
+                
                 my $data = $retriever->getHostData(
-                                                set         => $set_name,
+                                                set         => $indicator_set->indicatorset_name,
                                                 host        => $node,
                                                 required_ds => $indic_names,
                                                 time_laps   => $time_span,
@@ -104,7 +136,8 @@ sub retrieveData {
                                                 end         => $args{end},
                                                 historical  => $args{historical},
                                                 raw         => $args{raw},
-                                                );
+                                                last_value  => $args{last_value} || $last_value,
+                            );
                 $monitored_values{$node} = $monitored_values{$node} ? { %{$monitored_values{$node}}, %{$data} } :  $data;
             };
             if ($@) {
@@ -144,7 +177,7 @@ sub retrieveData {
 sub getIndicators {
     my ($self, %args) = @_;
 
-    return Indicator->search(
+    return Entity::Indicator->search(
         hash => { "indicatorset.indicatorset_provider" => 'SnmpProvider' }
     );
 }
@@ -162,7 +195,7 @@ sub getIndicator {
 
     General::checkParams(args => \%args, required => ['id']);
 
-    return Indicator->get(id => $args{id});
+    return Entity::Indicator->get(id => $args{id});
 }
 
 =head2 collectIndicator
@@ -174,15 +207,19 @@ sub getIndicator {
 sub collectIndicator {
     my ($self, %args) = @_;
 
-    my $indicator = Indicator->get(id => $args{indicator_id});
+    my $collector_indicator = Entity::CollectorIndicator->get(id => $args{indicator_id});
+    my $indicator = $collector_indicator->indicator;
 
     eval {
         my $adm = Administrator->new();
         $adm->{db}->resultset('Collect')->create({
-            cluster_id      => $args{service_provider_id},
-            indicatorset_id => $indicator->indicatorset_id
+            service_provider_id => $args{service_provider_id},
+            indicatorset_id     => $indicator->indicatorset_id
         });
     };
+    if ($@) {
+        $log->info($@);
+    }
 }
 
 =head2 getCollectorType

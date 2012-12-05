@@ -39,12 +39,8 @@ use base "EEntity::EOperation";
 use strict;
 use warnings;
 
-#use Kanopya::Exceptions;
-#use EFactory;
 use Entity;
 use Externalnode::Node;
-#use Entity::ServiceProvider::Inside::Cluster;
-#use Entity::Host;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -54,9 +50,6 @@ my $errmsg;
 
 sub check {
     my $self = shift;
-    my %args = @_;
-    my @logmsg = keys %{$self->{context}};
-    $log->debug(" aaa @logmsg");
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 }
 
@@ -67,53 +60,50 @@ sub prepare {
 
     my $node = $self->{context}->{host}->node;
 
-    if(! defined $node){
+    if (! defined $node) {
         my $error = 'Host must be promoted to node to be resubmited';
         throw Kanopya::Exception::Internal::WrongValue(error => $error);
     }
+
     $self->{context}->{vm_cluster} = $node->inside;
 
-    $self->{context}->{cloudmanager_comp}    = EFactory::newEEntity(data => Entity->get(id => $self->{context}->{host}->host_manager_id));
-
+    $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(
+                                                data => Entity->get(
+                                                    id => $self->{context}->{host}->host_manager_id
+                                                )
+                                            );
 
     $self->{params}->{host_ram_origin}  = $self->{context}->{host}->host_ram;
     $self->{params}->{host_core_origin} = $self->{context}->{host}->host_core;
 
-    $log->debug($self->{params}->{host_ram_origin}.' '.$self->{params}->{host_core_origin});
+    if (! defined $self->{context}->{hypervisor}) {
 
-    my $host_manager_params = $self->{context}->{vm_cluster}->getManagerParameters(manager_type => 'host_manager');
+        my $host_manager_params = $self->{context}->{vm_cluster}->getManagerParameters(manager_type => 'host_manager');
 
-    $self->{context}->{host}->updateMemory(memory => $host_manager_params->{ram});
-    $self->{context}->{host}->updateCPU(cpu_number => $host_manager_params->{core});
+        $self->{context}->{host}->updateMemory(memory => $host_manager_params->{ram});
+        $self->{context}->{host}->updateCPU(cpu_number => $host_manager_params->{core});
 
-    #TODO Factorize the following code which appears in prerequisites of EAddNode too
-    my $hvs   = $self->{context}->{cloudmanager_comp}->hypervisors();
-    my @hv_in_ids;
-    for my $hv (@$hvs) {
-        my ($state,$time_stamp) = $hv->getNodeState();
-        $log->info('hv <'.($hv->getId()).'>, state <'.($state).'>');
-        if($state eq 'in') {
-            push @hv_in_ids, $hv->getId();
+        my $cm = CapacityManagement->new(
+                     cloud_manager => $self->{context}->{cloudmanager_comp},
+        );
+
+        my $hypervisor_id = $cm->getHypervisorIdResubmitVM(
+                                vm_id           => $self->{context}->{host}->id,
+                                wanted_values   => {
+                                    ram           => $self->{params}->{host_ram_origin},
+                                    cpu           => $self->{params}->{host_core_origin},
+                                    ram_effective => 1*1024*1024*1024
+                                }
+                            );
+    
+        #TODO implement remediation like in EAddNode
+        if (! defined $hypervisor_id) {
+            my $error = 'Cannot find free hypervisor to resubmit node';
+            throw Kanopya::Exception::Internal::WrongValue(error => $error);
         }
-    }
 
-    my $cm = CapacityManagement->new(
-                 cloud_manager => $self->{context}->{cloudmanager_comp},
-    );
-
-     my $hypervisor_id = $cm->getHypervisorIdForVM(wanted_values   => {
-                             ram           => $self->{params}->{host_ram_origin},
-                             cpu           => $self->{params}->{host_core_origin},
-                             ram_effective => 1*1024*1024*1024
-                         });
-
-    #TODO implement remediation like in EAddNode
-    if (!defined $hypervisor_id) {
-        my $error = 'Cannot find free hypervisor to resubmit node';
-        throw Kanopya::Exception::Internal::WrongValue(error => $error);
-    }
-    else {
         $self->{context}->{hypervisor} = Entity->get(id => $hypervisor_id);
+
     }
 }
 
@@ -122,12 +112,20 @@ sub execute {
     $self->SUPER::execute();
 
     $self->{context}->{cloudmanager_comp}->onevm_resubmit(
-                                           vm_nameorid => $self->{context}->{host}->host_hostname,
+        vm_nameorid => $self->{context}->{host}->host_hostname,
     );
 
+    sleep(5); # Wait 5 seconds for the VM to be pending
+    my $state = $self->{context}->{cloudmanager_comp}->getVMState(host => $self->{context}->{host})->{state};
+
+    if ( not $state eq 'pend') {
+         my $error = "VM state is <$state> while must be in <pend> state !";
+         throw Kanopya::Exception::Internal::WrongValue(error => $error);
+    }
+
     $self->{context}->{cloudmanager_comp}->onevm_deploy(
-                                           vm_nameorid    => $self->{context}->{host}->host_hostname,
-                                           host_nameorid  => $self->{context}->{hypervisor}->host_hostname,
+        vm_nameorid    => $self->{context}->{host}->host_hostname,
+        host_nameorid  => $self->{context}->{hypervisor}->host_hostname,
     );
 
     $self->{context}->{host}->setState(state => 'starting');
@@ -136,14 +134,20 @@ sub execute {
 # Almost the same code than postStartNode prerequisite
 sub postrequisites {
     my ($self, %args)  = @_;
-    $self->{context}->{cloudmanager_comp}   = EFactory::newEEntity(data => Entity->get(id => $self->{context}->{host}->host_manager_id));
+
+    $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(
+                                                data => Entity->get(
+                                                    id => $self->{context}->{host}->host_manager_id
+                                                )
+                                            );
+
     # Duration to wait before retrying prerequistes
     my $delay = 10;
 
     # Duration to wait for setting host broken
     my $broken_time = 240;
 
-    my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
+    my $host_id    = $self->{context}->{host}->id;
 
     # Check how long the host is 'starting'
     my @state = $self->{context}->{host}->getState;
@@ -160,24 +164,26 @@ sub postrequisites {
 
     my $vm_state = $self->{context}->{cloudmanager_comp}->getVMState(
                            host => $self->{context}->{host},
-        );
-        $log->info('Vm <'.$host_id.'> opennebula status <'.($vm_state->{state}).'>');
-        if ($vm_state->{state} eq 'runn') {
-            $log->info('VM running try to contact it');
-        }
-        elsif ($vm_state->{state} eq 'boot') {
-            $log->info('VM still booting');
-            return $delay;
-        }
-        elsif ($vm_state->{state} eq 'fail' ) {
-            my $lastmessage = $self->{context}->{cloudmanager_comp}->vmLoggedErrorMessage(opennebula3_vm => $self->{context}->{host});
-            throw Kanopya::Exception(error => 'Vm fail on boot: '.$lastmessage);
-        }
-        elsif ($vm_state->{state} eq 'pend' ) {
-            $log->info('timeout in '.($broken_time - $starting_time).' s');
-            $log->info('VM still pending'); #TODO check HV state
-            return $delay;
-        }
+    );
+
+    $log->info('Vm <'.$host_id.'> opennebula status <'.($vm_state->{state}).'>');
+
+    if ($vm_state->{state} eq 'runn') {
+        $log->info('VM running try to contact it');
+    }
+    elsif ($vm_state->{state} eq 'boot') {
+        $log->info('VM still booting');
+        return $delay;
+    }
+    elsif ($vm_state->{state} eq 'fail' ) {
+        my $lastmessage = $self->{context}->{cloudmanager_comp}->vmLoggedErrorMessage(opennebula3_vm => $self->{context}->{host});
+        throw Kanopya::Exception(error => 'Vm fail on boot: '.$lastmessage);
+    }
+    elsif ($vm_state->{state} eq 'pend' ) {
+        $log->info('timeout in '.($broken_time - $starting_time).' s');
+        $log->info('VM still pending'); #TODO check HV state
+        return $delay;
+    }
 
     # Instanciate an econtext to try initiating an ssh connexion.
     eval {
@@ -221,6 +227,8 @@ sub finish {
     $self->{params}->{memory}     = $self->{params}->{host_ram_origin};
     delete $self->{params}->{host_core_origin};
     delete $self->{params}->{host_ram_origin};
+    delete $self->{context}->{hypervisor};
+    delete $self->{context}->{vm_cluster};
 }
 
 1;

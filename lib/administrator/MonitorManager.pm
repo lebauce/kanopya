@@ -101,10 +101,10 @@ sub getIndicatorSets {
                         'table_oid' => $set->get_column( 'indicatorset_tableoid' ),
                         'index_oid' => $set->get_column( 'indicatorset_indexoid' ),
                         'ds' => \@indicators
-                    };    
+                    };
     }
-    
-    return \@sets;
+
+    return wantarray ? @sets : \@sets;
 }
 
 =head2 getCollectedSets

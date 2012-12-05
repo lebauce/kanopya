@@ -1,4 +1,4 @@
-# ERelieveHypervisor.pm - Operation class implementing
+# EFlushHypervisor.pm - Operation class implementing
 
 #    Copyright © 2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 
 =head1 NAME
 
-EEntity::Operation::ERelieveHypervisor - Operation class implementing
+EEntity::Operation::EFlushHypervisor - Operation class implementing
 
 =head1 SYNOPSIS
 
@@ -33,7 +33,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EEntity::EOperation::ERelieveHypervisor;
+package EEntity::EOperation::EFlushHypervisor;
 use base "EEntity::EOperation";
 
 use strict;
@@ -51,9 +51,9 @@ sub check {
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 }
 
-
 sub prepare {
     my $self = shift;
+
     $self->SUPER::prepare();
 
     if (not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
@@ -61,39 +61,42 @@ sub prepare {
         throw Kanopya::Exception(error => $error);
     }
 
-    my @cloudmanagers = $self->{context}->{host}->node->inside->getComponents(category => 'Cloudmanager');
-    $self->{context}->{cloud_manager} = EFactory::newEEntity(data => $cloudmanagers[0]);
-
-    my $vm_min_effective_ram = $self->{context}->{host}->getMinEffectiveRamVm(); #vm / ram
-    my $hv_max_effective_freeram = $self->{context}->{cloud_manager}->getMaxRamFreeHV();  #hv / ram
-
-    if ($hv_max_effective_freeram->{hypervisor}->id eq  $self->{context}->{host}->id) {
-        my $error = 'Hypervisor is already the least loaded one';
-        throw Kanopya::Exception(error => $error);
-    }
-
-# Transmit new context to next operation defined in workflow_def (migratehost)
-    $self->{context}->{vm}   = $vm_min_effective_ram->{vm},
-    $self->{context}->{host} = $hv_max_effective_freeram->{hypervisor},
-  }
+    # variable used in maintenance workflows
+    $self->{context}->{host_to_deactivate} = $self->{context}->{host};
+}
 
 sub execute {
     my $self = shift;
+
+    $self->{context}->{cloud_manager} = EFactory::newEEntity(
+                                            data => $self->{context}->{host}->getCloudManager(),
+                                        );
+
+    my $cm = CapacityManagement->new(
+        cloud_manager => $self->{context}->{cloud_manager},
+    );
+
+    my $host_id = $self->{context}->{host}->id;
+
+    my $flushRes = $cm->flushHypervisor(hv_id => $host_id);
+    if ($flushRes->{num_failed} == 0) {
+        my $workflow = $self->workflow;
+        for my $operation (@{$flushRes->{operation_plan}}) {
+            $log->info('Operation enqueuing host = '.$operation->{params}->{context}->{host}->id);
+            $workflow->enqueueNow(operation => $operation);
+        }
+    }
+    else {
+        throw Kanopya::Exception(
+                  error => "The hypervisor ".$self->{context}->{host}->host_hostname." can't be flushed"
+              );
+    }
     $self->SUPER::execute();
 }
 
 sub finish {
     my ($self) = @_;
-#    $self->getWorkflow()->enqueue(
-#        type => 'MigrateHost',
-#        priority => 1,
-#        params => {
-#            context => {
-#                vm    => $self->{context}->{virtual_machine},
-#                host  => $self->{context}->{hypervisor_destination},
-#            },
-#        }
-#    );
+    delete $self->{context}->{host};
 }
 
 1;

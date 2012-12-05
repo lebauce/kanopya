@@ -1,4 +1,4 @@
-# ERelieveHypervisor.pm - Operation class implementing
+# EResubmitHypervisor.pm - Operation class implementing
 
 #    Copyright © 2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 
 =head1 NAME
 
-EEntity::Operation::ERelieveHypervisor - Operation class implementing
+EEntity::Operation::EResubmitHypervisor - Operation class implementing
 
 =head1 SYNOPSIS
 
@@ -33,7 +33,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EEntity::EOperation::ERelieveHypervisor;
+package EEntity::EOperation::EResubmitHypervisor;
 use base "EEntity::EOperation";
 
 use strict;
@@ -51,9 +51,9 @@ sub check {
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 }
 
-
 sub prepare {
     my $self = shift;
+
     $self->SUPER::prepare();
 
     if (not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
@@ -61,39 +61,58 @@ sub prepare {
         throw Kanopya::Exception(error => $error);
     }
 
-    my @cloudmanagers = $self->{context}->{host}->node->inside->getComponents(category => 'Cloudmanager');
-    $self->{context}->{cloud_manager} = EFactory::newEEntity(data => $cloudmanagers[0]);
-
-    my $vm_min_effective_ram = $self->{context}->{host}->getMinEffectiveRamVm(); #vm / ram
-    my $hv_max_effective_freeram = $self->{context}->{cloud_manager}->getMaxRamFreeHV();  #hv / ram
-
-    if ($hv_max_effective_freeram->{hypervisor}->id eq  $self->{context}->{host}->id) {
-        my $error = 'Hypervisor is already the least loaded one';
-        throw Kanopya::Exception(error => $error);
-    }
-
-# Transmit new context to next operation defined in workflow_def (migratehost)
-    $self->{context}->{vm}   = $vm_min_effective_ram->{vm},
-    $self->{context}->{host} = $hv_max_effective_freeram->{hypervisor},
-  }
+    $self->{context}->{host}->setAttr(name => 'active', value => 0);
+    $self->{context}->{host}->save();
+}
 
 sub execute {
     my $self = shift;
+
+    $self->{context}->{cloud_manager} = EFactory::newEEntity(
+                                            data => $self->{context}->{host}->getCloudManager(),
+                                        );
+
+    my @vms = $self->{context}->{host}->virtual_machines;
+    my %vms_wanted_values;
+
+    for my $vm (@vms) {
+        $vms_wanted_values{$vm->id} = {ram => $vm->host->host_ram, cpu => $vm->host->host_core};
+    }
+
+    my $cm = CapacityManagement->new( cloud_manager => $self->{context}->{cloud_manager} );
+
+    my $resubmition_hv_ids = $cm->getHypervisorIdsForVMs(vms_wanted_values => \%vms_wanted_values);
+
+    my $workflow = $self->workflow;
+
+    while (my ($vm_id, $hv_id) = each %{$resubmition_hv_ids}) {
+
+        my $vm_host = Entity->get(id => $vm_id)->host;
+        my $hv = Entity->get(id => $hv_id);
+
+        $log->info("Plan to move vm <".$vm_host->id."> on hypervisor <$hv_id>");
+
+        my $workflow_to_enqueue = {
+             name   => 'ResubmitNode',
+             params => {
+                 context => {
+                     host        => $vm_host,
+                     hypervisor  => $hv,
+                 }
+             }
+        };
+
+        $workflow->enqueueNow(workflow => $workflow_to_enqueue);
+
+    }
     $self->SUPER::execute();
 }
 
 sub finish {
     my ($self) = @_;
-#    $self->getWorkflow()->enqueue(
-#        type => 'MigrateHost',
-#        priority => 1,
-#        params => {
-#            context => {
-#                vm    => $self->{context}->{virtual_machine},
-#                host  => $self->{context}->{hypervisor_destination},
-#            },
-#        }
-#    );
+    $self->{context}->{host}->setAttr(name => 'active', value => 1);
+    $self->{context}->{host}->save();
+    delete $self->{context}->{host};
 }
 
 1;

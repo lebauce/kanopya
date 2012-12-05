@@ -18,25 +18,25 @@ ApacheProvider - ApacheProvider object
 
 =head1 SYNOPSIS
 
-    use ApacheProvider;
-    
+    use DataProvider::ApacheProvider;
+
     # Creates provider
-    my $provider = ApacheProvider->new( $host );
-    
+    my $provider = DataProvider::ApacheProvider->new( $host );
+
     # Retrieve data
     my $var_map = { 'var_name' => '<apache status var name>', ... };
     $provider->retrieveData( var_map => $var_map );
 
 =head1 DESCRIPTION
 
-ApacheProvider is used to retrieve apache status values from a specific host.
-Apache status var names correspond to strings before ":" displayed in apache status page (see http://$host/server-status?auto)  
+DataProvider::ApacheProvider is used to retrieve apache status values from a specific host.
+Apache status var names correspond to strings before ":" displayed in apache status page (see http://$host/server-status?auto)
 
 =head1 METHODS
 
 =cut
 
-package ApacheProvider;
+package DataProvider::ApacheProvider;
 
 use strict;
 use warnings;

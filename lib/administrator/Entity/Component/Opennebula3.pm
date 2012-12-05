@@ -169,8 +169,17 @@ sub getOvercommitmentFactors {
 
 sub hypervisors {
     my $self = shift;
+    return $self->opennebula3_hypervisors;
+}
 
-    my @hypervisors = Entity::Host::Hypervisor::Opennebula3Hypervisor->search(hash => { opennebula3_id => $self->getId });
+sub activeHypervisors {
+    my $self = shift;
+
+    my @hypervisors = $self->searchRelated(
+                          filters => ['opennebula3_hypervisors'],
+                          hash    => { active => 1 }
+                      );
+
     return wantarray ? @hypervisors : \@hypervisors;
 }
 
@@ -325,7 +334,7 @@ sub setConf {
     } else {
         $self->{_dbix}->update($conf);
     }
-    
+
     # repositories config
     $self->{_dbix}->opennebula3_repositories->delete_all;
     foreach my $repo (@$repos) {

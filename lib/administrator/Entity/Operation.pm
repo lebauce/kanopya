@@ -151,6 +151,15 @@ sub enqueue {
     return Entity::Operation->new(%args);
 }
 
+sub enqueueNow {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
+
+    return Entity::Operation->new(%args);
+}
+
 sub new {
     my $class = shift;
     my %args = @_;

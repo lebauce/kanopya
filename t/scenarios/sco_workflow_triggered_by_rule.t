@@ -40,7 +40,7 @@ lives_ok {
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 my $adm = Administrator->new;
 $adm->beginTransaction;
-
+my $service_provider;
 eval{
     my $executor = Executor->new();
     my $aggregator= Aggregator->new();
@@ -53,7 +53,7 @@ eval{
             service_provider_id => $external_cluster_mockmonitor->id,
     );
 
-    my $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
     );
 
@@ -363,14 +363,23 @@ eval{
     my $wf2;
     lives_ok { $wf1 = Entity->get(id=>$rule2->id)->workflow_def } 'Check workflow def';
     lives_ok { $wf2 = Entity->get(id=>$arule2->id)->workflow_def } 'Check workflow def';
-
     $rule2->delete();
     $arule2->delete();
-
     dies_ok { WorkflowDef->get(id => $wf1->id)} 'Check workflow def deleted';
     dies_ok { WorkflowDef->get(id => $wf2->id)} 'Check workflow def deleted';
 
-    sub test_rrd_remove {
+    test_rrd_remove();
+    #$adm->commitTransaction;
+    $adm->rollbackTransaction;
+};
+if($@) {
+    my $error = $@;
+    print $error."\n";
+    test_rrd_remove();
+    $adm->rollbackTransaction;
+}
+
+sub test_rrd_remove {
     my @cms = Entity::Clustermetric->search (hash => {
         clustermetric_service_provider_id => $service_provider->id
     });
@@ -378,13 +387,17 @@ eval{
     my @cm_ids = map {$_->id} @cms;
     while (@cms) { (pop @cms)->delete(); };
 
-    is (scalar Entity::Combination::AggregateCombination->search (hash => {
+    my @acs = Entity::Combination::AggregateCombination->search (hash => {
         service_provider_id => $service_provider->id
-    }), 0, 'Check all aggregate combinations are deleted');
+    });
 
-    is (scalar Entity::AggregateRule->search (hash => {
+    is ((scalar @acs), 0, 'Check all aggregate combinations are deleted');
+
+    my @ars = Entity::AggregateRule->search (hash => {
         aggregate_rule_service_provider_id => $service_provider->id
-    }), 0, 'Check all aggregate rules are deleted');
+    });
+    
+    is (scalar @acs, 0, 'Check all aggregate rules are deleted');
 
     my $one_rrd_remove = 0;
     for my $cm_id (@cm_ids) {
@@ -394,15 +407,6 @@ eval{
         close(FILE);
     }
     ok ($one_rrd_remove == 0, "Check all have been removed, still $one_rrd_remove rrd");
-}
-    #$adm->commitTransaction;
-    $adm->rollbackTransaction;
-};
-if($@) {
-    $adm->rollbackTransaction;
-    my $error = $@;
-    print $error."\n";
-    test_rrd_remove();
 }
 
 sub service_rule_objects_creation {

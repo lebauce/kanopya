@@ -43,9 +43,9 @@ sub checkStoppable {
         my $opennebula3   = $cluster->getComponent(name => "Opennebula", version => "3");
 
         my $cm = CapacityManagement->new(
-            hypervisor_cluster_id  => $self->node->inside_id,
             cloud_manager => $opennebula3,
         );
+
         my $flushRes = $cm->flushHypervisor(hv_id => $self->getId());
         if ($flushRes->{num_failed} == 0) {
             my $workflow = Entity::Workflow->new(workflow_name => 'remediation_hypervisor_'.$self->getId());

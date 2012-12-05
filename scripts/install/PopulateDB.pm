@@ -615,7 +615,9 @@ sub registerOperations {
         [ 'ProcessRule', 'Processing triggered rule' ],
         [ 'ResubmitNode', 'Resubmit a virtual machine to the IAAS' ],
         [ 'RelieveHypervisor', 'Relieve the hypervisor by migrating one VM' ],
-        [ 'Synchronize', 'Synchronize a component' ]
+        [ 'Synchronize', 'Synchronize a component' ],
+        [ 'FlushHypervisor', 'Compute flush hypervisor plan' ],
+        [ 'ResubmitHypervisor', 'Resubmit hypervisor virtual machines' ],
     ];
 
     for my $operation (@{$operations}) {
@@ -827,6 +829,17 @@ sub registerIndicators {
                 [ 'billing/Memory', 'Memory', 'Charged memory', undef, undef, 'FF000099', 'Bytes', undef ],
             ]
         },
+        {
+            set => {
+                name      => 'state',
+                provider  => 'KanopyaDatabaseProvider',
+                type      => 'GAUGE',
+            },
+            indicators => [
+                [ 'state/Up', 'Up', 'Host is up', undef, undef, 'FF000099', '', undef ],
+            ]
+        },
+
         {
             set => {
                 name      => 'diskIOTable',
@@ -1361,8 +1374,42 @@ sub populate_workflow_def {
         }
     );
     my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
+    $relieve_hypervisor_wf->addStep( operationtype_id => $relieve_hypervisor_op_id );
     $relieve_hypervisor_wf->addStep( operationtype_id => $resubmit_node_op_id );
     $relieve_hypervisor_wf->addStep( operationtype_id => $migrate_op_id );
+
+    # MaintenanceHypervisor workflow def
+    my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflow(
+        workflow_name => 'HypervisorMaintenance',
+        params => {
+            internal => {
+                scope_id => 1,
+            },
+            automatic => {
+                context => { host => undef },
+            },
+        }
+    );
+    my $flush_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
+    $hypervisor_maintenance_wf->addStep( operationtype_id => $flush_hypervisor_op_id);
+    $hypervisor_maintenance_wf->addStep(
+        operationtype_id => Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id
+    );
+
+    # Hypervisor resubmit workflow def
+    my $hypervisor_resubmit_wf = $kanopya_wf_manager->createWorkflow(
+        workflow_name => 'ResubmitHypervisor',
+        params => {
+            internal => {
+                scope_id => 1,
+            },
+            automatic => {
+                context => { host => undef },
+            },
+        }
+    );
+    my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
+    $hypervisor_resubmit_wf->addStep( operationtype_id => $resubmit_hypervisor_op_id);
 }
 
 sub populate_policies {

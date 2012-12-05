@@ -71,7 +71,8 @@ eval{
         );
     } 'Add opennebula to service provider';
 
-
+    test_resubmit();
+    test_hypervisor_selection_multi();
     test_hypervisor_selection();
     test_migration_authorization();
     test_scale_memory();
@@ -86,6 +87,36 @@ if($@) {
     print $error."\n";
 }
 
+
+sub test_resubmit {
+
+    my $infra = {
+        vms => {
+            $vms[0]->id => {cpu => 8, ram => 8*1024*1024*1024},
+            $vms[1]->id => {cpu => 2, ram => 2*1024*1024*1024},
+            $vms[2]->id => {cpu => 1, ram => 1*1024*1024*1024},
+        },
+        hvs => {  1 => {vm_ids  => [$vms[0]->id,$vms[1]->id],
+                        hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
+                  2 => {vm_ids  => [$vms[2]->id],
+                        hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
+        }
+    };
+
+    my $cm = CapacityManagement->new(infra => $infra);
+
+    is ( $cm->getHypervisorIdResubmitVM (
+             vm_id         => $vms[0]->id,
+             wanted_values => { ram => 8*$coef, cpu => 8 },
+         ), 1, 'Check resubmit same hv');
+
+    is ( $cm->getHypervisorIdResubmitVM (
+             vm_id         => $vms[0]->id,
+             wanted_values => { ram => 9*$coef, cpu => 8 },
+         ), 2, 'Check resubmit other hv');
+
+}
+
 sub test_migration_authorization {
     my $cm = CapacityManagement->new(infra => getTestInfraForScaling());
 
@@ -96,6 +127,50 @@ sub test_migration_authorization {
     );
 }
 
+sub test_hypervisor_selection_multi {
+    my $infra = getTestInfraForScaling();
+
+    my $vms_wanted_values = {
+        2101 => { cpu => 1, ram => 7*$coef },
+        1983 => { cpu => 1, ram => 2*$coef },
+    };
+
+    my $rep = CapacityManagement->new(infra => $infra)->getHypervisorIdsForVMs(vms_wanted_values => $vms_wanted_values);
+
+    is ($rep->{2101}, 2, 'Check vm 1 ram placement');
+    is ($rep->{1983}, 1, 'Check vm 2 ram placement');
+
+    $vms_wanted_values = {
+        2101 => { cpu => 2, ram => 1*$coef },
+        1983 => { cpu => 7, ram => 1*$coef },
+    };
+
+    $rep = CapacityManagement->new(infra => getTestInfraForScaling())
+                             ->getHypervisorIdsForVMs(vms_wanted_values => $vms_wanted_values);
+
+    is ($rep->{2101}, 1, 'Check vm 1 cpu placement');
+    is ($rep->{1983}, 2, 'Check vm 2 cpu placement');
+
+    $vms_wanted_values = {
+        2101 => { cpu => 1, ram => 8*$coef }, #-
+        1983 => { cpu => 8, ram => 1*$coef }, #-
+        2305 => { cpu => 4, ram => 3*$coef }, #2
+        1982 => { cpu => 3, ram => 4*$coef }, #2
+        2610 => { cpu => 1, ram => 1*$coef }, #1
+        1985 => { cpu => 1, ram => 1*$coef }, #1
+
+    };
+
+    $rep = CapacityManagement->new(infra => getTestInfraForScaling())
+                             ->getHypervisorIdsForVMs(vms_wanted_values => $vms_wanted_values);
+
+    ok (! defined $rep->{2101}, 'Check ram/cpu placement');
+    ok (! defined $rep->{1983}, 'Check ram/cpu placement');
+    is ($rep->{2305}, 2, 'Check ram/cpu placement');
+    is ($rep->{1982}, 2, 'Check ram/cpu placement');
+    is ($rep->{2610}, 1, 'Check ram/cpu placement');
+    is ($rep->{1985}, 1, 'Check ram/cpu placement');
+}
 sub test_hypervisor_selection {
     my %args = @_;
 

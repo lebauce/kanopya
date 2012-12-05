@@ -12,11 +12,11 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package VsphereProvider;
+package DataProvider::VsphereProvider;
 
 use strict;
 use warnings;
-
+use base 'DataProvider';
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::Component::Vsphere5::Vsphere5Datacenter;
 use Kanopya::Exceptions;

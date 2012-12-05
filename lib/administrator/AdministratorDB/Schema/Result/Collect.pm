@@ -26,7 +26,7 @@ __PACKAGE__->table("collect");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 cluster_id
+=head2 service_provider_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -43,7 +43,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "cluster_id",
+  "service_provider_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -51,7 +51,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
-__PACKAGE__->set_primary_key("indicatorset_id", "cluster_id");
+__PACKAGE__->set_primary_key("indicatorset_id", "service_provider_id");
 
 =head1 RELATIONS
 
@@ -70,18 +70,18 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 cluster
+=head2 service_provider
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Cluster>
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "cluster",
-  "AdministratorDB::Schema::Result::Cluster",
-  { cluster_id => "cluster_id" },
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 

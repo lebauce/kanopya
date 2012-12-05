@@ -1151,7 +1151,7 @@ sub searchRelated {
     requireClass($searched_class);
 
     my $method = $join->{accessor} eq "single" ? "find" : "search";
-    return $searched_class->$method(%args, raw_hash => { $join->{on} => $args{id} },
+    return $searched_class->$method(%args, raw_hash => { $join->{on} => ref ($self) ? $self->id : $args{id} },
                                            hash     => $args{hash},
                                            join     => $join->{join});
 }
@@ -1185,7 +1185,33 @@ sub find {
     return $object;
 }
 
+=begin classdoc
 
+Return a single element matching the specified criterias take the same arguments as 'searchRelated'.
+
+@return the matching object
+
+=end classdoc
+
+=cut
+
+sub findRelated {
+    my ($class, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'filters' ],
+                         optional => { 'hash' => { } });
+
+    my @objects = $class->searchRelated(%args);
+
+    my $object = pop @objects;
+    if (! defined $object) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "No entry found for " . $class . ", with hash " . Dumper($args{hash})
+              );
+    }
+    return $object;
+}
 =pod
 
 =begin classdoc

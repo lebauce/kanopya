@@ -36,10 +36,11 @@ Can retrieve value for all OIDs (see snmp MIBs).
 
 =cut
 
-package SnmpProvider;
+package DataProvider::SnmpProvider;
 
 use strict;
 use warnings;
+use base 'DataProvider';
 use Net::SNMP;
 
 =head2 new

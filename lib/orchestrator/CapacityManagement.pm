@@ -73,50 +73,55 @@ sub new {
     $self->{_operationPlan} = [];
 
     # Either the infra is get by params, or it is directly constructed
-    if(defined $args{infra}){
+    if (defined $args{infra}) {
         $self->{_infra} = $args{infra};
     }
     else {
-        General::checkParams(args => \%args, optional => { cluster_id            => undef,
-                                                           hypervisor_cluster_id => undef,
-                                                           cloud_manager         => undef });
+        General::checkParams(args => \%args, optional => { cloud_manager         => undef });
 
-        if (defined $args{cloud_manager}){
+        if (defined $args{cloud_manager}) {
             $self->{_cloud_manager} = $args{cloud_manager};
         }
-        elsif ( defined $self->{_cluster_id} ) {
-            my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_cluster_id});
-            $self->{_cloud_manager} = $cluster->getManager(manager_type => 'host_manager');
-        }
-        elsif ( defined  $self->{_hypervisor_cluster_id} ) {
-            my $hypervisor = Entity->get(id => $self->{_hypervisor_cluster_id});
-            $self->{_cloud_manager} = $hypervisor->getComponent(name => 'Opennebula', version => 3);
-        }
         else {
-            throw Kanopya::Exception(error => 'No cloud manager, nor cluster, nor hypervisor id, Capacity Manager cannot construct infra');
+            throw Kanopya::Exception(error => 'No cloud_manager arg capacity manager cannot construct infra');
         }
 
         $self->{_admin} = Administrator->new();
-        $self->{_infra} = $self->_constructInfra();
+        $self->{_infra} = $self->_constructInfra;
 
-        # Get availble memory for all cloud manager hosts (hypervisors)
+        # Get available memory for all cloud manager hosts (hypervisors)
         my $overcommitment_factors =  $self->{_cloud_manager}->getOvercommitmentFactors();
         $log->info('Overcommitment cpu    factor <'.($overcommitment_factors->{overcommitment_cpu_factor}).'>');
         $log->info('Overcommitment memory factor <'.($overcommitment_factors->{overcommitment_memory_factor}).'>');
 
         # Add extra information to hypervisors
-        my $hypervisors = $self->{_cloud_manager}->hypervisors();
-        for my $hypervisor (@$hypervisors) {
-            my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
-            my $hypervisor_available_memory = $ehypervisor->getAvailableMemory;
+        my @hypervisors = $self->{_cloud_manager}->activeHypervisors();
 
-            $self->{_hvs_mem_available}->{$hypervisor->id} = $hypervisor_available_memory->{mem_theoretically_available};
+        for my $hypervisor (@hypervisors) {
+            # Non execution dependant information
+            $self->{_infra}->{hvs}->{$hypervisor->id}
+                                  ->{hv_capa}->{cpu} *= $overcommitment_factors->{overcommitment_cpu_factor};
+        }
+
+        for my $hypervisor (@hypervisors) {
+            my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
+            my $hypervisor_available_memory;
+
+            eval {
+                $hypervisor_available_memory = $ehypervisor->getAvailableMemory;
+                $log->info(Dumper $hypervisor_available_memory);
+            };
+            if($@) {
+                $log->info($@);
+            }
+
+            if (defined $hypervisor_available_memory->{mem_theoretically_available}) {
+                $self->{_hvs_mem_available}->{$hypervisor->id} = $hypervisor_available_memory->{mem_theoretically_available};
+            }
+
             $self->{_infra}->{hvs}->{$hypervisor->id}->{hv_capa}->{ram_effective} = $hypervisor_available_memory->{mem_effectively_available};
 
             # Manage CPU Overcommitment when cloud_manager is defined
-
-            $self->{_infra}->{hvs}->{$hypervisor->id}
-                                  ->{hv_capa}->{cpu} *= $overcommitment_factors->{overcommitment_cpu_factor};
         }
 
         # Add extra information to VMs
@@ -145,7 +150,7 @@ Variable getter
 
 =cut
 
-sub getInfra{
+sub getInfra {
     my ($self) = @_;
     return $self->{_infra};
 }
@@ -163,37 +168,38 @@ Use the cloud manager to get the infrastructure information
 
 =cut
 
-sub _constructInfra{
+sub _constructInfra {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => []);
     # OPTION : hv_capacities
 
     # Get the list of all hypervisors
-    my @hypervisors_r = $self->{_cloud_manager}->hypervisors();
+    my @hypervisors_r = $self->{_cloud_manager}->activeHypervisors();
     my $master_hv;
 
     my ($hvs, $vms);
     for my $hypervisor (@hypervisors_r) {
 
-        if( $hypervisor->node->master_node == 1 ) {
-            $master_hv = $hypervisor->getId;
+        if ($hypervisor->node->master_node == 1) {
+            $master_hv = $hypervisor->id;
         }
 
-        $hvs->{$hypervisor->getId} = {
+        $hvs->{$hypervisor->id} = {
             hv_capa => {
                 ram => $hypervisor->host_ram,
                 cpu => $hypervisor->host_core,
             },
             vm_ids  => [],
         };
+
         my @hypervisor_vms = $hypervisor->getVms();
         for my $vm (@hypervisor_vms) {
-            $vms->{$vm->getId} = {
+            $vms->{$vm->id} = {
                 ram => $vm->host_ram,
                 cpu => $vm->host_core,
             };
-            push @{$hvs->{$hypervisor->getId}->{vm_ids}}, $vm->getId;
+            push @{$hvs->{$hypervisor->getId}->{vm_ids}}, $vm->id;
         }
     }
 
@@ -215,7 +221,7 @@ Check if a scale-in is authorized w.r.t. the VM resources and the destination HV
 @param vm_id id of the checked vm
 @param hv_id id of the hypervisor of the vm
 @param resource_type scaled resource
-@param wanted_resource value of the resource you want to scale  
+@param wanted_resource value of the resource you want to scale
 
 @return 1 if scale-in is possible, return 0 if some resources are missing.
 
@@ -285,6 +291,11 @@ sub isMigrationAuthorized{
     my $vm_id = $args{vm_id};
     my $hv_id = $args{hv_id};
 
+    if (not defined $self->{_infra}->{hvs}->{$hv_id}) {
+        $log->error("Hypervisor <$hv_id> is not an active host of the cloud manager");
+        return 0;
+    }
+
     my @resources = keys %{$self->{_infra}->{vms}->{$vm_id}};
 
     my $remaining_resources = $self->_getHvSizeRemaining(
@@ -295,7 +306,7 @@ sub isMigrationAuthorized{
         $log->info("Check $resource, good if :  ".$self->{_infra}->{vms}->{$vm_id}->{$resource}.' < '.$remaining_resources->{$resource});
 
         if( $self->{_infra}->{vms}->{$vm_id}->{$resource} > $remaining_resources->{$resource}  ) {
-            $log->info("Not enough $resource to migrate VM $vm_id (".$self->{_infra}->{vms}->{$vm_id}->{$resource}.") in HV $hv_id (".$remaining_resources->{$resource} );
+            $log->error("Not enough $resource to migrate VM $vm_id (".$self->{_infra}->{vms}->{$vm_id}->{$resource}.") in HV $hv_id (".$remaining_resources->{$resource} );
             return 0;
         }
     }
@@ -339,7 +350,8 @@ sub optimIaas{
     } while ($optim == 1);
 
     $self->_applyMigrationPlan(
-        plan => $current_plan
+        plan                    => $current_plan,
+        empty_master_allowed    => 0,
     );
     $log->debug(Dumper $self->{_infra}->{hvs});
     return $self->{_operationPlan};
@@ -349,7 +361,7 @@ sub optimIaas{
 
 =begin classdoc
 
-Simplified the migration plan to avoir useless migration and to keep some vms in the master node 
+Simplified the migration plan to avoir useless migration and to keep some vms in the master node
 
 @param plan the orginal migration plan
 
@@ -363,29 +375,35 @@ sub _applyMigrationPlan{
     # Keep only one migration per VM
 
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, required => ['plan']);
+    General::checkParams(
+        args => \%args,
+            required => ['plan', 'empty_master_allowed'],
+    );
 
     my $plan = $args{plan};
 
     # Trick to avoid empty master node (useless)
     # TODO refactoring a better algorithm to avoid this configuration
-
     my $replace_master_id;
     my $master_hv_id = $self->{_infra}->{master_hv};
-    $log->info(Dumper $self->{_infra});
 
-    if( scalar (@{$self->{_infra}->{hvs}->{$master_hv_id}->{vm_ids}} ) == 0 ) {
+    if ($args{empty_master_allowed} == 0) {
 
-        $log->info('Master node seems empty, try to empty another HV');
+        $log->info(Dumper $self->{_infra});
 
-        my $hv_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
+        if( scalar (@{$self->{_infra}->{hvs}->{$master_hv_id}->{vm_ids}} ) == 0 ) {
 
-        my $hvs = $self->{_infra}->{hvs};
-        for my $hv_id (@{$hv_ids}) {
-            if ($hvs->{$hv_id}->{hv_capa}->{cpu} <= $hvs->{$master_hv_id}->{hv_capa}->{cpu}
-                && $hvs->{$hv_id}->{hv_capa}->{ram} <= $hvs->{$master_hv_id}->{hv_capa}->{ram}) {
+            $log->info('Master node seems empty, try to empty another HV');
 
-                $replace_master_id = $hv_id;
+            my $hv_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
+
+            my $hvs = $self->{_infra}->{hvs};
+            for my $hv_id (@{$hv_ids}) {
+                if ($hvs->{$hv_id}->{hv_capa}->{cpu} <= $hvs->{$master_hv_id}->{hv_capa}->{cpu}
+                    && $hvs->{$hv_id}->{hv_capa}->{ram} <= $hvs->{$master_hv_id}->{hv_capa}->{ram}) {
+
+                    $replace_master_id = $hv_id;
+                }
             }
         }
     }
@@ -426,12 +444,29 @@ sub _applyMigrationPlan{
     }
 }
 
+sub getHypervisorIdsForVMs{
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['vms_wanted_values']);
+
+    my %rep;
+    while (my ($vm_id, $wanted_values) = each (%{$args{vms_wanted_values}})) {
+        my $hv_id = $self->getHypervisorIdForVM(wanted_values => $wanted_values);
+        if (defined $hv_id) {
+            push @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}}, $vm_id;
+            $self->{_infra}->{vms}->{$vm_id} = $wanted_values;
+            $rep{$vm_id} = $hv_id;
+        }
+    }
+    return \%rep;
+}
+
+
 =pod
 
 =begin classdoc
 
-Return the hypervisor ID in which to place the vm. Choose the hypervisor with enough resource 
-with minimum size (in order to optimize infrastructure usage) 
+Return the hypervisor ID in which to re-place the vm. Choose the hypervisor with enough resource
+with minimum size (in order to optimize infrastructure usage)
 
 @param wanted_values the resource values of the VM
 
@@ -441,7 +476,43 @@ with minimum size (in order to optimize infrastructure usage)
 
 =cut
 
-sub getHypervisorIdForVM{
+sub getHypervisorIdResubmitVM {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['vm_id', 'wanted_values']);
+    # Remove me from present vm
+    $self->_removeVmfromInfra( vm_id => $args{vm_id} );
+    return $self->getHypervisorIdForVM(%args);
+}
+
+
+sub _removeVmfromInfra {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['vm_id']);
+    my $vm_id = $args{vm_id};
+    delete $self->{_infra}->{vms}->{$vm_id};
+
+    #TODO add a break to avoid continuing research once id is found
+    HV:for my $hv_id_it ( keys %{$self->{_infra}->{hvs}} ) {
+        @{$self->{_infra}->{hvs}->{$hv_id_it}->{vm_ids}} = grep {$vm_id != $_} @{$self->{_infra}->{hvs}->{$hv_id_it}->{vm_ids}};
+    }
+}
+
+=pod
+
+=begin classdoc
+
+Return the hypervisor ID in which to place the vm. Choose the hypervisor with enough resource
+with minimum size (in order to optimize infrastructure usage)
+
+@param wanted_values the resource values of the VM
+
+@return The hypervisor id
+
+=end classdoc
+
+=cut
+
+sub getHypervisorIdForVM {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['wanted_values']);
@@ -894,7 +965,7 @@ sub _getHvSizeOccupied{
 
     for my $vm_id (@$hv_vms) {
         $size->{cpu} += $self->{_infra}->{vms}->{$vm_id}->{cpu};
-        $size->{ram} += $self->{_infra}->{vms}->{$vm_id}->{ram} + 32*1024*1024; #ADD MARGIN 32MB per VM
+        $size->{ram} += $self->{_infra}->{vms}->{$vm_id}->{ram};
         #TODO margin used originally for Xen. Can be parametered
     }
 
@@ -932,7 +1003,7 @@ sub _getHvSizeRemaining {
     my $remaining_cpu = $all_the_cpu - $size->{cpu};
     my $remaining_ram;
 
-    if(defined $self->{_hvs_mem_available }) {
+    if(defined $self->{_hvs_mem_available}) {
         $remaining_ram = $self->{_hvs_mem_available}->{$hv_id};
         $log->info("HV <$hv_id> Remaining RAM <$remaining_ram> using real values");
     }
@@ -1048,7 +1119,7 @@ sub _scaleOrder{
 Modify the internal infrastructure when the algorithms plan a migration operation
 
 @param vm_id id of the vm
-@param hv_dest_id id of destination hypervisor 
+@param hv_dest_id id of destination hypervisor
 
 =end classdoc
 
@@ -1202,7 +1273,7 @@ with minimum space (average btw RAM and CPU)
 @param wanted_metrics values wanted for the vm
 @param hv_selection_ids hypervisor which can be used to perform the migration
 
-@return a hash with keys : hv_id => the hypervisor id, min_size_remaining => the 'score' used to 
+@return a hash with keys : hv_id => the hypervisor id, min_size_remaining => the 'score' used to
 compare 2 hypervisors
 
 =end classdoc
@@ -1276,7 +1347,7 @@ sub _migrateOtherVmToScale{
     my $new_value        = $args{new_value};
     my $scale_metric     = $args{scale_metric};
     my $hv_selection_ids = $args{hv_selection_ids};
-    
+
     my $hv_id            = $self->_getHvIdFromVmId(vm_id => $vm_id);
 
     my $vms_in_hv        = $self->{_infra}->{hvs}->{$hv_id}->{vm_ids};
@@ -1389,7 +1460,7 @@ sub _optimStep{
         # which would not have been able to empty anyway => once this HV used it
         # enables to empty the next HV Or perhaps next HV could have been empty
         #
-        # => option selected 
+        # => option selected
 
         @hv_selection_ids = grep { $_ != $hv_id } @$hv_selected_ids;
 
@@ -1433,7 +1504,7 @@ sub _optimStep{
 =begin classdoc
 
     Return a hash table indicating which hypervisors are empty and which hypervisors are not
-    empty 
+    empty
 
 =end classdoc
 
@@ -1600,9 +1671,9 @@ sub _computeRelativeResourceSize{
 =begin classdoc
 
     Return the ids of the HV with minimum number of VMs and the value
-    
+
     @return the ids of the HV with minimum number of VMs and the value
-    
+
 =end classdoc
 
 =cut
@@ -1652,11 +1723,17 @@ sub flushHypervisor {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['hv_id']);
 
+    if (not defined $self->{_infra}->{hvs}->{$args{hv_id}}) {
+        my $error = "Hypervisor <$args{hv_id}> is not an active host of the cloud manager";
+        throw Kanopya::Exception(error => $error);
+    }
+
     $self->{_operationPlan} = [];
     my $flush_results = $self->_getFlushHypervisorPlan(hv_id => $args{hv_id});
 
     $self->_applyMigrationPlan(
-        plan => $flush_results->{operation_plan}
+        plan                    => $flush_results->{operation_plan},
+        empty_master_allowed    => 1,
     );
 
     return { num_failed     => $flush_results->{num_failed},
@@ -1688,7 +1765,7 @@ sub _getFlushHypervisorPlan {
 
     my $hv_selected_ids;
 
-    if ( defined $args{use_empty_hv} && $args{use_empty_hv} == 1) {
+    if (defined $args{use_empty_hv} && $args{use_empty_hv} == 1) {
         $hv_selected_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
     }
     else {
@@ -1698,9 +1775,10 @@ sub _getFlushHypervisorPlan {
     # Just remove current hv it self
     my @hv_selection_ids = grep { $_ != $hv_id } @$hv_selected_ids;
     $log->debug("List of HVs available to free <$hv_id> : @hv_selection_ids");
-    
+
     # Migrate all the vm of the selected hv
     my @vmlist = @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
+
     $log->info("List of VMs to migrate = @vmlist");
 
     my @operation_plan = ();

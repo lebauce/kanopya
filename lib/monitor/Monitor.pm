@@ -345,6 +345,19 @@ sub createRRD {
     return $rrd;
 }
 
+sub deleteRRD {
+    my ($self, %args) = @_;
+    General::checkParams(
+        args     => \%args,
+        required => ['set_name', 'host_name'],
+    );
+    my $set_name = $args{set_name};
+    my $rrd_name = $self->rrdName( set_name => $args{set_name}, host_name => $args{host_name} );
+    my $rrdfile_name = "$rrd_name.rrd";
+    my $cmd = 'rm '.$self->{_rrd_base_dir}.'/'.$rrdfile_name;
+    system ($cmd);
+}
+
 =head2 rebuild
     
     Class : Public
