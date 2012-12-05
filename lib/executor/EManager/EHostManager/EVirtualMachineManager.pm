@@ -32,11 +32,11 @@ sub getFreeHost {
     General::checkParams(args => \%args, required => [ "ram", "core", "interfaces" ]);
 
     $log->info("Looking for a virtual host");
-    my $host = eval{
+    my $host = eval {
         return $self->createVirtualHost(
                    core   => $args{core},
                    ram    => $args{ram},
-                   ifaces => $args{interfaces},
+                   ifaces => scalar @{$args{interfaces}},
                );
     };
     if ($@) {
