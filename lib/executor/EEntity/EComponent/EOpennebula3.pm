@@ -202,7 +202,8 @@ sub registerHypervisor {
 
     my $agent = $self->getServiceProvider->getComponent(category => "Configurationagent");
     my $eagent = EFactory::newEEntity(data => $agent);
-    $eagent->postStartNode(cluster => $self->getServiceProvider);
+    $eagent->postStartNode(cluster => $self->getServiceProvider,
+                           host    => $args{host});
 
     # hypervisor declaration
     my $hostname = $args{host}->host_hostname;
