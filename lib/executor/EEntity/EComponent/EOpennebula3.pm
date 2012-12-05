@@ -134,27 +134,34 @@ sub postStartNode {
         my @mounts;
 
         for my $repo (@{$conf->{opennebula3_repositories}}) {
-            if(not defined $repo->{datastore_id}) {
+            if (not defined $repo->{datastore_id}) {
                 # declare the datastore
+                my $dsid;
                 my $ds_name = $repo->{repository_name};
-                my $ds_template = $self->generateDatastoreTemplate(ds_name => $ds_name);
-                my $dsid = $self->onedatastore_create(file => $ds_template);
-
-                # update the datastore id in db
-                $comp->{_dbix}->opennebula3_repositories->search(
-                    {repository_name => $ds_name}
-                )->single->update({datastore_id => $dsid});
-
-                # create the directory and mount the container
-                my $command = one_command("mkdir -p /var/lib/one/datastores/$dsid");
-                $self->getEContext->execute(command => $command);
                 my $container_access = Entity::ContainerAccess->get(
-                                       id => $repo->{container_access_id}
-                                   );
-                $command = 'mount -t nfs -o rw,sync,vers=3 ';
-                $command .= $container_access->getAttr(name => 'container_access_export');
-                $command .= " /var/lib/one/datastores/$dsid";
-                $self->getEContext->execute(command => $command);
+                                           id => $repo->{container_access_id}
+                                       );
+
+                if ($ds_name eq "system") {
+                    $dsid = 0;
+                } else {
+                    my $ds_template = $self->generateDatastoreTemplate(ds_name => $ds_name);
+                    $dsid = $self->onedatastore_create(file => $ds_template);
+
+                    # update the datastore id in db
+                    $comp->{_dbix}->opennebula3_repositories->search(
+                        {repository_name => $ds_name}
+                    )->single->update({datastore_id => $dsid});
+
+                    # create the directory and mount the container
+                    my $command = one_command("mkdir -p /var/lib/one/datastores/$dsid");
+                    $self->getEContext->execute(command => $command);
+
+                    $command = 'mount -t nfs -o rw,sync,vers=3 ';
+                    $command .= $container_access->getAttr(name => 'container_access_export');
+                    $command .= " /var/lib/one/datastores/$dsid";
+                    $self->getEContext->execute(command => $command);
+                }
 
                 # update linux mount table
                 push @mountentries, {
