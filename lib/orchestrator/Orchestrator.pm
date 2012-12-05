@@ -152,7 +152,7 @@ sub manage_aggregates {
                     $log->info( '</CM '.$service_provider_id.'>');
                     1;
                 }or do {
-                    print "Error in clustermetricManagement of cluster $service_provider->getId : $@\n";
+                    print "Error in clustermetricManagement of cluster $service_provider_id : $@\n";
                     $log->error($@);
                 };
 
