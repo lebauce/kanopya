@@ -198,4 +198,11 @@ sub cloneComponentsInstalledFrom {
     }
 }
 
+sub getContainer {
+    my $self = shift;
+
+    my @accesses = $self->systemimage_container_accesses;
+    return $accesses[0]->container_access->container;
+}
+
 1;

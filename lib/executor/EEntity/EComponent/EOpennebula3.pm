@@ -492,7 +492,7 @@ sub startHost {
 
     my $image_templatefile = $self->generateImageTemplate(
         image_name        => $image_name,
-        image_source      => $repo{datastore_id} . '/' . $image->container->container_device,
+        image_source      => $repo{datastore_id} . '/' . $image->getContainer->container_device,
     );
 
     my $imageid = $self->oneimage_create(
