@@ -47,6 +47,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("basedb");
 my $errmsg;
 my %class_type_cache;
+my %attr_defs_cache;
 
 use constant ATTR_DEF => {
     label => {
@@ -328,6 +329,11 @@ sub getAttrDefs {
 
     my $attributedefs = {};
     my $modulename = $class;
+
+    if (exists $attr_defs_cache{$args{'group_by'}}{$class}) {
+        return $attr_defs_cache{$args{'group_by'}}{$class};
+    }
+
     my @hierachy = getClassHierarchy($class);
 
     while(@hierachy) {
@@ -395,6 +401,7 @@ sub getAttrDefs {
     $attributedefs->{$modulename} = $merge->merge($attributedefs->{$modulename}, BaseDB::getAttrDef());
 
     if ($args{group_by} eq 'module') {
+        $attr_defs_cache{'module'}{$class} = $attributedefs;
         return $attributedefs;
     }
 
@@ -403,6 +410,8 @@ sub getAttrDefs {
     foreach my $module (keys %$attributedefs) {
         $result = $merge->merge($result, $attributedefs->{$module});
     }
+
+    $attr_defs_cache{$args{'group_by'}}{$class} = $result;
 
     return $result;
 }
