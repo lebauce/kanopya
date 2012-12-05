@@ -48,7 +48,7 @@ main();
 
 sub main {
     eval{
-    
+
         # These test needs :
         # One IAAS Opennebula with 2 hypervisors
         # 4 vms on the first hypervisor
@@ -111,7 +111,7 @@ sub resubmit_hv_on_state {
     my $hv_cluster = $hv1->node->inside;
 
     # Get indicators
-    my $indic = Entity::CollectorIndicator->find ( 
+    my $indic = Entity::CollectorIndicator->find (
         hash => { 'indicator.indicator_label' => 'state/Up' }
     );
 
@@ -135,14 +135,14 @@ sub resubmit_hv_on_state {
     );
 
     my $node = $hv1->node;
-    
+
     for my $hv_t (@hvs) {
-        $collector->deleteRRD(set_name => 'state', host_name => $hv_t->host_hostname);        
+        $collector->deleteRRD(set_name => 'state', host_name => $hv_t->host_hostname);
     }
 
     $node->setAttr(name => 'node_state', value => 'in:'.time());
     $node->save();
-    
+
     my %indicators;
     $indicators{$indic->indicator->indicator_oid} = $indic->indicator;
 
@@ -158,7 +158,7 @@ sub resubmit_hv_on_state {
 
     is ($nodes_metrics ->{$hv1->host_hostname}->{'Host is up'}, 1, 'Hv1 is up');
     is ($hv1->active, 1, 'Hv1 is activated');
-    
+
     $orchestrator->manage_aggregates();
 
     $node->setAttr(name => 'node_state', value => 'broken:'.time());
@@ -215,24 +215,18 @@ sub resubmit_hv_on_state {
     is (scalar @operations, 1, '1 operation enqueued');
     is ( (shift @operations)->type, 'ResubmitHypervisor', 'operation ResubmitHypervisor enqueued');
     $executor->oneRun();
-
     @operations = Entity::Operation->search(hash => {}, order_by => 'execution_rank asc');
-
     shift @operations; # Remove old ResubmitHypervisor operation
     is (scalar @operations, 6, '6 operations enqueued');
 
     is ( (shift @operations)->type, 'ResubmitNode', 'operation ResubmitNode enqueued');
-    $executor->oneRun();
     is ( (shift @operations)->type, 'ScaleCpuHost', 'operation ScaleCpuHost enqueued');
-    $executor->oneRun();
     is ( (shift @operations)->type, 'ScaleMemoryHost', 'operation ScaleMemoryHost enqueued');
-    $executor->oneRun();
     is ( (shift @operations)->type, 'ResubmitNode', 'operation ResubmitNode enqueued');
-    $executor->oneRun();
     is ( (shift @operations)->type, 'ScaleCpuHost', 'operation ScaleCpuHost enqueued');
-    $executor->oneRun();
     is ( (shift @operations)->type, 'ScaleMemoryHost', 'operation ScaleMemoryHost enqueued');
-    $executor->oneRun();
+
+    executor_real_infra();
 
     $orchestrator->manage_aggregates();
     sleep(10);
@@ -262,7 +256,7 @@ sub resubmit_vm_on_state {
     my $vm_cluster = $spms[0]->service_provider;
 
     # Get indicators
-    my $indic = Entity::CollectorIndicator->find ( 
+    my $indic = Entity::CollectorIndicator->find (
         hash => { 'indicator.indicator_label' => 'state/Up' }
     );
 
@@ -290,12 +284,12 @@ sub resubmit_vm_on_state {
     my $node = $vm->node;
 
     for my $vm_t (@vms) {
-        $collector->deleteRRD(set_name => 'state', host_name => $vm_t->host_hostname);        
+        $collector->deleteRRD(set_name => 'state', host_name => $vm_t->host_hostname);
     }
 
     $node->setAttr(name => 'node_state', value => 'in:'.time());
     $node->save();
-    
+
     my %indicators;
     $indicators{$indic->indicator->indicator_oid} = $indic->indicator;
 
@@ -365,14 +359,13 @@ sub resubmit_vm_on_state {
     $orchestrator->manage_aggregates();
 
     my @operations = Entity::Operation->search(hash => {}, order_by => 'execution_rank asc');
-    is (scalar @operations, 3, '3 operations enqueued'); 
+    is (scalar @operations, 3, '3 operations enqueued');
 
     is ( (shift @operations)->type, 'ResubmitNode', 'operation ResubmitNode enqueued');
-    $executor->oneRun();
     is ( (shift @operations)->type, 'ScaleCpuHost', 'operation ScaleCpuHost enqueued');
-    $executor->oneRun();
     is ( (shift @operations)->type, 'ScaleMemoryHost', 'operation ScaleMemoryHost enqueued');
-    $executor->oneRun();
+
+    executor_real_infra();
 
     my ($state, $foo) = $vm->getNodeState();
     is ($state, 'in', 'Node in' );
@@ -385,7 +378,7 @@ sub resubmit_vm_on_state {
     $orchestrator->manage_aggregates();
     @operations = Entity::Operation->search(hash => {});
     is (scalar @operations, 0, 'no operation waiting for delay');
-    
+
     sleep(55);
     $orchestrator->manage_aggregates();
     @operations = Entity::Operation->search(hash => {});
@@ -428,9 +421,8 @@ sub resubmit_hypervisor {
     is ($ops[$id++]->type, 'ScaleCpuHost', 'Operation ScaleCpuHost');
     is ($ops[$id++]->type, 'ScaleMemoryHost', 'Operation ScaleMemoryHost');
 
-    for my $i (1..$id) {
-        lives_ok { $executor->oneRun; } 'execution';
-    }
+    executor_real_infra();
+
     check_no_operation_and_no_lock();
 
     is (scalar $hv1->virtual_machines, 4, 'Hv1 has 4 vms');
@@ -455,9 +447,7 @@ sub maintenance_hypervisor {
     is ($ops[2]->type, 'MigrateHost', 'Operation MigrateHost');
     is ($ops[3]->type, 'DeactivateHost', 'Operation DeactivateHost');
 
-    lives_ok { $executor->oneRun; } 'EMigration execution';
-    lives_ok { $executor->oneRun; } 'EMigration execution';
-    lives_ok { $executor->oneRun; } 'Host deactivation';
+    executor_real_infra();
 
     @hv1_vms = $hv1->virtual_machines;
     @hv2_vms = $hv2->virtual_machines;
@@ -480,30 +470,53 @@ sub check_no_operation_and_no_lock {
     remove_operations_and_locks();
 }
 
-    
+
 sub split_2_2 {
     my @vms = $one->opennebula3_vms;
 
     if ($hv1->virtual_machines > $hv2->virtual_machines) {
         while ($hv1->virtual_machines != $hv2->virtual_machines) {
             my @vms = $hv1->virtual_machines;
-            my $vm = (pop @vms); 
+            my $vm = (pop @vms);
             $vm->migrate(hypervisor => $hv2);
-            lives_ok { $executor->oneRun; } 'migration vm to hv2 execution';
+
+            executor_real_infra();
             is ($vm->reload->hypervisor->id, $hv2->id, 'Check vm has migrated');
         }
     }
     elsif ($hv1->virtual_machines < $hv2->virtual_machines) {
         while ($hv1->virtual_machines != $hv2->virtual_machines) {
             my @vms = $hv2->virtual_machines;
-            my $vm = (pop @vms); 
+            my $vm = (pop @vms);
             $vm->migrate(hypervisor => $hv1);
-            lives_ok { $executor->oneRun; } 'migration vm to hv1 execution';
+
+            executor_real_infra();
             is ($vm->reload->hypervisor->id, $hv1->id, 'Check vm has migrated');
         }
     }
 
     is ( scalar $hv1->virtual_machines, 2, 'Check split');
     is ( scalar $hv2->virtual_machines, 2, 'Check split');
+}
+
+sub executor_real_infra {
+    my %args = @_;
+    lives_ok {
+        my $timeout = $args{timeout} || 300;
+        my $operation;
+        while ($timeout > 0) {
+            eval {
+                $operation = Entity::Operation->find(hash => {});
+            };
+            if ($@) {
+                last;
+            }
+            else {
+                sleep 5;
+                $timeout -= 5;
+                $executor->oneRun;
+            }
+        }
+    } 'Waiting maximum 300 seconds for the host to start';
 }
 
