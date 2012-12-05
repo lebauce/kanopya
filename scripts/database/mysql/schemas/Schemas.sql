@@ -511,7 +511,7 @@ CREATE TABLE `iface` (
   `iface_mac_addr` char(18) DEFAULT NULL,
   `iface_pxe` int(10) UNSIGNED NOT NULL,
   `host_id` int(8) UNSIGNED NOT NULL,
-  `master` char(32) DEFAULT NULL,
+  `master` char(32) DEFAULT '',
   PRIMARY KEY (`iface_id`),
   FOREIGN KEY (`iface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`iface_mac_addr`),

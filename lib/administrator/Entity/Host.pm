@@ -531,7 +531,7 @@ sub getIfaces {
         my @ifcs = Entity::Iface->search(hash => { host_id   => $self->id,
                                                    iface_pxe => $pxe,
                                                    # Do not search bonding slave ifaces
-                                                   master    => undef });
+                                                   master    => '' });
 
         IFACE:
         for my $iface (@ifcs) {

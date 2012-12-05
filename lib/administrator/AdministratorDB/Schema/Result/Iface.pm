@@ -74,6 +74,7 @@ __PACKAGE__->table("iface");
 =head2 master
 
   data_type: 'char'
+  default_value: ''
   is_nullable: 1
   size: 32
 
@@ -101,7 +102,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "master",
-  { data_type => "char", is_nullable => 1, size => 32 },
+  { data_type => "char", default_value => '', is_nullable => 1, size => 32 },
 );
 
 =head1 PRIMARY KEY
