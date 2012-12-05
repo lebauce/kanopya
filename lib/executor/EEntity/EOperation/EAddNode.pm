@@ -294,7 +294,8 @@ sub execute {
 
         # Creation of the export to access to the system image container
         my @accesses;
-        my $portals = delete $createexport_params->{iscsi_portals};
+        my $portals = defined $createexport_params->{iscsi_portals} ?
+                          delete $createexport_params->{iscsi_portals} : [ 0 ];
         for my $portal_id (@{ $portals }) {
             push @accesses, $self->{context}->{export_manager}->createExport(
                                 export_name  => $self->{context}->{systemimage}->systemimage_name,
