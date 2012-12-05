@@ -178,6 +178,9 @@ $answers->{clusters_directory} .= '/' if($answers->{clusters_directory} !~ /\/$/
 make_path("$answers->{clusters_directory}", { verbose => 1, mode => 0755 });
 print "done\n";
 
+# /nfsexports directory creation
+make_path('/nfsexports', { verbose => 1 });
+
 ######################
 # SSH key generation #
 ######################
