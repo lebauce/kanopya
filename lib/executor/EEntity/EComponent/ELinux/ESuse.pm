@@ -35,8 +35,8 @@ sub _writeNetConf {
         my $template_file;
 
         if ($iface->{type} eq 'master') {
-            $template_file = 'ifcfg-bonded-master.tt';
             foreach my $slave (@{ $iface->{slaves} }) {
+                $template_file = 'ifcfg-bonded-slave.tt';
                 my $file = $self->generateNodeFile(
                     cluster       => $args{cluster},
                     host          => $args{host},
@@ -46,6 +46,11 @@ sub _writeNetConf {
                     data          => { interface => ''}
                 );
             }
+            $args{econtext}->send(
+                src  => $file,
+                dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $slave->iface_name
+            );
+            $template_file = 'ifcfg-bonded-master.tt';
         }
         else {
             $template_file = 'ifcfg.tt';

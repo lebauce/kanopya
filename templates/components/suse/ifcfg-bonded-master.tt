@@ -11,5 +11,5 @@ STARTMODE='auto'
 USERCONTROL='no'
 BONDING_MASTER='yes'
 BONDING_MODULE_OPTS='mode=balance-rr miimon=100'
-[% FOREACH slave=interface.slaves %]BONDING_SLAVE[% loop.index %]='[% slave %]'
+[% FOREACH slave=interface.slaves %]BONDING_SLAVE[% loop.index %]='[% (slave.iface_name) %]'
 [% END %]

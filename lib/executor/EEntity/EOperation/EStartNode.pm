@@ -145,11 +145,11 @@ sub execute {
         $log->info("Operate components configuration");
         foreach my $component (@{ $self->{cluster_components} }) {
             my $ecomponent = EEntity->new(entity => $component);
-            $ecomponent->addNode(host               => $self->{context}->{host},
-                                 mount_point        => $self->{params}->{mountpoint},
-                                 cluster            => $self->{context}->{cluster},
-                                 container_access   => $self->{context}->{container_access},
-                                 erollback          => $self->{erollback});
+            $ecomponent->addNode(host             => $self->{context}->{host},
+                                 mount_point      => $self->{params}->{mountpoint},
+                                 cluster          => $self->{context}->{cluster},
+                                 container_access => $self->{context}->{container_access},
+                                 erollback        => $self->{erollback});
         }
 
         # Authorize the Kanopya master to connect to the node using SSH
