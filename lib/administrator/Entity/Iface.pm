@@ -206,7 +206,7 @@ sub slaves {
     my $self = shift;
     my %args = @_;
 
-    my @slaves = grep { $_->master == $self->iface_name } $self->host->ifaces;
+    my @slaves = grep { $_->master eq $self->iface_name } $self->host->ifaces;
 
     return wantarray ? @slaves : \@slaves;
 }

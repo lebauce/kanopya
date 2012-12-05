@@ -472,14 +472,14 @@ sub configureIfaces {
         my @netconfs = $interface->netconfs;
         if ($interface->bonds_number > 0) {
             my @valid_ifaces = grep {scalar @{ $_->slaves } == $interface->bonds_number } @ifaces;
-            my $selected_iface = pop @valid_ifaces;
-            @ifaces = grep {!$selected_iface} @ifaces;
+            my $selected_iface = $valid_ifaces[0];
+            @ifaces = grep {$selected_iface ne $_} @ifaces;
             $selected_iface->update(netconf_ifaces => \@netconfs);
         }
         else {
             my @valid_ifaces = grep {scalar @{ $_->slaves } == 0} @ifaces;
-            my $selected_iface = pop @valid_ifaces;
-            @ifaces = grep {!$selected_iface} @ifaces;
+            my $selected_iface = $valid_ifaces[0];
+            @ifaces = grep {$selected_iface ne $_} @ifaces;
             $selected_iface->update(netconf_ifaces => \@netconfs);
         }
     }
