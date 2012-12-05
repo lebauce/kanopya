@@ -439,19 +439,8 @@ sub _generateNetConf {
                               gateway => $gateway, };
 
             #check if iface has slaves (for bonding purposes)
-            if ($iface->slaves > 0) {
-                my @unsorted_slaves;
-                my @slaves = $iface->slaves;
-                my %sort;
-
-                foreach my $slave (@slaves) {
-                    my $copy = $slave;
-                    $copy->iface_name =~ s/[^0-9]//g;
-                    $sort{$slave} = $copy->iface_name;
-                }
-
-                @slaves = sort { $sort{$a} <=> $sort{$b} } keys %sort;
-
+            my @slaves = $iface->slaves;
+            if (scalar @slaves > 0) {
                 $net_iface->{slaves} = \@slaves;
                 $net_iface->{type}   = 'master';
             }

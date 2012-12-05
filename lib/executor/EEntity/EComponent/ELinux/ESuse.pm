@@ -109,7 +109,7 @@ sub customizeInitramfs {
 
     $log->info("customize initramfs $initrddir");
 
-    $self->_initrd_iscsi(initrd_dir    => $initrddir,
+    my $rootdev = $self->_initrd_iscsi(initrd_dir    => $initrddir,
                          initiatorname => $args{host}->host_initiatorname,
                          target        => $target,
                          portals       => $portals);
@@ -117,7 +117,8 @@ sub customizeInitramfs {
     my @ifaces = $args{host}->getIfaces();
     $self->_initrd_config(initrd_dir => $initrddir,
                           ifaces     => \@ifaces,
-                          hostname   => $args{host}->host_hostname);
+                          hostname   => $args{host}->host_hostname
+                          rootdev    => $rootdev);
 }
 
 # build the open-iscsi part of the initrd
