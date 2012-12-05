@@ -868,4 +868,11 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+__PACKAGE__->has_many(
+  "collector_indicators",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.collector_manager_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 1;
