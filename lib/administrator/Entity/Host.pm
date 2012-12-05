@@ -571,7 +571,7 @@ sub getPXEIface {
                          host_id   => $self->host_id,
                          iface_pxe => 1,
                          # Do not search bonding slave ifaces
-                         master    => undef
+                         master    => ''
                      });
     };
     if ($@) {
