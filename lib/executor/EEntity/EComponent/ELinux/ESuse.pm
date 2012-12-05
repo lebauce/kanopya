@@ -45,11 +45,13 @@ sub _writeNetConf {
                     template_file => $template_file,
                     data          => { interface => ''}
                 );
+
+                $args{econtext}->send(
+                    src  => $file,
+                    dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $slave->iface_name
+                );
             }
-            $args{econtext}->send(
-                src  => $file,
-                dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $slave->iface_name
-            );
+
             $template_file = 'ifcfg-bonded-master.tt';
         }
         else {
