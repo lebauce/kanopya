@@ -117,7 +117,7 @@ sub customizeInitramfs {
     my @ifaces = $args{host}->getIfaces();
     $self->_initrd_config(initrd_dir => $initrddir,
                           ifaces     => \@ifaces,
-                          hostname   => $args{host}->host_hostname
+                          hostname   => $args{host}->host_hostname,
                           rootdev    => $rootdev);
 }
 
@@ -193,16 +193,14 @@ sub _initrd_config {
     for my $iface (@{$args{ifaces}}) {
         my $name = $iface->getAttr(name => 'iface_name');
         my $mac  = $iface->getAttr(name => 'iface_mac_addr');
-        eval {
-            my $ip   = $iface->getIPAddr;
-        };
+        my $ip   =  eval { $iface->getIPAddr; };
         if ($@) {
           next IFACE;
         }
         my $netmask = $iface->getPoolip->network->network_netmask;
         my $gateway = $iface->getPoolip->network->network_gateway;
         push @macaddresses, "$name:$mac";
-        push @ips, "$ip::$gateway:$netmask:$hostname:$name:none";
+        push @ips, $ip.'::'.$gateway.':'.$netmask.':'.$hostname.':'.$name.':none';
     }
                         
     my $static_macaddress = join(' ', @macaddresses);
