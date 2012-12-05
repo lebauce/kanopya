@@ -175,7 +175,7 @@ sub _initrd_iscsi {
         $log->debug("removing multipath capability");
         $cmd = 'rm '.$args{initrd_dir}.'/boot/04-multipathd.sh '.$args{initrd_dir}.'/boot/21-multipath.sh';
         $econtext->execute(command => $cmd);
-        $rootdev = '/dev/disk/by-path/ip-'.$portals[0]->{ip}.':'.$portals[0]->{port}.'-iscsi-'.$target.'-lun-0';
+        $rootdev = '/dev/disk/by-path/ip-'.$portals[0]->{ip}.':'.$portals[0]->{port}.'-iscsi-'.$target.'-lun-0-part1';
     }
     return $rootdev;
 }
