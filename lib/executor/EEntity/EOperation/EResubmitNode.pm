@@ -120,6 +120,14 @@ sub execute {
         vm_nameorid => $self->{context}->{host}->host_hostname,
     );
 
+    sleep(5); # Wait 5 seconds for the VM to be pending
+    my $state = $self->{context}->{cloudmanager_comp}->getVMState(host => $self->{context}->{host})->{state};
+
+    if ( not $state eq 'pend') {
+         my $error = "VM state is <$state> while must be in <pend> state !";
+         throw Kanopya::Exception::Internal::WrongValue(error => $error);
+    }
+
     $self->{context}->{cloudmanager_comp}->onevm_deploy(
         vm_nameorid    => $self->{context}->{host}->host_hostname,
         host_nameorid  => $self->{context}->{hypervisor}->host_hostname,
