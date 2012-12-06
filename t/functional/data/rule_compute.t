@@ -688,9 +688,6 @@ sub test_aggregate_combination {
         threshold => '99.99',
     );
 
-    print "***\n";
-    print Entity->get(id => $rule->id)->aggregate_rule_formula_string."\n";
-
     $cm->update (clustermetric_statistics_function_name => 'min');
     $comb->update (aggregate_combination_formula => '-id'.($cm->id));
     $ac_left->update (
