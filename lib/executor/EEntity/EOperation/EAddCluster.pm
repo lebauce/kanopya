@@ -60,10 +60,10 @@ sub prepare {
     }
 
     # Check the boot policy or the export manager
-    if (not ($self->{params}->{cluster_params}->{cluster_boot_policy} xor
+    if (not ($self->{params}->{cluster_params}->{cluster_boot_policy} or
              $self->{params}->{managers}->{export_manager}->{manager_id})) {
         throw Kanopya::Exception::Internal::WrongValue(
-                  error => "One must specify either boot_policy or export_manager_id (but not both)."
+                  error => "One must specify either boot_policy or export_manager_id."
               );
     }
 

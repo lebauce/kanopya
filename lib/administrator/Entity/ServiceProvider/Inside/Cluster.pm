@@ -453,20 +453,22 @@ sub configureManagers {
     my $export_manager = eval { $self->getManager(manager_type => 'export_manager') };
 
     # If the export manager exists, deduce the boot policy
-    if ($export_manager) {
-        my $bootpolicy = $disk_manager->getBootPolicyFromExportManager(export_manager => $export_manager);
-        $self->setAttr(name => 'cluster_boot_policy', value => $bootpolicy);
-        $self->save();
-    }
-    # Else use the boot policy to deduce the export manager to use
-    else {
-        $export_manager = $disk_manager->getExportManagerFromBootPolicy(
-                              boot_policy => $self->cluster_boot_policy
-                          );
+    if(not ($export_manager and $self->cluster_boot_policy)) {
+        if ($export_manager) {
+            my $bootpolicy = $disk_manager->getBootPolicyFromExportManager(export_manager => $export_manager);
+            $self->setAttr(name => 'cluster_boot_policy', value => $bootpolicy);
+            $self->save();
+        }
+        # Else use the boot policy to deduce the export manager to use
+        else {
+            $export_manager = $disk_manager->getExportManagerFromBootPolicy(
+                                  boot_policy => $self->cluster_boot_policy
+                              );
 
-        $self->addManager(manager_id => $export_manager->id, manager_type => "export_manager");
+            $self->addManager(manager_id => $export_manager->id, manager_type => "export_manager");
+        }
     }
-
+    
     if ($self->cluster_boot_policy eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
         $self->addComponentFromType(
             component_type_id => ComponentType->find(hash => { component_name => "Openiscsi" })->id
