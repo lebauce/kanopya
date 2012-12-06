@@ -261,9 +261,9 @@ sub migrateHost {
 
     my $host_id = $args{host}->onevm_id;
 
-    $log->debug("Apply VLAN on the destination hypervisor");
-    $self->propagateVLAN(host       => $args{host},
-                         hypervisor => $args{hypervisor_dst});
+    # $log->debug("Apply VLAN on the destination hypervisor");
+    # $self->propagateVLAN(host       => $args{host},
+    #                      hypervisor => $args{hypervisor_dst});
 
     $self->onevm_livemigrate(
         vm_nameorid   => $host_id,
@@ -513,10 +513,6 @@ sub startHost {
             hypervisor => $hypervisor,
         );
     }
-
-    # Apply the VLAN's on the hypervisor interface dedicated to virtual machines
-    $self->propagateVLAN(host       => $args{host},
-                         hypervisor => $hypervisor);
 
     # create the vm from template
     my $vmid = $self->onevm_create(file => $vm_templatefile);
@@ -1005,40 +1001,65 @@ sub generateKvmVmTemplate {
     my $repository_path = $self->image_repository_path . '/' . $repo{repository_name};
 
     my $interfaces = [];
-    my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
+    my @bridges = $args{hypervisor}->getIfaces(role => 'vms');
     for my $iface ($args{host}->getIfaces()) {
-        for my $network ($iface->getInterface->getNetworks) {
-            my $vlan = $network->isa("Entity::Network::Vlan") ?
-                           $network->getAttr(name => "vlan_number") : undef;
+        # Look for an appropriate bridge
+        my $bridge = undef;
+        my @vm_networks;
 
+        for my $vm_netconf ($iface->netconfs) {
+            for my $vm_poolip ($vm_netconf->poolips) {
+                push @vm_networks, $vm_poolip->network;
+            }
+        }
 
-            my $ip;
-            eval {
-                $ip = $iface->getIPAddr();
-            };
-            if ($@) {
-                my $exception = $@;
-                if (Kanopya::Exception::Internal::NotFound->caught()) {
-                    next;
+        BRIDGE:
+        my $found = 0;
+        for $bridge (@bridges) {
+            my @unsatisfied_networks = @vm_networks;
+            for my $netconf ($bridge->netconfs) {
+                for my $poolip ($netconf->poolips) {
+                    @unsatisfied_networks = grep { $_->id != $poolip->network->id } @vm_networks;
                 }
-                else { $exception->rethrow(); }
             }
 
-            # generate and register vnet
-            my $vnet_template = $self->generateVnetTemplate(
-                vnet_name       => $hostname.'-'.$iface->getAttr(name => 'iface_name'),
-                vnet_bridge     => "br-" . ($vlan || "default"),
-                vnet_phydev     => $bridge->getAttr(name => "iface_name"),
-                vnet_vlanid     => $vlan,
-                vnet_mac        => $iface->getAttr(name => 'iface_mac_addr'),
-                vnet_netaddress => $ip
-            );
+            if ((scalar @unsatisfied_networks) == 0) {
+                $found = 1;
+                last BRIDGE;
+            }
+        }
 
-            my $vnetid = $self->onevnet_create(file => $vnet_template);
-            push @$interfaces, {
-                mac     => $iface->getAttr(name => 'iface_mac_addr'),
-                network => $hostname.'-'.$iface->getAttr(name => 'iface_name'),
-            };
+        if (not $found) {
+            throw Kanopya::Exception::Execution(error => "Could not find a bridge that match the requirements");
+        }
+
+        my $vlan = undef;
+        my @netconfs = $iface->netconfs;
+        if (scalar @netconfs) {
+            my $netconf = pop @netconfs;
+            my @vlans = $netconf->vlans;
+            if (scalar @vlans) {
+                $vlan = pop @vlans;
+                my $ehost_manager = EFactory::newEEntity(data => $args{hypervisor}->getHostManager);
+                $ehost_manager->applyVLAN(iface  => $bridge,
+                                          vlan   => $vlan);
+            }
+        }
+
+        # generate and register vnet
+        my $vnet_template = $self->generateVnetTemplate(
+            vnet_name       => $hostname . '-' . $iface->iface_name,
+            vnet_bridge     => "br-" . ($vlan || "default"),
+            vnet_phydev     => "p" . $bridge->iface_name,
+            vnet_vlanid     => defined $vlan ? $vlan->vlan_number : undef,
+            vnet_mac        => $iface->iface_mac_addr,
+            vnet_netaddress => $iface->getIPAddr
+        );
+
+        my $vnetid = $self->onevnet_create(file => $vnet_template);
+        push @$interfaces, {
+            mac     => $iface->iface_mac_addr,
+            network => $hostname . '-' . $iface->iface_name,
         };
     }
 
