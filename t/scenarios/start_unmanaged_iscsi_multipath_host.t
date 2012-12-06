@@ -51,17 +51,17 @@ eval {
     my ($storage_network1, $storage_network2);
     lives_ok {
         $storage_network1 = Entity::Network->new(network_name    => 'storage_path1',
-                                                 network_addr    => '10.10.0.0',
+                                                 network_addr    => '10.100.0.0',
                                                  network_netmask => '255.255.255.0',
-                                                 network_gateway => '10.10.0.254');
-    } 'create storage_network1 10.10.0.0';
+                                                 network_gateway => '10.100.0.254');
+    } 'create storage_network1 10.100.0.0';
     
     lives_ok {
         $storage_network2 = Entity::Network->new(network_name    => 'storage_path2',
-                                                 network_addr    => '10.20.0.0',
+                                                 network_addr    => '10.200.0.0',
                                                  network_netmask => '255.255.255.0',
-                                                 network_gateway => '10.20.0.254');
-    } 'create storage_network2 10.20.0.0';
+                                                 network_gateway => '10.200.0.254');
+    } 'create storage_network2 10.200.0.0';
 
     my $admin_network;
     lives_ok {
@@ -75,14 +75,14 @@ eval {
     my ($pool1, $pool2);
     lives_ok {
         $pool1 = Entity::Poolip->new(poolip_name       => 'storage_pool1',
-                                     poolip_first_addr => '10.10.0.10',
+                                     poolip_first_addr => '10.100.0.10',
                                      poolip_size       => 200,
                                      network_id        => $storage_network1->id);
     } 'create poolip 1 on storage_network1';
     
     lives_ok {
         $pool2 = Entity::Poolip->new(poolip_name       => 'storage_pool2',
-                                     poolip_first_addr => '10.20.0.10',
+                                     poolip_first_addr => '10.200.0.10',
                                      poolip_size       => 200,
                                      network_id        => $storage_network2->id);
     } 'create poolip 2 on storage_network2';
@@ -184,9 +184,9 @@ eval {
     isa_ok ($export_manager->_getEntity, 'Manager::ExportManager');
 
     lives_ok {
-        $export_manager->setConf(conf => { iscsi_portals => [ { iscsi_portal_ip   => '10.10.0.1',
+        $export_manager->setConf(conf => { iscsi_portals => [ { iscsi_portal_ip   => '10.100.0.1',
                                                                 iscsi_portal_port => 3260 },
-                                                                { iscsi_portal_ip   => '10.20.0.1',
+                                                                { iscsi_portal_ip   => '10.200.0.1',
                                                                 iscsi_portal_port => 3260 },
                                                               ] });
     } 'Configuring portals of the iSCSI component';
