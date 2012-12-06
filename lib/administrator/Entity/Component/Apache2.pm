@@ -298,7 +298,7 @@ sub getBaseConfiguration {
     };
 }
 
-sub insertDefaultConfiguration {
+sub insertDefaultExtendedConfiguration {
     my $self = shift;
     $self->{_dbix}->apache2_virtualhosts->create(
             {

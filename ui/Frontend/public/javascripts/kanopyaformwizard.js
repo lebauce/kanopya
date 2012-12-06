@@ -120,6 +120,27 @@ var KanopyaFormWizard = (function() {
                                       this.attributedefs[relation_name].label || relation_name);
             }
         }
+
+        // We add buttons at end of the form
+        var buttons = this.actionsCallback();
+        if (buttons) {
+            var actionsTable = $("<table>");
+            var tr = $('<tr>');
+            for (var i in buttons) {
+                // To make wizard ignore them
+                var button = buttons[i].addClass('wizard-ignore');
+                // A new column for each action button
+                var td = $('<td>');
+                td.append(button);
+                tr.append(td);
+            }
+            actionsTable.append(tr);
+            var fieldset = $("<fieldset>").appendTo(this.form);
+            var legend   = $("<legend>", { text : 'Actions' }).css('font-weight', 'bold');
+            fieldset.append(legend);
+            fieldset.append(actionsTable);
+            this.form.appendTo(this.content).append(fieldset);
+        }
     }
 
     KanopyaFormWizard.prototype.buildFromAttrDef = function(attributes, displayed, values, relations, listing) {
@@ -717,6 +738,7 @@ var KanopyaFormWizard = (function() {
         this.valuesCallback  = args.valuesCallback  || this.getValues;
         this.attrsCallback   = args.attrsCallback   || this.getAttributes;
         this.optionsCallback = args.optionsCallback || function () { return false } ;
+        this.actionsCallback = args.actionsCallback || $.noop;
         this.cancelCallback  = args.cancel          || $.noop;
         this.error           = args.error           || $.noop;
     }

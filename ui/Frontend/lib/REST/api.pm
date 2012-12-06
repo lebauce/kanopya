@@ -149,6 +149,7 @@ my %resources = (
     "userprofile"              => "UserProfile",
     "vlan"                     => "Entity::Vlan",
     "vsphere5"                 => "Entity::Component::Vsphere5",
+    "vsphere5repository"       => "Entity::Component::Vsphere5::Vsphere5Repository",
     "workflow"                 => "Entity::Workflow",
     "workflowdef"              => "Entity::WorkflowDef",
 );

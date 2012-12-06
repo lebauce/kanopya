@@ -64,25 +64,45 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    vsphere5_pwd => {
-        pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
     vsphere5_login => {
+        label        => 'Login',
+        type         => 'string',
         pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    vsphere5_pwd => {
+        label        => 'Password',
+        type         => 'password',
+        pattern      => '^.+$',
+        is_mandatory => 1,
+        is_editable  => 1
     },
     vsphere5_url => {
-        pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        label        => 'URL',
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_editable  => 1,
+        is_mandatory => 1
     },
     overcommitment_memory_factor => {
+        label        => 'Overcommitment memory factor',
+        type         => 'string',
         pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
+        is_mandatory => 0
+    },
+    overcommitment_cpu_factor => {
+        label        => 'Overcommitment CPU factor',
+        type         => 'string',
+        pattern      => '^\d*$',
+        is_editable  => 1,
+        is_mandatory => 0
+    },
+    vsphere5_repositories => {
+        label       => 'Virtual machine images repositories',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1,
     },
     # TODO: move this virtual attr to HostManager attr def when supported
     host_type => {
@@ -143,6 +163,28 @@ sub checkHostManagerParams {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['ram', 'cpu']);
+}
+
+=pod
+
+=begin classdoc
+
+=head2 getBaseConfiguration
+
+Get the basic configuration of the Vsphere component
+
+@return %base_configuration
+
+=end classdoc
+
+=cut
+
+sub getBaseConfiguration {
+    return {
+        vsphere5_login      => 'login',
+        vsphere5_pwd        => 'password',
+        vsphere5_url        => '127.0.0.1'
+    };
 }
 
 =pod
@@ -238,7 +280,11 @@ sub negociateConnection {
 
 =begin classdoc
 
+=head2 retrieveDatacenters
+
 Retrieve a list of all datacenters
+
+@param id_request ID of request
 
 @return: \@datacenter_infos
 
@@ -247,9 +293,12 @@ Retrieve a list of all datacenters
 =cut
 
 sub retrieveDatacenters {
-    my ($self) = @_;
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['id_request']);
 
     my @datacenters_infos;
+    my $id_response = $args{id_request};
 
     my $datacenter_views = $self->findEntityViews(
                                view_type      => 'Datacenter',
@@ -264,17 +313,25 @@ sub retrieveDatacenters {
         push @datacenters_infos, \%datacenter_infos;
     }
 
-    return \@datacenters_infos;
+    my $response = {
+        id_response => $id_response,
+        items_list  => \@datacenters_infos,
+    };
+
+    return $response;
 }
 
 =pod
 
 =begin classdoc
 
+=head2 retrieveClustersAndHypervisors
+
 Retrieve a list of Clusters and Hypervisors (that are not in a cluster)
 hosted in a given Datacenter
 
 @param datacenter_name the datacenter name
+@param id_request ID of request
 
 @return \@clusters_and_hypervisors_infos
 
@@ -285,9 +342,10 @@ hosted in a given Datacenter
 sub retrieveClustersAndHypervisors {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['datacenter_name']);
+    General::checkParams(args => \%args, required => ['datacenter_name', 'id_request']);
 
     my @clusters_hypervisors_infos;
+    my $id_response = $args{id_request};
     my $datacenter_name = $args{datacenter_name};
 
     #Find datacenter view
@@ -328,17 +386,25 @@ sub retrieveClustersAndHypervisors {
         push @clusters_hypervisors_infos, $compute_resource_infos;
     }
 
-    return \@clusters_hypervisors_infos;
+    my $response = {
+        id_response => $id_response,
+        items_list  => \@clusters_hypervisors_infos,
+    };
+
+    return $response;
 }
 
 =pod
 
 =begin classdoc
 
+=head2 retrieveClusterHypervisors
+
 Retrieve a cluster's hypervisors
 
 @param cluster_name the name of the target cluster
 @param datacenter_name the name of the cluster's datacenter
+@param id_request ID of request
 
 @return \@hypervisors_infos
 
@@ -349,7 +415,9 @@ Retrieve a cluster's hypervisors
 sub retrieveClusterHypervisors {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['cluster_name', 'datacenter_name']);
+    General::checkParams(args => \%args, required => ['cluster_name', 'datacenter_name', 'id_request']);
+
+    my $id_response = $args{id_request};
 
     #retrieve datacenter and cluster views
     my $datacenter_view = $self->findEntityView(
@@ -379,18 +447,26 @@ sub retrieveClusterHypervisors {
         push @hypervisors_infos, \%hypervisor_infos;
     }
 
-    return \@hypervisors_infos;
+    my $response = {
+        id_response => $id_response,
+        items_list  => \@hypervisors_infos,
+    };
+
+    return $response;
 }
 
 =pod 
 
 =begin classdoc
 
+=head2 retrieveHypervisorVms
+
 Retrieve all the VM from a vsphere hypervisor
 
 @param datacenter_name the name of the hypervisor's datacenter
 @param hypervisor_name the name of the target hypervisor
- 
+@param id_request ID of request
+
 @return \@vms_infos
 
 =end classdoc
@@ -400,7 +476,9 @@ Retrieve all the VM from a vsphere hypervisor
 sub retrieveHypervisorVms {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['datacenter_name', 'hypervisor_name']);
+    General::checkParams(args => \%args, required => ['datacenter_name', 'hypervisor_name', 'id_request']);
+
+    my $id_response = $args{id_request};
 
     #retrieve views
     my $datacenter_view = $self->findEntityView(
@@ -430,7 +508,12 @@ sub retrieveHypervisorVms {
         push @vms_infos, $vm_infos;
     }
 
-    return \@vms_infos;
+    my $response = {
+        id_response => $id_response,
+        items_list  => \@vms_infos,
+    };
+
+    return $response;
 }
 
 =pod 
@@ -1382,12 +1465,12 @@ sub getConf {
     my ($self,%args) = @_;
 
     my %conf;
-    my @repos = Vsphere5Repository->search(hash => { vsphere5_id => $self->id });
+    my @repos = Entity::Component::Vsphere5::Vsphere5Repository->search(hash => { vsphere5_id => $self->id });
 
-    $conf{login}        = $self->vsphere5_login;
-    $conf{password}     = $self->vsphere5_pwd;
-    $conf{url}          = $self->vsphere5_url;
-    $conf{repositories} = \@repos;
+    $conf{vsphere5_login}         = $self->vsphere5_login;
+    $conf{vsphere5_pwd}           = $self->vsphere5_pwd;
+    $conf{vsphere5_url}           = $self->vsphere5_url;
+    $conf{vsphere5_repositories}  = \@repos;
 
     return \%conf;
 }
@@ -1433,7 +1516,7 @@ sub addRepository {
 
     General::checkParams(args => \%args, required => ['repository_name', 'container_access_id']);
 
-    my $repository = Vsphere5Repository->new(vsphere5_id         => $self->id,
+    my $repository = Entity::Component::Vsphere5::Vsphere5Repository->new(vsphere5_id         => $self->id,
                                              repository_name     => $args{repository_name},
                                              container_access_id => $args{container_access_id},
                      );
@@ -1496,7 +1579,7 @@ sub getRepository {
 
     General::checkParams(args => \%args, required => ['container_access_id']);
 
-    my $repository = Vsphere5Repository->find(hash => {
+    my $repository = Entity::Component::Vsphere5::Vsphere5Repository->find(hash => {
                          container_access_id => $args{container_access_id} }
                      );
 

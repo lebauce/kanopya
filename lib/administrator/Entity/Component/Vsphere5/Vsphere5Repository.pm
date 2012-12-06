@@ -21,18 +21,20 @@ use base 'BaseDB';
 use constant ATTR_DEF => {
     vsphere5_id         => {
         pattern      => '^\d*$',
-        is_mandatory => 1,
-        is_extended  => 0
+        is_mandatory => 1
     },
     repository_name     => {
+        label        => 'Name',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1
     },
     container_access_id => {
-        pattern      => '^\d*$',
+        label        => 'Container access',
+        type         => 'relation',
+        relation     => 'single',
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1,
     },
 };
 
