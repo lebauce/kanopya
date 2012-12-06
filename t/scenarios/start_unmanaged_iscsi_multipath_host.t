@@ -112,7 +112,7 @@ eval {
 
     my $kernel;
     lives_ok {
-        $kernel = Entity::Kernel->find(hash => { kernel_name => '3.0.13-0.27-default' });
+        $kernel = Entity::Kernel->find(hash => { kernel_name => '3.0.42-0.7-default' });
     } 'Get a kernel for KVM';
 
     my $hostmodel;
