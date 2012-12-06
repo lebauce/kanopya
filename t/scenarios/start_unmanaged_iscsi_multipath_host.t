@@ -28,6 +28,7 @@ use_ok ('Entity::Poolip');
 use_ok ('Entity::Operation');
 use_ok ('Entity::Component::Iscsi::IscsiPortal');
 use_ok ('ComponentType');
+use_ok ('Entity::Workflow');
 
 
 my $testing = 1;
@@ -229,7 +230,7 @@ eval {
             cluster_basehostname   => 'one',
             cluster_nameserver1    => '208.67.222.222',
             cluster_nameserver2    => '127.0.0.1',
-            # cluster_boot_policy    => 'PXE Boot via ISCSI',
+            cluster_boot_policy    => 'PXE Boot via ISCSI',
             user_id                => $admin_user->id,
             managers               => {
                 host_manager => {
@@ -253,7 +254,7 @@ eval {
                     manager_type     => "export_manager",
                     manager_params   => {
                         iscsi_portals => \@iscsi_portal_ids,
-                        target        => 'iqn.2012-11.com.hederatech.nas:vm2',
+                        target        => 'iqn.2012-11.com.hederatech.nas:vm',
                         lun           => 0
                     }
                 },
@@ -282,9 +283,8 @@ eval {
     } 'AddCluster operation enqueue';
 
     lives_ok { $executor->oneRun; } 'AddCluster operation execution succeed';
-    lives_ok { $executor->oneRun; } 'AddCluster operation execution succeed';
 
-    my ($cluster, $cluster_id);
+    my ($cluster, $cluster_id, $workflow, $wf_id, $state, $test);
     lives_ok {
         $cluster = Entity::ServiceProvider::Inside::Cluster->find(
                        hash => { cluster_name => 'UnmanagedStorageCluster'}
@@ -294,14 +294,31 @@ eval {
     isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster');     
 
     lives_ok {
-        $cluster->start();
-    } 'Start cluster, PreStartNode operation enqueue.';
+        $wf_id = $cluster->start()->id;
+    } 'AddNode workflow enqueued.';
 
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
+    $test = "start cluster (workflow $wf_id)";
+    STARTCLUSTER:
+    while(1) {
+	      lives_ok { $executor->oneRun; } 'executor run';
+          $workflow = Entity::Workflow->get(id => $wf_id);
+          $state = $workflow->state;
+          my $operation = $workflow->getCurrentOperation;
+	      diag("Current operation is ".$operation->type);
+          if($state eq 'running') {
+              diag("Workflow $wf_id running");
+              sleep(5);
+              next STARTCLUSTER;
+	      } elsif($state eq 'done') {
+              diag("Workflow $wf_id done");
+              pass($test);
+              last STARTCLUSTER;
+	      } elsif($state eq 'cancelled') {
+              diag("Workflow $wf_id cancelled");
+              fail($test);
+              last STARTCLUSTER;
+	      }
+    }
 
     if ($testing) {
         $adm->rollbackTransaction;
