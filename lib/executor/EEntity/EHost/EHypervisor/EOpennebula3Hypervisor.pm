@@ -77,7 +77,4 @@ sub getMaxRamFreeVm {
     );
 }
 
-sub getAvailableMemory {
-}
-
 1;

@@ -121,17 +121,23 @@ sub _generateQemuKvmUdev {
     $self->getExecutorEContext->execute(command => $command);
 }
 
+=head2 getAvailableMemory
+
+    Return the available memory amount by interrogating virsh
+
+=cut
+
 sub getAvailableMemory {
     my ($self, %args) = @_;
 
     General::checkParams(
         args     => \%args,
         required => [ "host" ],
-        optional => { vm => undef, resources => [ 'ram', 'cpu' ] }
     );
 
+    my $host = $args{host};
     my $mem = 0;
-    my @vms = $self->virtual_machines;
+    my @vms = $host->virtual_machines;
 
     if (@vms) {
         my $command = '';
@@ -141,7 +147,7 @@ sub getAvailableMemory {
             $command .= "virsh dumpxml one-$onevm_id | grep currentMemory; "
         }
 
-        my $result = $self->getEContext->execute(command => $command);
+        my $result = $host->getEContext->execute(command => $command);
         my $parser = XML::Simple->new();
         my $stdout = '<root>' . $result->{stdout} . '</root>';
         my $res_array = $parser->XMLin($stdout, ForceArray => 'currentMemory')->{currentMemory};
@@ -151,8 +157,8 @@ sub getAvailableMemory {
     }
 
     return {
-        mem_effectively_available   => $self->SUPER::getAvailableMemory->{mem_effectively_available},
-        mem_theoretically_available => $self->host_ram * $self->opennebula3->overcommitment_memory_factor - $mem,
+        mem_effectively_available   => $host->getSystemComponent->getAvailableMemory(host => $host)->{mem_effectively_available},
+        mem_theoretically_available => $host->host_ram * $self->iaas->overcommitment_memory_factor - $mem,
     }
 }
 
@@ -168,13 +174,14 @@ sub getVmResources {
 
     General::checkParams(
         args     => \%args,
+        required => [ 'host' ],
         optional => { vm => undef, resources => [ 'ram', 'cpu' ] }
     );
 
     # If no vm specified, get resssources for all hypervisor vms.
     my @vms;
     if (not defined $args{vm}) {
-        @vms = $self->getVms;
+        @vms = $args{host}->getVms;
     } else {
         push @vms, $args{vm};
     }
@@ -182,7 +189,7 @@ sub getVmResources {
     my $vms_resources = {};
     for my $vm (@vms) {
         # Get the vm configuration in xml
-        my $result = $self->getEContext->execute(command => 'virsh dumpxml one-' . $vm->onevm_id);
+        my $result = $args{host}->getEContext->execute(command => 'virsh dumpxml one-' . $vm->onevm_id);
         if ($result->{exitcode} != 0) {
             throw Kanopya::Exception::Execution(error => $result->{stdout});
         }
@@ -221,6 +228,8 @@ sub getVmResources {
 
 =head2 updatePinning
 
+    Update the CPU pinning for an hypervisor
+
 =cut
 
 sub updatePinning {
@@ -229,7 +238,7 @@ sub updatePinning {
 
     General::checkParams(
         args        => \%args,
-        required    => [ 'vm' ],
+        required    => [ 'host', 'vm' ],
         optional    => { cpus => -1 }
     );
 
@@ -250,13 +259,18 @@ sub updatePinning {
         }
         ++$i;
     }
-    $self->getEContext->execute(command => "$cmd");
+    $args{host}->getEContext->execute(command => "$cmd");
 }
 
 sub getMinEffectiveRamVm {
     my ($self,%args) = @_;
 
-    my @virtual_machines = $self->virtual_machines;
+    General::checkParams(
+        args        => \%args,
+        required    => [ 'host' ]
+    );
+
+    my @virtual_machines = $args{host}->virtual_machines;
 
     my $min_vm  = shift @virtual_machines;
     my $min_ram = EFactory::newEEntity(data => $min_vm)->getRamUsedByVm->{total};
