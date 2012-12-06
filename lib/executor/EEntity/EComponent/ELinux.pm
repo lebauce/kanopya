@@ -91,6 +91,59 @@ sub postStopNode {
     }    
 }
 
+=head2 getAvailableMemory
+
+    Return the available memory amount.
+
+=cut
+
+sub getAvailableMemory {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    # Get the memory infos from procfs
+    my $result = $args{host}->getEContext->execute(command => "cat /proc/meminfo");
+
+    # Keep the lines about free memory only
+    my @lines = grep { $_ =~ '^(MemTotal:|MemFree:|Buffers:|Cached:)' } split('\n', $result->{stdout});
+
+    my $total = (split('\s+', shift @lines))[1];
+
+    # Total available memory is the sum of free, buffers and cached memory
+    my $free = 0;
+    for my $line (@lines) {
+        my ($mentype, $amount, $unit) = split('\s+', $line);
+        $free += $amount;
+    }
+
+    # Return the free memory in bytes
+    return {
+        mem_effectively_available => $free * 1024,
+        mem_total                 => $total * 1024
+    }
+}
+
+=head2 getTotalCpu
+
+    Return the total cpu count.
+
+=cut
+
+sub getTotalCpu {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    # Get the memory infos from procfs
+    my $result = $args{host}->getEContext->execute(command => "cat /proc/cpuinfo");
+
+    # Keep the lines about free memory only
+    my @lines = grep { $_ =~ '^processor(\s)+:' } split('\n', $result->{stdout});
+
+    return scalar @lines;
+}
+
 # generate all component files for a host
 
 sub generateConfiguration {

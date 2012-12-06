@@ -126,7 +126,20 @@ sub getEContext {
 
 sub timeOuted {
     my $self = shift;
+
     $self->setState(state => 'broken');
+}
+
+=head2 getSystemComponent
+
+    Return the component to interrogate to get system informations
+
+=cut
+
+sub getSystemComponent {
+    my $self = shift;
+
+    return EEntity->new(entity => $self->node->service_provider->getComponent(category => "System"));
 }
 
 =head2 getAvailableMemory
@@ -136,28 +149,9 @@ sub timeOuted {
 =cut
 
 sub getAvailableMemory {
-    my ($self, %args) = @_;
+    my $self = shift;
 
-    # Get the memory infos from procfs
-    my $result = $self->getEContext->execute(command => "cat /proc/meminfo");
-
-    # Keep the lines about free memory only
-    my @lines = grep { $_ =~ '^(MemTotal:|MemFree:|Buffers:|Cached:)' } split('\n', $result->{stdout});
-
-    my $total = (split('\s+', shift @lines))[1];
-
-    # Total available memory is the sum of free, buffers and cached memory
-    my $free = 0;
-    for my $line (@lines) {
-        my ($mentype, $amount, $unit) = split('\s+', $line);
-        $free += $amount;
-    }
-
-    # Return the free memory in bytes
-    return {
-        mem_effectively_available => $free * 1024,
-        mem_total                 => $total * 1024
-    }
+    return $self->getSystemComponent->getAvailableMemory(host => $self);
 }
 
 =head2 getTotalMemory
@@ -179,15 +173,9 @@ sub getTotalMemory {
 =cut
 
 sub getTotalCpu {
-    my ($self, %args) = @_;
+    my $self = shift;
 
-    # Get the memory infos from procfs
-    my $result = $self->getEContext->execute(command => "cat /proc/cpuinfo");
-
-    # Keep the lines about free memory only
-    my @lines = grep { $_ =~ '^processor(\s)+:' } split('\n', $result->{stdout});
-
-    return scalar @lines;
+    return $self->getSystemComponent->getTotalCpu(host => $self);
 }
 
 1;
