@@ -202,7 +202,7 @@ sub test_alerts_aggregator {
     sleep 2;
     $aggregator->update ();
 
-    my @alerts = Alert->search (hash=>{});
+    @alerts = Alert->search (hash=>{});
     is (scalar @alerts, $total_alert_before_test + 1, 'Check one alert has been created');
     my $first_alert = pop @alerts;
 
