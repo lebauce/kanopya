@@ -13,6 +13,7 @@ iface lo inet loopback
 #iface eth0 inet dhcp
 
 [% FOREACH interface=interfaces %]
+[% IF not interface.iface_pxe %]
 auto [% interface.name %]
 iface [% interface.name %] inet [% interface.method %]
 [% IF interface.method == "static" %]
@@ -38,6 +39,7 @@ iface [% interface.name %] inet [% interface.method %]
       [% IF interface.role == "vms" %]
       post-up ethtool -K $IFACE lro off
       [% END %]
+[% END %]
 [% END %]
 [% END %]
 
