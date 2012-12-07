@@ -164,10 +164,10 @@ function convertUnits(value, unitIn, unitOut) {
 */
 
 function getReadableSize(sizeInBytes, exactValue) {
-
     var i = 0;
     var byteUnits = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    while ((exactValue && sizeInBytes % 1024 == 0) || (!exactValue && sizeInBytes >= 1024)) {
+    while (sizeInBytes != 0 &&
+           ((exactValue && sizeInBytes % 1024 == 0) || (!exactValue && sizeInBytes >= 1024))) {
         sizeInBytes = sizeInBytes / 1024;
         i++;
     }
@@ -257,12 +257,14 @@ function ajax(method, route, data, onsuccess, onerror) {
             if(onsuccess) {
                 onsuccess(d);
             }
-        },
+        }
     }
-    if (data && method === 'POST') {
+    //if (data && method === 'POST') {
+    if (data) {
         opts.data = JSON.stringify(data);
         opts.contentType = 'application/json';
     }
+
     $.ajax(opts);
     return response;
 }
