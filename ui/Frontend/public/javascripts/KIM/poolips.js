@@ -1,4 +1,4 @@
-require('kanopyaformwizard.js');
+//require('kanopyaformwizard.js');
 
 function poolip_addbutton_action(e) {
     (new KanopyaFormWizard({

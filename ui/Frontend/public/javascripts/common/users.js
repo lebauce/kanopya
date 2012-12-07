@@ -1,6 +1,6 @@
 require('detailstable.js');
 require('common/formatters.js');
-require('kanopyaformwizard.js');
+//require('kanopyaformwizard.js');
 require('modalform.js');
 
 var g_user_id = undefined;

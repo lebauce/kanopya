@@ -1,5 +1,5 @@
 require('common/general.js');
-require('kanopyaformwizard.js');
+//require('kanopyaformwizard.js');
 
 function loadServicesConfig(cid, eid) {
         create_grid({

@@ -1,4 +1,4 @@
-require('kanopyaformwizard.js');
+//require('kanopyaformwizard.js');
 
 function netconf_addbutton_action(e) {
     (new KanopyaFormWizard({
