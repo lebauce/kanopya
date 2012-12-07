@@ -129,7 +129,7 @@ sub label {
     my $self = shift;
 
     my $label = $self->getLabelAttr();
-    return $label ? $self->getAttr(name => $label) : $self->id;
+    return $label ? $self->$label : $self->id;
 }
 
 =pod
@@ -167,6 +167,7 @@ sub update {
 
     # Populate relations
     $self->populateRelations(relations => $relations);
+
     return $self;
 }
 
@@ -1453,7 +1454,6 @@ sub toJSON {
             $hash->{pk} = $self->id;
         }
     }
-
     return $hash;
 }
 
@@ -1534,7 +1534,7 @@ sub populateRelations {
             $linkfk = getKeyFromCond(cond => $conds[0]);
 
             my @entries = $relationclass->search(hash => { $fk => $self->id });
-            %$exsting = map { $_->id => $_ } @entries;
+            %$exsting = map { $_->$linkfk => $_ } @entries;
         }
 
         # Create/update all entries
