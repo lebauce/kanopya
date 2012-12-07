@@ -463,45 +463,44 @@ sub _generateNetConf {
             next IFACES;
         }
 
-        # Only add non pxe iface to /etc/network/interfaces
-        if (not $iface->iface_pxe) {
+        my ($gateway, $netmask, $ip, $method);
 
-            my ($gateway, $netmask, $ip, $method);
+        if ($iface->hasIp) {
+            my $network = $iface->getPoolip->network;
+            $netmask    = $network->network_netmask;
+            $ip         = $iface->getIPAddr;
 
-            if ($iface->hasIp) {
-                my $network = $iface->getPoolip->network;
-                $netmask    = $network->network_netmask;
-                $ip         = $iface->getIPAddr;
-
-                if ($is_loadbalanced and not $is_masternode) {
-                    $gateway = $args{cluster}->getMasterNodeIp;
-                }
-                else {
-                    $gateway = ($network->id == $args{cluster}->default_gateway_id) ? $network->network_gateway : undef;
-                }
-                $method = "static";
+            if ($is_loadbalanced and not $is_masternode) {
+                $gateway = $args{cluster}->getMasterNodeIp;
             }
             else {
-                $method = "manual";
+                $gateway = ($network->id == $args{cluster}->default_gateway_id) ? $network->network_gateway : undef;
             }
-
-            my $net_iface = { method  => $method,
-                              name    => $iface->iface_name,
-                              address => $ip,
-                              netmask => $netmask,
-                              gateway => $gateway, };
-
-            #check if iface has slaves (for bonding purposes)
-            my @slaves = $iface->slaves;
-            if (scalar @slaves > 0) {
-                $net_iface->{slaves} = \@slaves;
-                $net_iface->{type}   = 'master';
-            }
-
-            push @net_ifaces, $net_iface;
-
-            $log->info("Iface " . $iface->iface_name . " configured via static file");
+            $method = "static";
         }
+        else {
+            $method = "manual";
+        }
+
+        my $net_iface = {
+            method    => $method,
+            name      => $iface->iface_name,
+            address   => $ip,
+            netmask   => $netmask,
+            gateway   => $gateway,
+            iface_pxe => $iface->iface_pxe,
+        };
+
+        #check if iface has slaves (for bonding purposes)
+        my @slaves = $iface->slaves;
+        if (scalar @slaves > 0) {
+            $net_iface->{slaves} = \@slaves;
+            $net_iface->{type}   = 'master';
+        }
+
+        push @net_ifaces, $net_iface;
+
+        $log->info("Iface " . $iface->iface_name . " configured via static file");
     }
 
     $self->_writeNetConf(ifaces => \@net_ifaces, %args);

@@ -4,6 +4,6 @@
 # if you need to adapt this configuration file,
 # please modify the template on Kanopya Private Cloud Admin server
 
-STARTMODE=auto
+STARTMODE=[% IF interface.iface_pxe %]nfsroot[% ELSE %]auto[% END %]
 IPADDR=[% interface.address %]
 NETMASK=[% interface.netmask %]
