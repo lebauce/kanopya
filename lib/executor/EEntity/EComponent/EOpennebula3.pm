@@ -1004,7 +1004,6 @@ sub generateKvmVmTemplate {
     my @bridges = $args{hypervisor}->getIfaces(role => 'vms');
     for my $iface ($args{host}->getIfaces()) {
         # Look for an appropriate bridge
-        my $bridge = undef;
         my @vm_networks;
 
         for my $vm_netconf ($iface->netconfs) {
@@ -1024,12 +1023,12 @@ sub generateKvmVmTemplate {
             }
 
             if ((scalar @unsatisfied_networks) == 0) {
-                $found = 1;
+                $found_bridge = $bridge;
                 last BRIDGE;
             }
         }
 
-        if (not $found) {
+        if (not defined ($found_bridge)) {
             throw Kanopya::Exception::Execution(error => "Could not find a bridge that match the requirements");
         }
 
@@ -1041,7 +1040,7 @@ sub generateKvmVmTemplate {
             if (scalar @vlans) {
                 $vlan = pop @vlans;
                 my $ehost_manager = EFactory::newEEntity(data => $args{hypervisor}->getHostManager);
-                $ehost_manager->applyVLAN(iface  => $bridge,
+                $ehost_manager->applyVLAN(iface  => $found_bridge,
                                           vlan   => $vlan);
             }
         }
@@ -1050,7 +1049,7 @@ sub generateKvmVmTemplate {
         my $vnet_template = $self->generateVnetTemplate(
             vnet_name       => $hostname . '-' . $iface->iface_name,
             vnet_bridge     => "br-" . ($vlan || "default"),
-            vnet_phydev     => "p" . $bridge->iface_name,
+            vnet_phydev     => "p" . $found_bridge->iface_name,
             vnet_vlanid     => defined $vlan ? $vlan->vlan_number : undef,
             vnet_mac        => $iface->iface_mac_addr,
             vnet_netaddress => $iface->getIPAddr
