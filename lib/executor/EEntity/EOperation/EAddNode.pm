@@ -253,7 +253,7 @@ sub execute {
         # Creation of the device based on distribution device
         my $container = EEntity->new(entity => $self->{context}->{disk_manager}->createDisk(
                             name       => $self->{context}->{systemimage}->systemimage_name,
-                            size       => $self->{context}->{masterimage}->masterimage_size,
+                            size       => delete $createdisk_params->{systemimage_size},
                             # TODO: get this value from masterimage attrs.
                             filesystem => 'ext3',
                             erollback  => $self->{erollback},
