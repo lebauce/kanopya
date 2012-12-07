@@ -493,7 +493,8 @@ sub _generateNetConf {
 
         my @vlans;
         foreach my $netconf ($iface->netconfs) {
-            push @vlans, $netconf->vlans;
+            my @netconf_vlans = $netconf->vlans;
+            push @vlans, @netconf_vlans;
         }
         if (scalar @vlans > 0) {
            $net_iface->{vlans} = \@vlans;

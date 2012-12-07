@@ -72,7 +72,7 @@ sub _writeNetConf {
 
         if ($iface->{vlans}) {
             $template_file = 'ifcfg-vlan.tt';
-            foreach my $vlan ($iface->{vlans}) {
+            foreach my $vlan (@{ $iface->{vlans} }) {
                 my %vlan_infos;
                 my $vlan_id = 'vlan' . $vlan->vlan_number;
                 $vlan_infos{iface_name} = $iface->{name};
