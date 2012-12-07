@@ -275,8 +275,8 @@ function migrate(spid, eid) {
         type        : 'GET',
         success     : function(hmgr) {
             $.ajax({
-                url     : '/api/opennebula3/' + hmgr[0].manager_id + '/hypervisors',
-                type    : 'POST',
+                url     : '/api/opennebula3/' + hmgr[0].manager_id + '/opennebula3_hypervisors',
+                type    : 'GET',
                 success : function(data) {
                     for (var i in data) if (data.hasOwnProperty(i)) {
                         $(sel).append($('<option>', { text : data[i].host_hostname, value : data[i].pk }));
