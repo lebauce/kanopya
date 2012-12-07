@@ -1,0 +1,130 @@
+# Copyright © 2011-2012 Hedera Technology SAS
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+
+package Entity::Policy::NetworkPolicy;
+use base 'Entity::Policy';
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+use Log::Log4perl 'get_logger';
+
+my $log = get_logger("");
+
+use constant ATTR_DEF => {};
+
+sub getAttrDef { return ATTR_DEF; }
+
+
+my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
+sub getPolicyDef {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, optional => { 'set_mandatory' => 0 });
+
+    %args = %{ $self->mergeValues(values => \%args) };
+
+    # Build the default gateway network list
+    my @networks;
+    for my $network (Entity::Network->search(hash => {})) {
+        push @networks, $network->toJSON();
+    }
+    my @netconfs;
+    for my $netconf (Entity::Netconf->search(hash => {})) {
+        push @netconfs, $netconf->toJSON();
+    }
+
+    my $attributes = {
+        displayed  => [ 'cluster_domainname', 'cluster_nameserver1', 'cluster_nameserver2', 'default_gateway_id' ],
+        attributes =>  {
+            cluster_domainname => {
+                label   => 'Domain name',
+                type    => 'string',
+                pattern => '^[a-z0-9-]+(\\.[a-z0-9-]+)+$',
+            },
+            cluster_nameserver1 => {
+                label   => 'Name server 1',
+                type    => 'string',
+                pattern => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
+            },
+            cluster_nameserver2 => {
+                label   => 'Name server 2',
+                type    => 'string',
+                pattern => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
+            },
+            default_gateway_id => {
+                label    => 'Default gateway network',
+                type     => 'relation',
+                relation => 'single',
+                pattern  => '^\d*$',
+                options  => \@networks,
+            },
+            interfaces => {
+                label       => 'Interfaces',
+                type        => 'relation',
+                relation    => 'single_multi',
+                is_editable => 1,
+                attributes  => {
+                    attributes => {
+                        policy_id => {
+                            type     => 'relation',
+                            relation => 'single',
+                        },
+                        netconfs => {
+                            label       => 'Network configurations',
+                            type        => 'relation',
+                            relation    => 'multi',
+                            link_to     => 'netconf',
+                            pattern     => '^\d*$',
+                            options     => \@netconfs,
+                            is_editable => 1,
+                        },
+                        bonds_number => {
+                            label       => 'Bonding slave count',
+                            type        => 'integer',
+                            pattern     => '^\d*$',
+                            is_editable => 1,
+                        },
+                    },
+                },
+            },
+        },
+        relations => {
+            interfaces => {
+                attrs    => { accessor => 'multi' },
+                cond     => { 'foreign.policy_id' => 'self.policy_id' },
+                resource => 'interface'
+            },
+        },
+    };
+
+    push @{ $attributes->{displayed} }, {
+        'interfaces' => [ 'netconfs', 'bonds_number' ]
+    };
+
+    # Complete the attributes with common ones
+    $attributes = $merge->merge($self->SUPER::getPolicyDef(%args), $attributes);
+
+    $self->setValues(attributes => $attributes, values => \%args);
+    return $attributes;
+}
+
+1;

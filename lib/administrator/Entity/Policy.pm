@@ -23,6 +23,11 @@ use warnings;
 
 use ParamPreset;
 use Entity::ServiceProvider::Inside::Cluster;
+use Entity::Network;
+use Entity::Netconf;
+use Entity::Masterimage;
+use Entity::Kernel;
+use ComponentType;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
@@ -37,12 +42,14 @@ use constant ATTR_DEF => {
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
+        is_editable  => 1,
     },
     policy_desc => {
         label        => 'Description',
         type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
+        is_editable  => 1,
     },
     policy_type => {
         pattern      => '^.*$',
@@ -51,7 +58,6 @@ use constant ATTR_DEF => {
     param_preset_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
 };
 
@@ -59,18 +65,18 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
-        getFlattenedHash => {
-            description => 'Return a single level hash with all attributes and values of the policy',
-            perm_holder => 'entity',
+        getPolicyDef => {
+            description => 'build the policy definition in function of policy attributes values.',
         },
     };
 }
 
+
+my $merge = Hash::Merge->new('LEFT_PRECEDENT');
+
 sub new {
     my $class = shift;
     my %args = @_;
-    my $self;
 
     # Firstly pop the policy atrributes
     my $attrs = {
@@ -79,40 +85,56 @@ sub new {
         policy_desc => delete $args{policy_desc},
     };
 
-    # Pop the policy id if defined
-    my $policy_id = delete $args{policy_id};
+    $class->checkAttrs(attrs => $attrs);
 
-    # If policy_id defined, this is a policy update.
-    if ($policy_id) {
-        $self = Entity::Policy->get(id => $policy_id);
+    # Build the policy pattern from
+    my $pattern = $class->buildPattern(policy_type => $attrs->{policy_type}, hash => \%args);
+    my $preset  = ParamPreset->new(params => $pattern);
+    $attrs->{param_preset_id} = $preset->id;
 
-        # Set the policy atrributtes
-        for my $name (keys %$attrs) {
-            $self->setAttr(name => $name, value => $attrs->{$name});
-        }
-        $self->save();
+    my $self = $class->SUPER::new(%$attrs);
 
-        # Build the policy pattern from
-        my $pattern = $class->buildPatternFromHash(policy_type => $attrs->{policy_type}, hash => \%args);
-        $self->param_preset->update(params => $pattern, override => 1);
-    }
-    # Else this a policy creation
-    else {
-        $class->checkAttrs(attrs => $attrs);
+    # Add the concrete policy to the Policy master group
+    Entity::Policy->getMasterGroup->appendEntity(entity => $self);
 
-        # Build the policy pattern from
-        my $pattern = $class->buildPatternFromHash(policy_type => $attrs->{policy_type}, hash => \%args);
-        my $preset  = ParamPreset->new(params => $pattern);
-        $attrs->{param_preset_id} = $preset->id;
-
-        $self = $class->SUPER::new(%$attrs);
-    }
     return $self;
 }
 
-sub buildPatternFromHash {
-    my $class = shift;
-    my %args = @_;
+sub toJSON {
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, optional => { 'model' => undef });
+
+    my $json = $self->SUPER::toJSON(%args);
+
+    if (not $args{model}) {
+        $json = $self->mergeValues(values => $json);
+    }
+    return $json;
+}
+
+sub update {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    # Firstly pop the policy atrributes
+    my $attrs = {
+        policy_name => delete $args{policy_name},
+        policy_desc => delete $args{policy_desc},
+    };
+    $self->SUPER::update(%$attrs);
+
+    # Build the policy pattern from
+    my $pattern = $class->buildPattern(policy_type => $self->policy_type, hash => \%args);
+    $self->param_preset->update(params => $pattern, override => 1);
+}
+
+sub buildPattern {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
 
     General::checkParams(args => \%args, required => [ 'policy_type', 'hash' ]);
 
@@ -144,62 +166,35 @@ sub buildPatternFromHash {
                 }
             }
             # Handle components
-            elsif ($name =~ m/^component_type_/ and $args{policy_type} eq 'system') {
-                $pattern{components}->{'component_' . $args{hash}->{$name}}->{component_type} = $args{hash}->{$name};
+            elsif ($name eq 'components' and ref($args{hash}->{$name}) eq 'ARRAY' and $args{policy_type} eq 'system') {
+                my %components = map { $_->{component_type} => $_ } @{ $args{hash}->{$name} };
+                $pattern{components} = \%components;
             }
             # Handle networks interfaces
-            elsif ($name =~ m/^interface_netconfs_/ and $args{policy_type} eq 'network') {
-                # Create the interface array if not exists
-                if ($args{hash}->{$name} and ref($args{hash}->{$name}) ne 'ARRAY') {
-                    $args{hash}->{$name} = [ $args{hash}->{$name} ];
-                }
-                my $interface = {};
-                for my $netconf (@{ $args{hash}->{$name} }) {
-                    $interface->{interface_netconfs}->{$netconf} = $netconf;
-                }
+            elsif ($name eq 'interfaces' and ref($args{hash}->{$name}) eq 'ARRAY' and $args{policy_type} eq 'network') {
+                my $index = 0;
+                my $interfaces = {};
+                for my $interface (@{ $args{hash}->{$name} }) {
+                    if (ref($interface->{netconfs}) ne 'ARRAY') {
+                        $interface->{netconfs} = [ $interface->{netconfs} ];
+                    }
+                    # Transform the netconfs list into a hash for merging purpose
+                    my %netconfs = map { $_ => $_ } @{ $interface->{netconfs} };
+                    $interface->{netconfs} = \%netconfs;
 
-                (my $interface_index = $name) =~ s/^interface_netconfs_//g;
-                if ($args{hash}->{'bonds_number_' . $interface_index}) {
-                    $interface->{bonds_number} = $args{hash}->{'bonds_number_' . $interface_index};
+                    my $identifier = join('_', keys %{ $interface->{netconfs} }) . '_' . $interface->{bonds_number};
+                    if (defined $interfaces->{'interface_' . $identifier}) {
+                        $identifier .= '_' .  $index;
+                    }
+                    $interfaces->{'interface_' . $identifier} = $interface;
+                    $index++;
                 }
-
-                my $identifier = join('_', @{ $args{hash}->{$name} }) . '_' . $interface->{bonds_number};
-                if (defined $pattern{interfaces}->{'interface_' . $identifier}) {
-                    $identifier .= '_' .  $interface_index;
-                }
-                $pattern{interfaces}->{'interface_' . $identifier} = $interface;
+                $pattern{interfaces} = $interfaces;
             }
             # Handle billing limit
-            elsif ($name =~ m/^limit_start_/ and $args{policy_type} eq 'billing') {
-                my $limit_index = $name;
-                $limit_index    =~ s/^limit_start_//g;
-
-                if (defined($args{hash}->{'limit_ending_' . $limit_index}) and defined($args{hash}->{'limit_value_' . $limit_index}) and
-                    defined($args{hash}->{'limit_type_' . $limit_index})) {
-                    my $limit   = {
-                        start   => $args{hash}->{'limit_start_' . $limit_index},
-                        ending  => $args{hash}->{'limit_ending_' . $limit_index},
-                        value   => $args{hash}->{'limit_value_' . $limit_index},
-                        type    => $args{hash}->{'limit_type_'  . $limit_index}
-                    };
-                    if (defined($args{hash}->{'limit_soft_' . $limit_index}) and "$args{hash}->{'limit_soft_' . $limit_index}" eq "1") {
-                        $limit->{soft}  = "1";
-                    }
-                    else {
-                        $limit->{soft}  = "0";
-                    }
-                    if ($args{hash}->{'limit_repeats_' . $limit_index} and $args{hash}->{'limit_repeat_start_time_' . $limit_index} and
-                        $args{hash}->{'limit_repeat_end_time_' . $limit_index}) {
-                        $limit->{repeats}           = $args{hash}->{'limit_repeats_' . $limit_index};
-                        $limit->{repeat_start_time} = $args{hash}->{'limit_repeat_start_time_' . $limit_index};
-                        $limit->{repeat_end_time}   = $args{hash}->{'limit_repeat_end_time_' . $limit_index};
-                    } else {
-                        $limit->{repeats}           = 0;
-                        $limit->{repeat_start_time} = 0;
-                        $limit->{repeat_end_time}   = 0;
-                    }
-                    $pattern{billing_limits}->{$limit_index}    = $limit;
-                  }
+            elsif ($name eq 'billing_limits' and ref($args{hash}->{$name}) eq 'ARRAY' and $args{policy_type} eq 'billing') {
+                my %limits = map { join('_',  values $_) => $_ } @{ $args{hash}->{$name} };
+                $pattern{billing_limits} = \%limits;
             }
             # Can we handle these params whithout hard code  ?
             elsif ($name =~ /systemimage_size/) {
@@ -221,11 +216,11 @@ sub buildPatternFromHash {
     return \%pattern;
 }
 
-sub getFlattenedHash {
+sub getPolicyPattern {
     my $self = shift;
     my %args = @_;
 
-    my %flat_hash;
+    my $flat_hash = {};
     my $pattern = $self->param_preset->load();
 
     # Transform the policy configuration pattern to a flat hash
@@ -234,70 +229,132 @@ sub getFlattenedHash {
         if ($name eq 'managers') {
             for my $manager_type (keys %{$pattern->{$name}}) {
                 # Set the manager id
-                $flat_hash{$manager_type . '_id'} = $pattern->{$name}->{$manager_type}->{manager_id};
+                $flat_hash->{$manager_type . '_id'} = $pattern->{$name}->{$manager_type}->{manager_id};
 
                 # Set the manager parameters
                 for my $manager_param (keys %{$pattern->{$name}->{$manager_type}->{manager_params}}) {
-                    $flat_hash{$manager_param} = $pattern->{$name}->{$manager_type}->{manager_params}->{$manager_param};
+                    $flat_hash->{$manager_param} = $pattern->{$name}->{$manager_type}->{manager_params}->{$manager_param};
                 }
             }
         }
         # Handle components
         elsif ($name eq 'components') {
             for my $component (values %{ $pattern->{$name} }) {
-                if (not defined $flat_hash{'component_type'}) {
-                    $flat_hash{'component_type'} = [];
+                if (not defined $flat_hash->{'components'}) {
+                    $flat_hash->{'components'} = [];
                 }
-                push @{ $flat_hash{'component_type'} }, $component->{component_type};
+                push @{ $flat_hash->{'components'} }, { component_type => $component->{component_type} };
             }
         }
         # Handle network interfaces
         elsif ($name eq 'interfaces') {
             for my $interface (values %{ $pattern->{$name} }) {
-                if (not defined $flat_hash{'network_interface'}) {
-                    $flat_hash{'network_interface'} = [];
+                if (not defined $flat_hash->{'interfaces'}) {
+                    $flat_hash->{'interfaces'} = [];
                 }
 
-                if (defined $interface->{interface_netconfs} and ref($interface->{interface_netconfs}) eq 'HASH') {
-                    my @netconfs = values %{ $interface->{interface_netconfs} };
-                    $interface->{interface_netconfs} = \@netconfs;
+                if (defined $interface->{netconfs} and ref($interface->{netconfs}) eq 'HASH') {
+                    my @netconfs = values %{ $interface->{netconfs} };
+                    $interface->{netconfs} = \@netconfs;
                 }
-                push @{ $flat_hash{'network_interface'} }, $interface;
+                push @{ $flat_hash->{'interfaces'} }, $interface;
             }
         }
         elsif ($name eq 'billing_limits') {
-            for my $billinglimit (values %{ $pattern->{$name} }) {
-                my $blimit  = {};
-                if (not defined $flat_hash{'billing_limits'}) {
-                    $flat_hash{'billing_limits'}    = [];
+            for my $billing (values %{ $pattern->{$name} }) {
+                if (not defined $flat_hash->{'billing_limits'}) {
+                    $flat_hash->{'billing_limits'} = [];
                 }
-
-                for my $k (keys %{ $billinglimit }) {
-                    if ("$billinglimit->{$k}" ne "0") {
-                        # Must transform times from timestamp to GMT
-                        if ($k eq "start" or $k eq "ending"
-                            or $k eq "repeat_start_time" or $k eq "repeat_end_time") {
-                            my $strftimeformat;
-                            if ($k eq "start" or $k eq "ending") {
-                                $strftimeformat     = "%d/%m/%Y %H:%M";
-                            } else {
-                                $strftimeformat     = "%H:%M";
-                            }
-                            $billinglimit->{$k} = strftime $strftimeformat, localtime($billinglimit->{$k} / 1000);
-                        }
-                        $blimit->{'limit_' . $k}    = $billinglimit->{$k};
-                    }
-                }
-                push @{ $flat_hash{'billing_limits'} }, $blimit;
+                push @{ $flat_hash->{'billing_limits'} }, $billing;
             }
         }
         else {
-            $flat_hash{$name} = $pattern->{$name};
+            $flat_hash->{$name} = $pattern->{$name};
         }
     }
 
-    $log->debug("Returning flattened policy hash:\n" . Dumper(\%flat_hash));
-    return \%flat_hash;
+    $log->debug("Returning flattened policy hash:\n" . Dumper($flat_hash));
+    return $flat_hash;
+}
+
+sub getPolicyDef {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    my $attributes = {
+        displayed => [ 'policy_name', 'policy_desc' ]
+    };
+
+    return $merge->merge($attributes, $class->toJSON(model => 1));
+}
+
+sub setValues {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'attributes', 'values' ],
+                         optional => { 'set_mandatory' => 0 });
+
+    # Set the values
+    for my $attrname (keys %{ $args{attributes}->{attributes} }) {
+        if (defined $args{values}->{$attrname}) {
+            $args{attributes}->{attributes}->{$attrname}->{value} = $args{values}->{$attrname};
+        }
+        if ($args{set_mandatory}) {
+            $args{attributes}->{attributes}->{$attrname}->{is_mandatory} = 1;
+        }
+        $args{attributes}->{attributes}->{$attrname}->{is_editable} = 1;
+    }
+}
+
+sub mergeValues {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'values' ]);
+
+    # Use existing values if defined, but override them with 
+    # with values from parameters (LEFT_PRECEDENT).
+    if (ref($self)) {
+        $args{values} = $merge->merge($args{values}, $self->getPolicyPattern());
+    }
+    return $args{values};
+}
+
+sub searchManagers {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args => \%args,
+                         required => [ 'component_category' ],
+                         optional => { 'service_provider_id' => undef });
+
+    # Build the list of host providers
+    my $types = {
+        component => 'Entity::Component',
+        connector => 'Entity::Connector',
+    };
+
+    my @managers;
+    for my $name (keys $types) {
+        my $filters = { $name . '_type.' . $name . '_category' => $args{component_category} };
+        if (defined $args{service_provider_id}) {
+            $filters->{service_provider_id} = $args{service_provider_id};
+        }
+        @managers = (@managers, $types->{$name}->search(hash => $filters));
+    }
+    return @managers;
+}
+
+sub getMasterGroupName {
+    my $self = shift;
+
+    return 'Policy';
 }
 
 1;
