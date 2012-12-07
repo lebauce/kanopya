@@ -1013,8 +1013,8 @@ sub generateKvmVmTemplate {
             }
         }
 
-        BRIDGE:
         my $found = 0;
+        BRIDGE:
         for $bridge (@bridges) {
             my @unsatisfied_networks = @vm_networks;
             for my $netconf ($bridge->netconfs) {
