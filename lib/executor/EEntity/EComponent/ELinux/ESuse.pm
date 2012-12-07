@@ -45,13 +45,11 @@ sub _writeNetConf {
                     template_file => $template_file,
                     data          => { interface => ''}
                 );
-
                 $args{econtext}->send(
                     src  => $file,
                     dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $slave->iface_name
                 );
             }
-
             $template_file = 'ifcfg-bonded-master.tt';
         }
         else {
@@ -71,6 +69,29 @@ sub _writeNetConf {
             src  => $file,
             dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $iface->{name}
         );
+
+        if ($iface->{vlans}) {
+            $template_file = 'ifcfg-vlan.tt';
+            foreach my $vlan ($iface->{vlans}) {
+                my %vlan_infos;
+                my $vlan_id = 'vlan' . $vlan->vlan_number;
+                $vlan_infos{iface_name} = $iface->{name};
+
+                my $file = $self->generateNodeFile(
+                    cluster       => $args{cluster},
+                    host          => $args{host},
+                    file          => '/etc/sysconfig/network/ifcfg-' . $vlan_id,
+                    template_dir  => '/templates/components/suse',
+                    template_file => $template_file,
+                    data          => { interface => \%vlan_infos }
+                );
+
+                $args{econtext}->send(
+                    src  => $file,
+                    dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $vlan_id
+                );
+            }
+        }
     }
 }
 
