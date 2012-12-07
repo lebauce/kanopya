@@ -1,0 +1,5 @@
+BOOTPROTO='static'
+STARTMODE='auto'
+USERCONTROL='no'
+VLAN='yes'
+ETHERDEVICE='[% interface.iface_name %]'
