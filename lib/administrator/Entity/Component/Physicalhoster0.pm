@@ -67,6 +67,26 @@ sub getPolicyParams {
     return [];
 }
 
+sub getHostManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    return {
+        cpu => {
+            label   => 'Required CPU number',
+            type    => 'integer',
+            unit    => 'core(s)',
+            pattern => '^\d*$',
+        },
+        ram => {
+            label   => 'Required RAM amount',
+            type    => 'integer',
+            unit    => 'byte',
+            pattern => '^\d*$',
+        }
+    };
+}
+
 sub getConf {
     return {};
 }

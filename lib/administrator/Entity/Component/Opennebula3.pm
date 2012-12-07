@@ -219,7 +219,39 @@ sub checkScaleMemory {
     my $ram_current = pop @{$raw_data->{$indicator_oid}};
     my $ram_before  = pop @{$raw_data->{$indicator_oid}};
 
-    return {ram_current => $ram_current, ram_before => $ram_before};
+    return { ram_current => $ram_current, ram_before => $ram_before };
+}
+
+sub getHostManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    return {
+        core => {
+            label   => 'Initial CPU number',
+            type    => 'integer',
+            unit    => 'core(s)',
+            pattern => '^\d*$',
+        },
+        ram => {
+            label   => 'Initial RAM amount',
+            type    => 'integer',
+            unit    => 'byte',
+            pattern => '^\d*$',
+        },
+        max_core => {
+            label   => 'Maximum CPU number',
+            type    => 'integer',
+            unit    => 'core(s)',
+            pattern => '^\d*$',
+        },
+        max_ram => {
+            label   => 'Maximum RAM amount',
+            type    => 'integer',
+            unit    => 'byte',
+            pattern => '^\d*$',
+        }
+    };
 }
 
 =head2 getPolicyParams

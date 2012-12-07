@@ -52,6 +52,14 @@ sub checkHostManagerParams {
     General::checkParams(args => \%args, required => [ "cpu", "ram" ]);
 }
 
+sub getHostManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    return {};
+}
+
+
 =head2 addHost
 
 =cut

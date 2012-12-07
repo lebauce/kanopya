@@ -73,6 +73,40 @@ sub checkDiskManagerParams {
     General::checkParams(args => \%args, required => [ "container_access_id", "systemimage_size" ]);
 }
 
+
+=pod
+
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
+
+=cut
+
+sub getDiskManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    my $accesses = {};
+    for my $access (@{ $self->getConf->{container_accesses} }) {
+        $accesses->{$access->{container_access_id}} = $access->{container_access_name};
+    }
+
+    return {
+        container_access_id => {
+            label   => 'NFS repository to use',
+            type    => 'enum',
+            options => $accesses
+        },
+        image_type => {
+            label   => 'Disk image format',
+            type    => 'enum',
+            options => [ "raw", "qcow2", "VMDK" ]
+        },
+    };
+}
+
 =head2 getPolicyParams
 
 =cut

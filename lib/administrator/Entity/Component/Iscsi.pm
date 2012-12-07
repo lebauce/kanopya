@@ -59,6 +59,45 @@ sub checkExportManagerParams {
     General::checkParams(args => \%args, required => [ "iscsi_portals", "target", "lun" ]);
 }
 
+
+=pod
+
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
+
+=cut
+
+sub getExportManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    my $portals = {};
+    for my $portal (@{ $self->getConf->{iscsi_portals} }) {
+        $portals->{$portal->{iscsi_portal_id}} = $portal->{iscsi_portal_ip} . ':' . $portal->{iscsi_portal_port}
+    }
+
+    return {
+        iscsi_portals => {
+            label   => 'ISCSI portals to use',
+            type    => 'enum',
+            options => $portals
+        },
+        target => {
+            label   => 'ISCSI target name',
+            type    => 'string',
+            pattern => '^.*$',
+        },
+        lun => {
+            label   => 'LUN number',
+            type    => 'integer',
+            pattern => '^\d+$',
+        },
+    };
+}
+
 sub getPolicyParams {
     my $self = shift;
     my %args = @_;
