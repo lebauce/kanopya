@@ -100,14 +100,17 @@ sub new {
 sub update {
     my ($self, %args) = @_;
 
-    # Try to lock the entoty while updating it
+    # Try to lock the entity while updating it
     $self->lock(consumer => $self);
 
     eval {
         $self->SUPER::update(%args);
     };
     if ($@) {
+        my $exception = $@;
         $self->unlock(consumer => $self);
+
+        $exception->rethrow();
     }
     $self->unlock(consumer => $self);
 
@@ -141,7 +144,10 @@ sub remove {
         $self->SUPER::remove(%args);
     };
     if ($@) {
+        my $exception = $@;
         $self->unlock(consumer => $self);
+
+        $exception->rethrow();
     }
 
     $self->unlock(consumer => $self);
