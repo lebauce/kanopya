@@ -26,22 +26,45 @@ var KanopyaFormWizard = (function() {
         }
 
         // Initialize the from
-        this.form   = $("<form>", { method : method, action : action });
-        this.table  = $("<table>").css('width', 650);
-        this.tables = [];
+        this.data = {};
+        this.form = $("<form>", { method : method, action : action });
 
-        this.form.appendTo(this.content).append(this.table);
+        // Load the form contents
+        this.load();
+    }
+
+    KanopyaFormWizard.prototype.load = function() {
+        var table = $("<table>").css('width', 650);
+        this.tables = [ table ];
+
+        this.form.appendTo(this.content).append(table);
 
         this.attributedefs = {};
 
         // Retrieve data structure and values from api
-        var response = this.attrsCallback(this.type);
+        var response = this.attrsCallback(this.type, this.data);
         if (response == undefined) {
             throw new Error("KanopyaFormWizard: Could not get attributes of: " + this.type);
         }
 
         var attributes = response.attributes;
         var relations  = response.relations;
+
+        // Displayed attr list can be overriden by the type attributes contents
+        if (response.displayed) {
+            this.displayed = response.displayed;
+        }
+
+        // Extract displayed 1-n relations from the displyed attr list
+        var displayed = [];
+        for (var index in this.displayed) {
+            if ($.isPlainObject(this.displayed[index])) {
+                $.extend(true, this.relations, this.displayed[index]);
+            } else {
+                displayed.push(this.displayed[index]);
+            }
+        }
+        this.displayed = displayed;
 
         // Firstly merge the attrdef with possible raw attrdef given in params
         jQuery.extend(true, attributes, this.rawattrdef);
@@ -60,13 +83,18 @@ var KanopyaFormWizard = (function() {
             var relationdef = relations[relation_name];
 
             // Get the relation type attrdef
-            var response = this.attrsCallback(relationdef.resource);
+            var response;
+            if (attributes[relation_name].attributes !== undefined) {
+                response = attributes[relation_name].attributes;
+            } else {
+                response = this.attrsCallback(relationdef.resource, this.data);
+            }
             if (response == undefined) {
                 throw new Error("KanopyaFormWizard: Could not get attributes of: " + relationdef.resource);
             }
 
             var rel_attributedefs = response.attributes;
-            var rel_relationdefs  = response.relations;
+            var rel_relationdefs  = response.relations !== undefined ? response.relations : {};
 
             // Tag attr defs as belongs to a relation
             for (var name in rel_attributedefs) {
@@ -85,6 +113,7 @@ var KanopyaFormWizard = (function() {
             if (!this.id) {
                 // If it is a creation, remove the foreign key attr from new relations
                 delete rel_attributedefs[foreign];
+
             } else {
                 // If it is an update, set the foreign key attr to obj primary key for new relations
                 rel_attributedefs[foreign].value = this.id;
@@ -153,7 +182,7 @@ var KanopyaFormWizard = (function() {
         }
         for (hidden in attributes) {
             // An attr can be forced to be not hidden
-            if (attributes[hidden].hidden !== false) {
+            if (attributes[hidden].hidden != false) {
                 attributes[hidden].hidden = true;
             }
             ordered_attributes[hidden] = attributes[hidden];
@@ -187,8 +216,7 @@ var KanopyaFormWizard = (function() {
         this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
         this.content.find('select[multiple!="multiple"]').not('.wizard-ignore').multiselect({
             multiple: false,
-            header: "Select an option",
-            noneSelectedText: "-",
+            header: false,
             selectedList: 1
         });
     };
@@ -233,6 +261,11 @@ var KanopyaFormWizard = (function() {
     KanopyaFormWizard.prototype.newFormInput = function(name, value, listing) {
         var attr = this.attributedefs[name];
 
+        var width = 250;
+        if (listing !== undefined) {
+            width -= 100;
+        }
+
         // Create input and label DOM elements
         var label = $("<label>", { for : 'input_' + name, text : name });
 
@@ -245,11 +278,11 @@ var KanopyaFormWizard = (function() {
 
         // Handle text fields
         if (toInputType(attr.type) === 'textarea') {
-            input = $("<textarea>", { class : 'ui-corner-all' });
+            input = $("<textarea>", { class : 'ui-corner-all ui-widget-content' });
 
         // Handle select fields
         } else if (toInputType(attr.type) === 'select') {
-            input = $("<select>", { width: 250 });
+            input = $("<select>", { width: width });
 
             // If relation is multi, set the multiple select attribute
             if (attr.relation === 'multi') {
@@ -261,7 +294,6 @@ var KanopyaFormWizard = (function() {
 
             // Inserting select options
             for (var i in attr.options) if (attr.options.hasOwnProperty(i)) {
-
                 var optionvalue = attr.options[i][link_to_attribute_pk_name] || attr.options[i].pk || attr.options[i];
                 var optiontext  = attr.options[i].label || attr.options[i].pk || attr.options[i];
                 var option = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
@@ -277,7 +309,8 @@ var KanopyaFormWizard = (function() {
 
         // Handle other field types
         } else {
-            input = $("<input>", { type : attr.type ? toInputType(attr.type) : 'text', class : 'ui-corner-all', width: 246 });
+            input = $("<input>", { type : attr.type ? toInputType(attr.type) : 'text',
+                                   class : 'ui-corner-all ui-widget-content', width: width - 1, height: 18 });
         }
 
         // Set the input attributes
@@ -321,9 +354,10 @@ var KanopyaFormWizard = (function() {
             }
         }
 
-        // Set the field as hidden if defined.
-        // Be carefull to not move this block before the previous
-        // tests on the input type, has we change the type to hidden.
+        /* Set the field as hidden if defined.
+         * Be carefull to not move this block before the previous
+         * tests on the input type, has we change the type to hidden.
+         */
         if (attr.hidden) {
             input.attr('type', 'hidden');
         }
@@ -338,6 +372,11 @@ var KanopyaFormWizard = (function() {
 
         if ($(input).attr('type') === 'date') {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
+        }
+
+        // Set reload callback on onChange event if required
+        if (attr.reload) {
+            input.bind('change', $.proxy(this.reload, this));
         }
 
         /*
@@ -355,7 +394,7 @@ var KanopyaFormWizard = (function() {
 
             var current_unit;
             var unit_input = addFieldUnit(attr, unit_cont, unit_field_id);
-            if ($(input).attr('disabled')) {
+            if (unit_input && $(input).attr('disabled')) {
                 unit_input.attr('disabled', 'disabled');
             }
             current_unit = attr.unit;
@@ -369,8 +408,10 @@ var KanopyaFormWizard = (function() {
             // If exist a value then convert it in human readable
             if (current_unit === 'byte' && $(input).val()) {
                 var readable_value = getReadableSize($(input).val(), 1);
-                $(input).val( readable_value.value );
-                $(unit_cont).find('option:contains("' + readable_value.unit + '")').attr('selected', 'selected');
+                if (readable_value.value != 0) {
+                    $(input).val(readable_value.value);
+                    $(unit_cont).find('option:contains("' + readable_value.unit + '")').attr('selected', 'selected');
+                }
             }
 
             // TODO: Get the real lenght of the unit select box.
@@ -394,8 +435,6 @@ var KanopyaFormWizard = (function() {
 
             if (input.attr('type') === 'checkbox') {
                 input.width(110);
-            } else {
-                input.width(input.width() - 50);
             }
 
             // Search for the line that contains labels for this listing
@@ -492,7 +531,7 @@ var KanopyaFormWizard = (function() {
                 }
 
                 linecontainer = $("<tr>").append(inputcontainer);
-                $(input).css('width', '96%');
+                $(input).css('width', '96.5%');
 
             } else {
                 linecontainer = $("<tr>").css('position', 'relative');
@@ -532,6 +571,19 @@ var KanopyaFormWizard = (function() {
         }
     }
 
+    KanopyaFormWizard.prototype.reload = function() {
+        this.beforeSerialize($(this.form));
+        this.data = this.serialize($(this.form).serializeArray());
+
+        // Remove table of the current step
+        $.each(this.tables, function (index, table) {
+            table.remove();
+        });
+
+        // Then reload the from
+        this.load();
+    }
+
     KanopyaFormWizard.prototype.mustDisableField = function(name) {
         if (this.attributedefs[name].disabled == true) {
             return true;
@@ -567,7 +619,10 @@ var KanopyaFormWizard = (function() {
             }
 
             if (_this.attributedefs[$(this).attr('name')].serialize != null) {
-                $(this).val(_this.attributedefs[$(this).attr('name')].serialize($(this).val(), $(this)));
+                var value = _this.attributedefs[$(this).attr('name')].serialize($(this).val(), $(this));
+                if (value != 0) {
+                    $(this).val(value);
+                }
             }
 
             // Disable empty non mandatory fields, only if there are select or not editable.
@@ -580,7 +635,7 @@ var KanopyaFormWizard = (function() {
         });
     }
 
-    KanopyaFormWizard.prototype.handleBeforeSubmit = function(arr, $form, opts) {
+    KanopyaFormWizard.prototype.serialize = function(arr) {
         // Building a hash representing the object with its relations
         var data = {};
         var rel_attr_names = {};
@@ -596,7 +651,6 @@ var KanopyaFormWizard = (function() {
                     rel_attr_names[belongs_to] = [];
                 }
                 var rel_list = data[belongs_to];
-
                 if (rel_list === undefined) {
                     data[belongs_to] = [];
                     rel_list = data[belongs_to];
@@ -606,7 +660,7 @@ var KanopyaFormWizard = (function() {
                 if ($.inArray(attr.name, rel_attr_names[belongs_to]) < 0 && rel_attr_names[belongs_to].length) {
                     rel_attr_names[belongs_to].push(attr.name);
 
-                } else if (this.attributedefs[attr.name].relation !== 'multi') {
+                } else if (rel_list[rel_list.length - 1] == undefined || ! $.isArray(rel_list[rel_list.length - 1][attr.name])) {
                     rel_attr_names[belongs_to] = [attr.name];
                     rel_list.push({});
                 }
@@ -625,8 +679,15 @@ var KanopyaFormWizard = (function() {
                 hash_to_fill[attr.name] = attr.value;
             }
         }
-        this.submitCallback(data, $form, opts, $.proxy(this.onSuccess, this), $.proxy(this.onError, this));
+        return data;
+    }
 
+    KanopyaFormWizard.prototype.handleBeforeSubmit = function(arr, $form, opts) {
+        // Serialize values in a hash represen ting the object with this relations
+        this.data = this.serialize(arr);
+
+        // Submit the values
+        this.submitCallback(this.data, $form, opts, $.proxy(this.onSuccess, this), $.proxy(this.onError, this));
         return false;
     }
 
@@ -641,11 +702,11 @@ var KanopyaFormWizard = (function() {
             success     : $.proxy(this.onSuccess, this),
             error       : $.proxy(this.onError, this)
         });
-
     }
 
     KanopyaFormWizard.prototype.getValues = function(type, id, attributes) {
         var url = '/api/' + type + '/' + id;
+
         // As the relations n-n are not defined in 'relation' param, we need to
         // browse the attributes to find relations attr that needs an expand to get values.
         var relations = jQuery.extend({}, this.relations);
@@ -660,7 +721,7 @@ var KanopyaFormWizard = (function() {
         jQuery.extend(relations, multi_relations);
 
         // For each relation 1-N, use expand to get related entries with object values
-        if (relations) {
+        if (relations && !$.isEmptyObject(relations)) {
             var expands = [];
             for (relation in relations) if (relations.hasOwnProperty(relation)) {
                 expands.push(relation);
@@ -708,7 +769,7 @@ var KanopyaFormWizard = (function() {
             return table;
 
         } else {
-            return this.table;
+            return this.tables[0];
         }
     }
 
@@ -876,7 +937,7 @@ var KanopyaFormWizard = (function() {
         catch (err) {
             error.reason = 'An error occurs, but can not be parsed...'
         }
-        $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all' }));
+        $(this.content).prepend($("<div>", { text : error.reason, class : 'ui-state-error ui-corner-all ui-widget-content' }));
         this.error(data);
     }
 
