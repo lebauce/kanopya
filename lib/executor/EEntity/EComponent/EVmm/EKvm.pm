@@ -251,7 +251,7 @@ sub updatePinning {
     while ($i < $args{vm}->opennebula3_kvm_vm_cores) {
         if ($i < $args{cpus}) {
             $cmd    .= "virsh vcpupin one-" . $args{vm}->onevm_id
-                . " " . $i . " 0-" . ($self->host_core - 1) . " ; ";
+                . " " . $i . " 0-" . ($args{host}->host_core - 1) . " ; ";
         }
         else {
             $cmd    .= "virsh vcpupin one-" . $args{vm}->onevm_id
