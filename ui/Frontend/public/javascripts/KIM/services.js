@@ -320,6 +320,8 @@ function nodedetailsaction(cid, eid) {
         url     : '/api/node/' + eid + '?expand=host',
         success : function(data) {
             var remoteUrl   = data.host.remote_session_url;
+            var isActive    = data.host.active;
+            var isUp        = (/^up:/).test(data.host.host_state);
             var isVirtual   = false;
             $.ajax({    
                 url     : '/api/entity/' + data.host.host_manager_id,
@@ -369,13 +371,19 @@ function nodedetailsaction(cid, eid) {
                     action      : function() { window.open(remoteUrl); }
                 },
                 {
-                    label   : 'Put node in maintenance',
-                    icon    : 'wrench',
-                    action  : '/api/host/' + data.host.pk + '/maintenance',
-                    confirm : 'All the virtual machines will be migrated and the hypervisor will be put in maintenance'
+                    label       : 'Put node in maintenance',
+                    icon        : 'wrench',
+                    condition   : !isVirtual && isUp && isActive,
+                    action      : '/api/host/' + data.host.pk + '/maintenance',
+                    confirm     : 'All the virtual machines will be migrated and the hypervisor will be put in maintenance'
                 },
-
-
+                {
+                    label       : 'Restore from maintenance',
+                    icon        : 'gear',
+                    condition   : !isVirtual && isUp && !isActive,
+                    action      : '/api/host/' + data.host.pk + '/restore',
+                    confirm     : 'hypervisor will be now used to host virtual machines'
+                },
             ]
             require('KIM/services_details.js');
             createallbuttons(buttons, $('#' + cid));
