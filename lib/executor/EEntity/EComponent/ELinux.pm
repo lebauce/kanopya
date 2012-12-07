@@ -482,11 +482,14 @@ sub _generateNetConf {
             $method = "manual";
         }
 
-        my $net_iface = { method  => $method,
-                          name    => $iface->iface_name,
-                          address => $ip,
-                          netmask => $netmask,
-                          gateway => $gateway, };
+        my $net_iface = {
+            method    => $method,
+            name      => $iface->iface_name,
+            address   => $ip,
+            netmask   => $netmask,
+            gateway   => $gateway,
+            iface_pxe => $iface->iface_pxe,
+        };
 
         #check if iface has slaves (for bonding purposes)
         my @slaves = $iface->slaves;
