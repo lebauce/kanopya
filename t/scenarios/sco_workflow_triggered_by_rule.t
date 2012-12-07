@@ -66,8 +66,9 @@ eval{
 
     lives_ok{
         $service_provider->addManager(
-            manager_id   => $mock_monitor->id,
-            manager_type => 'collector_manager',
+            manager_id      => $mock_monitor->id,
+            manager_type    => 'collector_manager',
+            no_default_conf => 1,
         );
     } 'Add mock monitor to service provider';
 
