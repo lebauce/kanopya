@@ -124,7 +124,7 @@ sub paramPresets {
 
     my $preset;
     eval {
-        $preset = ParamPreset->id;
+        $preset = ParamPreset->get(id => $param_preset_id);
     };
     if ($@) {
         $errmsg = 'could not retrieve any param preset for workflow: '.$@;
