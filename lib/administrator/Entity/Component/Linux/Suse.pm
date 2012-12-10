@@ -17,13 +17,16 @@ use base 'Entity::Component::Linux';
 
 use strict;
 use warnings;
+
+use Entity::Component::Linux::LinuxMount;
+
 use Log::Log4perl 'get_logger';
 use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
 
-sub insertDefaultConfiguration {
+sub insertDefaultExtendedConfiguration {
     my $self = shift;
     
     my @default_conf = (

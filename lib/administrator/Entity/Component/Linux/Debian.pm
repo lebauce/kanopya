@@ -17,6 +17,9 @@ use base 'Entity::Component::Linux';
 
 use strict;
 use warnings;
+
+use Entity::Component::Linux::LinuxMount;
+
 use Log::Log4perl 'get_logger';
 use Data::Dumper;
 
@@ -25,7 +28,7 @@ my $errmsg;
 
 sub getAttrDef { return { }; }
 
-sub insertDefaultConfiguration {
+sub insertDefaultExtendedConfiguration {
     my $self = shift;
     
     my @default_conf = (
