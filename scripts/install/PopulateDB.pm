@@ -1256,12 +1256,14 @@ sub populate_workflow_def {
     my $scale_op_id       = Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
     my $scale_amount_desc = "Format:\n - '+value' to increase\n - '-value' to decrease\n - 'value' to set";
 
+    my $delay_desc = 'Delay minimum between two workflow triggers';
     # ScaleIn cpu workflow def
     my $scale_cpu_wf = $kanopya_wf_manager->createWorkflow(
         workflow_name => 'ScaleInCPU',
         params => {
             specific => {
                 scalein_value => { label => 'Nb core', description => $scale_amount_desc},
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             },
             internal => {
                 scope_id => 1,
@@ -1280,6 +1282,7 @@ sub populate_workflow_def {
         params => {
             specific => {
                 scalein_value => { label => 'Amount', unit => 'byte', description => $scale_amount_desc},
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             },
             internal => {
                 scope_id => 1,
@@ -1305,7 +1308,10 @@ sub populate_workflow_def {
                     cluster => undef
                 }
             },
-            internal => { scope_id => 2 }
+            internal => { scope_id => 2 },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
         }
     );
     $addnode_wf->addStep(operationtype_id => $addnode_op_id);
@@ -1325,7 +1331,10 @@ sub populate_workflow_def {
                     cluster => undef
                 }
             },
-            internal => { scope_id => 2 }
+            internal => { scope_id => 2 },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
         }
     );
     $stopnode_wf->addStep(operationtype_id => $prestop_op_id);
@@ -1352,6 +1361,9 @@ sub populate_workflow_def {
             automatic => {
                 context => { host => undef },
             },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
         }
     );
     my $resubmit_node_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitNode' })->id;
@@ -1371,6 +1383,9 @@ sub populate_workflow_def {
             automatic => {
                 context => { host => undef },
             },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
         }
     );
     my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
@@ -1388,6 +1403,9 @@ sub populate_workflow_def {
             automatic => {
                 context => { host => undef },
             },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
         }
     );
     my $flush_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
@@ -1406,6 +1424,9 @@ sub populate_workflow_def {
             automatic => {
                 context => { host => undef },
             },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
         }
     );
     my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
