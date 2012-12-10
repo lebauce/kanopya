@@ -41,7 +41,6 @@ use EFactory;
 use String::Random;
 use Template;
 use IO::Socket;
-use Net::Ping;
 
 use Log::Log4perl "get_logger";
 
@@ -89,32 +88,10 @@ sub postStart {
     $self->getHostManager->postStart(host => $self);
 }
 
-sub ping {
-    my ($self) = @_;
-    my $ip = $self->adminIp;
-    my $ping = Net::Ping->new("icmp");
-    my $pingable = $ping->ping($ip, 2);
-    $ping->close();
-    return $pingable ? $pingable : 0;
-}
-
 sub checkUp {
     my ($self, %args) = @_;
 
-    my $pingable = $self->ping();
-
-    if ($pingable) {
-        eval {
-            $self->getEContext->execute(command => "uptime");
-        };
-        if ($@) {
-            $log->info("Ehost->checkUp for host <" . $self->adminIp .
-                       ">, host pingable but not sshable");
-            return 0;
-        }
-    }
-
-    return $pingable ? $pingable : 0;
+    return $self->getHostManager->checkUp(host => $self);
 }
 
 sub getEContext {

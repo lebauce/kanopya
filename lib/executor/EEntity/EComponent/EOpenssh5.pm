@@ -16,10 +16,39 @@ package EEntity::EComponent::EOpenssh5;
 use strict;
 use Template;
 use String::Random;
+
 use base "EEntity::EComponent";
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 my $errmsg;
+
+=pod
+
+=begin classdoc
+
+Check if host is up
+
+=end classdoc
+
+=end
+
+=cut
+
+sub isUp {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+    my $host = $args{host};
+
+    eval {
+        $host->getEContext->execute(command => "uptime");
+    };
+    if ($@) {
+        $log->info('isUp() check for host <' . $host->adminIp . '>, host not sshable');
+        return 0;
+    }
+}
 
 1;

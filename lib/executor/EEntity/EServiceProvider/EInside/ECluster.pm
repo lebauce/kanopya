@@ -299,7 +299,7 @@ sub checkComponents {
         my $component_name = $component->component_type->component_name;
         $log->debug("Browsing component: " . $component_name);
 
-        my $ecomponent = EFactory::newEEntity(data => $component);
+        my $ecomponent = EEntity->new(entity => $component);
 
         if (not $ecomponent->isUp(host => $args{host}, cluster => $self)) {
             $log->info("Component <$component_name> not yet operational on host <" . $args{host}->id .  ">");
@@ -318,7 +318,7 @@ sub postStartNode {
 
     $log->info('Processing cluster components configuration for this node');
     foreach my $component (@components) {
-        EFactory::newEEntity(data => $component)->postStartNode(
+        EEntity->new(entity => $component)->postStartNode(
             cluster   => $self,
             host      => $args{host},
             erollback => $args{erollback}
