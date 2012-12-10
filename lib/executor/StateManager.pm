@@ -118,7 +118,7 @@ sub run {
 
                     # create an alert if not already created
                     if(not $hostalert) {
-                        Alert->new(entity_id => $cluster->id, alert_message => $hostmsg, alert_signature => $hostmsg);
+                        Alert->new(entity_id => $cluster->id, alert_message => $hostmsg, alert_signature => $hostmsg.' '.time());
                         $log->warn($msg);
                     }
 
@@ -168,7 +168,7 @@ sub run {
 
                         # create an alert if not already created
                         if(not $compalert) {
-                            Alert->new(entity_id => $cluster->id, alert_message => $compmsg, alert_signature => $compmsg);
+                            Alert->new(entity_id => $cluster->id, alert_message => $compmsg, alert_signature => $compmsg.' '.time());
                             $log->warn($msg);
                         }
 
