@@ -632,6 +632,7 @@ sub registerComponents {
     my %args = @_;
 
     my $components = [
+        [ 'Openssh', '5', 'Secureshell', undef ],
         [ 'Storage', '0', 'Storage', undef ],
         [ 'Lvm', '2', 'Storage', undef ],
         [ 'Apache', '2', 'Webserver', '/templates/components/apache2' ],
