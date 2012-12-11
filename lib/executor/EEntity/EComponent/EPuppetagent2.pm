@@ -156,10 +156,10 @@ sub applyConfiguration {
     my $hosts = $args{cluster}->getHosts();
     my @ehosts = map { EEntity->new(entity => $_) } values %$hosts;
     for my $ehost (@ehosts) {
-        $self->generatePuppetDefinitions(host => $ehost,
-                                         %args);
-        $self->applyManifest(host => $ehost,
-                             %args);
+        $self->generatePuppetDefinitions(%args,
+                                         host => $ehost);
+        $self->applyManifest(%args,
+                             host => $ehost);
     }
 }
 
