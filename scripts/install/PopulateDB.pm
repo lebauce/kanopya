@@ -359,7 +359,7 @@ sub registerUsers {
           desc    => 'Entity master group containing all entities',
           system  => 1,
           methods => {
-              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm' ]
+              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm', 'subscribe' ]
           }
         },
     ];

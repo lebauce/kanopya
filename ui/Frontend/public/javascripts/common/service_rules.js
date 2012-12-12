@@ -438,7 +438,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                         grid, rowid, 'workflow_def_id', 'workflow_def_name');
             }
             require('common/notification_subscription.js');
-            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_nodemetric_rules_" +  elem_id +"_alert");
+            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_nodemetric_rules_" +  elem_id +"_alert", false);
         },
         colNames: [ 'id', 'name', 'enabled', 'formula', 'description', 'trigger', 'Alert' ],
         colModel: [
@@ -546,7 +546,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                         grid, rowid, 'workflow_def_id', 'workflow_def_name');
             }
             require('common/notification_subscription.js');
-            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_aggregate_rules_" +  elem_id +"_alert");
+            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_aggregate_rules_" +  elem_id +"_alert", false);
         },
         details : {
             tabs    : [
