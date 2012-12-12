@@ -29,6 +29,10 @@ my $errmsg;
 
 Check if host is up
 
+@param host the target host to check
+
+@return boolean
+
 =end classdoc
 
 =end
