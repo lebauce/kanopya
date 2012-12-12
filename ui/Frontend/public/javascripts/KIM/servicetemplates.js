@@ -45,18 +45,8 @@ function load_service_template_content (container_id) {
                     { name: 'service_desc', index: 'service_desc', width:500 },
                     { name: 'subscribe', index : 'subscribe', width : 40, align : 'center', nodetails : true }],
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
-            var cell            = $(grid).find('tr#' + rowid).find('td[aria-describedby="service_template_list_subscribe"]');
-            var subscribeButton = $('<div>').button({ text : false, icons : { primary : 'ui-icon-mail-closed' } }).appendTo(cell);
-            $(subscribeButton).attr('style', 'margin-top:5px;');
-            $(subscribeButton).click(function() {
-                var details = {
-                    tabs : [
-                        { label : 'Notification subscriptions', id : 'subscription', onLoad : function(cid, eid) { loadSubscriptionModal(cid, eid, 'AddCluster'); } }
-                    ],
-                    title : 'Notification subscriptions'
-                };
-                show_detail('entity_subscription_list', 'entity_subscription_list', rowelem.pk, rowdata, details);
-            });
+            require('common/notification_subscription.js');
+            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_template_list_subscribe");
         }
     } );
 

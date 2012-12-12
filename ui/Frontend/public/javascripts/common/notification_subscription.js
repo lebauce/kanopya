@@ -1,6 +1,21 @@
 require('common/formatters.js');
 require('views.js');
 
+var addSubscriptionButtonInGrid = function(grid, rowid, rowdata, rowelem, colid) {
+    var cell            = $(grid).find('tr#' + rowid).find('td[aria-describedby="' + colid + '"]');
+    var subscribeButton = $('<div>').button({ text : false, icons : { primary : 'ui-icon-mail-closed' } }).appendTo(cell);
+    $(subscribeButton).attr('style', 'margin-top:5px;');
+    $(subscribeButton).click(function() {
+        var details = {
+            tabs : [
+                { label : 'Notification subscriptions', id : 'subscription', onLoad : function(cid, eid) { loadSubscriptionModal(cid, eid, 'AddCluster'); } }
+            ],
+            title : 'Notification subscriptions'
+        };
+        show_detail('entity_subscription_list', 'entity_subscription_list', rowelem.pk, rowdata, details);
+    });
+}
+
 function userOrGroupFormatter(cell, options, row) {
     var entity;
     $.ajax({
