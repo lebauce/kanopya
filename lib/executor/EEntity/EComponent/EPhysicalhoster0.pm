@@ -20,6 +20,7 @@ use base "EManager::EHostManager";
 use strict;
 use warnings;
 
+use Net::Ping;
 use General;
 use DecisionMaker::HostSelector;
 
@@ -33,8 +34,7 @@ my $errmsg;
 =cut
 
 sub startHost {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
@@ -70,5 +70,28 @@ sub startHost {
 =cut
 
 sub stopHost {}
+
+
+=pod
+
+=begin classdoc
+
+Check up if the host is pingable
+
+=end classdoc
+
+=cut
+
+sub checkUp {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+    my $ip = $args{host}->adminIp;
+    my $ping = Net::Ping->new("icmp");
+    my $pingable = $ping->ping($ip, 2);
+    $ping->close();
+    return $pingable ? $pingable : 0;
+}
 
 1;

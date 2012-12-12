@@ -156,7 +156,7 @@ __PACKAGE__->belongs_to(
   "component",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "component_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 component_template
@@ -174,8 +174,8 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -191,7 +191,7 @@ __PACKAGE__->belongs_to(
   "component_type",
   "AdministratorDB::Schema::Result::ComponentType",
   { component_type_id => "component_type_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
 =head2 dhcpd3
@@ -434,6 +434,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 openssh5
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Openssh5>
+
+=cut
+
+__PACKAGE__->might_have(
+  "openssh5",
+  "AdministratorDB::Schema::Result::Openssh5",
+  { "foreign.openssh5_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 php5
 
 Type: might_have
@@ -510,7 +525,7 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -559,7 +574,7 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vmms
+=head2 vmm_iaas
 
 Type: has_many
 
@@ -568,13 +583,13 @@ Related object: L<AdministratorDB::Schema::Result::Vmm>
 =cut
 
 __PACKAGE__->has_many(
-  "vmms",
+  "vmm_iaas",
   "AdministratorDB::Schema::Result::Vmm",
   { "foreign.iaas_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vmm
+=head2 vmm_vmm
 
 Type: might_have
 
@@ -583,7 +598,7 @@ Related object: L<AdministratorDB::Schema::Result::Vmm>
 =cut
 
 __PACKAGE__->might_have(
-  "vmm",
+  "vmm_vmm",
   "AdministratorDB::Schema::Result::Vmm",
   { "foreign.vmm_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -605,14 +620,12 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-27 16:08:30
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ap9hz/QlDGsGHA1XQbz3xw
-
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2012-12-11 14:47:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cse0s6oPdmP8Yrt8GQj3rg
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "component_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
- 
 1;

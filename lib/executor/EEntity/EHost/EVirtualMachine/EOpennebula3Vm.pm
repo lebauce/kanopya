@@ -31,36 +31,4 @@ sub timeOuted {
     $self->getHostManager->forceDeploy(vm => $self, hypervisor => $self->hypervisor);
 }
 
-=head2 checkUp
-
-    Desc: check the state of the vm
-    Return: error if vm state is 'fail'
-
-=cut
-
-sub checkUp {
-    my $self = shift;
-
-    my $vm_state = $self->getHostManager->getVMState(host => $self);
-
-    $log->info('VM <' . $self->id . '> opennebula status <' . ($vm_state->{state}) . '>');
-
-    if ($vm_state->{state} eq 'runn') {
-        $log->info('VM running try to contact it');
-    }
-    elsif ($vm_state->{state} eq 'boot') {
-        $log->info('VM still booting');
-        return 0;
-    }
-    elsif ($vm_state->{state} eq 'fail' ) {
-        my $lastmessage = $self->getHostManager->vmLoggedErrorMessage(opennebula3_vm => $self);
-        throw Kanopya::Exception(error => 'Vm fail on boot: ' . $lastmessage);
-    }
-    elsif ($vm_state->{state} eq 'pend' ) { 
-        $log->info('VM still pending'); #TODO check HV state
-        return 0;
-    }
-
-    return $self->SUPER::checkUp();
-}
 1;
