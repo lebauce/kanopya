@@ -49,6 +49,8 @@ sub isUp {
         $log->info('isUp() check for host <' . $host->adminIp . '>, host not sshable');
         return 0;
     }
+
+    return 1;
 }
 
 1;
