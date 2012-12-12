@@ -430,15 +430,17 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         content_container_id: 'node_accordion_container',
         grid_id: serviceNodemetricRulesGridId,
         grid_class: 'service_resources_nodemetric_rules',
-        afterInsertRow: function(grid, rowid, rowdata) {
+        afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             // Workflow name
             if (rowdata.workflow_def_id) {
                 setCellWithRelatedValue(
                         '/api/workflowdef/' + rowdata.workflow_def_id,
                         grid, rowid, 'workflow_def_id', 'workflow_def_name');
             }
+            require('common/notification_subscription.js');
+            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_nodemetric_rules_" +  elem_id +"_alert");
         },
-        colNames: [ 'id', 'name', 'enabled', 'formula', 'description', 'trigger' ],
+        colNames: [ 'id', 'name', 'enabled', 'formula', 'description', 'trigger', 'Alert' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
@@ -446,6 +448,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             { name: 'formula_label', index: 'formula_label', width: 120 },
             { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 120 },
             { name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
+            { name: 'alert', index: 'alert', width: 40, align: 'center', nodetails: true }
         ],
         details: {
             tabs : [
@@ -524,7 +527,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         grid_class: 'service_resources_aggregate_rules',
         content_container_id: 'service_accordion_container',
         grid_id: serviceAggregateRulesGridId,
-        colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description', 'trigger'],
+        colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description', 'trigger', 'alert'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
@@ -533,14 +536,17 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
              {name:'formula_label',index:'formula_label', width:90,},
              {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
              {name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
+             {name: 'alert', index: 'alert', width: 40, align: 'center', nodetails: true }
            ],
-        afterInsertRow: function(grid, rowid, rowdata) {
+        afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             // Workflow name
             if (rowdata.workflow_def_id) {
                 setCellWithRelatedValue(
                         '/api/workflowdef/' + rowdata.workflow_def_id,
                         grid, rowid, 'workflow_def_id', 'workflow_def_name');
             }
+            require('common/notification_subscription.js');
+            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_aggregate_rules_" +  elem_id +"_alert");
         },
         details : {
             tabs    : [

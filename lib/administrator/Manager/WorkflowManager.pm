@@ -362,7 +362,7 @@ sub runWorkflow {
                related_id => $service_provider_id,
                params     => $workflow_params,
                # TODO: Uncomment the following line once rules becomme entities.
-               # rule    => Entity->get(id => $rule_id),
+               rule    => Entity->get(id => $rule_id),
            );
 }
 
