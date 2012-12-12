@@ -1,5 +1,54 @@
 #!/usr/bin/perl
 
+# The following cases should be tested:
+#
+# I. iface number constraint:
+# Cluster configurations:
+#__________________________________________
+#SIMPLE IFACES| BONDED IFACES | BOND NUMBER|
+#_____________|_______________|____________|
+#     1       |       0       |     0      |
+#_____________|_______________|____________|
+#     1       |       1       |     1      |
+#_____________|_______________|____________|
+#     1       |       1       |     2      |
+#_____________|_______________|____________|
+#     1       |       2       |     1      |
+#_____________|_______________|____________|
+#     1       |       2       |     2      |
+#_____________|_______________|____________|
+#     2       |       1       |     1      |
+#_____________|_______________|____________|
+#     2       |       0       |     0      |
+#_____________|_______________|____________|
+#     2       |       1       |     2      |
+#_____________|_______________|____________|
+#     2       |       2       |     2      |
+#_____________|_______________|____________|
+#     2       |       2       |     1      |
+#_____________|_______________|____________|
+#
+# All those combinations should be tested with the following host configuration
+#
+# Host configuration:
+# -> Good number of simple and bonbs number
+# -> without any ifaces
+# -> without simple ifaces
+# -> without bonded ifaces
+# -> with an insufficiant number of simple ifaces
+# -> with an insufficiant number of bonded ifaces
+# -> with an insufficiant number of bonds slaves
+#
+# II. Netconf constraints:
+#
+# "If an iface of the host is configured, we consider that the whole host is configured,
+# and thus that all the configured cluster interfaces must have a sibling among the host
+# ifaces"
+#
+#
+#
+
+
 use strict;
 use warnings;
 

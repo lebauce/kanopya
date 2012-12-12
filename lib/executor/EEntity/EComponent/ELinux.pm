@@ -491,6 +491,15 @@ sub _generateNetConf {
             iface_pxe => $iface->iface_pxe,
         };
 
+        my @vlans;
+        foreach my $netconf ($iface->netconfs) {
+            my @netconf_vlans = $netconf->vlans;
+            push @vlans, @netconf_vlans;
+        }
+        if (scalar @vlans > 0) {
+           $net_iface->{vlans} = \@vlans;
+        }
+
         #check if iface has slaves (for bonding purposes)
         my @slaves = $iface->slaves;
         if (scalar @slaves > 0) {
