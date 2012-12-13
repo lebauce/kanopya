@@ -29,14 +29,15 @@ use_ok ('Entity::Netconf');
 use_ok ('Entity::Iface');
 use_ok ('Externalnode::Node');
 use Execution;
+use Register;
 
 my $testing = 0;
 my $NB_HYPERVISORS = 1;
 my $boards = [
     {
-        ram  => 2048,
-        core => 2,
-        nics => [
+        ram    => 2048,
+        core   => 2,
+        ifaces => [
             {
                 name => "eth0",
                 mac  => "00:11:22:33:44:55",
@@ -123,43 +124,14 @@ eval {
         $kernel = Entity::Kernel->find(hash => { kernel_name => '3.0.42-0.7-default' });
     } 'Get a kernel for KVM';
 
-    my @hosts;
-    lives_ok {
-        @hosts = Entity::Host->find(hash => { host_manager_id => $physical_hoster->getId });
-    } 'Retrieve physical hosts';
-
     my $admin_user;
     lives_ok {
         $admin_user = Entity::User->find(hash => { user_login => 'admin' });
     } 'Retrieve the admin user';
 
-    my $hostid;
     lives_ok {
-        for my $board (@{$boards}) {
-            my $host = Entity::Host->new(
-                active             => 1,
-                host_manager_id    => $physical_hoster->getId,
-                kernel_id          => $kernel->getId,
-                host_serial_number => "123",
-                host_ram           => $board->{ram} * 1024 * 1024,
-                host_core          => $board->{core}
-            );
-
-            for my $nic (@{$board->{nics}}) {
-                my $if_id = $host->addIface(
-                    iface_name     => $nic->{name},
-                    iface_pxe      => $nic->{pxe},
-                    iface_mac_addr => $nic->{mac}
-                );
-
-                if (defined $nic->{master}) {
-	            my $if = Entity::Iface->get(id => $if_id);
-		    $if->setAttr(name => 'master', value => $nic->{master});
-		    $if->save();
-		}
-            }
-
-	    $hostid = $host->id;
+        for my $board (@{ $boards }) {
+            Register->registerHost(board => $board);
         };
     } 'Registering physical hosts';
 
@@ -249,7 +221,7 @@ eval {
                                   },
                                   public => {
                                       interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
-                                          bonds_number        => 2
+                                          bonds_number => 2
                                   },
                               },
                           );
@@ -272,14 +244,16 @@ eval {
 	    foreach my $host (values %$hosts) {
 	        my @ifaces = Entity::Ifaces->search(hash => {host_id => $host->id});
     	    my @simple_ifaces = grep {scalar @{ $_->slaves } == 0 && !$_->master } @ifaces;
-	        my @bonded = grep  {scalar @{ $_->slaves} > 0 || defined $_->master } @ifaces;
+	        my @bonded = grep {scalar @{ $_->slaves } > 0 || defined $_->master } @ifaces;
 	        foreach my $interface (@c_interfaces) {
     		    my @netconfs = $interface->netconfs;
     	    	if (!$interface->bonds_number || $interface->bonds_number == 0) {
-	    	        foreach my $netconf (@netconfs) {
-		    	        NetconfIface->new(netconf_id => $netconf->id,
-			    	                	  iface_id   => $simple_ifaces[0]->id);
-		            }
+                    foreach my $simple_iface (@simple_ifaces) {
+	    	            foreach my $netconf (@netconfs) {
+		    	            NetconfIface->new(netconf_id => $netconf->id,
+			    	                    	  iface_id   => $simple_iface->id);
+		                }
+                    }
     		    }
 	    	    else {
 		            foreach my $bonded (@bonded) {
@@ -292,21 +266,6 @@ eval {
             }
 	    }
     } 'associate netconf to ifaces';
-
-
-    # foreach my $interface (@interfaces) {
-    #     my $name = 'netconf' . $interface->{name};
-    #     my $netconf = Entity::Netconf->create(netconf_name    => $name,
-    #                                           netconf_role_id => $adminnetconf->netconf_role->id);
-    #     my %interface;
-
-    #     $interface{interface_netconf} = $netconf;
-    #     $interface{bonds_number}      = $interface->{bond_nb};
-
-    #     # we attach the interface to the cluster
-    #     $cluster->addNetworkInterface(netconfs     => [ $interface{interface_netconf} ],
-    #                                   bonds_number => $interface{bonds_number});
-    # }
 
     my $fileimagemanager;
     lives_ok {
@@ -331,48 +290,8 @@ eval {
     } 'configuring Opennebula image repository';
 
     Execution->execute(entity => $cluster->start());
-
-    my $startedHost;
-    lives_ok {
-        my $hosts = $cluster->getHosts;
-        $startedHost = $hosts->{$hostid};
-    } 'Retrieve started host';
-    isa_ok($startedHost, "Entity::Host");
-
-    my @ifaces;
-    lives_ok {
-        @ifaces	= $startedHost->ifaces;
-    } 'Retrieve its ifaces';
-
-    my $isThereASlave = 0;
-    for $iface (@ifaces) {
-        isa_ok($iface, "Entity::Iface");
-        if ($iface->slaves ne undef) {
-            $isThereASlave = 1;
-        }
-    }
-    is($isThereASlave, 1);
-
-    # lives_ok {
-    #     $cluster->forceStop;
-    # } 'force stop cluster, ForceStopCluster operation enqueue';
-
-    # lives_ok { $executor->oneRun; } 'ForceStopCluster operation execution succeed';
-
-    # ($state, $timestemp) = $cluster->getState;
-    # cmp_ok ($state, 'eq', 'down', "Cluster is 'down'");
-
-    # lives_ok { $cluster->remove; } 'RemoveCluster operation enqueue';
-    # lives_ok { $executor->oneRun; } 'RemoveCluster operation execution succeed';
-
-    # throws_ok {
-    #     $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster->getId);
-    # } 
-    # 'Kanopya::Exception::DB',
-    # "Cluster with id $cluster_id does not exist anymore";
 };
 if($@) {
     my $error = $@;
     print $error."\n";
 };
-
