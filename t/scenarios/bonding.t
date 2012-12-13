@@ -28,6 +28,7 @@ use_ok ('Entity::Operation');
 use_ok ('Entity::Netconf');
 use_ok ('Entity::Iface');
 use_ok ('Externalnode::Node');
+use Execution;
 
 my $testing = 0;
 my $NB_HYPERVISORS = 1;
@@ -45,13 +46,13 @@ my $boards = [
                 name => "eth1",
                 mac  => "66:77:88:99:00:aa",
                 pxe  => 0,
-		master => 'bond0',
+		        master => 'bond0',
             },
             {
                 name => "eth2",
                 mac  => "66:87:88:99:00:aa",
                 pxe  => 0,
-		master => 'bond0',
+        		master => 'bond0',
             },
             {
                 name => "bond0",
@@ -74,9 +75,6 @@ eval {
     my $adm = Administrator->new;
     my $db = $adm->{db};
     
-    my @args = ();
-    my $executor = new_ok("Executor", \@args, "Instantiate an executor");
-
     if ($testing) {
         $adm->beginTransaction;
     }
@@ -90,10 +88,10 @@ eval {
     my $physical_hoster;
     lives_ok {
         $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
-			       hash => {
+			                   hash => {
                                    cluster_name => 'Kanopya'
-			       }
-			   );
+			                   }
+            			   );
         $physical_hoster = $kanopya_cluster->getHostManager();
     } 'Retrieve the Kanopya cluster';
 
@@ -105,7 +103,7 @@ eval {
         $disk_manager = EEntity->new(
                             entity => $kanopya_cluster->getComponent(name    => 'Lvm',
                                                                      version => 2) 
-			);
+			            );
     };
 
     isa_ok ($disk_manager->_getEntity, 'Manager::DiskManager');
@@ -166,17 +164,17 @@ eval {
     } 'Registering physical hosts';
 
     my $masterimage;
+    my $deploy;
     lives_ok {
-        Entity::Operation->enqueue(
-            priority => 200,
-            type     => 'DeployMasterimage',
-            params   => { file_path => "/vagrant/" . ($ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2"),
-                          keep_file => 1 },
-        );
+        $deploy = Entity::Operation->enqueue(
+                      priority => 200,
+                      type     => 'DeployMasterimage',
+                      params   => { file_path => "/vagrant/" . ($ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2"),
+                                    keep_file => 1 },
+                  );
     } 'Deploy master image';
 
-    lives_ok { $executor->oneRun; } 'DeployMasterImage operation execution succeed';
-    lives_ok { $executor->oneRun; } 'DeployMasterImage operation execution succeed';
+    Execution->execute(entity => $deploy);
 
     lives_ok {
         $masterimage = Entity::Masterimage->find( hash => { } );
@@ -184,82 +182,80 @@ eval {
 
     my $adminnetconf;
     lives_ok {
-	$adminnetconf	= Entity::Netconf->find(hash => {
-	    netconf_name    => "Kanopya admin"
-	});
+    	$adminnetconf	= Entity::Netconf->find(hash => {
+	        netconf_name    => "Kanopya admin"
+	    });
     } 'Retrieve admin NetConf';
 
     isa_ok($adminnetconf, 'Entity::Netconf');
 
     my @iscsi_portal_ids;
     lives_ok {
-	for my $portal (Entity::Component::Iscsi::IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
-	    push @iscsi_portal_ids, $portal->id;
-	}
+	    for my $portal (Entity::Component::Iscsi::IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
+	        push @iscsi_portal_ids, $portal->id;
+    	}
     } 'Retrieve admin network';
 
+    my $cluster_create;
     lives_ok {
-        Entity::ServiceProvider::Inside::Cluster->create(
-            active                 => 1,
-            cluster_name           => "Bondage",
-            cluster_min_node       => "1",
-            cluster_max_node       => "3",
-            cluster_priority       => "100",
-            cluster_si_shared      => 0,
-            cluster_si_persistent  => 1,
-            cluster_domainname     => 'my.domain',
-            cluster_basehostname   => 'one',
-            cluster_nameserver1    => '208.67.222.222',
-            cluster_nameserver2    => '127.0.0.1',
-            kernel_id              => $kernel->id,
-            masterimage_id         => $masterimage->id,
-            user_id                => $admin_user->id,
-            managers               => {
-                host_manager => {
-                    manager_id     => $physical_hoster->id,
-                    manager_type   => "host_manager",
-                    manager_params => {
-                        cpu        => 1,
-                        ram        => 512 * 1024 * 1024,
-                    }
-                },
-                disk_manager => {
-                    manager_id       => $disk_manager->id,
-                    manager_type     => "disk_manager",
-                    manager_params   => {
-                        vg_id            => 1,
-                        systemimage_size => 4 * 1024 * 1024 * 1024
-                    },
-                },
-                export_manager => {
-                    manager_id       => $export_manager->id,
-                    manager_type     => "export_manager",
-                    manager_params   => {
-			iscsi_portals => \@iscsi_portal_ids,
-			# target        => 'dummytarget',
-			# lun           => 0,
-                    }
-                },
-            },
-            components => {
-		opennebula => {
-	            component_type => ComponentType->find(hash => {component_name => 'Opennebula'})->id,
-		},
-	    },
-            interfaces => {
-                admin => {
-                    interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
-                },
-                public => {
-                    interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
-                    bonds_number        => 2
-                },
-            },
-        );
+        $cluster_create = Entity::ServiceProvider::Inside::Cluster->create(
+                              active                 => 1,
+                              cluster_name           => "Bondage",
+                              cluster_min_node       => "1",
+                              cluster_max_node       => "3",
+                              cluster_priority       => "100",
+                              cluster_si_shared      => 0,
+                              cluster_si_persistent  => 1,
+                              cluster_domainname     => 'my.domain',
+                              cluster_basehostname   => 'one',
+                              cluster_nameserver1    => '208.67.222.222',
+                              cluster_nameserver2    => '127.0.0.1',
+                              kernel_id              => $kernel->id,
+                              masterimage_id         => $masterimage->id,
+                              user_id                => $admin_user->id,
+                              managers               => {
+                                  host_manager => {
+                                      manager_id     => $physical_hoster->id,
+                                      manager_type   => "host_manager",
+                                      manager_params => {
+                                          cpu        => 1,
+                                          ram        => 512 * 1024 * 1024,
+                                      }
+                                  },
+                                  disk_manager => {
+                                      manager_id       => $disk_manager->id,
+                                      manager_type     => "disk_manager",
+                                      manager_params   => {
+                                          vg_id            => 1,
+                                          systemimage_size => 4 * 1024 * 1024 * 1024
+                                      },
+                                  },
+                                  export_manager => {
+                                      manager_id       => $export_manager->id,
+                                      manager_type     => "export_manager",
+                                      manager_params   => {
+                                          iscsi_portals => \@iscsi_portal_ids,
+                                      }
+                                  },
+                              },
+                              components => {
+                                  opennebula => {
+                    	              component_type => ComponentType->find(hash => {component_name => 'Opennebula'})->id,
+	                              },
+	                          },
+                              interfaces => {
+                                  admin => {
+                                      interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
+                                  },
+                                  public => {
+                                      interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
+                                          bonds_number        => 2
+                                  },
+                              },
+                          );
     } 'AddCluster operation enqueue';
 
-    lives_ok { $executor->oneRun; } 'AddCluster operation execution succeed';
-    lives_ok { $executor->oneRun; } 'AddCluster operation execution succeed';
+    Execution->execute(entity => $cluster_create); 
 
     my ($cluster, $cluster_id);
     lives_ok {
@@ -271,30 +267,30 @@ eval {
     isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster');     
    
     lives_ok {
-	my @c_interfaces = Entity::Interface->search(hash => {service_provider_id => $cluster->id});
-	my $hosts = $cluster->getHosts;
-	foreach my $host (values %$hosts) {
-	    my @ifaces = Entity::Ifaces->search(hash => {host_id => $host->id});
-	    my @simple_ifaces = grep {scalar @{ $_->slaves } == 0 && !$_->master } @ifaces;
-	    my @bonded = grep  {scalar @{ $_->slaves} > 0 || defined $_->master } @ifaces;
-	    foreach my $interface (@c_interfaces) {
-		my @netconfs = $interface->netconfs;
-		if (!$interface->bonds_number || $interface->bonds_number == 0) {
-		    foreach my $netconf (@netconfs) {
-			NetconfIface->new(netconf_id => $netconf->id,
-					  iface_id   => $simple_ifaces[0]->id);
-		    }
-		}
-		else {
-		    foreach my $bonded (@bonded) {
-			foreach my $netconf (@netconfs) {
-			    NetconfIface->new(netconf_id => $netconf->id,
-			                      iface_id   => $bonded->id);
-			}
-		    }
-		}
+	    my @c_interfaces = Entity::Interface->search(hash => {service_provider_id => $cluster->id});
+    	my $hosts = $cluster->getHosts;
+	    foreach my $host (values %$hosts) {
+	        my @ifaces = Entity::Ifaces->search(hash => {host_id => $host->id});
+    	    my @simple_ifaces = grep {scalar @{ $_->slaves } == 0 && !$_->master } @ifaces;
+	        my @bonded = grep  {scalar @{ $_->slaves} > 0 || defined $_->master } @ifaces;
+	        foreach my $interface (@c_interfaces) {
+    		    my @netconfs = $interface->netconfs;
+    	    	if (!$interface->bonds_number || $interface->bonds_number == 0) {
+	    	        foreach my $netconf (@netconfs) {
+		    	        NetconfIface->new(netconf_id => $netconf->id,
+			    	                	  iface_id   => $simple_ifaces[0]->id);
+		            }
+    		    }
+	    	    else {
+		            foreach my $bonded (@bonded) {
+        	    		foreach my $netconf (@netconfs) {
+		            	    NetconfIface->new(netconf_id => $netconf->id,
+			                                  iface_id   => $bonded->id);
+                		}
+	    	        }
+		        }
             }
-	}
+	    }
     } 'associate netconf to ifaces';
 
 
@@ -325,47 +321,16 @@ eval {
     } 'retrieve Opennebula component';
 
     lives_ok {
-        $opennebula->setConf(conf => {
-            image_repository_path    => "/srv/cloud/images",
-            opennebula3_id           => $opennebula->id,
-#            opennebula3_repositories => [ {
-#                container_access_id  => $nfs->id,
-#                repository_name      => 'image_repo'
-#            } ],
-            hypervisor               => "kvm"
-        } );
+        $opennebula->setConf(
+            conf => {
+                image_repository_path => "/srv/cloud/images",
+                opennebula3_id        => $opennebula->id,
+                hypervisor            => "kvm",
+            }
+        );
     } 'configuring Opennebula image repository';
 
-    lives_ok {
-        $cluster->start();
-    } 'Start cluster, PreStartNode operation enqueue.';
-                            
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-    lives_ok { $executor->oneRun; } 'PreStartNode operation execution succeed';
-
-    my ($state, $timestemp) = $cluster->getState;
-    cmp_ok ($state, 'eq', 'starting', "Cluster is 'starting'");
-
-    lives_ok {
-        my $timeout = 600;
-        my $operation;
-        while ($timeout > 0) {
-            eval {
-                $operation = Entity::Operation->find(hash => {});
-            };
-            if ($@) {
-                last;
-            }
-            else {
-                sleep 5;
-                $timeout -= 5;
-                $executor->oneRun;
-            }
-        }
-    } 'Waiting maximum 600 seconds for the host to start';
+    Execution->execute(entity => $cluster->start());
 
     my $startedHost;
     lives_ok {
