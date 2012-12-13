@@ -1190,7 +1190,7 @@ sub registerKanopyaMaster {
         inside_id             => $admin_cluster->id,
         host_id               => $admin_host->id,
         master_node           => 1,
-        node_state            => "in." . time(),
+        node_state            => "in:" . time(),
         node_number           => 1
     );
 
