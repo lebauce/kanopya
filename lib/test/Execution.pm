@@ -19,7 +19,7 @@
 
 =begin classdoc
 
-Kanopya common test library
+Kanopya module to handle operation and workflow execution 
 
 @since 12/12/12
 @instance hash
@@ -40,7 +40,6 @@ use Test::Pod;
 
 use Kanopya::Exceptions;
 use General;
-use Entity::Workflow;
 use Executor;
 
 my @args = ();
@@ -53,9 +52,6 @@ my $executor = new_ok("Executor", \@args, "Instantiate an executor");
 Manage operation and workflow execution
 Check if all the operations of a workflow have been executed, and if not trigger oneRuns
 
-@param entity an operation or a workflow object
-
-@return boolean
 
 =end classdoc
 
@@ -82,41 +78,29 @@ sub execute {
 
     my $test = 'execute' . $workflow->workflow_name . 'workflow';
 
-
     WORKFLOW:
     while(1) {
-
         lives_ok { $executor->oneRun; } 'executor run';
-
-        my $current;
-        eval {
-            $current = $workflow->getCurrentOperation;
-        };
-        if (!$@) {
-            diag('current operation is: ' . $current);
-        }
-
-        #refresh workflow view
-        $workflow = Entity::Workflow->find(hash => {workflow_id => $workflow->id});
-
         my $state = $workflow->state;
+        my $operation = $workflow->getCurrentOperation;
+        diag('Current operation is ' . $operation->type);
         if($state eq 'running') {
             diag('Workflow ' . $workflow->id . ' running');
             sleep(5);
             next WORKFLOW;
         }
         elsif($state eq 'done') {
-            diag('Workflow ' . $workflow->id . ' done');
+            diag('Workflow ' . $workflow->id . 'done');
             pass($test);
             last WORKFLOW;
         }
         elsif ($state eq 'failed') {
-            diag('Workflow ' . $workflow->id . ' failed');
+            diag('Workflow ' . $workflow->id . 'failed');
             fail($test);
             last WORKFLOW;
         }
         elsif($state eq 'cancelled') {
-            diag('Workflow ' . $workflow->id . ' cancelled');
+            diag('Workflow ' . $workflow->id . 'cancelled');
             fail($test);
             last WORKFLOW;
         }
