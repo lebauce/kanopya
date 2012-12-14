@@ -38,7 +38,10 @@ sub getPolicyDef {
     my $class = ref($self) || $self;
     my %args  = @_;
 
-    General::checkParams(args => \%args, optional => { 'set_mandatory' => 0 });
+    General::checkParams(args     => \%args,
+                         optional => { 'set_mandatory'       => 0,
+                                       'set_editable'        => 1,
+                                       'set_params_editable' => 0 });
 
     %args = %{ $self->mergeValues(values => \%args) };
 
@@ -58,7 +61,6 @@ sub getPolicyDef {
                 relation     => 'single',
                 pattern      => '^\d*$',
                 is_mandatory => 1,
-                is_editable  => 1,
                 reload       => 1,
                 options      => \@hostproviders,
             },
@@ -66,9 +68,8 @@ sub getPolicyDef {
                 label        => "Host type",
                 type         => 'relation',
                 relation     => 'single',
-                is_mandatory => 1,
-                is_editable  => 1,
                 pattern      => '^\d*$',
+                is_mandatory => 1,
                 reload       => 1,
             }
         }
@@ -112,8 +113,26 @@ sub getPolicyDef {
         push @{ $attributes->{displayed} }, $attrname;
     }
 
-    $self->setValues(attributes => $attributes, values => \%args);
+    $self->setValues(attributes          => $attributes,
+                     values              => \%args,
+                     set_mandatory       => delete $args{set_mandatory},
+                     set_editable        => delete $args{set_editable},
+                     set_params_editable => delete $args{set_params_editable});
+
     return $attributes;
+}
+
+sub getNonEditableAttributes {
+    my ($self, %args) = @_;
+
+    my $definition = $self->SUPER::getNonEditableAttributes();
+
+    # Add the host_provider_id as a non editable attr if host_manager_id
+    # defined as as a non editable attr.
+    if (defined $definition->{host_manager_id}) {
+        $definition->{host_provider_id} = 1;
+    }
+    return $definition;
 }
 
 1;

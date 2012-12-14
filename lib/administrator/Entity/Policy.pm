@@ -131,6 +131,95 @@ sub update {
     $self->param_preset->update(params => $pattern, override => 1);
 }
 
+sub getPolicyDef {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    my $attributes = {
+        displayed => [ 'policy_name', 'policy_desc' ]
+    };
+
+    my $json = $class->toJSON(model => 1);
+
+    # Remove the param_preset_id form the json, as
+    # the contents of params preset are added to the json.
+    delete $json->{attributes}->{param_preset_id};
+
+    return $merge->merge($attributes, $json);
+}
+
+sub mergeValues {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'values' ]);
+
+    # Use existing values if defined, but override them with
+    # with values from parameters (LEFT_PRECEDENT).
+    if (ref($self)) {
+        my $existing = $self->getPolicyPattern();
+        # Here we need to manually override the existing list values with
+        # list value from paramters as the merge extends the list contents.
+        for my $attrname (keys %{ $args{values} }) {
+            if (ref($args{values}->{$attrname}) eq 'ARRAY') {
+                $existing->{$attrname} = [];
+            }
+            elsif ("$args{values}->{$attrname}" eq "") {
+                delete $args{values}->{$attrname};
+            }
+        }
+        $args{values} = $merge->merge($args{values}, $existing);
+    }
+    return $args{values};
+}
+
+sub setValues {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'attributes', 'values' ],
+                         optional => { 'set_mandatory'       => 0,
+                                       'set_editable'        => 1,
+                                       'set_params_editable' => 0 });
+
+    # If set_params_editable defined, we must to set non editable all
+    # attributes that come from the policy instance, all others all some parameters
+    # added to the policy definition.
+    my $noneditable = {};
+    if (ref($self) and $args{set_params_editable}) {
+        $noneditable = $self->getNonEditableAttributes(%{ $args{values} });
+    }
+
+    # Set the values
+    for my $attrname (keys %{ $args{attributes}->{attributes} }) {
+        if (defined $args{values}->{$attrname} and "$args{values}->{$attrname}" ne "") {
+            $args{attributes}->{attributes}->{$attrname}->{value} = $args{values}->{$attrname};
+
+            # Set attributes editable in function of parameters
+            if (($args{set_params_editable} and not defined $noneditable->{$attrname}) or
+                $args{set_editable}) {
+                $args{attributes}->{attributes}->{$attrname}->{is_editable} = 1;
+            }
+        }
+        else {
+            $args{attributes}->{attributes}->{$attrname}->{is_editable} = 1;
+        }
+        if ($args{set_mandatory}) {
+            $args{attributes}->{attributes}->{$attrname}->{is_mandatory} = 1;
+        }
+    }
+}
+
+sub getNonEditableAttributes {
+    my ($self, %args) = @_;
+
+    return $self->getPolicyPattern();
+}
+
 sub buildPattern {
     my $self  = shift;
     my $class = ref($self) || $self;
@@ -212,7 +301,7 @@ sub buildPattern {
         }
     }
 
-    $log->debug("Returning configuration pattern for a $args{policy_type} policy:\n" . Dumper(\%pattern));
+    #$log->debug("Returning configuration pattern for a $args{policy_type} policy:\n" . Dumper(\%pattern));
     return \%pattern;
 }
 
@@ -273,56 +362,8 @@ sub getPolicyPattern {
         }
     }
 
-    $log->debug("Returning flattened policy hash:\n" . Dumper($flat_hash));
+    #$log->debug("Returning flattened policy hash:\n" . Dumper($flat_hash));
     return $flat_hash;
-}
-
-sub getPolicyDef {
-    my $self  = shift;
-    my $class = ref($self) || $self;
-    my %args  = @_;
-
-    my $attributes = {
-        displayed => [ 'policy_name', 'policy_desc' ]
-    };
-
-    return $merge->merge($attributes, $class->toJSON(model => 1));
-}
-
-sub setValues {
-    my $self  = shift;
-    my $class = ref($self) || $self;
-    my %args  = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'attributes', 'values' ],
-                         optional => { 'set_mandatory' => 0 });
-
-    # Set the values
-    for my $attrname (keys %{ $args{attributes}->{attributes} }) {
-        if (defined $args{values}->{$attrname}) {
-            $args{attributes}->{attributes}->{$attrname}->{value} = $args{values}->{$attrname};
-        }
-        if ($args{set_mandatory}) {
-            $args{attributes}->{attributes}->{$attrname}->{is_mandatory} = 1;
-        }
-        $args{attributes}->{attributes}->{$attrname}->{is_editable} = 1;
-    }
-}
-
-sub mergeValues {
-    my $self  = shift;
-    my $class = ref($self) || $self;
-    my %args  = @_;
-
-    General::checkParams(args => \%args, required => [ 'values' ]);
-
-    # Use existing values if defined, but override them with 
-    # with values from parameters (LEFT_PRECEDENT).
-    if (ref($self)) {
-        $args{values} = $merge->merge($args{values}, $self->getPolicyPattern());
-    }
-    return $args{values};
 }
 
 sub searchManagers {

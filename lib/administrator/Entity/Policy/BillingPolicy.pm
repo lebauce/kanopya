@@ -38,7 +38,10 @@ sub getPolicyDef {
     my $class = ref($self) || $self;
     my %args  = @_;
 
-    General::checkParams(args => \%args, optional => { 'set_mandatory' => 0 });
+    General::checkParams(args     => \%args,
+                         optional => { 'set_mandatory'       => 0,
+                                       'set_editable'        => 1,
+                                       'set_params_editable' => 0 });
 
     %args = %{ $self->mergeValues(values => \%args) };
 
@@ -126,7 +129,12 @@ sub getPolicyDef {
     # Complete the attributes with common ones
     $attributes = $merge->merge($self->SUPER::getPolicyDef(%args), $attributes);
 
-    $self->setValues(attributes => $attributes, values => \%args);
+    $self->setValues(attributes          => $attributes,
+                     values              => \%args,
+                     set_mandatory       => delete $args{set_mandatory},
+                     set_editable        => delete $args{set_editable},
+                     set_params_editable => delete $args{set_params_editable});
+
     return $attributes;
 }
 
