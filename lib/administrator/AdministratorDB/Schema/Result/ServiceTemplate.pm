@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::ServiceTemplate;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::ServiceTemplate
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<service_template>
 
 =cut
 
@@ -70,6 +90,7 @@ __PACKAGE__->table("service_template");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 1
 
 =head2 billing_policy_id
@@ -129,7 +150,12 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "system_policy_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
   "billing_policy_id",
   {
     data_type => "integer",
@@ -145,9 +171,40 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</service_template_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("service_template_id");
 
 =head1 RELATIONS
+
+=head2 billing_policy
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::BillingPolicy>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "billing_policy",
+  "AdministratorDB::Schema::Result::BillingPolicy",
+  { billing_policy_id => "billing_policy_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
 
 =head2 clusters
 
@@ -162,6 +219,81 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Result::Cluster",
   { "foreign.service_template_id" => "self.service_template_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 hosting_policy
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::HostingPolicy>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "hosting_policy",
+  "AdministratorDB::Schema::Result::HostingPolicy",
+  { hosting_policy_id => "hosting_policy_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 network_policy
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::NetworkPolicy>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "network_policy",
+  "AdministratorDB::Schema::Result::NetworkPolicy",
+  { network_policy_id => "network_policy_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+=head2 orchestration_policy
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::OrchestrationPolicy>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "orchestration_policy",
+  "AdministratorDB::Schema::Result::OrchestrationPolicy",
+  { orchestration_policy_id => "orchestration_policy_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+=head2 scalability_policy
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ScalabilityPolicy>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "scalability_policy",
+  "AdministratorDB::Schema::Result::ScalabilityPolicy",
+  { scalability_policy_id => "scalability_policy_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 service_template
@@ -179,33 +311,18 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 hosting_policy
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Policy>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "hosting_policy",
-  "AdministratorDB::Schema::Result::Policy",
-  { policy_id => "hosting_policy_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
 =head2 storage_policy
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Policy>
+Related object: L<AdministratorDB::Schema::Result::StoragePolicy>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "storage_policy",
-  "AdministratorDB::Schema::Result::Policy",
-  { policy_id => "storage_policy_id" },
+  "AdministratorDB::Schema::Result::StoragePolicy",
+  { storage_policy_id => "storage_policy_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
@@ -214,78 +331,18 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 network_policy
+=head2 system_policy
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Policy>
+Related object: L<AdministratorDB::Schema::Result::SystemPolicy>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "network_policy",
-  "AdministratorDB::Schema::Result::Policy",
-  { policy_id => "network_policy_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
-=head2 scalability_policy
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Policy>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "scalability_policy",
-  "AdministratorDB::Schema::Result::Policy",
-  { policy_id => "scalability_policy_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
-=head2 billing_policy
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Policy>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "billing_policy",
-  "AdministratorDB::Schema::Result::Policy",
-  { policy_id => "billing_policy_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
-=head2 orchestration_policy
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Policy>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "orchestration_policy",
-  "AdministratorDB::Schema::Result::Policy",
-  { policy_id => "orchestration_policy_id" },
+  "system_policy",
+  "AdministratorDB::Schema::Result::SystemPolicy",
+  { system_policy_id => "system_policy_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
@@ -295,8 +352,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-14 15:34:03
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zenaRB3TdZKYaTtnVOfHEw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-12-06 10:18:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:iRGRBesfpZSiTeKWljjgkg
 
 __PACKAGE__->belongs_to(
   "parent",
