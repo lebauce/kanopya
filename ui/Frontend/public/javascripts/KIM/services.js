@@ -81,66 +81,106 @@ function servicesList (container_id, elem_id) {
     });
     
     //$("#services_list").on('gridChange', reloadServices);
-    
-    function createServiceDef () {
-        var service_def = jQuery.extend(true, {}, service);
-
-        for (var policy in policies) {
-            var policy_def = jQuery.extend(true, {}, policies[policy]);
-
-            var step = policy.substring(0, 1).toUpperCase() + policy.substring(1);
-
-            // Add the policy selection input
-            service_def[policy + '_policy_id'] = {
-                label           : step + ' policy',
-                step            : step,
-                type            : 'select',
-                entity          : 'policy',
-                filters         : { policy_type : policy },
-                display         : 'policy_name',
-                values_provider : {
-                    func : 'getFlattenedHash',
-                    args : { },
-                },
-                is_mandatory    : true,
-                pattern         : '^[1-9][0-9]*$',
-                disable_filled  : true,
-            };
-            service_def.service_template_id.fields_provided.push(policy + '_policy_id');
-
-            for (var field in policy_def) {
-                if (field !== 'policy_name' && field !== 'policy_desc') {
-                    policy_def[field].policy           = policy;
-                    policy_def[field].step             = step;
-                    policy_def[field].disable_filled   = true;
-                    policy_def[field].hide_filled      = false;
-                    policy_def[field].handle_mandatory = true;
-
-                    if (! policy_def[field].composite &&  policy_def[field].type != 'hidden') {
-                        policy_def[field].is_mandatory   = true;
-                    }
-
-                    service_def[field] = policy_def[field];
-                }
-            }
-        }
-        return service_def;
-    }
 
     function createAddServiceButton(cid, grid) {
-        var service_opts = {
-            title       : 'Instantiate a service',
-            name        : 'cluster',
-            callback    : function () { $(grid).trigger("reloadGrid"); }
-        };
-
-        var button = $("<button>", { id : 'instantiate_service_button', text : 'Instantiate a service'} ).button({
+        var button = $("<button>", { id : 'instantiate_service_button', text : 'Instantiate a service'}).button({
             icons   : { primary : 'ui-icon-plusthick' }
         });
 
         button.bind('click', function() {
-            service_opts.fields = createServiceDef();
-            new PolicyForm(service_opts).start();
+            // Use the kanopyaformwizard for policies
+            (new KanopyaFormWizard({
+                title         : 'Instantiate a service',
+                type          : 'cluster',
+                reloadable    : true,
+                hide_disabled : true,
+                displayed     : [ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ],
+                rawattrdef    : {
+                    cluster_name : {
+                        label        : 'Service name',
+                        type         : 'string',
+                        pattern      : '^[a-zA-Z_0-9]+$',
+                        is_mandatory : true,
+                        is_editable  : true
+                    },
+                    cluster_desc : {
+                        label        : 'Service description',
+                        type         : 'text',
+                        pattern      : '^.*$',
+                        is_mandatory : false,
+                        is_editable  : true
+                    },
+                    user_id : {
+                        label        : 'Customer',
+                        type         : 'relation',
+                        relation     : 'single',
+                        pattern      : "^[1-9][0-9]+$",
+                        is_mandatory : true,
+                        is_editable  : true
+                    },
+                    service_template_id : {
+                        label        : 'Service type',
+                        type         : 'relation',
+                        relation     : 'single',
+                        reload       : true,
+                        pattern      : "^[1-9][0-9]+$",
+                        welcome      : "Select a service type",
+                        is_mandatory : true,
+                        is_editable  : true
+                    }
+                },
+                attrsCallback : function (resource, data) {
+                    var attributes;
+
+                    // Define the cluster relation hard coded here, to avoid a call
+                    // to the cluster attributes for the relations only
+                    var cluster_relations = {
+                        user : {
+                            resource : "user",
+                            cond     : { "foreign.user_id" : "self.user_id" },
+                            attrs    : { accessor : "single" }
+                        },
+                        service_template : {
+                            resource : "servicetemplate",
+                            cond     : { "foreign.service_template_id" : "self.service_template_id" },
+                            attrs    : { accessor : "single" }
+                        }
+                    };
+
+                    // If the service template defined, fill the from with the service template definition
+                    if (data.service_template_id) {
+                        attributes = ajax('POST', '/api/servicetemplate/getServiceTemplateDef', data);
+
+                        // Delete the service template fields other than policies ids
+                        delete attributes.attributes['service_name'];
+                        delete attributes.attributes['service_desc'];
+
+                    } else {
+                        attributes = { attributes : {}, relations : {} };
+                    }
+                    $.extend(true, attributes.relations, cluster_relations);
+
+                    // Set the value if defined (at reload)
+                    $.each([ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ], function (index, attr) {
+                        if (data[attr] !== undefined) {
+                            if (attributes.attributes[attr] === undefined) {
+                                attributes.attributes[attr] = {};
+                            }
+                            attributes.attributes[attr].value = data[attr];
+                        }
+                    });
+                    return attributes;
+                },
+                optionsCallback : function (name, value, relations) {
+                    if (name === 'user_id') {
+                        return ajax('GET', '/api/user?user_profiles.profile.profile_name=Customer');
+
+                    } else {
+                        return false;
+                    }
+                },
+                callback : function () { $(grid).trigger("reloadGrid"); }
+            })).start();
         });
 
         $('#' + cid).append(button);
