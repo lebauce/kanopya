@@ -317,7 +317,7 @@ sub _matchRam {
 
     General::checkParams(args => \%args, required => [ 'host', 'ram' ]);
 
-   if ($args{host}->host_ram >= $args{ram}) {
+    if ($args{host}->host_ram >= $args{ram}) {
         $log->debug('Cluster ram constraint (' . $args{ram} . ') <= host ram amount (' . $args{host}->host_ram . ')');
         return 1;
     }
