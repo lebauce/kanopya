@@ -147,20 +147,25 @@ also handle the update of relations.
 
 sub update {
     my ($self, %args) = @_;
-    my $hash = \%args;
+
+    my $class = ref($self) || $self;
+    my $hash  = \%args;
 
     # Extract relation for futher handling
     my $relations = extractRelations(hash => $hash);
     delete $hash->{id};
 
     my $updated = 0;
+    my $attrdef = $class->getAttrDefs();
     for my $attr (keys %$hash) {
-        my $currentvalue = $self->getAttr(name => $attr);
-        if ((defined $currentvalue and "$hash->{$attr}" ne "$currentvalue") or
-            (not defined $currentvalue and defined $hash->{$attr})) {
-            $self->setAttr(name => $attr, value => $hash->{$attr});
+        if (not $attrdef->{$attr}->{is_virtual}) {
+            my $currentvalue = $self->getAttr(name => $attr);
+            if ((defined $currentvalue and "$hash->{$attr}" ne "$currentvalue") or
+                (not defined $currentvalue and defined $hash->{$attr})) {
+                $self->setAttr(name => $attr, value => $hash->{$attr});
 
-            if (not $updated) { $updated = 1; }
+                if (not $updated) { $updated = 1; }
+            }
         }
     }
     if ($updated) { $self->save(); }
@@ -435,10 +440,10 @@ sub checkAttr {
     General::checkParams(args => \%args, required => [ 'name' ], optional => {'value' => undef});
 
     my $attributes_def = $class->getAttrDefs();
-    if (exists $attributes_def->{$args{name}} && defined $args{value} &&
-        $args{value} !~ m/($attributes_def->{$args{name}}->{pattern})/) {
+    if (exists $attributes_def->{$args{name}} && (not $attributes_def->{$args{name}}->{is_virtual}) &&
+        defined $args{value} && $args{value} !~ m/($attributes_def->{$args{name}}->{pattern})/) {
 
-        $errmsg = "$class"."->checkAttr detect a wrong value $args{value} for param: $args{name} on class $class";
+        $errmsg = "detect a wrong value <$args{value}> for param <$args{name}> on class <$class>";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -486,15 +491,17 @@ sub checkAttrs {
                 my $pattern = $attributes_def->{$module}->{$attr}->{pattern};
 
                 if (((not defined $value) and $attributes_def->{$module}->{$attr}->{is_mandatory}) or
-                    ((defined $value and defined $pattern) and $value !~ m/($pattern)/)) {
-                    $errmsg = "$class"."->checkAttrs detect a wrong value ($value) for param : $attr on class $module";
+                    ((defined $value and defined $pattern) and $value !~ m/($pattern)/) and
+                    (not $attributes_def->{$args{name}}->{is_virtual})) {
+
+                    $errmsg = "detect a wrong value <$value> for param <$attr> on class <$module>";
                     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
                 }
                 $final_attrs->{$module}->{$attr} = $value;
                 next ATTRLOOP;
             }
         }
-        $errmsg = "$class" . "->checkAttrs detect a wrong attr $attr !";
+        $errmsg = "detect a wrong attr <$attr>";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
@@ -502,8 +509,10 @@ sub checkAttrs {
     # search for non provided mandatory attribute and set primary keys to undef
     foreach my $module (keys %$attributes_def) {
         foreach my $attr (keys(%{$attributes_def->{$module}})) {
-            if (($attributes_def->{$module}->{$attr}->{is_mandatory}) && (! exists $attrs->{$attr})) {
-                $errmsg = "$class" . "->checkAttrs detect a missing attribute $attr (on $module)!";
+            if ((! $attributes_def->{$module}->{$attr}->{is_virtual}) &&
+                ($attributes_def->{$module}->{$attr}->{is_mandatory}) && (! exists $attrs->{$attr})) {
+
+                $errmsg = "detect a missing attribute <$attr> on class <$module>";
                 $log->error($errmsg);
                 throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
             }
