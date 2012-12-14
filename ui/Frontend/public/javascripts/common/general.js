@@ -259,8 +259,8 @@ function ajax(method, route, data, onsuccess, onerror) {
             }
         }
     }
-    //if (data && method === 'POST') {
-    if (data) {
+
+    if (data && ! method === 'GET') {
         opts.data = JSON.stringify(data);
         opts.contentType = 'application/json';
     }
