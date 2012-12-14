@@ -27,6 +27,7 @@ use_ok ('Entity::Iface');
 use_ok ('Externalnode::Node');
 use Execution;
 use Register;
+use Retrieve;
 
 my $testing = 0;
 my $NB_HYPERVISORS = 1;
@@ -80,11 +81,7 @@ eval {
     my $kanopya_cluster;
     my $physical_hoster;
     lives_ok {
-        $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
-			                   hash => {
-                                   cluster_name => 'Kanopya'
-			                   }
-            			   );
+        $kanopya_cluster = Retrieve->retrieveCluster();
         $physical_hoster = $kanopya_cluster->getHostManager();
     } 'Retrieve the Kanopya cluster';
 
@@ -95,7 +92,7 @@ eval {
     lives_ok {
         $disk_manager = EEntity->new(
                             entity => $kanopya_cluster->getComponent(name    => 'Lvm',
-                                                                     version => 2) 
+                                                                     version => 2)
 			            );
     };
 
@@ -221,11 +218,9 @@ eval {
 
     Execution->execute(entity => $cluster_create); 
 
-    my ($cluster, $cluster_id);
+    my $cluster;
     lives_ok {
-        $cluster = Entity::ServiceProvider::Inside::Cluster->find(
-                       hash => { cluster_name => 'Bondage'}
-                   );
+        $cluster = Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
     } 'retrieve Cluster via name';
 
     isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster');     
