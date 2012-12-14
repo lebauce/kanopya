@@ -22,6 +22,15 @@ use strict;
 use warnings;
 
 use Entity::Policy;
+use Entity::Policy::HostingPolicy;
+use Entity::Policy::StoragePolicy;
+use Entity::Policy::NetworkPolicy;
+use Entity::Policy::BillingPolicy;
+use Entity::Policy::SystemPolicy;
+use Entity::Policy::ScalabilityPolicy;
+use Entity::Policy::OrchestrationPolicy;
+
+use Clone qw(clone);
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
@@ -30,55 +39,90 @@ my $log = get_logger("");
 
 use constant ATTR_DEF => {
     service_name => {
+        label        => 'Service name',
+        type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1,
     },
     service_desc => {
+        label        => 'Description',
+        type         => 'text',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
+        is_editable  => 1,
     },
     hosting_policy_id => {
+        label        => 'Hosting policy',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d+$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1,
     },
     storage_policy_id => {
+        label        => 'Storage policy',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1,
     },
     network_policy_id => {
+        label        => 'Network policy',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1,
     },
     scalability_policy_id => {
+        label        => 'Scalability policy',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1,
     },
     system_policy_id => {
+        label        => 'System policy',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1,
     },
     billing_policy_id => {
+        label        => 'Billing policy',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1,
     },
     orchestration_policy_id => {
+        label        => 'Orchestration policy',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0
+        is_mandatory => 1,
+        is_editable  => 1,
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-our $POLICY_TYPES = ['hosting', 'storage', 'network', 'scalability', 'system', 'billing', 'orchestration'];
+sub methods {
+    return {
+        getServiceTemplateDef => {
+            description => 'build the service definition.',
+        },
+    };
+}
+
+my $POLICY_TYPES = [ 'hosting', 'storage', 'network', 'scalability', 'system', 'billing', 'orchestration' ];
+
+my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 
 sub new {
@@ -86,35 +130,126 @@ sub new {
     my %args = @_;
     my $self;
 
-    # Firstly pop the service template atrributes
+    # Firstly pop the service template attributes
+    delete $args{class_type_id};
     my $attrs = {
         service_name => delete $args{service_name},
         service_desc => delete $args{service_desc},
     };
 
-    for my $policy_type (@$POLICY_TYPES) {
-        if (not $args{$policy_type . '_policy_id'}) {
-            my $policy_args = {};
-            my $pattern = $policy_type . '_';
+    # Then extract the policies ids
+    for my $arg (grep /_policy_id/, keys %args) {
+        my $policy = Entity::Policy->get(id => delete $args{$arg});
 
-            for my $arg (grep /$pattern/, keys %args) {
-                $arg =~ s/^$pattern//g;
-                if ($arg eq 'policy_name') {
-                    $args{$pattern . $arg} .= ' (for service "' . $attrs->{service_name} .  '")';
-                }
-                $policy_args->{$arg} = $args{$pattern . $arg};
-            }
-            if (scalar (keys %$policy_args) != 0) {
-                $policy_args->{policy_type} = $policy_type;
+        # Remove param_preset_id from the policy JSON
+        my $json = $policy->toJSON;
+        delete $json->{param_preset_id};
 
-                my $policy = Entity::Policy->new(%$policy_args);
-                $args{$policy_type . '_policy_id'} = $policy->getAttr(name => 'policy_id');
+        # Browse the policy definition and create a derivated policy
+        # if some empty attributes has been filled.
+        my $altered = 0;
+        for my $attrname (keys %{ $policy->getPolicyDef->{attributes} }) {
+            if (defined $args{$attrname} and "$args{$attrname}" ne "$json->{$attrname}" and
+                not $policy->getPolicyDef->{attributes}->{$attrname}->{is_virtual} and
+                ref($args{$attrname}) ne "ARRAY") {
+
+                $json->{$attrname} = $args{$attrname};
+                $altered = 1;
             }
+        };
+        if ($altered) {
+            $json->{policy_name} .= ' (for service "' . $attrs->{service_name} .  '")';
+
+            my $policyclass = 'Entity::Policy::' . ucfirst($json->{policy_type}) . 'Policy';
+            $policy = $policyclass->new(%$json);
         }
-        $attrs->{$policy_type . '_policy_id'} = $args{$policy_type . '_policy_id'};
+
+        $attrs->{$arg} = $policy->id;
+    }
+    return $class->SUPER::new(%$attrs);
+}
+
+sub getServiceTemplateDef {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    my $attributes = clone($class->toJSON(model => 1));
+
+    # Instanciate the service template if the id is defined,
+    # this should occurs at the service instanciation only.
+    my $servicetemplate;
+    if (defined $args{service_template_id}) {
+        $servicetemplate = Entity::ServiceTemplate->get(id => $args{service_template_id});
     }
 
-    return $class->SUPER::new(%$attrs);
+    for my $policy_type (@$POLICY_TYPES) {
+        my $policy_class = 'Entity::Policy::' . ucfirst($policy_type) . 'Policy';
+
+        # For instance, set all all policy types mandatory
+        $attributes->{attributes}->{$policy_type . '_policy_id'}->{is_mandatory} = 1;
+        push @ { $attributes->{displayed} }, $policy_type . '_policy_id';
+
+        # If the service template id is defined, use its policies ids.
+        if (defined $servicetemplate) {
+            my $policy = $servicetemplate->getAttr(name => $policy_type . '_policy');
+            $args{$policy_type . '_policy_id'} = $policy->id;
+
+            # Set the policy id non editable
+            $attributes->{attributes}->{$policy_type . '_policy_id'}->{options} = [ $policy->toJSON() ];
+            $attributes->{attributes}->{$policy_type . '_policy_id'}->{is_editable} = 0;
+        }
+        else {
+            # Add the policy select box for the current policy type with options
+            my @policies;
+            for my $policy ($policy_class->search(hash => {})) {
+                push @policies, $policy->toJSON();
+            }
+            $attributes->{attributes}->{$policy_type . '_policy_id'}->{options} = \@policies;
+            $attributes->{attributes}->{$policy_type . '_policy_id'}->{reload}  = 1;
+
+            # If the value for the policy not defined and the policy is mandatory...
+            if ($attributes->{attributes}->{$policy_type . '_policy_id'}->{is_mandatory} and
+                not defined $args{$policy_type . '_policy_id'} and scalar(@policies)) {
+
+                # ...set the value to the first policy in options
+                $args{$policy_type . '_policy_id'} = $policies[0]->{pk};
+            }
+        }
+
+        # Merge the current policy attrbiutes
+        my $policy_attributes;
+        if (defined $args{$policy_type . '_policy_id'}) {
+            $attributes->{attributes}->{$policy_type . '_policy_id'}->{value} = $args{$policy_type . '_policy_id'};
+
+            # Get the policy defintion from the policy instance if the id is defined
+            my $policy = Entity::Policy->get(id => $args{$policy_type . '_policy_id'});
+            $policy_attributes = $policy->getPolicyDef(
+                                     set_mandatory       => defined $servicetemplate ? 1 : 0,
+                                     set_editable        => 0,
+                                     set_params_editable => 1,
+                                     %args
+                                 );
+        }
+        else {
+            $policy_attributes = $policy_class->getPolicyDef(
+                                     set_mandatory => defined $servicetemplate ? 1 : 0,
+                                     %args
+                                 );
+        }
+
+        # Removed policy_name and policy_desc from the displayed attr list
+        shift @{ $policy_attributes->{displayed} };
+        shift @{ $policy_attributes->{displayed} };
+
+        # Remove the common policy attributes
+        delete $policy_attributes->{attributes}->{policy_type};
+        delete $policy_attributes->{attributes}->{policy_name};
+        delete $policy_attributes->{attributes}->{policy_desc};
+
+        $attributes = $merge->merge($attributes, $policy_attributes);
+    }
+    return $attributes;
 }
 
 sub getPolicies () {
