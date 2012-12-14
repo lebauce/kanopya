@@ -76,31 +76,42 @@ sub execute {
         );
     }
 
-    my $test = 'execute' . $workflow->workflow_name . 'workflow';
+    my $test = 'execute ' . $workflow->workflow_name . ' workflow';
 
     WORKFLOW:
     while(1) {
+
         lives_ok { $executor->oneRun; } 'executor run';
+
+        my $current;
+        eval {
+          $current = $workflow->getCurrentOperation;
+        };
+        if (!$@) {
+            diag('Current operation is ' . $current);
+        }
+
+        #refresh workflow view
+        $workflow = Entity::Workflow->find(hash => {workflow_id => $workflow->id});
+
         my $state = $workflow->state;
-        my $operation = $workflow->getCurrentOperation;
-        diag('Current operation is ' . $operation->type);
         if($state eq 'running') {
             diag('Workflow ' . $workflow->id . ' running');
             sleep(5);
             next WORKFLOW;
         }
         elsif($state eq 'done') {
-            diag('Workflow ' . $workflow->id . 'done');
+            diag('Workflow ' . $workflow->id . ' done');
             pass($test);
             last WORKFLOW;
         }
         elsif ($state eq 'failed') {
-            diag('Workflow ' . $workflow->id . 'failed');
+            diag('Workflow ' . $workflow->id . ' failed');
             fail($test);
             last WORKFLOW;
         }
         elsif($state eq 'cancelled') {
-            diag('Workflow ' . $workflow->id . 'cancelled');
+            diag('Workflow ' . $workflow->id . ' cancelled');
             fail($test);
             last WORKFLOW;
         }

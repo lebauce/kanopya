@@ -19,7 +19,7 @@
 
 =begin classdoc
 
-Kanopya module to handle register actions 
+Kanopya module to handle register actions
 
 @since 13/12/12
 @instance hash
@@ -49,7 +49,7 @@ use Entity::ServiceProvider::Inside::Cluster;
 
 Register an host into kanopya
 
-@param 
+@param board the host parameters (core, ram, and ifaces detail)
 
 @return boolean
 
@@ -80,8 +80,8 @@ sub registerHost {
                    host_core          => $board->{core},
                );
 
-    if (defined $args{ifaces}) {
-        foreach my $iface (@{ $args{ifaces} }) {
+    if (defined $board->{ifaces}) {
+        foreach my $iface (@{ $board->{ifaces} }) {
             my $if_id = $host->addIface(
                             iface_name     => $iface->{name},
                             iface_pxe      => $iface->{pxe},

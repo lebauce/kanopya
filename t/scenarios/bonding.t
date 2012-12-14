@@ -12,15 +12,12 @@ Log::Log4perl->easy_init({
 });
 
 use_ok ('Administrator');
-use_ok ('Executor');
 use_ok ('NetconfVlan');
 use_ok ('Entity::Vlan');
 use_ok ('Entity::ServiceProvider::Inside::Cluster');
 use_ok ('Entity::User');
 use_ok ('Entity::Host');
 use_ok ('Entity::Kernel');
-use_ok ('Entity::Processormodel');
-use_ok ('Entity::Hostmodel');
 use_ok ('Entity::Masterimage');
 use_ok ('Entity::Network');
 use_ok ('Entity::Poolip');
@@ -35,7 +32,7 @@ my $testing = 0;
 my $NB_HYPERVISORS = 1;
 my $boards = [
     {
-        ram    => 2048,
+        ram    => 4,
         core   => 2,
         ifaces => [
             {
@@ -79,11 +76,6 @@ eval {
     if ($testing) {
         $adm->beginTransaction;
     }
-
-    my $hostmodel;
-    lives_ok {
-        $hostmodel = Entity::Hostmodel->find(hash => {});
-    } 'Get an existing host model';
 
     my $kanopya_cluster;
     my $physical_hoster;
@@ -130,7 +122,8 @@ eval {
     } 'Retrieve the admin user';
 
     lives_ok {
-        for my $board (@{ $boards }) {
+        $DB::single = 1;
+        foreach my $board (@{ $boards }) {
             Register->registerHost(board => $board);
         };
     } 'Registering physical hosts';
@@ -191,7 +184,7 @@ eval {
                                       manager_type   => "host_manager",
                                       manager_params => {
                                           cpu        => 1,
-                                          ram        => 512 * 1024 * 1024,
+                                          ram        => 4 * 1024 * 1024,
                                       }
                                   },
                                   disk_manager => {
@@ -256,15 +249,15 @@ eval {
                     }
     		    }
 	    	    else {
-		            foreach my $bonded (@bonded) {
-        	    		foreach my $netconf (@netconfs) {
-		            	    NetconfIface->new(netconf_id => $netconf->id,
-			                                  iface_id   => $bonded->id);
-                		}
-	    	        }
-		        }
+                    foreach my $bonded (@bonded) {
+                        foreach my $netconf (@netconfs) {
+                            NetconfIface->new(netconf_id => $netconf->id,
+                                              iface_id   => $bonded->id);
+                        }
+                    }
+                }
             }
-	    }
+        }
     } 'associate netconf to ifaces';
 
     my $fileimagemanager;
