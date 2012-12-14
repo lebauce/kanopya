@@ -4,6 +4,10 @@ require('jquery/jquery.form.wizard.js');
 require('jquery/jquery.qtip.min.js');
 require('jquery/jquery.multiselect.min.js');
 
+
+var attributes_blacklist = [ 'class_type_id', 'entity_comment_id' ];
+
+
 var KanopyaFormWizard = (function() {
     function KanopyaFormWizard(args) {
         this.handleArgs(args);
@@ -30,14 +34,13 @@ var KanopyaFormWizard = (function() {
         this.form = $("<form>", { method : method, action : action });
 
         // Load the form contents
+        this.tables = {};
         this.load();
     }
 
     KanopyaFormWizard.prototype.load = function() {
-        var table = $("<table>").css('width', 650);
-        this.tables = [ table ];
-
-        this.form.appendTo(this.content).append(table);
+        this.tables[this.type] = $("<table>").css('width', 650);
+        this.form.appendTo(this.content).append(this.tables[this.type]);
 
         this.attributedefs = {};
 
@@ -51,20 +54,21 @@ var KanopyaFormWizard = (function() {
         var relations  = response.relations;
 
         // Displayed attr list can be overriden by the type attributes contents
+        var displayed = $.merge([], this.displayed);
         if (response.displayed) {
-            this.displayed = response.displayed;
+            $.merge(displayed, response.displayed);
         }
 
-        // Extract displayed 1-n relations from the displyed attr list
-        var displayed = [];
-        for (var index in this.displayed) {
-            if ($.isPlainObject(this.displayed[index])) {
-                $.extend(true, this.relations, this.displayed[index]);
+        // Extract displayed 1-n relations from the displayed attr list
+        var displayed_no_relations = [];
+        for (var index in displayed) {
+            if ($.isPlainObject(displayed[index])) {
+                $.extend(true, this.relations, displayed[index]);
             } else {
-                displayed.push(this.displayed[index]);
+                displayed_no_relations.push(displayed[index]);
             }
         }
-        this.displayed = displayed;
+        displayed = displayed_no_relations;
 
         // Firstly merge the attrdef with possible raw attrdef given in params
         jQuery.extend(true, attributes, this.rawattrdef);
@@ -76,7 +80,7 @@ var KanopyaFormWizard = (function() {
         }
 
         // Build the form section corresponding to the object/class attributes
-        this.buildFromAttrDef(attributes, this.displayed, values, relations);
+        this.buildFromAttrDef(attributes, displayed, values, relations);
 
         // For each relation 1-N, list all entries, add input to create an entry
         for (relation_name in this.relations) if (this.relations.hasOwnProperty(relation_name)) {
@@ -124,7 +128,9 @@ var KanopyaFormWizard = (function() {
                 var add_button = $("<input>", { text : 'Add', class : 'wizard-ignore', type: 'button', id: 'add_button_' + relation_name });
                 var add_button_line = $("<tr>").css('position', 'relative');
                 $("<td>", { colspan : 2 }).append(add_button).appendTo(add_button_line);
-                this.findTable(this.attributedefs[relation_name].label || relation_name, this.attributedefs[relation_name].step).append(add_button_line);
+
+                var tag = this.attributedefs[relation_name].label || relation_name;
+                this.findTable(tag, this.attributedefs[relation_name].step).append(add_button_line);
 
                 var _this = this;
                 var fixed_params = {
@@ -142,10 +148,12 @@ var KanopyaFormWizard = (function() {
                 add_button.val('Add');
             }
 
+            // Check if values are specified in the relation attribute def
+            var entries = this.attributedefs[relation_name].value || values[relation_name];
+
             // For each relation entries, add filled inputs in one line
-            for (var entry in values[relation_name]) {
-                this.buildFromAttrDef(rel_attributedefs, this.relations[relation_name],
-                                      values[relation_name][entry], rel_relationdefs,
+            for (var entry in entries) {
+                this.buildFromAttrDef(rel_attributedefs, this.relations[relation_name], entries[entry], rel_relationdefs,
                                       this.attributedefs[relation_name].label || relation_name);
             }
         }
@@ -193,17 +201,26 @@ var KanopyaFormWizard = (function() {
 
         // For each attributes, add an input to the form
         for (var name in ordered_attributes) if (ordered_attributes.hasOwnProperty(name)) {
-            var value = this.attributedefs[name].value || values[name] || undefined;
+            /*
+             * Do not insert inputs for:
+             * - single_multi relations as they are displayed in a separate listing,
+             * - virtual attributes as we can not set a value on,
+             * - blacklisted attributes.
+             */
+            if (!(this.attributedefs[name].is_virtual || $.inArray(name, attributes_blacklist) >= 0) &&
+                !(this.attributedefs[name].type === 'relation' && this.attributedefs[name].relation === "single_multi")) {
+                var value = this.attributedefs[name].value || values[name] || undefined;
 
-            // Get options for select inputs
-            if (this.attributedefs[name].type === 'relation' &&
-                (this.attributedefs[name].options === undefined || this.attributedefs[name].reload_options == true) &&
-                (this.attributedefs[name].relation === 'single' || this.attributedefs[name].relation === 'multi')) {
-                this.attributedefs[name].options = this.getOptions(name, value, relations);
+                // Get options for select inputs
+                if (this.attributedefs[name].type === 'relation' &&
+                    (this.attributedefs[name].options === undefined || this.attributedefs[name].reload_options == true) &&
+                    (this.attributedefs[name].relation === 'single' || this.attributedefs[name].relation === 'multi')) {
+                    this.attributedefs[name].options = this.getOptions(name, value, relations);
+                }
+
+                // Finally create the input field with label
+                this.newFormInput(name, value, listing);
             }
-
-            // Finally create the input field with label
-            this.newFormInput(name, value, listing);
         }
 
         if ($(this.content).height() > $(window).innerHeight() - 200) {
@@ -214,11 +231,11 @@ var KanopyaFormWizard = (function() {
 
         // Use jQuery.mutiselect (after DOM loading)
         this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
-        this.content.find('select[multiple!="multiple"]').not('.wizard-ignore').multiselect({
-            multiple: false,
-            header: false,
-            selectedList: 1
-        });
+//        this.content.find('select[multiple!="multiple"]').not('.wizard-ignore').multiselect({
+//            multiple: false,
+//            header: false,
+//            selectedList: 1
+//        });
     };
 
     KanopyaFormWizard.prototype.getOptions = function(name, value, relations) {
@@ -278,7 +295,7 @@ var KanopyaFormWizard = (function() {
 
         // Handle text fields
         if (toInputType(attr.type) === 'textarea') {
-            input = $("<textarea>", { class : 'ui-corner-all ui-widget-content' });
+            input = $("<textarea>"); //{ class : 'ui-corner-all ui-widget-content' });
 
         // Handle select fields
         } else if (toInputType(attr.type) === 'select') {
@@ -291,6 +308,15 @@ var KanopyaFormWizard = (function() {
 
             // Get link_to attribute PK name for relation
             var link_to_attribute_pk_name = this.attributedefs[name].link_to + '_id';
+
+            // Check if a welcome value is defined
+            if (attr.welcome && $.isEmptyObject(this.data)) {
+                attr.options.unshift({ pk : -1, label : attr.welcome });
+                $(input).bind('change.welcome', function (event) {
+                    $(this).find("option:first").remove();
+                    $(this).unbind('change.welcome');
+                });
+            }
 
             // Inserting select options
             for (var i in attr.options) if (attr.options.hasOwnProperty(i)) {
@@ -310,7 +336,7 @@ var KanopyaFormWizard = (function() {
         // Handle other field types
         } else {
             input = $("<input>", { type : attr.type ? toInputType(attr.type) : 'text',
-                                   class : 'ui-corner-all ui-widget-content', width: width - 1, height: 18 });
+                                   /*class : 'ui-corner-all ui-widget-content',*/ width: width - 1, height: 18 });
         }
 
         // Set the input attributes
@@ -324,7 +350,7 @@ var KanopyaFormWizard = (function() {
                 this.validateRules[name].required = true;
             }
 
-        } else if (toInputType(attr.type) === 'select' && attr.relation === 'single') {
+        } else if ((toInputType(attr.type) === 'select' && attr.relation === 'single') || attr.type === 'enum') {
             var option = $("<option>", { value : '', text : '-' }).prependTo(input);
             if (value === undefined) {
                 $(option).attr('selected', 'selected');
@@ -354,6 +380,16 @@ var KanopyaFormWizard = (function() {
             }
         }
 
+        // Disable the field if required
+        if (this.mustDisableField(name, value) === true) {
+            $(input).attr('disabled', 'disabled');
+
+            // If the hide_disabled option set, hide the input
+            if (this.hide_disabled) {
+                attr.hidden = true;
+            }
+        }
+
         /* Set the field as hidden if defined.
          * Be carefull to not move this block before the previous
          * tests on the input type, has we change the type to hidden.
@@ -365,17 +401,12 @@ var KanopyaFormWizard = (function() {
         // Finally, insert DOM elements in the form
         this.insertInput(input, label, this.findTable(listing, attr.step), attr.help || attr.description, listing);
 
-        // Disable the field if required
-        if (this.mustDisableField(name) === true) {
-            $(input).attr('disabled', 'disabled');
-        }
-
         if ($(input).attr('type') === 'date') {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
         }
 
         // Set reload callback on onChange event if required
-        if (attr.reload) {
+        if (attr.reload && this.reloadable) {
             input.bind('change', $.proxy(this.reload, this));
         }
 
@@ -414,7 +445,7 @@ var KanopyaFormWizard = (function() {
                 }
             }
 
-            // TODO: Get the real lenght of the unit select box.
+            // TODO: Get the real length of the unit select box.
             if (unit_input) {
                 unit_input.addClass('wizard-ignore');
                 $(input).width($(input).width() - 50);
@@ -576,20 +607,27 @@ var KanopyaFormWizard = (function() {
         this.data = this.serialize($(this.form).serializeArray());
 
         // Remove table of the current step
-        $.each(this.tables, function (index, table) {
-            table.remove();
-        });
+        for (var table in this.tables) {
+            if (this.tables[table].parent().is('fieldset')) {
+                this.tables[table].parent().remove();
+            }
+            this.tables[table].remove();
+        }
+        this.tables = {};
 
         // Then reload the from
         this.load();
     }
 
-    KanopyaFormWizard.prototype.mustDisableField = function(name) {
+    KanopyaFormWizard.prototype.mustDisableField = function(name, value) {
         if (this.attributedefs[name].disabled == true) {
             return true;
         }
         if ($(this.form).attr('method').toUpperCase() === 'PUT' && this.attributedefs[name].is_editable != true &&
             !(this.attributedefs[name].is_primary == true && this.attributedefs[name].belongs_to != undefined)) {
+            return true;
+        }
+        if (this.attributedefs[name].is_editable != true && value !== undefined){
             return true;
         }
         if (this.attributedefs[name].belongs_to &&
@@ -721,7 +759,7 @@ var KanopyaFormWizard = (function() {
         jQuery.extend(relations, multi_relations);
 
         // For each relation 1-N, use expand to get related entries with object values
-        if (relations && !$.isEmptyObject(relations)) {
+        if (relations && ! $.isEmptyObject(relations)) {
             var expands = [];
             for (relation in relations) if (relations.hasOwnProperty(relation)) {
                 expands.push(relation);
@@ -741,8 +779,8 @@ var KanopyaFormWizard = (function() {
         return values;
     }
 
-    KanopyaFormWizard.prototype.getAttributes = function(resource) {
-        return ajax('GET', '/api/attributes/' + resource);
+    KanopyaFormWizard.prototype.getAttributes = function(resource, data) {
+        return ajax('GET', '/api/attributes/' + resource, data);
     }
 
     KanopyaFormWizard.prototype.findTable = function(tag, step) {
@@ -769,7 +807,7 @@ var KanopyaFormWizard = (function() {
             return table;
 
         } else {
-            return this.tables[0];
+            return this.tables[this.type];
         }
     }
 
@@ -795,6 +833,8 @@ var KanopyaFormWizard = (function() {
         this.callback        = args.callback        || $.noop;
         this.title           = args.title           || this.name;
         this.skippable       = args.skippable       || false;
+        this.reloadable      = args.reloadable      || false;
+        this.hide_disabled   = args.hide_disabled   || false;
         this.submitCallback  = args.submitCallback  || this.submit;
         this.valuesCallback  = args.valuesCallback  || this.getValues;
         this.attrsCallback   = args.attrsCallback   || this.getAttributes;
@@ -814,6 +854,8 @@ var KanopyaFormWizard = (function() {
             callback        : this.callback,
             title           : this.title,
             skippable       : this.skippable,
+            reloadable      : this.reloadable,
+            hide_disabled   : this.hide_disabled,
             submitCallback  : this.submitCallback,
             valuesCallback  : this.valuesCallback,
             attrsCallback   : this.attrsCallback,
