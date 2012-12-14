@@ -102,14 +102,22 @@ sub _matchHostConstraints {
     my $host = $args{host};
 
     if (defined $args{ram}) {
-        $self->_matchRam(host => $args{host}, ram => $args{ram});
+        if (not $self->_matchRam(host => $args{host}, ram => $args{ram})) {
+            return 0;
+        }
     }
     if (defined $args{core}) {
-        $self->_matchCore(host => $args{host}, core => $args{core});
+        if (not $self->_matchCore(host => $args{host}, core => $args{core})) {
+            return 0;
+        }
     }
     if (defined $args{interfaces}) {
-        $self->_matchIfaceNumber(host => $args{host}, interfaces => $args{interfaces});
-        $self->_matchIfaceNetconf(host => $args{host}, interfaces => $args{interfaces}); 
+        if (not $self->_matchIfaceNumber(host => $args{host}, interfaces => $args{interfaces})) {
+            return 0;
+        }
+        if (not $self->_matchIfaceNetconf(host => $args{host}, interfaces => $args{interfaces})) {
+            return 0;
+        }
     }
 
     return 1;
@@ -227,6 +235,8 @@ sub _matchIfaceNetconf {
             }
         }
     }
+
+    return 1;
 }
 
 =pod
@@ -284,6 +294,7 @@ sub _matchIfaceNumber {
         return 0;
     }
 
+    return 1;
 }
 
 =pod
@@ -307,11 +318,11 @@ sub _matchRam {
     General::checkParams(args => \%args, required => [ 'host', 'ram' ]);
 
     if ($args{host}->host_ram >= $args{ram}) {
-        $log->debug("Cluster ram constraint ($args{ram}) <= host ram amount ($args{host}->host_ram)");
+        $log->debug('Cluster ram constraint (' . $args{ram} . ') <= host ram amount (' . $args{host}->host_ram . ')');
         return 1;
     }
     else {
-        $log->debug("Cluster ram constraint ($args{ram}) >= host ram amount ($args{host}->host_ram)");
+        $log->debug('Cluster ram constraint (' . $args{ram} . ') >= host ram amount (' . $args{host}->host_ram . ')');
         return 0;
     }
 }
@@ -337,11 +348,11 @@ sub _matchCore {
     General::checkParams(args => \%args, required => [ 'host', 'core' ]);
 
     if ($args{host}->host_core >= $args{core}) {
-        $log->debug("Cluster core constraint ($args{core}) =< host cores number ($args{host}->host_core)");
+        $log->debug('Cluster core constraint (' . $args{core} . ') <= host cores number (' . $args{host}->host_core . ')');
         return 1;
     }
     else {
-        $log->debug("Cluster core constraint ($args{core}) >= host cores number ($args{host}->host_core)");
+        $log->debug('Cluster core constraint (' . $args{core} . ') >= host cores number (' . $args{host}->host_core . ')');
         return 0;
     }
 }

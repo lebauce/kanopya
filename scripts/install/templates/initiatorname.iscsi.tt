@@ -4,4 +4,4 @@
 ## If you change the InitiatorName, existing access control lists
 ## may reject this initiator.  The InitiatorName must be unique
 ## for each iSCSI initiator.  Do NOT duplicate iSCSI InitiatorNames.
-InitiatorName=[% initiatorname %]
+InitiatorName=[% kanopya_initiator %]

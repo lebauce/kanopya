@@ -120,6 +120,7 @@ sub addNode {
     $host_manager_params->{interfaces} = \@interfaces;
 
     my $ehost_manager = EEntity->new(entity => $host_manager);
+
     my $host = $ehost_manager->getFreeHost(%$host_manager_params);
 
     $log->debug("Host manager <" . $host_manager->id . "> returned free host <$host>");

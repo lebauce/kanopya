@@ -628,4 +628,12 @@ __PACKAGE__->belongs_to(
   { entity_id => "component_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
+
+__PACKAGE__->has_many(
+  "vmms",
+  "AdministratorDB::Schema::Result::Vmm",
+  { "foreign.iaas_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 1;
