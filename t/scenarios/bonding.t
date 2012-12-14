@@ -122,7 +122,6 @@ eval {
     } 'Retrieve the admin user';
 
     lives_ok {
-        $DB::single = 1;
         foreach my $board (@{ $boards }) {
             Register->registerHost(board => $board);
         };

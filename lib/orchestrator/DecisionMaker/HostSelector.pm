@@ -235,6 +235,8 @@ sub _matchIfaceNetconf {
             }
         }
     }
+
+    return 1;
 }
 
 =pod
@@ -292,6 +294,7 @@ sub _matchIfaceNumber {
         return 0;
     }
 
+    return 1;
 }
 
 =pod
