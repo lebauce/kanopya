@@ -169,6 +169,12 @@ sub setAttr {
     $self->SUPER::setAttr(%args);
 }
 
+sub label {
+    my ($self, %args) = @_;
+
+    return $self->user_firstname . ' ' . $self->user_lastname . ' (' . $self->user_login . ')';
+}
+
 =head2 consumeQuota
 
     Consume any resource type in the user quota.
