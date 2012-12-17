@@ -1447,6 +1447,24 @@ sub populate_workflow_def {
     );
     my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
     $hypervisor_resubmit_wf->addStep( operationtype_id => $resubmit_hypervisor_op_id);
+
+    my $notify_wf_node      = $kanopya_wf_manager->createWorkflow(
+        workflow_name   => 'NotifyWorkflow Scope',
+        params          => {
+            internal    => {
+                scope_id    => 1
+            }
+        }
+    );
+
+    my $notify_wf_service   = $kanopya_wf_manager->createWorkflow(
+        workflow_name   => 'NotifyWorkflow Service',
+        params          => {
+            internal    => {
+                scope_id    => 2
+            }
+        }
+    );
 }
 
 sub populate_policies {
