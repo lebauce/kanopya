@@ -24,11 +24,12 @@ Logical formula of node metric conditions
 
 =cut
 
-package Entity::NodemetricRule;
+package Entity::Rule::NodemetricRule;
+use base 'Entity::Rule';
 
 use strict;
 use warnings;
-use base 'Entity';
+
 use Data::Dumper;
 use Externalnode;
 use Entity::NodemetricCondition;

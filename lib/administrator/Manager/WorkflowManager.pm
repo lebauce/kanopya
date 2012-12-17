@@ -30,8 +30,8 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 use Data::Dumper;
 
-use Entity::AggregateRule;
-use Entity::NodemetricRule;
+use Entity::Rule::AggregateRule;
+use Entity::Rule::NodemetricRule;
 use Entity::WorkflowDef;
 use WorkflowDefManager;
 use ParamPreset;
@@ -295,12 +295,12 @@ sub _linkWorkflowToRule {
     my $scope_name = $scope->getAttr(name => 'scope_name');
 
     if ($scope_name eq 'node') {
-        $rule = Entity::NodemetricRule->find (hash => {nodemetric_rule_id => $rule_id});
+        $rule = Entity::Rule::NodemetricRule->find (hash => {nodemetric_rule_id => $rule_id});
         $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
         $rule->save();
 
     } elsif ($scope_name eq 'service_provider') {
-        $rule = Entity::AggregateRule->find(hash => {aggregate_rule_id => $rule_id});
+        $rule = Entity::Rule::AggregateRule->find(hash => {aggregate_rule_id => $rule_id});
         $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
         $rule->save();
     }

@@ -18,7 +18,7 @@ use base 'BaseDB';
 
 use strict;
 use warnings;
-use Entity::NodemetricRule;
+use Entity::Rule::NodemetricRule;
 use Entity::Workflow;
 
 use Log::Log4perl "get_logger";

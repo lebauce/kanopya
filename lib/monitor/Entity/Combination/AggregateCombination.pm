@@ -19,7 +19,7 @@
 Mathematical formula of cluster metrics.
 
 @see <package>Entity::Clustermetric</package>
-@see <package>Entity::AggregateRule</package>
+@see <package>Entity::Rule::AggregateRule</package>
 
 =end classdoc
 

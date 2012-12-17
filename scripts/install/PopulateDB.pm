@@ -184,9 +184,9 @@ my @classes = (
     'Entity::Combination::ConstantCombination',
     'Entity::Combination::AggregateCombination',
     'Entity::AggregateCondition',
-    'Entity::AggregateRule',
+    'Entity::Rule::AggregateRule',
     'Entity::NodemetricCondition',
-    'Entity::NodemetricRule',
+    'Entity::Rule::NodemetricRule',
     'Entity::WorkflowDef',
     'Entity::Component::Apache2::Apache2Virtualhost',
     'Entity::Component::Linux::LinuxMount',
@@ -197,7 +197,8 @@ my @classes = (
     'Entity::Component::Iscsi::IscsiPortal',
     'Entity::Component::Vmm',
     'Entity::Component::Vmm::Kvm',
-    'Entity::Component::Vmm::Xen'
+    'Entity::Component::Vmm::Xen',
+    'Entity::Rule',
 );
 
 sub registerClassTypes {
@@ -1451,18 +1452,22 @@ sub populate_workflow_def {
     my $notify_wf_node      = $kanopya_wf_manager->createWorkflow(
         workflow_name   => 'NotifyWorkflow Scope',
         params          => {
-            internal    => {
+            internal   => {
                 scope_id    => 1
-            }
+            },
+            automatic  => { },
+            specific   => { }
         }
     );
 
     my $notify_wf_service   = $kanopya_wf_manager->createWorkflow(
         workflow_name   => 'NotifyWorkflow Service',
         params          => {
-            internal    => {
+            internal   => {
                 scope_id    => 2
-            }
+            },
+            automatic  => { },
+            specific   => { }
         }
     );
 }

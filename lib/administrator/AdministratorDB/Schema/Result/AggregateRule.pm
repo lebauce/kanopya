@@ -235,8 +235,8 @@ __PACKAGE__->belongs_to(
 
  __PACKAGE__->belongs_to(
    "parent",
-     "AdministratorDB::Schema::Result::Entity",
-         { "foreign.entity_id" => "self.aggregate_rule_id" },
+     "AdministratorDB::Schema::Result::Rule",
+         { "foreign.rule_id" => "self.aggregate_rule_id" },
              { cascade_copy => 0, cascade_delete => 1 }
  );
 

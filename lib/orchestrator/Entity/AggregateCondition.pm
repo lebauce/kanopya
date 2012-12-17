@@ -31,7 +31,7 @@ use strict;
 use warnings;
 use TimeData::RRDTimeData;
 use Entity::Combination::AggregateCombination;
-require 'Entity/AggregateRule.pm';
+require 'Entity/Rule/AggregateRule.pm';
 use base 'Entity';
 use Data::Dumper;
 # logger
@@ -206,7 +206,7 @@ sub eval{
 
 sub getDependentRules {
     my $self = shift;
-    my @rules_from_same_service = Entity::AggregateRule->search(
+    my @rules_from_same_service = Entity::Rule::AggregateRule->search(
                                       hash => {
                                           aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id
                                       }
@@ -241,7 +241,7 @@ sub getDependencies {
 
 sub delete {
     my $self = shift;
-    my @rules_from_same_service = Entity::AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
+    my @rules_from_same_service = Entity::Rule::AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
 
     my $id = $self->getId;
     LOOP:

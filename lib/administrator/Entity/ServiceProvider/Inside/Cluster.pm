@@ -1236,7 +1236,7 @@ sub generateOverLoadNodemetricRules {
             nodemetric_rule_state               => 'enabled',
             nodemetric_rule_service_provider_id => $service_provider_id,
         };
-        Entity::NodemetricRule->new(%$prule);
+        Entity::Rule::NodemetricRule->new(%$prule);
     }
 }
 

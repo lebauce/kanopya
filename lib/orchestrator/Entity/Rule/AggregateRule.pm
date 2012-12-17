@@ -24,12 +24,13 @@ Logical formula of aggregate conditions
 
 =cut
 
-package Entity::AggregateRule;
+package Entity::Rule::AggregateRule;
+use base 'Entity::Rule';
 
 use strict;
 use warnings;
+
 use TimeData::RRDTimeData;
-use base 'Entity';
 use Entity::AggregateCondition;
 use Data::Dumper;
 use Switch;
