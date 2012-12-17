@@ -24,11 +24,26 @@ use warnings;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
+use Clone qw(clone);
+
 my $log = get_logger("");
 
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+use constant POLICY_ATTR_DEF => {
+    host_manager_id => {
+        label        => "Host type",
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        reload       => 1,
+    },
+};
+
+sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
 
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
@@ -52,27 +67,24 @@ sub getPolicyDef {
     }
     my @hostproviders = values $providers;
 
+    my $policy_attrdef = clone($class->getPolicyAttrDef);
+
+    # Manually add the host_provider_id attr because it is not an
+    # attribute in the policy pattern
+    $policy_attrdef->{host_provider_id} = {
+        label        => 'Host provider',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        reload       => 1,
+    };
+
+    $policy_attrdef->{host_provider_id}->{options} = \@hostproviders;
+
     my $attributes = {
         displayed  => [ 'host_provider_id', 'host_manager_id' ],
-        attributes =>  {
-            host_provider_id => {
-                label        => 'Host provider',
-                type         => 'relation',
-                relation     => 'single',
-                pattern      => '^\d*$',
-                is_mandatory => 1,
-                reload       => 1,
-                options      => \@hostproviders,
-            },
-            host_manager_id => {
-                label        => "Host type",
-                type         => 'relation',
-                relation     => 'single',
-                pattern      => '^\d*$',
-                is_mandatory => 1,
-                reload       => 1,
-            }
-        }
+        attributes => $policy_attrdef,
     };
 
     # Complete the attributes with common ones

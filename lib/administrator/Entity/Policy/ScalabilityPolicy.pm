@@ -24,11 +24,33 @@ use warnings;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
+use Clone qw(clone);
+
 my $log = get_logger("");
 
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+use constant POLICY_ATTR_DEF => {
+    cluster_min_node => {
+        label    => 'Minimum node number',
+        type     => 'integer',
+        pattern  => '^[1-9][0-9]*$',
+    },
+    cluster_max_node => {
+        label    => 'Maximum node number',
+        type     => 'integer',
+        pattern  => '^[1-9][0-9]*$',
+    },
+    cluster_priority => {
+        label    => 'Cluster priority',
+        type     => 'integer',
+        pattern  => '^[1-9][0-9]*$',
+    },
+};
+
+sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
 
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
@@ -45,25 +67,10 @@ sub getPolicyDef {
 
     %args = %{ $self->mergeValues(values => \%args) };
 
+    my $policy_attrdef = clone($class->getPolicyAttrDef);
     my $attributes = {
         displayed  => [ 'cluster_min_node', 'cluster_max_node', 'cluster_priority' ],
-        attributes =>  {
-            cluster_min_node => {
-                label    => 'Minimum node number',
-                type     => 'integer',
-                pattern  => '^[1-9][0-9]*$',
-            },
-            cluster_max_node => {
-                label    => 'Maximum node number',
-                type     => 'integer',
-                pattern  => '^[1-9][0-9]*$',
-            },
-            cluster_priority => {
-                label    => 'Cluster priority',
-                type     => 'integer',
-                pattern  => '^[1-9][0-9]*$',
-            },
-        }
+        attributes => $policy_attrdef,
     };
 
     # Complete the attributes with common ones

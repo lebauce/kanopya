@@ -30,5 +30,24 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+use constant POLICY_ATTR_DEF => {};
+
+sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
+
+
+sub getPatternFromParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'params' ]);
+
+    my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
+
+    if (defined $args{params}->{orchestration_service_provider_id}) {
+        $pattern->{orchestration}->{service_provider_id} = delete $args{params}->{orchestration_service_provider_id};
+    }
+    return $pattern;
+}
+
 1;
 

@@ -24,11 +24,64 @@ use warnings;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
+use Clone qw(clone);
+
 my $log = get_logger("");
 
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+use constant POLICY_ATTR_DEF => {
+    masterimage_id => {
+        label    => 'Master image',
+        type     => 'relation',
+        relation => 'single',
+        pattern  => '^\d*$',
+    },
+    kernel_id => {
+        label   => 'Kernel',
+        type     => 'relation',
+        relation => 'single',
+        pattern  => '^\d*$',
+    },
+    cluster_si_shared => {
+        label   => 'System image shared',
+        type    => 'boolean',
+    },
+    cluster_si_persistent => {
+        label   => 'Persistent system images',
+        type    => 'boolean',
+    },
+    cluster_basehostname => {
+        label   => 'Cluster base hostname',
+        type    => 'string',
+        pattern => '^[a-z_0-9]+$',
+    },
+    components => {
+        label       => 'Components',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1,
+        attributes  => {
+            attributes => {
+                policy_id => {
+                    type     => 'relation',
+                    relation => 'single',
+                },
+                component_type => {
+                    label       => 'Component type',
+                    type        => 'relation',
+                    relation    => 'single',
+                    pattern     => '^\d*$',
+                    is_editable => 1
+                },
+            }
+        }
+    },
+};
+
+sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
 
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
@@ -58,69 +111,25 @@ sub getPolicyDef {
         push @componenttypes, $componenttype->toJSON();
     }
 
+    my $policy_attrdef = clone($class->getPolicyAttrDef);
+
+    # Manually add the systemimage_size attr because it is a manager param
+    $policy_attrdef->{systemimage_size} = {
+        label   => 'System image size',
+        type    => 'integer',
+        unit    => 'byte',
+        pattern => '^\d*$',
+    };
+
+    $policy_attrdef->{kernel_id}->{options} = \@kernels;
+    $policy_attrdef->{masterimage_id}->{options} = \@masterimages;
+    $policy_attrdef->{components}->{attributes}->{attributes}->{component_type}->{options} = \@componenttypes;
+
     my $attributes = {
-        displayed  => [
-            'masterimage_id', 'kernel_id', 'systemimage_size', 'cluster_si_shared',
-            'cluster_si_persistent', 'cluster_basehostname'
-        ],
-        attributes =>  {
-            masterimage_id => {
-                label    => 'Master image',
-                type     => 'relation',
-                relation => 'single',
-                pattern  => '^\d*$',
-                options  => \@masterimages,
-            },
-            kernel_id => {
-                label   => 'Kernel',
-                type     => 'relation',
-                relation => 'single',
-                pattern  => '^\d*$',
-                options  => \@kernels,
-            },
-            systemimage_size => {
-                label   => 'System image size',
-                type    => 'integer',
-                unit    => 'byte',
-                pattern => '^\d*$',
-            },
-            cluster_si_shared => {
-                label   => 'System image shared',
-                type    => 'boolean',
-            },
-            cluster_si_persistent => {
-                label   => 'Persistent system images',
-                type    => 'boolean',
-            },
-            cluster_basehostname => {
-                label   => 'Cluster base hostname',
-                type    => 'string',
-                pattern => '^[a-z_0-9]+$',
-            },
-            components => {
-                label       => 'Components',
-                type        => 'relation',
-                relation    => 'single_multi',
-                is_editable => 1,
-                attributes  => {
-                    attributes => {
-                        policy_id => {
-                            type     => 'relation',
-                            relation => 'single',
-                        },
-                        component_type => {
-                            label       => 'Component type',
-                            type        => 'relation',
-                            relation    => 'single',
-                            pattern     => '^\d*$',
-                            options     => \@componenttypes,
-                            is_editable => 1
-                        },
-                    }
-                }
-            },
-        },
-        relations => {
+        displayed  => [ 'kernel_id', 'masterimage_id', 'systemimage_size', 'cluster_basehostname',
+                        'cluster_si_persistent', 'cluster_si_shared' ],
+        attributes => $policy_attrdef,
+        relations  => {
             components => {
                 attrs    => { accessor => 'multi' },
                 cond     => { 'foreign.policy_id' => 'self.policy_id' },
@@ -143,6 +152,24 @@ sub getPolicyDef {
                      set_params_editable => delete $args{set_params_editable});
 
     return $attributes;
+}
+
+sub getPatternFromParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'params' ]);
+
+    my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
+
+    if (ref($args{params}->{components}) eq 'ARRAY') {
+        my %components = map { $_->{component_type} => $_ } @{ delete $args{params}->{components} };
+        $pattern->{components} = \%components;
+    }
+    if (defined $args{params}->{systemimage_size}) {
+        $pattern->{managers}->{disk_manager}->{manager_params}->{systemimage_size} = delete $args{params}->{systemimage_size};
+    }
+    return $pattern;
 }
 
 1;

@@ -24,11 +24,67 @@ use warnings;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
+use Clone qw(clone);
+
 my $log = get_logger("");
 
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+use constant POLICY_ATTR_DEF => {
+    cluster_domainname => {
+        label   => 'Domain name',
+        type    => 'string',
+        pattern => '^[a-z0-9-]+(\\.[a-z0-9-]+)+$',
+    },
+    cluster_nameserver1 => {
+        label   => 'Name server 1',
+        type    => 'string',
+        pattern => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
+    },
+    cluster_nameserver2 => {
+        label   => 'Name server 2',
+        type    => 'string',
+        pattern => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
+    },
+    default_gateway_id => {
+        label    => 'Default gateway network',
+        type     => 'relation',
+        relation => 'single',
+        pattern  => '^\d*$',
+    },
+    interfaces => {
+        label       => 'Interfaces',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1,
+        attributes  => {
+            attributes => {
+                policy_id => {
+                    type     => 'relation',
+                    relation => 'single',
+                },
+                netconfs => {
+                    label       => 'Network configurations',
+                    type        => 'relation',
+                    relation    => 'multi',
+                    link_to     => 'netconf',
+                    pattern     => '^\d*$',
+                    is_editable => 1,
+                },
+                bonds_number => {
+                    label       => 'Bonding slave count',
+                    type        => 'integer',
+                    pattern     => '^\d*$',
+                    is_editable => 1,
+                },
+            },
+        },
+    }
+};
+
+sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
 
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
@@ -55,61 +111,13 @@ sub getPolicyDef {
         push @netconfs, $netconf->toJSON();
     }
 
+    my $policy_attrdef = clone($class->getPolicyAttrDef);
+    $policy_attrdef->{default_gateway_id}->{options} = \@networks;
+    $policy_attrdef->{interfaces}->{attributes}->{attributes}->{netconfs}->{options} = \@netconfs;
+
     my $attributes = {
         displayed  => [ 'cluster_domainname', 'cluster_nameserver1', 'cluster_nameserver2', 'default_gateway_id' ],
-        attributes =>  {
-            cluster_domainname => {
-                label   => 'Domain name',
-                type    => 'string',
-                pattern => '^[a-z0-9-]+(\\.[a-z0-9-]+)+$',
-            },
-            cluster_nameserver1 => {
-                label   => 'Name server 1',
-                type    => 'string',
-                pattern => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
-            },
-            cluster_nameserver2 => {
-                label   => 'Name server 2',
-                type    => 'string',
-                pattern => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
-            },
-            default_gateway_id => {
-                label    => 'Default gateway network',
-                type     => 'relation',
-                relation => 'single',
-                pattern  => '^\d*$',
-                options  => \@networks,
-            },
-            interfaces => {
-                label       => 'Interfaces',
-                type        => 'relation',
-                relation    => 'single_multi',
-                is_editable => 1,
-                attributes  => {
-                    attributes => {
-                        policy_id => {
-                            type     => 'relation',
-                            relation => 'single',
-                        },
-                        netconfs => {
-                            label       => 'Network configurations',
-                            type        => 'relation',
-                            relation    => 'multi',
-                            link_to     => 'netconf',
-                            pattern     => '^\d*$',
-                            options     => \@netconfs,
-                            is_editable => 1,
-                        },
-                        bonds_number => {
-                            label       => 'Bonding slave count',
-                            type        => 'integer',
-                            pattern     => '^\d*$',
-                            is_editable => 1,
-                        },
-                    },
-                },
-            },
-        },
+        attributes => $policy_attrdef,
         relations => {
             interfaces => {
                 attrs    => { accessor => 'multi' },
@@ -133,6 +141,37 @@ sub getPolicyDef {
                      set_params_editable => delete $args{set_params_editable});
 
     return $attributes;
+}
+
+sub getPatternFromParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'params' ]);
+
+    my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
+
+    if (ref($args{params}->{interfaces}) eq 'ARRAY') {
+        my $index = 0;
+        my $interfaces = {};
+        for my $interface (@{ delete $args{params}->{interfaces} }) {
+            if (ref($interface->{netconfs}) ne 'ARRAY') {
+                $interface->{netconfs} = [ $interface->{netconfs} ];
+            }
+            # Transform the netconfs list into a params for merging purpose
+            my %netconfs = map { $_ => $_ } @{ $interface->{netconfs} };
+            $interface->{netconfs} = \%netconfs;
+
+            my $identifier = join('_', keys %{ $interface->{netconfs} }) . '_' . $interface->{bonds_number};
+            if (defined $interfaces->{'interface_' . $identifier}) {
+                $identifier .= '_' .  $index;
+            }
+            $interfaces->{'interface_' . $identifier} = $interface;
+            $index++;
+        }
+        $pattern->{interfaces} = $interfaces;
+    }
+    return $pattern;
 }
 
 1;

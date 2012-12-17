@@ -24,11 +24,79 @@ use warnings;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
+use Clone qw(clone);
+
 my $log = get_logger("");
 
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+use constant POLICY_ATTR_DEF => {
+    billing_limits => {
+        label       => 'Limits',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1,
+        attributes  => {
+            attributes => {
+                policy_id => {
+                    type     => 'relation',
+                    relation => 'single',
+                },
+                limit_start => {
+                    label        => 'Start',
+                    type         => 'date',
+                    is_mandatory => 1,
+                    is_editable  => 1,
+                },
+                limit_ending => {
+                    label        => 'End',
+                    type         => 'date',
+                    is_mandatory => 1,
+                    is_editable  => 1,
+                },
+                limit_type => {
+                    label   => 'Type',
+                    type    => 'enum',
+                    options => [ 'ram', 'cpu' ],
+                    # Add a mechanism to have mutliple units in function of the option.
+                    is_editable  => 1,
+                },
+                limit_soft => {
+                    label        => 'Soft limit ?',
+                    type         => 'boolean',
+                    is_mandatory => 1,
+                    is_editable  => 1,
+                },
+                limit_value => {
+                    label   => 'Value',
+                    type    => 'string',
+                    pattern => '^[0-9.]+$',
+                    is_editable  => 1,
+                },
+                limit_repeats => {
+                    label   => 'Repeat',
+                    type    => 'enum',
+                    options => ['Daily'],
+                    is_editable  => 1,
+                },
+                limit_repeat_start_time => {
+                    label   => 'Repeat start',
+                    type    => 'time',
+                    is_editable  => 1,
+                },
+                limit_repeat_end_time => {
+                    label   => 'Repeat end',
+                    type    => 'time',
+                    is_editable  => 1,
+                },
+            },
+        },
+    },
+};
+
+sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
 
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
@@ -45,72 +113,11 @@ sub getPolicyDef {
 
     %args = %{ $self->mergeValues(values => \%args) };
 
+    my $policy_attrdef = clone($class->getPolicyAttrDef);
     my $attributes = {
         displayed  => [],
-        attributes =>  {
-            billing_limits => {
-                label       => 'Limits',
-                type        => 'relation',
-                relation    => 'single_multi',
-                is_editable => 1,
-                attributes  => {
-                    attributes => {
-                        policy_id => {
-                            type     => 'relation',
-                            relation => 'single',
-                        },
-                        limit_start => {
-                            label        => 'Start',
-                            type         => 'date',
-                            is_mandatory => 1,
-                            is_editable  => 1,
-                        },
-                        limit_ending => {
-                            label        => 'End',
-                            type         => 'date',
-                            is_mandatory => 1,
-                            is_editable  => 1,
-                        },
-                        limit_type => {
-                            label   => 'Type',
-                            type    => 'enum',
-                            options => [ 'ram', 'cpu' ],
-                            # Add a mechanism to have mutliple units in function of the option.
-                            is_editable  => 1,
-                        },
-                        limit_soft => {
-                            label        => 'Soft limit ?',
-                            type         => 'boolean',
-                            is_mandatory => 1,
-                            is_editable  => 1,
-                        },
-                        limit_value => {
-                            label   => 'Value',
-                            type    => 'string',
-                            pattern => '^[0-9.]+$',
-                            is_editable  => 1,
-                        },
-                        limit_repeats => {
-                            label   => 'Repeat',
-                            type    => 'enum',
-                            options => ['Daily'],
-                            is_editable  => 1,
-                        },
-                        limit_repeat_start_time => {
-                            label   => 'Repeat start',
-                            type    => 'time',
-                            is_editable  => 1,
-                        },
-                        limit_repeat_end_time => {
-                            label   => 'Repeat end',
-                            type    => 'time',
-                            is_editable  => 1,
-                        },
-                    },
-                },
-            },
-        },
-        relations => {
+        attributes => $policy_attrdef,
+        relations  => {
             billing_limits => {
                 attrs    => { accessor => 'multi' },
                 cond     => { 'foreign.policy_id' => 'self.policy_id' },
@@ -136,6 +143,21 @@ sub getPolicyDef {
                      set_params_editable => delete $args{set_params_editable});
 
     return $attributes;
+}
+
+sub getPatternFromParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'params' ]);
+
+    my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
+
+    if (ref($args{params}->{billing_limits}) eq 'ARRAY') {
+        my %limits = map { join('_',  values $_) => $_ } @{ delete $args{params}->{billing_limits} };
+        $pattern->{billing_limits} = \%limits;
+    }
+    return $pattern;
 }
 
 1;

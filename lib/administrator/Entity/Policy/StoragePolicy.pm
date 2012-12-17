@@ -24,11 +24,34 @@ use warnings;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
+use Clone qw(clone);
+
 my $log = get_logger("");
 
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+use constant POLICY_ATTR_DEF => {
+    disk_manager_id => {
+        label        => "Storage type",
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        reload       => 1,
+        is_mandatory => 1,
+    },
+    export_manager_id => {
+        label        => "Access protocol",
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        reload       => 1,
+        is_mandatory => 1,
+    }
+};
+
+sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
@@ -52,35 +75,23 @@ sub getPolicyDef {
     }
     my @storageproviders = values $providers;
 
+    my $policy_attrdef = clone($class->getPolicyAttrDef);
+    $policy_attrdef->{storage_provider_id}->{options} = \@storageproviders;
+
+    # Manually add the host_provider_id attr because it is not an
+    # attribute in the policy pattern
+    $policy_attrdef->{storage_provider_id} = {
+        label        => 'Data store',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        reload       => 1,
+        is_mandatory => 1,
+    };
+
     my $attributes = {
         displayed  => [ 'storage_provider_id', 'disk_manager_id' ],
-        attributes =>  {
-            storage_provider_id => {
-                label        => 'Data store',
-                type         => 'relation',
-                relation     => 'single',
-                pattern      => '^\d*$',
-                reload       => 1,
-                options      => \@storageproviders,
-                is_mandatory => 1,
-            },
-            disk_manager_id => {
-                label        => "Storage type",
-                type         => 'relation',
-                relation     => 'single',
-                pattern      => '^\d*$',
-                reload       => 1,
-                is_mandatory => 1,
-            },
-            export_manager_id => {
-                label        => "Access protocol",
-                type         => 'relation',
-                relation     => 'single',
-                pattern      => '^\d*$',
-                reload       => 1,
-                is_mandatory => 1,
-            }
-        }
+        attributes => $policy_attrdef,
     };
 
     # Complete the attributes with common ones

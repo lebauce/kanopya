@@ -85,19 +85,37 @@ sub new {
         policy_desc => delete $args{policy_desc},
     };
 
-    $class->checkAttrs(attrs => $attrs);
-
-    # Build the policy pattern from
-    my $pattern = $class->buildPattern(policy_type => $attrs->{policy_type}, hash => \%args);
-    my $preset  = ParamPreset->new(params => $pattern);
-    $attrs->{param_preset_id} = $preset->id;
-
+    # Create a policy with an empty pattern
     my $self = $class->SUPER::new(%$attrs);
+
+    # Build the policy pattern from args
+    $self->setPatternFromParams(params => \%args);
 
     # Add the concrete policy to the Policy master group
     Entity::Policy->getMasterGroup->appendEntity(entity => $self);
 
     return $self;
+}
+
+sub update {
+    my $self  = shift;
+    my %args  = @_;
+
+    # Firstly pop the policy atrributes
+    my $attrs = {
+        policy_name => delete $args{policy_name},
+        policy_desc => delete $args{policy_desc},
+    };
+    $self->SUPER::update(%$attrs);
+
+    # Firstly empty the old pattern
+    my $presets = $self->param_preset;
+    if ($presets) {
+        $presets->remove()
+    }
+
+    # Build the policy pattern from args
+    $self->setPatternFromParams(params => \%args);
 }
 
 sub toJSON {
@@ -114,21 +132,14 @@ sub toJSON {
     return $json;
 }
 
-sub update {
+sub setPatternFromParams {
     my $self  = shift;
-    my $class = ref($self) || $self;
     my %args  = @_;
 
-    # Firstly pop the policy atrributes
-    my $attrs = {
-        policy_name => delete $args{policy_name},
-        policy_desc => delete $args{policy_desc},
-    };
-    $self->SUPER::update(%$attrs);
+    General::checkParams(args => \%args, required => [ 'params' ]);
 
-    # Build the policy pattern from
-    my $pattern = $class->buildPattern(policy_type => $self->policy_type, hash => \%args);
-    $self->param_preset->update(params => $pattern, override => 1);
+    my $preset = ParamPreset->new(params => $self->getPattern(params => $args{params}));
+    $self->setAttr(name => 'param_preset_id', value => $preset->id, save => 1);
 }
 
 sub getPolicyDef {
@@ -149,6 +160,71 @@ sub getPolicyDef {
     return $merge->merge($attributes, $json);
 }
 
+sub getPattern {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, optional => { 'params' => {} });
+
+    # Merge the policy params with those given in parameters
+    my $params  = $merge->merge($args{params}, $self->getParams);
+    my $pattern = $self->getPatternFromParams(params => $params);
+
+    # Manually remove deleted params for the original params hashes,
+    # because the merge of the params with the policy contents has
+    # overiden the referece of the original params hash.
+    for my $param (keys %{ $args{params} }) {
+        if (not defined $params->{$param}) {
+            delete $args{params}->{$param};
+        }
+    }
+    return $pattern
+}
+
+sub getPatternFromParams {
+    my $self  = shift;
+    my $class = ref($self);
+    my %args  = @_;
+
+    General::checkParams(args => \%args, optional => { 'params' => {} });
+
+    my $pattern = {};
+    my $attrdef = $class->getPolicyAttrDef;
+
+    # Transform the policy form params to a cluster configuration pattern
+    for my $name (keys %{$args{params}}) {
+        # Handle defined values that belongs to the attrdef of the policy only
+        if (defined $args{params}->{$name} and $args{params}->{$name} ne '' and exists $attrdef->{$name} and
+            not ($attrdef->{$name}->{type} eq 'relation' and $attrdef->{$name}->{relation} eq 'single_multi')) {
+
+            # Handle managers
+            if ($name =~ m/_manager_id/) {
+                my $manager_type = $name;
+                $manager_type =~ s/_id$//g;
+
+                # Set the manager infos
+                $pattern->{managers}->{$manager_type}->{manager_id} = delete $args{params}->{$name};
+                $pattern->{managers}->{$manager_type}->{manager_type} = $manager_type;
+
+                # Set the manager params if required
+                my $manager = Entity->get(id => $pattern->{managers}->{$manager_type}->{manager_id});
+                my @params = map { $_->{name} } @{ $manager->getPolicyParams(policy_type => $self->policy_type) };
+                for my $param (@params) {
+                    if (defined $args{params}->{$param} and $args{params}->{$param}) {
+                        $pattern->{managers}->{$manager_type}->{manager_params}->{$param} = delete $args{params}->{$param};
+                    }
+                }
+            }
+            # Handle cluster attributtes.
+            else {
+                # TODO: checkAttr
+                $pattern->{$name} = delete $args{params}->{$name};
+            }
+        }
+    }
+    return $pattern;
+}
+
 sub mergeValues {
     my $self  = shift;
     my $class = ref($self) || $self;
@@ -159,7 +235,7 @@ sub mergeValues {
     # Use existing values if defined, but override them with
     # with values from parameters (LEFT_PRECEDENT).
     if (ref($self)) {
-        my $existing = $self->getPolicyPattern();
+        my $existing = $self->getParams();
         # Here we need to manually override the existing list values with
         # list value from paramters as the merge extends the list contents.
         for my $attrname (keys %{ $args{values} }) {
@@ -217,100 +293,16 @@ sub setValues {
 sub getNonEditableAttributes {
     my ($self, %args) = @_;
 
-    return $self->getPolicyPattern();
+    return $self->getParams();
 }
 
-sub buildPattern {
-    my $self  = shift;
-    my $class = ref($self) || $self;
-    my %args  = @_;
-
-    General::checkParams(args => \%args, required => [ 'policy_type', 'hash' ]);
-
-    my %pattern;
-
-    # Build the complette list of cluster attributes.
-    my $cluster_attrs = Entity::ServiceProvider::Inside::Cluster->getAttrDefs();
-
-    # Transform the policy form hash to a cluster configuration pattern
-    for my $name (keys %{$args{hash}}) {
-        # Handle defined values only
-        if (defined $args{hash}->{$name} and $args{hash}->{$name} ne '') {
-            # Handle managers
-            if ($name =~ m/_manager_id/) {
-                my $manager_type = $name;
-                $manager_type =~ s/_id$//g;
-
-                # Set the manager infos
-                $pattern{managers}->{$manager_type}->{manager_id} = $args{hash}->{$name};
-                $pattern{managers}->{$manager_type}->{manager_type} = $manager_type;
-
-                # Set the manager params if required
-                my $manager = Entity->get(id => $args{hash}->{$name});
-                my @params = map { $_->{name} } @{ $manager->getPolicyParams(policy_type => $args{policy_type}) };
-                for my $param (@params) {
-                    if (defined $args{hash}->{$param} and $args{hash}->{$param}) {
-                        $pattern{managers}->{$manager_type}->{manager_params}->{$param} = $args{hash}->{$param};
-                    }
-                }
-            }
-            # Handle components
-            elsif ($name eq 'components' and ref($args{hash}->{$name}) eq 'ARRAY' and $args{policy_type} eq 'system') {
-                my %components = map { $_->{component_type} => $_ } @{ $args{hash}->{$name} };
-                $pattern{components} = \%components;
-            }
-            # Handle networks interfaces
-            elsif ($name eq 'interfaces' and ref($args{hash}->{$name}) eq 'ARRAY' and $args{policy_type} eq 'network') {
-                my $index = 0;
-                my $interfaces = {};
-                for my $interface (@{ $args{hash}->{$name} }) {
-                    if (ref($interface->{netconfs}) ne 'ARRAY') {
-                        $interface->{netconfs} = [ $interface->{netconfs} ];
-                    }
-                    # Transform the netconfs list into a hash for merging purpose
-                    my %netconfs = map { $_ => $_ } @{ $interface->{netconfs} };
-                    $interface->{netconfs} = \%netconfs;
-
-                    my $identifier = join('_', keys %{ $interface->{netconfs} }) . '_' . $interface->{bonds_number};
-                    if (defined $interfaces->{'interface_' . $identifier}) {
-                        $identifier .= '_' .  $index;
-                    }
-                    $interfaces->{'interface_' . $identifier} = $interface;
-                    $index++;
-                }
-                $pattern{interfaces} = $interfaces;
-            }
-            # Handle billing limit
-            elsif ($name eq 'billing_limits' and ref($args{hash}->{$name}) eq 'ARRAY' and $args{policy_type} eq 'billing') {
-                my %limits = map { join('_',  values $_) => $_ } @{ $args{hash}->{$name} };
-                $pattern{billing_limits} = \%limits;
-            }
-            # Can we handle these params whithout hard code  ?
-            elsif ($name =~ /systemimage_size/) {
-                $pattern{managers}->{disk_manager}->{manager_params}->{$name} = $args{hash}->{$name};
-            }
-            # Handle orchestration data (already well formatted metrics and rules)
-            elsif ($name eq 'orchestration_service_provider_id') {
-                $pattern{orchestration}{service_provider_id} = $args{hash}->{$name};
-            }
-            # Handle cluster attributtes.
-            elsif (exists $cluster_attrs->{$name}) {
-                # TODO: checkAttr
-                $pattern{$name} = $args{hash}->{$name};
-            }
-        }
-    }
-
-    #$log->debug("Returning configuration pattern for a $args{policy_type} policy:\n" . Dumper(\%pattern));
-    return \%pattern;
-}
-
-sub getPolicyPattern {
+sub getParams {
     my $self = shift;
     my %args = @_;
 
     my $flat_hash = {};
-    my $pattern = $self->param_preset->load();
+    my $presets = $self->param_preset;
+    my $pattern = $presets ? $presets->load() : {};
 
     # Transform the policy configuration pattern to a flat hash
     for my $name (keys %$pattern) {
@@ -368,7 +360,6 @@ sub getPolicyPattern {
 
 sub searchManagers {
     my $self  = shift;
-    my $class = ref($self) || $self;
     my %args  = @_;
 
     General::checkParams(args => \%args,
