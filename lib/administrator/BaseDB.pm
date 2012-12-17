@@ -443,7 +443,7 @@ sub checkAttr {
     if (exists $attributes_def->{$args{name}} && (not $attributes_def->{$args{name}}->{is_virtual}) &&
         defined $args{value} && $args{value} !~ m/($attributes_def->{$args{name}}->{pattern})/) {
 
-        $errmsg = "detect a wrong value <$args{value}> for param <$args{name}> on class <$class>";
+        $errmsg = "Wrong value detected <$args{value}> for param <$args{name}> on class <$class>";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -494,14 +494,14 @@ sub checkAttrs {
                     ((defined $value and defined $pattern) and $value !~ m/($pattern)/) and
                     (not $attributes_def->{$args{name}}->{is_virtual})) {
 
-                    $errmsg = "detect a wrong value <$value> for param <$attr> on class <$module>";
+                    $errmsg = "Wrong value detected <$value> for param <$attr> on class <$module>";
                     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
                 }
                 $final_attrs->{$module}->{$attr} = $value;
                 next ATTRLOOP;
             }
         }
-        $errmsg = "detect a wrong attr <$attr>";
+        $errmsg = "Wrong attribute detected <$attr>";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
@@ -512,7 +512,7 @@ sub checkAttrs {
             if ((! $attributes_def->{$module}->{$attr}->{is_virtual}) &&
                 ($attributes_def->{$module}->{$attr}->{is_mandatory}) && (! exists $attrs->{$attr})) {
 
-                $errmsg = "detect a missing attribute <$attr> on class <$module>";
+                $errmsg = "Missing attribute detected <$attr> on class <$module>";
                 $log->error($errmsg);
                 throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
             }
@@ -778,7 +778,9 @@ Set one name attribute with the given value, search this attribute throw the who
 class hierarchy, and check attribute validity.
 
 @param name the name of the attribute to set the value
-@param value the value to set
+
+@optional value the value to set
+@optional save a flag to save the object
 
 @return the value set
 
@@ -789,7 +791,9 @@ class hierarchy, and check attribute validity.
 sub setAttr {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'name' ], optional => { 'value' => undef });
+    General::checkParams(args     => \%args,
+                         required => [ 'name' ],
+                         optional => { 'value' => undef, 'save'  => 0 });
 
     my ($name, $value) = ($args{name}, $args{value});
     my $dbix = $self->{_dbix};
@@ -817,6 +821,9 @@ sub setAttr {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
+    if ($args{save}) {
+        $self->save();
+    }
 #    $self->{_altered} = 1;
 
     return $value;
