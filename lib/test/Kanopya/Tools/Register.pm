@@ -29,7 +29,7 @@ Kanopya module to handle register actions
 
 =cut
 
-package Register;
+package Kanopya::Tools::Register;
 
 use strict;
 use warnings;

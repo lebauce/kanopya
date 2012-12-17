@@ -29,7 +29,7 @@ Kanopya module to handle operation and workflow execution
 
 =cut
 
-package Execution;
+package Kanopya::Tools::Execution;
 
 use strict;
 use warnings;

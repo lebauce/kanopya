@@ -29,7 +29,7 @@ Kanopya module to Retrieve complex entities
 
 =cut
 
-package Retrieve;
+package Kanopya::Tools::Retrieve;
 
 use strict;
 use warnings;
