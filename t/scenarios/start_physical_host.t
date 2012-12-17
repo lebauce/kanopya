@@ -25,7 +25,7 @@ use_ok ('Entity::Network');
 use_ok ('Entity::Netconf');
 use_ok ('Entity::Poolip');
 use_ok ('Entity::Operation');
-use Execution;
+use Kanopya::Tools::Execution;
 
 my $testing = 0;
 my $NB_HYPERVISORS = 1;
@@ -178,7 +178,7 @@ eval {
                   );
     } 'Deploy master image';
 
-    Execution->execute(entity => $deploy);
+    Kanopya::Tools::Execution->execute(entity => $deploy);
 
     lives_ok {
         $opennebula_masterimage = Entity::Masterimage->find( hash => { } );
@@ -255,7 +255,7 @@ eval {
                           );
     } 'AddCluster operation enqueue';
 
-    Execution->execute(entity => $cluster_create); 
+    Kanopya::Tools::Execution->execute(entity => $cluster_create); 
 
     my ($cluster, $cluster_id);
     lives_ok {
@@ -266,7 +266,7 @@ eval {
 
     isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster');     
 
-    Execution->execute(entity => $cluster->start());
+    Kanopya::Tools::Execution->execute(entity => $cluster->start());
 };
 if($@) {
     my $error = $@;

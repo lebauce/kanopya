@@ -25,9 +25,9 @@ use_ok ('Entity::Operation');
 use_ok ('Entity::Netconf');
 use_ok ('Entity::Iface');
 use_ok ('Externalnode::Node');
-use Execution;
-use Register;
-use Retrieve;
+use Kanopya::Tools::Execution;
+use Kanopya::Tools::Register;
+use Kanopya::Tools::Retrieve;
 
 my $testing = 0;
 my $NB_HYPERVISORS = 1;
@@ -81,7 +81,7 @@ eval {
     my $kanopya_cluster;
     my $physical_hoster;
     lives_ok {
-        $kanopya_cluster = Retrieve->retrieveCluster();
+        $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
         $physical_hoster = $kanopya_cluster->getHostManager();
     } 'Retrieve the Kanopya cluster';
 
@@ -120,7 +120,7 @@ eval {
 
     lives_ok {
         foreach my $board (@{ $boards }) {
-            Register->registerHost(board => $board);
+            Kanopya::Tools::Register->registerHost(board => $board);
         };
     } 'Registering physical hosts';
 
@@ -135,7 +135,7 @@ eval {
                   );
     } 'Deploy master image';
 
-    Execution->execute(entity => $deploy);
+    Kanopya::Tools::Execution->execute(entity => $deploy);
 
     lives_ok {
         $masterimage = Entity::Masterimage->find( hash => { } );
@@ -216,11 +216,11 @@ eval {
                           );
     } 'AddCluster operation enqueue';
 
-    Execution->execute(entity => $cluster_create); 
+    Kanopya::Tools::Execution->execute(entity => $cluster_create); 
 
     my $cluster;
     lives_ok {
-        $cluster = Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
+        $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
     } 'retrieve Cluster via name';
 
     isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster');     
@@ -276,7 +276,7 @@ eval {
         );
     } 'configuring Opennebula image repository';
 
-    Execution->execute(entity => $cluster->start());
+    Kanopya::Tools::Execution->execute(entity => $cluster->start());
 };
 if($@) {
     my $error = $@;
