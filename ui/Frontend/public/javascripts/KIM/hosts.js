@@ -10,7 +10,8 @@ function host_addbutton_action(e) {
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : [ 'host_desc', 'host_core', 'host_ram', 'kernel_id', 'host_serial_number' ],
         relations  : { 'ifaces'         : [ 'iface_name', 'iface_mac_addr', 'iface_pxe', 'netconf_ifaces' ],
-                       'bonding_ifaces' : [ 'bonding_iface_name', 'slave_ifaces' ] },
+                       'bonding_ifaces' : [ 'bonding_iface_name', 'slave_ifaces' ],
+                       'harddisks'      : [ 'harddisk_device' ] },
         rawattrdef : {
             'host_manager_id' : {
                 'value' : g_host_manager_id
@@ -98,7 +99,7 @@ function host_addbutton_action(e) {
             }
         },
         valuesCallback  : function(type, id, attributes) {
-            var host = ajax('GET', '/api/' + type + '/' + id + '?expand=ifaces');
+            var host = ajax('GET', '/api/' + type + '/' + id + '?expand=ifaces,harddisks');
 
             var ifaces = host['ifaces'];
             host['ifaces'] = [];
