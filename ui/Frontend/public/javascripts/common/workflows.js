@@ -3,6 +3,9 @@ require('jquery/jquery.form.wizard.js');
 require('common/general.js');
 require('common/service_common.js');
 
+var notifyworkflow_regex        = new RegExp('^\\d+_NotifyWorkflow (node|service_provider)$');
+var simple_notifyworkflow_regex = new RegExp('^NotifyWorkflow (node|service_provider)$');
+
 function createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
     function createParameterList(parameters) {
         var list    = $("<ul>").css({
@@ -424,18 +427,20 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
                                 $(select).bind('change', createForm);
                                 $(data).each( function() {
                                     var wfd = this;
-                                    $.get(
-                                            '/api/workflowdef/' + wfd.pk,
-                                            function(data) {
-                                                var wfd_params = data.param_presets;
-                                                if (wfd_params.internal && wfd_params.internal.scope_id == scid) {
-                                                      wfd.specificparams  = wfd_params.specific;
-                                                      wfdefs.push(wfd);
-                                                      $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
-                                                      $(select).change();
-                                                  }
-                                            }
-                                    );
+                                    if (simple_notifyworkflow_regex.exec(wfd.workflow_def_name) == null) {
+                                        $.get(
+                                                '/api/workflowdef/' + wfd.pk,
+                                                function(data) {
+                                                    var wfd_params = data.param_presets;
+                                                    if (wfd_params.internal && wfd_params.internal.scope_id == scid) {
+                                                        wfd.specificparams  = wfd_params.specific;
+                                                        wfdefs.push(wfd);
+                                                        $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
+                                                        $(select).change();
+                                                    }
+                                                }
+                                        );
+                                    }
                                 });
                                 $(dial).dialog({
                                       resizable       : false,

@@ -366,8 +366,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                     $.ajax({
                         url     : '/api/workflowdef/' + data.workflow_def_id,
                         success : function(wfdef) {
-                            var r   = new RegExp('^\\d+_NotifyWorkflow (node|service_provider)$');
-                            if (r.exec(wfdef.workflow_def_name) == null) {
+                            if (notifyworkflow_regex.exec(wfdef.workflow_def_name) == null) {
                                 var p   = $('<p>', { text : 'Associated workflow : ' + wfdef.workflow_def_name }).appendTo(detail_div);
                                 appendWorkflowActionsButtons(p, cid, eid, data.workflow_def_id, elem_id);
                             } else {
