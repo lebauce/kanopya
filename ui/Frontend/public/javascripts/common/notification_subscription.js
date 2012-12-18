@@ -1,7 +1,7 @@
 require('common/formatters.js');
 require('views.js');
 
-var addSubscriptionButtonInGrid = function(grid, rowid, rowdata, rowelem, colid, validation) {
+var addSubscriptionButtonInGrid = function(grid, rowid, rowdata, rowelem, colid, operationType, validation) {
     var cell            = $(grid).find('tr#' + rowid).find('td[aria-describedby="' + colid + '"]');
     var subscribeButton = $('<div>').button({ text : false, icons : { primary : 'ui-icon-mail-closed' } }).appendTo(cell);
     $(subscribeButton).attr('style', 'margin-top:5px;');
@@ -12,7 +12,7 @@ var addSubscriptionButtonInGrid = function(grid, rowid, rowdata, rowelem, colid,
                     label  : 'Notification subscriptions',
                     id     : 'subscription',
                     onLoad : function(cid, eid) {
-                        loadSubscriptionModal(cid, eid, 'AddCluster', validation);
+                        loadSubscriptionModal(cid, eid, operationType, validation);
                     }
                 }
             ],

@@ -46,7 +46,7 @@ function load_service_template_content (container_id) {
                     { name: 'subscribe', index : 'subscribe', width : 40, align : 'center', nodetails : true }],
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             require('common/notification_subscription.js');
-            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_template_list_subscribe");
+            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_template_list_subscribe", "AddCluster");
         }
     } );
 
