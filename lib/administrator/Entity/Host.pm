@@ -139,6 +139,13 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1,
     },
+    harddisks => {
+        label        => 'Hard disks',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
     admin_ip => {
         label        => 'Administration ip',
         is_virtual   => 1,

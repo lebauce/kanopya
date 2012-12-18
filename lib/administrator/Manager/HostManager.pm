@@ -124,6 +124,15 @@ sub createHost {
         delete $args{ifaces};
     }
 
+    if (defined $args{harddisks}) {
+        my $index = 0;
+        for my $harddisk (@{$args{harddisks}}) {
+            $composite_params->{harddisks}->{'harddisk_' . $index} = $harddisk;
+            $index++;
+        }
+        delete $args{harddisks};
+    }
+
     Entity::Operation->enqueue(
         priority => 200,
         type     => 'AddHost',
