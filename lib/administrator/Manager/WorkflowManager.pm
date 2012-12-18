@@ -30,6 +30,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 use Data::Dumper;
 
+use Entity::Rule;
 use Entity::Rule::AggregateRule;
 use Entity::Rule::NodemetricRule;
 use Entity::WorkflowDef;
@@ -180,6 +181,14 @@ sub associateWorkflow {
                                          optional => { 'specific_params' => {} },
     );
 
+    my $rule    = Entity::Rule->find(hash => { rule_id => $args{rule_id} });
+    if (defined $rule->workflow_def) {
+        $self->deassociateWorkflow(
+            rule_id         => $args{rule_id},
+            workflow_def_id => $rule->workflow_def_id
+        );
+    }
+
     my $workflow_def_id      = $args{origin_workflow_def_id};
     my $origin_workflow_name = $self->getWorkflowDef (workflow_def_id => $workflow_def_id)
                                    ->getAttr(name => 'workflow_def_name');
@@ -294,16 +303,9 @@ sub _linkWorkflowToRule {
     my $scope      = Scope->find(hash => {scope_id => $scope_id});
     my $scope_name = $scope->getAttr(name => 'scope_name');
 
-    if ($scope_name eq 'node') {
-        $rule = Entity::Rule::NodemetricRule->find (hash => {nodemetric_rule_id => $rule_id});
-        $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
-        $rule->save();
-
-    } elsif ($scope_name eq 'service_provider') {
-        $rule = Entity::Rule::AggregateRule->find(hash => {aggregate_rule_id => $rule_id});
-        $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
-        $rule->save();
-    }
+    $rule    = Entity::Rule->find(hash => { rule_id => $rule_id });
+    $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
+    $rule->save();
 }
 
 =head2 runWorkflow
