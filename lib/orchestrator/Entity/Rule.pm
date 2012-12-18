@@ -64,6 +64,23 @@ sub notifyWorkflowName {
     return undef;
 }
 
+sub associateWithNotifyWorkflow {
+    my $self        = shift;
+
+    my $wf_manager  = $self->serviceProvider->getManager(manager_type => "workflow_manager");
+    # TODO
+    # Do not use a fake attribute to retrieve the fake workflow name but create only one
+    # fake workflow and modify its scope_id dynamically
+    my $wf_name     = $self->notifyWorkflowName;
+    my $orig_wf     = Entity::WorkflowDef->find(hash => { workflow_def_name => $wf_name });
+
+    $wf_manager->associateWorkflow(
+        new_workflow_name       => $self->id . "_" . $wf_name,
+        origin_workflow_def_id  => $orig_wf->id,
+        rule_id                 => $self->id
+    );
+}
+
 =pod
 =begin classdoc
 
@@ -82,18 +99,7 @@ sub subscribe {
 
     if (not defined $self->workflow_def) {
         eval {
-            my $wf_manager  = $self->serviceProvider->getManager(manager_type => "workflow_manager");
-            # TODO
-            # Do not use a fake attribute to retrieve the fake workflow name but create only one
-            # fake workflow and modify its scope_id dynamically
-            my $wf_name     = $self->notifyWorkflowName;
-            my $orig_wf     = Entity::WorkflowDef->find(hash => { workflow_def_name => $wf_name });
-
-            $wf_manager->associateWorkflow(
-                new_workflow_name       => $self->id . "_" . $wf_name,
-                origin_workflow_def_id  => $orig_wf->id,
-                rule_id                 => $self->id
-            );
+            $self->associateWithNotifyWorkflow();
         };
         if ($@) {
             $result->remove;

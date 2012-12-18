@@ -37,6 +37,7 @@ use Entity::WorkflowDef;
 use WorkflowDefManager;
 use ParamPreset;
 use Scope;
+use NotificationSubscription;
 
 sub methods {
   return {
@@ -155,6 +156,17 @@ sub deassociateWorkflow {
                rule_id  => $args{rule_id},
                scope_id => $workflow_params->{internal}->{scope_id}
            );
+    
+    # Check if there's subscriptions on this rule
+    my @notification_subscriptions  = NotificationSubscription->search(hash => {
+            entity_id   => $args{rule_id}
+    });
+    if ($#notification_subscriptions gt -1) {
+        # If any, must re-associate the rule with the empty workflow
+        Entity::Rule->find(hash => {
+            rule_id => $args{rule_id}
+        })->associateWithNotifyWorkflow();
+    }
 
     # Delete workflow def
     $workflow_def->delete();
