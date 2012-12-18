@@ -12,25 +12,92 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+=begin classdoc
+
+General Rule class. Implement specific behavior for entity's subscribe method.
+
+@since 2012-Dec-17
+
+=end classdoc
+=cut
+
 package Entity::Rule;
 use base "Entity";
 
 use strict;
 use warnings;
 
-use constant ATTR_DEF => { };
+use Entity::WorkflowDef;
+
+use constant ATTR_DEF   => { };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return { };
+sub methods { return { }; }
+
+=pod
+=begin classdoc
+
+Fake attr returning the associated service_provider whatever the relation name is.
+
+@return a service_provider instance
+
+=end classdoc
+=cut
+
+sub serviceProvider {
+    return undef;
 }
 
-sub subscribe {
-    my $self    = shift;
-    my %args    = @_;
+=pod
+=begin classdoc
 
+Fake attr returning the right name for the NotifyWorkflow.
+
+@return String containing a workflow name
+
+=end classdoc
+=cut
+
+sub notifyWorkflowName {
+    return undef;
+}
+
+=pod
+=begin classdoc
+
+Implement specific behavior for subscription : must associate the rule with an empty workflow when it is not associated with any.
+
+@return the same value as Entity::subscribe
+
+=end classdoc
+=cut
+
+sub subscribe {
+    my $self        = shift;
+    my %args        = @_;
+ 
     my $result  = $self->SUPER::subscribe(%args);
+
+    eval {
+        my $wf_manager  = $self->serviceProvider->getManager(manager_type => "workflow_manager");
+        # TODO
+        # Do not use a fake attribute to retrieve the fake workflow name but create only one
+        # fake workflow and modify its scope_id dynamically
+        my $wf_name     = $self->notifyWorkflowName;
+        my $orig_wf     = Entity::WorkflowDef->find(hash => { workflow_def_name => $wf_name });
+
+        $wf_manager->associateWorkflow(
+            new_workflow_name       => $self->id . "_" . $wf_name,
+            origin_workflow_def_id  => $orig_wf->id,
+            rule_id                 => $self->id
+        );
+    };
+    if ($@) {
+        $result->remove;
+        $result = undef;
+    }
 
     return $result;
 }

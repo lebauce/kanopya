@@ -1450,7 +1450,7 @@ sub populate_workflow_def {
     $hypervisor_resubmit_wf->addStep( operationtype_id => $resubmit_hypervisor_op_id);
 
     my $notify_wf_node      = $kanopya_wf_manager->createWorkflow(
-        workflow_name   => 'NotifyWorkflow Scope',
+        workflow_name   => 'NotifyWorkflow node',
         params          => {
             internal   => {
                 scope_id    => 1
@@ -1461,7 +1461,7 @@ sub populate_workflow_def {
     );
 
     my $notify_wf_service   = $kanopya_wf_manager->createWorkflow(
-        workflow_name   => 'NotifyWorkflow Service',
+        workflow_name   => 'NotifyWorkflow service_provider',
         params          => {
             internal   => {
                 scope_id    => 2

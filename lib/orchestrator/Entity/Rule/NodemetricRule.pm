@@ -457,4 +457,13 @@ sub delete {
     if (defined $workflow_def) { $workflow_def->delete(); };
 }
 
+sub serviceProvider {
+    my $self    = shift;
+    return $self->nodemetric_rule_service_provider;
+}
+
+sub notifyWorkflowName {
+    return "NotifyWorkflow node";
+}
+
 1;

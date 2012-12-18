@@ -437,4 +437,13 @@ sub delete {
     if (defined $workflow_def) { $workflow_def->delete(); };
 }
 
+sub serviceProvider {
+    my $self    = shift;
+    return $self->aggregate_rule_service_provider;
+}
+
+sub notifyWorkflowName {
+    return "NotifyWorkflow service_provider";
+}
+
 1;
