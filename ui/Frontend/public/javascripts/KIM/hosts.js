@@ -13,10 +13,14 @@ function host_addbutton_action(e) {
                        'bonding_ifaces' : [ 'bonding_iface_name', 'slave_ifaces' ] },
         rawattrdef : {
             host_manager_id : {
-                value : g_host_manager_id
+                value : g_host_manager_id,
+                // Required to avoid the field disabled
+                is_editable : 1
             },
             active : {
-                value : 1
+                value : 1,
+                // Required to avoid the field disabled
+                is_editable : 1
             }
         },
         attrsCallback  : function (resource) {
