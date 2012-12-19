@@ -90,12 +90,12 @@ function servicesList (container_id, elem_id) {
         button.bind('click', function() {
             // Use the kanopyaformwizard for policies
             (new KanopyaFormWizard({
-                title         : 'Instantiate a service',
-                type          : 'cluster',
-                reloadable    : true,
-                hide_disabled : true,
-                displayed     : [ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ],
-                rawattrdef    : {
+                title        : 'Instantiate a service',
+                type         : 'cluster',
+                reloadable   : true,
+                hideDisabled : true,
+                displayed    : [ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ],
+                rawattrdef   : {
                     cluster_name : {
                         label        : 'Service name',
                         type         : 'string',
