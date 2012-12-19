@@ -32,16 +32,14 @@ var KanopyaFormWizard = (function() {
         // Initialize the from
         this.data = {};
         this.form = $("<form>", { method : method, action : action });
+        this.form.appendTo(this.content);
 
         // Load the form contents
-        this.tables = {};
+        this.steps = {};
         this.load();
     }
 
     KanopyaFormWizard.prototype.load = function() {
-        this.tables[this.type] = $("<table>").css('width', 650);
-        this.form.appendTo(this.content).append(this.tables[this.type]);
-
         this.attributedefs = {};
 
         // Retrieve data structure and values from api
@@ -88,7 +86,7 @@ var KanopyaFormWizard = (function() {
 
             // Get the relation type attrdef
             var response;
-            if (attributes[relation_name].attributes !== undefined) {
+            if (attributes[relation_name] !== undefined && attributes[relation_name].attributes !== undefined) {
                 response = attributes[relation_name].attributes;
             } else {
                 response = this.attrsCallback(relationdef.resource, this.data);
@@ -101,8 +99,10 @@ var KanopyaFormWizard = (function() {
             var rel_relationdefs  = response.relations !== undefined ? response.relations : {};
 
             // Tag attr defs as belongs to a relation
+            var step = attributes[relation_name] ? attributes[relation_name].step : undefined;
             for (var name in rel_attributedefs) {
                 rel_attributedefs[name].belongs_to = relation_name;
+                rel_attributedefs[name].step = step;
             }
 
             // If creation, find the foreign key name to remove the attr from relation attrs
@@ -130,7 +130,7 @@ var KanopyaFormWizard = (function() {
                 $("<td>", { colspan : 2 }).append(add_button).appendTo(add_button_line);
 
                 var tag = this.attributedefs[relation_name].label || relation_name;
-                this.findTable(tag, this.attributedefs[relation_name].step).append(add_button_line);
+                this.findTable(this.attributedefs[relation_name].step, tag).append(add_button_line);
 
                 var _this = this;
                 var fixed_params = {
@@ -229,13 +229,13 @@ var KanopyaFormWizard = (function() {
         }
         $(this.content).dialog('option', 'position', 'top');
 
-        // Use jQuery.mutiselect (after DOM loading)
+        // Use jQuery.mutiselect (after DOM loaded)
         this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
-//        this.content.find('select[multiple!="multiple"]').not('.wizard-ignore').multiselect({
-//            multiple: false,
-//            header: false,
-//            selectedList: 1
-//        });
+        this.content.find('select[multiple!="multiple"]').not('.unit').multiselect({
+            multiple: false,
+            header: false,
+            selectedList: 1
+        });
     };
 
     KanopyaFormWizard.prototype.getOptions = function(name, value, relations) {
@@ -295,7 +295,7 @@ var KanopyaFormWizard = (function() {
 
         // Handle text fields
         if (toInputType(attr.type) === 'textarea') {
-            input = $("<textarea>"); //{ class : 'ui-corner-all ui-widget-content' });
+            input = $("<textarea>", { class : 'ui-corner-all ui-widget-content' });
 
         // Handle select fields
         } else if (toInputType(attr.type) === 'select') {
@@ -336,7 +336,7 @@ var KanopyaFormWizard = (function() {
         // Handle other field types
         } else {
             input = $("<input>", { type : attr.type ? toInputType(attr.type) : 'text',
-                                   /*class : 'ui-corner-all ui-widget-content',*/ width: width - 1, height: 18 });
+                                   class : 'ui-corner-all ui-widget-content', width: width - 1, height: 18 });
         }
 
         // Set the input attributes
@@ -382,10 +382,10 @@ var KanopyaFormWizard = (function() {
 
         // Disable the field if required
         if (this.mustDisableField(name, value) === true) {
-            $(input).attr('disabled', 'disabled');
+            this.disableInput(input);
 
-            // If the hide_disabled option set, hide the input
-            if (this.hide_disabled) {
+            // If the hideDisabled option set, hide the input
+            if (this.hideDisabled) {
                 attr.hidden = true;
             }
         }
@@ -399,7 +399,7 @@ var KanopyaFormWizard = (function() {
         }
 
         // Finally, insert DOM elements in the form
-        this.insertInput(input, label, this.findTable(listing, attr.step), attr.help || attr.description, listing);
+        this.insertInput(input, label, this.findTable(attr.step, listing), attr.help || attr.description, listing);
 
         if ($(input).attr('type') === 'date') {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
@@ -425,8 +425,16 @@ var KanopyaFormWizard = (function() {
 
             var current_unit;
             var unit_input = addFieldUnit(attr, unit_cont, unit_field_id);
-            if (unit_input && $(input).attr('disabled')) {
-                unit_input.attr('disabled', 'disabled');
+            if (unit_input) {
+                if ($(input).attr('disabled')) {
+                    this.disableInput(unit_input);
+                }
+                $(unit_input).addClass('unit');
+                // TODO: Get the real length of the unit select box.
+                $(input).width($(input).width() - 50);
+            } else {
+                // TODO: Get the real length of the unit select box.
+                $(input).width($(input).width() - 45);
             }
             current_unit = attr.unit;
 
@@ -443,14 +451,6 @@ var KanopyaFormWizard = (function() {
                     $(input).val(readable_value.value);
                     $(unit_cont).find('option:contains("' + readable_value.unit + '")').attr('selected', 'selected');
                 }
-            }
-
-            // TODO: Get the real length of the unit select box.
-            if (unit_input) {
-                unit_input.addClass('wizard-ignore');
-                $(input).width($(input).width() - 50);
-            } else {
-                $(input).width($(input).width() - 45);
             }
         }
     }
@@ -472,7 +472,7 @@ var KanopyaFormWizard = (function() {
             var labelsline = $(table).find('tr.labels_' + listing).get(0);
             var errorsline = $(table).find('tr.errors_' + listing).get(0);
             if (! labelsline) {
-                // Add an empty line if not exists
+                // Add an empty line if not existsset next
                 labelsline = $("<tr>").css('position', 'relative');
                 labelsline.addClass('labels_' + listing);
                 labelsline.appendTo(table);
@@ -533,7 +533,6 @@ var KanopyaFormWizard = (function() {
                     });
                     td.append(removeButton);
                 }
-
                 line.append(td);
             }
 
@@ -602,18 +601,24 @@ var KanopyaFormWizard = (function() {
         }
     }
 
+    KanopyaFormWizard.prototype.disableInput = function(input) {
+        $(input).attr('disabled', 'disabled');
+        $(input).addClass('wizard-ignore').addClass("ui-state-disabled");
+    }
+
     KanopyaFormWizard.prototype.reload = function() {
         this.beforeSerialize($(this.form));
+
+        // Update the data hash as it will be given in parameter
+        // to the attributtes request at reload
         this.data = this.serialize($(this.form).serializeArray());
 
         // Remove table of the current step
-        for (var table in this.tables) {
-            if (this.tables[table].parent().is('fieldset')) {
-                this.tables[table].parent().remove();
+        for (var step in this.steps) {
+            for (var table in this.steps[step]) {
+                $(this.steps[step][table]).find('tr').remove();
             }
-            this.tables[table].remove();
         }
-        this.tables = {};
 
         // Then reload the from
         this.load();
@@ -642,7 +647,6 @@ var KanopyaFormWizard = (function() {
         $(form).find(':input').not('.wizard-ignore').not('button').each(function () {
             // Must transform all 'on' or 'off' values from checkboxes to '1' or '0'
             if (toInputType(_this.attributedefs[$(this).attr('name')].type) === 'checkbox') {
-                //if ($(this).attr('value') === 'on' && $(this).attr('checked')) {
                 if ($(this).attr('checked')) {
                     $(this).attr('value', '1');
                 } else {
@@ -783,32 +787,42 @@ var KanopyaFormWizard = (function() {
         return ajax('GET', '/api/attributes/' + resource, data);
     }
 
-    KanopyaFormWizard.prototype.findTable = function(tag, step) {
-        if (tag !== undefined) {
-            tag.replace(/ /g, '_');
+    KanopyaFormWizard.prototype.findTable = function(step, tag) {
+        // Use the resource type if no step specified
+        if (step === undefined) {
+            step = this.type;
+        }
+        var table = tag || step;
 
-            var table = this.tables[tag];
-            if (table === undefined) {
-                var table = $("<table>", { id : this.name + '_tag_' + tag });
-
-                var fieldset = $("<fieldset>").appendTo(this.form);
-                var legend   = $("<legend>", { text : tag }).css('font-weight', 'bold');
-                fieldset.css('border-color', '#ddd');
-                fieldset.append(legend);
-                fieldset.append(table);
-
-                $(table).css('width', '100%');
-                if (step !== undefined) {
-                    table.attr('rel', step);
-                    $(table).addClass('step');
-                }
-                this.tables[tag] = table;
+        // If the div for the step does not exists, create it
+        var stepdiv;
+        if (this.steps[step] === undefined) {
+            stepdiv = $("<div>", { id : this.name + '_step_' + step }).appendTo(this.form);
+            if (step !== this.type) {
+                stepdiv.addClass('step').attr('rel', step);
             }
-            return table;
+            this.steps[step] = {};
 
         } else {
-            return this.tables[this.type];
+            stepdiv = $(this.form).find('#' + this.name + '_step_' + step);
         }
+
+        // If the table does not exists, create it
+        if (this.steps[step][table] === undefined) {
+            this.steps[step][table] = $("<table>");
+            if (tag) {
+                this.steps[step][table].css('width', this.width).css('width', this.width - 50);
+                var fieldset = $("<fieldset>").css('border-color', '#ddd');
+                fieldset.append($("<legend>", { text : tag }).css('font-weight', 'bold'));
+                fieldset.append(this.steps[step][table]);
+                fieldset.appendTo(stepdiv);
+
+            } else {
+                this.steps[step][table].css('width', this.width);
+                this.steps[step][table].appendTo(stepdiv);
+            }
+        }
+        return this.steps[step][table];
     }
 
     KanopyaFormWizard.prototype.start = function() {
@@ -827,6 +841,7 @@ var KanopyaFormWizard = (function() {
         }
 
         this.id              = args.id;
+        this.width           = args.width           || 650;
         this.displayed       = args.displayed       || [];
         this.relations       = args.relations       || {};
         this.rawattrdef      = args.rawattrdef      || {};
@@ -834,7 +849,7 @@ var KanopyaFormWizard = (function() {
         this.title           = args.title           || this.name;
         this.skippable       = args.skippable       || false;
         this.reloadable      = args.reloadable      || false;
-        this.hide_disabled   = args.hide_disabled   || false;
+        this.hideDisabled    = args.hideDisabled    || false;
         this.submitCallback  = args.submitCallback  || this.submit;
         this.valuesCallback  = args.valuesCallback  || this.getValues;
         this.attrsCallback   = args.attrsCallback   || this.getAttributes;
@@ -848,6 +863,7 @@ var KanopyaFormWizard = (function() {
         return {
             type            : this.type,
             id              : this.id,
+            width           : this.width,
             displayed       : this.displayed,
             relations       : this.relations,
             rawattrdef      : this.rawattrdef,
@@ -855,7 +871,7 @@ var KanopyaFormWizard = (function() {
             title           : this.title,
             skippable       : this.skippable,
             reloadable      : this.reloadable,
-            hide_disabled   : this.hide_disabled,
+            hideDisabled    : this.hideDisabled,
             submitCallback  : this.submitCallback,
             valuesCallback  : this.valuesCallback,
             attrsCallback   : this.attrsCallback,
@@ -886,9 +902,9 @@ var KanopyaFormWizard = (function() {
     }
 
     KanopyaFormWizard.prototype.changeStep = function(event, data) {
-        var steps   = $(this.form).children("table.step");
-        var text    = "";
-        var i       = 1;
+        var steps = $(this.form).children("div.step");
+        var text  = "";
+        var index = 1;
         $(steps).each(function() {
             var prepend = "";
             var append  = "";
@@ -897,13 +913,23 @@ var KanopyaFormWizard = (function() {
                 append  = "</b>";
             }
             if (text === "") {
-                text += prepend + i + ". " + $(this).attr('rel') + append;
+                text += prepend + index + ". " + $(this).attr('rel') + append;
             } else {
-                text += " >> " + prepend + i + ". " + $(this).attr('rel') + append;
+                text += " >> " + prepend + index + ". " + $(this).attr('rel') + append;
             }
-            ++i;
+            ++index;
         });
         $(this.content).children("div#" + this.name + "_steps").html(text);
+
+        // Update buttons state
+        var state = $(this.form).formwizard("state");
+        if (! state.isLastStep) {
+            this.buttons['Ok'].find('span').text('Next');
+        }
+        else {
+            this.buttons['Ok'].find('span').text('Ok');
+        }
+        this.enableButtons(state);
     }
 
     KanopyaFormWizard.prototype.startWizard = function() {
@@ -925,7 +951,7 @@ var KanopyaFormWizard = (function() {
             }
         });
 
-        var steps = $(this.form).children("table.step");
+        var steps = $(this.form).children("div.step");
         if (steps.length > 1) {
             $(steps).each(function() {
                 if (!$(this).html()) {
@@ -984,15 +1010,38 @@ var KanopyaFormWizard = (function() {
     }
 
     KanopyaFormWizard.prototype.openDialog = function() {
-        var buttons = {
-            'Cancel'    : $.proxy(this.cancel, this),
-            'Ok'        : $.proxy(this.validateForm, this)
-        };
+        var buttons = [];
+        buttons.push({
+            id    : "button-cancel",
+            text  : "Cancel",
+            click : $.proxy(this.cancel, this)
+        });
+
+        // Add a back button if there is more than one step
+        if (Object.keys(this.steps).length > 1) {
+            buttons.push({
+                id    : "button-back",
+                text  : "Back",
+                click : $.proxy(this.back, this)
+            });
+        }
+
+        // Always add the OK button
+        buttons.push({
+            id    : "button-ok",
+            text  : "Ok",
+            click : $.proxy(this.validateForm, this)
+        });
+
         if (this.skippable) {
-            buttons['Skip'] = $.proxy(function() {
-                this.closeDialog();
-                this.callback();
-            }, this);
+            buttons.push({
+                id    : "button-skip",
+                text  : "Skip",
+                click :  $.proxy(function() {
+                    this.closeDialog();
+                    this.callback();
+                }, this)
+            });
         }
         this.content.dialog({
             title           : this.title,
@@ -1005,17 +1054,51 @@ var KanopyaFormWizard = (function() {
             buttons         : buttons,
             closeOnEscape   : false
         });
+        this.buttons = {
+            'Ok'     : $('#button-ok'),
+            'Cancel' : $('#button-cancel'),
+            'Back'   : $('#button-back')
+        };
         $('.ui-dialog-titlebar-close').remove();
+        
+        // If we are in the step mode, disable button as they will be
+        // enabled by the changeStep method.
+        if (Object.keys(this.steps).length > 1) {
+            this.disableButtons();
+        }
     }
 
     KanopyaFormWizard.prototype.cancel = function() {
+        this.cancelCallback();
+        this.closeDialog();
+    }
+
+    KanopyaFormWizard.prototype.back = function() {
+        this.disableButtons();
+
         var state = $(this.form).formwizard("state");
         if (state.isFirstStep) {
-            this.cancelCallback();
-            this.closeDialog();
+            this.cancel();
         }
         else {
             $(this.form).formwizard("back");
+        }
+    }
+
+    KanopyaFormWizard.prototype.disableButtons = function() {
+        for (var button in this.buttons) {
+            this.buttons[button].attr('disabled', 'disabled').addClass("ui-state-disabled");
+        }
+    }
+
+    KanopyaFormWizard.prototype.enableButtons = function(state) {
+        if (state === undefined) {
+            state = $(this.form).formwizard("state");
+        }
+        for (var button in this.buttons) {
+            if (! (state.isFirstStep && button === 'Back')) {
+                this.buttons[button].removeAttr('disabled').removeClass("ui-state-disabled");
+            }
         }
     }
 
@@ -1029,6 +1112,8 @@ var KanopyaFormWizard = (function() {
     }
 
     KanopyaFormWizard.prototype.validateForm = function () {
+        this.disableButtons();
+
         var _this = this;
 
         // Add validation rules for inputs inserted dynamically in the form.
@@ -1041,10 +1126,17 @@ var KanopyaFormWizard = (function() {
                 }
             }
         });
+        var oldstep = $(this.form).formwizard("state").currentStep;
 
         $(this.form).formwizard("next");
-    }
 
+        // If the state has not changed, there was an error while
+        // validation, so enable buttons
+        var state = $(this.form).formwizard("state");
+        if (oldstep === state.currentStep && ! state.isLastStep) {
+            this.enableButtons();
+        }
+    }
     return KanopyaFormWizard;
     
 })();
