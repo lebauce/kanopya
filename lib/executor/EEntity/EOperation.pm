@@ -150,6 +150,7 @@ sub validation {
             my $input;
             my $baseurl = "http://" . $ip . ":5000/validation/operation/" . $self->id;
 
+            my $message = '';
             if ($subscribtion->validation) {
                 $input = "validationmail";
                 $templatedata->{validation_url} = $baseurl . '/validate';
@@ -159,21 +160,22 @@ sub validation {
                 $self->addValidationPerm(consumer => $subscribtion->subscriber);
 
                 $validation = 1;
+                
+                $template->process($input . '.tt', $templatedata, \$message)
+                    or throw Kanopya::Exception::Internal(
+                         error => "Error when processing template " . $input . '.tt'
+                     );
             }
             else {
-                $input = "notificationmail";
+                $input      = "notificationmail";
+                my $eentity = EFactoroy::newEEntity(data => $entity);
+                $message    = $eentity->notificationMessage(operation => $self->_getEntity);
             }
 
             my $subject = '';
             $template->process($input . 'subject.tt', $templatedata, \$subject)
                 or throw Kanopya::Exception::Internal(
                      error => "Error when processing template " . $input . 'subject.tt'
-                 );
-
-            my $message = '';
-            $template->process($input . '.tt', $templatedata, \$message)
-                or throw Kanopya::Exception::Internal(
-                     error => "Error when processing template " . $input . '.tt'
                  );
 
             # TODO: Use multi recipient send, instead of sending one mail per subcriber

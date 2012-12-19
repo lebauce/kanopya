@@ -161,6 +161,38 @@ sub setMock {
     $mocks_classes->{$class} = $args{mock};
 }
 
+=pod
+=begin classdoc
+
+Build a notification message with a given Operation
+
+@param operation
+@return notification message
+
+=end classdoc
+=cut
+
+sub notificationMessage {
+    my $self    = shift;
+    my %args    = @_;
+
+    General::checkParams(
+        args        => \%args,
+        required    => [ 'operation' ]
+    );
+
+    my $message = "";
+    
+    my $template        = Template->new(General::getTemplateConfiguration());
+    my $templatedata    = { operation => $args{operation}->label };
+    $template->process('notificationmail.tt', $templatedata, \$message)
+        or throw Kanopya::Exception::Internal(
+             error => "Error when processing template notificationmail.tt"
+         );
+
+    return $message;
+}
+
 sub AUTOLOAD {
     my $self = shift;
     my %args = @_;
