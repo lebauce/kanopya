@@ -341,6 +341,13 @@ function createServiceCondition(container_id, elem_id) {
     $('#' + container_id).append(button);
 };
 
+var filterNotifyWorkflow    = function(grid, rowid) {
+    var workflowname    = ($(grid).getRowData(rowid)).workflow_def_id;
+    if (notifyworkflow_regex.exec(workflowname) != null) {
+        $(grid).setCell(rowid, "workflow_def_id", " ");
+    }
+};
+
 function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     var container = $("#" + container_id);
 
@@ -389,7 +396,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     }
 
     ////////////////////////RULES ACCORDION//////////////////////////////////
-            
+
     var divacc = $('<div id="accordionrule">').appendTo(container);
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
     $('<div id="node_accordion_container">').appendTo(divacc);
@@ -429,7 +436,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         },
     } );
     createNodemetricCondition('node_accordion_container', elem_id)
-    
+
     // Display nodemetric rules
     $("<p>").appendTo('#node_accordion_container');
     create_grid( {
@@ -443,7 +450,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             if (rowdata.workflow_def_id) {
                 setCellWithRelatedValue(
                         '/api/workflowdef/' + rowdata.workflow_def_id,
-                        grid, rowid, 'workflow_def_id', 'workflow_def_name');
+                        grid, rowid, 'workflow_def_id', 'workflow_def_name', filterNotifyWorkflow);
             }
             require('common/notification_subscription.js');
             addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_nodemetric_rules_" +  elem_id +"_alert", "ProcessRule", false);
@@ -472,7 +479,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             url : '/api/nodemetricrule'
         },
     } );
-    
+
     createRuleButton('node_accordion_container', elem_id, 'nodemetric_rule');
     if (!mode_policy) {
         importItemButton(
@@ -551,7 +558,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             if (rowdata.workflow_def_id) {
                 setCellWithRelatedValue(
                         '/api/workflowdef/' + rowdata.workflow_def_id,
-                        grid, rowid, 'workflow_def_id', 'workflow_def_name');
+                        grid, rowid, 'workflow_def_id', 'workflow_def_name', filterNotifyWorkflow);
             }
             require('common/notification_subscription.js');
             addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_aggregate_rules_" +  elem_id +"_alert", "ProcessRule", false);
