@@ -43,21 +43,9 @@ sub createHost {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "host_core", "kernel_id",
-                                       "host_serial_number", "host_ram" ]);
+                         required => [ "host_core", "host_serial_number", "host_ram" ]);
 
     if (defined $args{erollback}) { delete $args{erollback}; }
-
-    # Check if kernel_id exist
-    $log->debug("checking kernel existence with id <$args{kernel_id}>");
-    eval {
-        Entity::Kernel->get(id => $args{kernel_id});
-    };
-    if($@) {
-        $errmsg = "Wrong kernel_id attribute detected <$args{kernel_id}>\n" . $@;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
 
     my $host = $self->_getEntity()->addHost(%args);
 

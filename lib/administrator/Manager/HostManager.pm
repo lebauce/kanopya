@@ -69,7 +69,7 @@ sub addHost {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "host_core", "kernel_id", "host_serial_number", "host_ram" ]);
+                         required => [ "host_core", "host_serial_number", "host_ram" ]);
 
     my $host_manager_id = $self->getAttr(name => 'entity_id');
 
@@ -118,7 +118,7 @@ sub createHost {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "host_core", "kernel_id", "host_serial_number", "host_ram" ]);
+                         required => [ "host_core", "host_serial_number", "host_ram" ]);
 
     my $composite_params = {};
     if (defined $args{ifaces}) {

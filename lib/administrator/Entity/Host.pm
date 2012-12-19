@@ -185,8 +185,7 @@ sub create {
     my %args  = @_;
 
     General::checkParams(args   => \%args,
-                         required => ['host_manager_id', 'host_core', 'kernel_id',
-                                      'host_ram', 'host_serial_number' ]);
+                         required => [ 'host_manager_id', 'host_core', 'host_ram', 'host_serial_number' ]);
 
     Entity->get(id => $args{host_manager_id})->createHost(%args);
 }
