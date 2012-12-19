@@ -264,16 +264,13 @@ sub demote {
     bless $args{demoted}, $class;
 
     # Set the class type to the new promotion class
-    eval {
-        my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                        hash  => { class_type => $class })->single;
+    my $rs = $adm->_getDbixFromHash(table => "ClassType",
+                                    hash  => { class_type => $class })->single;
 
-        $args{demoted}->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
-        $args{demoted}->save();
-    };
-    if ($@) {
-        # Unregistred or abstract class name <$class>, assuming it is not an Entity.
-    }
+    $args{demoted}->setAttr(name  => 'class_type_id',
+                            value => $rs->get_column('class_type_id'));
+    $args{demoted}->save();
+
     return $args{demoted};
 }
 
@@ -1283,9 +1280,10 @@ sub delete {
 
         } else { last; }
     }
+
+    $self->{_dbix} = $dbix->parent;
     $dbix->delete;
 }
-
 
 =pod
 
