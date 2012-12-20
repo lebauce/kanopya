@@ -1281,7 +1281,10 @@ sub delete {
         } else { last; }
     }
 
-    $self->{_dbix} = $dbix->parent;
+    if (defined $args{trunc}) {
+        $self->{_dbix} = $dbix->parent;
+    }
+
     $dbix->delete;
 }
 
