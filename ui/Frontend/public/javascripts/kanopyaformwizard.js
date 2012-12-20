@@ -345,7 +345,15 @@ var KanopyaFormWizard = (function() {
         }
 
         // Set the input attributes
-        $(input).attr({ name : name, id : 'input_' + name, rel : name });
+        var id = 'input_' + name;
+
+        // If listing mode, use the numbre of row to postfix input ids
+        // avoiding inputs of each rows have the same id.
+        if (listing) {
+            // 3 lines are used for the button, labels and errors
+            id += '_' + (table.find('tr').length - 4);
+        }
+        $(input).attr({ name : name, id : id, rel : name });
 
         // Check if the attr is mandatory
         this.validateRules[name] = {};
