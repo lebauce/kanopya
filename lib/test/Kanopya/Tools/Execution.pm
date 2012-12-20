@@ -43,7 +43,7 @@ use General;
 use Executor;
 
 my @args = ();
-my $executor = new_ok("Executor", \@args, "Instantiate an executor");
+my $executor = Executor->new();
 
 =pod
 
@@ -76,12 +76,9 @@ sub execute {
         );
     }
 
-    my $test = 'execute ' . $workflow->workflow_name . ' workflow';
-
     WORKFLOW:
     while(1) {
-
-        lives_ok { $executor->oneRun; } 'executor run';
+        $executor->oneRun;
 
         my $current;
         eval {
@@ -91,7 +88,7 @@ sub execute {
             diag('Current operation is ' . $current);
         }
 
-        #refresh workflow view
+        # refresh workflow view
         $workflow = Entity::Workflow->find(hash => {workflow_id => $workflow->id});
 
         my $state = $workflow->state;
@@ -102,18 +99,15 @@ sub execute {
         }
         elsif($state eq 'done') {
             diag('Workflow ' . $workflow->id . ' done');
-            pass($test);
             last WORKFLOW;
         }
         elsif ($state eq 'failed') {
             diag('Workflow ' . $workflow->id . ' failed');
-            fail($test);
-            last WORKFLOW;
+            throw Kanopya::Exception::Internal(error => 'Execution of workflow ' . $workflow->workflow_name . ' (' .$workflow->id . ') failed');
         }
         elsif($state eq 'cancelled') {
             diag('Workflow ' . $workflow->id . ' cancelled');
-            fail($test);
-            last WORKFLOW;
+            throw Kanopya::Exception::Internal(error => 'Execution of workflow ' . $workflow->workflow_name . ' (' .$workflow->id . ') cancelled');
         }
     }
 
