@@ -125,12 +125,16 @@ var KanopyaFormWizard = (function() {
 
             // If the relation is editable, insert a button to add entries
             if (this.attributedefs[relation_name].is_editable == true) {
-                var add_button = $("<input>", { text : 'Add', class : 'wizard-ignore', type: 'button', id: 'add_button_' + relation_name });
+                var add_button = $("<input>", { class : 'wizard-ignore', type: 'button', id: 'add_button_' + relation_name });
                 var add_button_line = $("<tr>").css('position', 'relative');
                 $("<td>", { colspan : 2 }).append(add_button).appendTo(add_button_line);
 
                 var tag = this.attributedefs[relation_name].label || relation_name;
-                this.findTable(this.attributedefs[relation_name].step, tag).append(add_button_line);
+                var table = this.findTable(this.attributedefs[relation_name].step, tag);
+                if (table.parent().is('fieldset') && table.parent().css('display') == 'none') {
+                    table.parent().css('display', 'block');
+                }
+                table.append(add_button_line);
 
                 var _this = this;
                 var fixed_params = {
@@ -292,6 +296,7 @@ var KanopyaFormWizard = (function() {
         }
 
         var input = undefined;
+        var table = this.findTable(attr.step, listing);
 
         // Handle text fields
         if (toInputType(attr.type) === 'textarea') {
@@ -396,10 +401,15 @@ var KanopyaFormWizard = (function() {
          */
         if (attr.hidden) {
             input.attr('type', 'hidden');
+
+        } else {
+            if (table.parent().is('fieldset') && table.parent().css('display') == 'none') {
+               table.parent().css('display', 'block');
+            }
         }
 
         // Finally, insert DOM elements in the form
-        this.insertInput(input, label, this.findTable(attr.step, listing), attr.help || attr.description, listing);
+        this.insertInput(input, label, table, attr.help || attr.description, listing);
 
         if ($(input).attr('type') === 'date') {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
@@ -457,6 +467,8 @@ var KanopyaFormWizard = (function() {
 
     KanopyaFormWizard.prototype.insertInput = function(input, label, table, help, listing) {
         var linecontainer;
+
+        // TODO: factorize code for both mode listing or not
 
         // If listing mode, append the input horizontally to the last line.
         // Build the labels line if not exists
@@ -617,10 +629,13 @@ var KanopyaFormWizard = (function() {
         for (var step in this.steps) {
             for (var table in this.steps[step]) {
                 $(this.steps[step][table]).find('tr').remove();
+                if (this.steps[step][table].parent().is('fieldset')) {
+                    this.steps[step][table].parent().css('display', 'none');
+                }
             }
         }
 
-        // Then reload the from
+        // Then reload the form
         this.load();
     }
 
@@ -788,6 +803,13 @@ var KanopyaFormWizard = (function() {
     }
 
     KanopyaFormWizard.prototype.findTable = function(step, tag) {
+        // Use step as tag if defined in options
+        if (this.stepsAsTags && step !== undefined) {
+            if (tag === undefined) {
+                tag = step;
+            }
+            step = undefined;
+        }
         // Use the resource type if no step specified
         if (step === undefined) {
             step = this.type;
@@ -812,7 +834,7 @@ var KanopyaFormWizard = (function() {
             this.steps[step][table] = $("<table>");
             if (tag) {
                 this.steps[step][table].css('width', this.width).css('width', this.width - 50);
-                var fieldset = $("<fieldset>").css('border-color', '#ddd');
+                var fieldset = $("<fieldset>").css('border-color', '#ddd').css('display', 'none');
                 fieldset.append($("<legend>", { text : tag }).css('font-weight', 'bold'));
                 fieldset.append(this.steps[step][table]);
                 fieldset.appendTo(stepdiv);
@@ -850,6 +872,7 @@ var KanopyaFormWizard = (function() {
         this.skippable       = args.skippable       || false;
         this.reloadable      = args.reloadable      || false;
         this.hideDisabled    = args.hideDisabled    || false;
+        this.stepsAsTags     = args.stepsAsTags     || false;
         this.submitCallback  = args.submitCallback  || this.submit;
         this.valuesCallback  = args.valuesCallback  || this.getValues;
         this.attrsCallback   = args.attrsCallback   || this.getAttributes;
@@ -872,6 +895,7 @@ var KanopyaFormWizard = (function() {
             skippable       : this.skippable,
             reloadable      : this.reloadable,
             hideDisabled    : this.hideDisabled,
+            stepsAsTags     : this.stepsAsTags,
             submitCallback  : this.submitCallback,
             valuesCallback  : this.valuesCallback,
             attrsCallback   : this.attrsCallback,
@@ -1131,9 +1155,11 @@ var KanopyaFormWizard = (function() {
         $(this.form).formwizard("next");
 
         // If the state has not changed, there was an error while
-        // validation, so enable buttons
+        // validation, so enable buttons.
         var state = $(this.form).formwizard("state");
-        if (oldstep === state.currentStep && ! state.isLastStep) {
+        if (Object.keys(this.steps).length <= 1 ||
+            (oldstep === state.currentStep && ! state.isLastStep)) {
+
             this.enableButtons();
         }
     }
