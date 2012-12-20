@@ -428,7 +428,7 @@ sub becomeMasterNode {
 
 =cut
 
-sub stopToBeNode{
+sub stopToBeNode {
     my $self = shift;
 
     if (not defined $self->node) {
@@ -437,6 +437,14 @@ sub stopToBeNode{
         #throw Kanopya::Exception::DB(error => $errmsg);
     }
     else {
+        my @ifaces = $self->getIfaces;
+        for my $iface (@ifaces) {
+            my @ips = $iface->ips;
+            for my $ip (@ips) {
+                $ip->delete();
+            }
+        }
+
         $self->node->delete();
     }
 
