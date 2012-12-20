@@ -1,4 +1,5 @@
 require('common/notification_subscription.js');
+require('common/service_common.js');
 
 function load_service_template_content (container_id) {
     function createAddServiceTemplateButton(cid, grid) {
@@ -16,24 +17,9 @@ function load_service_template_content (container_id) {
                 attrsCallback : function (resource, data) {
                     var attributes = ajax('POST', '/api/' + resource + '/getServiceTemplateDef', data);
 
-                    var step;
-                    for (var index in attributes.displayed) {
-                        attrname = attributes.displayed[index];
+                    // Set steps
+                    set_steps(attributes);
 
-                        if (! $.isPlainObject(attrname) && attrname.match(/_policy_id$/) != undefined) {
-                            step = attrname.replace('_policy_id','');
-                            step = step.substr(0,1).toUpperCase() + step.substr(1);
-                        }
-                        if (step) {
-                            var attrnames = [attrname];
-                            if ($.isPlainObject(attrname)) {
-                                attrnames = Object.keys(attrname);
-                            }
-                            for (index in attrnames){
-                                attributes.attributes[attrnames[index]].step = step;
-                            }
-                        }
-                    }
                     // Set the value if defined (at reload)
                     $.each([ 'service_name', 'service_desc' ], function (index, attr) {
                         if (data[attr] !== undefined) {

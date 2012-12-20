@@ -1,6 +1,4 @@
 // KIM services
-
-require('modalform.js');
 require('common/service_common.js');
 require('common/model.js');
 
@@ -94,6 +92,7 @@ function servicesList (container_id, elem_id) {
                 type         : 'cluster',
                 reloadable   : true,
                 hideDisabled : true,
+                stepsAsTags  : true,
                 displayed    : [ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ],
                 rawattrdef   : {
                     cluster_name : {
@@ -159,6 +158,9 @@ function servicesList (container_id, elem_id) {
                         attributes = { attributes : {}, relations : {} };
                     }
                     $.extend(true, attributes.relations, cluster_relations);
+
+                    // Set steps
+                    set_steps(attributes);
 
                     // Set the value if defined (at reload)
                     $.each([ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ], function (index, attr) {
