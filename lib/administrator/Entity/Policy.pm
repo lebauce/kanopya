@@ -29,6 +29,8 @@ use Entity::Masterimage;
 use Entity::Kernel;
 use ComponentType;
 
+use Clone qw(clone);
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -151,7 +153,7 @@ sub getPolicyDef {
         displayed => [ 'policy_name', 'policy_desc' ]
     };
 
-    my $json = $class->toJSON(model => 1);
+    my $json = clone($class->toJSON(model => 1));
 
     # Remove the param_preset_id form the json, as
     # the contents of params preset are added to the json.
