@@ -23,6 +23,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Entity::Operation;
+use EntityLock;
 use EFactory;
 
 use Log::Log4perl "get_logger";
@@ -54,6 +55,11 @@ sub cancel {
         $operation->remove();
     }
 
+    # Remove here possible resilient locks due to contexts params overriding
+    # TODO: Be sure no resilient locks occurs
+    for my $lock (EntityLock->search(hash => { consumer_id => $self->id })) {
+        $lock->remove();
+    }
     $self->setState(state => $args{state});
 }
 
