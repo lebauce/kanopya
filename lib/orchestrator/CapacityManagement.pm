@@ -111,8 +111,9 @@ sub new {
                 $hypervisor_available_memory = $ehypervisor->getAvailableMemory;
                 $log->info(Dumper $hypervisor_available_memory);
             };
-            if($@) {
-                $log->info($@);
+            if ($@) {
+                my $error = $@;
+                $log->error('Capacity Management catches following error : '.$error);
             }
 
             if (defined $hypervisor_available_memory->{mem_theoretically_available}) {
@@ -132,8 +133,14 @@ sub new {
             my $vm   = Entity->get(id => $vm_id);
             my $e_vm = EFactory::newEEntity(data => $vm);
             #TODO: This can take some time => need a method whichs retrieve information in one shot
-            $self->{_infra}->{vms}->{$vm_id}->{ram_effective} = $e_vm->getRamUsedByVm->{total};
-        }
+            eval {
+	            $self->{_infra}->{vms}->{$vm_id}->{ram_effective} = $e_vm->getRamUsedByVm->{total};
+            };
+            if ($@) {
+                my $error = $@;
+                $log->error('Capacity Management catches following error : '.$error);
+            }
+       }
     }
     return $self;
 }
