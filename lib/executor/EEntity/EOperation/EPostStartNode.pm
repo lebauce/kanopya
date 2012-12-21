@@ -140,6 +140,8 @@ sub finish {
     }
 
     # /!\ WARNING: DO NOT DELETE $self->{context}->{host} ! needed in worflow addNode + VM migration
+
+    delete $self->{context}->{cluster}; # Need to be deleted for Add hypervisor followed by add Vm
 }
 
 sub _cancel {
