@@ -55,9 +55,7 @@ sub getAvailableMemory {
 
 sub getVmResources {
     my ($self, %args) = @_;
-
-    return $self->vmm->getAvailableMemory(host => $self,
-                                          %args);
+    return $self->vmm->getVmResources(host => $self, %args);
 }
 
 =head2 getAvailableMemory
