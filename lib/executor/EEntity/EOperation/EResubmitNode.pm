@@ -116,12 +116,19 @@ sub execute {
     );
 
     sleep(5); # Wait 5 seconds for the VM to be pending
-    my $state = $self->{context}->{cloudmanager_comp}->getVMState(host => $self->{context}->{host})->{state};
 
-    if ( not $state eq 'pend') {
-         my $error = "VM state is <$state> while must be in <pend> state !";
-         throw Kanopya::Exception::Internal::WrongValue(error => $error);
-    }
+    $self->{context}->{cloudmanager_comp}->onevm_deploy(
+        vm_nameorid    => $self->{context}->{host}->host_hostname,
+        host_nameorid  => $self->{context}->{hypervisor}->host_hostname,
+    );
+
+    sleep(5);
+
+    $self->{context}->{cloudmanager_comp}->onevm_resubmit(
+        vm_nameorid => $self->{context}->{host}->host_hostname,
+    );
+
+    sleep(5); # Wait 5 seconds for the VM to be pending
 
     $self->{context}->{cloudmanager_comp}->onevm_deploy(
         vm_nameorid    => $self->{context}->{host}->host_hostname,
@@ -186,13 +193,10 @@ sub postrequisites {
     }
 
     # Instanciate an econtext to try initiating an ssh connexion.
-    eval {
-        $self->{context}->{host}->getEContext;
-    };
-    if ($@) {
-        $log->info("Host <$host_id> not yet reachable at <$node_ip>");
-        return $delay;
-    }
+       if ( not $self->{context}->{'host'}->checkUp() ) {
+            $log->info("Host <$host_id> not yet reachable at <$node_ip>");
+            return $delay;
+        }
 
     # Check if all host components are up.
     my @components = $self->{context}->{vm_cluster}->getComponents(category => "all");
