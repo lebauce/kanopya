@@ -8,7 +8,7 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/rules_on_state.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'/vagrant/rules_on_state.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
 lives_ok {
@@ -72,13 +72,10 @@ sub main {
         ($hv1, $hv2) = ($hvs[0], $hvs[1]);
 
         remove_operations_and_locks();
+
         split_2_2();
         check_no_operation_and_no_lock();
         maintenance_hypervisor();
-        check_no_operation_and_no_lock();
-        split_2_2();
-        check_no_operation_and_no_lock();
-        resubmit_hypervisor();
         check_no_operation_and_no_lock();
         split_2_2();
         check_no_operation_and_no_lock();
@@ -87,7 +84,10 @@ sub main {
         check_no_operation_and_no_lock();
         resubmit_hv_on_state();
         check_no_operation_and_no_lock();
-
+        split_2_2();
+        check_no_operation_and_no_lock();
+        resubmit_hypervisor();
+        check_no_operation_and_no_lock();
     };
     if($@) {
         my $error = $@;
@@ -147,9 +147,8 @@ sub resubmit_hv_on_state {
     $indicators{$indic->indicator->indicator_oid} = $indic->indicator;
 
     $collector->update();
-    sleep(4);
+    sleep(5);
     $collector->update();
-
 
     my $nodes_metrics = $hv_cluster->getNodesMetrics(
         indicators => \%indicators,
@@ -164,11 +163,8 @@ sub resubmit_hv_on_state {
     $node->setAttr(name => 'node_state', value => 'broken:'.time());
     $node->save();
 
+    sleep(5);
     $collector->update();
-    for my $i (1..5) {
-        sleep(4);
-        $collector->update();
-    }
 
     $nodes_metrics = $hv_cluster->getNodesMetrics(
         indicators => \%indicators,
@@ -242,9 +238,13 @@ sub resubmit_hv_on_state {
     is (scalar @hv2_vms, 4, 'Hv2 has 4 vms');
 
     sleep(55);
+
     $orchestrator->manage_aggregates();
+
     @operations = Entity::Operation->search(hash => {});
-    is (scalar @operations, 1, 'And of delay, workflow re-enqueud');
+
+    is (scalar @operations, 1, 'End of delay, workflow re-enqueud');
+
     while (@operations) { (pop @operations)->delete(); }
     $ncomb->delete();
 }
@@ -282,6 +282,8 @@ sub resubmit_vm_on_state {
     my @vms = $one->opennebula3_vms;
     my $vm = $vms[0];
     my $node = $vm->node;
+    my $old_ram = $vm->host_ram;
+    my $old_cpu = $vm->host_core;
 
     for my $vm_t (@vms) {
         $collector->deleteRRD(set_name => 'state', host_name => $vm_t->host_hostname);
@@ -295,7 +297,7 @@ sub resubmit_vm_on_state {
 
     $collector->update();
 
-    sleep(4);
+    sleep(5);
 
     $collector->update();
 
@@ -308,14 +310,25 @@ sub resubmit_vm_on_state {
 
     $orchestrator->manage_aggregates();
 
+
+    my $evm = EFactory::newEEntity(data => $vm);
+
+    eval {
+        $evm->getEContext->execute(command => 'ifconfig eth0 down ; ifconfig eth1 down');
+    };
+
+    diag('Vm ifdown');
+
+
     $node->setAttr(name => 'node_state', value => 'broken:'.time());
     $node->save();
 
     $collector->update();
-    for my $i (1..5) {
-        sleep(4);
-        $collector->update();
-    }
+
+    sleep(5);
+
+    $collector->update();
+
 
     $nodes_metrics = $vm_cluster->getNodesMetrics(
         indicators => \%indicators,
@@ -367,9 +380,12 @@ sub resubmit_vm_on_state {
 
     executor_real_infra();
 
-    my ($state, $foo) = $vm->getNodeState();
-    is ($state, 'in', 'Node in' );
+    check_vm_ram(vm =>$vm, ram => $old_ram);
+    check_vm_cpu(vm =>$vm, cpu => $old_cpu);
 
+    my ($state, $foo) = $vm->getNodeState();
+
+    is ($state, 'in', 'Node in' );
 
     $orchestrator->manage_aggregates();
     sleep(10);
@@ -395,7 +411,17 @@ sub remove_operations_and_locks {
 
     my @ops = Entity::Operation->search(hash => {});
     while (@ops) {
+	print "delete op\n";
         (pop @ops)->delete();
+    }
+   
+    my @nr = Entity::NodemetricRule->search(hash => {});
+    while (@nr) {
+        (pop @nr)->delete();
+    }
+    my @ar = Entity::AggregateRule->search(hash => {});
+    while (@ar) {
+        (pop @ar)->delete();
     }
 
 }
@@ -403,8 +429,21 @@ sub resubmit_hypervisor {
 
     my @hv1_vms = $hv1->virtual_machines;
     my @hv2_vms = $hv2->virtual_machines;
+
+    my @old_rams = map {$_->host_ram} @hv2_vms;
+    my @old_cpus = map {$_->host_core} @hv2_vms;
+
+
     is (scalar @hv1_vms, 2, '1st hv has 2 vms');
     is (scalar @hv2_vms, 2, '2nd hv has 2 vms');
+
+    my $ehyp = EFactory::newEEntity(data => $hv2);
+
+    eval {
+        $ehyp->getEContext->execute(command => 'ifconfig eth0 down ; ifconfig eth1 down');
+    };
+
+    diag('Hypervisor ifdown');
 
     $hv2->resubmitVms;
     lives_ok { $executor->oneRun; } 'EResubmitHypervisor execution';
@@ -427,6 +466,11 @@ sub resubmit_hypervisor {
 
     is (scalar $hv1->virtual_machines, 4, 'Hv1 has 4 vms');
     is (scalar $hv2->virtual_machines, 0, 'Hv2 has 0 vms');
+
+    for my $i (0..(@hv2_vms-1)) {
+        check_vm_cpu(vm => $hv2_vms[$i], cpu => $old_cpus[$i]);
+        check_vm_ram(vm => $hv2_vms[$i], ram => $old_rams[$i]);
+    }
 }
 
 sub maintenance_hypervisor {
@@ -520,3 +564,36 @@ sub executor_real_infra {
     } 'Waiting maximum 300 seconds for the host to start';
 }
 
+sub check_vm_ram {
+    my %args = @_;
+    my $vm = $args{vm}->reload;
+    my $ram = $args{ram};
+
+    if (!($vm->host_ram == $ram)) {
+        throw Kanopya::Exception(error => 'vm ram value in DB is wrong');
+    }
+
+    my $evm = EFactory::newEEntity(data => $vm);
+
+    if (!($evm->getTotalMemory == $ram)) {
+        throw Kanopya::Exception(error => 'vm real ram value is wrong');
+    }
+    diag('# vm ram is ok');
+}
+
+sub check_vm_cpu {
+    my %args = @_;
+    my $vm = $args{vm}->reload;
+    my $cpu = $args{cpu};
+
+    if (!($vm->host_core == $cpu)) {
+        throw Kanopya::Exception(error => 'vm cpu value in DB is wrong');
+    }
+
+    my $evm = EFactory::newEEntity(data => $vm);
+
+    if (!($evm->getTotalCpu == $cpu)) {
+        throw Kanopya::Exception(error => 'vm real cpu value is wrong');
+    }
+    diag('# vm cpu is ok');
+}
