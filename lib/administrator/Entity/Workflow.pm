@@ -116,10 +116,10 @@ sub enqueue {
     );
 }
 
-sub enqueueNow {
+sub _getOperationsToEnqueue {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, optional => { 'operation' => undef, 'workflow' => undef});
 
+    General::checkParams(args => \%args, optional => { 'operation' => undef, 'workflow' => undef});
     my @operations_to_enqueue = ();
 
     if (defined $args{workflow}) {
@@ -140,29 +140,96 @@ sub enqueueNow {
         $operations_to_enqueue[0]->{params} = $args{operation}->{params};
     }
 
+    return @operations_to_enqueue;
+}
 
+sub _updatePendingOperationRank {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'offset' ]);
 
     my @sorted_operations = sort {
         $b->execution_rank <=> $a->execution_rank
     } $self->operations;
 
     my $incr_num = 0; # num of operations to slide
+
     for my $operation (@sorted_operations) {
         if ($operation->state eq 'pending') {
             # offset all pending operation to insert new ones
             my $execution_rank = $operation->execution_rank;
-            $execution_rank += scalar (@operations_to_enqueue);
+            $execution_rank += $args{offset};
             $operation->setAttr(name => 'execution_rank', value => $execution_rank);
             $operation->save();
             $incr_num++;
         }
     }
+    return $incr_num;
+}
+
+sub _updateProcessingOperationRank {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'offset' ]);
+
+    my $processing_operation = $self->findRelated(
+                                filters => ['operations'],
+                                hash    => { 'me.state' => ['processing', 'prereported', 'ready'] }
+                            );
+
+    my $execution_rank = $processing_operation->execution_rank;
+    $execution_rank += $args{offset};
+    $processing_operation->setAttr(name => 'execution_rank', value => $execution_rank);
+    $processing_operation->save();
+    $log->debug('Operation id '.$processing_operation->id.': new rank'.$execution_rank);
+}
+
+sub enqueueBefore {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, optional => { 'operation' => undef, 'workflow' => undef});
+
+    my @operations_to_enqueue = $self->_getOperationsToEnqueue(%args);
+
+    my $incr_num = $self->_updatePendingOperationRank( offset => (scalar @operations_to_enqueue) );
+
+    $self->_updateProcessingOperationRank( offset => (scalar @operations_to_enqueue) );
 
     my $rank_offset = 0;
 
     for my $operation_to_enqueue (@operations_to_enqueue) {
 
-        my $operation = Entity::Operation->enqueueNow(
+        my $operation = Entity::Operation->enqueue(
+            workflow_id => $self->getAttr(name => 'workflow_id'),
+            %$operation_to_enqueue,
+        );
+
+        if ($incr_num > 0) {
+            # Ajust execution rank
+            my $current_rank = $operation->execution_rank;
+            my $new_rank = $current_rank - $incr_num - scalar(@operations_to_enqueue) + $rank_offset - 1;
+            $operation->setAttr(name => 'execution_rank', value => $new_rank);
+            if ($new_rank == 0) {
+                $operation->setAttr(name => 'state', value => 'ready');
+            }
+            $operation->save();
+            $rank_offset++;
+        }
+    }
+
+    map {$log->debug($_->execution_rank.' '.$_->type.' '.$_->state)} $self->operations;
+}
+
+sub enqueueNow {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, optional => { 'operation' => undef, 'workflow' => undef});
+
+    my @operations_to_enqueue = $self->_getOperationsToEnqueue(%args);
+
+    my $incr_num = $self->_updatePendingOperationRank( offset => (scalar @operations_to_enqueue) );
+
+    my $rank_offset = 0;
+
+    for my $operation_to_enqueue (@operations_to_enqueue) {
+
+        my $operation = Entity::Operation->enqueue(
             workflow_id => $self->getAttr(name => 'workflow_id'),
             %$operation_to_enqueue,
         );
@@ -175,7 +242,7 @@ sub enqueueNow {
             $rank_offset++;
         }
     }
-    map {$log->info($_->execution_rank.' '.$_->type)} $self->operations;
+    map {$log->debug($_->execution_rank.' '.$_->type)} $self->operations;
 }
 
 sub getCurrentOperation {
