@@ -77,6 +77,14 @@ sub prepare {
         }
         $self->{params}->{ifaces} = \@ifaces;
     }
+    
+    if (defined $self->{params}->{harddisks}) {
+        my @harddisks;
+        for my $hd (keys %{$self->{params}->{harddisks}}) {
+            push @harddisks, $self->{params}->{harddisks}->{$hd};
+        }
+        $self->{params}->{harddisks} = \@harddisks;
+    }
 }
 
 sub execute {

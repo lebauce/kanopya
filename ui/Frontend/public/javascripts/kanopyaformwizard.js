@@ -164,7 +164,7 @@ var KanopyaFormWizard = (function() {
 
         // For each attributes, add an input to the form
         for (var name in ordered_attributes) if (ordered_attributes.hasOwnProperty(name)) {
-            var value = this.attributedefs[name].value || values[name] || undefined;
+            var value = this.attributedefs[name].value || values[name] || this.attributedefs[name].default || undefined;
 
             // Get options for select inputs
             if (this.attributedefs[name].type === 'relation' &&

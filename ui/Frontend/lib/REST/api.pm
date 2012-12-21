@@ -57,6 +57,7 @@ my %resources = (
     "fileimagemanager0"        => "Entity::Component::Fileimagemanager0",
     "gp"                       => "Entity::Gp",
     "haproxy1"                 => "Entity::Component::HAProxy1",
+    "harddisk"                 => "Harddisk",
     "host"                     => "Entity::Host",
     "hostmodel"                => "Entity::Hostmodel",
     "hypervisor"               => "Entity::Host::Hypervisor",
