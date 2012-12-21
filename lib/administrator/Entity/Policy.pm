@@ -169,12 +169,15 @@ sub getPattern {
     General::checkParams(args => \%args, optional => { 'params' => {} });
 
     # Merge the policy params with those given in parameters
-    my $params  = $merge->merge($args{params}, $self->getParams);
+    # Set the option 'noarrays' for getting policy params because
+    # the merge module is not able to merge arrays, so the resulting
+    # merged params will have duplicated values in arrays.
+    my $params  = $merge->merge($args{params}, $self->getParams(noarrays => 1));
     my $pattern = $self->getPatternFromParams(params => $params);
 
-    # Manually remove deleted params for the original params hashes,
+    # Manually remove deleted params from the original params hashes,
     # because the merge of the params with the policy contents has
-    # overiden the referece of the original params hash.
+    # overriden the reference of the original params hash.
     for my $param (keys %{ $args{params} }) {
         if (not defined $params->{$param}) {
             delete $args{params}->{$param};
@@ -205,7 +208,7 @@ sub getPatternFromParams {
                 $manager_type =~ s/_id$//g;
 
                 # Set the manager infos
-                $pattern->{managers}->{$manager_type}->{manager_id} = delete $args{params}->{$name};
+                $pattern->{managers}->{$manager_type}->{manager_id}   = delete $args{params}->{$name};
                 $pattern->{managers}->{$manager_type}->{manager_type} = $manager_type;
 
                 # Set the manager params if required
@@ -238,6 +241,7 @@ sub mergeValues {
     # with values from parameters (LEFT_PRECEDENT).
     if (ref($self)) {
         my $existing = $self->getParams();
+
         # Here we need to manually override the existing list values with
         # list value from paramters as the merge extends the list contents.
         for my $attrname (keys %{ $args{values} }) {
@@ -302,11 +306,14 @@ sub getParams {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, optional => { 'noarrays' => 0 });
+
     my $flat_hash = {};
     my $presets = $self->param_preset;
     my $pattern = $presets ? $presets->load() : {};
 
     # Transform the policy configuration pattern to a flat hash
+    ATTRIBUTE:
     for my $name (keys %$pattern) {
         # Handle managers
         if ($name eq 'managers') {
@@ -322,6 +329,8 @@ sub getParams {
         }
         # Handle components
         elsif ($name eq 'components') {
+            if ($args{noarrays}) { next ATTRIBUTE; }
+
             for my $component (values %{ $pattern->{$name} }) {
                 if (not defined $flat_hash->{'components'}) {
                     $flat_hash->{'components'} = [];
@@ -331,6 +340,8 @@ sub getParams {
         }
         # Handle network interfaces
         elsif ($name eq 'interfaces') {
+            if ($args{noarrays}) { next ATTRIBUTE; }
+
             for my $interface (values %{ $pattern->{$name} }) {
                 if (not defined $flat_hash->{'interfaces'}) {
                     $flat_hash->{'interfaces'} = [];
@@ -343,7 +354,10 @@ sub getParams {
                 push @{ $flat_hash->{'interfaces'} }, $interface;
             }
         }
+        # Handle billing limits
         elsif ($name eq 'billing_limits') {
+            if ($args{noarrays}) { next ATTRIBUTE; }
+
             for my $billing (values %{ $pattern->{$name} }) {
                 if (not defined $flat_hash->{'billing_limits'}) {
                     $flat_hash->{'billing_limits'} = [];
