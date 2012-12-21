@@ -92,12 +92,12 @@ sub postStartNode {
     $self->iaas->registerHypervisor(host => $args{host});
 }
 
-sub stopHost {
+sub stopNode {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    $self->iaas->removeHypervisor(host => $args{host});
+    $self->iaas->unregisterHypervisor(host => $args{host});
 }
 
 sub isUp {
