@@ -41,33 +41,10 @@ sub prerequisites {
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
-    if (defined $self->{params}->{remediation_workflow_id}){
-
-        my $wf = Entity::Workflow->get(id => $self->{params}->{remediation_workflow_id});
-        $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> STATE <'.($wf->getAttr(name => 'state')).'> ');
-
-        if($wf->getAttr(name => 'state') eq 'cancelled') {
-            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> cancelled, EXCEPTION');
-            throw Kanopya::Exception::Internal(error => 'Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> has been cancelled');
-        }
-        elsif ($wf->getAttr(name => 'state') eq 'done') {
-            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> done, let us continue');
-            # HERE NO RETURN => CONTINUE AFTER THE IF
-        }
-        elsif ($wf->getAttr(name => 'state') eq 'running') {
-            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> still running, waiting for its end');
-            return 20;
-        }
-        else {
-            $log->info('Remediation workflow <'.($self->{params}->{remediation_worfklow_id}).'> status unknown : '.($wf->getAttr(name => 'state')).', EXCEPTION');
-            throw Kanopya::Exception::Internal(error => 'Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> has been cancelled');
-        }
-    }
-
     my $cluster = $self->{context}->{cluster};
     my $host_type = $cluster->getHostManager->hostType;
 
-    if($host_type eq 'Virtual Machine') {
+    if ($host_type eq 'Virtual Machine') {
 
         $self->{context}->{host_manager} = EFactory::newEEntity(
                                                data => $cluster->getManager(manager_type => 'host_manager'),
@@ -110,11 +87,10 @@ sub prerequisites {
         else {
             $log->info('Need to start a new hypervisor');
             my $hv_cluster = $self->{context}->{host_manager}->getServiceProvider();
-            my $wf = $hv_cluster->addNode();
-            $self->{params}->{remediation_workflow_id} = $wf->getAttr(name => 'workflow_id');
-
-            $log->info('Launch remediation workflow id <'.($self->{params}->{remediation_workflow_id}).'>');
-            return 15;
+            my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $hv_cluster, }  }};
+            $self->workflow->enqueueBefore(workflow => $workflow_to_enqueue);
+            $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
+            return -1;
         }
    }
    else {   #Physical
@@ -154,9 +130,12 @@ sub prepare {
 
         # Check if the specified host is managed by the cluster host manager
         if ($host_manager_id != $cluster_host_manager_id) {
-            $errmsg = "Specified host <$args{host_id}>, is not managed by the same host manager than the " .
-                      "cluster one (<$host_manager_id>) ne <$cluster_host_manager_id).";
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+            delete $self->{context}->{host};
+            # TODO throw the following error when new context and param system passing through operations
+
+            # $errmsg = 'Specified host <.'($self->{context}->{host}->id).'>, is not managed by the same host manager than the ' .
+            #     "cluster one (<$host_manager_id>) != <$cluster_host_manager_id>).";
+            #     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
         }
     }
 
