@@ -310,8 +310,8 @@ sub registerUsers {
           desc    => 'Component group containing all components',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
-              'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
+              'ServiceDeveloper' => [ 'get' ],
+              'Sales'            => [ 'get' ]
           }
         },
         { name    => 'Connector',
@@ -319,8 +319,8 @@ sub registerUsers {
           desc    => 'Connector group containing all connectors',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
-              'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
+              'ServiceDeveloper' => [ 'get' ],
+              'Sales'            => [ 'get' ]
           }
         },
         { name    => 'Policy',

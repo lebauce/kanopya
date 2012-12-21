@@ -213,7 +213,9 @@ sub getPatternFromParams {
 
                 # Set the manager params if required
                 my $manager = Entity->get(id => $pattern->{managers}->{$manager_type}->{manager_id});
-                my @params = map { $_->{name} } @{ $manager->getPolicyParams(policy_type => $self->policy_type) };
+                my $method = 'get' . join('', map { ucfirst($_) } split('_', $manager_type)) . 'Params';
+
+                my @params = keys % { $manager->$method };
                 for my $param (@params) {
                     if (defined $args{params}->{$param} and $args{params}->{$param}) {
                         $pattern->{managers}->{$manager_type}->{manager_params}->{$param} = delete $args{params}->{$param};

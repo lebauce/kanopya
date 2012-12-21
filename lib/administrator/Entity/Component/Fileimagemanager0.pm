@@ -107,27 +107,6 @@ sub getDiskManagerParams {
     };
 }
 
-=head2 getPolicyParams
-
-=cut
-
-sub getPolicyParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    my $accesses = {};
-    if ($args{policy_type} eq 'storage') {
-        for my $access (@{ $self->getConf->{container_accesses} }) {
-            $accesses->{$access->{container_access_id}} = $access->{container_access_name};
-        }
-        return [ { name => 'container_access_id', label => 'NFS export to use', values => $accesses },
-                 { name => 'image_type', label => 'Disk image format', values => [ "raw", "qcow2", "VMDK" ] } ];
-    }
-    return [];
-}
-
 sub getConf {
     my $self = shift;
     my $conf = {};

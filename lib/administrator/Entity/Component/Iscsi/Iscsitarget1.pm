@@ -89,22 +89,6 @@ sub getExportManagerParams {
     };
 }
 
-sub getPolicyParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    my $portals = {};
-    if ($args{policy_type} eq 'storage') {
-        for my $portal (@{ $self->SUPER::getConf->{iscsi_portals} }) {
-            $portals->{$portal->{iscsi_portal_id}} = $portal->{iscsi_portal_ip} . ':' . $portal->{iscsi_portal_port}
-        }
-        return [ { name => 'iscsi_portals', label => 'ISCSI portals', values => $portals } ];
-    }
-    return [];
-}
-
 sub getConf {
     my $self = shift;
     my @targets = ();

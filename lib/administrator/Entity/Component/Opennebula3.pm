@@ -254,25 +254,6 @@ sub getHostManagerParams {
     };
 }
 
-=head2 getPolicyParams
-
-=cut
-
-sub getPolicyParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    if ($args{policy_type} eq 'hosting') {
-        return [ { name => 'max_core', label => 'Maximum CPU number', pattern => '^[0-9]+$', unit => 'core(s)' },
-                 { name => 'core',     label => 'Initial CPU number', pattern => '^[0-9]+$', unit => 'core(s)' },
-                 { name => 'max_ram',  label => 'Maximum RAM amount', pattern => '^[0-9]+$', unit => 'byte' },
-                 { name => 'ram',      label => 'Initial RAM amount', pattern => '^[0-9]+$', unit => 'byte' } ];
-    }
-    return [];
-}
-
 =head2 getBootPolicies
 
     Desc: return a list containing boot policies available

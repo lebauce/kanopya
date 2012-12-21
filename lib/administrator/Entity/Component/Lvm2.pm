@@ -95,26 +95,6 @@ sub getDiskManagerParams {
     };
 }
 
-=head2 getPolicyParams
-
-=cut
-
-sub getPolicyParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    my $vgs = {};
-    if ($args{policy_type} eq 'storage') {
-        for my $vg (@{ $self->getConf->{lvm2_vgs} }) {
-            $vgs->{$vg->{lvm2_vg_id}} = $vg->{lvm2_vg_name};
-        }
-        return [ { name => 'vg_id', label => 'Volume group to use', values => $vgs } ];
-    }
-    return [];
-}
-
 sub getMainVg {
     my $self = shift;
 

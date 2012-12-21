@@ -66,10 +66,6 @@ sub methods {
         setConf   => {
             description => 'set configuration',
         },
-        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
-        getPolicyParams => {
-            description => 'get the parameters required for policies definition.',
-        },
     }
 };
 
@@ -151,19 +147,6 @@ sub setConf {
     if ($updated) {
         $self->save();
     }
-}
-
-=head2 getPolicyParams
-
-=cut
-
-sub getPolicyParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    return [];
 }
 
 =head2 getTemplateDirectory

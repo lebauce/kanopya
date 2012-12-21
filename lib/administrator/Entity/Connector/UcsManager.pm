@@ -132,22 +132,17 @@ sub checkHostManagerParams {
     General::checkParams(args => \%args, required => [ "service_profile_template_id" ]);
 }
 
-=head2 getPolicyParams
-
-=cut
-
-sub getPolicyParams {
+sub getHostManagerParams {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    if ($args{policy_type} eq 'hosting') {
-        return [ { name   => 'service_profile_template_id',
-                   label  => 'Service profile',
-                   values => [ 'sptmpl_kanopya01-A', 'sptmpl_kanopya01-B' ] } ];
-    }
-    return [];
+    return {
+        service_profile_template_i => {
+            label   => 'Service profile',
+            type    => 'enum',
+            options => [ 'sptmpl_kanopya01-A', 'sptmpl_kanopya01-B' ]
+        }
+    };
 }
 
 =head2 synchronize
