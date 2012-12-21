@@ -33,39 +33,15 @@ my $log = get_logger("");
 sub checkStoppable {
     my $self = shift;
 
-    $log->info('entering prestopable');
     my @vms = $self->getVms();
 
     if (scalar @vms) {
         $log->info('Some vms needs to be migrated before stopping this hypervisor');
-        my $cluster = Entity->get(id => $self->node->inside_id);
-        $log->info(ref $cluster);
-        my $opennebula3   = $cluster->getComponent(name => "Opennebula", version => "3");
-
-        my $cm = CapacityManagement->new(
-            cloud_manager => $opennebula3,
-        );
-
-        my $flushRes = $cm->flushHypervisor(hv_id => $self->getId());
-        if ($flushRes->{num_failed} == 0) {
-            my $workflow = Entity::Workflow->new(workflow_name => 'remediation_hypervisor_'.$self->getId());
-
-            for my $operation (@{$flushRes->{operation_plan}}){
-                $log->info('Operation enqueuing');
-                $workflow->enqueue(
-                    %$operation
-                );
-            }
-            return {remediation_workflow_id => $workflow->getId()}
-        }
-        else {
-            throw Kanopya::Exception(error => "The hypervisor " . $self->host_hostname .
-                                          " can't be stopped as it still runs virtual machines which can not be migrated");
-        }
+        return 0;
     }
     else {
         $log->info('hypervisor is empty stop authorized');
-        return {};
+        return 1;
     }
 }
 

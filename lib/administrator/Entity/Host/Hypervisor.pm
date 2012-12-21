@@ -58,6 +58,8 @@ sub checkStoppable {
         throw Kanopya::Exception(error => "The hypervisor " . $self->host_hostname .
                                           " can't be stopped as it still runs virtual machines");
     }
+
+    return 0;
 }
 
 sub getCloudManager {

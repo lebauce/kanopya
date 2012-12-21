@@ -806,7 +806,7 @@ sub remoteSessionUrl {
 =cut
 
 sub checkStoppable {
-    return {};
+    return 1;
 }
 
 1;
