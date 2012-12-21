@@ -100,40 +100,20 @@ sub prerequisites {
         $self->{context}->{host} = EFactory::newEEntity(data => $host);
     }
 
-    # Check if there is a remediation_workflow
-    # Currently : all vm migrations when removing an hypervisor
+    if ($self->{context}->{host}->checkStoppable == 0) {
+        $log->info('Need to flush the hypervisor before stopping it');
 
-    if (not defined $self->{params}->{remediation_workflow_id}) {
-        $log->info('no remediation workflow');
-        $self->{params}->{remediation_workflow_id} = $self->{context}->{host}->checkStoppable->{remediation_workflow_id};
+        my $operation_to_enqueue = {
+            type => 'FlushHypervisor',
+            priority => 1,
+            params => { context => { host => $self->{context}->{host}}, }
+        };
+
+        $self->workflow->enqueueBefore(operation => $operation_to_enqueue);
+        $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
+        return -1;
     }
 
-    if (defined $self->{params}->{remediation_workflow_id}){
-
-        my $wf = Entity::Workflow->get(id => $self->{params}->{remediation_workflow_id});
-        $log->info('Remediation Workflow <'.($self->{params}->{remediation_workflow_id}).'> state <'.($wf->getAttr(name => 'state')).'> ');
-
-        if($wf->getAttr(name => 'state') eq 'cancelled') {
-            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> cancelled, EXCEPTION');
-            throw Kanopya::Exception::Internal(error => 'Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> has been cancelled');
-        }
-        elsif ($wf->getAttr(name => 'state') eq 'done') {
-            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> done, let us continue');
-            # HERE NO RETURN => CONTINUE AFTER THE IF
-        }
-        elsif ($wf->getAttr(name => 'state') eq 'running') {
-            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> still running, waiting for its end');
-            if(defined $self->{context}->{cluster}) {
-                $self->{context}->{cluster}->unlock(workflow => $self->getWorkflow);
-            }
-            $self->{context}->{cluster} = undef;
-            return $delay;
-        }
-        else {
-            $log->info('Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> status unknown : '.($wf->getAttr(name => 'state')).', EXCEPTION');
-            throw Kanopya::Exception::Internal(error => 'Remediation workflow <'.($self->{params}->{remediation_workflow_id}).'> has been cancelled');
-        }
-    }
     if(not defined $self->{context}->{cluster}) {
          my $cluster = Entity->get(id => $self->{context}->{host}->node->service_provider_id);
          $self->{context}->{cluster} = $cluster;
