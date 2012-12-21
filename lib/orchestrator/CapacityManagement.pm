@@ -881,9 +881,7 @@ sub _scaleOnNewHV {
     my $new_value    = $args{new_value};
     my $scale_metric = $args{scale_metric};
 
-    my $cluster      = Entity->get(id => $self->{_cluster_id});
-    my $opennebula   = $cluster->getManager(manager_type => 'host_manager');
-    my $hv_cluster   = $opennebula->getServiceProvider();
+    my $hv_cluster   = $self->{_cloud_manager}->getServiceProvider();
 
     # Add new hypervisor
     push @{$self->{_operationPlan}}, {

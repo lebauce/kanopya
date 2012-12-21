@@ -82,7 +82,6 @@ sub execute{
     my $cluster_id = $self->{context}->{host}->getClusterId();
 
     my $cm = CapacityManagement->new(
-                 cluster_id    => $self->{context}->{host}->getClusterId(),
                  cloud_manager => $self->{context}->{cloudmanager_comp},
              );
 
