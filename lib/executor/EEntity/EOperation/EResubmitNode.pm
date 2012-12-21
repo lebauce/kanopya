@@ -217,6 +217,12 @@ sub postrequisites {
     $self->{context}->{host}->setState(state => "up");
     $self->{context}->{host}->setNodeState(state => "in");
     $self->{context}->{host}->setAttr(name => 'hypervisor_id', value => $self->{context}->{hypervisor}->getId);
+
+    my $ram = $self->{context}->{host}->getTotalMemory;
+    my $cpu = $self->{context}->{host}->getTotalCpu;
+    $self->{context}->{host}->setAttr(name => 'host_ram', value => $ram);
+    $self->{context}->{host}->setAttr(name => 'host_core', value => $cpu);
+
     $self->{context}->{host}->save();
     $log->debug("Host <$host_id> is 'up'");
 
