@@ -220,7 +220,7 @@ sub oneRun {
                 $delay = $op->prerequisites();
 
                 # If the prerequisite are validated, process the operation
-                if (not $delay) {
+                if ($delay == 0) {
                     $op->setState(state => 'processing');
 
                     $adm->commitTransaction;
@@ -244,20 +244,24 @@ sub oneRun {
             }
 
             # Report the operation if required
-            if ($delay) {
-                # Update the context with possibles newly set params
-                $op->{params}->{context} = $op->{context};
-                $op->setParams(params => $op->{params});
-
-                $op->report(duration => $delay);
-
-                if ($op->state eq 'ready') {
-                    $op->setState(state => 'prereported');
+            if ($delay != 0) {
+                if ($delay < 0) {
+                    $op->setState(state => 'pending');
                 }
-                elsif ($op->state eq 'processing') {
-                    $op->setState(state => 'postreported');
+                else {
+                    # Update the context with possibles newly set params
+                    $op->{params}->{context} = $op->{context};
+                    $op->setParams(params => $op->{params});
+    
+                    $op->report(duration => $delay);
+    
+                    if ($op->state eq 'ready') {
+                        $op->setState(state => 'prereported');
+                    }
+                    elsif ($op->state eq 'processing') {
+                        $op->setState(state => 'postreported');
+                    }
                 }
-
                 $adm->commitTransaction;
 
                 throw Kanopya::Exception::Execution::OperationReported(error => 'Operation reported');
