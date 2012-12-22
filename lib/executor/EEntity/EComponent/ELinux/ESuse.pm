@@ -141,6 +141,20 @@ sub customizeInitramfs {
                          initiatorname => $args{host}->host_initiatorname,
                          target        => $target,
                          portals       => $portals);
+                         
+    # TODO check host harddisks for a harddisk_device called 'autodetect'
+    # if present, initiate deployment
+    #
+    # $rootdev = $self->_initrd_deployment(initrd_dir  => $initrddir,
+    #                                      src_device  => $rootdev,
+    #                                      dest_device => '/dev/sda', 
+    #                                      root_size   => '10',
+    #                                      swap_size   => '4'); 
+    
+    # else remove deployement script
+    $cmd = 'rm '.$args{initrd_dir}.'/boot/83-deploy.sh';
+    $econtext->execute(command => $cmd);
+    
 
     my @ifaces = $args{host}->getIfaces();
     $self->_initrd_config(initrd_dir => $initrddir,
@@ -150,6 +164,24 @@ sub customizeInitramfs {
 }
 
 # build the open-iscsi part of the initrd
+
+=pod
+
+=begin classdoc
+
+generate config variables for iscsi script in the initrd.
+enable multipath script if several portals are provided
+
+@param initrd_dir initrd working directory  
+@param target device to duplicate to dest_device
+@param portals device receiving src_device content
+@param initiatorname size in gigabyte to use during root resizing
+
+@return device containing root filesystem
+
+=end classdoc
+
+=cut
 
 sub _initrd_iscsi {
     my ($self, %args) = @_;
@@ -200,6 +232,56 @@ sub _initrd_iscsi {
     }
     return $rootdev;
 }
+
+=pod
+
+=begin classdoc
+
+desc
+
+@param initrd_dir initrd working directory  
+@param src_device device to duplicate to dest_device
+@param dest_device device receiving src_device content
+@param root_size size in gigabyte to use during root resizing
+@param swap_size size in gigabyte to use during swap device creation
+
+=end classdoc
+
+=cut
+
+sub _initrd_deployment {
+    my ($self, %args) = @_;
+    General::checkParams(args     =>\%args,
+                         required => ['initrd_dir','src_device','dest_device', 'root_size', 'swap_size']);
+    
+    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
+                        input_file  => 'deploy.sh.tt',
+                        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                        output      => '/deploy.sh',
+                        data        => { deploy_src_dev  => $args{src_device},
+                                         deploy_dest_dev => $args{dest_device},
+                                         deploy_root_size => $args{root_size},
+                                         deploy_swap_size => $args{swap_size}  
+                                       }
+                        );
+    # TODO change hard coded root device (depend on master image partitioning)
+    return '/dev/sda1'
+}
+
+=pod
+
+=begin classdoc
+
+generate config variables for deployment script in the initrd
+
+@param initrd_dir initrd working directory  
+@param ifaces array reference of Entity::Iface instances to configure static ip
+@param hostname host hostname
+@param rootdev device containing the final root filesystem
+
+=end classdoc
+
+=cut
 
 sub _initrd_config {
     my ($self, %args) = @_;

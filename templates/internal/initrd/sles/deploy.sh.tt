@@ -1,0 +1,6 @@
+[ "$deploy_src_dev" ] || deploy_src_dev='[% deploy_src_dev %]'
+[ "$deploy_dest_dev" ] || deploy_dest_dev='[% deploy_dest_dev %]'
+[ "$deploy_root_size" ] || deploy_root_size='[% deploy_root_size %]'
+[ "$deploy_swap_size" ] || deploy_swap_size='[% deploy_swap_size %]'
+
+
