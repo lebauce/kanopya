@@ -65,7 +65,7 @@ sub getPolicyDef {
     for my $component ($class->searchManagers(component_category => 'Cloudmanager')) {
         $providers->{$component->service_provider->id} = $component->service_provider->toJSON();
     }
-    my @hostproviders = values $providers;
+    my @hostproviders = values %{$providers};
 
     my $policy_attrdef = clone($class->getPolicyAttrDef);
 
@@ -108,7 +108,7 @@ sub getPolicyDef {
         $manager_options->{$component->id} = $component->toJSON();
         $manager_options->{$component->id}->{label} = $component->host_type;
     }
-    my @options = values $manager_options;
+    my @options = values %{$manager_options};
     $attributes->{attributes}->{host_manager_id}->{options} = \@options;
 
     # If the manager id not defined or the defined value not in options
@@ -120,7 +120,7 @@ sub getPolicyDef {
     # Get the host manager params from the selected host manager
     my $hostmanager = Entity->get(id => $args{host_manager_id});
     my $managerparams = $hostmanager->getHostManagerParams();
-    for my $attrname (keys $managerparams) {
+    for my $attrname (keys %{$managerparams}) {
         $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
         push @{ $attributes->{displayed} }, $attrname;
     }

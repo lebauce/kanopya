@@ -154,7 +154,7 @@ sub getPatternFromParams {
     my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
 
     if (ref($args{params}->{billing_limits}) eq 'ARRAY') {
-        my %limits = map { join('_',  values $_) => $_ } @{ delete $args{params}->{billing_limits} };
+        my %limits = map { join('_',  values %{$_} ) => $_ } @{ delete $args{params}->{billing_limits} };
         $pattern->{billing_limits} = \%limits;
     }
     return $pattern;

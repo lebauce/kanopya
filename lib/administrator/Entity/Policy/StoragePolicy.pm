@@ -73,7 +73,7 @@ sub getPolicyDef {
     for my $component ($class->searchManagers(component_category => 'Storage')) {
         $providers->{$component->service_provider->id} = $component->service_provider->toJSON();
     }
-    my @storageproviders = values $providers;
+    my @storageproviders = values %{$providers};
 
     my $policy_attrdef = clone($class->getPolicyAttrDef);
     $policy_attrdef->{storage_provider_id}->{options} = \@storageproviders;
@@ -115,7 +115,7 @@ sub getPolicyDef {
         $manager_options->{$component->id} = $component->toJSON();
         $manager_options->{$component->id}->{label} = $component->disk_type;
     }
-    my @diskmanageroptions = values $manager_options;
+    my @diskmanageroptions = values %{$manager_options};
     $attributes->{attributes}->{disk_manager_id}->{options} = \@diskmanageroptions;
 
     # If the manager id not defined or the defined value not in options
@@ -127,7 +127,7 @@ sub getPolicyDef {
     # Get the disk manager params from the selected disk manager
     my $diskmanager = Entity->get(id => $args{disk_manager_id});
     my $managerparams = $diskmanager->getDiskManagerParams();
-    for my $attrname (keys $managerparams) {
+    for my $attrname (keys %{$managerparams}) {
         $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
         push @{ $attributes->{displayed} }, $attrname;
     }
@@ -141,7 +141,7 @@ sub getPolicyDef {
         $manager_options->{$component->id} = $component->toJSON();
         $manager_options->{$component->id}->{label} = $component->export_type;
     }
-    my @expmanageroptions = values $manager_options;
+    my @expmanageroptions = values %{$manager_options};
     $attributes->{attributes}->{export_manager_id}->{options} = \@expmanageroptions;
 
     # If the manager id not defined or the defined value not in options
@@ -153,7 +153,7 @@ sub getPolicyDef {
     # Get the export manager params from the selected export manager
     my $exportmanager = Entity->get(id => $args{export_manager_id});
     $managerparams = $exportmanager->getExportManagerParams();
-    for my $attrname (keys $managerparams) {
+    for my $attrname (keys %{$managerparams}) {
         $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
         push @{ $attributes->{displayed} }, $attrname;
     }

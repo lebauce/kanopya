@@ -391,7 +391,7 @@ sub searchManagers {
     };
 
     my @managers;
-    for my $name (keys $types) {
+    for my $name (keys %{$types}) {
         my $filters = { $name . '_type.' . $name . '_category' => $args{component_category} };
         if (defined $args{service_provider_id}) {
             $filters->{service_provider_id} = $args{service_provider_id};
