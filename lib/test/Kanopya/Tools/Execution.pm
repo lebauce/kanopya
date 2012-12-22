@@ -84,20 +84,16 @@ sub execute {
         eval {
           $current = $workflow->getCurrentOperation;
         };
-        if (!$@) {
-            diag('Current operation is ' . $current);
-        }
 
         # refresh workflow view
         $workflow = Entity::Workflow->find(hash => {workflow_id => $workflow->id});
 
         my $state = $workflow->state;
-        if($state eq 'running') {
-            diag('Workflow ' . $workflow->id . ' running');
+        if ($state eq 'running') {
             sleep(5);
             next WORKFLOW;
         }
-        elsif($state eq 'done') {
+        elsif ($state eq 'done') {
             diag('Workflow ' . $workflow->id . ' done');
             last WORKFLOW;
         }
@@ -105,7 +101,7 @@ sub execute {
             diag('Workflow ' . $workflow->id . ' failed');
             throw Kanopya::Exception::Internal(error => 'Execution of workflow ' . $workflow->workflow_name . ' (' .$workflow->id . ') failed');
         }
-        elsif($state eq 'cancelled') {
+        elsif ($state eq 'cancelled') {
             diag('Workflow ' . $workflow->id . ' cancelled');
             throw Kanopya::Exception::Internal(error => 'Execution of workflow ' . $workflow->workflow_name . ' (' .$workflow->id . ') cancelled');
         }
